@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>NvBlastExtRadialDamageDesc &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>NvBlastExtRadialDamageDesc &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,144 +64,98 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>NvBlastExtRadialDamageDesc</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>NvBlastExtRadialDamageDesc</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nvblastextradialdamagedesc">
-<span id="exhale-struct-struct-nv-blast-ext-radial-damage-desc"></span><h1>NvBlastExtRadialDamageDesc<a class="headerlink" href="#nvblastextradialdamagedesc" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nvblastextradialdamagedesc">
+<span id="exhale-struct-struct-nv-blast-ext-radial-damage-desc"></span><h1>NvBlastExtRadialDamageDesc<a class="headerlink" href="#nvblastextradialdamagedesc" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#file-extensions-shaders-nvblastextdamageshaders-h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
 <dl class="cpp struct">
-<dt id="_CPPv426NvBlastExtRadialDamageDesc">
-<span id="_CPPv326NvBlastExtRadialDamageDesc"></span><span id="_CPPv226NvBlastExtRadialDamageDesc"></span><span id="NvBlastExtRadialDamageDesc"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastExtRadialDamageDesc</span></code><a class="headerlink" href="#_CPPv426NvBlastExtRadialDamageDesc" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv426NvBlastExtRadialDamageDesc">
+<span id="_CPPv326NvBlastExtRadialDamageDesc"></span><span id="_CPPv226NvBlastExtRadialDamageDesc"></span><span id="NvBlastExtRadialDamageDesc"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastExtRadialDamageDesc</span></span></span><a class="headerlink" href="#_CPPv426NvBlastExtRadialDamageDesc" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Radial Damage Desc. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N26NvBlastExtRadialDamageDesc6damageE">
-<span id="_CPPv3N26NvBlastExtRadialDamageDesc6damageE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc6damageE"></span><span id="NvBlastExtRadialDamageDesc::damage__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1a2b8469219b6615b208b5022a6fe27379"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">damage</span></code><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc6damageE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N26NvBlastExtRadialDamageDesc6damageE">
+<span id="_CPPv3N26NvBlastExtRadialDamageDesc6damageE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc6damageE"></span><span id="NvBlastExtRadialDamageDesc::damage__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1a2b8469219b6615b208b5022a6fe27379"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damage</span></span></span><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc6damageE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>normalized damage amount, range: [0, 1] (maximum health value to be reduced) </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N26NvBlastExtRadialDamageDesc8positionE">
-<span id="_CPPv3N26NvBlastExtRadialDamageDesc8positionE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc8positionE"></span><span id="NvBlastExtRadialDamageDesc::position__floatA"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1afd4c995f6402ebf1feaff268c7ca849b"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">position</span></code><span class="pre">[</span><span class="pre">3</span><span class="pre">]</span><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc8positionE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N26NvBlastExtRadialDamageDesc8positionE">
+<span id="_CPPv3N26NvBlastExtRadialDamageDesc8positionE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc8positionE"></span><span id="NvBlastExtRadialDamageDesc::position__floatA"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1afd4c995f6402ebf1feaff268c7ca849b"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">position</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc8positionE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>origin of damage action </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N26NvBlastExtRadialDamageDesc9minRadiusE">
-<span id="_CPPv3N26NvBlastExtRadialDamageDesc9minRadiusE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc9minRadiusE"></span><span id="NvBlastExtRadialDamageDesc::minRadius__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1af3546b34798c8d8f97facb157f44a35d"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">minRadius</span></code><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc9minRadiusE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N26NvBlastExtRadialDamageDesc9minRadiusE">
+<span id="_CPPv3N26NvBlastExtRadialDamageDesc9minRadiusE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc9minRadiusE"></span><span id="NvBlastExtRadialDamageDesc::minRadius__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1af3546b34798c8d8f97facb157f44a35d"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">minRadius</span></span></span><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc9minRadiusE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>inner radius of damage action </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N26NvBlastExtRadialDamageDesc9maxRadiusE">
-<span id="_CPPv3N26NvBlastExtRadialDamageDesc9maxRadiusE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc9maxRadiusE"></span><span id="NvBlastExtRadialDamageDesc::maxRadius__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1a4cc2f97bb0d5288196c18bc85985f3bc"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">maxRadius</span></code><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc9maxRadiusE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N26NvBlastExtRadialDamageDesc9maxRadiusE">
+<span id="_CPPv3N26NvBlastExtRadialDamageDesc9maxRadiusE"></span><span id="_CPPv2N26NvBlastExtRadialDamageDesc9maxRadiusE"></span><span id="NvBlastExtRadialDamageDesc::maxRadius__float"></span><span class="target" id="struct_nv_blast_ext_radial_damage_desc_1a4cc2f97bb0d5288196c18bc85985f3bc"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxRadius</span></span></span><a class="headerlink" href="#_CPPv4N26NvBlastExtRadialDamageDesc9maxRadiusE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>outer radius of damage action </p>
 </dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

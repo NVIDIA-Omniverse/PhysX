@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>lowlevel/NvBlast.h &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>lowlevel/NvBlast.h &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,85 +64,48 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>lowlevel/NvBlast.h</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>lowlevel/NvBlast.h</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="lowlevel-nvblast-h">
-<span id="file-lowlevel-nvblast-h"></span><h1>lowlevel/NvBlast.h<a class="headerlink" href="#lowlevel-nvblast-h" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="lowlevel-nvblast-h">
+<span id="file-lowlevel-nvblast-h"></span><h1>lowlevel/NvBlast.h<a class="headerlink" href="#lowlevel-nvblast-h" title="Permalink to this headline"></a></h1>
 <p>↰ Parent directory: <a class="reference internal" href="dir_lowlevel.html#dir-lowlevel"><span class="std std-ref">lowlevel/</span></a></p>
 <p>Defines the API for the low-level blast library.</p>
 <p>Source: <a class="reference internal" href="program_listing_file_lowlevel_NvBlast.h.html#program-listing-file-lowlevel-nvblast-h"><span class="std std-ref">lowlevel/NvBlast.h</span></a></p>
-<div class="section" id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a6a3d0ae6f5c5efb65699140897adb8c0.html#exhale-function-nv-blast-8h-1a6a3d0ae6f5c5efb65699140897adb8c0"><span class="std std-ref">NvBlastActorApplyFracture</span></a>: Applies the direct fracture and breaks graph bonds/edges as necessary.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ae9f0eef6bd6fe0e356ab8ec009372e58.html#exhale-function-nv-blast-8h-1ae9f0eef6bd6fe0e356ab8ec009372e58"><span class="std std-ref">NvBlastActorCacheBondHeath</span></a>: Tell the system to cache the bond health for the given bond index.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a5261035f206eb5fb1a1822323ff8d725.html#exhale-function-nv-blast-8h-1a5261035f206eb5fb1a1822323ff8d725"><span class="std std-ref">NvBlastActorCanFracture</span></a>: Determines if the actor can fracture further.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ad7b368ffbf45a130d7b116530b81a77e.html#exhale-function-nv-blast-8h-1ad7b368ffbf45a130d7b116530b81a77e"><span class="std std-ref">NvBlastActorDeactivate</span></a>: Deactivate an actor within its family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a7bf6cbcc95e377f61dbd1ab87bf6facc.html#exhale-function-nv-blast-8h-1a7bf6cbcc95e377f61dbd1ab87bf6facc"><span class="std std-ref">NvBlastActorGenerateFracture</span></a>: Creates fracture commands for the actor using a damage program and program parameters (material and damage descriptions).</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a89921a073e03d720fd0c7c3823cd9b7c.html#exhale-function-nv-blast-8h-1a89921a073e03d720fd0c7c3823cd9b7c"><span class="std std-ref">NvBlastActorGetBondHealths</span></a>: Access the bond health data for an actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aade01abac334e958f85e717e23d57f96.html#exhale-function-nv-blast-8h-1aade01abac334e958f85e717e23d57f96"><span class="std std-ref">NvBlastActorGetCachedBondHeaths</span></a>: Access the cached bond health data for an actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a2d59048197fbddd4ba1ec575eef91b4d.html#exhale-function-nv-blast-8h-1a2d59048197fbddd4ba1ec575eef91b4d"><span class="std std-ref">NvBlastActorGetFamily</span></a>: Access to an actor’s family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a16a6e2f6192e31c06c7650db0ab3c2be.html#exhale-function-nv-blast-8h-1a16a6e2f6192e31c06c7650db0ab3c2be"><span class="std std-ref">NvBlastActorGetBondHealths</span></a>: Access the bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a49458a81e64b4ae5f6f17a2b96d1ceef.html#exhale-function-nv-blast-8h-1a49458a81e64b4ae5f6f17a2b96d1ceef"><span class="std std-ref">NvBlastActorGetCachedBondHeaths</span></a>: Access the cached bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a2bff9b062a3ebf8af4bc2bf73ff21d19.html#exhale-function-nv-blast-8h-1a2bff9b062a3ebf8af4bc2bf73ff21d19"><span class="std std-ref">NvBlastActorGetFamily</span></a>: Access to an actor’s family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a3a97a2b9a11e4eb47fa05b3e6f520fce.html#exhale-function-nv-blast-8h-1a3a97a2b9a11e4eb47fa05b3e6f520fce"><span class="std std-ref">NvBlastActorGetGraphNodeCount</span></a>: Get the number of graph nodes for this actor.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1abdf46f09850fb6952509a94f14d9406b.html#exhale-function-nv-blast-8h-1abdf46f09850fb6952509a94f14d9406b"><span class="std std-ref">NvBlastActorGetGraphNodeIndices</span></a>: Retrieve a list of graph node indices for the actor into the given array.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ad9607ac7bd28e0a3a2b3bec7aa8d5805.html#exhale-function-nv-blast-8h-1ad9607ac7bd28e0a3a2b3bec7aa8d5805"><span class="std std-ref">NvBlastActorGetIndex</span></a>: Access to an actor’s internal index.</p></li>
@@ -203,14 +120,14 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1adc280b2a624d76981c87fb5f068d5106.html#exhale-function-nv-blast-8h-1adc280b2a624d76981c87fb5f068d5106"><span class="std std-ref">NvBlastActorSplit</span></a>: Releases the oldActor and creates its children newActors if necessary.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a3204e6077b424c4e10f605af0fa119d5.html#exhale-function-nv-blast-8h-1a3204e6077b424c4e10f605af0fa119d5"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMap</span></a>: Apply chunk reorder map.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a9eea9e02fc7f81cdc0399e7196bddf58.html#exhale-function-nv-blast-8h-1a9eea9e02fc7f81cdc0399e7196bddf58"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMapInPlace</span></a>: Apply chunk reorder map.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a868a59bb905879503d5e9a034cff247e.html#exhale-function-nv-blast-8h-1a868a59bb905879503d5e9a034cff247e"><span class="std std-ref">NvBlastAssetCreateFamily</span></a>: Family-building function.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1ae9662f10cbfadc6dbef7add15f32374a.html#exhale-function-nv-blast-8h-1ae9662f10cbfadc6dbef7add15f32374a"><span class="std std-ref">NvBlastAssetCreateFamilyFromSizeData</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae429a4da15af7a1a6f3027583c059222.html#exhale-function-nv-blast-8h-1ae429a4da15af7a1a6f3027583c059222"><span class="std std-ref">NvBlastAssetCreateFamily</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a855fccdb43c27ea29c0558d659dc1388.html#exhale-function-nv-blast-8h-1a855fccdb43c27ea29c0558d659dc1388"><span class="std std-ref">NvBlastAssetCreateFamilyFromSizeData</span></a>: Family-building function.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a2539b7a2f244a8f0c45d7020d1dfad63.html#exhale-function-nv-blast-8h-1a2539b7a2f244a8f0c45d7020d1dfad63"><span class="std std-ref">NvBlastAssetGetActorSerializationSizeUpperBound</span></a>: A buffer size sufficient to serialize an actor instanced from a given asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab44bf9e7f8a755094ee4f45aade1c0ab.html#exhale-function-nv-blast-8h-1ab44bf9e7f8a755094ee4f45aade1c0ab"><span class="std std-ref">NvBlastAssetGetBondCount</span></a>: Get the number of bonds in the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1ad612242052e71894fecfca76f5cf39d3.html#exhale-function-nv-blast-8h-1ad612242052e71894fecfca76f5cf39d3"><span class="std std-ref">NvBlastAssetGetBonds</span></a>: Access an array of bonds of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1acaa8efe5e3c88b70dada8da8308fbbad.html#exhale-function-nv-blast-8h-1acaa8efe5e3c88b70dada8da8308fbbad"><span class="std std-ref">NvBlastAssetGetBonds</span></a>: Access an array of bonds of the given asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac82609eb93afc9a8ab7011f2eb8f9a23.html#exhale-function-nv-blast-8h-1ac82609eb93afc9a8ab7011f2eb8f9a23"><span class="std std-ref">NvBlastAssetGetChunkCount</span></a>: Get the number of chunks in the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aac1c384c82de07c613b7c0539f7707df.html#exhale-function-nv-blast-8h-1aac1c384c82de07c613b7c0539f7707df"><span class="std std-ref">NvBlastAssetGetChunks</span></a>: Access an array of chunks of the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1abff733fd05dc5b7a730336699a427c25.html#exhale-function-nv-blast-8h-1abff733fd05dc5b7a730336699a427c25"><span class="std std-ref">NvBlastAssetGetChunkToGraphNodeMap</span></a>: Access a map from chunk index to graph node index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad92c02f175537b70ae3ecd2b7099ef6d.html#exhale-function-nv-blast-8h-1ad92c02f175537b70ae3ecd2b7099ef6d"><span class="std std-ref">NvBlastAssetGetChunks</span></a>: Access an array of chunks of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac7debde1e3a7b0a4dd44672df77dd3a8.html#exhale-function-nv-blast-8h-1ac7debde1e3a7b0a4dd44672df77dd3a8"><span class="std std-ref">NvBlastAssetGetChunkToGraphNodeMap</span></a>: Access a map from chunk index to graph node index.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab933a279e63545023464292bf7d562a1.html#exhale-function-nv-blast-8h-1ab933a279e63545023464292bf7d562a1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySize</span></a>: Calculates the memory requirements for a family based upon an asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a2735d36912e3a3261096a3309f1e7ed1.html#exhale-function-nv-blast-8h-1a2735d36912e3a3261096a3309f1e7ed1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySizeFromSizeData</span></a>: Calculates the memory requirements for a family based upon supplied sized data.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ae8bee2fd37d6af164165a23adb0592a9.html#exhale-function-nv-blast-8h-1ae8bee2fd37d6af164165a23adb0592a9"><span class="std std-ref">NvBlastAssetGetFirstSubsupportChunkIndex</span></a>: Get the first subsupport chunk index in the given asset.</p></li>
@@ -223,17 +140,17 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a40e77f2e7fc3a33c95201ca6229a2977.html#exhale-function-nv-blast-8h-1a40e77f2e7fc3a33c95201ca6229a2977"><span class="std std-ref">NvBlastAssetMemSizeDataFromAsset</span></a>: Fill out the size data from the provided asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac0c345ce6676ad87cbd06e2f0debd8f7.html#exhale-function-nv-blast-8h-1ac0c345ce6676ad87cbd06e2f0debd8f7"><span class="std std-ref">NvBlastAssetSetID</span></a>: Set an asset’s ID.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac4748f2da0b6a1be9055141c68ac668f.html#exhale-function-nv-blast-8h-1ac4748f2da0b6a1be9055141c68ac668f"><span class="std std-ref">NvBlastBuildAssetDescChunkReorderMap</span></a>: Build chunk reorder map.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a8455859eec0e23e95aa5bbf7c4fd1e14.html#exhale-function-nv-blast-8h-1a8455859eec0e23e95aa5bbf7c4fd1e14"><span class="std std-ref">NvBlastCreateAsset</span></a>: Asset-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aaace8a1030e13b004309e833ca40293f.html#exhale-function-nv-blast-8h-1aaace8a1030e13b004309e833ca40293f"><span class="std std-ref">NvBlastCreateAsset</span></a>: Asset-building function.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1afd09f53fb71a1fb33053eebf1610367b.html#exhale-function-nv-blast-8h-1afd09f53fb71a1fb33053eebf1610367b"><span class="std std-ref">NvBlastEnsureAssetExactSupportCoverage</span></a>: Function to ensure (check and update) support coverage of chunks.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a6d774be820fc1ff7df4d2241df1db220.html#exhale-function-nv-blast-8h-1a6d774be820fc1ff7df4d2241df1db220"><span class="std std-ref">NvBlastFamilyCreateFirstActor</span></a>: Instance the family’s asset into a new, unfractured actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a38e8e96d5b62bf19dc3135603ed38240.html#exhale-function-nv-blast-8h-1a38e8e96d5b62bf19dc3135603ed38240"><span class="std std-ref">NvBlastFamilyDeserializeActor</span></a>: Deserialize a single Actor from a buffer into the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a673e56d8a36466d6c636aa264dd0cb15.html#exhale-function-nv-blast-8h-1a673e56d8a36466d6c636aa264dd0cb15"><span class="std std-ref">NvBlastFamilyGetActorByIndex</span></a>: Retrieve the actor associated with the given actor index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a5881026cff8649115f9a75ef84b5c247.html#exhale-function-nv-blast-8h-1a5881026cff8649115f9a75ef84b5c247"><span class="std std-ref">NvBlastFamilyCreateFirstActor</span></a>: Instance the family’s asset into a new, unfractured actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a77fa8cfe94abf6c29526b985b46f3c9b.html#exhale-function-nv-blast-8h-1a77fa8cfe94abf6c29526b985b46f3c9b"><span class="std std-ref">NvBlastFamilyDeserializeActor</span></a>: Deserialize a single Actor from a buffer into the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1adcba284ec223c0acf83bb93fca19200c.html#exhale-function-nv-blast-8h-1adcba284ec223c0acf83bb93fca19200c"><span class="std std-ref">NvBlastFamilyGetActorByIndex</span></a>: Retrieve the actor associated with the given actor index.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a88fd777ba36d4ad6c6d7a7913810c24d.html#exhale-function-nv-blast-8h-1a88fd777ba36d4ad6c6d7a7913810c24d"><span class="std std-ref">NvBlastFamilyGetActorCount</span></a>: Retrieve the number of active actors associated with the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1aeb9144660cd1dbdb4dc23720a3e542de.html#exhale-function-nv-blast-8h-1aeb9144660cd1dbdb4dc23720a3e542de"><span class="std std-ref">NvBlastFamilyGetActors</span></a>: Retrieve the active actors associated with the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1adca8ba4a5449c530cfdb9a39e50215dd.html#exhale-function-nv-blast-8h-1adca8ba4a5449c530cfdb9a39e50215dd"><span class="std std-ref">NvBlastFamilyGetAsset</span></a>: Retrieve the asset of the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a91de461f69f45cb3a14fb5bb171ccc6e.html#exhale-function-nv-blast-8h-1a91de461f69f45cb3a14fb5bb171ccc6e"><span class="std std-ref">NvBlastFamilyGetAsset</span></a>: Retrieve the asset of the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1afa406b4fc35520001060b529ec95e820.html#exhale-function-nv-blast-8h-1afa406b4fc35520001060b529ec95e820"><span class="std std-ref">NvBlastFamilyGetAssetID</span></a>: Retrieve the asset ID of the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a5c7e938874e2f930ea5b55fedb27b12e.html#exhale-function-nv-blast-8h-1a5c7e938874e2f930ea5b55fedb27b12e"><span class="std std-ref">NvBlastFamilyGetChunkActor</span></a>: Retrieve the actor associated with the given chunk.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aecb6ec09b8d34ee733d667cacb1cd83a.html#exhale-function-nv-blast-8h-1aecb6ec09b8d34ee733d667cacb1cd83a"><span class="std std-ref">NvBlastFamilyGetChunkActorIndices</span></a>: Retrieve the actor indices associated with chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ab7ce37efba821c40bf5b31914a07b5fb.html#exhale-function-nv-blast-8h-1ab7ce37efba821c40bf5b31914a07b5fb"><span class="std std-ref">NvBlastFamilyGetChunkActor</span></a>: Retrieve the actor associated with the given chunk.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a1750190d934afc34fbe40f091fe08712.html#exhale-function-nv-blast-8h-1a1750190d934afc34fbe40f091fe08712"><span class="std std-ref">NvBlastFamilyGetChunkActorIndices</span></a>: Retrieve the actor indices associated with chunks.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a15f297534c834b7335747be318303aa7.html#exhale-function-nv-blast-8h-1a15f297534c834b7335747be318303aa7"><span class="std std-ref">NvBlastFamilyGetFormatVersion</span></a>: Retrieve the data format version for the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac9e06ffe539277ccbdb648c97308fa65.html#exhale-function-nv-blast-8h-1ac9e06ffe539277ccbdb648c97308fa65"><span class="std std-ref">NvBlastFamilyGetMaxActorCount</span></a>: Retrieve the max active actor count family could have.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a730a6ea95065b53b9d9b65bde8cbb336.html#exhale-function-nv-blast-8h-1a730a6ea95065b53b9d9b65bde8cbb336"><span class="std std-ref">NvBlastFamilyGetRequiredScratchForCreateFirstActor</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastFamilyCreateFirstActor.</p></li>
@@ -246,52 +163,43 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a749f932dc54fa2d3f413bd6fcc1ba6e9.html#exhale-function-nv-blast-8h-1a749f932dc54fa2d3f413bd6fcc1ba6e9"><span class="std std-ref">NvBlastTicksToSeconds</span></a>: Convert a tick value from <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> to seconds.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab3059b35f2c62b8110d90336f5cecefc.html#exhale-function-nv-blast-8h-1ab3059b35f2c62b8110d90336f5cecefc"><span class="std std-ref">NvBlastTimersReset</span></a>: Resets all values in the given <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> struct to zero.</p></li>
 </ul>
-</div>
-<div class="section" id="defines">
-<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="defines">
+<h2>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="define__nv_blast_8h_1a72f7ca021d885848e5ca7e09f708f18c.html#exhale-define-nv-blast-8h-1a72f7ca021d885848e5ca7e09f708f18c"><span class="std std-ref">NvBlastActorIsBoundToWorld</span></a></p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

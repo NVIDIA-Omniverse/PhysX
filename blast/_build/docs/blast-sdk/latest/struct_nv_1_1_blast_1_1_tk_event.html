@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::TkEvent &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::TkEvent &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,120 +64,83 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::TkEvent</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::TkEvent</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-tkevent">
-<span id="exhale-struct-struct-nv-1-1-blast-1-1-tk-event"></span><h1>Nv::Blast::TkEvent<a class="headerlink" href="#nv-blast-tkevent" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-tkevent">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-tk-event"></span><h1>Nv::Blast::TkEvent<a class="headerlink" href="#nv-blast-tkevent" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkEvent.h.html#file-toolkit-nvblasttkevent-h"><span class="std std-ref">toolkit/NvBlastTkEvent.h</span></a></p>
 <dl class="cpp struct">
-<dt id="_CPPv4N2Nv5Blast7TkEventE">
-<span id="_CPPv3N2Nv5Blast7TkEventE"></span><span id="_CPPv2N2Nv5Blast7TkEventE"></span><span id="Nv::Blast::TkEvent"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkEvent</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEventE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEventE">
+<span id="_CPPv3N2Nv5Blast7TkEventE"></span><span id="_CPPv2N2Nv5Blast7TkEventE"></span><span id="Nv::Blast::TkEvent"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TkEvent</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEventE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Event data dispatched to <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_event_listener.html#class_nv_1_1_blast_1_1_tk_event_listener"><span class="std std-ref">TkEventListener</span></a> objects. </p>
 <p>The user may implement the abstract <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_event_listener.html#class_nv_1_1_blast_1_1_tk_event_listener"><span class="std std-ref">TkEventListener</span></a> interface and pass the listener object to a BlastTk object which dispatches events. (See for example <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html#class_nv_1_1_blast_1_1_tk_family"><span class="std std-ref">TkFamily</span></a>.) </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
 <dl class="cpp enum">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4TypeE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4TypeE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4TypeE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07b"></span><em class="property"><span class="pre">enum</span> </em><code class="sig-name descname"><span class="pre">Type</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4TypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4TypeE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4TypeE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4TypeE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07b"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Type</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4TypeE" title="Permalink to this definition"></a><br /></dt>
 <dd><p><em>Values:</em></p>
 <dl class="cpp enumerator">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4Type5SplitE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4Type5SplitE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type5SplitE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba02c12594603837feafbdb7f02aa5f7d8"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">Split</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type5SplitE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4Type5SplitE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4Type5SplitE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type5SplitE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba02c12594603837feafbdb7f02aa5f7d8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Split</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type5SplitE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Sent when a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> is split. See <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_split_event.html#struct_nv_1_1_blast_1_1_tk_split_event"><span class="std std-ref">TkSplitEvent</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp enumerator">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4Type15FractureCommandE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4Type15FractureCommandE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type15FractureCommandE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba19ab6a1a1e39df40326e78ede85dd647"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">FractureCommand</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type15FractureCommandE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4Type15FractureCommandE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4Type15FractureCommandE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type15FractureCommandE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba19ab6a1a1e39df40326e78ede85dd647"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FractureCommand</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type15FractureCommandE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Sent when a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> generated fracture commands using <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor_1aee5e7fdfa7cd0b33f5ba92168841d4b2"><span class="std std-ref">TkActor::generateFracture</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp enumerator">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4Type13FractureEventE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4Type13FractureEventE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type13FractureEventE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07bac6b2016ae9607033e0d76000d6d13e98"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">FractureEvent</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type13FractureEventE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4Type13FractureEventE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4Type13FractureEventE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type13FractureEventE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07bac6b2016ae9607033e0d76000d6d13e98"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FractureEvent</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type13FractureEventE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Sent when a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> is fractured using <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor_1aa02c42add8033877003cd907a0818785"><span class="std std-ref">TkActor::applyFracture</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp enumerator">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4Type11JointUpdateE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4Type11JointUpdateE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type11JointUpdateE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba31e6a4fa25b3f83bb3e23185829430b2"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">JointUpdate</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type11JointUpdateE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4Type11JointUpdateE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4Type11JointUpdateE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type11JointUpdateE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba31e6a4fa25b3f83bb3e23185829430b2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">JointUpdate</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type11JointUpdateE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Sent when TkJoints change their attachment state. See <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#struct_nv_1_1_blast_1_1_tk_joint_update_event"><span class="std std-ref">TkJointUpdateEvent</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp enumerator">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4Type9TypeCountE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4Type9TypeCountE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type9TypeCountE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba8ddfbe9ceb31a245bd3c53bacd64353b"></span><em class="property"><span class="pre">enumerator</span> </em><code class="sig-name descname"><span class="pre">TypeCount</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type9TypeCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4Type9TypeCountE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4Type9TypeCountE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4Type9TypeCountE"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a13a95a0e6743fea0f0a374a3d943b07ba8ddfbe9ceb31a245bd3c53bacd64353b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TypeCount</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4Type9TypeCountE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 </div>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv">
-<span id="_CPPv3I0ENK2Nv5Blast7TkEvent10getPayloadEv"></span><span id="_CPPv2I0ENK2Nv5Blast7TkEvent10getPayloadEv"></span><span class="pre">template&lt;</span><span class="pre">typename</span> <code class="sig-name descname"><span class="pre">T</span></code><span class="pre">&gt;</span><br /><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a255a9107e4fc1135668f9f54eeeec46a"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="#_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv" title="Nv::Blast::TkEvent::getPayload::T"><span class="pre">T</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getPayload</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv">
+<span id="_CPPv3I0ENK2Nv5Blast7TkEvent10getPayloadEv"></span><span id="_CPPv2I0ENK2Nv5Blast7TkEvent10getPayloadEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1aa58913b8200bf5c0e19e1d52e29a4c92"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv" title="Nv::Blast::TkEvent::getPayload::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPayload</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK2Nv5Blast7TkEvent10getPayloadEPK1Tv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Casts the payload data into its type-dependent format. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -234,61 +151,52 @@
 
 </div>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast7TkEvent7payloadE">
-<span id="_CPPv3N2Nv5Blast7TkEvent7payloadE"></span><span id="_CPPv2N2Nv5Blast7TkEvent7payloadE"></span><span id="Nv::Blast::TkEvent::payload__voidCP"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a84ab4fb1c357357dd349bb367d1f93dc"></span><em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">payload</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent7payloadE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent7payloadE">
+<span id="_CPPv3N2Nv5Blast7TkEvent7payloadE"></span><span id="_CPPv2N2Nv5Blast7TkEvent7payloadE"></span><span id="Nv::Blast::TkEvent::payload__voidCP"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a84ab4fb1c357357dd349bb367d1f93dc"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">payload</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent7payloadE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Type-dependent payload data. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast7TkEvent4typeE">
-<span id="_CPPv3N2Nv5Blast7TkEvent4typeE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4typeE"></span><span id="Nv::Blast::TkEvent::type__Type"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a000709f52a7d7e2629aaa0114260dec5"></span><a class="reference internal" href="#_CPPv4N2Nv5Blast7TkEvent4TypeE" title="Nv::Blast::TkEvent::Type"><span class="pre">Type</span></a> <code class="sig-name descname"><span class="pre">type</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4typeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkEvent4typeE">
+<span id="_CPPv3N2Nv5Blast7TkEvent4typeE"></span><span id="_CPPv2N2Nv5Blast7TkEvent4typeE"></span><span id="Nv::Blast::TkEvent::type__Type"></span><span class="target" id="struct_nv_1_1_blast_1_1_tk_event_1a000709f52a7d7e2629aaa0114260dec5"></span><a class="reference internal" href="#_CPPv4N2Nv5Blast7TkEvent4TypeE" title="Nv::Blast::TkEvent::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkEvent4typeE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>See the Type enum, above. </p>
 </dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

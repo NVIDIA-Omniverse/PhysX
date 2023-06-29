@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/extensions/PxDefaultSimulationFilterShader.h &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/extensions/PxDefaultSimulationFilterShader.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-extensions-pxdefaultsimulationfiltershader-h">
+<span id="file-include-extensions-pxdefaultsimulationfiltershader-h"></span><h1>include/extensions/PxDefaultSimulationFilterShader.h<a class="headerlink" href="#include-extensions-pxdefaultsimulationfiltershader-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_extensions.html#dir-include-extensions"><span class="std std-ref">include/extensions/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_extensions_PxDefaultSimulationFilterShader.h.html#program-listing-file-include-extensions-pxdefaultsimulationfiltershader-h"><span class="std std-ref">include/extensions/PxDefaultSimulationFilterShader.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_extensions_PxExtensionsAPI.h.html#file-include-extensions-pxextensionsapi-h"><span class="std std-ref">include/extensions/PxExtensionsAPI.h</span></a></p></li>
+</ul>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_filter_op.html#exhale-struct-struct-px-filter-op"><span class="std std-ref">PxFilterOp</span></a>: Collision filtering operations.</p></li>
+<li><p><a class="reference internal" href="class_px_groups_mask.html#exhale-class-class-px-groups-mask"><span class="std std-ref">PxGroupsMask</span></a>: 64-bit mask used for collision filtering.</p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f.html#exhale-function-group-extensions-1ga587ba12f90f77543c3e4452abeb0f22f"><span class="std std-ref">PxDefaultSimulationFilterShader</span></a>: Implementation of a simple filter shader that emulates PhysX 2.8.x filtering.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga4ad1c1fb89841e9f9416530aed66170b.html#exhale-function-group-extensions-1ga4ad1c1fb89841e9f9416530aed66170b"><span class="std std-ref">PxGetFilterBool</span></a>: Retrieves filtering’s boolean value.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1gaf61e11222319b3a664d8127c8b64bb98.html#exhale-function-group-extensions-1gaf61e11222319b3a664d8127c8b64bb98"><span class="std std-ref">PxGetFilterConstants</span></a>: Gets filtering constant K0 and K1.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1gab5878e8b784c6c17d26a20bc202c4c0e.html#exhale-function-group-extensions-1gab5878e8b784c6c17d26a20bc202c4c0e"><span class="std std-ref">PxGetFilterOps</span></a>: Retrieves filtering operation.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga0918cc645e6e95c3077a816ba33b42e9.html#exhale-function-group-extensions-1ga0918cc645e6e95c3077a816ba33b42e9"><span class="std std-ref">PxGetGroup</span></a>: Retrieves the value set with <a class="reference internal" href="function_group__extensions_1ga0f895f83f81c371385418a3284d28070.html#exhale-function-group-extensions-1ga0f895f83f81c371385418a3284d28070"><span class="std std-ref">PxSetGroup</span></a></p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1gae13799b44f055e19212220bdff322597.html#exhale-function-group-extensions-1gae13799b44f055e19212220bdff322597"><span class="std std-ref">PxGetGroupCollisionFlag</span></a>: Determines if collision detection is performed between a pair of groups.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga13ef0a91d385e0f45c1b73b3ffafa8dc.html#exhale-function-group-extensions-1ga13ef0a91d385e0f45c1b73b3ffafa8dc"><span class="std std-ref">PxGetGroupsMask</span></a>: Gets 64-bit mask used for collision filtering.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1gaf17024df6afd1cbab816914f25b33214.html#exhale-function-group-extensions-1gaf17024df6afd1cbab816914f25b33214"><span class="std std-ref">PxSetFilterBool</span></a>: Setups filtering’s boolean value.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga7f3ed5a3baab55369f7ee35e4e44cfb0.html#exhale-function-group-extensions-1ga7f3ed5a3baab55369f7ee35e4e44cfb0"><span class="std std-ref">PxSetFilterConstants</span></a>: Setups filtering’s K0 and K1 value.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga64679ee1d097cd1699fd8d3413ac2932.html#exhale-function-group-extensions-1ga64679ee1d097cd1699fd8d3413ac2932"><span class="std std-ref">PxSetFilterOps</span></a>: Setups filtering operations.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga0f895f83f81c371385418a3284d28070.html#exhale-function-group-extensions-1ga0f895f83f81c371385418a3284d28070"><span class="std std-ref">PxSetGroup</span></a>: Sets which collision group this actor is part of.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga8ced9dfabbe8811f9c5ea8933e1298f7.html#exhale-function-group-extensions-1ga8ced9dfabbe8811f9c5ea8933e1298f7"><span class="std std-ref">PxSetGroupCollisionFlag</span></a>: Specifies if collision should be performed by a pair of groups.</p></li>
+<li><p><a class="reference internal" href="function_group__extensions_1ga4e9876a60fc230eb433a6b3d77beaae9.html#exhale-function-group-extensions-1ga4e9876a60fc230eb433a6b3d77beaae9"><span class="std std-ref">PxSetGroupsMask</span></a>: Sets 64-bit mask used for collision filtering.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

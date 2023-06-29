@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBoxController &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBoxController</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxboxcontroller">
+<span id="exhale-class-class-px-box-controller"></span><h1>PxBoxController<a class="headerlink" href="#pxboxcontroller" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxBoxController.h.html#file-include-characterkinematic-pxboxcontroller-h"><span class="std std-ref">include/characterkinematic/PxBoxController.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxController</span></code> (<a class="reference internal" href="class_px_controller.html#exhale-class-class-px-controller"><span class="std std-ref">PxController</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxBoxController">
+<span id="_CPPv315PxBoxController"></span><span id="_CPPv215PxBoxController"></span><span id="PxBoxController"></span><span class="target" id="class_px_box_controller"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxController</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><a class="headerlink" href="#_CPPv415PxBoxController" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Box character controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc"><span class="std std-ref">PxBoxControllerDesc</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller"><span class="std std-ref">PxController</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getHalfHeightEv">
+<span id="_CPPv3NK15PxBoxController13getHalfHeightEv"></span><span id="_CPPv2NK15PxBoxController13getHalfHeightEv"></span><span id="PxBoxController::getHalfHeightC"></span><span class="target" id="class_px_box_controller_1a25c66f4fabdb4d689bc77aba02f66ebd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfHeight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getHalfHeightEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a815c411aad6776da24bbb4fceb6aa8b6"><span class="std std-ref">PxBoxControllerDesc.halfHeight</span></a> <a class="reference internal" href="#class_px_box_controller_1af959bc51b41f2c00156cd28bd19fc240"><span class="std std-ref">setHalfHeight()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half height of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController17getHalfSideExtentEv">
+<span id="_CPPv3NK15PxBoxController17getHalfSideExtentEv"></span><span id="_CPPv2NK15PxBoxController17getHalfSideExtentEv"></span><span id="PxBoxController::getHalfSideExtentC"></span><span class="target" id="class_px_box_controller_1a3e1de6ef41ef607c768012530931cb98"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfSideExtent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController17getHalfSideExtentEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half side extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1ab3c305136be5d04e77862a7e2e4f4808"><span class="std std-ref">PxBoxControllerDesc.halfSideExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1af1b0b85810c79821ddb61cb42d0ef730"><span class="std std-ref">setHalfSideExtent()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half side extent of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController20getHalfForwardExtentEv">
+<span id="_CPPv3NK15PxBoxController20getHalfForwardExtentEv"></span><span id="_CPPv2NK15PxBoxController20getHalfForwardExtentEv"></span><span id="PxBoxController::getHalfForwardExtentC"></span><span class="target" id="class_px_box_controller_1addbaf29dafa43422705e70449a62a8a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfForwardExtent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController20getHalfForwardExtentEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half forward extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a4efede85355dc05251d1c5c8bbb5a8bf"><span class="std std-ref">PxBoxControllerDesc.halfForwardExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1acae44a6bab0ca9da6d47b84345d03e61"><span class="std std-ref">setHalfForwardExtent()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half forward extent of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setHalfHeightE5PxF32">
+<span id="_CPPv3N15PxBoxController13setHalfHeightE5PxF32"></span><span id="_CPPv2N15PxBoxController13setHalfHeightE5PxF32"></span><span id="PxBoxController::setHalfHeight__PxF32"></span><span class="target" id="class_px_box_controller_1af959bc51b41f2c00156cd28bd19fc240"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfHeight</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfHeight</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setHalfHeightE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a815c411aad6776da24bbb4fceb6aa8b6"><span class="std std-ref">PxBoxControllerDesc.halfHeight</span></a> <a class="reference internal" href="#class_px_box_controller_1a25c66f4fabdb4d689bc77aba02f66ebd"><span class="std std-ref">getHalfHeight()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfHeight</strong> – <strong>[in]</strong> The new half height for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController17setHalfSideExtentE5PxF32">
+<span id="_CPPv3N15PxBoxController17setHalfSideExtentE5PxF32"></span><span id="_CPPv2N15PxBoxController17setHalfSideExtentE5PxF32"></span><span id="PxBoxController::setHalfSideExtent__PxF32"></span><span class="target" id="class_px_box_controller_1af1b0b85810c79821ddb61cb42d0ef730"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfSideExtent</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfSideExtent</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController17setHalfSideExtentE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half side extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1ab3c305136be5d04e77862a7e2e4f4808"><span class="std std-ref">PxBoxControllerDesc.halfSideExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1a3e1de6ef41ef607c768012530931cb98"><span class="std std-ref">getHalfSideExtent()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfSideExtent</strong> – <strong>[in]</strong> The new half side extent for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController20setHalfForwardExtentE5PxF32">
+<span id="_CPPv3N15PxBoxController20setHalfForwardExtentE5PxF32"></span><span id="_CPPv2N15PxBoxController20setHalfForwardExtentE5PxF32"></span><span id="PxBoxController::setHalfForwardExtent__PxF32"></span><span class="target" id="class_px_box_controller_1acae44a6bab0ca9da6d47b84345d03e61"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfForwardExtent</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfForwardExtent</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController20setHalfForwardExtentE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half forward extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a4efede85355dc05251d1c5c8bbb5a8bf"><span class="std std-ref">PxBoxControllerDesc.halfForwardExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1addbaf29dafa43422705e70449a62a8a1"><span class="std std-ref">getHalfForwardExtent()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfForwardExtent</strong> – <strong>[in]</strong> The new half forward extent for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController7getTypeEv">
+<span id="_CPPv3NK15PxBoxController7getTypeEv"></span><span id="_CPPv2NK15PxBoxController7getTypeEv"></span><span id="PxBoxController::getTypeC"></span><span class="target" id="class_px_controller_1ad98589ad22dcdcedaf1c5fa9f0f40b53"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the type of controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxControllerType </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController7releaseEv">
+<span id="_CPPv3N15PxBoxController7releaseEv"></span><span id="_CPPv2N15PxBoxController7releaseEv"></span><span id="PxBoxController::release"></span><span class="target" id="class_px_controller_1a0ed314c5bf5dd95f9f340de15efb5776"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the controller. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext">
+<span id="_CPPv3N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="_CPPv2N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="PxBoxController::move__PxVec3CR.PxF32.PxF32.PxControllerFiltersCR.PxObstacleContextCP"></span><span class="target" id="class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db.html#_CPPv426PxControllerCollisionFlags" title="PxControllerCollisionFlags"><span class="n"><span class="pre">PxControllerCollisionFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">move</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">disp</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minDist</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">elapsedTime</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller_filters.html#_CPPv419PxControllerFilters" title="PxControllerFilters"><span class="n"><span class="pre">PxControllerFilters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filters</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_obstacle_context.html#_CPPv417PxObstacleContext" title="PxObstacleContext"><span class="n"><span class="pre">PxObstacleContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">obstacles</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Moves the character using a “collide-and-slide” algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>disp</strong> – <strong>[in]</strong> Displacement vector </p></li>
+<li><p><strong>minDist</strong> – <strong>[in]</strong> The minimum travelled distance to consider. If travelled distance is smaller, the character doesn’t move. This is used to stop the recursive motion algorithm when remaining distance to travel is small. </p></li>
+<li><p><strong>elapsedTime</strong> – <strong>[in]</strong> Time elapsed since last call </p></li>
+<li><p><strong>filters</strong> – <strong>[in]</strong> User-defined filters for this move </p></li>
+<li><p><strong>obstacles</strong> – <strong>[in]</strong> Potential additional obstacles the CCT should collide with. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Collision flags, collection of <a class="reference internal" href="typedef_group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db.html#group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db"><span class="std std-ref">PxControllerCollisionFlags</span></a> </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController11setPositionERK14PxExtendedVec3">
+<span id="_CPPv3N15PxBoxController11setPositionERK14PxExtendedVec3"></span><span id="_CPPv2N15PxBoxController11setPositionERK14PxExtendedVec3"></span><span id="PxBoxController::setPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController11setPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s position. </p>
+<p>The position controlled by this function is the center of the collision shape.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions. </p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The character’s position must be such that it does not overlap the static geometry.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (center) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController11getPositionEv">
+<span id="_CPPv3NK15PxBoxController11getPositionEv"></span><span id="_CPPv2NK15PxBoxController11getPositionEv"></span><span id="PxBoxController::getPositionC"></span><span class="target" id="class_px_controller_1aca54bef0663caf75613a5542e54d318e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController11getPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the raw position of the controller. </p>
+<p>The position retrieved by this function is the center of the collision shape. To retrieve the bottom position of the shape, a.k.a. the foot position, use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> function.</p>
+<p>The position is updated by calls to <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a>. Calling this method without calling <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> will return the last position or the initial position of the controller.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s center position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15setFootPositionERK14PxExtendedVec3">
+<span id="_CPPv3N15PxBoxController15setFootPositionERK14PxExtendedVec3"></span><span id="_CPPv2N15PxBoxController15setFootPositionERK14PxExtendedVec3"></span><span id="PxBoxController::setFootPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1ab09889972859bf03168d1d48434094ff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFootPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController15setFootPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set controller’s foot position. </p>
+<p>The position controlled by this function is the bottom of the collision shape, a.k.a. the foot position.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (bottom) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController15getFootPositionEv">
+<span id="_CPPv3NK15PxBoxController15getFootPositionEv"></span><span id="_CPPv2NK15PxBoxController15getFootPositionEv"></span><span id="PxBoxController::getFootPositionC"></span><span class="target" id="class_px_controller_1a401af38fab565432d05b87112b26b816"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFootPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController15getFootPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the “foot” position of the controller, i.e. </p>
+<p>the position of the bottom of the CCT’s shape.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s foot position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getActorEv">
+<span id="_CPPv3NK15PxBoxController8getActorEv"></span><span id="_CPPv2NK15PxBoxController8getActorEv"></span><span id="PxBoxController::getActorC"></span><span class="target" id="class_px_controller_1a3754e17468322484fa5fd7034a208653"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><span class="n"><span class="pre">PxRigidDynamic</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getActor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getActorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the rigid body actor associated with this controller (see PhysX documentation). </p>
+<p>The behavior upon manually altering this actor is undefined, you should primarily use it for reading const properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the actor associated with the controller. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setStepOffsetEK5PxF32">
+<span id="_CPPv3N15PxBoxController13setStepOffsetEK5PxF32"></span><span id="_CPPv2N15PxBoxController13setStepOffsetEK5PxF32"></span><span id="PxBoxController::setStepOffset__PxF32C"></span><span class="target" id="class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStepOffset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setStepOffsetEK5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a51fe254a4807b832b2d34e884d856438"><span class="std std-ref">PxControllerDesc.stepOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The new step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getStepOffsetEv">
+<span id="_CPPv3NK15PxBoxController13getStepOffsetEv"></span><span id="_CPPv2NK15PxBoxController13getStepOffsetEv"></span><span id="PxBoxController::getStepOffsetC"></span><span class="target" id="class_px_controller_1a2a46763eb7541abe5d1c73eacca4639c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStepOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getStepOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"><span class="std std-ref">setStepOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE">
+<span id="_CPPv3N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="_CPPv2N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="PxBoxController::setNonWalkableMode__PxControllerNonWalkableMode::Enum"></span><span class="target" id="class_px_controller_1a8f30123d5e7d45c6fdb1992cf8c748ef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setNonWalkableMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> The new value of the non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController18getNonWalkableModeEv">
+<span id="_CPPv3NK15PxBoxController18getNonWalkableModeEv"></span><span id="_CPPv2NK15PxBoxController18getNonWalkableModeEv"></span><span id="PxBoxController::getNonWalkableModeC"></span><span class="target" id="class_px_controller_1ad16b10c1e20376c23ce81af23b5ef880"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNonWalkableMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController18getNonWalkableModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController16getContactOffsetEv">
+<span id="_CPPv3NK15PxBoxController16getContactOffsetEv"></span><span id="_CPPv2NK15PxBoxController16getContactOffsetEv"></span><span id="PxBoxController::getContactOffsetC"></span><span class="target" id="class_px_controller_1a836a426813b11552b4dfb481e0ba576f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController16getContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController16setContactOffsetE5PxF32">
+<span id="_CPPv3N15PxBoxController16setContactOffsetE5PxF32"></span><span id="_CPPv2N15PxBoxController16setContactOffsetE5PxF32"></span><span id="PxBoxController::setContactOffset__PxF32"></span><span class="target" id="class_px_controller_1a6bf15ba0b66b3f271fdb2f2c6cb8c68b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController16setContactOffsetE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController14getUpDirectionEv">
+<span id="_CPPv3NK15PxBoxController14getUpDirectionEv"></span><span id="_CPPv2NK15PxBoxController14getUpDirectionEv"></span><span id="PxBoxController::getUpDirectionC"></span><span class="target" id="class_px_controller_1ad8fe2f181b59bcbee150f786bb41adfe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUpDirection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController14getUpDirectionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController14setUpDirectionERK6PxVec3">
+<span id="_CPPv3N15PxBoxController14setUpDirectionERK6PxVec3"></span><span id="_CPPv2N15PxBoxController14setUpDirectionERK6PxVec3"></span><span id="PxBoxController::setUpDirection__PxVec3CR"></span><span class="target" id="class_px_controller_1a3393ba5043c3534712d8f362a9872cfc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUpDirection</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController14setUpDirectionERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>up</strong> – <strong>[in]</strong> The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getSlopeLimitEv">
+<span id="_CPPv3NK15PxBoxController13getSlopeLimitEv"></span><span id="_CPPv2NK15PxBoxController13getSlopeLimitEv"></span><span id="PxBoxController::getSlopeLimitC"></span><span class="target" id="class_px_controller_1a7e03e7863dd2036f673b084f3ce94629"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSlopeLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getSlopeLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setSlopeLimitE5PxF32">
+<span id="_CPPv3N15PxBoxController13setSlopeLimitE5PxF32"></span><span id="_CPPv2N15PxBoxController13setSlopeLimitE5PxF32"></span><span id="PxBoxController::setSlopeLimit__PxF32"></span><span class="target" id="class_px_controller_1a5e3a554fe03319301360df65122f22c8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSlopeLimit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">slopeLimit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setSlopeLimitE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature can not be enabled at runtime, i.e. if the slope limit is zero when creating the CCT (which disables the feature) then changing the slope limit at runtime will not have any effect, and the call will be ignored.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>slopeLimit</strong> – <strong>[in]</strong> The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15invalidateCacheEv">
+<span id="_CPPv3N15PxBoxController15invalidateCacheEv"></span><span id="_CPPv2N15PxBoxController15invalidateCacheEv"></span><span id="PxBoxController::invalidateCache"></span><span class="target" id="class_px_controller_1a4d65669022c2f65926fde8112e72c500"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invalidateCache</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController15invalidateCacheEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes internal geometry cache. </p>
+<p>The character controller uses caching in order to speed up collision testing. The cache is automatically flushed when a change to static objects is detected in the scene. For example when a static shape is added, updated, or removed from the scene, the cache is automatically invalidated.</p>
+<p>However there may be situations that cannot be automatically detected, and those require manual invalidation of the cache. Currently the user must call this when the filtering behavior changes (the <a class="reference internal" href="class_px_controller_filters.html#class_px_controller_filters"><span class="std std-ref">PxControllerFilters</span></a> parameter of the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController::move</span></a> call). While the controller in principle could detect a change in these parameters, it cannot detect a change in the behavior of the filtering function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController.move</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController8getSceneEv">
+<span id="_CPPv3N15PxBoxController8getSceneEv"></span><span id="_CPPv2N15PxBoxController8getSceneEv"></span><span id="PxBoxController::getScene"></span><span class="target" id="class_px_controller_1a3a7134907855142bcae10e462958a61e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the scene associated with the controller. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The physics scene </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController11getUserDataEv">
+<span id="_CPPv3NK15PxBoxController11getUserDataEv"></span><span id="_CPPv2NK15PxBoxController11getUserDataEv"></span><span id="PxBoxController::getUserDataC"></span><span class="target" id="class_px_controller_1a74cdda2b323e76b66ffc6a5c02376e92"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getUserData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController11getUserDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController11setUserDataEPv">
+<span id="_CPPv3N15PxBoxController11setUserDataEPv"></span><span id="_CPPv2N15PxBoxController11setUserDataEPv"></span><span id="PxBoxController::setUserData__voidP"></span><span class="target" id="class_px_controller_1a2b6c1841bafa53877baa3dca8543c9ca"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUserData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userData</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController11setUserDataEPv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>userData</strong> – <strong>[in]</strong> The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getStateER17PxControllerState">
+<span id="_CPPv3NK15PxBoxController8getStateER17PxControllerState"></span><span id="_CPPv2NK15PxBoxController8getStateER17PxControllerState"></span><span id="PxBoxController::getState__PxControllerStateRC"></span><span class="target" id="class_px_controller_1ad694218683ad584f6120bc001c0d1616"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getState</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_state.html#_CPPv417PxControllerState" title="PxControllerState"><span class="n"><span class="pre">PxControllerState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getStateER17PxControllerState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns information about the controller’s internal state. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_state.html#struct_px_controller_state"><span class="std std-ref">PxControllerState</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>state</strong> – <strong>[out]</strong> The controller’s internal state</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getStatsER17PxControllerStats">
+<span id="_CPPv3NK15PxBoxController8getStatsER17PxControllerStats"></span><span id="_CPPv2NK15PxBoxController8getStatsER17PxControllerStats"></span><span id="PxBoxController::getStats__PxControllerStatsRC"></span><span class="target" id="class_px_controller_1ae98a10df99157bdaed67a05795fb3599"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStats</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_stats.html#_CPPv417PxControllerStats" title="PxControllerStats"><span class="n"><span class="pre">PxControllerStats</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stats</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getStatsER17PxControllerStats" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the controller’s internal statistics. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_stats.html#struct_px_controller_stats"><span class="std std-ref">PxControllerStats</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stats</strong> – <strong>[out]</strong> The controller’s internal statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController6resizeE6PxReal">
+<span id="_CPPv3N15PxBoxController6resizeE6PxReal"></span><span id="_CPPv2N15PxBoxController6resizeE6PxReal"></span><span id="PxBoxController::resize__PxReal"></span><span class="target" id="class_px_controller_1a4b982db163cd5189357eee4c26430cf6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController6resizeE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Resizes the controller. </p>
+<p>This function attempts to resize the controller to a given size, while making sure the bottom position of the controller remains constant. In other words the function modifies both the height and the (center) position of the controller. This is a helper function that can be used to implement a ‘crouch’ functionality for example.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>height</strong> – <strong>[in]</strong> Desired controller’s height </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15PxBoxControllerEv">
+<span id="_CPPv3N15PxBoxController15PxBoxControllerEv"></span><span id="_CPPv2N15PxBoxController15PxBoxControllerEv"></span><span id="PxBoxController::PxBoxController"></span><span class="target" id="class_px_box_controller_1a7ac9da5c6362b5a5b89eb124245327e7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxBoxController15PxBoxControllerEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxControllerD0Ev">
+<span id="_CPPv3N15PxBoxControllerD0Ev"></span><span id="_CPPv2N15PxBoxControllerD0Ev"></span><span id="PxBoxController::~PxBoxController"></span><span class="target" id="class_px_box_controller_1a792cdd51d6c3efdf97679f7afb399332"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBoxController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxBoxControllerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

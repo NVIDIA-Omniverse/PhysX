@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSoftBodyGpuDataFlag &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSoftBodyGpuDataFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsoftbodygpudataflag">
+<span id="exhale-class-class-px-soft-body-gpu-data-flag"></span><h1>PxSoftBodyGpuDataFlag<a class="headerlink" href="#pxsoftbodygpudataflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSoftBodyFlag.h.html#file-include-pxsoftbodyflag-h"><span class="std std-ref">include/PxSoftBodyFlag.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxSoftBodyGpuDataFlag">
+<span id="_CPPv321PxSoftBodyGpuDataFlag"></span><span id="_CPPv221PxSoftBodyGpuDataFlag"></span><span id="PxSoftBodyGpuDataFlag"></span><span class="target" id="class_px_soft_body_gpu_data_flag"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSoftBodyGpuDataFlag</span></span></span><a class="headerlink" href="#_CPPv421PxSoftBodyGpuDataFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>These flags determine what data is read or written when using <a class="reference internal" href="class_px_scene.html#class_px_scene_1a7c452d5fa9603ecd67a0d973b0980149"><span class="std std-ref">PxScene::copySoftBodyData()</span></a> or <a class="reference internal" href="class_px_scene.html#class_px_scene_1a1ec163a2dd43e16abe55500edf8548b6"><span class="std std-ref">PxScene::applySoftBodyData</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a7c452d5fa9603ecd67a0d973b0980149"><span class="std std-ref">PxScene::copySoftBodyData</span></a>, <a class="reference internal" href="class_px_scene.html#class_px_scene_1a1ec163a2dd43e16abe55500edf8548b6"><span class="std std-ref">PxScene::applySoftBodyData</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4EnumE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4EnumE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4EnumE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfe"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum12eTET_INDICESE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum12eTET_INDICESE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum12eTET_INDICESE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfea5d9cb5315f53e86c0948707c13083b68"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTET_INDICES</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum12eTET_INDICESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The collision mesh tetrahedron indices (quadruples of int32) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum15eTET_REST_POSESE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum15eTET_REST_POSESE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum15eTET_REST_POSESE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfea6dbe42baee20da8032d0ae678caaf99e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTET_REST_POSES</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum15eTET_REST_POSESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The collision mesh tetrahedron rest poses (float 3x3 matrices) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum14eTET_ROTATIONSE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum14eTET_ROTATIONSE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum14eTET_ROTATIONSE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfeaa3d2dac4bae9e619b3964610733e4dee"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTET_ROTATIONS</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum14eTET_ROTATIONSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The collision mesh tetrahedron orientations (quaternions, quadruples of float) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eTET_POSITION_INV_MASSE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum22eTET_POSITION_INV_MASSE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum22eTET_POSITION_INV_MASSE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfea8eda7f5b43a420b5932527df0281b53d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eTET_POSITION_INV_MASS</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eTET_POSITION_INV_MASSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The collision mesh vertex positions and their inverted mass in the 4th component (quadruples of float) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum16eSIM_TET_INDICESE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum16eSIM_TET_INDICESE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum16eSIM_TET_INDICESE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfea73b27bd865b3bb0efc514e373306fa03"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIM_TET_INDICES</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum16eSIM_TET_INDICESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The simulation mesh tetrahedron indices (quadruples of int32) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum18eSIM_TET_ROTATIONSE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum18eSIM_TET_ROTATIONSE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum18eSIM_TET_ROTATIONSE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfeaf99f06f6bdd4c3c2c329b249a0b4e991"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIM_TET_ROTATIONS</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum18eSIM_TET_ROTATIONSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The simulation mesh tetrahedron orientations (quaternions, quadruples of float) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eSIM_VELOCITY_INV_MASSE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum22eSIM_VELOCITY_INV_MASSE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum22eSIM_VELOCITY_INV_MASSE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfeac0a44c73b55138e720aad05d291b1bea"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIM_VELOCITY_INV_MASS</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eSIM_VELOCITY_INV_MASSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The simulation mesh vertex velocities and their inverted mass in the 4th component (quadruples of float) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eSIM_POSITION_INV_MASSE">
+<span id="_CPPv3N21PxSoftBodyGpuDataFlag4Enum22eSIM_POSITION_INV_MASSE"></span><span id="_CPPv2N21PxSoftBodyGpuDataFlag4Enum22eSIM_POSITION_INV_MASSE"></span><span class="target" id="class_px_soft_body_gpu_data_flag_1ad7912c722be5fb439a4b75963d2c5bfea292162dd60ceaf4041dcce1715895d6a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIM_POSITION_INV_MASS</span></span></span><a class="headerlink" href="#_CPPv4N21PxSoftBodyGpuDataFlag4Enum22eSIM_POSITION_INV_MASSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The simulation mesh vertex positions and their inverted mass in the 4th component (quadruples of float) </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTGSSolverBodyVel &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTGSSolverBodyVel</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtgssolverbodyvel">
+<span id="exhale-struct-struct-px-t-g-s-solver-body-vel"></span><h1>PxTGSSolverBodyVel<a class="headerlink" href="#pxtgssolverbodyvel" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_solver_PxSolverDefs.h.html#file-include-solver-pxsolverdefs-h"><span class="std std-ref">include/solver/PxSolverDefs.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv418PxTGSSolverBodyVel">
+<span id="_CPPv318PxTGSSolverBodyVel"></span><span id="_CPPv218PxTGSSolverBodyVel"></span><span id="PxTGSSolverBodyVel"></span><span class="target" id="struct_px_t_g_s_solver_body_vel"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></span><a class="headerlink" href="#_CPPv418PxTGSSolverBodyVel" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxTGSSolverBodyVel15projectVelocityERK6PxVec3RK6PxVec3">
+<span id="_CPPv3NK18PxTGSSolverBodyVel15projectVelocityERK6PxVec3RK6PxVec3"></span><span id="_CPPv2NK18PxTGSSolverBodyVel15projectVelocityERK6PxVec3RK6PxVec3"></span><span id="PxTGSSolverBodyVel::projectVelocity__PxVec3CR.PxVec3CRC"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a45b340d207b1927c451c5467f19307df"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">projectVelocity</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ang</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK18PxTGSSolverBodyVel15projectVelocityERK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel14linearVelocityE">
+<span id="_CPPv3N18PxTGSSolverBodyVel14linearVelocityE"></span><span id="_CPPv2N18PxTGSSolverBodyVel14linearVelocityE"></span><span id="PxTGSSolverBodyVel::linearVelocity__PxVec3"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1abae9ced7d04c3508f959e3d6413781dc"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linearVelocity</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel14linearVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel20nbStaticInteractionsE">
+<span id="_CPPv3N18PxTGSSolverBodyVel20nbStaticInteractionsE"></span><span id="_CPPv2N18PxTGSSolverBodyVel20nbStaticInteractionsE"></span><span id="PxTGSSolverBodyVel::nbStaticInteractions__PxU16"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a024740f7b599adb152a938b55c153709"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbStaticInteractions</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel20nbStaticInteractionsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel19maxDynamicPartitionE">
+<span id="_CPPv3N18PxTGSSolverBodyVel19maxDynamicPartitionE"></span><span id="_CPPv2N18PxTGSSolverBodyVel19maxDynamicPartitionE"></span><span id="PxTGSSolverBodyVel::maxDynamicPartition__PxU16"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a1f1ac6c09e0d09bf84cfa4d0e88facee"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxDynamicPartition</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel19maxDynamicPartitionE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel15angularVelocityE">
+<span id="_CPPv3N18PxTGSSolverBodyVel15angularVelocityE"></span><span id="_CPPv2N18PxTGSSolverBodyVel15angularVelocityE"></span><span id="PxTGSSolverBodyVel::angularVelocity__PxVec3"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a62180b6a25deacd6454c72f0680b3349"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angularVelocity</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel15angularVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel13partitionMaskE">
+<span id="_CPPv3N18PxTGSSolverBodyVel13partitionMaskE"></span><span id="_CPPv2N18PxTGSSolverBodyVel13partitionMaskE"></span><span id="PxTGSSolverBodyVel::partitionMask__PxU32"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a270fce74ffe1dc2d2207fd709b9fb2cd"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">partitionMask</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel13partitionMaskE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel10deltaAngDtE">
+<span id="_CPPv3N18PxTGSSolverBodyVel10deltaAngDtE"></span><span id="_CPPv2N18PxTGSSolverBodyVel10deltaAngDtE"></span><span id="PxTGSSolverBodyVel::deltaAngDt__PxVec3"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a0f8a1cde9ca85bff8d8c95a444502128"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deltaAngDt</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel10deltaAngDtE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel9maxAngVelE">
+<span id="_CPPv3N18PxTGSSolverBodyVel9maxAngVelE"></span><span id="_CPPv2N18PxTGSSolverBodyVel9maxAngVelE"></span><span id="PxTGSSolverBodyVel::maxAngVel__PxReal"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a96df4104c19d116c22bc0279975a16b2"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxAngVel</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel9maxAngVelE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel10deltaLinDtE">
+<span id="_CPPv3N18PxTGSSolverBodyVel10deltaLinDtE"></span><span id="_CPPv2N18PxTGSSolverBodyVel10deltaLinDtE"></span><span id="PxTGSSolverBodyVel::deltaLinDt__PxVec3"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a863ba941fa369400c70692b7fa7b57e6"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deltaLinDt</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel10deltaLinDtE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel9lockFlagsE">
+<span id="_CPPv3N18PxTGSSolverBodyVel9lockFlagsE"></span><span id="_CPPv2N18PxTGSSolverBodyVel9lockFlagsE"></span><span id="PxTGSSolverBodyVel::lockFlags__PxU16"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a396aa6ce5758b19d81a4860fa67065db"></span><a class="reference internal" href="typedef_group__foundation_1ga7354283a14b2bf4bed64f9cb6ac36aa4.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">lockFlags</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel9lockFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel11isKinematicE">
+<span id="_CPPv3N18PxTGSSolverBodyVel11isKinematicE"></span><span id="_CPPv2N18PxTGSSolverBodyVel11isKinematicE"></span><span id="PxTGSSolverBodyVel::isKinematic__b"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a661c068fee9d0d69310f061791cc1a31"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKinematic</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel11isKinematicE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxTGSSolverBodyVel3padE">
+<span id="_CPPv3N18PxTGSSolverBodyVel3padE"></span><span id="_CPPv2N18PxTGSSolverBodyVel3padE"></span><span id="PxTGSSolverBodyVel::pad__PxU8"></span><span class="target" id="struct_px_t_g_s_solver_body_vel_1a143884acc4bdc567626be91653ed861f"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pad</span></span></span><a class="headerlink" href="#_CPPv4N18PxTGSSolverBodyVel3padE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

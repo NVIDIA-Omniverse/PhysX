@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::RegularRadialPatternDesc &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::RegularRadialPatternDesc &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,183 +64,137 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::RegularRadialPatternDesc</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::RegularRadialPatternDesc</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-regularradialpatterndesc">
-<span id="exhale-struct-struct-nv-1-1-blast-1-1-regular-radial-pattern-desc"></span><h1>Nv::Blast::RegularRadialPatternDesc<a class="headerlink" href="#nv-blast-regularradialpatterndesc" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-regularradialpatterndesc">
+<span id="exhale-struct-struct-nv-1-1-blast-1-1-regular-radial-pattern-desc"></span><h1>Nv::Blast::RegularRadialPatternDesc<a class="headerlink" href="#nv-blast-regularradialpatterndesc" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#file-extensions-authoringcommon-nvblastextauthoringpatterngenerator-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h</span></a></p>
-<div class="section" id="inheritance-relationships">
-<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="base-type">
-<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline">¶</a></h3>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::PatternDescriptor</span></code> (<a class="reference internal" href="struct_nv_1_1_blast_1_1_pattern_descriptor.html#exhale-struct-struct-nv-1-1-blast-1-1-pattern-descriptor"><span class="std std-ref">Nv::Blast::PatternDescriptor</span></a>)</p></li>
 </ul>
 <dl class="cpp struct">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDescE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDescE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDescE"></span><span id="Nv::Blast::RegularRadialPatternDesc"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">RegularRadialPatternDesc</span></code> <span class="pre">:</span> <em class="property"><span class="pre">public</span></em> <span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><span class="pre">::</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_pattern_descriptor.html#_CPPv4N2Nv5Blast17PatternDescriptorE" title="Nv::Blast::PatternDescriptor"><span class="pre">PatternDescriptor</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDescE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDescE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDescE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDescE"></span><span id="Nv::Blast::RegularRadialPatternDesc"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RegularRadialPatternDesc</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">Nv</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Blast</span></span><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_nv_1_1_blast_1_1_pattern_descriptor.html#_CPPv4N2Nv5Blast17PatternDescriptorE" title="Nv::Blast::PatternDescriptor"><span class="n"><span class="pre">PatternDescriptor</span></span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDescE" title="Permalink to this definition"></a><br /></dt>
 <dd><div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMinE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc9radiusMinE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc9radiusMinE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radiusMin__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a8db39b69e964d8101adda7fcd6d0ca31"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">radiusMin</span></code> <span class="pre">=</span> <span class="pre">0.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMinE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMinE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc9radiusMinE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc9radiusMinE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radiusMin__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a8db39b69e964d8101adda7fcd6d0ca31"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radiusMin</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMinE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radiusMax__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a0ff8d3f6ca0577fe576b63b365f4d2d1"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">radiusMax</span></code> <span class="pre">=</span> <span class="pre">1.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radiusMax__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a0ff8d3f6ca0577fe576b63b365f4d2d1"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radiusMax</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc9radiusMaxE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc11radialStepsE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc11radialStepsE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc11radialStepsE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialSteps__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1ab0d4e2ba3b7301e42dd366164f926462"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">radialSteps</span></code> <span class="pre">=</span> <span class="pre">3</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc11radialStepsE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc11radialStepsE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc11radialStepsE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc11radialStepsE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialSteps__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1ab0d4e2ba3b7301e42dd366164f926462"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radialSteps</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">3</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc11radialStepsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc12angularStepsE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc12angularStepsE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc12angularStepsE"></span><span id="Nv::Blast::RegularRadialPatternDesc::angularSteps__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a05be2d62a3e6c523f4fefd38eb051ac3"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">angularSteps</span></code> <span class="pre">=</span> <span class="pre">8</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc12angularStepsE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc12angularStepsE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc12angularStepsE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc12angularStepsE"></span><span id="Nv::Blast::RegularRadialPatternDesc::angularSteps__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a05be2d62a3e6c523f4fefd38eb051ac3"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angularSteps</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">8</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc12angularStepsE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc8apertureE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc8apertureE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc8apertureE"></span><span id="Nv::Blast::RegularRadialPatternDesc::aperture__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1aea9dd71b7e45e775ce616f155680e1c2"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">aperture</span></code> <span class="pre">=</span> <span class="pre">.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc8apertureE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc8apertureE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc8apertureE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc8apertureE"></span><span id="Nv::Blast::RegularRadialPatternDesc::aperture__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1aea9dd71b7e45e775ce616f155680e1c2"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">aperture</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc8apertureE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE"></span><span id="Nv::Blast::RegularRadialPatternDesc::angularNoiseAmplitude__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a2c56c6584f48516069a0e9196888053f"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">angularNoiseAmplitude</span></code> <span class="pre">=</span> <span class="pre">0.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE"></span><span id="Nv::Blast::RegularRadialPatternDesc::angularNoiseAmplitude__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a2c56c6584f48516069a0e9196888053f"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angularNoiseAmplitude</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc21angularNoiseAmplitudeE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialNoiseAmplitude__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a88b0bfd26937828f0a94f48246731b39"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">radialNoiseAmplitude</span></code> <span class="pre">=</span> <span class="pre">0.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialNoiseAmplitude__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a88b0bfd26937828f0a94f48246731b39"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radialNoiseAmplitude</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseAmplitudeE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialNoiseFrequency__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a838cc159e772872072e0efc65ab39f29"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">radialNoiseFrequency</span></code> <span class="pre">=</span> <span class="pre">0.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE"></span><span id="Nv::Blast::RegularRadialPatternDesc::radialNoiseFrequency__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a838cc159e772872072e0efc65ab39f29"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radialNoiseFrequency</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc20radialNoiseFrequencyE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE"></span><span id="Nv::Blast::RegularRadialPatternDesc::debrisRadiusMult__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a8fb32b5eaf08288834fecf87064a623a"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">debrisRadiusMult</span></code> <span class="pre">=</span> <span class="pre">1.0f</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE"></span><span id="Nv::Blast::RegularRadialPatternDesc::debrisRadiusMult__float"></span><span class="target" id="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc_1a8fb32b5eaf08288834fecf87064a623a"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">debrisRadiusMult</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc16debrisRadiusMultE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc3RNGE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc3RNGE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc3RNGE"></span><span id="Nv::Blast::RegularRadialPatternDesc::RNG__RNG_CALLBACK"></span><span class="target" id="struct_nv_1_1_blast_1_1_pattern_descriptor_1a7f743be5fe7e4daf2d2b031a041fa29b"></span><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html#_CPPv4N2Nv5Blast12RNG_CALLBACKE" title="Nv::Blast::RNG_CALLBACK"><span class="pre">RNG_CALLBACK</span></a> <code class="sig-name descname"><span class="pre">RNG</span></code> <span class="pre">=</span> <span class="pre">nullptr</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc3RNGE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc3RNGE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc3RNGE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc3RNGE"></span><span id="Nv::Blast::RegularRadialPatternDesc::RNG__RNG_CALLBACK"></span><span class="target" id="struct_nv_1_1_blast_1_1_pattern_descriptor_1a7f743be5fe7e4daf2d2b031a041fa29b"></span><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html#_CPPv4N2Nv5Blast12RNG_CALLBACKE" title="Nv::Blast::RNG_CALLBACK"><span class="n"><span class="pre">RNG_CALLBACK</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RNG</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc3RNGE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE">
-<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE"></span><span id="Nv::Blast::RegularRadialPatternDesc::interiorMaterialId__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_pattern_descriptor_1ad5b24919d89dd367b0aeba80e06781eb"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">interiorMaterialId</span></code> <span class="pre">=</span> <span class="pre">1000</span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE">
+<span id="_CPPv3N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE"></span><span id="_CPPv2N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE"></span><span id="Nv::Blast::RegularRadialPatternDesc::interiorMaterialId__uint32_t"></span><span class="target" id="struct_nv_1_1_blast_1_1_pattern_descriptor_1ad5b24919d89dd367b0aeba80e06781eb"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">interiorMaterialId</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1000</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast24RegularRadialPatternDesc18interiorMaterialIdE" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

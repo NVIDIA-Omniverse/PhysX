@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleTireStickyStateUpdate &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleTireStickyStateUpdate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicletirestickystateupdate">
+<span id="exhale-function-group-vehicle2-1ga5608a30da14348c28aae970738fcfbe5"></span><h1>PxVehicleTireStickyStateUpdate<a class="headerlink" href="#pxvehicletirestickystateupdate" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_tire_PxVehicleTireFunctions.h.html#file-include-vehicle2-tire-pxvehicletirefunctions-h"><span class="std std-ref">include/vehicle2/tire/PxVehicleTireFunctions.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv430PxVehicleTireStickyStateUpdateRK24PxVehicleAxleDescriptionRK20PxVehicleWheelParamsRK25PxVehicleTireStickyParamsRK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK22PxVehicleTireGripStateRK23PxVehicleTireSpeedStateRK30PxVehicleWheelRigidBody1dStateK6PxRealR24PxVehicleTireStickyState">
+<span id="_CPPv330PxVehicleTireStickyStateUpdateRK24PxVehicleAxleDescriptionRK20PxVehicleWheelParamsRK25PxVehicleTireStickyParamsRK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK22PxVehicleTireGripStateRK23PxVehicleTireSpeedStateRK30PxVehicleWheelRigidBody1dStateK6PxRealR24PxVehicleTireStickyState"></span><span id="_CPPv230PxVehicleTireStickyStateUpdateRK24PxVehicleAxleDescriptionRK20PxVehicleWheelParamsRK25PxVehicleTireStickyParamsRK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK22PxVehicleTireGripStateRK23PxVehicleTireSpeedStateRK30PxVehicleWheelRigidBody1dStateK6PxRealR24PxVehicleTireStickyState"></span><span id="PxVehicleTireStickyStateUpdate__PxVehicleAxleDescriptionCR.PxVehicleWheelParamsCR.PxVehicleTireStickyParamsCR.PxVehicleArrayData:PxVehicleWheelActuationStateC:CR.PxVehicleTireGripStateCR.PxVehicleTireSpeedStateCR.PxVehicleWheelRigidBody1dStateCR.PxRealC.PxVehicleTireStickyStateR"></span><span class="target" id="group__vehicle2_1ga5608a30da14348c28aae970738fcfbe5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleTireStickyStateUpdate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDescription</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_params.html#_CPPv420PxVehicleWheelParams" title="PxVehicleWheelParams"><span class="n"><span class="pre">PxVehicleWheelParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_tire_sticky_params.html#_CPPv425PxVehicleTireStickyParams" title="PxVehicleTireStickyParams"><span class="n"><span class="pre">PxVehicleTireStickyParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireStickyParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_actuation_state.html#_CPPv428PxVehicleWheelActuationState" title="PxVehicleWheelActuationState"><span class="n"><span class="pre">PxVehicleWheelActuationState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actuationStates</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_tire_grip_state.html#_CPPv422PxVehicleTireGripState" title="PxVehicleTireGripState"><span class="n"><span class="pre">PxVehicleTireGripState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireGripState</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_tire_speed_state.html#_CPPv423PxVehicleTireSpeedState" title="PxVehicleTireSpeedState"><span class="n"><span class="pre">PxVehicleTireSpeedState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireSpeedState</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_rigid_body1d_state.html#_CPPv430PxVehicleWheelRigidBody1dState" title="PxVehicleWheelRigidBody1dState"><span class="n"><span class="pre">PxVehicleWheelRigidBody1dState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelRigidBody1dState</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="struct_px_vehicle_tire_sticky_state.html#_CPPv424PxVehicleTireStickyState" title="PxVehicleTireStickyState"><span class="n"><span class="pre">PxVehicleTireStickyState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">tireStickyState</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv430PxVehicleTireStickyStateUpdateRK24PxVehicleAxleDescriptionRK20PxVehicleWheelParamsRK25PxVehicleTireStickyParamsRK18PxVehicleArrayDataIK28PxVehicleWheelActuationStateERK22PxVehicleTireGripStateRK23PxVehicleTireSpeedStateRK30PxVehicleWheelRigidBody1dStateK6PxRealR24PxVehicleTireStickyState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>When a tire has been at a very low speed for a threshold time without application of drive torque, a secondary tire model is applied to bring the tire to rest using velocity constraints that asymptotically approach zero speed along the tire’s lateral and longitudinal directions. </p>
+<p>This secondary tire model is referred to as the sticky tire model and the tire is considered to be in the sticky tire state when the speed and time conditions are satisfied. The purpose of PxVehicleTireStickyStateUpdate is to compute the target speeds of the sticky state and to record whether sticky state is active or not. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__vehicle2_1gacee95435871dbb1e330e2afffb15bef7.html#group__vehicle2_1gacee95435871dbb1e330e2afffb15bef7"><span class="std std-ref">PxVehiclePhysXConstraintStatesUpdate</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__vehicle2_1gad1df58b8219df8a0c3e7012ad83eead0.html#group__vehicle2_1gad1df58b8219df8a0c3e7012ad83eead0"><span class="std std-ref">PxVehicleTireSlipsAccountingForStickyStatesUpdate</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The velocity constraints are maintained through integration with the PhysX scene using the function PxVehiclePhysXConstraintStatesUpdate. Alternative implementations independent of PhysX are possible. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axleDescription</strong> – <strong>[in]</strong> is the axles of the vehicle and the wheels on each axle. </p></li>
+<li><p><strong>wheelParams</strong> – <strong>[in]</strong> describes the radius of the wheel </p></li>
+<li><p><strong>tireStickyParams</strong> – <strong>[in]</strong> describe the threshold speeds and times for the lateral and longitudinal sticky states. </p></li>
+<li><p><strong>actuationStates</strong> – <strong>[in]</strong> describes whether each wheel experiences a drive torque. </p></li>
+<li><p><strong>tireGripState</strong> – <strong>[in]</strong> is the load and friction experienced by the tire. </p></li>
+<li><p><strong>tireSpeedState</strong> – <strong>[in]</strong> is the component of rigid body velocity at the tire contact point projected along the tire’s longitudinal and lateral axes. </p></li>
+<li><p><strong>wheelRigidBody1dState</strong> – <strong>[in]</strong> is the wheel rotation speed. </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> is the simulation time that has lapsed since the last call to PxVehicleTireStickyStateUpdate </p></li>
+<li><p><strong>tireStickyState</strong> – <strong>[out]</strong> is a description of the sticky state of the tire in the longitudinal and lateral directions. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>NvBlastChunk &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>NvBlastChunk &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,158 +64,112 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>NvBlastChunk</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>NvBlastChunk</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nvblastchunk">
-<span id="exhale-struct-struct-nv-blast-chunk"></span><h1>NvBlastChunk<a class="headerlink" href="#nvblastchunk" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nvblastchunk">
+<span id="exhale-struct-struct-nv-blast-chunk"></span><h1>NvBlastChunk<a class="headerlink" href="#nvblastchunk" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
 <dl class="cpp struct">
-<dt id="_CPPv412NvBlastChunk">
-<span id="_CPPv312NvBlastChunk"></span><span id="_CPPv212NvBlastChunk"></span><span id="NvBlastChunk"></span><span class="target" id="struct_nv_blast_chunk"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastChunk</span></code><a class="headerlink" href="#_CPPv412NvBlastChunk" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv412NvBlastChunk">
+<span id="_CPPv312NvBlastChunk"></span><span id="_CPPv212NvBlastChunk"></span><span id="NvBlastChunk"></span><span class="target" id="struct_nv_blast_chunk"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastChunk</span></span></span><a class="headerlink" href="#_CPPv412NvBlastChunk" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Represents a piece of a destructible asset which may be realized as an entity with a physical and graphical component. </p>
 <p>Chunks may form a hierarchical decomposition of the asset. They contain parent and child chunk index information which defines the hierarchy. The parent and child chunk indices are their positions with the NvBlastAsset::chunks array.</p>
 <p>Child chunk indices are contiguous, starting at firstChildIndex and ending with childIndexStop - 1. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk8centroidE">
-<span id="_CPPv3N12NvBlastChunk8centroidE"></span><span id="_CPPv2N12NvBlastChunk8centroidE"></span><span id="NvBlastChunk::centroid__floatA"></span><span class="target" id="struct_nv_blast_chunk_1a3c8c4522d0fdde5d38f59509aa2333d2"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">centroid</span></code><span class="pre">[</span><span class="pre">3</span><span class="pre">]</span><a class="headerlink" href="#_CPPv4N12NvBlastChunk8centroidE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk8centroidE">
+<span id="_CPPv3N12NvBlastChunk8centroidE"></span><span id="_CPPv2N12NvBlastChunk8centroidE"></span><span id="NvBlastChunk::centroid__floatA"></span><span class="target" id="struct_nv_blast_chunk_1a3c8c4522d0fdde5d38f59509aa2333d2"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">centroid</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk8centroidE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Central position for the chunk’s volume. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk6volumeE">
-<span id="_CPPv3N12NvBlastChunk6volumeE"></span><span id="_CPPv2N12NvBlastChunk6volumeE"></span><span id="NvBlastChunk::volume__float"></span><span class="target" id="struct_nv_blast_chunk_1a8ba6098c271d2b347598c64b4e60b64a"></span><span class="pre">float</span> <code class="sig-name descname"><span class="pre">volume</span></code><a class="headerlink" href="#_CPPv4N12NvBlastChunk6volumeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk6volumeE">
+<span id="_CPPv3N12NvBlastChunk6volumeE"></span><span id="_CPPv2N12NvBlastChunk6volumeE"></span><span id="NvBlastChunk::volume__float"></span><span class="target" id="struct_nv_blast_chunk_1a8ba6098c271d2b347598c64b4e60b64a"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">volume</span></span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk6volumeE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Volume of the chunk. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk16parentChunkIndexE">
-<span id="_CPPv3N12NvBlastChunk16parentChunkIndexE"></span><span id="_CPPv2N12NvBlastChunk16parentChunkIndexE"></span><span id="NvBlastChunk::parentChunkIndex__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1af98dff11de0de7118f98489b76d0104f"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">parentChunkIndex</span></code><a class="headerlink" href="#_CPPv4N12NvBlastChunk16parentChunkIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk16parentChunkIndexE">
+<span id="_CPPv3N12NvBlastChunk16parentChunkIndexE"></span><span id="_CPPv2N12NvBlastChunk16parentChunkIndexE"></span><span id="NvBlastChunk::parentChunkIndex__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1af98dff11de0de7118f98489b76d0104f"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parentChunkIndex</span></span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk16parentChunkIndexE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Index of parent (UINT32_MAX denotes no parent) </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk15firstChildIndexE">
-<span id="_CPPv3N12NvBlastChunk15firstChildIndexE"></span><span id="_CPPv2N12NvBlastChunk15firstChildIndexE"></span><span id="NvBlastChunk::firstChildIndex__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1a788bc10dd2959c77871a64dcce87387d"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">firstChildIndex</span></code><a class="headerlink" href="#_CPPv4N12NvBlastChunk15firstChildIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk15firstChildIndexE">
+<span id="_CPPv3N12NvBlastChunk15firstChildIndexE"></span><span id="_CPPv2N12NvBlastChunk15firstChildIndexE"></span><span id="NvBlastChunk::firstChildIndex__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1a788bc10dd2959c77871a64dcce87387d"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">firstChildIndex</span></span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk15firstChildIndexE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Index of first child. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk14childIndexStopE">
-<span id="_CPPv3N12NvBlastChunk14childIndexStopE"></span><span id="_CPPv2N12NvBlastChunk14childIndexStopE"></span><span id="NvBlastChunk::childIndexStop__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1ad5a53684d0123f6536598896f672b719"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">childIndexStop</span></code><a class="headerlink" href="#_CPPv4N12NvBlastChunk14childIndexStopE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk14childIndexStopE">
+<span id="_CPPv3N12NvBlastChunk14childIndexStopE"></span><span id="_CPPv2N12NvBlastChunk14childIndexStopE"></span><span id="NvBlastChunk::childIndexStop__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1ad5a53684d0123f6536598896f672b719"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">childIndexStop</span></span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk14childIndexStopE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Stop for child indices. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N12NvBlastChunk8userDataE">
-<span id="_CPPv3N12NvBlastChunk8userDataE"></span><span id="_CPPv2N12NvBlastChunk8userDataE"></span><span id="NvBlastChunk::userData__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1a9d49d856390e7758d4ea26ae69ae6aa5"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">userData</span></code><a class="headerlink" href="#_CPPv4N12NvBlastChunk8userDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N12NvBlastChunk8userDataE">
+<span id="_CPPv3N12NvBlastChunk8userDataE"></span><span id="_CPPv2N12NvBlastChunk8userDataE"></span><span id="NvBlastChunk::userData__uint32_t"></span><span class="target" id="struct_nv_blast_chunk_1a9d49d856390e7758d4ea26ae69ae6aa5"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N12NvBlastChunk8userDataE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Field for user to associate with external data. </p>
 </dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

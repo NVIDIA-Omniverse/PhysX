@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTriangleMeshGeometry &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTriangleMeshGeometry</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtrianglemeshgeometry">
+<span id="exhale-class-class-px-triangle-mesh-geometry"></span><h1>PxTriangleMeshGeometry<a class="headerlink" href="#pxtrianglemeshgeometry" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxTriangleMeshGeometry.h.html#file-include-geometry-pxtrianglemeshgeometry-h"><span class="std std-ref">include/geometry/PxTriangleMeshGeometry.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxGeometry</span></code> (<a class="reference internal" href="class_px_geometry.html#exhale-class-class-px-geometry"><span class="std std-ref">PxGeometry</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv422PxTriangleMeshGeometry">
+<span id="_CPPv322PxTriangleMeshGeometry"></span><span id="_CPPv222PxTriangleMeshGeometry"></span><span id="PxTriangleMeshGeometry"></span><span class="target" id="class_px_triangle_mesh_geometry"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><a class="headerlink" href="#_CPPv422PxTriangleMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Triangle mesh geometry class. </p>
+<p>This class unifies a mesh object with a scaling transform, and lets the combined object be used anywhere a <a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> is needed.</p>
+<p>The scaling is a transform along arbitrary axes contained in the scale object. The vertices of the mesh in geometry (or shape) space is the <a class="reference internal" href="class_px_mesh_scale.html#class_px_mesh_scale_1a5e400f0d1c372288d663668c55875e68"><span class="std std-ref">PxMeshScale::toMat33()</span></a> transform, multiplied by the vertex space vertices in the <a class="reference internal" href="#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> object. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry22PxTriangleMeshGeometryEP14PxTriangleMeshRK11PxMeshScale19PxMeshGeometryFlags">
+<span id="_CPPv3N22PxTriangleMeshGeometry22PxTriangleMeshGeometryEP14PxTriangleMeshRK11PxMeshScale19PxMeshGeometryFlags"></span><span id="_CPPv2N22PxTriangleMeshGeometry22PxTriangleMeshGeometryEP14PxTriangleMeshRK11PxMeshScale19PxMeshGeometryFlags"></span><span id="PxTriangleMeshGeometry::PxTriangleMeshGeometry__PxTriangleMeshP.PxMeshScaleCR.PxMeshGeometryFlags"></span><span class="target" id="class_px_triangle_mesh_geometry_1a336cf8d0478919a45fa725d20df33921"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mesh</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scaling</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__geomutils_1gab335a00d0493a23fed5423bc3ea9e463.html#_CPPv419PxMeshGeometryFlags" title="PxMeshGeometryFlags"><span class="n"><span class="pre">PxMeshGeometryFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__geomutils_1gab335a00d0493a23fed5423bc3ea9e463.html#_CPPv419PxMeshGeometryFlags" title="PxMeshGeometryFlags"><span class="n"><span class="pre">PxMeshGeometryFlags</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry22PxTriangleMeshGeometryEP14PxTriangleMeshRK11PxMeshScale19PxMeshGeometryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+<p>By default creates an empty object with a NULL mesh and identity scale.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh</strong> – <strong>[in]</strong> Mesh pointer. May be NULL, though this will not make the object valid for shape construction. </p></li>
+<li><p><strong>scaling</strong> – <strong>[in]</strong> Scale factor. </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> Mesh flags. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry22PxTriangleMeshGeometryERK22PxTriangleMeshGeometry">
+<span id="_CPPv3N22PxTriangleMeshGeometry22PxTriangleMeshGeometryERK22PxTriangleMeshGeometry"></span><span id="_CPPv2N22PxTriangleMeshGeometry22PxTriangleMeshGeometryERK22PxTriangleMeshGeometry"></span><span id="PxTriangleMeshGeometry::PxTriangleMeshGeometry__PxTriangleMeshGeometryCR"></span><span class="target" id="class_px_triangle_mesh_geometry_1a4769c6c2be345682ddd4c78c725f2bea"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N22PxTriangleMeshGeometry22PxTriangleMeshGeometryERK22PxTriangleMeshGeometry" title="PxTriangleMeshGeometry::PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry22PxTriangleMeshGeometryERK22PxTriangleMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy constructor. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>that</strong> – <strong>[in]</strong> Other object </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometryaSERK22PxTriangleMeshGeometry">
+<span id="_CPPv3N22PxTriangleMeshGeometryaSERK22PxTriangleMeshGeometry"></span><span id="_CPPv2N22PxTriangleMeshGeometryaSERK22PxTriangleMeshGeometry"></span><span id="PxTriangleMeshGeometry::assign-operator__PxTriangleMeshGeometryCR"></span><span class="target" id="class_px_triangle_mesh_geometry_1a6868ae6ed81bb919afe10572dc67da52"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">that</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometryaSERK22PxTriangleMeshGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assignment operator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxTriangleMeshGeometry7isValidEv">
+<span id="_CPPv3NK22PxTriangleMeshGeometry7isValidEv"></span><span id="_CPPv2NK22PxTriangleMeshGeometry7isValidEv"></span><span id="PxTriangleMeshGeometry::isValidC"></span><span class="target" id="group__geomutils_1ga83d04e49a61041df4cbd313972460aec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK22PxTriangleMeshGeometry7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the geometry is valid. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidActor::createShape, <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A valid triangle mesh has a positive scale value in each direction (scale.scale.x &gt; 0, scale.scale.y &gt; 0, scale.scale.z &gt; 0). It is illegal to call PxRigidActor::createShape and <a class="reference internal" href="class_px_physics.html#class_px_physics_1af4cdf479a0ab44b303bbe8b0d69d9578"><span class="std std-ref">PxPhysics::createShape</span></a> with a triangle mesh that has zero extents in any direction.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the current settings are valid for shape creation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK22PxTriangleMeshGeometry7getTypeEv">
+<span id="_CPPv3NK22PxTriangleMeshGeometry7getTypeEv"></span><span id="_CPPv2NK22PxTriangleMeshGeometry7getTypeEv"></span><span id="PxTriangleMeshGeometry::getTypeC"></span><span class="target" id="class_px_geometry_1ad2b00176e41b024361b83ff030639b60"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK22PxTriangleMeshGeometry7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the type of the geometry. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The type of the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry5scaleE">
+<span id="_CPPv3N22PxTriangleMeshGeometry5scaleE"></span><span id="_CPPv2N22PxTriangleMeshGeometry5scaleE"></span><span id="PxTriangleMeshGeometry::scale__PxMeshScale"></span><span class="target" id="class_px_triangle_mesh_geometry_1a423a7229f2fe693dae9c1eddb8100ef6"></span><a class="reference internal" href="class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><span class="n"><span class="pre">PxMeshScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The scaling transformation. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry9meshFlagsE">
+<span id="_CPPv3N22PxTriangleMeshGeometry9meshFlagsE"></span><span id="_CPPv2N22PxTriangleMeshGeometry9meshFlagsE"></span><span id="PxTriangleMeshGeometry::meshFlags__PxMeshGeometryFlags"></span><span class="target" id="class_px_triangle_mesh_geometry_1a32ce1910ff9ea011bca00f460713f1ef"></span><a class="reference internal" href="typedef_group__geomutils_1gab335a00d0493a23fed5423bc3ea9e463.html#_CPPv419PxMeshGeometryFlags" title="PxMeshGeometryFlags"><span class="n"><span class="pre">PxMeshGeometryFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">meshFlags</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry9meshFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh flags. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry16paddingFromFlagsE">
+<span id="_CPPv3N22PxTriangleMeshGeometry16paddingFromFlagsE"></span><span id="_CPPv2N22PxTriangleMeshGeometry16paddingFromFlagsE"></span><span id="PxTriangleMeshGeometry::paddingFromFlags__PxPadding:3:"></span><span class="target" id="class_px_triangle_mesh_geometry_1a114bc6e19dc5bc001ef9cedd1b772a03"></span><a class="reference internal" href="struct_px_padding.html#_CPPv4I_4PxU8E9PxPadding" title="PxPadding"><span class="n"><span class="pre">PxPadding</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="m"><span class="pre">3</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">paddingFromFlags</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry16paddingFromFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>padding for mesh flags </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry12triangleMeshE">
+<span id="_CPPv3N22PxTriangleMeshGeometry12triangleMeshE"></span><span id="_CPPv2N22PxTriangleMeshGeometry12triangleMeshE"></span><span id="PxTriangleMeshGeometry::triangleMesh__PxTriangleMeshP"></span><span class="target" id="class_px_triangle_mesh_geometry_1a36384e72aaa256ef42c239da306a0587"></span><a class="reference internal" href="class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">triangleMesh</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry12triangleMeshE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A reference to the mesh object. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry12mTypePaddingE">
+<span id="_CPPv3N22PxTriangleMeshGeometry12mTypePaddingE"></span><span id="_CPPv2N22PxTriangleMeshGeometry12mTypePaddingE"></span><span id="PxTriangleMeshGeometry::mTypePadding__float"></span><span class="target" id="class_px_geometry_1a5284d479017acbf4c06147715f42a47c"></span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mTypePadding</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry12mTypePaddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N22PxTriangleMeshGeometry5mTypeE">
+<span id="_CPPv3N22PxTriangleMeshGeometry5mTypeE"></span><span id="_CPPv2N22PxTriangleMeshGeometry5mTypeE"></span><span id="PxTriangleMeshGeometry::mType__PxGeometryType::Enum"></span><span class="target" id="class_px_geometry_1af24eeb8078fbd12e17206029b52a45b6"></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv414PxGeometryType" title="PxGeometryType"><span class="n"><span class="pre">PxGeometryType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_type.html#_CPPv4N14PxGeometryType4EnumE" title="PxGeometryType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mType</span></span></span><a class="headerlink" href="#_CPPv4N22PxTriangleMeshGeometry5mTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

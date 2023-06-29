@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTransformPadded &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTransformPadded</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtransformpadded">
+<span id="exhale-struct-struct-px-transform-padded"></span><h1>PxTransformPadded<a class="headerlink" href="#pxtransformpadded" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxTransform.h.html#file-include-foundation-pxtransform-h"><span class="std std-ref">include/foundation/PxTransform.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxTransformT&lt;</span> <span class="pre">float</span> <span class="pre">&gt;</span></code> (<a class="reference internal" href="class_px_transform_t.html#exhale-class-class-px-transform-t"><span class="std std-ref">PxTransformT</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv417PxTransformPadded">
+<span id="_CPPv317PxTransformPadded"></span><span id="_CPPv217PxTransformPadded"></span><span id="PxTransformPadded"></span><span class="target" id="struct_px_transform_padded"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv417PxTransformPadded" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A generic padded &amp; aligned transform class. </p>
+<p>This can be used for safe faster loads &amp; stores, and faster address computations (the default <a class="reference internal" href="class_px_transform_t.html#class_px_transform_t"><span class="std std-ref">PxTransformT</span></a> often generating imuls for this otherwise). Padding bytes can be reused to store useful data if needed. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedEv">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedEv"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedEv"></span><span id="PxTransformPadded::PxTransformPadded"></span><span class="target" id="struct_px_transform_padded_1a8f12a03e51faf4502240534a11b6ccad"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedERK17PxTransformPadded">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedERK17PxTransformPadded"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedERK17PxTransformPadded"></span><span id="PxTransformPadded::PxTransformPadded__PxTransformPaddedCR"></span><span class="target" id="struct_px_transform_padded_1a4773cbd2680206562b7dd38adf53bdb0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK17PxTransformPadded" title="PxTransformPadded::PxTransformPadded"><span class="n"><span class="pre">PxTransformPadded</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK17PxTransformPadded" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedERK11PxTransform">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedERK11PxTransform"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedERK11PxTransform"></span><span id="PxTransformPadded::PxTransformPadded__PxTransformCR"></span><span class="target" id="struct_px_transform_padded_1af8049f6235e96225073d41062c259a5e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedE10PxIDENTITY">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedE10PxIDENTITY"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedE10PxIDENTITY"></span><span id="PxTransformPadded::PxTransformPadded__PxIDENTITY"></span><span class="target" id="struct_px_transform_padded_1aa9d5774ebc416fd8a44be95543eb0860"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="enum_group__foundation_1ga70160ca5bbafef277790b3e0f12baf38.html#_CPPv410PxIDENTITY" title="PxIDENTITY"><span class="n"><span class="pre">PxIDENTITY</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedE10PxIDENTITY" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxVec3">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedERK6PxVec3"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedERK6PxVec3"></span><span id="PxTransformPadded::PxTransformPadded__PxVec3CR"></span><span class="target" id="struct_px_transform_padded_1ab868cbe2da12e987b61609155953b999"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxQuat">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedERK6PxQuat"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedERK6PxQuat"></span><span id="PxTransformPadded::PxTransformPadded__PxQuatCR"></span><span class="target" id="struct_px_transform_padded_1a0f883c108e99eb6b8232646b391dad81"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">orientation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxVec3RK6PxQuat">
+<span id="_CPPv3N17PxTransformPadded17PxTransformPaddedERK6PxVec3RK6PxQuat"></span><span id="_CPPv2N17PxTransformPadded17PxTransformPaddedERK6PxVec3RK6PxQuat"></span><span id="PxTransformPadded::PxTransformPadded__PxVec3CR.PxQuatCR"></span><span class="target" id="struct_px_transform_padded_1a14d719c96ccf997e3b49c354229d74a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformPadded</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPadded17PxTransformPaddedERK6PxVec3RK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPaddedaSERK17PxTransformPadded">
+<span id="_CPPv3N17PxTransformPaddedaSERK17PxTransformPadded"></span><span id="_CPPv2N17PxTransformPaddedaSERK17PxTransformPadded"></span><span id="PxTransformPadded::assign-operator__PxTransformPaddedCR"></span><span class="target" id="struct_px_transform_padded_1af388a3922d1ba7883f614ba4a1cf7db1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv417PxTransformPadded" title="PxTransformPadded"><span class="n"><span class="pre">PxTransformPadded</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPaddedaSERK17PxTransformPadded" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPaddedaSERK11PxTransform">
+<span id="_CPPv3N17PxTransformPaddedaSERK11PxTransform"></span><span id="_CPPv2N17PxTransformPaddedaSERK11PxTransform"></span><span id="PxTransformPadded::assign-operator__PxTransformCR"></span><span class="target" id="struct_px_transform_padded_1aa2b5278b008234e09f6c33de4ea5aa81"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPaddedaSERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPaddedeqERK12PxTransformT">
+<span id="_CPPv3NK17PxTransformPaddedeqERK12PxTransformT"></span><span id="_CPPv2NK17PxTransformPaddedeqERK12PxTransformT"></span><span id="PxTransformPadded::eq-operator__PxTransformTCRC"></span><span class="target" id="class_px_transform_t_1ad936d3d1934179bb1efa4f5ac2beb6de"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPaddedeqERK12PxTransformT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if the two transforms are exactly equal </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPaddedmlERK12PxTransformT">
+<span id="_CPPv3NK17PxTransformPaddedmlERK12PxTransformT"></span><span id="_CPPv2NK17PxTransformPaddedmlERK12PxTransformT"></span><span id="PxTransformPadded::mul-operator__PxTransformTCRC"></span><span class="target" id="class_px_transform_t_1ad330fec370ae5592c7e6cbeeab4f6cd5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPaddedmlERK12PxTransformT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPaddedmLERK12PxTransformT">
+<span id="_CPPv3N17PxTransformPaddedmLERK12PxTransformT"></span><span id="_CPPv2N17PxTransformPaddedmLERK12PxTransformT"></span><span id="PxTransformPadded::mul-assign-operator__PxTransformTCR"></span><span class="target" id="class_px_transform_t_1abeed2bbf68ec73cf89ad4760dea3bff5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">*=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTransformPaddedmLERK12PxTransformT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Equals matrix multiplication. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded10getInverseEv">
+<span id="_CPPv3NK17PxTransformPadded10getInverseEv"></span><span id="_CPPv2NK17PxTransformPadded10getInverseEv"></span><span id="PxTransformPadded::getInverseC"></span><span class="target" id="class_px_transform_t_1ace53ef64ee6e17ed366d3e01d89e0563"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInverse</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded10getInverseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded13getNormalizedEv">
+<span id="_CPPv3NK17PxTransformPadded13getNormalizedEv"></span><span id="_CPPv2NK17PxTransformPadded13getNormalizedEv"></span><span id="PxTransformPadded::getNormalizedC"></span><span class="target" id="class_px_transform_t_1a1df50bbcd18851b6c422ba0ebf5dcfd7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNormalized</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded13getNormalizedEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>return a normalized transform (i.e. </p>
+<p>one in which the quaternion has unit magnitude) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded9transformERK7PxVec3TIfE">
+<span id="_CPPv3NK17PxTransformPadded9transformERK7PxVec3TIfE"></span><span id="_CPPv2NK17PxTransformPadded9transformERK7PxVec3TIfE"></span><span id="PxTransformPadded::transform__PxVec3T:float:CRC"></span><span class="target" id="class_px_transform_t_1add5c949d70e8e982a18bb5bca0871369"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded9transformERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded9transformERK12PxTransformT">
+<span id="_CPPv3NK17PxTransformPadded9transformERK12PxTransformT"></span><span id="_CPPv2NK17PxTransformPadded9transformERK12PxTransformT"></span><span id="PxTransformPadded::transform__PxTransformTCRC"></span><span class="target" id="class_px_transform_t_1a72ef899c2cf23387df2fbfaa3dd3b4c5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded9transformERK12PxTransformT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform transform to parent (returns compound transform: first src, then *this) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded12transformInvERK7PxVec3TIfE">
+<span id="_CPPv3NK17PxTransformPadded12transformInvERK7PxVec3TIfE"></span><span id="_CPPv2NK17PxTransformPadded12transformInvERK7PxVec3TIfE"></span><span id="PxTransformPadded::transformInv__PxVec3T:float:CRC"></span><span class="target" id="class_px_transform_t_1a561b795ab403b3c455f466c60d489526"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded12transformInvERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded12transformInvERK12PxTransformT">
+<span id="_CPPv3NK17PxTransformPadded12transformInvERK12PxTransformT"></span><span id="_CPPv2NK17PxTransformPadded12transformInvERK12PxTransformT"></span><span id="PxTransformPadded::transformInv__PxTransformTCRC"></span><span class="target" id="class_px_transform_t_1a268da7fd403b07b98aca752ca6ec8f1e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_transform_t.html#_CPPv4I0E12PxTransformT" title="PxTransformT"><span class="n"><span class="pre">PxTransformT</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded12transformInvERK12PxTransformT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transform transform from parent (returns compound transform: first src, then this-&gt;inverse) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded6rotateERK7PxVec3TIfE">
+<span id="_CPPv3NK17PxTransformPadded6rotateERK7PxVec3TIfE"></span><span id="_CPPv2NK17PxTransformPadded6rotateERK7PxVec3TIfE"></span><span id="PxTransformPadded::rotate__PxVec3T:float:CRC"></span><span class="target" id="class_px_transform_t_1a0f2d4ef455533a319b11516b5928dde5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded6rotateERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded9rotateInvERK7PxVec3TIfE">
+<span id="_CPPv3NK17PxTransformPadded9rotateInvERK7PxVec3TIfE"></span><span id="_CPPv2NK17PxTransformPadded9rotateInvERK7PxVec3TIfE"></span><span id="PxTransformPadded::rotateInv__PxVec3T:float:CRC"></span><span class="target" id="class_px_transform_t_1a5e2f4cc0e9c7f711c2fb9e65079d25c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">rotateInv</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded9rotateInvERK7PxVec3TIfE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded7isValidEv">
+<span id="_CPPv3NK17PxTransformPadded7isValidEv"></span><span id="_CPPv2NK17PxTransformPadded7isValidEv"></span><span id="PxTransformPadded::isValidC"></span><span class="target" id="class_px_transform_t_1a802a5db86c7d7fb9b4ba20c214da0acd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and q is a unit quaternion </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded6isSaneEv">
+<span id="_CPPv3NK17PxTransformPadded6isSaneEv"></span><span id="_CPPv2NK17PxTransformPadded6isSaneEv"></span><span id="PxTransformPadded::isSaneC"></span><span class="target" id="class_px_transform_t_1a2c7a14e473c98b8e16984cdc0d8301b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSane</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded6isSaneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if finite and quat magnitude is reasonably close to unit to allow for some accumulation of error vs isValid </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTransformPadded8isFiniteEv">
+<span id="_CPPv3NK17PxTransformPadded8isFiniteEv"></span><span id="_CPPv2NK17PxTransformPadded8isFiniteEv"></span><span id="PxTransformPadded::isFiniteC"></span><span class="target" id="class_px_transform_t_1a9571b999aa64437d1bc1cf2bc805d404"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isFinite</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTransformPadded8isFiniteEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns true if all elems are finite (not NAN or INF, etc.) </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded7paddingE">
+<span id="_CPPv3N17PxTransformPadded7paddingE"></span><span id="_CPPv2N17PxTransformPadded7paddingE"></span><span id="PxTransformPadded::padding__PxU32"></span><span class="target" id="struct_px_transform_padded_1aafbc3b696b5c75f4d8a5822eb7e76f5e"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">padding</span></span></span><a class="headerlink" href="#_CPPv4N17PxTransformPadded7paddingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded1qE">
+<span id="_CPPv3N17PxTransformPadded1qE"></span><span id="_CPPv2N17PxTransformPadded1qE"></span><span id="PxTransformPadded::q__PxQuatT:float:"></span><span class="target" id="class_px_transform_t_1a4fb0b0787e75fa0650084f5a397da050"></span><a class="reference internal" href="class_px_quat_t.html#_CPPv4I0E7PxQuatT" title="PxQuatT"><span class="n"><span class="pre">PxQuatT</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">q</span></span></span><a class="headerlink" href="#_CPPv4N17PxTransformPadded1qE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTransformPadded1pE">
+<span id="_CPPv3N17PxTransformPadded1pE"></span><span id="_CPPv2N17PxTransformPadded1pE"></span><span id="PxTransformPadded::p__PxVec3T:float:"></span><span class="target" id="class_px_transform_t_1a5e4a619cb027b8c3997e55c11895fca1"></span><a class="reference internal" href="class_px_vec3_t.html#_CPPv4I0E7PxVec3T" title="PxVec3T"><span class="n"><span class="pre">PxVec3T</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">float</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">p</span></span></span><a class="headerlink" href="#_CPPv4N17PxTransformPadded1pE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleSimulationContext &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleSimulationContext</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclesimulationcontext">
+<span id="exhale-struct-struct-px-vehicle-simulation-context"></span><h1>PxVehicleSimulationContext<a class="headerlink" href="#pxvehiclesimulationcontext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_PxVehicleParams.h.html#file-include-vehicle2-pxvehicleparams-h"><span class="std std-ref">include/vehicle2/PxVehicleParams.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="derived-type">
+<h3>Derived Type<a class="headerlink" href="#derived-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxVehiclePhysXSimulationContext</span></code> (<a class="reference internal" href="struct_px_vehicle_phys_x_simulation_context.html#exhale-struct-struct-px-vehicle-phys-x-simulation-context"><span class="std std-ref">PxVehiclePhysXSimulationContext</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv426PxVehicleSimulationContext">
+<span id="_CPPv326PxVehicleSimulationContext"></span><span id="_CPPv226PxVehicleSimulationContext"></span><span id="PxVehicleSimulationContext"></span><span class="target" id="struct_px_vehicle_simulation_context"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleSimulationContext</span></span></span><a class="headerlink" href="#_CPPv426PxVehicleSimulationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Subclassed by <a class="reference internal" href="struct_px_vehicle_phys_x_simulation_context.html#struct_px_vehicle_phys_x_simulation_context"><span class="std std-ref">PxVehiclePhysXSimulationContext</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext26PxVehicleSimulationContextEv">
+<span id="_CPPv3N26PxVehicleSimulationContext26PxVehicleSimulationContextEv"></span><span id="_CPPv2N26PxVehicleSimulationContext26PxVehicleSimulationContextEv"></span><span id="PxVehicleSimulationContext::PxVehicleSimulationContext"></span><span class="target" id="struct_px_vehicle_simulation_context_1a88e38e9d5a8a799002c43fea003eb82f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleSimulationContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext26PxVehicleSimulationContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxVehicleSimulationContext7getTypeEv">
+<span id="_CPPv3NK26PxVehicleSimulationContext7getTypeEv"></span><span id="_CPPv2NK26PxVehicleSimulationContext7getTypeEv"></span><span id="PxVehicleSimulationContext::getTypeC"></span><span class="target" id="struct_px_vehicle_simulation_context_1a5b11e4f3657f36f6055150268546aee0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_simulation_context_type.html#_CPPv430PxVehicleSimulationContextType" title="PxVehicleSimulationContextType"><span class="n"><span class="pre">PxVehicleSimulationContextType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_simulation_context_type.html#_CPPv4N30PxVehicleSimulationContextType4EnumE" title="PxVehicleSimulationContextType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxVehicleSimulationContext7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext12setToDefaultEv">
+<span id="_CPPv3N26PxVehicleSimulationContext12setToDefaultEv"></span><span id="_CPPv2N26PxVehicleSimulationContext12setToDefaultEv"></span><span id="PxVehicleSimulationContext::setToDefault"></span><span class="target" id="struct_px_vehicle_simulation_context_1ac6bcf2593fa11b93287d2e9a7223fa44"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK26PxVehicleSimulationContext17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK26PxVehicleSimulationContext17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK26PxVehicleSimulationContext17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleSimulationContext::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_simulation_context_1aa78f5f89619e02eafa4f7d64626c252c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv426PxVehicleSimulationContext" title="PxVehicleSimulationContext"><span class="n"><span class="pre">PxVehicleSimulationContext</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK26PxVehicleSimulationContext17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext7gravityE">
+<span id="_CPPv3N26PxVehicleSimulationContext7gravityE"></span><span id="_CPPv2N26PxVehicleSimulationContext7gravityE"></span><span id="PxVehicleSimulationContext::gravity__PxVec3"></span><span class="target" id="struct_px_vehicle_simulation_context_1aca26ce27882ad74f0de328ef79e2ae06"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">gravity</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext7gravityE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext5frameE">
+<span id="_CPPv3N26PxVehicleSimulationContext5frameE"></span><span id="_CPPv2N26PxVehicleSimulationContext5frameE"></span><span id="PxVehicleSimulationContext::frame__PxVehicleFrame"></span><span class="target" id="struct_px_vehicle_simulation_context_1a7d4fa6a39fa92572e78dab4293f0e2f8"></span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">frame</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext5frameE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext5scaleE">
+<span id="_CPPv3N26PxVehicleSimulationContext5scaleE"></span><span id="_CPPv2N26PxVehicleSimulationContext5scaleE"></span><span id="PxVehicleSimulationContext::scale__PxVehicleScale"></span><span class="target" id="struct_px_vehicle_simulation_context_1aa44d2ec00dec897abfde97cc03f7040b"></span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext14tireSlipParamsE">
+<span id="_CPPv3N26PxVehicleSimulationContext14tireSlipParamsE"></span><span id="_CPPv2N26PxVehicleSimulationContext14tireSlipParamsE"></span><span id="PxVehicleSimulationContext::tireSlipParams__PxVehicleTireSlipParams"></span><span class="target" id="struct_px_vehicle_simulation_context_1a3f8b9b44d93ea00ebd8aa369eecc3ecc"></span><a class="reference internal" href="struct_px_vehicle_tire_slip_params.html#_CPPv423PxVehicleTireSlipParams" title="PxVehicleTireSlipParams"><span class="n"><span class="pre">PxVehicleTireSlipParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireSlipParams</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext14tireSlipParamsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext16tireStickyParamsE">
+<span id="_CPPv3N26PxVehicleSimulationContext16tireStickyParamsE"></span><span id="_CPPv2N26PxVehicleSimulationContext16tireStickyParamsE"></span><span id="PxVehicleSimulationContext::tireStickyParams__PxVehicleTireStickyParams"></span><span class="target" id="struct_px_vehicle_simulation_context_1a1c034e42821ff51615d7d5333197c506"></span><a class="reference internal" href="struct_px_vehicle_tire_sticky_params.html#_CPPv425PxVehicleTireStickyParams" title="PxVehicleTireStickyParams"><span class="n"><span class="pre">PxVehicleTireStickyParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tireStickyParams</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext16tireStickyParamsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext45thresholdForwardSpeedForWheelAngleIntegrationE">
+<span id="_CPPv3N26PxVehicleSimulationContext45thresholdForwardSpeedForWheelAngleIntegrationE"></span><span id="_CPPv2N26PxVehicleSimulationContext45thresholdForwardSpeedForWheelAngleIntegrationE"></span><span id="PxVehicleSimulationContext::thresholdForwardSpeedForWheelAngleIntegration__PxReal"></span><span class="target" id="struct_px_vehicle_simulation_context_1a3c7704ddfac68279c232fbd632de6092"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">thresholdForwardSpeedForWheelAngleIntegration</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext45thresholdForwardSpeedForWheelAngleIntegrationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Forward wheel speed below which the wheel rotation speed gets blended with the rolling speed. </p>
+<p>The blended rotation speed is used to integrate the wheel rotation angle. At low forward wheel speed, the wheel rotation speed can get unstable (depending on the tire model used) and, for example, oscillate.</p>
+<p><strong>Unit:</strong> velocity = length / time </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If brake or throttle is applied, there will be no blending.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext10pvdContextE">
+<span id="_CPPv3N26PxVehicleSimulationContext10pvdContextE"></span><span id="_CPPv2N26PxVehicleSimulationContext10pvdContextE"></span><span id="PxVehicleSimulationContext::pvdContext__PxVehiclePvdContext"></span><span class="target" id="struct_px_vehicle_simulation_context_1afc57c2511b0a797466531ee923c708b6"></span><a class="reference internal" href="struct_px_vehicle_pvd_context.html#_CPPv419PxVehiclePvdContext" title="PxVehiclePvdContext"><span class="n"><span class="pre">PxVehiclePvdContext</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pvdContext</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext10pvdContextE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure to support Omni PVD, the PhysX Visual Debugger. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxVehicleSimulationContext4typeE">
+<span id="_CPPv3N26PxVehicleSimulationContext4typeE"></span><span id="_CPPv2N26PxVehicleSimulationContext4typeE"></span><span id="PxVehicleSimulationContext::type__PxVehicleSimulationContextType::Enum"></span><span class="target" id="struct_px_vehicle_simulation_context_1a0b74c76c68049295160641c6480ca133"></span><a class="reference internal" href="struct_px_vehicle_simulation_context_type.html#_CPPv430PxVehicleSimulationContextType" title="PxVehicleSimulationContextType"><span class="n"><span class="pre">PxVehicleSimulationContextType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_simulation_context_type.html#_CPPv4N30PxVehicleSimulationContextType4EnumE" title="PxVehicleSimulationContextType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N26PxVehicleSimulationContext4typeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

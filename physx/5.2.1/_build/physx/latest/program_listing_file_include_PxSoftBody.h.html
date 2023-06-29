@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Listing for include/PxSoftBody.h &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Program Listing for include/PxSoftBody.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="program-listing-for-include-pxsoftbody-h">
+<span id="program-listing-file-include-pxsoftbody-h"></span><h1>Program Listing for include/PxSoftBody.h<a class="headerlink" href="#program-listing-for-include-pxsoftbody-h" title="Permalink to this headline"></a></h1>
+<p>↰ Return to documentation for <a class="reference internal" href="file_include_PxSoftBody.h.html#file-include-pxsoftbody-h"><span class="std std-ref">include/PxSoftBody.h</span></a></p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_SOFT_BODY_H</span>
+<span class="cp">#define PX_SOFT_BODY_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxFEMParameter.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxActor.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxConeLimitedConstraint.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxSoftBodyFlag.h&quot;</span><span class="cp"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if PX_VC</span>
+<span class="cp">#pragma warning(push)</span>
+<span class="cp">#pragma warning(disable : 4435)</span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxCudaContextManager</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxTetrahedronMesh</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxSoftBodyAuxData</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxFEMCloth</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxParticleBuffer</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="cp">#define PX_MAX_TETID    0x000fffff</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxSoftBodyFlag</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">eDISABLE_SELF_COLLISION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">eCOMPUTE_STRESS_TENSOR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">eENABLE_CCD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">eDISPLAY_SIM_MESH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">eKINEMATIC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">ePARTIALLY_KINEMATIC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">5</span><span class="w"></span>
+<span class="w">        </span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">PxSoftBodyFlag</span><span class="o">::</span><span class="n">Enum</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">PxSoftBodyFlags</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxSoftBody</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxActor</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">                         </span><span class="o">~</span><span class="n">PxSoftBody</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="n">setSoftBodyFlag</span><span class="p">(</span><span class="n">PxSoftBodyFlag</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">flag</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">val</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">setSoftBodyFlags</span><span class="p">(</span><span class="n">PxSoftBodyFlags</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxSoftBodyFlags</span><span class="w">     </span><span class="nf">getSoftBodyFlag</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">setParameter</span><span class="p">(</span><span class="n">PxFEMParameters</span><span class="w"> </span><span class="n">parameters</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxFEMParameters</span><span class="w">         </span><span class="nf">getParameter</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">             </span><span class="nf">getPositionInvMassBufferD</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">             </span><span class="nf">getRestPositionBufferD</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">             </span><span class="nf">getSimPositionInvMassBufferD</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxVec4</span><span class="o">*</span><span class="w">             </span><span class="nf">getSimVelocityBufferD</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">markDirty</span><span class="p">(</span><span class="n">PxSoftBodyDataFlags</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">setKinematicTargetBufferD</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">positions</span><span class="p">,</span><span class="w"> </span><span class="n">PxSoftBodyFlags</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxCudaContextManager</span><span class="o">*</span><span class="w">   </span><span class="nf">getCudaContextManager</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">setWakeCounter</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">wakeCounterValue</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxReal</span><span class="w">              </span><span class="nf">getWakeCounter</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">bool</span><span class="w">                </span><span class="nf">isSleeping</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">setSolverIterationCounts</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">minPositionIters</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">minVelocityIters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">getSolverIterationCounts</span><span class="p">(</span><span class="n">PxU32</span><span class="o">&amp;</span><span class="w"> </span><span class="n">minPositionIters</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">&amp;</span><span class="w"> </span><span class="n">minVelocityIters</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxShape</span><span class="o">*</span><span class="w">            </span><span class="nf">getShape</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxTetrahedronMesh</span><span class="o">*</span><span class="w">      </span><span class="nf">getCollisionMesh</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTetrahedronMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">getCollisionMesh</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxTetrahedronMesh</span><span class="o">*</span><span class="w">      </span><span class="nf">getSimulationMesh</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTetrahedronMesh</span><span class="o">*</span><span class="w"> </span><span class="nf">getSimulationMesh</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxSoftBodyAuxData</span><span class="o">*</span><span class="w"> </span><span class="nf">getSoftBodyAuxData</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSoftBodyAuxData</span><span class="o">*</span><span class="w"> </span><span class="nf">getSoftBodyAuxData</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">bool</span><span class="w">                </span><span class="nf">attachShape</span><span class="p">(</span><span class="n">PxShape</span><span class="o">&amp;</span><span class="w"> </span><span class="n">shape</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">bool</span><span class="w">                </span><span class="nf">attachSimulationMesh</span><span class="p">(</span><span class="n">PxTetrahedronMesh</span><span class="o">&amp;</span><span class="w"> </span><span class="n">simulationMesh</span><span class="p">,</span><span class="w"> </span><span class="n">PxSoftBodyAuxData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">softBodyAuxData</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">detachShape</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">detachSimulationMesh</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">release</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">addParticleFilter</span><span class="p">(</span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particlesystem</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleId</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetId</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">removeParticleFilter</span><span class="p">(</span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particlesystem</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleId</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetId</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">               </span><span class="nf">addParticleAttachment</span><span class="p">(</span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particlesystem</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxParticleBuffer</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">particleId</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetId</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">barycentric</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">removeParticleAttachment</span><span class="p">(</span><span class="n">PxPBDParticleSystem</span><span class="o">*</span><span class="w"> </span><span class="n">particlesystem</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">addRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">vertId</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                </span><span class="nf">removeRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">vertId</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">                   </span><span class="nf">addRigidAttachment</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">vertId</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">actorSpacePose</span><span class="p">,</span><span class="w"> </span><span class="n">PxConeLimitedConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeRigidAttachment</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">addTetRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeTetRigidFilter</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">                   </span><span class="nf">addTetRigidAttachment</span><span class="p">(</span><span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">barycentric</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">actorSpacePose</span><span class="p">,</span><span class="w"> </span><span class="n">PxConeLimitedConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">addSoftBodyFilter</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">otherSoftBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">otherTetIdx</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeSoftBodyFilter</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">otherSoftBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">otherTetIdx</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx1</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">addSoftBodyFilters</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">otherSoftBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">otherTetIndices</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">tetIndices</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIndicesSize</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeSoftBodyFilters</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">otherSoftBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">otherTetIndices</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">tetIndices</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIndicesSize</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">                   </span><span class="nf">addSoftBodyAttachment</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">softbody0</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">tetBarycentric0</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">tetBarycentric1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxConeLimitedConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">constraintOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeSoftBodyAttachment</span><span class="p">(</span><span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">softbody0</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">addClothFilter</span><span class="p">(</span><span class="n">PxFEMCloth</span><span class="o">*</span><span class="w"> </span><span class="n">cloth</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">triIdx</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeClothFilter</span><span class="p">(</span><span class="n">PxFEMCloth</span><span class="o">*</span><span class="w"> </span><span class="n">cloth</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">triIdx</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">                   </span><span class="nf">addClothAttachment</span><span class="p">(</span><span class="n">PxFEMCloth</span><span class="o">*</span><span class="w"> </span><span class="n">cloth</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">triIdx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">triBarycentric</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">tetIdx</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">tetBarycentric</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">PxConeLimitedConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">constraintOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">void</span><span class="w">                    </span><span class="nf">removeClothAttachment</span><span class="p">(</span><span class="n">PxFEMCloth</span><span class="o">*</span><span class="w"> </span><span class="n">cloth</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">handle</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxBounds3</span><span class="w">       </span><span class="nf">getWorldBounds</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">inflation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.01f</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="n">PxU32</span><span class="w">           </span><span class="nf">getGpuSoftBodyIndex</span><span class="p">()</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w">     </span><span class="nf">getConcreteTypeName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PX_OVERRIDE</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;PxSoftBody&quot;</span><span class="p">;</span><span class="w">  </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">protected</span><span class="o">:</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_INLINE</span><span class="w">                   </span><span class="n">PxSoftBody</span><span class="p">(</span><span class="n">PxType</span><span class="w"> </span><span class="n">concreteType</span><span class="p">,</span><span class="w"> </span><span class="n">PxBaseFlags</span><span class="w"> </span><span class="n">baseFlags</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxActor</span><span class="p">(</span><span class="n">concreteType</span><span class="p">,</span><span class="w"> </span><span class="n">baseFlags</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_INLINE</span><span class="w">                   </span><span class="n">PxSoftBody</span><span class="p">(</span><span class="n">PxBaseFlags</span><span class="w"> </span><span class="n">baseFlags</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxActor</span><span class="p">(</span><span class="n">baseFlags</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">        </span><span class="k">virtual</span><span class="w">     </span><span class="kt">bool</span><span class="w">            </span><span class="n">isKindOf</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PX_OVERRIDE</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="o">!::</span><span class="n">strcmp</span><span class="p">(</span><span class="s">&quot;PxSoftBody&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">PxActor</span><span class="o">::</span><span class="n">isKindOf</span><span class="p">(</span><span class="n">name</span><span class="p">);</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxVec4</span><span class="w"> </span><span class="n">PxConfigureSoftBodyKinematicTarget</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">isActive</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec4</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">target</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isActive</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="n">result</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">else</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">//Any non-zero value will mark the target as inactive</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="n">result</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxVec4</span><span class="w"> </span><span class="n">PxConfigureSoftBodyKinematicTarget</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">isActive</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PxConfigureSoftBodyKinematicTarget</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">(</span><span class="n">target</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">),</span><span class="w"> </span><span class="n">isActive</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="cp">#if PX_VC</span>
+<span class="cp">#pragma warning(pop)</span>
+<span class="cp">#endif</span>
+
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

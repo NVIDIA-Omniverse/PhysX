@@ -1,85 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>High Level (Toolkit) API (NvBlastTk) &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>High Level (Toolkit) API (NvBlastTk) &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/mermaid-init.js"></script>
         <script src="../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../_static/version.js"></script>
         <script src="../../_static/social-media.js"></script>
         <script src="../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Extensions (NvBlastExt)" href="extensions/index.html" />
-    <link rel="prev" title="Globals API (NvBlastGlobals)" href="api_globals_users_guide.html" /> 
+    <link rel="prev" title="Globals API (NvBlastGlobals)" href="api_globals_users_guide.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../index.html">
-          
-
-          
-            
-            <img src="../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -87,19 +52,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -135,71 +89,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>High Level (Toolkit) API (NvBlastTk)</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>High Level (Toolkit) API (NvBlastTk)</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="high-level-toolkit-api-nvblasttk">
-<span id="pagehlapi"></span><h1>High Level (Toolkit) API (NvBlastTk)<a class="headerlink" href="#high-level-toolkit-api-nvblasttk" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="high-level-toolkit-api-nvblasttk">
+<span id="pagehlapi"></span><h1>High Level (Toolkit) API (NvBlastTk)<a class="headerlink" href="#high-level-toolkit-api-nvblasttk" title="Permalink to this headline"></a></h1>
 <p><strong>Table of Contents</strong></p>
 <p><a class="reference internal" href="#tkintroduction"><span class="std std-ref">Introduction to NvBlastTk</span></a></p>
 <p><a class="reference internal" href="#tk-class-hierarchy"><span class="std std-ref">NvBlastTk Class Hierarchy</span></a></p>
@@ -212,8 +129,8 @@
 <p><a class="reference internal" href="#tkjoints"><span class="std std-ref">Joints</span></a></p>
 <p><a class="reference internal" href="#tkevents"><span class="std std-ref">Events</span></a></p>
 <p><a class="reference internal" href="#tktypes"><span class="std std-ref">Object and Type Identification</span></a></p>
-<div class="section" id="introduction-to-nvblasttk">
-<span id="tkintroduction"></span><h2>Introduction to NvBlastTk<a class="headerlink" href="#introduction-to-nvblasttk" title="Permalink to this headline">¶</a></h2>
+<section id="introduction-to-nvblasttk">
+<span id="tkintroduction"></span><h2>Introduction to NvBlastTk<a class="headerlink" href="#introduction-to-nvblasttk" title="Permalink to this headline"></a></h2>
 <p>The high-level API, NvBlastTk (Tk stands for “toolkit”), is intended to be a more powerful library and a much more convenient entry point
 into the use of Blast.  Like the low-level library, Tk is physics and graphics-agnostic.  Whereas the low-level API is C-style, Tk uses
 a C++ API.  Everything in Tk is in the namespace:</p>
@@ -234,9 +151,9 @@ Every object in Tk is prefixed with ‘Tk’.  For example, the Tk framework int
 <li><p>Event dispatching for actor families (see <strong>TkFamily</strong>).</p></li>
 <li><p>Intra-actor and inter-actor joint management (see <strong>TkJoint</strong>).  Note, these “joints” only hold descriptor data, since physical objects are not handled by BlastTk.</p></li>
 </ul>
-</div>
-<div class="section" id="nvblasttk-class-hierarchy">
-<span id="tk-class-hierarchy"></span><h2>NvBlastTk Class Hierarchy<a class="headerlink" href="#nvblasttk-class-hierarchy" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="nvblasttk-class-hierarchy">
+<span id="tk-class-hierarchy"></span><h2>NvBlastTk Class Hierarchy<a class="headerlink" href="#nvblasttk-class-hierarchy" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>There are two abstract interfaces, one of which deriving from the other: <strong>TkObject &lt;- TkIdentifiable</strong>.
 * Lightweight objects are derived from <strong>TkObject</strong>.
@@ -247,9 +164,9 @@ Every object in Tk is prefixed with ‘Tk’.  For example, the Tk framework int
 <li><p><strong>TkActor</strong> derives from <strong>TkObject</strong>.  It is mostly a wrapper for NvBlastActor, but it also provides a number of damage functions to the user.</p></li>
 <li><p><strong>TkJoint</strong> derives from <strong>TkObject</strong>.  <strong>TkAsset</strong> descriptors, cause internal <strong>TkJoint</strong> obejcts to be created within an actor (joining chunks within the same actor).  Alternatively, the TkFramework provides a function which allows the user to create an external joint between any two different actors.  As actors split, internal joints may become external.  The user gets notification whenever joints become external, or when actors joined by joints change or are deleted, through listeners attached to the associated TkFamily objects.</p></li>
 </ul>
-</div>
-<div class="section" id="linking-and-header-files">
-<span id="tk-include-and-library"></span><h2>Linking and Header Files<a class="headerlink" href="#linking-and-header-files" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="linking-and-header-files">
+<span id="tk-include-and-library"></span><h2>Linking and Header Files<a class="headerlink" href="#linking-and-header-files" title="Permalink to this headline"></a></h2>
 <p>To use the BlastTk library, the application need only inlclude the header NvBlastTk.h, found in the <strong>include/toolkit</strong> folder, and link
 against the appropriate version of the NvBlastTk library.  Depending on the platform and configuration, various suffixes will be added to the library
 name.  The general naming scheme is</p>
@@ -257,9 +174,9 @@ name.  The general naming scheme is</p>
 <p>(config) is DEBUG, CHECKED, OR PROFILE for the corresponding configurations.  For a release configuration there is no (config) suffix.</p>
 <p>(arch) is _x86 or _x64 for Windows 32- and 64-bit builds, respectively, and empty for non-Windows platforms.</p>
 <p>(ext) is .lib for static linking and .dll for dynamic linking on Windows.</p>
-</div>
-<div class="section" id="creating-the-tkframework">
-<span id="framework-init"></span><h2>Creating the TkFramework<a class="headerlink" href="#creating-the-tkframework" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="creating-the-tkframework">
+<span id="framework-init"></span><h2>Creating the TkFramework<a class="headerlink" href="#creating-the-tkframework" title="Permalink to this headline"></a></h2>
 <p>As a reminder, in this document we assume we are in the Nv::Blast namespace:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>using namespace Nv::Blast;
 </pre></div>
@@ -279,9 +196,9 @@ to the global function NvBlastTkFrameworkCreate:</p>
 </pre></div>
 </div>
 <p>This will release all assets, families, actors, joints, and groups.</p>
-</div>
-<div class="section" id="creating-a-tkasset">
-<span id="tkasset-creation"></span><h2>Creating a TkAsset<a class="headerlink" href="#creating-a-tkasset" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="creating-a-tkasset">
+<span id="tkasset-creation"></span><h2>Creating a TkAsset<a class="headerlink" href="#creating-a-tkasset" title="Permalink to this headline"></a></h2>
 <p>The TkAsset object is a high-level wrapper for the low-level NvBlastAsset (see <a class="reference internal" href="api_ll_users_guide.html#assets"><span class="std std-ref">Creating an Asset from a Descriptor (Authoring)</span></a>).  The descriptor used to create a TkAsset, a TkAssetDesc, is derived from
 NvBlastAssetDesc.  The base fields should be filled in as described in (<a class="reference internal" href="api_ll_users_guide.html#assets"><span class="std std-ref">Creating an Asset from a Descriptor (Authoring)</span></a>).  The new field is an optional array of flags to be associated with each bond in
 the base descriptor.  Currently the only flag is “BondJointed,” and if set will cause an “internal joint” to be created in actors (TkActor type) created from the asset.
@@ -347,9 +264,9 @@ Otherwise, the mapped value will be a valid graph node index.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>asset-&gt;release();
 </pre></div>
 </div>
-</div>
-<div class="section" id="instancing-a-tkasset-creation-of-a-tkactor-and-a-tkfamily">
-<span id="tkasset-instancing"></span><h2>Instancing a TkAsset: Creation of a TkActor and a TkFamily<a class="headerlink" href="#instancing-a-tkasset-creation-of-a-tkactor-and-a-tkfamily" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="instancing-a-tkasset-creation-of-a-tkactor-and-a-tkfamily">
+<span id="tkasset-instancing"></span><h2>Instancing a TkAsset: Creation of a TkActor and a TkFamily<a class="headerlink" href="#instancing-a-tkasset-creation-of-a-tkactor-and-a-tkfamily" title="Permalink to this headline"></a></h2>
 <p>Whereas with the Blast low-level (<a class="reference internal" href="api_ll_users_guide.html#pagellapi"><span class="std std-ref">Low Level API (NvBlast)</span></a>), one must explicitly create a family (NvBlastFamily) from an asset (NvBlastAsset) before creating
 the first actor (NvBlastActor) in the family, NvBlastTk creates a TkFamily automatically when an unfractured TkActor is instanced from a TkAsset using
 the framework’s createActor function.  This family is accessible through the actor and any actor that is created from splitting it.  The family is
@@ -379,9 +296,9 @@ TkActor* actor = framework-&gt;createActor(desc);
 parent’s family.</p>
 <p>For most applications, the user will need to create a listener object to pass to every family created, in order to keep their physics and graphics representations
 in sync with the splitting of the TkActor.  For more on this, see <a class="reference internal" href="#tkevents"><span class="std std-ref">Events</span></a>.</p>
-</div>
-<div class="section" id="groups">
-<span id="tkgroups"></span><h2>Groups<a class="headerlink" href="#groups" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="groups">
+<span id="tkgroups"></span><h2>Groups<a class="headerlink" href="#groups" title="Permalink to this headline"></a></h2>
 <p>One important feature of NvBlastTk is the ability to multitask damage processing.  The mechanism by which the toolkit does this is the group object, TkGroup.
 Groups are created at the request of the user; the user may create as many groups as he or she likes.  Actors may be added or removed from groups in any way the
 user wishes, with the only constraint being that a given actor may belong to no more than one group.  A group is a processing object, much like a scene in a physics
@@ -448,9 +365,9 @@ group2-&gt;release();
 group-&gt;returnWorker(worker);
 </pre></div>
 </div>
-</div>
-<div class="section" id="applying-damage-to-actors-and-families">
-<span id="damage-in-tk"></span><h2>Applying Damage to Actors and Families<a class="headerlink" href="#applying-damage-to-actors-and-families" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="applying-damage-to-actors-and-families">
+<span id="damage-in-tk"></span><h2>Applying Damage to Actors and Families<a class="headerlink" href="#applying-damage-to-actors-and-families" title="Permalink to this headline"></a></h2>
 <p>Damage in NvBlastTk uses the same damage program scheme as the low-level SDK (see <a class="reference internal" href="api_ll_users_guide.html#splitting"><span class="std std-ref">Damage and Fracturing</span></a>).  One passes the program
 (NvBlastDamageProgram), damage descriptor (program-dependent), and material (also program-dependent) to a TkActor::damage
 function.  Ultimately, the damage descriptor and material data are all parameters used by the damage program.  The distinction
@@ -460,8 +377,8 @@ functions, however.</p>
 <p>For convenience, the user may set a default material in the actor’s family.  This assumes, of course, that the material parameters
 for this default are compatible with the program being used to damage the family’s actors.</p>
 <p>Examples of the three TkActor damage methods are given below.</p>
-<div class="section" id="multiple-damage-descriptors-using-nvblastprogramparams">
-<span id="multiple-damage"></span><h3>Multiple Damage Descriptors using NvBlastProgramParams<a class="headerlink" href="#multiple-damage-descriptors-using-nvblastprogramparams" title="Permalink to this headline">¶</a></h3>
+<section id="multiple-damage-descriptors-using-nvblastprogramparams">
+<span id="multiple-damage"></span><h3>Multiple Damage Descriptors using NvBlastProgramParams<a class="headerlink" href="#multiple-damage-descriptors-using-nvblastprogramparams" title="Permalink to this headline"></a></h3>
 <p><strong>N.B. - with this method of damage, the lifetime of the NvBlastProgramParams *must* extend at
 least until the TkGroup::endProcess call for the actor.</strong></p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>NvBlastDamageProgram program =
@@ -501,9 +418,9 @@ NvBlastProgramParams params = { damageDescs, 2, &amp;material };
 actor-&gt;damage(program, &amp;params);    // params must be kept around until TkGroup::endProcess is called!
 </pre></div>
 </div>
-</div>
-<div class="section" id="single-damage-descriptor-with-default-tkfamily-material">
-<span id="single-damage-desc-default-material"></span><h3>Single Damage Descriptor with Default TkFamily Material<a class="headerlink" href="#single-damage-descriptor-with-default-tkfamily-material" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="single-damage-descriptor-with-default-tkfamily-material">
+<span id="single-damage-desc-default-material"></span><h3>Single Damage Descriptor with Default TkFamily Material<a class="headerlink" href="#single-damage-descriptor-with-default-tkfamily-material" title="Permalink to this headline"></a></h3>
 <p>This method of damage copies the damage descriptor into a buffer, so the user need <em>not</em> hold onto
 a copy after the damage function call.  Only one damage descriptor may be passed in at once.</p>
 <p>To use this method, the user must first set a default material in the actor’s family.  For example:</p>
@@ -540,19 +457,19 @@ damageDesc.maxRadius = 1.0f;
 actor-&gt;damage(program, &amp;damageDesc, (uint32_t)sizeof(RadialDamageDesc));
 </pre></div>
 </div>
-</div>
-<div class="section" id="single-damage-descriptor-with-specified-material">
-<span id="single-damage-desc-with-material"></span><h3>Single Damage Descriptor with Specified Material<a class="headerlink" href="#single-damage-descriptor-with-specified-material" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="single-damage-descriptor-with-specified-material">
+<span id="single-damage-desc-with-material"></span><h3>Single Damage Descriptor with Specified Material<a class="headerlink" href="#single-damage-descriptor-with-specified-material" title="Permalink to this headline"></a></h3>
 <p>This method is just like the one above, except that the user has the opportunity to override the material used during damage.</p>
 <p><strong>N.B. - the lifetime of the material passed in *must* extend at least until the TkGroup::endProcess call for the actor.</strong></p>
 <p>This call is just like the one above with an extra material parameter:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>actor-&gt;damage(program, &amp;damageDesc, (uint32_t)sizeof(RadialDamageDesc), &amp;material);
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="joints">
-<span id="tkjoints"></span><h2>Joints<a class="headerlink" href="#joints" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="joints">
+<span id="tkjoints"></span><h2>Joints<a class="headerlink" href="#joints" title="Permalink to this headline"></a></h2>
 <p>Joints in NvBlastTk are abstract representations of physical joints.  When joints become active, change the actors they join,
 or become unreferenced (the actors they join disappear), the user will receive notification via a TkJointUpdateEvent
 (see <a class="reference internal" href="#tkevents"><span class="std std-ref">Events</span></a>).</p>
@@ -591,8 +508,8 @@ desc.attachPositions[1] = nvidia::NvVec3(0.0f, 0.0f, 10.0f);    // Attach positi
 TkJoint* jointNRF = framework-&gt;createJoint(desc);
 </pre></div>
 </div>
-<div class="section" id="releasing-joints">
-<span id="id1"></span><h3>Releasing Joints<a class="headerlink" href="#releasing-joints" title="Permalink to this headline">¶</a></h3>
+<section id="releasing-joints">
+<span id="id1"></span><h3>Releasing Joints<a class="headerlink" href="#releasing-joints" title="Permalink to this headline"></a></h3>
 <p>TkJoints are not released by Blast, except when the TkFramework is released.  Otherwise, the user is responsible for
 releasing TkJoints after they become unreferenced.  This is facilitated by the Unreferenced subtype of the TkJointUpdateEvent.  After
 receiving this event for joint, the user may choose to release, using the typical TkObject::release() method.</p>
@@ -612,10 +529,10 @@ that <em>become</em> external are still associated with a single family and thei
 and do not have memory tied to any TkFamily (even if both actors joined are in the same family).  Releasing a family holding one
 of the actors in such a “purely external” joint will trigger a TkJointUpdateEvent of subtype Unreferenced, however, signalling that
 the joint is ready for user release.</p>
-</div>
-</div>
-<div class="section" id="events">
-<span id="tkevents"></span><h2>Events<a class="headerlink" href="#events" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="events">
+<span id="tkevents"></span><h2>Events<a class="headerlink" href="#events" title="Permalink to this headline"></a></h2>
 <p>NvBlastTk uses events to communicate the results of actor splitting, joint updates from actor splitting, and fracture event buffers
 that can be used to synchronize fracturing between multiple clients.</p>
 <p>Events are broadcast to listeners which implement the TkEventListener interface.  Listeners are held by TkFamily objects.  During
@@ -690,8 +607,8 @@ actor-&gt;getFamily().addListener(myListener); //  myListener is an object which
 </pre></div>
 </div>
 <p>Listeners may also be removed from families at any time.</p>
-<div class="section" id="object-and-type-identification">
-<span id="tktypes"></span><h3>Object and Type Identification<a class="headerlink" href="#object-and-type-identification" title="Permalink to this headline">¶</a></h3>
+<section id="object-and-type-identification">
+<span id="tktypes"></span><h3>Object and Type Identification<a class="headerlink" href="#object-and-type-identification" title="Permalink to this headline"></a></h3>
 <p>NvBlastTk objects that are derived from TkIdentifiable (TkAsset, TkFamily, and TkGroup) support an object and class (type) identification
 system.  The TkIdentifiable interfaces setID and getID allow the user to set and access an NvBlastID for each object.  The NvBlastID
 is a 128-bit identifier.  TkIdentifiable objects are tracked by the TkFramework, which may be used to look up an object by its NvBlastID.</p>
@@ -769,47 +686,38 @@ else
 <p>A TkIdentifiable-derived class may be queried for its name using the TkType interface, using TkType::getName().
 This function returns a const char pointer to a string.</p>
 <p>Finally, one may query the class for its current format version number using TkType::getVersion().</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

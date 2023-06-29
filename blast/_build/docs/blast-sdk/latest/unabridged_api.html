@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Namespaces &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Namespaces &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,80 +64,43 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Namespaces</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Namespaces</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="namespaces">
-<h1>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="namespaces">
+<h1>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="namespace_Nv.html#namespace-nv"><span class="std std-ref">Nv</span></a>: FractureTool has requirements to input meshes to fracture them successfully: 1) Mesh should be closed (watertight) 2) There should not be self-intersections and open-edges.</p></li>
 <li><p><a class="reference internal" href="namespace_Nv__Blast.html#namespace-nv-blast"><span class="std std-ref">Nv::Blast</span></a></p></li>
 <li><p><a class="reference internal" href="namespace_nvidia.html#namespace-nvidia"><span class="std std-ref">nvidia</span></a></p></li>
 <li><p><a class="reference internal" href="namespace_nvidia__task.html#namespace-nvidia-task"><span class="std std-ref">nvidia::task</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="classes-and-structs">
-<h1>Classes and Structs<a class="headerlink" href="#classes-and-structs" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="classes-and-structs">
+<h1>Classes and Structs<a class="headerlink" href="#classes-and-structs" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_authoring_result.html#exhale-struct-struct-nv-1-1-blast-1-1-authoring-result"><span class="std std-ref">Nv::Blast::AuthoringResult</span></a>: Authoring results.</p></li>
 <li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_beam_pattern_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-beam-pattern-desc"><span class="std std-ref">Nv::Blast::BeamPatternDesc</span></a></p></li>
@@ -285,9 +202,9 @@
 <li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_voronoi_sites_generator.html#exhale-class-class-nv-1-1-blast-1-1-voronoi-sites-generator"><span class="std std-ref">Nv::Blast::VoronoiSitesGenerator</span></a>: Class for voronoi sites generation inside supplied mesh.</p></li>
 <li><p><a class="reference internal" href="class_nv_blast_ext_damage_accelerator.html#exhale-class-class-nv-blast-ext-damage-accelerator"><span class="std std-ref">NvBlastExtDamageAccelerator</span></a>: A few example damage shader implementations.</p></li>
 </ul>
-</div>
-<div class="section" id="functions">
-<h1>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="functions">
+<h1>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="function__nv_blast_types_8h_1a92803a9b9c38d6a2aaf20746bcf4dac4.html#exhale-function-nv-blast-types-8h-1a92803a9b9c38d6a2aaf20746bcf4dac4"><span class="std std-ref">canTakeDamage</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a046f351eedab67de8286b249c348160a.html#exhale-function-nv-blast-globals-8h-1a046f351eedab67de8286b249c348160a"><span class="std std-ref">Nv::Blast::logLL</span></a></p></li>
@@ -297,9 +214,9 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a5261035f206eb5fb1a1822323ff8d725.html#exhale-function-nv-blast-8h-1a5261035f206eb5fb1a1822323ff8d725"><span class="std std-ref">NvBlastActorCanFracture</span></a>: Determines if the actor can fracture further.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ad7b368ffbf45a130d7b116530b81a77e.html#exhale-function-nv-blast-8h-1ad7b368ffbf45a130d7b116530b81a77e"><span class="std std-ref">NvBlastActorDeactivate</span></a>: Deactivate an actor within its family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a7bf6cbcc95e377f61dbd1ab87bf6facc.html#exhale-function-nv-blast-8h-1a7bf6cbcc95e377f61dbd1ab87bf6facc"><span class="std std-ref">NvBlastActorGenerateFracture</span></a>: Creates fracture commands for the actor using a damage program and program parameters (material and damage descriptions).</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a89921a073e03d720fd0c7c3823cd9b7c.html#exhale-function-nv-blast-8h-1a89921a073e03d720fd0c7c3823cd9b7c"><span class="std std-ref">NvBlastActorGetBondHealths</span></a>: Access the bond health data for an actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aade01abac334e958f85e717e23d57f96.html#exhale-function-nv-blast-8h-1aade01abac334e958f85e717e23d57f96"><span class="std std-ref">NvBlastActorGetCachedBondHeaths</span></a>: Access the cached bond health data for an actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a2d59048197fbddd4ba1ec575eef91b4d.html#exhale-function-nv-blast-8h-1a2d59048197fbddd4ba1ec575eef91b4d"><span class="std std-ref">NvBlastActorGetFamily</span></a>: Access to an actor’s family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a16a6e2f6192e31c06c7650db0ab3c2be.html#exhale-function-nv-blast-8h-1a16a6e2f6192e31c06c7650db0ab3c2be"><span class="std std-ref">NvBlastActorGetBondHealths</span></a>: Access the bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a49458a81e64b4ae5f6f17a2b96d1ceef.html#exhale-function-nv-blast-8h-1a49458a81e64b4ae5f6f17a2b96d1ceef"><span class="std std-ref">NvBlastActorGetCachedBondHeaths</span></a>: Access the cached bond health data for an actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a2bff9b062a3ebf8af4bc2bf73ff21d19.html#exhale-function-nv-blast-8h-1a2bff9b062a3ebf8af4bc2bf73ff21d19"><span class="std std-ref">NvBlastActorGetFamily</span></a>: Access to an actor’s family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a3a97a2b9a11e4eb47fa05b3e6f520fce.html#exhale-function-nv-blast-8h-1a3a97a2b9a11e4eb47fa05b3e6f520fce"><span class="std std-ref">NvBlastActorGetGraphNodeCount</span></a>: Get the number of graph nodes for this actor.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1abdf46f09850fb6952509a94f14d9406b.html#exhale-function-nv-blast-8h-1abdf46f09850fb6952509a94f14d9406b"><span class="std std-ref">NvBlastActorGetGraphNodeIndices</span></a>: Retrieve a list of graph node indices for the actor into the given array.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ad9607ac7bd28e0a3a2b3bec7aa8d5805.html#exhale-function-nv-blast-8h-1ad9607ac7bd28e0a3a2b3bec7aa8d5805"><span class="std std-ref">NvBlastActorGetIndex</span></a>: Access to an actor’s internal index.</p></li>
@@ -314,14 +231,14 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1adc280b2a624d76981c87fb5f068d5106.html#exhale-function-nv-blast-8h-1adc280b2a624d76981c87fb5f068d5106"><span class="std std-ref">NvBlastActorSplit</span></a>: Releases the oldActor and creates its children newActors if necessary.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a3204e6077b424c4e10f605af0fa119d5.html#exhale-function-nv-blast-8h-1a3204e6077b424c4e10f605af0fa119d5"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMap</span></a>: Apply chunk reorder map.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a9eea9e02fc7f81cdc0399e7196bddf58.html#exhale-function-nv-blast-8h-1a9eea9e02fc7f81cdc0399e7196bddf58"><span class="std std-ref">NvBlastApplyAssetDescChunkReorderMapInPlace</span></a>: Apply chunk reorder map.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a868a59bb905879503d5e9a034cff247e.html#exhale-function-nv-blast-8h-1a868a59bb905879503d5e9a034cff247e"><span class="std std-ref">NvBlastAssetCreateFamily</span></a>: Family-building function.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1ae9662f10cbfadc6dbef7add15f32374a.html#exhale-function-nv-blast-8h-1ae9662f10cbfadc6dbef7add15f32374a"><span class="std std-ref">NvBlastAssetCreateFamilyFromSizeData</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ae429a4da15af7a1a6f3027583c059222.html#exhale-function-nv-blast-8h-1ae429a4da15af7a1a6f3027583c059222"><span class="std std-ref">NvBlastAssetCreateFamily</span></a>: Family-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a855fccdb43c27ea29c0558d659dc1388.html#exhale-function-nv-blast-8h-1a855fccdb43c27ea29c0558d659dc1388"><span class="std std-ref">NvBlastAssetCreateFamilyFromSizeData</span></a>: Family-building function.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a2539b7a2f244a8f0c45d7020d1dfad63.html#exhale-function-nv-blast-8h-1a2539b7a2f244a8f0c45d7020d1dfad63"><span class="std std-ref">NvBlastAssetGetActorSerializationSizeUpperBound</span></a>: A buffer size sufficient to serialize an actor instanced from a given asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab44bf9e7f8a755094ee4f45aade1c0ab.html#exhale-function-nv-blast-8h-1ab44bf9e7f8a755094ee4f45aade1c0ab"><span class="std std-ref">NvBlastAssetGetBondCount</span></a>: Get the number of bonds in the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1ad612242052e71894fecfca76f5cf39d3.html#exhale-function-nv-blast-8h-1ad612242052e71894fecfca76f5cf39d3"><span class="std std-ref">NvBlastAssetGetBonds</span></a>: Access an array of bonds of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1acaa8efe5e3c88b70dada8da8308fbbad.html#exhale-function-nv-blast-8h-1acaa8efe5e3c88b70dada8da8308fbbad"><span class="std std-ref">NvBlastAssetGetBonds</span></a>: Access an array of bonds of the given asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac82609eb93afc9a8ab7011f2eb8f9a23.html#exhale-function-nv-blast-8h-1ac82609eb93afc9a8ab7011f2eb8f9a23"><span class="std std-ref">NvBlastAssetGetChunkCount</span></a>: Get the number of chunks in the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aac1c384c82de07c613b7c0539f7707df.html#exhale-function-nv-blast-8h-1aac1c384c82de07c613b7c0539f7707df"><span class="std std-ref">NvBlastAssetGetChunks</span></a>: Access an array of chunks of the given asset.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1abff733fd05dc5b7a730336699a427c25.html#exhale-function-nv-blast-8h-1abff733fd05dc5b7a730336699a427c25"><span class="std std-ref">NvBlastAssetGetChunkToGraphNodeMap</span></a>: Access a map from chunk index to graph node index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ad92c02f175537b70ae3ecd2b7099ef6d.html#exhale-function-nv-blast-8h-1ad92c02f175537b70ae3ecd2b7099ef6d"><span class="std std-ref">NvBlastAssetGetChunks</span></a>: Access an array of chunks of the given asset.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ac7debde1e3a7b0a4dd44672df77dd3a8.html#exhale-function-nv-blast-8h-1ac7debde1e3a7b0a4dd44672df77dd3a8"><span class="std std-ref">NvBlastAssetGetChunkToGraphNodeMap</span></a>: Access a map from chunk index to graph node index.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab933a279e63545023464292bf7d562a1.html#exhale-function-nv-blast-8h-1ab933a279e63545023464292bf7d562a1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySize</span></a>: Calculates the memory requirements for a family based upon an asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a2735d36912e3a3261096a3309f1e7ed1.html#exhale-function-nv-blast-8h-1a2735d36912e3a3261096a3309f1e7ed1"><span class="std std-ref">NvBlastAssetGetFamilyMemorySizeFromSizeData</span></a>: Calculates the memory requirements for a family based upon supplied sized data.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ae8bee2fd37d6af164165a23adb0592a9.html#exhale-function-nv-blast-8h-1ae8bee2fd37d6af164165a23adb0592a9"><span class="std std-ref">NvBlastAssetGetFirstSubsupportChunkIndex</span></a>: Get the first subsupport chunk index in the given asset.</p></li>
@@ -334,34 +251,34 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a40e77f2e7fc3a33c95201ca6229a2977.html#exhale-function-nv-blast-8h-1a40e77f2e7fc3a33c95201ca6229a2977"><span class="std std-ref">NvBlastAssetMemSizeDataFromAsset</span></a>: Fill out the size data from the provided asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac0c345ce6676ad87cbd06e2f0debd8f7.html#exhale-function-nv-blast-8h-1ac0c345ce6676ad87cbd06e2f0debd8f7"><span class="std std-ref">NvBlastAssetSetID</span></a>: Set an asset’s ID.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac4748f2da0b6a1be9055141c68ac668f.html#exhale-function-nv-blast-8h-1ac4748f2da0b6a1be9055141c68ac668f"><span class="std std-ref">NvBlastBuildAssetDescChunkReorderMap</span></a>: Build chunk reorder map.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a8455859eec0e23e95aa5bbf7c4fd1e14.html#exhale-function-nv-blast-8h-1a8455859eec0e23e95aa5bbf7c4fd1e14"><span class="std std-ref">NvBlastCreateAsset</span></a>: Asset-building function.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1aaace8a1030e13b004309e833ca40293f.html#exhale-function-nv-blast-8h-1aaace8a1030e13b004309e833ca40293f"><span class="std std-ref">NvBlastCreateAsset</span></a>: Asset-building function.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1afd09f53fb71a1fb33053eebf1610367b.html#exhale-function-nv-blast-8h-1afd09f53fb71a1fb33053eebf1610367b"><span class="std std-ref">NvBlastEnsureAssetExactSupportCoverage</span></a>: Function to ensure (check and update) support coverage of chunks.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1ac37d2686e8dc06a250d84e5d58ae5f6e.html#exhale-function-nv-blast-ext-asset-utils-8h-1ac37d2686e8dc06a250d84e5d58ae5f6e"><span class="std std-ref">NvBlastExtAssetTransformInPlace</span></a>: Transforms asset in place using scale, rotation, transform.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a053cf16f7f6536a2ad467a130706a2c2.html#exhale-function-nv-blast-ext-asset-utils-8h-1a053cf16f7f6536a2ad467a130706a2c2"><span class="std std-ref">NvBlastExtAssetUtilsAddExternalBonds</span></a>: Reauthor the provided asset to create external bonds in the specified support chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a79645b49a418d1c0b5d8c25d5c965da6.html#exhale-function-nv-blast-ext-asset-utils-8h-1a79645b49a418d1c0b5d8c25d5c965da6"><span class="std std-ref">NvBlastExtAssetUtilsAddExternalBonds</span></a>: Reauthor the provided asset to create external bonds in the specified support chunks.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a9c345f8d263d200a404d47aa913727c7.html#exhale-function-nv-blast-ext-asset-utils-8h-1a9c345f8d263d200a404d47aa913727c7"><span class="std std-ref">NvBlastExtAssetUtilsCreateDesc</span></a>: Creates an asset descriptor from an asset.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_asset_utils_8h_1a51725c40995e0c86428bdc9fb5450f48.html#exhale-function-nv-blast-ext-asset-utils-8h-1a51725c40995e0c86428bdc9fb5450f48"><span class="std std-ref">NvBlastExtAssetUtilsMergeAssets</span></a>: Creates an asset descriptor which will build an asset that merges several assets.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa267355276c6c7f75e11b1d1b401e9aa.html#exhale-function-nv-blast-ext-authoring-8h-1aa267355276c6c7f75e11b1d1b401e9aa"><span class="std std-ref">NvBlastExtAuthoringBuildCollisionMeshes</span></a>: Build collision meshes.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af5f4d1eb694a93557d1f39f8564ef435.html#exhale-function-nv-blast-ext-authoring-8h-1af5f4d1eb694a93557d1f39f8564ef435"><span class="std std-ref">NvBlastExtAuthoringBuildCutoutSet</span></a>: Builds a cutout set (which must have been initially created by createCutoutSet()).</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a15fa5f130ca888ab5d84073112e0ce58.html#exhale-function-nv-blast-ext-authoring-8h-1a15fa5f130ca888ab5d84073112e0ce58"><span class="std std-ref">NvBlastExtAuthoringBuildMeshConvexDecomposition</span></a>: Build convex mesh decomposition.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0a7dc1a643abf2e3b37e6db8724298bf.html#exhale-function-nv-blast-ext-authoring-8h-1a0a7dc1a643abf2e3b37e6db8724298bf"><span class="std std-ref">NvBlastExtAuthoringCreateBBoxBasedAccelerator</span></a>: Create BBoxBasedAccelerator - SpatialAccelerator which uses a bbox/grid algorithm.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a8bf20d770ff841495410c94728ee6f7b.html#exhale-function-nv-blast-ext-authoring-8h-1a8bf20d770ff841495410c94728ee6f7b"><span class="std std-ref">NvBlastExtAuthoringCreateBondGenerator</span></a>: Create BlastBondGenerator.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ad59a0b7bceb9cf2d7f09cc104e584fe6.html#exhale-function-nv-blast-ext-authoring-8h-1ad59a0b7bceb9cf2d7f09cc104e584fe6"><span class="std std-ref">NvBlastExtAuthoringCreateBooleanTool</span></a>: Create BooleanTool object.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a96fac66d91c7052499f8ad246114d187.html#exhale-function-nv-blast-ext-authoring-8h-1a96fac66d91c7052499f8ad246114d187"><span class="std std-ref">NvBlastExtAuthoringCreateCutoutSet</span></a>: Instantiates a blank CutoutSet.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a41aee44d57db3e410d5d9dd5b07632d5.html#exhale-function-nv-blast-ext-authoring-8h-1a41aee44d57db3e410d5d9dd5b07632d5"><span class="std std-ref">NvBlastExtAuthoringCreateFractureTool</span></a>: Create FractureTool object.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a7c782ba7a27d4ae519a95260bf45d542.html#exhale-function-nv-blast-ext-authoring-8h-1a7c782ba7a27d4ae519a95260bf45d542"><span class="std std-ref">NvBlastExtAuthoringCreateGridAccelerator</span></a>: Create GridAccelerator - SpatialAccelerator which use Grid for faster mesh sampling.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af169fb5abb2f0475f7ef221129fcc278.html#exhale-function-nv-blast-ext-authoring-8h-1af169fb5abb2f0475f7ef221129fcc278"><span class="std std-ref">NvBlastExtAuthoringCreateMesh</span></a>: Constructs mesh object from array of triangles.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa763b10260b7d2a495fb106601977422.html#exhale-function-nv-blast-ext-authoring-8h-1aa763b10260b7d2a495fb106601977422"><span class="std std-ref">NvBlastExtAuthoringCreateMeshCleaner</span></a>: Creates MeshCleaner object.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a0d65b4208e0e406c8c61330610845c18.html#exhale-function-nv-blast-ext-authoring-8h-1a0d65b4208e0e406c8c61330610845c18"><span class="std std-ref">NvBlastExtAuthoringCreateMeshFromFacets</span></a>: Constructs mesh object from array of vertices, edges and facets.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a5faad1bdb348d4979b2bf17b33f9b12f.html#exhale-function-nv-blast-ext-authoring-8h-1a5faad1bdb348d4979b2bf17b33f9b12f"><span class="std std-ref">NvBlastExtAuthoringCreateMeshOnlyTriangles</span></a>: Constructs mesh object from triangles represented as arrays of vertices, indices and per facet material.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a53c22dbb75e939a04e48aa0e9dfe2158.html#exhale-function-nv-blast-ext-authoring-8h-1a53c22dbb75e939a04e48aa0e9dfe2158"><span class="std std-ref">NvBlastExtAuthoringCreatePatternGenerator</span></a>: Returns pattern generator used for generating fracture patterns.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa25abe5fade09b88b159acb13161ec1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa25abe5fade09b88b159acb13161ec1c"><span class="std std-ref">NvBlastExtAuthoringCreateSpatialGrid</span></a>: Create spatial grid for mesh.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a97122e1d0d06d7d5c6a8820c998431c8.html#exhale-function-nv-blast-ext-authoring-8h-1a97122e1d0d06d7d5c6a8820c998431c8"><span class="std std-ref">NvBlastExtAuthoringCreateSweepingAccelerator</span></a>: Create SweepingAccelerator - SpatialAccelerator which uses a sweep algorithm.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1acd91ba6bf9cb55758bd477fe114e318b.html#exhale-function-nv-blast-ext-authoring-8h-1acd91ba6bf9cb55758bd477fe114e318b"><span class="std std-ref">NvBlastExtAuthoringCreateVoronoiSitesGenerator</span></a>: Voronoi sites should not be generated outside of the fractured mesh, so VoronoiSitesGenerator should be supplied with fracture mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a1f5a294a39c512ce47699b8292b3535f.html#exhale-function-nv-blast-ext-authoring-8h-1a1f5a294a39c512ce47699b8292b3535f"><span class="std std-ref">NvBlastExtAuthoringCreateBBoxBasedAccelerator</span></a>: Create BBoxBasedAccelerator - SpatialAccelerator which uses a bbox/grid algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ae20dff4e503dc9c1296ab6e673631553.html#exhale-function-nv-blast-ext-authoring-8h-1ae20dff4e503dc9c1296ab6e673631553"><span class="std std-ref">NvBlastExtAuthoringCreateBondGenerator</span></a>: Create BlastBondGenerator.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a8483fa66a2b28fa4100cb72c7baacad7.html#exhale-function-nv-blast-ext-authoring-8h-1a8483fa66a2b28fa4100cb72c7baacad7"><span class="std std-ref">NvBlastExtAuthoringCreateBooleanTool</span></a>: Create BooleanTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1afda2df0deffc27339a667e6083883d0c.html#exhale-function-nv-blast-ext-authoring-8h-1afda2df0deffc27339a667e6083883d0c"><span class="std std-ref">NvBlastExtAuthoringCreateCutoutSet</span></a>: Instantiates a blank CutoutSet.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a71f3fe9e90c068408922eea4756dad58.html#exhale-function-nv-blast-ext-authoring-8h-1a71f3fe9e90c068408922eea4756dad58"><span class="std std-ref">NvBlastExtAuthoringCreateFractureTool</span></a>: Create FractureTool object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a9f5ad9b17d1aed6bdaa7ecc5e3b8ff88.html#exhale-function-nv-blast-ext-authoring-8h-1a9f5ad9b17d1aed6bdaa7ecc5e3b8ff88"><span class="std std-ref">NvBlastExtAuthoringCreateGridAccelerator</span></a>: Create GridAccelerator - SpatialAccelerator which use Grid for faster mesh sampling.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a83bd2e459926ad7fa302b2a75ccc7bf9.html#exhale-function-nv-blast-ext-authoring-8h-1a83bd2e459926ad7fa302b2a75ccc7bf9"><span class="std std-ref">NvBlastExtAuthoringCreateMesh</span></a>: Constructs mesh object from array of triangles.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a5785276da7e4343a269d77c122aeae5d.html#exhale-function-nv-blast-ext-authoring-8h-1a5785276da7e4343a269d77c122aeae5d"><span class="std std-ref">NvBlastExtAuthoringCreateMeshCleaner</span></a>: Creates MeshCleaner object.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a014cbd275002c7bb193124f9b9c0f4bb.html#exhale-function-nv-blast-ext-authoring-8h-1a014cbd275002c7bb193124f9b9c0f4bb"><span class="std std-ref">NvBlastExtAuthoringCreateMeshFromFacets</span></a>: Constructs mesh object from array of vertices, edges and facets.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a182991cd87c0d30176ef387e542b589a.html#exhale-function-nv-blast-ext-authoring-8h-1a182991cd87c0d30176ef387e542b589a"><span class="std std-ref">NvBlastExtAuthoringCreateMeshOnlyTriangles</span></a>: Constructs mesh object from triangles represented as arrays of vertices, indices and per facet material.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ad7a523ed519af53e8b530736e5c44192.html#exhale-function-nv-blast-ext-authoring-8h-1ad7a523ed519af53e8b530736e5c44192"><span class="std std-ref">NvBlastExtAuthoringCreatePatternGenerator</span></a>: Returns pattern generator used for generating fracture patterns.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a829dd32cdc2fef2ad2be7510c1aeda9c.html#exhale-function-nv-blast-ext-authoring-8h-1a829dd32cdc2fef2ad2be7510c1aeda9c"><span class="std std-ref">NvBlastExtAuthoringCreateSpatialGrid</span></a>: Create spatial grid for mesh.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa03021ce7e789ff5e320f3aff5293108.html#exhale-function-nv-blast-ext-authoring-8h-1aa03021ce7e789ff5e320f3aff5293108"><span class="std std-ref">NvBlastExtAuthoringCreateSweepingAccelerator</span></a>: Create SweepingAccelerator - SpatialAccelerator which uses a sweep algorithm.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a6b91a2e1d16163776f85374914dcfdfe.html#exhale-function-nv-blast-ext-authoring-8h-1a6b91a2e1d16163776f85374914dcfdfe"><span class="std std-ref">NvBlastExtAuthoringCreateVoronoiSitesGenerator</span></a>: Voronoi sites should not be generated outside of the fractured mesh, so VoronoiSitesGenerator should be supplied with fracture mesh.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1afee92cc71878d2b254360ef3ee223337.html#exhale-function-nv-blast-ext-authoring-8h-1afee92cc71878d2b254360ef3ee223337"><span class="std std-ref">NvBlastExtAuthoringFindAssetConnectingBonds</span></a>: Finds bonds connecting chunks in a list of assets.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aa055a16eea150c155525c41f32c82b1c.html#exhale-function-nv-blast-ext-authoring-8h-1aa055a16eea150c155525c41f32c82b1c"><span class="std std-ref">NvBlastExtAuthoringProcessFracture</span></a>: Performs pending fractures and generates fractured asset, render and collision geometry.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a6ed20448e4606cac27b903c1114f32c3.html#exhale-function-nv-blast-ext-authoring-8h-1a6ed20448e4606cac27b903c1114f32c3"><span class="std std-ref">NvBlastExtAuthoringProcessFracture</span></a>: Performs pending fractures and generates fractured asset, render and collision geometry.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1aaaa94617ab23d62f688504cd0e960b10.html#exhale-function-nv-blast-ext-authoring-8h-1aaaa94617ab23d62f688504cd0e960b10"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResult</span></a>: Releases AuthoringResult data.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1af06631688da85de482df0bdc3400959b.html#exhale-function-nv-blast-ext-authoring-8h-1af06631688da85de482df0bdc3400959b"><span class="std std-ref">NvBlastExtAuthoringReleaseAuthoringResultCollision</span></a>: Releases collision data for AuthoringResult.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ab5f1213bba94999b576885bc208d30c9.html#exhale-function-nv-blast-ext-authoring-8h-1ab5f1213bba94999b576885bc208d30c9"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHull</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1ae0a23af1bc03c31fac8dc1387118b1a5.html#exhale-function-nv-blast-ext-authoring-8h-1ae0a23af1bc03c31fac8dc1387118b1a5"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHull</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a3684fc5c5d206c429dfc78fe7d1c86b3.html#exhale-function-nv-blast-ext-authoring-8h-1a3684fc5c5d206c429dfc78fe7d1c86b3"><span class="std std-ref">NvBlastExtAuthoringTransformCollisionHullInPlace</span></a>: Transforms collision hull in place using scale, rotation, transform.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a364e68eac57e8a26eaf895452c266596.html#exhale-function-nv-blast-ext-authoring-8h-1a364e68eac57e8a26eaf895452c266596"><span class="std std-ref">NvBlastExtAuthoringTrimCollisionGeometry</span></a>: Convex geometry trimming.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_8h_1a231c56bb096167d21bbbc49cc46c0592.html#exhale-function-nv-blast-ext-authoring-8h-1a231c56bb096167d21bbbc49cc46c0592"><span class="std std-ref">NvBlastExtAuthoringUpdateGraphicsMesh</span></a>: Updates graphics mesh only.</p></li>
@@ -369,13 +286,13 @@
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a836ef5b0fd3eb3485af917599ab19e11.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a836ef5b0fd3eb3485af917599ab19e11"><span class="std std-ref">NvBlastExtCapsuleFalloffSubgraphShader</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a01ce708222741d4d1a3bdee94cdff422.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a01ce708222741d4d1a3bdee94cdff422"><span class="std std-ref">NvBlastExtCutterGraphShader</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a49ec2bf9cb78069aea33b323a3c46276.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a49ec2bf9cb78069aea33b323a3c46276"><span class="std std-ref">NvBlastExtCutterSubgraphShader</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aaba10f0cb7fda7438c600a9ea84c3a8f.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aaba10f0cb7fda7438c600a9ea84c3a8f"><span class="std std-ref">NvBlastExtDamageAcceleratorCreate</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1acc7892eb1f5b0ee4d6dfe693855a6fef.html#exhale-function-nv-blast-ext-damage-shaders-8h-1acc7892eb1f5b0ee4d6dfe693855a6fef"><span class="std std-ref">NvBlastExtDamageAcceleratorCreate</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a6349a0cf92522e18559d900ab65b14d1.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a6349a0cf92522e18559d900ab65b14d1"><span class="std std-ref">NvBlastExtFalloffGraphShader</span></a>: Radial Falloff and Radial Cutter damage for both graph and subgraph shaders.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a879c11ce1b73b7b497288c8a2710c438.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a879c11ce1b73b7b497288c8a2710c438"><span class="std std-ref">NvBlastExtFalloffSubgraphShader</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8f3d1da3bd2e0c19bd18b8840a4f531e"><span class="std std-ref">NvBlastExtImpactSpreadGraphShader</span></a>: Impact Spread Damage Shaders.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1ae6214e68108b781cdb160d787650dd2e.html#exhale-function-nv-blast-ext-damage-shaders-8h-1ae6214e68108b781cdb160d787650dd2e"><span class="std std-ref">NvBlastExtImpactSpreadSubgraphShader</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1a2485243df6083c79489c6289ea8491bf.html#exhale-function-nv-blast-ext-ll-serialization-8h-1a2485243df6083c79489c6289ea8491bf"><span class="std std-ref">NvBlastExtLlSerializerLoadSet</span></a>: Load all low-level serializers into the ExtSerialization manager.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_ext_serialization_8h_1a9dad7f69d7a72d402c99238ed3c34bfc.html#exhale-function-nv-blast-ext-serialization-8h-1a9dad7f69d7a72d402c99238ed3c34bfc"><span class="std std-ref">NvBlastExtSerializationCreate</span></a>: Create a new serialization manager.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_ext_serialization_8h_1a723455fa7b5fea412c3d8c9c2fc446c1.html#exhale-function-nv-blast-ext-serialization-8h-1a723455fa7b5fea412c3d8c9c2fc446c1"><span class="std std-ref">NvBlastExtSerializationCreate</span></a>: Create a new serialization manager.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1a51eaff0f60a0dd3f1ee29618549ae635.html#exhale-function-nv-blast-ext-ll-serialization-8h-1a51eaff0f60a0dd3f1ee29618549ae635"><span class="std std-ref">NvBlastExtSerializationSerializeAssetIntoBuffer</span></a>: Utility wrapper function to serialize an <a class="reference internal" href="struct_nv_blast_asset.html#exhale-struct-struct-nv-blast-asset"><span class="std std-ref">NvBlastAsset</span></a>.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_ll_serialization_8h_1ad4d8b950f06b6301279e6102a6d568d6.html#exhale-function-nv-blast-ext-ll-serialization-8h-1ad4d8b950f06b6301279e6102a6d568d6"><span class="std std-ref">NvBlastExtSerializationSerializeFamilyIntoBuffer</span></a>: Utility wrapper function to serialize an <a class="reference internal" href="struct_nv_blast_family.html#exhale-struct-struct-nv-blast-family"><span class="std std-ref">NvBlastFamily</span></a>.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_tk_serialization_8h_1ac41dafd2d5ffd5a6131426755c477793.html#exhale-function-nv-blast-ext-tk-serialization-8h-1ac41dafd2d5ffd5a6131426755c477793"><span class="std std-ref">NvBlastExtSerializationSerializeTkAssetIntoBuffer</span></a>: Utility wrapper function to serialize a TkAsset.</p></li>
@@ -384,15 +301,15 @@
 <li><p><a class="reference internal" href="function__nv_blast_ext_tk_serialization_8h_1a3b56ccefec36904aed01309194c012c0.html#exhale-function-nv-blast-ext-tk-serialization-8h-1a3b56ccefec36904aed01309194c012c0"><span class="std std-ref">NvBlastExtTkSerializerLoadSet</span></a>: Load all high-level serializers into the ExtSerialization manager.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa1a7f982c44ff2e230ba37caf03aaa0b.html#exhale-function-nv-blast-ext-damage-shaders-8h-1aa1a7f982c44ff2e230ba37caf03aaa0b"><span class="std std-ref">NvBlastExtTriangleIntersectionGraphShader</span></a>: Triangle Intersection damage for both graph and subgraph shaders.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8cd81f47a4c823b3fa5ed0dee6a114bb.html#exhale-function-nv-blast-ext-damage-shaders-8h-1a8cd81f47a4c823b3fa5ed0dee6a114bb"><span class="std std-ref">NvBlastExtTriangleIntersectionSubgraphShader</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a6d774be820fc1ff7df4d2241df1db220.html#exhale-function-nv-blast-8h-1a6d774be820fc1ff7df4d2241df1db220"><span class="std std-ref">NvBlastFamilyCreateFirstActor</span></a>: Instance the family’s asset into a new, unfractured actor.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a38e8e96d5b62bf19dc3135603ed38240.html#exhale-function-nv-blast-8h-1a38e8e96d5b62bf19dc3135603ed38240"><span class="std std-ref">NvBlastFamilyDeserializeActor</span></a>: Deserialize a single Actor from a buffer into the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a673e56d8a36466d6c636aa264dd0cb15.html#exhale-function-nv-blast-8h-1a673e56d8a36466d6c636aa264dd0cb15"><span class="std std-ref">NvBlastFamilyGetActorByIndex</span></a>: Retrieve the actor associated with the given actor index.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a5881026cff8649115f9a75ef84b5c247.html#exhale-function-nv-blast-8h-1a5881026cff8649115f9a75ef84b5c247"><span class="std std-ref">NvBlastFamilyCreateFirstActor</span></a>: Instance the family’s asset into a new, unfractured actor.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a77fa8cfe94abf6c29526b985b46f3c9b.html#exhale-function-nv-blast-8h-1a77fa8cfe94abf6c29526b985b46f3c9b"><span class="std std-ref">NvBlastFamilyDeserializeActor</span></a>: Deserialize a single Actor from a buffer into the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1adcba284ec223c0acf83bb93fca19200c.html#exhale-function-nv-blast-8h-1adcba284ec223c0acf83bb93fca19200c"><span class="std std-ref">NvBlastFamilyGetActorByIndex</span></a>: Retrieve the actor associated with the given actor index.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a88fd777ba36d4ad6c6d7a7913810c24d.html#exhale-function-nv-blast-8h-1a88fd777ba36d4ad6c6d7a7913810c24d"><span class="std std-ref">NvBlastFamilyGetActorCount</span></a>: Retrieve the number of active actors associated with the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1aeb9144660cd1dbdb4dc23720a3e542de.html#exhale-function-nv-blast-8h-1aeb9144660cd1dbdb4dc23720a3e542de"><span class="std std-ref">NvBlastFamilyGetActors</span></a>: Retrieve the active actors associated with the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1adca8ba4a5449c530cfdb9a39e50215dd.html#exhale-function-nv-blast-8h-1adca8ba4a5449c530cfdb9a39e50215dd"><span class="std std-ref">NvBlastFamilyGetAsset</span></a>: Retrieve the asset of the given family.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a91de461f69f45cb3a14fb5bb171ccc6e.html#exhale-function-nv-blast-8h-1a91de461f69f45cb3a14fb5bb171ccc6e"><span class="std std-ref">NvBlastFamilyGetAsset</span></a>: Retrieve the asset of the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1afa406b4fc35520001060b529ec95e820.html#exhale-function-nv-blast-8h-1afa406b4fc35520001060b529ec95e820"><span class="std std-ref">NvBlastFamilyGetAssetID</span></a>: Retrieve the asset ID of the given family.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1a5c7e938874e2f930ea5b55fedb27b12e.html#exhale-function-nv-blast-8h-1a5c7e938874e2f930ea5b55fedb27b12e"><span class="std std-ref">NvBlastFamilyGetChunkActor</span></a>: Retrieve the actor associated with the given chunk.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_8h_1aecb6ec09b8d34ee733d667cacb1cd83a.html#exhale-function-nv-blast-8h-1aecb6ec09b8d34ee733d667cacb1cd83a"><span class="std std-ref">NvBlastFamilyGetChunkActorIndices</span></a>: Retrieve the actor indices associated with chunks.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1ab7ce37efba821c40bf5b31914a07b5fb.html#exhale-function-nv-blast-8h-1ab7ce37efba821c40bf5b31914a07b5fb"><span class="std std-ref">NvBlastFamilyGetChunkActor</span></a>: Retrieve the actor associated with the given chunk.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_8h_1a1750190d934afc34fbe40f091fe08712.html#exhale-function-nv-blast-8h-1a1750190d934afc34fbe40f091fe08712"><span class="std std-ref">NvBlastFamilyGetChunkActorIndices</span></a>: Retrieve the actor indices associated with chunks.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a15f297534c834b7335747be318303aa7.html#exhale-function-nv-blast-8h-1a15f297534c834b7335747be318303aa7"><span class="std std-ref">NvBlastFamilyGetFormatVersion</span></a>: Retrieve the data format version for the given family.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ac9e06ffe539277ccbdb648c97308fa65.html#exhale-function-nv-blast-8h-1ac9e06ffe539277ccbdb648c97308fa65"><span class="std std-ref">NvBlastFamilyGetMaxActorCount</span></a>: Retrieve the max active actor count family could have.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a730a6ea95065b53b9d9b65bde8cbb336.html#exhale-function-nv-blast-8h-1a730a6ea95065b53b9d9b65bde8cbb336"><span class="std std-ref">NvBlastFamilyGetRequiredScratchForCreateFirstActor</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastFamilyCreateFirstActor.</p></li>
@@ -401,63 +318,63 @@
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a6b27b9cc240bef3481cbfa23f7051060.html#exhale-function-nv-blast-8h-1a6b27b9cc240bef3481cbfa23f7051060"><span class="std std-ref">NvBlastGetAssetMemorySize</span></a>: Calculates the memory requirements for an asset based upon its descriptor.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ae3c5502847a6e55d08153e068b20d0ce.html#exhale-function-nv-blast-8h-1ae3c5502847a6e55d08153e068b20d0ce"><span class="std std-ref">NvBlastGetAssetMemorySizeFromSizeData</span></a>: Calculates the memory requirements for an asset based upon supplied sized data.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a7517e528d4862b5e09853140bd4a2e46.html#exhale-function-nv-blast-8h-1a7517e528d4862b5e09853140bd4a2e46"><span class="std std-ref">NvBlastGetRequiredScratchForCreateAsset</span></a>: Returns the number of bytes of scratch memory that the user must supply to NvBlastCreateAsset, based upon the descriptor that will be passed into that function.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a648a2f8df62f603c042e594b77b8e4df.html#exhale-function-nv-blast-globals-8h-1a648a2f8df62f603c042e594b77b8e4df"><span class="std std-ref">NvBlastGlobalGetAllocatorCallback</span></a>: Retrieve a pointer to the global nvidia::NvAllocatorCallback.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a0dd0fc390dcadcc08a3cd2793ddad250.html#exhale-function-nv-blast-globals-8h-1a0dd0fc390dcadcc08a3cd2793ddad250"><span class="std std-ref">NvBlastGlobalGetErrorCallback</span></a>: Retrieve a pointer to the global nvidia::NvErrorCallback.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1aadca7a1d8bc2f11096f9f39579b68f85.html#exhale-function-nv-blast-globals-8h-1aadca7a1d8bc2f11096f9f39579b68f85"><span class="std std-ref">NvBlastGlobalGetProfilerCallback</span></a>: Retrieve a pointer to the global nvidia::NvProfilerCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a5f8e8d8eaecd2f1de3c864d799630b97.html#exhale-function-nv-blast-globals-8h-1a5f8e8d8eaecd2f1de3c864d799630b97"><span class="std std-ref">NvBlastGlobalGetAllocatorCallback</span></a>: Retrieve a pointer to the global nvidia::NvAllocatorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a777077b851d725884d5fc94a5801d26c.html#exhale-function-nv-blast-globals-8h-1a777077b851d725884d5fc94a5801d26c"><span class="std std-ref">NvBlastGlobalGetErrorCallback</span></a>: Retrieve a pointer to the global nvidia::NvErrorCallback.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a853fbf83579f4b808be92b8de84bc48d.html#exhale-function-nv-blast-globals-8h-1a853fbf83579f4b808be92b8de84bc48d"><span class="std std-ref">NvBlastGlobalGetProfilerCallback</span></a>: Retrieve a pointer to the global nvidia::NvProfilerCallback.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a9e4ff638b30abd8fbf9ebda1b5ae11ef.html#exhale-function-nv-blast-globals-8h-1a9e4ff638b30abd8fbf9ebda1b5ae11ef"><span class="std std-ref">NvBlastGlobalSetAllocatorCallback</span></a>: Set global nvidia::NvAllocatorCallback.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_globals_8h_1af7cd9159106823bbeca1cba3752304a3.html#exhale-function-nv-blast-globals-8h-1af7cd9159106823bbeca1cba3752304a3"><span class="std std-ref">NvBlastGlobalSetErrorCallback</span></a>: Set global nvidia::NvErrorCallback.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a0f2015a1dbb9328d7516fd45bcf10a45.html#exhale-function-nv-blast-globals-8h-1a0f2015a1dbb9328d7516fd45bcf10a45"><span class="std std-ref">NvBlastGlobalSetProfilerCallback</span></a>: Set a custom profiler callback.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a773ddce30d6fdeebf0a770dcc5fc1305.html#exhale-function-nv-blast-8h-1a773ddce30d6fdeebf0a770dcc5fc1305"><span class="std std-ref">NvBlastReorderAssetDescChunks</span></a>: Build and apply chunk reorder map.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1a749f932dc54fa2d3f413bd6fcc1ba6e9.html#exhale-function-nv-blast-8h-1a749f932dc54fa2d3f413bd6fcc1ba6e9"><span class="std std-ref">NvBlastTicksToSeconds</span></a>: Convert a tick value from <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> to seconds.</p></li>
 <li><p><a class="reference internal" href="function__nv_blast_8h_1ab3059b35f2c62b8110d90336f5cecefc.html#exhale-function-nv-blast-8h-1ab3059b35f2c62b8110d90336f5cecefc"><span class="std std-ref">NvBlastTimersReset</span></a>: Resets all values in the given <a class="reference internal" href="struct_nv_blast_timers.html#exhale-struct-struct-nv-blast-timers"><span class="std std-ref">NvBlastTimers</span></a> struct to zero.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1abffad36b5cbe769ac6d119bfb58d3523.html#exhale-function-nv-blast-tk-framework-8h-1abffad36b5cbe769ac6d119bfb58d3523"><span class="std std-ref">NvBlastTkFrameworkCreate</span></a>: Create a new TkFramework.</p></li>
-<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1ac9ef4ab9d817890d7a0f456cc6f07907.html#exhale-function-nv-blast-tk-framework-8h-1ac9ef4ab9d817890d7a0f456cc6f07907"><span class="std std-ref">NvBlastTkFrameworkGet</span></a>: Retrieve a pointer to the global TkFramework singleton (if it exists).</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1ac3cfc3d9e238b8c72cd042e0b1cf3fa3.html#exhale-function-nv-blast-tk-framework-8h-1ac3cfc3d9e238b8c72cd042e0b1cf3fa3"><span class="std std-ref">NvBlastTkFrameworkCreate</span></a>: Create a new TkFramework.</p></li>
+<li><p><a class="reference internal" href="function__nv_blast_tk_framework_8h_1a7211e75d232b5518a4a388f6dddb196f.html#exhale-function-nv-blast-tk-framework-8h-1a7211e75d232b5518a4a388f6dddb196f"><span class="std std-ref">NvBlastTkFrameworkGet</span></a>: Retrieve a pointer to the global TkFramework singleton (if it exists).</p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef.html#exhale-function-nv-c-math-8h-1a1688e60463aa975a84b9b39cd4a34bef"><span class="std std-ref">operator*</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a6753f5de02113c898460719debac36f1.html#exhale-function-nv-c-math-8h-1a6753f5de02113c898460719debac36f1"><span class="std std-ref">operator*</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d.html#exhale-function-nv-c-math-8h-1abc8762e6469df555d6477e68aa8e3f9d"><span class="std std-ref">operator*</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98.html#exhale-function-nv-c-math-8h-1a63e23251d052c92a756bad8e591b3a98"><span class="std std-ref">operator*</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502.html#exhale-function-nv-c-math-8h-1abd56d8b3f515161d33d990bc578b1502"><span class="std std-ref">operator*</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381.html#exhale-function-nv-c-math-8h-1a507b474809ef6f3d5c0bbb3f33af5381"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a5e415ffc6af2c1c9d7872fa90ddff626.html#exhale-function-nv-c-math-8h-1a5e415ffc6af2c1c9d7872fa90ddff626"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1ae71dadb6c73f7cbfa9e962d9d7f64fbb.html#exhale-function-nv-c-math-8h-1ae71dadb6c73f7cbfa9e962d9d7f64fbb"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a83380b68327cdb0690a5b454498496f6.html#exhale-function-nv-c-math-8h-1a83380b68327cdb0690a5b454498496f6"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a62cf197236c23c5c96d1f355c638d988.html#exhale-function-nv-c-math-8h-1a62cf197236c23c5c96d1f355c638d988"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a9372b227d7ebd7103a9f210127f9b7f8.html#exhale-function-nv-c-math-8h-1a9372b227d7ebd7103a9f210127f9b7f8"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a718c04cab1e8ef6251f3aef712cf935a.html#exhale-function-nv-c-math-8h-1a718c04cab1e8ef6251f3aef712cf935a"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a460f35a5b35341bd954c3391b4afacb7.html#exhale-function-nv-c-math-8h-1a460f35a5b35341bd954c3391b4afacb7"><span class="std std-ref">operator*=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3c5d51bca7fdb48c180187675e6a21a5.html#exhale-function-nv-c-math-8h-1a3c5d51bca7fdb48c180187675e6a21a5"><span class="std std-ref">operator*=</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11.html#exhale-function-nv-c-math-8h-1a38631d57cea0f9c9ff55e06982c6bf11"><span class="std std-ref">operator+</span></a>: Some basic operators for NvcVec2 and NvcVec3.</p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130.html#exhale-function-nv-c-math-8h-1ac952738fe58b6ccf375037c9ef914130"><span class="std std-ref">operator+</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1afbf0addc3d96ac7eca9624f7f3e6973f.html#exhale-function-nv-c-math-8h-1afbf0addc3d96ac7eca9624f7f3e6973f"><span class="std std-ref">operator+=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1acbc334922b42a4c4cd4b969d3c543f10.html#exhale-function-nv-c-math-8h-1acbc334922b42a4c4cd4b969d3c543f10"><span class="std std-ref">operator+=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa9ad39d57a2deb016c71e880e9d3d051.html#exhale-function-nv-c-math-8h-1aa9ad39d57a2deb016c71e880e9d3d051"><span class="std std-ref">operator+=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad12c0bd228e8219a8d27368df3089c3d.html#exhale-function-nv-c-math-8h-1ad12c0bd228e8219a8d27368df3089c3d"><span class="std std-ref">operator+=</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d.html#exhale-function-nv-c-math-8h-1a13a8c7f04e60b858d494e21582044b5d"><span class="std std-ref">operator-</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300.html#exhale-function-nv-c-math-8h-1ad5d890cf7acb13499f0c1eeabc39c300"><span class="std std-ref">operator-</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1afda8027df3884875fbe538913053d73d.html#exhale-function-nv-c-math-8h-1afda8027df3884875fbe538913053d73d"><span class="std std-ref">operator-</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f.html#exhale-function-nv-c-math-8h-1a928a677f0333c676c8050d1a1c7b689f"><span class="std std-ref">operator-</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1af14298a4833923b3252a4ecab7411f18.html#exhale-function-nv-c-math-8h-1af14298a4833923b3252a4ecab7411f18"><span class="std std-ref">operator-=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a91aa1ef14d69069a2874afdaf95e362b.html#exhale-function-nv-c-math-8h-1a91aa1ef14d69069a2874afdaf95e362b"><span class="std std-ref">operator-=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2c02df2375152637ad447d375a00bb99.html#exhale-function-nv-c-math-8h-1a2c02df2375152637ad447d375a00bb99"><span class="std std-ref">operator-=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2824966271ddb90457f96e298cf8b461.html#exhale-function-nv-c-math-8h-1a2824966271ddb90457f96e298cf8b461"><span class="std std-ref">operator-=</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d.html#exhale-function-nv-c-math-8h-1a52325d979f123f131fa8de8ba7a1919d"><span class="std std-ref">operator/</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4.html#exhale-function-nv-c-math-8h-1aa8e8475ea48862fbf67c826a408cd0d4"><span class="std std-ref">operator/</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521.html#exhale-function-nv-c-math-8h-1a6df191085c33b1ace13a2113196d6521"><span class="std std-ref">operator/</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b.html#exhale-function-nv-c-math-8h-1a6fe2490b55b057497b07c364ae927c2b"><span class="std std-ref">operator/</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e.html#exhale-function-nv-c-math-8h-1a3611b94ab71c272ff7bec5230474602e"><span class="std std-ref">operator/</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc.html#exhale-function-nv-c-math-8h-1a8ac7d4f0c1cacd24219f53b16b2f18dc"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aee9d40098a20ba995017f53ba597a20f.html#exhale-function-nv-c-math-8h-1aee9d40098a20ba995017f53ba597a20f"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a76026c3838607d3be986f10ffe954bfc.html#exhale-function-nv-c-math-8h-1a76026c3838607d3be986f10ffe954bfc"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a1b079a619644b63364deec2aac2e4b63.html#exhale-function-nv-c-math-8h-1a1b079a619644b63364deec2aac2e4b63"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aedeea26cfc242b2099b3ba4c20ae78e9.html#exhale-function-nv-c-math-8h-1aedeea26cfc242b2099b3ba4c20ae78e9"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a76d66493fdfdd7e742497454c75b56e4.html#exhale-function-nv-c-math-8h-1a76d66493fdfdd7e742497454c75b56e4"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a4376e8ba6271f4b8516234f661ef0af6.html#exhale-function-nv-c-math-8h-1a4376e8ba6271f4b8516234f661ef0af6"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1acaffd0a4ab89df47cf5b5ac302af1c02.html#exhale-function-nv-c-math-8h-1acaffd0a4ab89df47cf5b5ac302af1c02"><span class="std std-ref">operator/=</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a72f041e5ea8d3ca6447c89b956050ef4.html#exhale-function-nv-c-math-8h-1a72f041e5ea8d3ca6447c89b956050ef4"><span class="std std-ref">operator/=</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60.html#exhale-function-nv-c-math-8h-1a68dfaa9aee29c4c44472edb04528eb60"><span class="std std-ref">operator^</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7.html#exhale-function-nv-c-math-8h-1aa12da244dd84d18bb1516cd65654f0c7"><span class="std std-ref">operator|</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031.html#exhale-function-nv-c-math-8h-1aa24e75f0f0f976ebe5333b3e70dc2031"><span class="std std-ref">operator|</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="variables">
-<h1>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="variables">
+<h1>Variables<a class="headerlink" href="#variables" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138.html#exhale-variable-nv-blast-ext-authoring-types-8h-1ad2d1cde5813011ad60c5a70903063138"><span class="std std-ref">Nv::Blast::kMaterialInteriorId</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea.html#exhale-variable-nv-blast-ext-authoring-types-8h-1aef4edf41a556a4a3a47621a9335b10ea"><span class="std std-ref">Nv::Blast::kNotValidVertexIndex</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4.html#exhale-variable-nv-blast-ext-authoring-types-8h-1adbf9e9203bf8bee845964d16b181bec4"><span class="std std-ref">Nv::Blast::kSmoothingGroupInteriorId</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7.html#exhale-variable-nv-blast-types-8h-1a1d6a0f220e269f62129e3ac6f13f75e7"><span class="std std-ref">Nv::Blast::kUnbreakableLimit</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="defines">
-<h1>Defines<a class="headerlink" href="#defines" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="defines">
+<h1>Defines<a class="headerlink" href="#defines" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="define__nv_blast_ext_authoring_8h_1a8cce5fb79e2923fd9f846edec21c226c.html#exhale-define-nv-blast-ext-authoring-8h-1a8cce5fb79e2923fd9f846edec21c226c"><span class="std std-ref">kBBoxBasedAcceleratorDefaultResolution</span></a></p></li>
 <li><p><a class="reference internal" href="define__nv_blast_globals_8h_1a5d66f893822bf7f14f90e2b5480c6741.html#exhale-define-nv-blast-globals-8h-1a5d66f893822bf7f14f90e2b5480c6741"><span class="std std-ref">NVBLAST_ALLOC</span></a>: Alloc/Free macros that use global nvidia::NvAllocatorCallback.</p></li>
@@ -479,54 +396,45 @@
 <li><p><a class="reference internal" href="define__nv_blast_8h_1a72f7ca021d885848e5ca7e09f708f18c.html#exhale-define-nv-blast-8h-1a72f7ca021d885848e5ca7e09f708f18c"><span class="std std-ref">NvBlastActorIsBoundToWorld</span></a></p></li>
 <li><p><a class="reference internal" href="define__nv_blast_ext_asset_utils_8h_1a5bd0bc634ba2a0eb03aa8ced8412947c.html#exhale-define-nv-blast-ext-asset-utils-8h-1a5bd0bc634ba2a0eb03aa8ced8412947c"><span class="std std-ref">NvBlastExtAssetUtilsAddWorldBonds</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="typedefs">
-<h1>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="typedefs">
+<h1>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html#exhale-typedef-nv-blast-ext-authoring-pattern-generator-8h-1a4e5bb14b7dd9af36721e2510c8cf4a88"><span class="std std-ref">Nv::Blast::RNG_CALLBACK</span></a></p></li>
 <li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1a82519adf79b20af687b7c8734b19e87a.html#exhale-typedef-nv-blast-types-8h-1a82519adf79b20af687b7c8734b19e87a"><span class="std std-ref">NvBlastGraphShaderFunction</span></a>: Damage shader for actors with more then one node in support graph.</p></li>
 <li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1aca9b64ae20263de0d18e0f58cb51b1ab.html#exhale-typedef-nv-blast-types-8h-1aca9b64ae20263de0d18e0f58cb51b1ab"><span class="std std-ref">NvBlastLog</span></a>: Function pointer type for logging.</p></li>
 <li><p><a class="reference internal" href="typedef__nv_blast_types_8h_1a84db34681482d19f9e58ce89adc7a918.html#exhale-typedef-nv-blast-types-8h-1a84db34681482d19f9e58ce89adc7a918"><span class="std std-ref">NvBlastSubgraphShaderFunction</span></a>: Damage shader for actors with single chunk.</p></li>
 </ul>
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

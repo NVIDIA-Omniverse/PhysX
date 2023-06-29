@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleTankDriveDifferentialParams &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleTankDriveDifferentialParams</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicletankdrivedifferentialparams">
+<span id="exhale-struct-struct-px-vehicle-tank-drive-differential-params"></span><h1>PxVehicleTankDriveDifferentialParams<a class="headerlink" href="#pxvehicletankdrivedifferentialparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_drivetrain_PxVehicleDrivetrainParams.h.html#file-include-vehicle2-drivetrain-pxvehicledrivetrainparams-h"><span class="std std-ref">include/vehicle2/drivetrain/PxVehicleDrivetrainParams.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxVehicleMultiWheelDriveDifferentialParams</span></code> (<a class="reference internal" href="struct_px_vehicle_multi_wheel_drive_differential_params.html#exhale-struct-struct-px-vehicle-multi-wheel-drive-differential-params"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams</span></a>)</p></li>
+</ul>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv436PxVehicleTankDriveDifferentialParams">
+<span id="_CPPv336PxVehicleTankDriveDifferentialParams"></span><span id="_CPPv236PxVehicleTankDriveDifferentialParams"></span><span id="PxVehicleTankDriveDifferentialParams"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialParams</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_multi_wheel_drive_differential_params.html#_CPPv442PxVehicleMultiWheelDriveDifferentialParams" title="PxVehicleMultiWheelDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleMultiWheelDriveDifferentialParams</span></span></a><a class="headerlink" href="#_CPPv436PxVehicleTankDriveDifferentialParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A description of a tank differential. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The wheels on a tank may be connected to the differential or not connected to the differential. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The wheels on a tank track may be connected to a tank track or not connected to a tank track. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to the differential but not to a tank track receive the torque split specified by the corresponding elements of <a class="reference internal" href="#struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams::torqueRatios</span></a>[]. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to a tank track but not to the differential receive no torque from the engine. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to a tank track and to the differential receive the torque split specified by the corresponding elements of <a class="reference internal" href="#struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"><span class="std std-ref">PxVehicleMultiWheelDriveDifferentialParams::torqueRatios</span></a>[] multiplied by the corresponding thrust controller value. If the thrust controller has a negative value, the wheels will receive a torque that is negative with respect to the gearing ratio. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The wheels in each tank track have a constraint applied to them to enforce the rule that they all have the same longitudinal speed at the contact point between the wheel and the tank track. </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams12setToDefaultEv">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams12setToDefaultEv"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams12setToDefaultEv"></span><span id="PxVehicleTankDriveDifferentialParams::setToDefault"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1adaadf05e1186a0430d48d9be7f4ce8ff"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams12addTankTrackEK5PxU32PCK5PxU32K5PxU32">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams12addTankTrackEK5PxU32PCK5PxU32K5PxU32"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams12addTankTrackEK5PxU32PCK5PxU32K5PxU32"></span><span id="PxVehicleTankDriveDifferentialParams::addTankTrack__PxU32C.PxU32CPC.PxU32C"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1ae8d01361153850f72792af9156776c6b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addTankTrack</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbWheelsInTrackToAdd</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wheelIdsInTrackToAdd</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">thrustControllerIndex</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams12addTankTrackEK5PxU32PCK5PxU32K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add a tank track by specifying the number of wheels along the track track and an array of wheel ids specifying each wheel in the tank track. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbWheelsInTrackToAdd</strong> – <strong>[in]</strong> is the number of wheels in the track to be added. </p></li>
+<li><p><strong>wheelIdsInTrackToAdd</strong> – <strong>[in]</strong> is an array of wheel ids specifying all the wheels in the track to be added. </p></li>
+<li><p><strong>thrustControllerIndex</strong> – <strong>[in]</strong> specifies the index of the thrust controller that will be used to control the tank track. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams11getNbTracksEv">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams11getNbTracksEv"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams11getNbTracksEv"></span><span id="PxVehicleTankDriveDifferentialParams::getNbTracksC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a1d9bbb762f66483208445afa85dbc31c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbTracks</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams11getNbTracksEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of tracks. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_tank_drive_differential_params_1a4698a78cefef09673ac623617c2812c7"><span class="std std-ref">getNbWheelsInTrack()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of tracks. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams18getNbWheelsInTrackEK5PxU32">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams18getNbWheelsInTrackEK5PxU32"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams18getNbWheelsInTrackEK5PxU32"></span><span id="PxVehicleTankDriveDifferentialParams::getNbWheelsInTrack__PxU32CC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a4698a78cefef09673ac623617c2812c7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbWheelsInTrack</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams18getNbWheelsInTrackEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the number of wheels in the ith track. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_tank_drive_differential_params_1af98bd05708709692f6ed6da892f99509"><span class="std std-ref">getWheelInTrack()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> specifies the track to be queried for its wheel count. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The number of wheels in the specified track. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams16getWheelsInTrackEK5PxU32">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams16getWheelsInTrackEK5PxU32"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams16getWheelsInTrackEK5PxU32"></span><span id="PxVehicleTankDriveDifferentialParams::getWheelsInTrack__PxU32CC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1abd733f58e703cbe56750c84e7f15da5b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getWheelsInTrack</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams16getWheelsInTrackEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the array of all wheels in the ith track. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> specifies the track to be queried for its wheels. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The array of wheels in the specified track. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams15getWheelInTrackEK5PxU32K5PxU32">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams15getWheelInTrackEK5PxU32K5PxU32"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams15getWheelInTrackEK5PxU32K5PxU32"></span><span id="PxVehicleTankDriveDifferentialParams::getWheelInTrack__PxU32C.PxU32CC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1af98bd05708709692f6ed6da892f99509"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWheelInTrack</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">j</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams15getWheelInTrackEK5PxU32K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the wheel id of the jth wheel in the ith track. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#struct_px_vehicle_tank_drive_differential_params_1a4698a78cefef09673ac623617c2812c7"><span class="std std-ref">getNbWheelsInTrack()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>j</strong> – <strong>[in]</strong> specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified track. </p></li>
+<li><p><strong>i</strong> – <strong>[in]</strong> specifies the track to be queried. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The wheel id of the jth wheel in the ith track. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams24getThrustControllerIndexEK5PxU32">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams24getThrustControllerIndexEK5PxU32"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams24getThrustControllerIndexEK5PxU32"></span><span id="PxVehicleTankDriveDifferentialParams::getThrustControllerIndex__PxU32CC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a2dd49670e3a91a80351100db47fb21de"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getThrustControllerIndex</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams24getThrustControllerIndexEK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the index of the thrust controller that will control a specified track. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>i</strong> – <strong>[in]</strong> specifies the track to be queried for its thrust controller index </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The index of the thrust controller that will control the ith track. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleTankDriveDifferentialParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a1eef42b4d5ee0a89467c7f1da87599fb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv436PxVehicleTankDriveDifferentialParams" title="PxVehicleTankDriveDifferentialParams"><span class="n"><span class="pre">PxVehicleTankDriveDifferentialParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleTankDriveDifferentialParams7isValidERK24PxVehicleAxleDescription">
+<span id="_CPPv3NK36PxVehicleTankDriveDifferentialParams7isValidERK24PxVehicleAxleDescription"></span><span id="_CPPv2NK36PxVehicleTankDriveDifferentialParams7isValidERK24PxVehicleAxleDescription"></span><span id="PxVehicleTankDriveDifferentialParams::isValid__PxVehicleAxleDescriptionCRC"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1ad4177a78c2becb4706b9a39d1c579e0d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleTankDriveDifferentialParams7isValidERK24PxVehicleAxleDescription" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams8nbTracksE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams8nbTracksE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams8nbTracksE"></span><span id="PxVehicleTankDriveDifferentialParams::nbTracks__PxU32"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a23958ffdb634a1fe239809a4ca23fcb0"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbTracks</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams8nbTracksE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of tracks. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams16thrustIdPerTrackE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams16thrustIdPerTrackE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams16thrustIdPerTrackE"></span><span id="PxVehicleTankDriveDifferentialParams::thrustIdPerTrack__PxU32A"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1abd766e7c11aeb0d7e2b0d12a2eee40e5"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">thrustIdPerTrack</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams16thrustIdPerTrackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The id of the thrust that will control the track. Must have value 0 or 1. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams16nbWheelsPerTrackE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams16nbWheelsPerTrackE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams16nbWheelsPerTrackE"></span><span id="PxVehicleTankDriveDifferentialParams::nbWheelsPerTrack__PxU32A"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a61dd354118436215ae2ed07cd5dc4f35"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheelsPerTrack</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams16nbWheelsPerTrackE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels in each track. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams15trackToWheelIdsE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams15trackToWheelIdsE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams15trackToWheelIdsE"></span><span id="PxVehicleTankDriveDifferentialParams::trackToWheelIds__PxU32A"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a9f1c7aa3d9e0b86019fc4fb787e8d0ec"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trackToWheelIds</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams15trackToWheelIdsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of wheel ids for the ith tank track begins at wheelIdsInTrackOrder[trackToWheelIds[i]]. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams20wheelIdsInTrackOrderE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams20wheelIdsInTrackOrderE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams20wheelIdsInTrackOrderE"></span><span id="PxVehicleTankDriveDifferentialParams::wheelIdsInTrackOrder__PxU32A"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1afda4df9993224aa8e4286700dbf34dcb"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wheelIdsInTrackOrder</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams20wheelIdsInTrackOrderE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The list of all wheel ids in all tracks. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams16nbWheelsInTracksE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams16nbWheelsInTracksE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams16nbWheelsInTracksE"></span><span id="PxVehicleTankDriveDifferentialParams::nbWheelsInTracks__PxU32"></span><span class="target" id="struct_px_vehicle_tank_drive_differential_params_1a513b88bb31d5af17781188145f1fe5c3"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbWheelsInTracks</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams16nbWheelsInTracksE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of wheels in all tracks. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams12torqueRatiosE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams12torqueRatiosE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams12torqueRatiosE"></span><span id="PxVehicleTankDriveDifferentialParams::torqueRatios__PxRealA"></span><span class="target" id="struct_px_vehicle_multi_wheel_drive_differential_params_1a6297d48dac4d4d28dcbfd6c009d064d1"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">torqueRatios</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams12torqueRatiosE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>torqueRatios describes the fraction of torque delivered to each wheel through the differential. </p>
+<p><strong>Range:</strong> [1, -1]</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels not connected to the differential must receive zero torque. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to the differential may receive a non-zero torque. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The sum of the absolute of the ratios of all wheels must equal to 1.0. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A negative torque ratio simulates a wheel with negative gearing applied.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleTankDriveDifferentialParams19aveWheelSpeedRatiosE">
+<span id="_CPPv3N36PxVehicleTankDriveDifferentialParams19aveWheelSpeedRatiosE"></span><span id="_CPPv2N36PxVehicleTankDriveDifferentialParams19aveWheelSpeedRatiosE"></span><span id="PxVehicleTankDriveDifferentialParams::aveWheelSpeedRatios__PxRealA"></span><span class="target" id="struct_px_vehicle_multi_wheel_drive_differential_params_1af0197f643a732b9cf1e09a52c9dd56f6"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">aveWheelSpeedRatios</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv415PxVehicleLimits" title="PxVehicleLimits"><span class="n"><span class="pre">PxVehicleLimits</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_vehicle_limits.html#_CPPv4N15PxVehicleLimits4Enum14eMAX_NB_WHEELSE" title="PxVehicleLimits::eMAX_NB_WHEELS"><span class="n"><span class="pre">eMAX_NB_WHEELS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N36PxVehicleTankDriveDifferentialParams19aveWheelSpeedRatiosE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>aveWheelSpeedRatios describes the contribution of each wheel to the average wheel speed measured at the clutch. </p>
+<p><strong>Range:</strong> [0, 1]</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels not connected to the differential do not contribute to the average wheel speed measured at the clutch. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Wheels connected to the differential may delivere a non-zero contribution to the average wheel speed measured at the clutch. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The sum of all ratios of all wheels must equal to 1.0.</p>
+</div>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

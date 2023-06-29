@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>NvBlastSupportGraph &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>NvBlastSupportGraph &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,75 +64,38 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>NvBlastSupportGraph</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>NvBlastSupportGraph</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nvblastsupportgraph">
-<span id="exhale-struct-struct-nv-blast-support-graph"></span><h1>NvBlastSupportGraph<a class="headerlink" href="#nvblastsupportgraph" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nvblastsupportgraph">
+<span id="exhale-struct-struct-nv-blast-support-graph"></span><h1>NvBlastSupportGraph<a class="headerlink" href="#nvblastsupportgraph" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
 <dl class="cpp struct">
-<dt id="_CPPv419NvBlastSupportGraph">
-<span id="_CPPv319NvBlastSupportGraph"></span><span id="_CPPv219NvBlastSupportGraph"></span><span id="NvBlastSupportGraph"></span><span class="target" id="struct_nv_blast_support_graph"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastSupportGraph</span></code><a class="headerlink" href="#_CPPv419NvBlastSupportGraph" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv419NvBlastSupportGraph">
+<span id="_CPPv319NvBlastSupportGraph"></span><span id="_CPPv219NvBlastSupportGraph"></span><span id="NvBlastSupportGraph"></span><span class="target" id="struct_nv_blast_support_graph"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastSupportGraph</span></span></span><a class="headerlink" href="#_CPPv419NvBlastSupportGraph" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Describes the connectivity between support chunks via bonds. </p>
 <p>Vertices in the support graph are termed “nodes,” and represent particular chunks (<a class="reference internal" href="struct_nv_blast_chunk.html#struct_nv_blast_chunk"><span class="std std-ref">NvBlastChunk</span></a>) in an <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>. The indexing for nodes is not the same as that for chunks. Only some chunks are represented by nodes in the graph, and these chunks are called “support chunks.”</p>
 <p>Adjacent node indices and adjacent bond indices are stored for each node, and therefore each bond is represented twice in this graph, going from node[i] -&gt; node[j] and from node[j] -&gt; node[i]. Therefore the size of the adjacentNodeIndices and adjacentBondIndices arrays are twice the number of bonds stored in the corresponding <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>.</p>
@@ -188,39 +105,38 @@
 <p>For a graph node with index i, the corresponding asset chunk index is found using graph.chunkIndices[i]. The reverse mapping (obtaining a graph node index from an asset chunk index) can be done using the <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">NvBlastAssetGetChunkToGraphNodeMap</span><span class="p">(</span><span class="n">asset</span><span class="p">,</span><span class="w"> </span><span class="n">logFn</span><span class="p">)</span><span class="w"></span>
 </pre></div>
 </div>
-</p>
-<p>function. See the documentation for its use. The returned “node index” for a non-support chunk is the invalid value 0xFFFFFFFF. </p>
+ function. See the documentation for its use. The returned “node index” for a non-support chunk is the invalid value 0xFFFFFFFF. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N19NvBlastSupportGraph9nodeCountE">
-<span id="_CPPv3N19NvBlastSupportGraph9nodeCountE"></span><span id="_CPPv2N19NvBlastSupportGraph9nodeCountE"></span><span id="NvBlastSupportGraph::nodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_support_graph_1aac2f6bdd02cc6ed2b30af8f3099d072f"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">nodeCount</span></code><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph9nodeCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N19NvBlastSupportGraph9nodeCountE">
+<span id="_CPPv3N19NvBlastSupportGraph9nodeCountE"></span><span id="_CPPv2N19NvBlastSupportGraph9nodeCountE"></span><span id="NvBlastSupportGraph::nodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_support_graph_1aac2f6bdd02cc6ed2b30af8f3099d072f"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nodeCount</span></span></span><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph9nodeCountE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Total number of nodes in the support graph. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N19NvBlastSupportGraph12chunkIndicesE">
-<span id="_CPPv3N19NvBlastSupportGraph12chunkIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph12chunkIndicesE"></span><span id="NvBlastSupportGraph::chunkIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1a6d9d5cbbbc94137fdec50d7b7a20e307"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">chunkIndices</span></code><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph12chunkIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N19NvBlastSupportGraph12chunkIndicesE">
+<span id="_CPPv3N19NvBlastSupportGraph12chunkIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph12chunkIndicesE"></span><span id="NvBlastSupportGraph::chunkIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1a6d9d5cbbbc94137fdec50d7b7a20e307"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">chunkIndices</span></span></span><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph12chunkIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Indices of chunks represented by the nodes, an array of size nodeCount. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N19NvBlastSupportGraph18adjacencyPartitionE">
-<span id="_CPPv3N19NvBlastSupportGraph18adjacencyPartitionE"></span><span id="_CPPv2N19NvBlastSupportGraph18adjacencyPartitionE"></span><span id="NvBlastSupportGraph::adjacencyPartition__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1aa1f5c4dc460ae44650e955b3ef1f7d57"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacencyPartition</span></code><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph18adjacencyPartitionE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N19NvBlastSupportGraph18adjacencyPartitionE">
+<span id="_CPPv3N19NvBlastSupportGraph18adjacencyPartitionE"></span><span id="_CPPv2N19NvBlastSupportGraph18adjacencyPartitionE"></span><span id="NvBlastSupportGraph::adjacencyPartition__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1aa1f5c4dc460ae44650e955b3ef1f7d57"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacencyPartition</span></span></span><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph18adjacencyPartitionE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Partitions both the adjacentNodeIndices and the adjacentBondIndices arrays into subsets corresponding to each node. </p>
 <p>The size of this array is nodeCount+1. For 0 &lt;= i &lt; nodeCount, adjacencyPartition[i] is the index of the first element in adjacentNodeIndices (or adjacentBondIndices) for nodes adjacent to the node with index i. adjacencyPartition[nodeCount] is the size of the adjacentNodeIndices and adjacentBondIndices arrays. This allows one to easily count the number of nodes adjacent to a node with index i, using adjacencyPartition[i+1] - adjacencyPartition[i]. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N19NvBlastSupportGraph19adjacentNodeIndicesE">
-<span id="_CPPv3N19NvBlastSupportGraph19adjacentNodeIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph19adjacentNodeIndicesE"></span><span id="NvBlastSupportGraph::adjacentNodeIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1aa7c1f66e9cd717b941272e739aed2931"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacentNodeIndices</span></code><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph19adjacentNodeIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N19NvBlastSupportGraph19adjacentNodeIndicesE">
+<span id="_CPPv3N19NvBlastSupportGraph19adjacentNodeIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph19adjacentNodeIndicesE"></span><span id="NvBlastSupportGraph::adjacentNodeIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1aa7c1f66e9cd717b941272e739aed2931"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacentNodeIndices</span></span></span><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph19adjacentNodeIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Array composed of subarrays holding the indices of nodes adjacent to a given node. </p>
 <p>The subarrays may be accessed through the adjacencyPartition array. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N19NvBlastSupportGraph19adjacentBondIndicesE">
-<span id="_CPPv3N19NvBlastSupportGraph19adjacentBondIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph19adjacentBondIndicesE"></span><span id="NvBlastSupportGraph::adjacentBondIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1ae659d7f25dd6ae780f8cf14d7bf3925a"></span><span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacentBondIndices</span></code><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph19adjacentBondIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N19NvBlastSupportGraph19adjacentBondIndicesE">
+<span id="_CPPv3N19NvBlastSupportGraph19adjacentBondIndicesE"></span><span id="_CPPv2N19NvBlastSupportGraph19adjacentBondIndicesE"></span><span id="NvBlastSupportGraph::adjacentBondIndices__uint32_tP"></span><span class="target" id="struct_nv_blast_support_graph_1ae659d7f25dd6ae780f8cf14d7bf3925a"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacentBondIndices</span></span></span><a class="headerlink" href="#_CPPv4N19NvBlastSupportGraph19adjacentBondIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Array composed of subarrays holding the indices of bonds (<a class="reference internal" href="struct_nv_blast_bond.html#struct_nv_blast_bond"><span class="std std-ref">NvBlastBond</span></a>) for a given node. </p>
 <p>The subarrays may be accessed through the adjacencyPartition array. </p>
 </dd></dl>
@@ -228,45 +144,36 @@
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

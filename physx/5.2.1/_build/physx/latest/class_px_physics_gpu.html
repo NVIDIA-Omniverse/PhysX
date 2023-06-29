@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxPhysicsGpu &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxPhysicsGpu</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxphysicsgpu">
+<span id="exhale-class-class-px-physics-gpu"></span><h1>PxPhysicsGpu<a class="headerlink" href="#pxphysicsgpu" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_gpu_PxPhysicsGpu.h.html#file-include-gpu-pxphysicsgpu-h"><span class="std std-ref">include/gpu/PxPhysicsGpu.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxPhysicsGpu">
+<span id="_CPPv312PxPhysicsGpu"></span><span id="_CPPv212PxPhysicsGpu"></span><span id="PxPhysicsGpu"></span><span class="target" id="class_px_physics_gpu"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPhysicsGpu</span></span></span><a class="headerlink" href="#_CPPv412PxPhysicsGpu" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu34createDenseGridIsosurfaceExtractorEP20PxCudaContextManagerRK9PxBounds36PxRealRK18PxIsosurfaceParams5PxU325PxU325PxU32">
+<span id="_CPPv3N12PxPhysicsGpu34createDenseGridIsosurfaceExtractorEP20PxCudaContextManagerRK9PxBounds36PxRealRK18PxIsosurfaceParams5PxU325PxU325PxU32"></span><span id="_CPPv2N12PxPhysicsGpu34createDenseGridIsosurfaceExtractorEP20PxCudaContextManagerRK9PxBounds36PxRealRK18PxIsosurfaceParams5PxU325PxU325PxU32"></span><span id="PxPhysicsGpu::createDenseGridIsosurfaceExtractor__PxCudaContextManagerP.PxBounds3CR.PxReal.PxIsosurfaceParamsCR.PxU32.PxU32.PxU32"></span><span class="target" id="class_px_physics_gpu_1a0b7b0d20de5696b6eddab08896b1d55d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_isosurface_extractor.html#_CPPv421PxIsosurfaceExtractor" title="PxIsosurfaceExtractor"><span class="n"><span class="pre">PxIsosurfaceExtractor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createDenseGridIsosurfaceExtractor</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">worldBounds</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">cellSize</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_isosurface_params.html#_CPPv418PxIsosurfaceParams" title="PxIsosurfaceParams"><span class="n"><span class="pre">PxIsosurfaceParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">isosurfaceParams</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumVertices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">512</span></span><span class="w"> </span><span class="o"><span class="pre">*</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumTriangles</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span><span class="w"> </span><span class="o"><span class="pre">*</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu34createDenseGridIsosurfaceExtractorEP20PxCudaContextManagerRK9PxBounds36PxRealRK18PxIsosurfaceParams5PxU325PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an isosurface extractor operating on a dense grid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>worldBounds</strong> – <strong>[in]</strong> The bounds of the internally used dense grid. The isosurface can only be generated inside those bounds. </p></li>
+<li><p><strong>cellSize</strong> – <strong>[in]</strong> The size of a single grid cell </p></li>
+<li><p><strong>isosurfaceParams</strong> – <strong>[in]</strong> The isosurface parameters to control the isolevel etc. </p></li>
+<li><p><strong>maxNumParticles</strong> – <strong>[in]</strong> The maximal number of particles that can be processed </p></li>
+<li><p><strong>maxNumVertices</strong> – <strong>[in]</strong> The maximal number of vertices the output buffer can hold </p></li>
+<li><p><strong>maxNumTriangles</strong> – <strong>[in]</strong> The maximal number of triangles the output buffer can hold </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu35createSparseGridIsosurfaceExtractorEP20PxCudaContextManagerRK18PxSparseGridParamsRK18PxIsosurfaceParams5PxU325PxU325PxU32">
+<span id="_CPPv3N12PxPhysicsGpu35createSparseGridIsosurfaceExtractorEP20PxCudaContextManagerRK18PxSparseGridParamsRK18PxIsosurfaceParams5PxU325PxU325PxU32"></span><span id="_CPPv2N12PxPhysicsGpu35createSparseGridIsosurfaceExtractorEP20PxCudaContextManagerRK18PxSparseGridParamsRK18PxIsosurfaceParams5PxU325PxU325PxU32"></span><span id="PxPhysicsGpu::createSparseGridIsosurfaceExtractor__PxCudaContextManagerP.PxSparseGridParamsCR.PxIsosurfaceParamsCR.PxU32.PxU32.PxU32"></span><span class="target" id="class_px_physics_gpu_1a2ccd2bdeddd2fd1041d44eb63fc1a4d5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html#_CPPv431PxSparseGridIsosurfaceExtractor" title="PxSparseGridIsosurfaceExtractor"><span class="n"><span class="pre">PxSparseGridIsosurfaceExtractor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSparseGridIsosurfaceExtractor</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_sparse_grid_params.html#_CPPv418PxSparseGridParams" title="PxSparseGridParams"><span class="n"><span class="pre">PxSparseGridParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sparseGridParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_isosurface_params.html#_CPPv418PxIsosurfaceParams" title="PxIsosurfaceParams"><span class="n"><span class="pre">PxIsosurfaceParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">isosurfaceParams</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumVertices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">512</span></span><span class="w"> </span><span class="o"><span class="pre">*</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumTriangles</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span><span class="w"> </span><span class="o"><span class="pre">*</span></span><span class="w"> </span><span class="m"><span class="pre">1024</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu35createSparseGridIsosurfaceExtractorEP20PxCudaContextManagerRK18PxSparseGridParamsRK18PxIsosurfaceParams5PxU325PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an isosurface extractor operating on a sparse grid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>sparseGridParams</strong> – <strong>[in]</strong> The sparse grid parameters defining the cell size etc. </p></li>
+<li><p><strong>isosurfaceParams</strong> – <strong>[in]</strong> The isosurface parameters to control the isolevel etc. </p></li>
+<li><p><strong>maxNumParticles</strong> – <strong>[in]</strong> The maximal number of particles that can be processed </p></li>
+<li><p><strong>maxNumVertices</strong> – <strong>[in]</strong> The maximal number of vertices the output buffer can hold </p></li>
+<li><p><strong>maxNumTriangles</strong> – <strong>[in]</strong> The maximal number of triangles the output buffer can hold </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu25createAnisotropyGeneratorEP20PxCudaContextManager5PxU326PxReal6PxReal6PxReal">
+<span id="_CPPv3N12PxPhysicsGpu25createAnisotropyGeneratorEP20PxCudaContextManager5PxU326PxReal6PxReal6PxReal"></span><span id="_CPPv2N12PxPhysicsGpu25createAnisotropyGeneratorEP20PxCudaContextManager5PxU326PxReal6PxReal6PxReal"></span><span id="PxPhysicsGpu::createAnisotropyGenerator__PxCudaContextManagerP.PxU32.PxReal.PxReal.PxReal"></span><span class="target" id="class_px_physics_gpu_1a55edcbe0e3a664868b072d5296527089"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_anisotropy_generator.html#_CPPv421PxAnisotropyGenerator" title="PxAnisotropyGenerator"><span class="n"><span class="pre">PxAnisotropyGenerator</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createAnisotropyGenerator</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">anisotropyScale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minAnisotropy</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.1f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxAnisotropy</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">2.0f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu25createAnisotropyGeneratorEP20PxCudaContextManager5PxU326PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an anisotropy generator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>maxNumParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>anisotropyScale</strong> – <strong>[in]</strong> A uniform scaling factor to increase or decrease anisotropy </p></li>
+<li><p><strong>minAnisotropy</strong> – <strong>[in]</strong> The minimum scaling factor in any dimension that anisotropy can have </p></li>
+<li><p><strong>maxAnisotropy</strong> – <strong>[in]</strong> The maximum scaling factor in any dimension that anisotropy can have </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu31createSmoothedPositionGeneratorEP20PxCudaContextManager5PxU326PxReal">
+<span id="_CPPv3N12PxPhysicsGpu31createSmoothedPositionGeneratorEP20PxCudaContextManager5PxU326PxReal"></span><span id="_CPPv2N12PxPhysicsGpu31createSmoothedPositionGeneratorEP20PxCudaContextManager5PxU326PxReal"></span><span id="PxPhysicsGpu::createSmoothedPositionGenerator__PxCudaContextManagerP.PxU32.PxReal"></span><span class="target" id="class_px_physics_gpu_1af7c23a006ec1059f109a999a92115282"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_smoothed_position_generator.html#_CPPv427PxSmoothedPositionGenerator" title="PxSmoothedPositionGenerator"><span class="n"><span class="pre">PxSmoothedPositionGenerator</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSmoothedPositionGenerator</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">smoothingStrength</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.5f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu31createSmoothedPositionGeneratorEP20PxCudaContextManager5PxU326PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a smoothed position generator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>maxNumParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>smoothingStrength</strong> – <strong>[in]</strong> Controls the strength of the smoothing effect </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu34createParticleNeighborhoodProviderEP20PxCudaContextManagerK5PxU32K6PxRealK5PxU32">
+<span id="_CPPv3N12PxPhysicsGpu34createParticleNeighborhoodProviderEP20PxCudaContextManagerK5PxU32K6PxRealK5PxU32"></span><span id="_CPPv2N12PxPhysicsGpu34createParticleNeighborhoodProviderEP20PxCudaContextManagerK5PxU32K6PxRealK5PxU32"></span><span id="PxPhysicsGpu::createParticleNeighborhoodProvider__PxCudaContextManagerP.PxU32C.PxRealC.PxU32C"></span><span class="target" id="class_px_physics_gpu_1aaedfcd165724ba8c7d0b65f9361e1a8f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_particle_neighborhood_provider.html#_CPPv430PxParticleNeighborhoodProvider" title="PxParticleNeighborhoodProvider"><span class="n"><span class="pre">PxParticleNeighborhoodProvider</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createParticleNeighborhoodProvider</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumParticles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">cellSize</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxNumSparseGridCells</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">262144</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu34createParticleNeighborhoodProviderEP20PxCudaContextManagerK5PxU32K6PxRealK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a neighborhood provider. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>maxNumParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>cellSize</strong> – <strong>[in]</strong> The grid cell size. Should be equal to 2*contactOffset for PBD particle systems. </p></li>
+<li><p><strong>maxNumSparseGridCells</strong> – <strong>[in]</strong> The maximal number of cells the internally used sparse grid can provide </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu20createArrayConverterEP20PxCudaContextManager">
+<span id="_CPPv3N12PxPhysicsGpu20createArrayConverterEP20PxCudaContextManager"></span><span id="_CPPv2N12PxPhysicsGpu20createArrayConverterEP20PxCudaContextManager"></span><span id="PxPhysicsGpu::createArrayConverter__PxCudaContextManagerP"></span><span class="target" id="class_px_physics_gpu_1a5fb2d06013dffe634b65b1aec41922cc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_array_converter.html#_CPPv416PxArrayConverter" title="PxArrayConverter"><span class="n"><span class="pre">PxArrayConverter</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createArrayConverter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu20createArrayConverterEP20PxCudaContextManager" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an array converter. </p>
+<p>If not used anymore, the caller needs to delete the returned pointer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu23createLineStripSkinningEP20PxCudaContextManager">
+<span id="_CPPv3N12PxPhysicsGpu23createLineStripSkinningEP20PxCudaContextManager"></span><span id="_CPPv2N12PxPhysicsGpu23createLineStripSkinningEP20PxCudaContextManager"></span><span id="PxPhysicsGpu::createLineStripSkinning__PxCudaContextManagerP"></span><span class="target" id="class_px_physics_gpu_1a3783d373155e90ff6124052b1ac96cdc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_line_strip_skinning.html#_CPPv419PxLineStripSkinning" title="PxLineStripSkinning"><span class="n"><span class="pre">PxLineStripSkinning</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createLineStripSkinning</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu23createLineStripSkinningEP20PxCudaContextManager" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an line strip embedding helper. </p>
+<p>If not used anymore, the caller needs to delete the returned pointer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pointer to a new instance of a <a class="reference internal" href="class_px_line_strip_skinning.html#class_px_line_strip_skinning"><span class="std std-ref">PxLineStripSkinning</span></a> </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu42estimateSceneCreationGpuMemoryRequirementsERK11PxSceneDesc">
+<span id="_CPPv3N12PxPhysicsGpu42estimateSceneCreationGpuMemoryRequirementsERK11PxSceneDesc"></span><span id="_CPPv2N12PxPhysicsGpu42estimateSceneCreationGpuMemoryRequirementsERK11PxSceneDesc"></span><span id="PxPhysicsGpu::estimateSceneCreationGpuMemoryRequirements__PxSceneDescCR"></span><span class="target" id="class_px_physics_gpu_1a670e1faf446266d58570ec37ff5197ef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">estimateSceneCreationGpuMemoryRequirements</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene_desc.html#_CPPv411PxSceneDesc" title="PxSceneDesc"><span class="n"><span class="pre">PxSceneDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sceneDesc</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu42estimateSceneCreationGpuMemoryRequirementsERK11PxSceneDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Estimates the amount of GPU memory needed to create a scene for the given descriptor. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While this is a conservative estimate, scene allocation may still fail even though there is enough memory - this function does not contain the potential overhead coming from the CUDA allocator. Additionally, there may be fragmentation issues. Generally, this is not an issue for scene allocation sizes &lt; 500Mb, but may become problematic for larger scenes.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sceneDesc</strong> – <strong>[in]</strong> a valid scene desriptor</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A conservative estimate for the amount of GPU memory needed to create a scene for the given descriptor. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpu7releaseEv">
+<span id="_CPPv3N12PxPhysicsGpu7releaseEv"></span><span id="_CPPv2N12PxPhysicsGpu7releaseEv"></span><span id="PxPhysicsGpu::release"></span><span class="target" id="class_px_physics_gpu_1aab6c6c94425585415d3536241beccc15"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpu7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxPhysicsGpuD0Ev">
+<span id="_CPPv3N12PxPhysicsGpuD0Ev"></span><span id="_CPPv2N12PxPhysicsGpuD0Ev"></span><span id="PxPhysicsGpu::~PxPhysicsGpu"></span><span class="target" id="class_px_physics_gpu_1aaa54ef6c0620dd67462ad4ca13a420ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxPhysicsGpu</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxPhysicsGpuD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

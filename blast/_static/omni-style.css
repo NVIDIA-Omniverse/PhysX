@@ -1,10 +1,72 @@
-/* din-2014 font */
-@import 'https://use.typekit.net/itz3gti.css';
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+/* Set up for old browsers*/
+@supports not (font-variation-settings: normal) {
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Lt.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Lt.woff2") format("woff2");
+    font-weight: 300;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Rg.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Rg.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Md.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Md.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Bd.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Bd.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+  }
+}
+
+/* Set up for modern browsers, all weights */
+@supports (font-variation-settings: normal) {
+  @font-face {
+    font-family: 'NVIDIA';
+    src: url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_W_Wght.woff2') format('woff2 supports variations'),
+    url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_W_Wght.woff2') format('woff2-variations');
+    font-weight: 100 1000;
+    font-stretch: 25% 151%;
+    font-style: normal;
+  }
+  @font-face{
+    font-family:'NVIDIA';
+    src:url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_Wght_W_Italic.woff2') format('woff2 supports variations'),
+    url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_Wght_W_Italic.woff2') format('woff2-variations');
+    font-weight:100 1000;
+    font-stretch:25% 151%;
+    font-style:italic;
+  }
+}
 
 :root
 {
     /* nv branding */
     --nv-green: #76b900;
+    --nv-green-illuminate: #76d300; /* button state - hover */
     --nv-black: #000000;
     --nv-white: #ffffff;
     --nv-green-2: #004831;
@@ -12,7 +74,8 @@
     --nv-success: var(--nv-green);
     --nv-error: #f44336;
 
-    --nv-font-face: din-2014;
+    --nv-font-face: NVIDIA,Arial,Helvetica,Sans-Serif;
+    --nv-font-face-mono: SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,Courier,monospace;
 
     /* nv branding: light theme */
     --text: #1a1a1a;
@@ -26,98 +89,102 @@
     --gray-3: #dddddd;
     --gray-4: #cccccc;
 
-    /* nv branding: light theme desktop */
+    /* nv branding: light theme mobile (closely matches our old font sizes) */
     --h1-color: var(--nv-green);
     --h1-font-weight: 100;
     --h1-letter-spacing: -0.02em;
-    --h1-font-size: 60px;
-    --h1-line-height: 60px;
+    --h1-font-size: 36px;
+    --h1-line-height: 1em;
     --h1-text-transform: uppercase;
 
     --h2-color: var(--nv-green);
     --h2-font-weight: 100;
     --h2-letter-spacing: -0.02em;
-    --h2-font-size: 48px;
-    --h2-line-height: 48px;
+    --h2-font-size: 24px;
+    --h2-line-height: 1em;
     --h2-text-transform: uppercase;
 
     --h3-color: var(--nv-green);
     --h3-font-weight: 100;
     --h3-letter-spacing: -0.02em;
-    --h3-font-size: 36px;
-    --h3-line-height: 36px;
+    --h3-font-size: 21px;
+    --h3-line-height: 1em;
     --h3-text-transform: uppercase;
 
     --h4-color: var(--nv-green);
     --h4-font-weight: 100;
     --h4-letter-spacing: -0.02em;
-    --h4-font-size: 24px;
-    --h4-line-height: 24px;
+    --h4-font-size: 18px;
+    --h4-line-height: 1em;
     --h4-text-transform: uppercase;
+
+    --h5-color: var(--nv-green);
+    --h5-font-size: var(--body-font-size);
+
+    --h6-color: var(--nv-green);
+    --h6-font-weight: 400;
 
     --body-font-color: var(--text);
     --body-font-weight: normal;
     --body-font-size: 16px;
-    --body-line-height: 24px;
+    --body-line-height: 1.5em;
 
     --small-font-color: var(--ui-and-graphics);
     --small-font-weight: normal;
     --small-font-size: 12px;
-    --small-line-height: 1.5em;
+    --small-line-height: 1.25em;
 
     --ul-font-color: var(--text);
     --ul-font-weight: normal;
     --ul-font-size: 16px;
-    --ul-line-height: 32px;
+    --ul-line-height: 2em;
     --ul-marker-font-face: FontAwesome;
     --ul-marker-content: '\f105 \00a0 \00a0';
 
     --ol-font-color: var(--text);
     --ol-font-weight: normal;
     --ol-font-size: 16px;
-    --ol-line-height: 32px;
+    --ol-line-height: 2em;
     --ol-list-style-type: decimal;
     --ol-ol-list-style-type: upper-alpha;
-    --ol-ol-ol-list-style-type: upper-alpha;
+    --ol-ol-ol-list-style-type: decimal; /* not specified in style guide */
 
-    --disabled-font-color: var(--grey-4);
+    --disabled-font-color: var(--gray-4);
     --disabled-font-weight: normal;
     --disabled-font-size: 16px;
-    --disabled-line-height: 16px;
+    --disabled-line-height: 1em; /* style guide says 16px */
 
     --error-font-color: var(--nv-error);
     --error-font-weight: normal;
     --error-font-size: 16px;
-    --error-line-height: 16px;
+    --error-line-height: 1em; /* style guide says 16px */
 
     --success-font-color: var(--nv-success);
     --success-font-weight: normal;
     --success-font-size: 16px;
-    --success-line-height: 16px;
+    --success-line-height: 1em; /* style guide says 16px */
 
     /* omni-style */
     --sidebar-color: #000000;
     --sidebar-alt-color: #333333;
-    --sidebar-headline-color: #76b900;
+    --sidebar-headline-color: var(--nv-green);
     --sidebar-text-color: #cccccc;
 
-    --table-color: var(--gray-2);
+    --table-background-header: var(--nv-black);
+    --table-background-alternate: var(--background-alternate); /* for alternating rows */
+    --table-text: var(--text);
+    --table-border: var(--ui-and-graphics);
+    --table-border-header: var(--gray-3);
 
-    --text-main-color: var(--text);
+    /* this is off-brand, but `uppercase` makes headings with source code look bad. */
+    --h1-text-transform: none;
+    --h2-text-transform: none;
+    --h3-text-transform: none;
+    --h4-text-transform: none;
 
-    --text-h1-color: var(--nv-green);
-    --text-h1-background-color: #000000; /* this is off-brand */
+    --h3-font-weight: normal; /* this is off-brand and overrides the above definition */
 
-    --text-h2-color:var(--nv-green);
-    --text-h2-border-color: #777777; /* this is off-brand */
-
-    --text-h3-color: var(--nv-green);
-    --text-h3-border-color: #cccccc; /* this is off-brand */
-
-    --text-h4-color: #999999; /* this is off-brand */
-    --text-alt-table: #333333;
-
-    --note-background-color: #76b900;
+    --note-background-color: var(--nv-green);
     --note-background-alt-color: #cccccc;
 
     --important-background-color: #f44336;
@@ -125,31 +192,28 @@
 
     --link-color: var(--nv-green);
     --link-visited-color: var(--nv-green);
-    --link-hover-color: #16c910; /* slightly brighter */
+    --link-hover-color: var(--nv-green-illuminate);
 
     --background-color: var(--background-default);
 
     /* template<typenameT> T* tryAcquireInterface(const void* pluginInterface) */
-    --api-member-header-background-color: var(--sidebar-alt-color);
+    --api-member-header-background-color: var(--gray-2);
     --api-member-header-border-color: var(--sidebar-headline-color);
-    --api-member-header-text-color: var(--sidebar-text-color);
+    --api-member-header-text-color: var(--text);
     --api-member-header-link-color: var(--link-color);
 
     --api-member-background-color: var(--gray-1);
 
     /* struct carb::Framework */
-    --api-header-text-color: var(--text-h2-color);
-    --api-header-border-color: var(--text-h2-border-color);
+    --api-header-text-color: var(--nv-green);
+    --api-header-border-color: var(--ui-and-graphics);
 
-    /* Public Functions */
-    --api-section-title-text-color: var(--text-h3-color);
-    --api-section-title-border-color: var(--sidebar-headline-color);
-
+    /* sphinx-design color modifications */
     --sd-color-tabs-label-active: var(--nv-green);
     --sd-color-tabs-underline-active: var(--nv-green);
 
-    --sd-color-tabs-label-hover: var(--nv-green);
-    --sd-color-tabs-underline-hover: rgba(118, 185, 0, .62);
+    --sd-color-tabs-label-hover: var(--nv-green-illuminate);
+    --sd-color-tabs-underline-hover: var(--nv-green-illuminate);
 }
 
 /* Width of template */
@@ -157,6 +221,13 @@
 {
     max-width: 1200px !important;
     background-color: var(--background-color);
+}
+
+ /* affects search box */
+#rtd-search-form,
+#rtd-search-form > input:nth-child(1)
+{
+    color-scheme: light;
 }
 
 /**********************************************************************************************************************/
@@ -361,7 +432,7 @@
 /* Replace majority of Fonts in RTD with DIN Pro*/
 body
 {
-    font-family: var(--nv-font-face), sans-serif;
+    font-family: var(--nv-font-face);
     color: var(--body-font-color);
     font-weight: var(--body-font-weight);
     font-size: var(--body-font-size);
@@ -372,99 +443,82 @@ body
 /* Headline Formatting */
 h1, p.rubric.rubric-h1
 {
-    color: var(--text-h1-color);
-    text-align: center;
-    background-color: var(--text-h1-background-color);
-    font-family: din-2014, sans-serif;
-    font-weight: 500;
+    color: var(--h1-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h1-font-weight);
+    font-size: var(--h1-font-size);
     font-style: normal;
-    padding: 10px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-right: 5px;
-    margin-left: 0px;
 
-    /* this is part of the branding guide, but it makes headings with source code look bad. */
-    /* text-transform: uppercase; */
-}
+    line-height: var(--h1-line-height);
+    margin-top: 0.75em;
+    margin-bottom: 0.75em !important; /* override RTD theme */
 
-p.rubric.rubric-h1
-{
-    font-size: 175%;
+    text-transform: var(--h1-text-transform);
 }
 
 h2, p.rubric.rubric-h2
 {
-    color: var(--text-h2-color);
-    border-color: var(--text-h2-border-color) !important;
-    border-top: solid 1px;
-    border-bottom: solid 1px;
-    background-color: transparent;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 0px;
-    padding-right: 0px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-right: 0px;
-    margin-left: 0px;
-    font-family: din-2014, sans-serif;
-    font-weight: 500;
+    color: var(--h2-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h2-font-weight);
+    font-size: var(--h2-font-size);
     font-style: normal;
 
-    /* this is part of the branding guide, but it makes headings with source code look bad. */
-    /* text-transform: uppercase; */
-}
+    line-height: var(--h2-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
 
-p.rubric.rubric-h2
-{
-    font-size: 150%;
+    text-transform: var(--h2-text-transform);
 }
 
 h3, p.rubric.rubric-h3
 {
-    color: var(--text-h3-color);
-    border-bottom: solid 1px;
-    border-color: var(--text-h3-border-color) !important;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 0px;
-    padding-right: 5px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-right: 5px;
-    margin-left: 0px;
-    font-family: din-2014-narrow, sans-serif;
-    font-weight: 400;
+    color: var(--h3-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h3-font-weight);
+    font-size: var(--h3-font-size);
     font-style: normal;
 
-    /* this is part of the branding guide, but it makes headings with source code look bad. */
-    /* text-transform: uppercase; */
-}
+    line-height: var(--h3-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
 
-p.rubric.rubric-h3
-{
-    font-size: 125%;
+    text-transform: var(--h3-text-transform);
 }
 
 h4, p.rubric.rubric-h4
 {
     color: var(--h4-color);
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-right: 5px;
-    margin-left: 0px;
-    font-family: din-2014-narrow, sans-serif;
-    font-weight: 400;
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h4-font-weight);
+    font-size: var(--h4-font-size);
     font-style: normal;
 
-    /* this is part of the branding guide, but it makes headings with source code look bad. */
-    /* text-transform: uppercase; */
+    line-height: var(--h4-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
+
+    text-transform: var(--h4-text-transform);
 }
 
-p.rubric.rubric-h4
+h5, p.rubric.rubric-h5
 {
-    font-size: 115%;
+    color: var(--h5-color);
+
+    font-family: var(--nv-font-face);
+    font-size: var(--h5-font-size);
+}
+
+h6, p.rubric.rubric-h6
+{
+    color: var(--h6-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h6-font-weight);
 }
 
 /* Paragraph Formatting */
@@ -476,7 +530,7 @@ p
     margin-left: 0px;
     font-size: var(--body-font-size);
     line-height: var(--body-line-height);
-    color: var(--text-main-color);
+    color: var(--text);
 }
 
 /* Math should inherit its color */
@@ -558,7 +612,7 @@ footer p:first-child::before
 .rst-content a code.download,
 .rst-content a tt.download
 {
-    font-family: var(--nv-font-face), sans-serif;
+    font-family: var(--nv-font-face);
     color: var(--nv-green);
     font-weight: var(--body-font-weight);
     font-size: var(--body-font-size);
@@ -570,6 +624,13 @@ footer p:first-child::before
 /**********************************************************************************************************************/
 
 /* tables */
+.rst-content table.docutils,
+.wy-table-bordered-all
+{
+    border-color: var(--table-border);
+}
+
+/* tables cells */
 .rst-content table.docutils td,
 .rst-content table.field-list td,
 .wy-table td
@@ -580,20 +641,38 @@ footer p:first-child::before
 
     font-size: var(--body-font-size);
     line-height: var(--body-line-height);
+
+    border-color: var(--table-border);
+}
+
+/* add left border for cells to the right of merged cells that are therefore the first in the row */
+.rst-content table.docutils td:first-child,
+.rst-content table.docutils th:first-child,
+.rst-content table.field-list td:first-child,
+.rst-content table.field-list th:first-child,
+.wy-table td:first-child,
+.wy-table th:first-child
+{
+    border-left-width: 1px;
 }
 
 /* odd rows have grey background */
-.rst-content table.docutils:not(.field-list)
-tr:nth-child(2n-1) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td,
 .wy-table-backed,
 .wy-table-odd td,
 .wy-table-striped tr:nth-child(2n-1) td
 {
-    background-color: var(--table-color);
-    color: #333333
+    background-color: var(--table-background-alternate);
+}
+
+/* optional table with no stripes */
+.rst-content table.docutils.table-no-stripes:not(.field-list) tr:nth-child(2n-1) td
+{
+    background-color: var(--table-background);
 }
 
 /* table header is white on black */
+html.writer-html5 .rst-content table.docutils th,
 .rst-content table.docutils thead th,
 .rst-content table.field-list thead th,
 .wy-table thead th,
@@ -601,15 +680,9 @@ tr:nth-child(2n-1) td,
 .rst-content table.field-list thead th p,
 .wy-table thead th p
 {
-    background-color: var(--sidebar-color);
+    background-color: var(--table-background-header);
     color: var(--sidebar-text-color);
-    border: 0px;
-}
-
-/* no border in table header */
-html.writer-html5 .rst-content table.docutils th
-{
-    border: 0px;
+    border-color: var(--table-border-header);
 }
 
 /* table header text */
@@ -626,6 +699,14 @@ html.writer-html5 .rst-content table.docutils th>p
 {
     font-size: var(--body-font-size);
     line-height: var(--body-line-height);
+}
+
+/* table name caption text */
+.rst-content table.docutils caption,
+.rst-content table.field-list caption,
+.wy-table caption
+{
+    color: var(--text);
 }
 
 /* remove weird top margin in first paragraph of a cell */
@@ -650,12 +731,24 @@ html.writer-html5 .rst-content table.docutils th>p
     margin-bottom: 0px;
 }
 
+/* provide a compact table style */
+.rst-content table.docutils.table-compact td,
+.rst-content table.docutils.table-compact th {
+    padding: 8px;
+}
+
+html.writer-html5 .rst-content table.docutils.table-compact td > p,
+html.writer-html5 .rst-content table.docutils.table-compact th > p {
+    font-size: var(--small-font-size);
+    line-height: var(--small-line-height);
+}
+
 /**********************************************************************************************************************/
 /*                                         Lists                                                                      */
 /**********************************************************************************************************************/
 
 /* unordered list should have a nv-green > */
-.rst-content .section ul:not(.treeView):not(.collapsibleList) li:not(.collapsibleListClosed):not(.collapsibleListOpen):not(.lastChild)::marker,
+.rst-content section ul:not(.treeView):not(.collapsibleList) li:not(.collapsibleListClosed):not(.collapsibleListOpen):not(.lastChild)::marker,
 .rst-content .toctree-wrapper ul li::marker,
 .wy-plain-list-disc li::marker,
 article ul li::marker
@@ -667,32 +760,32 @@ article ul li::marker
 }
 
 /* top-level ordered list should have a nv-green number */
-.rst-content .section ol li::marker,
+.rst-content section ol li::marker,
 .rst-content ol.arabic li::marker,
 .wy-plain-list-decimal li::marker,
 article ol li::marker
 {
     color: var(--nv-green);
     font-weight: 600;
-    list-style: decimal;
+    list-style: var(--ol-list-style-type);
 }
 
 /* second-level ordered list should have a nv-green uppercase letter */
-.rst-content .section ol ol li,
+.rst-content section ol ol li,
 .rst-content ol.arabic ol.arabic li,
 .wy-plain-list-decimal ol ol li,
 article ol ol li
 {
-    list-style: upper-alpha;
+    list-style: var(--ol-ol-list-style-type);
 }
 
 /* third-level ordered lists aren't in the branding guide.  let's use numbers. */
-rst-content .section ol ol ol li,
+.rst-content section ol ol ol li,
 .rst-content ol.arabic ol.arabic ol li,
 .wy-plain-list-decimal ol ol ol li,
 article ol ol ol li
 {
-    list-style: decimal;
+    list-style: var(--ol-ol-ol-list-style-type);
 }
 
 /* start the first paragraph immediately (don't add space at the top) */
@@ -757,6 +850,136 @@ dd p:first-child
     display: list-item;
 }
 
+.wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a,
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a,
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a,
+.wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a,
+.wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a,
+.wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a,
+.wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a,
+.wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a,
+.wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a
+{
+    color: #202020;
+    border: none;
+}
+.wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a{background-color: #F0F0F0;}
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a{background-color: #E8E8E8;}
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a{background-color: #E0E0E0;}
+.wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a{background-color: #D8D8D8;}
+.wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a{background-color: #D0D0D0;}
+.wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a{background-color: #C8C8C8;}
+.wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a{background-color: #C0C0C0;}
+.wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a{background-color: #B8B8B8;}
+.wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a{background-color: #B0B0B0;}
+
+.wy-menu-vertical li.toctree-l1.current:hover li.toctree-l2 > a:hover {background-color: #E8E8E8;}
+.wy-menu-vertical li.toctree-l2.current:hover li.toctree-l3 > a:hover {background-color: #E0E0E0;}
+.wy-menu-vertical li.toctree-l3.current:hover li.toctree-l4 > a:hover {background-color: #D8D8D8;}
+.wy-menu-vertical li.toctree-l4.current:hover li.toctree-l5 > a:hover {background-color: #D0D0D0;}
+.wy-menu-vertical li.toctree-l5.current:hover li.toctree-l6 > a:hover {background-color: #C8C8C8;}
+.wy-menu-vertical li.toctree-l6.current:hover li.toctree-l7 > a:hover {background-color: #C0C0C0;}
+.wy-menu-vertical li.toctree-l7.current:hover li.toctree-l8 > a:hover {background-color: #B8B8B8;}
+.wy-menu-vertical li.toctree-l8.current:hover li.toctree-l9 > a:hover {background-color: #B0B0B0;}
+.wy-menu-vertical li.toctree-l9.current:hover li.toctree-l10 > a:hover {background-color: #A8A8A8;}
+
+.wy-menu-vertical li.toctree-l1 a:hover,
+.wy-menu-vertical li.toctree-l2 a:hover,
+.wy-menu-vertical li.toctree-l3 a:hover,
+.wy-menu-vertical li.toctree-l4 a:hover,
+.wy-menu-vertical li.toctree-l5 a:hover,
+.wy-menu-vertical li.toctree-l6 a:hover,
+.wy-menu-vertical li.toctree-l7 a:hover,
+.wy-menu-vertical li.toctree-l8 a:hover,
+.wy-menu-vertical li.toctree-l9 a:hover,
+.wy-menu-vertical li.toctree-l10 a:hover
+{
+    color: #202020;
+    background-color: #DDDDDD;
+}
+
+.wy-menu-vertical .toctree-l1 a:hover,
+.wy-menu-vertical .toctree-l2 a:hover,
+.wy-menu-vertical .toctree-l3 a:hover,
+.wy-menu-vertical .toctree-l4 a:hover,
+.wy-menu-vertical .toctree-l5 a:hover,
+.wy-menu-vertical .toctree-l6 a:hover,
+.wy-menu-vertical .toctree-l7 a:hover,
+.wy-menu-vertical .toctree-l8 a:hover,
+.wy-menu-vertical .toctree-l9 a:hover,
+.wy-menu-vertical .toctree-l10 a:hover
+{
+    color: #000000;
+    background-color: #EEEEEE;
+}
+
+.wy-menu-vertical .toctree-l1.current a:hover,
+.wy-menu-vertical .toctree-l2.current a:hover,
+.wy-menu-vertical .toctree-l3.current a:hover,
+.wy-menu-vertical .toctree-l4.current a:hover,
+.wy-menu-vertical .toctree-l5.current a:hover,
+.wy-menu-vertical .toctree-l6.current a:hover,
+.wy-menu-vertical .toctree-l7.current a:hover,
+.wy-menu-vertical .toctree-l8.current a:hover,
+.wy-menu-vertical .toctree-l9.current a:hover,
+.wy-menu-vertical .toctree-l10.current a:hover
+{
+    color: #202020;
+}
+
+.wy-menu-vertical .toctree-l1.current,
+.wy-menu-vertical .toctree-l2.current,
+.wy-menu-vertical .toctree-l3.current,
+.wy-menu-vertical .toctree-l4.current,
+.wy-menu-vertical .toctree-l5.current,
+.wy-menu-vertical .toctree-l6.current,
+.wy-menu-vertical .toctree-l7.current,
+.wy-menu-vertical .toctree-l8.current,
+.wy-menu-vertical .toctree-l9.current,
+.wy-menu-vertical .toctree-l10.current
+{
+    color: #202020;
+}
+
+/* break these up into shades of grey? at different levels? */
+.wy-menu-vertical .toctree-l1.current a,
+.wy-menu-vertical .toctree-l2.current a,
+.wy-menu-vertical .toctree-l3.current a,
+.wy-menu-vertical .toctree-l4.current a,
+.wy-menu-vertical .toctree-l5.current a,
+.wy-menu-vertical .toctree-l6.current a,
+.wy-menu-vertical .toctree-l7.current a,
+.wy-menu-vertical .toctree-l8.current a,
+.wy-menu-vertical .toctree-l9.current a,
+.wy-menu-vertical .toctree-l10.current a,
+.wy-menu-vertical .toctree-l1.on a,
+.wy-menu-vertical .toctree-l2.on a,
+.wy-menu-vertical .toctree-l3.on a,
+.wy-menu-vertical .toctree-l4.on a,
+.wy-menu-vertical .toctree-l5.on a,
+.wy-menu-vertical .toctree-l6.on a,
+.wy-menu-vertical .toctree-l7.on a,
+.wy-menu-vertical .toctree-l8.on a,
+.wy-menu-vertical .toctree-l9.on a,
+.wy-menu-vertical .toctree-l10.on a
+{
+    color: #202020;
+    background-color: #EEEEEE;
+}
+
+/* plus/minus expansion signs */
+.wy-menu-vertical li span.toctree-expand,
+.wy-menu-vertical li.current > a span.toctree-expand,
+.wy-menu-vertical li.current > a:hover span.toctree-expand,
+.wy-menu-vertical li.current > a button.toctree-expand,
+.wy-menu-vertical li.current > a:hover button.toctree-expand,
+.wy-menu-vertical li.on > a span.toctree-expand,
+.wy-menu-vertical li.on > a:hover span.toctree-expand,
+.wy-menu-vertical li.on a button.toctree-expand
+{
+    color: #202020;
+}
+
 /**********************************************************************************************************************/
 /*                                         API Docs                                                                   */
 /**********************************************************************************************************************/
@@ -800,11 +1023,52 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     margin-bottom: 15px;
     margin-right: 0px;
     margin-left: 0px;
-    font-family: din-2014, sans-serif;
+    font-family: var(--nv-font-face-mono);
+    letter-spacing: -0.5px;
     font-weight: 500;
     font-style: normal;
-    font-size: 26px;
+    font-size: 20px;
     width: 100%;
+}
+
+dl.py
+{
+    font-style: normal; /* turn off italics, turning back on in api-styles.css for arg defaults*/
+}
+
+dl.py .sig.sig-object.py {
+    font-family: var(--nv-font-face-mono);
+    font-weight: 400;
+}
+dl.py .sig.sig-object.py span.sig-name.descname
+{
+    font-weight: 800;
+}
+
+/* Add newlines-plus-whitespace to params in class/method signatures
+Ensure final line does not receive tabs for final paren / type-annotation
+https://github.com/sphinx-doc/sphinx/issues/1514 */
+
+/* Newlines (\a) and spaces (\20) before each parameter */
+dl.py .sig-param::before {
+    content: "\a\20\20\20\20";
+    white-space: pre;
+}
+/* Newline after the last parameter (so the closing bracket is on a new line) */
+dl.py dt em.sig-param:last-of-type::after {
+    content: "\a";
+    white-space: pre;
+}
+/* To have blue background of width of the block (instead of width of content) */
+dl.class > dt:first-of-type {
+    display: block !important;
+}
+
+.sig-param span.p,
+.sig-param span.o,
+.sig-param span.default_value
+{
+    font-style: normal;
 }
 
 /* controls the text in the header */
@@ -819,7 +1083,7 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
 {
     color: var(--api-header-text-color);
     padding: 0px;
-    font-family: var(--nv-font-face);
+    font-family: var(--nv-font-face-mono);
 }
 
 /* make anchor in class/struct header proper size and color */
@@ -827,28 +1091,6 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
 {
     color: var(--api-header-text-color);
     font-size: 14px !important;
-}
-
-/* class section title (e.g. "Public Functions") */
-.breathe-sectiondef-title {
-    font-size: 20px;
-    color: var(--api-section-title-text-color);
-    position: relative;
-    left: -24px;
-
-    border-bottom: solid 1px;
-    border-color: var(--text-h3-border-color) !important;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    padding-left: 0px;
-    padding-right: 5px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    margin-right: 5px;
-    margin-left: 0px;
-    font-family: din-2014-narrow, sans-serif;
-    font-weight: 400;
-    font-style: normal;
 }
 
 /* class/struct fields/members */
@@ -873,6 +1115,19 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
 }
 
 
+/* module/class names */
+html.writer-html4 .rst-content dl:not(.docutils) .descclassname, html.writer-html4 .rst-content dl:not(.docutils) .descname, html.writer-html4 .rst-content dl:not(.docutils) .sig-name, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .descclassname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .descname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name
+{
+    color: var(--api-member-header-text-color);
+}
+
+/* class/struct fields/members names */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt .sig-name
+{
+    color: var(--api-member-header-text-color);
+}
+
+
 /* class/struct fields/members header link button */
 html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt .headerlink
 {
@@ -892,6 +1147,7 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
 {
     border: none;
     background: transparent;
+    color: var(--api-member-header-text-color);
 }
 
 /**********************************************************************************************************************/
@@ -991,17 +1247,23 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     }
 }
 
+/* links in extra breadcrumbs do not need padding */
+.wy-breadcrumbs li.wy-breadcrumbs-aside > a
+{
+    padding: 0px;
+}
+
 /* document version selection */
 
 .omni-version
 {
     position: fixed;
     bottom: 0;
-    background-color: #202020;
+    background-color: var(--sidebar-alt-color);
     width: 300px;
     line-height: 32px;
     padding-right: 1.618em;
-    color: #545454;
+    color: var(--sidebar-text-color);
     text-align:center
 }
 
@@ -1011,7 +1273,7 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     content: '\f126';
     padding-left: 10px;
     padding-right: 3px;
-    color: #848484;
+    color: var(--sidebar-text-color);
 }
 
 div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
@@ -1022,13 +1284,13 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
 .omni-version-select /* version selection box */
 {
     padding: inherit;
-    background-color: inherit;
+    background-color: var(--sidebar-alt-color);
     color: inherit;
     border: inherit;
     box-shadow: none;
     font-size: inherit;
     font-family: inherit;
-    color: #848484;
+    color: var(--sidebar-text-color);
 }
 
 /* warning dialog when version is not the latest */
@@ -1037,8 +1299,10 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
 {
     position: fixed;
     top: 10px;
-    left: 0px;
+    left: 50%;
     margin: 0;
+    margin-left: 150px;
+    transform: translateX(-50%);
     background: none;
     z-index: 1000;
     width: 100%;
@@ -1050,7 +1314,8 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
 .omni-version-warning-content /* center content in the warning box */
 {
     margin: 0 auto; /* center content */
-    max-width: 1450px; /* assumes page is 1500px */
+    max-width: 1100px; /* smaller than main body width of 1200px, see: wy-nav-content */
+    width: 50%;
     padding: 8px;
     text-align: center;
     border-radius: 4px;
@@ -1059,6 +1324,19 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
     border-style: solid;
     border-width: 1px;
     background: #fff3cd repeating-linear-gradient(135deg, transparent, transparent 56px, rgba(255, 255, 255, 0.2) 56px, rgba(255, 255, 255, 0.2) 112px );
+}
+
+@media screen and (max-width: 768px)
+{
+    .omni-version-warning
+    {
+        margin-left: 0;
+    }
+
+    .omni-version-warning-content
+    {
+        width: 100%;
+    }
 }
 
 .omni-version-warning-content a /* make links not green */
@@ -1101,4 +1379,48 @@ details.sd-dropdown .sd-summary-down svg {
     fill: var(--nv-green);
     opacity: 1.0;
     stroke-width: 1.0px;
+}
+
+/* hierarchy styling */
+.rebreather.hierarchy details.sd-dropdown {
+    margin-bottom: 0 !important;
+    border: none;
+}
+
+.rebreather.hierarchy div.rebreather.hierarchy ul,
+.rebreather.hierarchy details.sd-dropdown ul {
+    margin-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown div.sd-summary-content {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown>.sd-card-header {
+    border: none;
+    padding-left: 1.5em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown:not([open])>.sd-card-header {
+    border: none;
+    padding-left: 1.5em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown>.sd-summary-title .sd-summary-up {
+    right: unset;
+    left: 0.35em;
+    top: 0.35em;
+    font-size: 0.7em;
+}
+
+.rebreather.hierarchy details.sd-dropdown:not([open])>.sd-summary-title .sd-summary-down {
+    right: unset;
+    left: 0.35em;
+    top: 0.35em;
+    font-size: 0.7em;
 }

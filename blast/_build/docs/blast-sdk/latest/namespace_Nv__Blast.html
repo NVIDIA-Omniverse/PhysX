@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,73 +64,36 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast">
-<span id="namespace-nv-blast"></span><h1>Nv::Blast<a class="headerlink" href="#nv-blast" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+             
+  <section id="nv-blast">
+<span id="namespace-nv-blast"></span><h1>Nv::Blast<a class="headerlink" href="#nv-blast" title="Permalink to this headline"></a></h1>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_authoring_result.html#exhale-struct-struct-nv-1-1-blast-1-1-authoring-result"><span class="std std-ref">Nv::Blast::AuthoringResult</span></a>: Authoring results.</p></li>
 <li><p><a class="reference internal" href="struct_nv_1_1_blast_1_1_beam_pattern_desc.html#exhale-struct-struct-nv-1-1-blast-1-1-beam-pattern-desc"><span class="std std-ref">Nv::Blast::BeamPatternDesc</span></a></p></li>
@@ -247,68 +164,59 @@
 <li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#exhale-class-class-nv-1-1-blast-1-1-tk-type"><span class="std std-ref">Nv::Blast::TkType</span></a>: Interface for static (class) type data.</p></li>
 <li><p><a class="reference internal" href="class_nv_1_1_blast_1_1_voronoi_sites_generator.html#exhale-class-class-nv-1-1-blast-1-1-voronoi-sites-generator"><span class="std std-ref">Nv::Blast::VoronoiSitesGenerator</span></a>: Class for voronoi sites generation inside supplied mesh.</p></li>
 </ul>
-</div>
-<div class="section" id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="function__nv_blast_globals_8h_1a046f351eedab67de8286b249c348160a.html#exhale-function-nv-blast-globals-8h-1a046f351eedab67de8286b249c348160a"><span class="std std-ref">Nv::Blast::logLL</span></a></p></li>
 <li><p><a class="reference internal" href="function__nv_blast_ext_authoring_pattern_generator_8h_1a2af6111d7b1e477fa7b5aee4fec5bdfc.html#exhale-function-nv-blast-ext-authoring-pattern-generator-8h-1a2af6111d7b1e477fa7b5aee4fec5bdfc"><span class="std std-ref">Nv::Blast::savePatternToObj</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="typedefs">
-<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html#exhale-typedef-nv-blast-ext-authoring-pattern-generator-8h-1a4e5bb14b7dd9af36721e2510c8cf4a88"><span class="std std-ref">Nv::Blast::RNG_CALLBACK</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="variables">
-<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138.html#exhale-variable-nv-blast-ext-authoring-types-8h-1ad2d1cde5813011ad60c5a70903063138"><span class="std std-ref">Nv::Blast::kMaterialInteriorId</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea.html#exhale-variable-nv-blast-ext-authoring-types-8h-1aef4edf41a556a4a3a47621a9335b10ea"><span class="std std-ref">Nv::Blast::kNotValidVertexIndex</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4.html#exhale-variable-nv-blast-ext-authoring-types-8h-1adbf9e9203bf8bee845964d16b181bec4"><span class="std std-ref">Nv::Blast::kSmoothingGroupInteriorId</span></a></p></li>
 <li><p><a class="reference internal" href="variable__nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7.html#exhale-variable-nv-blast-types-8h-1a1d6a0f220e269f62129e3ac6f13f75e7"><span class="std std-ref">Nv::Blast::kUnbreakableLimit</span></a></p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

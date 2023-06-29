@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxHitFlag &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxHitFlag</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxhitflag">
+<span id="exhale-struct-struct-px-hit-flag"></span><h1>PxHitFlag<a class="headerlink" href="#pxhitflag" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxGeometryHit.h.html#file-include-geometry-pxgeometryhit-h"><span class="std std-ref">include/geometry/PxGeometryHit.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv49PxHitFlag">
+<span id="_CPPv39PxHitFlag"></span><span id="_CPPv29PxHitFlag"></span><span id="PxHitFlag"></span><span class="target" id="struct_px_hit_flag"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHitFlag</span></span></span><a class="headerlink" href="#_CPPv49PxHitFlag" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scene query and geometry query behavior flags. </p>
+<p>PxHitFlags are used for 3 different purposes:</p>
+<p>1) To request hit fields to be filled in by scene queries (such as hit position, normal, face index or UVs). 2) Once query is completed, to indicate which fields are valid (note that a query may produce more valid fields than requested). 3) To specify additional options for the narrow phase and mid-phase intersection routines.</p>
+<p>All these flags apply to both scene queries and geometry queries (<a class="reference internal" href="class_px_geometry_query.html#class_px_geometry_query"><span class="std std-ref">PxGeometryQuery</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> <a class="reference internal" href="struct_px_overlap_hit.html#struct_px_overlap_hit"><span class="std std-ref">PxOverlapHit</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"><span class="std std-ref">PxScene.raycast</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a9384aae12d3ef33f4db300cfe0c91c6a"><span class="std std-ref">PxScene.sweep</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">PxScene.overlap</span></a> <a class="reference internal" href="class_px_geometry_query.html#class_px_geometry_query"><span class="std std-ref">PxGeometryQuery</span></a> <a class="reference internal" href="function_group__extensions_1ga450abb675b283fd8031caf82e85844e2.html#group__extensions_1ga450abb675b283fd8031caf82e85844e2"><span class="std std-ref">PxFindFaceIndex</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4EnumE">
+<span id="_CPPv3N9PxHitFlag4EnumE"></span><span id="_CPPv2N9PxHitFlag4EnumE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum9ePOSITIONE">
+<span id="_CPPv3N9PxHitFlag4Enum9ePOSITIONE"></span><span id="_CPPv2N9PxHitFlag4Enum9ePOSITIONE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a21e4769575db55be01d8f91e06c59b1a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePOSITION</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>“position” member of <a class="reference internal" href="struct_px_query_hit.html#struct_px_query_hit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum7eNORMALE">
+<span id="_CPPv3N9PxHitFlag4Enum7eNORMALE"></span><span id="_CPPv2N9PxHitFlag4Enum7eNORMALE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a5972f664c2fbe85c992fb9aaba46a5cf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNORMAL</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>“normal” member of <a class="reference internal" href="struct_px_query_hit.html#struct_px_query_hit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum3eUVE">
+<span id="_CPPv3N9PxHitFlag4Enum3eUVE"></span><span id="_CPPv2N9PxHitFlag4Enum3eUVE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aac585040db8a8a2839de7104a81a370c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUV</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum3eUVE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>“u” and “v” barycentric coordinates of <a class="reference internal" href="struct_px_query_hit.html#struct_px_query_hit"><span class="std std-ref">PxQueryHit</span></a> are valid. Not applicable to sweep queries. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE">
+<span id="_CPPv3N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE"></span><span id="_CPPv2N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a7ec4e2f321d4fe4e3d02c4e4b532cc9b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eASSUME_NO_INITIAL_OVERLAP</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performance hint flag for sweeps when it is known upfront there’s no initial overlap. NOTE: using this flag may cause undefined results if shapes are initially overlapping. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum8eANY_HITE">
+<span id="_CPPv3N9PxHitFlag4Enum8eANY_HITE"></span><span id="_CPPv2N9PxHitFlag4Enum8eANY_HITE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a172dbdee60e60d7f8d5e74792abc2f16"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eANY_HIT</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum8eANY_HITE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Report any first hit. Used for geometries that contain more than one primitive. For meshes, if neither eMESH_MULTIPLE nor eANY_HIT is specified, a single closest hit will be reported. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE">
+<span id="_CPPv3N9PxHitFlag4Enum14eMESH_MULTIPLEE"></span><span id="_CPPv2N9PxHitFlag4Enum14eMESH_MULTIPLEE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64ade0c4ad4267c954d51e99905e69a399e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_MULTIPLE</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Report all hits for meshes rather than just the first. Not applicable to sweep queries. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum9eMESH_ANYE">
+<span id="_CPPv3N9PxHitFlag4Enum9eMESH_ANYE"></span><span id="_CPPv2N9PxHitFlag4Enum9eMESH_ANYE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a639d134a27861f74e3721dbd7be65bbc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_ANY</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Deprecated, please use eANY_HIT instead. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE">
+<span id="_CPPv3N9PxHitFlag4Enum16eMESH_BOTH_SIDESE"></span><span id="_CPPv2N9PxHitFlag4Enum16eMESH_BOTH_SIDESE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMESH_BOTH_SIDES</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Report hits with back faces of mesh triangles. Also report hits for raycast originating on mesh surface and facing away from the surface normal. Not applicable to sweep queries. Please refer to the user guide for heightfield-specific differences. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE">
+<span id="_CPPv3N9PxHitFlag4Enum14ePRECISE_SWEEPE"></span><span id="_CPPv2N9PxHitFlag4Enum14ePRECISE_SWEEPE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64af903d9ed69a9b2d397ca289752aaeef1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePRECISE_SWEEP</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Use more accurate but slower narrow phase sweep tests. May provide better compatibility with PhysX 3.2 sweep behavior. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum4eMTDE">
+<span id="_CPPv3N9PxHitFlag4Enum4eMTDE"></span><span id="_CPPv2N9PxHitFlag4Enum4eMTDE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64ad01fd75af43a6dffeafafb40489ac7b9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMTD</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum4eMTDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Report the minimum translation depth, normal and contact point. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE">
+<span id="_CPPv3N9PxHitFlag4Enum11eFACE_INDEXE"></span><span id="_CPPv2N9PxHitFlag4Enum11eFACE_INDEXE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a7193a2accbac7b56c15ba83461b716c8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFACE_INDEX</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>“face index” member of <a class="reference internal" href="struct_px_query_hit.html#struct_px_query_hit"><span class="std std-ref">PxQueryHit</span></a> is valid </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum8eDEFAULTE">
+<span id="_CPPv3N9PxHitFlag4Enum8eDEFAULTE"></span><span id="_CPPv2N9PxHitFlag4Enum8eDEFAULTE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64afbdec54374d753fed4682d855aac7270"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDEFAULT</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE">
+<span id="_CPPv3N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE"></span><span id="_CPPv2N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE"></span><span class="target" id="struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a96f3049caa29758b18308a37e97370f1"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMODIFIABLE_FLAGS</span></span></span><a class="headerlink" href="#_CPPv4N9PxHitFlag4Enum17eMODIFIABLE_FLAGSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Only this subset of flags can be modified by pre-filter. </p>
+<p>Other modifications will be discarded. </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

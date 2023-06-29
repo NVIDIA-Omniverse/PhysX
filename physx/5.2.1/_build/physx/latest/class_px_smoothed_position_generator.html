@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSmoothedPositionGenerator &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSmoothedPositionGenerator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsmoothedpositiongenerator">
+<span id="exhale-class-class-px-smoothed-position-generator"></span><h1>PxSmoothedPositionGenerator<a class="headerlink" href="#pxsmoothedpositiongenerator" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSmoothing.h.html#file-include-pxsmoothing-h"><span class="std std-ref">include/PxSmoothing.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv427PxSmoothedPositionGenerator">
+<span id="_CPPv327PxSmoothedPositionGenerator"></span><span id="_CPPv227PxSmoothedPositionGenerator"></span><span id="PxSmoothedPositionGenerator"></span><span class="target" id="class_px_smoothed_position_generator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSmoothedPositionGenerator</span></span></span><a class="headerlink" href="#_CPPv427PxSmoothedPositionGenerator" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Ccomputes smoothed positions for a particle system to improve rendering quality. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP19PxGpuParticleSystem5PxU328CUstream">
+<span id="_CPPv3N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP19PxGpuParticleSystem5PxU328CUstream"></span><span id="_CPPv2N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP19PxGpuParticleSystem5PxU328CUstream"></span><span id="PxSmoothedPositionGenerator::generateSmoothedPositions__PxGpuParticleSystemP.PxU32.CUstream"></span><span class="target" id="class_px_smoothed_position_generator_1a769471505d0f588cc46b5c6d2b470c23"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateSmoothedPositions</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_gpu_particle_system.html#_CPPv419PxGpuParticleSystem" title="PxGpuParticleSystem"><span class="n"><span class="pre">PxGpuParticleSystem</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuParticleSystem</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP19PxGpuParticleSystem5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules the compuation of smoothed positions on the specified cuda stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gpuParticleSystem</strong> – <strong>[in]</strong> A gpu pointer to access particle system data </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> The stream on which the cuda call gets scheduled </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream">
+<span id="_CPPv3N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream"></span><span id="_CPPv2N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream"></span><span id="PxSmoothedPositionGenerator::generateSmoothedPositions__PxVec4P.PxParticleNeighborhoodProviderR.PxU32.PxReal.CUstream"></span><span class="target" id="class_px_smoothed_position_generator_1ad2b3e271e59027031eeda5429c26f5aa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateSmoothedPositions</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">particlePositionsGpu</span></span>, <a class="reference internal" href="class_px_particle_neighborhood_provider.html#_CPPv430PxParticleNeighborhoodProvider" title="PxParticleNeighborhoodProvider"><span class="n"><span class="pre">PxParticleNeighborhoodProvider</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">neighborhoodProvider</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleContactOffset</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator25generateSmoothedPositionsEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules the compuation of smoothed positions on the specified cuda stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particlePositionsGpu</strong> – <strong>[in]</strong> A gpu pointer containing the particle positions </p></li>
+<li><p><strong>neighborhoodProvider</strong> – <strong>[in]</strong> A neighborhood provider object that supports fast neighborhood queries </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>particleContactOffset</strong> – <strong>[in]</strong> The particle contact offset </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> The stream on which the cuda call gets scheduled </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator19setResultBufferHostEP6PxVec4">
+<span id="_CPPv3N27PxSmoothedPositionGenerator19setResultBufferHostEP6PxVec4"></span><span id="_CPPv2N27PxSmoothedPositionGenerator19setResultBufferHostEP6PxVec4"></span><span id="PxSmoothedPositionGenerator::setResultBufferHost__PxVec4P"></span><span class="target" id="class_px_smoothed_position_generator_1a9ba7292eb496522dc037481fce7dd1ac"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferHost</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">smoothedPositions</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator19setResultBufferHostEP6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a host buffer that holds the smoothed position data after the timestep completed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>smoothedPositions</strong> – <strong>[in]</strong> A host buffer with memory for all particles already allocated </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator21setResultBufferDeviceEP6PxVec4">
+<span id="_CPPv3N27PxSmoothedPositionGenerator21setResultBufferDeviceEP6PxVec4"></span><span id="_CPPv2N27PxSmoothedPositionGenerator21setResultBufferDeviceEP6PxVec4"></span><span id="PxSmoothedPositionGenerator::setResultBufferDevice__PxVec4P"></span><span class="target" id="class_px_smoothed_position_generator_1a934cb11314c5f808ae5b894c464b413b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferDevice</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">smoothedPositions</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator21setResultBufferDeviceEP6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a device buffer that holds the smoothed position data after the timestep completed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>smoothedPositions</strong> – <strong>[in]</strong> A device buffer with memory for all particles already allocated </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator12setSmoothingEf">
+<span id="_CPPv3N27PxSmoothedPositionGenerator12setSmoothingEf"></span><span id="_CPPv2N27PxSmoothedPositionGenerator12setSmoothingEf"></span><span id="PxSmoothedPositionGenerator::setSmoothing__float"></span><span class="target" id="class_px_smoothed_position_generator_1a4e4a277028e447223555bee85a738535"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSmoothing</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">smoothingStrenght</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator12setSmoothingEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the intensity of the position smoothing effect. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>smoothingStrenght</strong> – <strong>[in]</strong> The strength of the smoothing effect </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxSmoothedPositionGenerator15getMaxParticlesEv">
+<span id="_CPPv3NK27PxSmoothedPositionGenerator15getMaxParticlesEv"></span><span id="_CPPv2NK27PxSmoothedPositionGenerator15getMaxParticlesEv"></span><span id="PxSmoothedPositionGenerator::getMaxParticlesC"></span><span class="target" id="class_px_smoothed_position_generator_1ad8008e65d281ca4713d4ea8f14d4a989"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxParticles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxSmoothedPositionGenerator15getMaxParticlesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the maximal number of particles. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator15setMaxParticlesE5PxU32">
+<span id="_CPPv3N27PxSmoothedPositionGenerator15setMaxParticlesE5PxU32"></span><span id="_CPPv2N27PxSmoothedPositionGenerator15setMaxParticlesE5PxU32"></span><span id="PxSmoothedPositionGenerator::setMaxParticles__PxU32"></span><span class="target" id="class_px_smoothed_position_generator_1aefa50b91e5b367acd9a44900a2c124aa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxParticles</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxParticles</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator15setMaxParticlesE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the maximal number of particles. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maxParticles</strong> – <strong>[in]</strong> The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxSmoothedPositionGenerator33getSmoothedPositionsDevicePointerEv">
+<span id="_CPPv3NK27PxSmoothedPositionGenerator33getSmoothedPositionsDevicePointerEv"></span><span id="_CPPv2NK27PxSmoothedPositionGenerator33getSmoothedPositionsDevicePointerEv"></span><span id="PxSmoothedPositionGenerator::getSmoothedPositionsDevicePointerC"></span><span class="target" id="class_px_smoothed_position_generator_1a9486bd6547947c5a846510e4f350de9b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSmoothedPositionsDevicePointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxSmoothedPositionGenerator33getSmoothedPositionsDevicePointerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the device pointer for the smoothed positions. </p>
+<p>Only available after calling setResultBufferHost or setResultBufferDevice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The device pointer for the smoothed positions </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator10setEnabledEb">
+<span id="_CPPv3N27PxSmoothedPositionGenerator10setEnabledEb"></span><span id="_CPPv2N27PxSmoothedPositionGenerator10setEnabledEb"></span><span id="PxSmoothedPositionGenerator::setEnabled__b"></span><span class="target" id="class_px_smoothed_position_generator_1a2f3f86fb0e771f7d72b267ac9fee0300"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setEnabled</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enabled</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator10setEnabledEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enables or disables the smoothed position generator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>enabled</strong> – <strong>[in]</strong> The boolean to set the generator to enabled or disabled </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK27PxSmoothedPositionGenerator9isEnabledEv">
+<span id="_CPPv3NK27PxSmoothedPositionGenerator9isEnabledEv"></span><span id="_CPPv2NK27PxSmoothedPositionGenerator9isEnabledEv"></span><span id="PxSmoothedPositionGenerator::isEnabledC"></span><span class="target" id="class_px_smoothed_position_generator_1a876b30869ea214a207d6bab3a0e84235"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isEnabled</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK27PxSmoothedPositionGenerator9isEnabledEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allows to query if the smoothed position generator is enabled. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if enabled, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGenerator7releaseEv">
+<span id="_CPPv3N27PxSmoothedPositionGenerator7releaseEv"></span><span id="_CPPv2N27PxSmoothedPositionGenerator7releaseEv"></span><span id="PxSmoothedPositionGenerator::release"></span><span class="target" id="class_px_smoothed_position_generator_1af23d1a622793cfc86c4a4a0a7d2d9733"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGenerator7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the instance and its data. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N27PxSmoothedPositionGeneratorD0Ev">
+<span id="_CPPv3N27PxSmoothedPositionGeneratorD0Ev"></span><span id="_CPPv2N27PxSmoothedPositionGeneratorD0Ev"></span><span id="PxSmoothedPositionGenerator::~PxSmoothedPositionGenerator"></span><span class="target" id="class_px_smoothed_position_generator_1a4fdb9b76ae8d8cdb3a51df70af9c5b08"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSmoothedPositionGenerator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N27PxSmoothedPositionGeneratorD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

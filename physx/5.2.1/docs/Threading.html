@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threading &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Geometry" href="Geometry.html" />
+    <link rel="prev" title="Startup and Shutdown" href="Startup.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Threading</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-access-from-multiple-threads">Data Access from Multiple Threads</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scene-locking">Scene Locking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#locking-semantics">Locking Semantics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#locking-best-practices">Locking Best Practices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#asynchronous-simulation">Asynchronous Simulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#double-buffering">Double Buffering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#multithreaded-simulation">Multithreaded Simulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#taskmanager">TaskManager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cpudispatcher">CpuDispatcher</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cpudispatcher-implementation-guidelines">CpuDispatcher Implementation Guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#basetask">BaseTask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#task">Task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lightcputask">LightCpuTask</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/physx/latest/physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Threading</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="threading">
+<span id="id1"></span><h1>Threading<a class="headerlink" href="#threading" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This chapter explains how to use PhysX in multithreaded applications. There are three main aspects to using PhysX with multiple threads:</p>
+<ul class="simple">
+<li><p>how to make read and write calls into the PhysX API from multiple threads without causing race conditions.</p></li>
+<li><p>how to use multiple threads to accelerate simulation processing.</p></li>
+<li><p>how to perform asynchronous simulation, and read and write to the API while simulation is being processed.</p></li>
+</ul>
+</section>
+<section id="data-access-from-multiple-threads">
+<span id="dataaccessrules"></span><h2>Data Access from Multiple Threads<a class="headerlink" href="#data-access-from-multiple-threads" title="Permalink to this headline"></a></h2>
+<p>For efficiency reasons, PhysX does not internally lock access to its data structures by the application, so be careful when calling the API from multiple application threads. The rules are as follows:</p>
+<ul class="simple">
+<li><p>API interface methods marked ‘const’ are read calls, other API interface methods are write calls.</p></li>
+<li><p>API read calls may be made simultaneously from multiple threads.</p></li>
+<li><p>Objects in different scenes may be safely accessed by different threads.</p></li>
+<li><p>Different objects outside a scene may be safely accessed from different threads. Be aware that accessing an object may indirectly cause access to another object via a persistent reference (such as joints and actors referencing one another, an actor referencing a shape, or a shape referencing a mesh.)</p></li>
+</ul>
+<p>Access patterns which do not conform to the above rules may result in data corruption, deadlocks, or crashes. Note in particular that it is not legal to perform a write operation on an object in a scene concurrently with a read operation to an object in the same scene. The checked build contains code which tracks access by application threads to objects within a scene, to try and detect problems at the point when the illegal API call is made.</p>
+<section id="scene-locking">
+<h3>Scene Locking<a class="headerlink" href="#scene-locking" title="Permalink to this headline"></a></h3>
+<p>Each <a class="reference internal" href="../_build/physx/latest/class_px_scene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> object provides a multiple reader, single writer lock that can be used to control access to the scene by multiple threads. This is useful for situations where the PhysX scene is
+shared between more than one independent subsystem. The scene lock provides a way for these systems to coordinate with each other without creating direct dependencies.</p>
+<p>It is not mandatory to use the lock. If all access to the scene is from a single thread, using the lock adds unnecessary overhead. Even if the scene is accessed from multiple threads, the threads may be synchronized using a simpler or more efficient application-specific mechanism that guarantees that the application meets the above conditions. However, using the scene lock has the following potential benefit:</p>
+<ul class="simple">
+<li><p>If the <a class="reference internal" href="../_build/physx/latest/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum16eREQUIRE_RW_LOCKE" title="PxSceneFlag::eREQUIRE_RW_LOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eREQUIRE_RW_LOCK</span></code></a> is set, the checked build will issue a warning for any API call made without first acquiring the lock, or if a write call is made when the lock has only been acquired for read.</p></li>
+</ul>
+<p>There are four methods for acquiring / releasing the lock:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxScene::lockRead</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">file</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">line</span><span class="o">=</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxScene::unlockRead</span><span class="p">();</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxScene::lockWrite</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">file</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">line</span><span class="o">=</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxScene::unlockWrite</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Additionally there is an RAII helper class to manage these locks, see PxSceneLock.h.</p>
+</section>
+<section id="locking-semantics">
+<h3>Locking Semantics<a class="headerlink" href="#locking-semantics" title="Permalink to this headline"></a></h3>
+<p>There are precise rules regarding the usage of the scene lock:</p>
+<ul class="simple">
+<li><p>Multiple threads may read at the same time.</p></li>
+<li><p>Only one thread may write at a time, no thread may write if any threads are reading.</p></li>
+<li><p>If a thread holds a write lock then it may call both read and write API methods.</p></li>
+<li><p>Re-entrant read locks are supported, meaning a <em>lockRead()</em> on a thread that has already acquired a read lock is permitted. Each <em>lockRead()</em> must have a paired <em>unlockRead()</em>.</p></li>
+<li><p>Re-entrant write locks are supported, meaning a <em>lockWrite()</em> on a thread that has already acquired a write lock is permitted. Each <em>lockWrite()</em> must have a paired <em>unlockWrite()</em>.</p></li>
+<li><p>Calling <em>lockRead()</em> by a thread that has already acquired the write lock is permitted and the thread will continue to have read and write access. Each lock*() must have an associated unlock*() that occurs in reverse order.</p></li>
+<li><p>Lock upgrading is <em>not</em> supported - a <em>lockWrite()</em> by a thread that has already acquired a read lock is <em>not</em> permitted. Attempting this in checked builds will result in an error, in release builds it will lead to deadlock.</p></li>
+<li><p>Writers are favored - if a thread attempts a <em>lockWrite()</em> while the read lock is acquired it will be blocked until all readers leave. If new readers arrive while the writer thread is blocked they will be put to sleep and the writer will have first chance to access the scene. This prevents writers being starved in the presence of multiple readers.</p></li>
+<li><p>If multiple writers are queued then the first writer will receive priority, subsequent writers will be granted access according to OS scheduling.</p></li>
+</ul>
+<p>Note: <a class="reference internal" href="../_build/physx/latest/class_px_scene.html#_CPPv4N7PxScene7releaseEv" title="PxScene::release"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::release()</span></code></a> automatically attempts to acquire the write lock, it is not necessary to acquire it manually before calling release().</p>
+</section>
+<section id="locking-best-practices">
+<h3>Locking Best Practices<a class="headerlink" href="#locking-best-practices" title="Permalink to this headline"></a></h3>
+<p>It is often useful to have the application acquire the lock a single time to perform multiple operations. This minimizes the overhead of the lock, and in addition can prevent cases such as a sweep test in one thread seeing a rag doll that has been only partially inserted by another thread.</p>
+<p>Clustering writes can also help reduce contention for the lock, as acquiring the lock for write will stall any other thread trying to perform a read access.</p>
+</section>
+</section>
+<section id="asynchronous-simulation">
+<h2>Asynchronous Simulation<a class="headerlink" href="#asynchronous-simulation" title="Permalink to this headline"></a></h2>
+<p>PhysX simulation is asynchronous by default. Start simulation by calling:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">simulate</span><span class="p">(</span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When this call returns, the simulation step has begun in a separate thread (if the CPU dispatcher has at least one thread in the thread pool). While simulation is running, it is illegal to modify the scene or any actor or shape in the scene.</p>
+<p>To wait until simulation completes, call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">fetchResults</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The boolean parameter to fetchResults denotes whether the call should wait for simulation to complete, or return immediately with the current completion status. See the API documentation for more detail.</p>
+<p>It is important to distinguish two time slots for data access:</p>
+<ol class="arabic simple">
+<li><p>After the call to <em>PxScene::fetchResults()</em> has returned and before the next <em>PxScene::simulate()</em> call (see figure below, blue area “1”).</p></li>
+<li><p>After the call to <em>PxScene::simulate()</em> has returned and before the corresponding <em>PxScene::fetchResults()</em> call (see figure below, green area “2”).</p></li>
+</ol>
+<a class="reference internal image-reference" href="../_images/timeSlots.png"><img alt="../_images/timeSlots.png" src="../_images/timeSlots.png" style="width: 800px;" /></a>
+<p>In the first time slot, the simulation is not running and there are no restrictions for reading or writing object properties. Changes to the position of an object, for example, are applied instantaneously and the next scene query or simulation step will take the new state into account.</p>
+<p>In the second time slot the simulation is running and, in the process, reading and changing the state of objects. Concurrent access from the user might corrupt the state of the objects or lead to data races or inconsistent views in the simulation code. Hence, the simulation code’s view of the objects must not be interrupted by API writes.</p>
+<p>Note that <em>simulate()</em> and <em>fetchResults()</em> are write calls on the scene, and as such it is illegal to access any object in the scene while these functions are running.</p>
+<section id="double-buffering">
+<span id="doublebuffering"></span><h3>Double Buffering<a class="headerlink" href="#double-buffering" title="Permalink to this headline"></a></h3>
+<p>Since PhysX 5.0, double-buffering is not supported anymore. It is not allowed to add, remove or modify scene objects while the simulation is running.</p>
+</section>
+</section>
+<section id="multithreaded-simulation">
+<span id="taskman"></span><h2>Multithreaded Simulation<a class="headerlink" href="#multithreaded-simulation" title="Permalink to this headline"></a></h2>
+<p>PhysX includes a task system for managing compute resources. Tasks are created with dependencies so
+that they are resolved in a given order, when ready they are then submitted to a
+user-implemented dispatcher for execution.</p>
+<p>Middleware products typically do not want to create CPU threads for their
+own use. This is especially true on consoles where execution threads
+can have significant overhead. In the task model, the computational
+work is broken into jobs that are submitted to the application’s thread pool as
+they become ready to run.</p>
+<p>The following classes comprise the CPU task management.</p>
+<section id="taskmanager">
+<h3>TaskManager<a class="headerlink" href="#taskmanager" title="Permalink to this headline"></a></h3>
+<p>A TaskManager manages inter-task dependencies and dispatches ready tasks
+to their respective dispatcher. There is a dispatcher for CPU tasks assigned
+to the TaskManager.</p>
+<p>TaskManagers are owned and created by the SDK. Each PxScene will allocate
+its own TaskManager instance which users can configure with dispatchers
+through either the PxSceneDesc or directly through the TaskManager interface.</p>
+</section>
+<section id="cpudispatcher">
+<h3>CpuDispatcher<a class="headerlink" href="#cpudispatcher" title="Permalink to this headline"></a></h3>
+<p>The CpuDispatcher is an abstract class the SDK uses for interfacing with the
+application’s thread pool. Typically, there will be one single
+CpuDispatcher for the entire application, since there is rarely a need
+for more than one thread pool. A CpuDispatcher instance may be shared by
+more than one TaskManager, for example if multiple scenes are being used.</p>
+<p>PhysX includes a default CpuDispatcher implementation, but it is recommended
+for applications to implement this class themselves so PhysX can
+efficiently share CPU resources with the application.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The TaskManager will call CpuDispatcher::submitTask() from either the
+context of API calls (aka: scene::simulate()) or from other running
+tasks, so the function must be thread-safe.</p>
+</div>
+<p>An implementation of the CpuDispatcher interface must call the following two methods on each submitted task for it to be run correctly:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">baseTask</span><span class="o">-&gt;</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="n">baseTask</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The PxExtensions library has a default implementation of a CPU dispatcher. The following code snippet shows how the default dispatcher is created.
+<em>mNbThreads</em> which is passed to <a class="reference internal" href="../_build/physx/latest/function_group__extensions_1ga9537ba228174d72b9e526bc6df0c87e4.html#_CPPv428PxDefaultCpuDispatcherCreate5PxU32P5PxU32N37PxDefaultCpuDispatcherWaitForWorkMode4EnumE5PxU32" title="PxDefaultCpuDispatcherCreate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxDefaultCpuDispatcherCreate()</span></code></a> defines how many worker threads the CPU dispatcher will have.:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSceneDesc</span><span class="w"> </span><span class="nf">sceneDesc</span><span class="p">(</span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">getTolerancesScale</span><span class="p">());</span><span class="w"></span>
+<span class="p">[...]</span><span class="w"></span>
+<span class="c1">// create CPU dispatcher with mNbThreads worker threads</span>
+<span class="n">mCpuDispatcher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultCpuDispatcherCreate</span><span class="p">(</span><span class="n">mNbThreads</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mCpuDispatcher</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxDefaultCpuDispatcherCreate failed!&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">cpuDispatcher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mCpuDispatcher</span><span class="p">;</span><span class="w"></span>
+<span class="p">[...]</span><span class="w"></span>
+<span class="n">mScene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">createScene</span><span class="p">(</span><span class="n">sceneDesc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Best performance is usually achieved if the number of threads is less than or equal to the available hardware threads of the platform to run on,
+creating more worker threads than hardware threads will often lead to worse performance. For platforms with a single execution core, the CPU dispatcher
+can be created with zero worker threads (PxDefaultCpuDispatcherCreate(0)). In this case all work will be executed on the thread that calls <a class="reference internal" href="../_build/physx/latest/class_px_scene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a>,
+which can be more efficient than using multiple threads.</p>
+</div>
+</section>
+<section id="cpudispatcher-implementation-guidelines">
+<h3>CpuDispatcher Implementation Guidelines<a class="headerlink" href="#cpudispatcher-implementation-guidelines" title="Permalink to this headline"></a></h3>
+<p>After the scene’s TaskManager has found a ready-to-run task and submitted it to the
+appropriate dispatcher it is up to the dispatcher implementation to decide how and
+when the task will be run.</p>
+<p>Often in game scenarios the rigid body simulation is time critical and the goal is to
+reduce the latency from simulate() to the completion of fetchResults(). The lowest
+possible latency will be achieved when the PhysX tasks have exclusive access to CPU resources
+during the update. In reality, PhysX will have to share compute resources with other application tasks.
+Below are some guidelines to help ensure a balance between throughput and latency when mixing
+the PhysX update with other work.</p>
+<ul class="simple">
+<li><p>Avoid interleaving long running tasks with PhysX tasks, this will help reduce latency.</p></li>
+<li><p>Avoid assigning worker threads to the same execution core as higher priority threads. If a PhysX task is context switched during execution the rest of the rigid body pipeline may be stalled, increasing latency.</p></li>
+<li><p>PhysX occasionally submits tasks and then immediately waits for them to complete, because of this, executing tasks in LIFO (stack) order may perform better than FIFO (queue) order.</p></li>
+<li><p>PhysX is not a perfectly parallel SDK, so interleaving small to medium granularity tasks will generally result in higher overall throughput.</p></li>
+<li><p>If the thread pool has per-thread job-queues then queuing tasks on the thread they were submitted to may result in more optimal CPU cache coherence, however this is not required.</p></li>
+</ul>
+<p>For more details see the default CpuDispatcher implementation that comes as part of the
+PxExtensions package. It uses worker threads that each have their own task queue and steal
+tasks from the back of other worker’s queues (LIFO order) to improve workload distribution.</p>
+</section>
+<section id="basetask">
+<h3>BaseTask<a class="headerlink" href="#basetask" title="Permalink to this headline"></a></h3>
+<p>BaseTask is the abstract base class for all task types. All task
+run() functions will be executed on application threads, so they
+need to be careful with their stack usage. As little stack as
+possible should be used, and tasks should never block for any reason.</p>
+</section>
+<section id="task">
+<span id="id2"></span><h3>Task<a class="headerlink" href="#task" title="Permalink to this headline"></a></h3>
+<p>The Task class is the standard task type. Tasks must be submitted to the
+TaskManager each simulation step for them to be executed. Tasks may be
+named at submission time, this allows them to be discoverable. Tasks
+will be given a reference count of 1 when they are submitted, and the
+TaskManager::startSimulation() function decrements the reference count
+of all tasks and dispatches all Tasks whose reference count reaches zero.
+Before TaskManager::startSimulation() is called, Tasks can set
+dependencies on each other to control the order in which they are dispatched.
+Once simulation has started, it is still possible to submit new tasks and
+add dependencies, but it is up to the programmer to avoid race hazards.
+Dependencies can not be added to tasks that have already been dispatched,
+and newly submitted Tasks must have their reference count decremented
+before that Task will be allowed to execute.</p>
+<p>Synchronization points can also be defined using Task names. The
+TaskManager will assign the name a TaskID with no Task implementation.
+When all of the named TaskID’s dependencies are met, it will decrement
+the reference count of all Tasks with that name.</p>
+</section>
+<section id="lightcputask">
+<h3>LightCpuTask<a class="headerlink" href="#lightcputask" title="Permalink to this headline"></a></h3>
+<p>LightCpuTask is another subclass of BaseTask that is explicitly
+scheduled by the programmer. LightCpuTasks have a reference count of 1
+when they are initialized, so their reference count must be decremented
+before they are dispatched. LightCpuTasks increment their continuation
+task reference count when they are initialized, and decrement the
+reference count when they are released (after completing their run() function)</p>
+<p>PhysX uses LightCpuTasks almost exclusively to manage CPU
+resources. For example, each stage of the simulation update may consist
+of multiple parallel tasks, when each of these tasks has finished execution
+it will decrement the reference count on the next task in the update chain.
+This will then be automatically dispatched for execution when its reference
+count reaches zero.</p>
+<p>The following code snippets show how some agent A.I. is run as a CPU Task. The agent A.I. is run as a background Task in parallel with the PhysX simulation update.</p>
+<p>For a CPU task that does not need handling of multiple continuations <em>LightCpuTask</em> can be subclassed. A <em>LightCpuTask</em> subclass requires that the getName and a run method be defined:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Agent</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxLightCpuTask</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="p">[...]</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Implements LightCpuTask</span>
+<span class="w">    </span><span class="k">virtual</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w">    </span><span class="n">getName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Agent AI Task&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w">  </span><span class="kt">void</span><span class="w">           </span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="p">[...]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>After PxScene::simulate() has been called, and the simulation started, the application calls removeReference() on each Agent task, this in turn causes it to be submitted to the CpuDispatcher for update. Note that it is also possible to submit tasks to the dispatcher directly (without manipulating reference counts) as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxLightCpuTask</span><span class="o">&amp;</span><span class="w"> </span><span class="n">task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mAgent</span><span class="p">;</span><span class="w"></span>
+<span class="n">mCpuDispatcher</span><span class="o">-&gt;</span><span class="n">submitTask</span><span class="p">(</span><span class="n">task</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Once queued for execution by the CpuDispatcher, one of the thread pool’s worker threads will eventually call the task’s run method. The Agent task might perform raycasts against the scene and update its internal state machine:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">Agent::run</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// run as a separate task/thread</span>
+<span class="w">    </span><span class="n">scanForObstacles</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">updateState</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It is safe to perform API read calls, such as scene queries, from multiple threads while simulate() is running. However, care must be taken not to overlap API read and write calls from multiple threads. In this case the SDK will issue an error, see <a class="reference internal" href="#threading"><span class="std std-ref">Threading</span></a> for more information.</p>
+<p>An example for explicit reference count modification and task dependency setup:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// c shall start once a and b have run, d shall start after c</span>
+<span class="c1">// a and b have no dependencies and shall run in parallel</span>
+<span class="c1">//</span>
+<span class="c1">// a</span>
+<span class="c1">//  \</span>
+<span class="c1">//   c - d</span>
+<span class="c1">//  /</span>
+<span class="c1">// b</span>
+
+<span class="n">d</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="n">taskManager</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+<span class="n">c</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="n">d</span><span class="p">);</span><span class="w"></span>
+<span class="n">a</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="n">c</span><span class="p">);</span><span class="w"></span>
+<span class="n">b</span><span class="p">.</span><span class="n">setContinuation</span><span class="p">(</span><span class="n">c</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// setup is done, now start all tasks by decrementing their refcount by 1</span>
+<span class="c1">// tasks with refcount == 0 will be submitted to the dispatcher (a &amp; b will start).</span>
+<span class="n">a</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span><span class="w"></span>
+<span class="n">b</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span><span class="w"></span>
+<span class="n">c</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span><span class="w"></span>
+<span class="n">d</span><span class="p">.</span><span class="n">removeReference</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxRepXSerializer &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxRepXSerializer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxrepxserializer">
+<span id="exhale-class-class-px-rep-x-serializer"></span><h1>PxRepXSerializer<a class="headerlink" href="#pxrepxserializer" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxRepXSerializer.h.html#file-include-extensions-pxrepxserializer-h"><span class="std std-ref">include/extensions/PxRepXSerializer.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv416PxRepXSerializer">
+<span id="_CPPv316PxRepXSerializer"></span><span id="_CPPv216PxRepXSerializer"></span><span id="PxRepXSerializer"></span><span class="target" id="class_px_rep_x_serializer"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRepXSerializer</span></span></span><a class="headerlink" href="#_CPPv416PxRepXSerializer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Serializer interface for RepX (Xml) serialization. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.</p>
+</dd></dl>
+
+</p>
+<p>In order to serialize a class to RepX both a <a class="reference internal" href="class_px_serializer.html#class_px_serializer"><span class="std std-ref">PxSerializer</span></a> and a <a class="reference internal" href="#class_px_rep_x_serializer"><span class="std std-ref">PxRepXSerializer</span></a> implementation are needed.</p>
+<p>A repx Serializer provides the ability to capture a live object to a descriptor or static state and the ability to write that state out to a file. Objects allocated by the Serializer using the allocator are freed when the collection itself is freed. SnRepXCoreSerializers.cpp implements a set of Serializers for the core PhysX types.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serializer.html#class_px_serializer"><span class="std std-ref">PxSerializer</span></a>, <a class="reference internal" href="define_group___serializers_1ga6018c37f238db16a878cfcba49091c4a.html#group___serializers_1ga6018c37f238db16a878cfcba49091c4a"><span class="std std-ref">PX_NEW_REPX_SERIALIZER</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a8c22f511770403078c3a0616251014e4"><span class="std std-ref">PxSerializationRegistry::registerRepXSerializer</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Implementing a <a class="reference internal" href="#class_px_rep_x_serializer"><span class="std std-ref">PxRepXSerializer</span></a> is currently not practical without including the internal PhysXExtension header “SnRepXSerializerImpl.h”.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxRepXSerializer11getTypeNameEv">
+<span id="_CPPv3N16PxRepXSerializer11getTypeNameEv"></span><span id="_CPPv2N16PxRepXSerializer11getTypeNameEv"></span><span id="PxRepXSerializer::getTypeName"></span><span class="target" id="class_px_rep_x_serializer_1a91effb5024aa5a90fbbdbf7f17eba795"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxRepXSerializer11getTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The type this Serializer is meant to operate on. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_rep_x_object.html#struct_px_rep_x_object_1a0c78e70aff2c5ede506a1279562e494a"><span class="std std-ref">PxRepXObject::typeName</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxRepXSerializer12objectToFileERK12PxRepXObjectP12PxCollectionR9XmlWriterR12MemoryBufferR23PxRepXInstantiationArgs">
+<span id="_CPPv3N16PxRepXSerializer12objectToFileERK12PxRepXObjectP12PxCollectionR9XmlWriterR12MemoryBufferR23PxRepXInstantiationArgs"></span><span id="_CPPv2N16PxRepXSerializer12objectToFileERK12PxRepXObjectP12PxCollectionR9XmlWriterR12MemoryBufferR23PxRepXInstantiationArgs"></span><span id="PxRepXSerializer::objectToFile__PxRepXObjectCR.PxCollectionP.XmlWriterR.MemoryBufferR.PxRepXInstantiationArgsR"></span><span class="target" id="class_px_rep_x_serializer_1ac818078a2cd3b41cdaf26ee5bf0e1f35"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">objectToFile</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_rep_x_object.html#_CPPv412PxRepXObject" title="PxRepXObject"><span class="n"><span class="pre">PxRepXObject</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inLiveObject</span></span>, <a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">inCollection</span></span>, <span class="n"><span class="pre">XmlWriter</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inWriter</span></span>, <span class="n"><span class="pre">MemoryBuffer</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inTempBuffer</span></span>, <a class="reference internal" href="struct_px_rep_x_instantiation_args.html#_CPPv423PxRepXInstantiationArgs" title="PxRepXInstantiationArgs"><span class="n"><span class="pre">PxRepXInstantiationArgs</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inArgs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxRepXSerializer12objectToFileERK12PxRepXObjectP12PxCollectionR9XmlWriterR12MemoryBufferR23PxRepXInstantiationArgs" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convert from a RepX object to a key-value pair hierarchy. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inLiveObject</strong> – <strong>[in]</strong> The object to convert to the passed in descriptor. </p></li>
+<li><p><strong>inCollection</strong> – <strong>[in]</strong> The collection to use to find ids of references of this object. </p></li>
+<li><p><strong>inWriter</strong> – <strong>[in]</strong> Interface to write data to. </p></li>
+<li><p><strong>inTempBuffer</strong> – <strong>[in]</strong> used to for temporary allocations. </p></li>
+<li><p><strong>inArgs</strong> – <strong>[in]</strong> The arguments used in create resources and objects. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxRepXSerializer12fileToObjectER9XmlReaderR18XmlMemoryAllocatorR23PxRepXInstantiationArgsP12PxCollection">
+<span id="_CPPv3N16PxRepXSerializer12fileToObjectER9XmlReaderR18XmlMemoryAllocatorR23PxRepXInstantiationArgsP12PxCollection"></span><span id="_CPPv2N16PxRepXSerializer12fileToObjectER9XmlReaderR18XmlMemoryAllocatorR23PxRepXInstantiationArgsP12PxCollection"></span><span id="PxRepXSerializer::fileToObject__XmlReaderR.XmlMemoryAllocatorR.PxRepXInstantiationArgsR.PxCollectionP"></span><span class="target" id="class_px_rep_x_serializer_1a7855c4cc5d86b72852018f2652ac60cb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_rep_x_object.html#_CPPv412PxRepXObject" title="PxRepXObject"><span class="n"><span class="pre">PxRepXObject</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fileToObject</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">XmlReader</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inReader</span></span>, <span class="n"><span class="pre">XmlMemoryAllocator</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inAllocator</span></span>, <a class="reference internal" href="struct_px_rep_x_instantiation_args.html#_CPPv423PxRepXInstantiationArgs" title="PxRepXInstantiationArgs"><span class="n"><span class="pre">PxRepXInstantiationArgs</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inArgs</span></span>, <a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">inCollection</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N16PxRepXSerializer12fileToObjectER9XmlReaderR18XmlMemoryAllocatorR23PxRepXInstantiationArgsP12PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Convert from a descriptor to a live object. </p>
+<p>Must be an object of this Serializer type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inReader</strong> – <strong>[in]</strong> The inverse of the writer, a key-value pair database. </p></li>
+<li><p><strong>inAllocator</strong> – <strong>[in]</strong> An allocator to use for temporary allocations. These will be freed after instantiation completes. </p></li>
+<li><p><strong>inArgs</strong> – <strong>[in]</strong> The arguments used in create resources and objects. </p></li>
+<li><p><strong>inCollection</strong> – <strong>[in]</strong> The collection used to find references.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The new live object. It can be an invalid object if the instantiation cannot take place. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N16PxRepXSerializerD0Ev">
+<span id="_CPPv3N16PxRepXSerializerD0Ev"></span><span id="_CPPv2N16PxRepXSerializerD0Ev"></span><span id="PxRepXSerializer::~PxRepXSerializer"></span><span class="target" id="class_px_rep_x_serializer_1aa7d45faa6e6fb1e464249762d88b599e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxRepXSerializer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N16PxRepXSerializerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

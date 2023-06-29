@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxContactPoint &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxContactPoint</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontactpoint">
+<span id="exhale-struct-struct-px-contact-point"></span><h1>PxContactPoint<a class="headerlink" href="#pxcontactpoint" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geomutils_PxContactPoint.h.html#file-include-geomutils-pxcontactpoint-h"><span class="std std-ref">include/geomutils/PxContactPoint.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414PxContactPoint">
+<span id="_CPPv314PxContactPoint"></span><span id="_CPPv214PxContactPoint"></span><span id="PxContactPoint"></span><span class="target" id="struct_px_contact_point"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPoint</span></span></span><a class="headerlink" href="#_CPPv414PxContactPoint" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint6normalE">
+<span id="_CPPv3N14PxContactPoint6normalE"></span><span id="_CPPv2N14PxContactPoint6normalE"></span><span id="PxContactPoint::normal__PxVec3"></span><span class="target" id="struct_px_contact_point_1a220d048dc545d7bdeaf46d9cedfa4253"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">normal</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint6normalE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The normal of the contacting surfaces at the contact point. </p>
+<p>For two shapes s0 and s1, the normal points in the direction that s0 needs to move in to resolve the contact with s1. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint10separationE">
+<span id="_CPPv3N14PxContactPoint10separationE"></span><span id="_CPPv2N14PxContactPoint10separationE"></span><span id="PxContactPoint::separation__PxReal"></span><span class="target" id="struct_px_contact_point_1a8f23d1e168b2c355a58d3c126cf97c3c"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">separation</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint10separationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The separation of the shapes at the contact point. </p>
+<p>A negative separation denotes a penetration. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint5pointE">
+<span id="_CPPv3N14PxContactPoint5pointE"></span><span id="_CPPv2N14PxContactPoint5pointE"></span><span id="PxContactPoint::point__PxVec3"></span><span class="target" id="struct_px_contact_point_1a883695bec050f6022b851131bf736d00"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">point</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint5pointE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The point of contact between the shapes, in world space. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint10maxImpulseE">
+<span id="_CPPv3N14PxContactPoint10maxImpulseE"></span><span id="_CPPv2N14PxContactPoint10maxImpulseE"></span><span id="PxContactPoint::maxImpulse__PxReal"></span><span class="target" id="struct_px_contact_point_1a843dbf80a05500256142339167618726"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">maxImpulse</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint10maxImpulseE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The max impulse permitted at this point. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint9targetVelE">
+<span id="_CPPv3N14PxContactPoint9targetVelE"></span><span id="_CPPv2N14PxContactPoint9targetVelE"></span><span id="PxContactPoint::targetVel__PxVec3"></span><span class="target" id="struct_px_contact_point_1a6fc5b07ca83c642dd91954c16f249471"></span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">targetVel</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint9targetVelE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint14staticFrictionE">
+<span id="_CPPv3N14PxContactPoint14staticFrictionE"></span><span id="_CPPv2N14PxContactPoint14staticFrictionE"></span><span id="PxContactPoint::staticFriction__PxReal"></span><span class="target" id="struct_px_contact_point_1aed8b997e6dd93d3ad7190d60bc2b8a37"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">staticFriction</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint14staticFrictionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The static friction coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint13materialFlagsE">
+<span id="_CPPv3N14PxContactPoint13materialFlagsE"></span><span id="_CPPv2N14PxContactPoint13materialFlagsE"></span><span id="PxContactPoint::materialFlags__PxU8"></span><span class="target" id="struct_px_contact_point_1ab08c33269fa6ec47ddde3f0c35bd3c57"></span><a class="reference internal" href="typedef_group__foundation_1gacb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">materialFlags</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint13materialFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Material flags for this contact (eDISABLE_FRICTION, eDISABLE_STRONG_FRICTION). </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint18internalFaceIndex1E">
+<span id="_CPPv3N14PxContactPoint18internalFaceIndex1E"></span><span id="_CPPv2N14PxContactPoint18internalFaceIndex1E"></span><span id="PxContactPoint::internalFaceIndex1__PxU32"></span><span class="target" id="struct_px_contact_point_1af7e450c1db1f1460574fd1754901c07a"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">internalFaceIndex1</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint18internalFaceIndex1E" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The surface index of shape 1 at the contact point. </p>
+<p>This is used to identify the surface material.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This field is only supported by triangle meshes and heightfields, else it will be set to PXC_CONTACT_NO_FACE_INDEX. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This value must be directly after internalFaceIndex0 in memory </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint15dynamicFrictionE">
+<span id="_CPPv3N14PxContactPoint15dynamicFrictionE"></span><span id="_CPPv2N14PxContactPoint15dynamicFrictionE"></span><span id="PxContactPoint::dynamicFriction__PxReal"></span><span class="target" id="struct_px_contact_point_1a032197f3e45effb240c4bb371dab0daf"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dynamicFriction</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint15dynamicFrictionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The dynamic friction coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint11restitutionE">
+<span id="_CPPv3N14PxContactPoint11restitutionE"></span><span id="_CPPv2N14PxContactPoint11restitutionE"></span><span id="PxContactPoint::restitution__PxReal"></span><span class="target" id="struct_px_contact_point_1a083c55bb1ff7cac15539c02816420aa7"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restitution</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint11restitutionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The restitution coefficient. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxContactPoint7dampingE">
+<span id="_CPPv3N14PxContactPoint7dampingE"></span><span id="_CPPv2N14PxContactPoint7dampingE"></span><span id="PxContactPoint::damping__PxReal"></span><span class="target" id="struct_px_contact_point_1a0473e54c5f11492af1c473e87dc575ff"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damping</span></span></span><a class="headerlink" href="#_CPPv4N14PxContactPoint7dampingE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

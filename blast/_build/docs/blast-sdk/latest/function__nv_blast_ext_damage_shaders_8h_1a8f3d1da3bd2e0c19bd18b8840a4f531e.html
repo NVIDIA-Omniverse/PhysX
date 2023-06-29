@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>NvBlastExtImpactSpreadGraphShader &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>NvBlastExtImpactSpreadGraphShader &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,75 +64,38 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>NvBlastExtImpactSpreadGraphShader</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>NvBlastExtImpactSpreadGraphShader</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nvblastextimpactspreadgraphshader">
-<span id="exhale-function-nv-blast-ext-damage-shaders-8h-1a8f3d1da3bd2e0c19bd18b8840a4f531e"></span><h1>NvBlastExtImpactSpreadGraphShader<a class="headerlink" href="#nvblastextimpactspreadgraphshader" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nvblastextimpactspreadgraphshader">
+<span id="exhale-function-nv-blast-ext-damage-shaders-8h-1a8f3d1da3bd2e0c19bd18b8840a4f531e"></span><h1>NvBlastExtImpactSpreadGraphShader<a class="headerlink" href="#nvblastextimpactspreadgraphshader" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#file-extensions-shaders-nvblastextdamageshaders-h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
 <dl class="cpp function">
-<dt id="_CPPv433NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv">
-<span id="_CPPv333NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv"></span><span id="_CPPv233NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv"></span><span id="NvBlastExtImpactSpreadGraphShader__NvBlastFractureBuffersP.NvBlastGraphShaderActorCP.voidCP"></span><span class="target" id="_nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e"></span><span class="pre">void</span> <code class="sig-name descname"><span class="pre">NvBlastExtImpactSpreadGraphShader</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="pre">NvBlastFractureBuffers</span></a> <span class="pre">*</span><em><span class="pre">commandBuffers</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_graph_shader_actor.html#_CPPv423NvBlastGraphShaderActor" title="NvBlastGraphShaderActor"><span class="pre">NvBlastGraphShaderActor</span></a> <span class="pre">*</span><em><span class="pre">actor</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">void</span> <span class="pre">*</span><em><span class="pre">params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv433NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv">
+<span id="_CPPv333NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv"></span><span id="_CPPv233NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv"></span><span id="NvBlastExtImpactSpreadGraphShader__NvBlastFractureBuffersP.NvBlastGraphShaderActorCP.voidCP"></span><span class="target" id="_nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastExtImpactSpreadGraphShader</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="n"><span class="pre">NvBlastFractureBuffers</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">commandBuffers</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_graph_shader_actor.html#_CPPv423NvBlastGraphShaderActor" title="NvBlastGraphShaderActor"><span class="n"><span class="pre">NvBlastGraphShaderActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433NvBlastExtImpactSpreadGraphShaderP22NvBlastFractureBuffersPK23NvBlastGraphShaderActorPKv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Impact Spread Damage Shaders. </p>
 <p>It assumes that position is somewhere on the chunk and looks for nearest chunk to this position and damages it. Then it does breadth-first support graph traversal. For radial falloff metric distance is measured along the edges of the graph. That allows to avoid damaging parts which are near in space but disjointed topologically. For example if you hit one column of an arc it would take much bigger radius for damage to travel to the other column than in the simple radial damage.</p>
 <p>Shader is designed to be used with impact damage, where it is know in advance that actual hit happened.</p>
@@ -190,45 +107,36 @@
 </p>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

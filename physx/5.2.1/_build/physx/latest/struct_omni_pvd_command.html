@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniPvdCommand &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>OmniPvdCommand</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omnipvdcommand">
+<span id="exhale-struct-struct-omni-pvd-command"></span><h1>OmniPvdCommand<a class="headerlink" href="#omnipvdcommand" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdCommands.h.html#file-pvdruntime-include-omnipvdcommands-h"><span class="std std-ref">pvdruntime/include/OmniPvdCommands.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv414OmniPvdCommand">
+<span id="_CPPv314OmniPvdCommand"></span><span id="_CPPv214OmniPvdCommand"></span><span id="OmniPvdCommand"></span><span class="target" id="struct_omni_pvd_command"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdCommand</span></span></span><a class="headerlink" href="#_CPPv414OmniPvdCommand" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4EnumE">
+<span id="_CPPv3N14OmniPvdCommand4EnumE"></span><span id="_CPPv2N14OmniPvdCommand4EnumE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum8eINVALIDE">
+<span id="_CPPv3N14OmniPvdCommand4Enum8eINVALIDE"></span><span id="_CPPv2N14OmniPvdCommand4Enum8eINVALIDE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498abbd38c6a370afbddd078e068f32e439a"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINVALID</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum8eINVALIDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum15eREGISTER_CLASSE">
+<span id="_CPPv3N14OmniPvdCommand4Enum15eREGISTER_CLASSE"></span><span id="_CPPv2N14OmniPvdCommand4Enum15eREGISTER_CLASSE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a5beab4639a77bd55acbbe67b9a91ac21"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGISTER_CLASS</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum15eREGISTER_CLASSE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum14eREGISTER_ENUME">
+<span id="_CPPv3N14OmniPvdCommand4Enum14eREGISTER_ENUME"></span><span id="_CPPv2N14OmniPvdCommand4Enum14eREGISTER_ENUME"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a2f81df152ac11416d21f0bdb577a8885"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGISTER_ENUM</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum14eREGISTER_ENUME" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum19eREGISTER_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum19eREGISTER_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum19eREGISTER_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498ac515c28732dd88ad41dbfaff85244066"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGISTER_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum19eREGISTER_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum25eREGISTER_CLASS_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum25eREGISTER_CLASS_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum25eREGISTER_CLASS_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a4e1179841cacb6fb05f6ae1795a2de14"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGISTER_CLASS_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum25eREGISTER_CLASS_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum31eREGISTER_UNIQUE_LIST_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum31eREGISTER_UNIQUE_LIST_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum31eREGISTER_UNIQUE_LIST_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a0a518137e3dda8959b7edbed4b895a04"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREGISTER_UNIQUE_LIST_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum31eREGISTER_UNIQUE_LIST_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum14eSET_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum14eSET_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum14eSET_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a3c795de34168898537fb93467088026b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSET_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum14eSET_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum29eADD_TO_UNIQUE_LIST_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum29eADD_TO_UNIQUE_LIST_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum29eADD_TO_UNIQUE_LIST_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498aa120aeb9c6693b1873feb8865a20d0e3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eADD_TO_UNIQUE_LIST_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum29eADD_TO_UNIQUE_LIST_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum34eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum34eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum34eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498ad1d8b639378f5b4bf031ed3805a79679"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTE</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum34eREMOVE_FROM_UNIQUE_LIST_ATTRIBUTEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum14eCREATE_OBJECTE">
+<span id="_CPPv3N14OmniPvdCommand4Enum14eCREATE_OBJECTE"></span><span id="_CPPv2N14OmniPvdCommand4Enum14eCREATE_OBJECTE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a4714795b075c2bc8c32d4937ed916f9d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCREATE_OBJECT</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum14eCREATE_OBJECTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum15eDESTROY_OBJECTE">
+<span id="_CPPv3N14OmniPvdCommand4Enum15eDESTROY_OBJECTE"></span><span id="_CPPv2N14OmniPvdCommand4Enum15eDESTROY_OBJECTE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498ac5792b78476c52c4fd8f6f6101128c07"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eDESTROY_OBJECT</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum15eDESTROY_OBJECTE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum12eSTART_FRAMEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum12eSTART_FRAMEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum12eSTART_FRAMEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a63764beca25be893f60f0be2d63daabc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSTART_FRAME</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum12eSTART_FRAMEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14OmniPvdCommand4Enum11eSTOP_FRAMEE">
+<span id="_CPPv3N14OmniPvdCommand4Enum11eSTOP_FRAMEE"></span><span id="_CPPv2N14OmniPvdCommand4Enum11eSTOP_FRAMEE"></span><span class="target" id="struct_omni_pvd_command_1a42e10f58e1d4054e94a8b540873f4498a66b8310c010a6c0dc73c5501ff755d51"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSTOP_FRAME</span></span></span><a class="headerlink" href="#_CPPv4N14OmniPvdCommand4Enum11eSTOP_FRAMEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

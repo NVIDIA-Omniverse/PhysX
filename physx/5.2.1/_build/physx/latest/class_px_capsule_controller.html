@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxCapsuleController &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxCapsuleController</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcapsulecontroller">
+<span id="exhale-class-class-px-capsule-controller"></span><h1>PxCapsuleController<a class="headerlink" href="#pxcapsulecontroller" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxCapsuleController.h.html#file-include-characterkinematic-pxcapsulecontroller-h"><span class="std std-ref">include/characterkinematic/PxCapsuleController.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxController</span></code> (<a class="reference internal" href="class_px_controller.html#exhale-class-class-px-controller"><span class="std std-ref">PxController</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxCapsuleController">
+<span id="_CPPv319PxCapsuleController"></span><span id="_CPPv219PxCapsuleController"></span><span id="PxCapsuleController"></span><span class="target" id="class_px_capsule_controller"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCapsuleController</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><a class="headerlink" href="#_CPPv419PxCapsuleController" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A capsule character controller. </p>
+<p>The capsule is defined as a position, a vertical height, and a radius. The height is the distance between the two sphere centers at the end of the capsule. In other words:</p>
+<p><p>p = pos (returned by controller)</p>
+<p>h = height</p>
+
+ r = radius</p>
+<p><p>p = center of capsule</p>
+<p>top sphere center = p.y + h*0.5</p>
+<p>bottom sphere center = p.y - h*0.5</p>
+<p>top capsule point = p.y + h*0.5 + r</p>
+
+ bottom capsule point = p.y - h*0.5 - r</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController9getRadiusEv">
+<span id="_CPPv3NK19PxCapsuleController9getRadiusEv"></span><span id="_CPPv2NK19PxCapsuleController9getRadiusEv"></span><span id="PxCapsuleController::getRadiusC"></span><span class="target" id="class_px_capsule_controller_1a8c361593760ea09b0ae84ab414520ed1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRadius</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController9getRadiusEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s radius. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1aa54d06eec5b469d6342e8f26535e8160"><span class="std std-ref">PxCapsuleControllerDesc.radius</span></a> <a class="reference internal" href="#class_px_capsule_controller_1aa568af92bc897e9242c063d50c71cfd2"><span class="std std-ref">setRadius()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The radius of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController9setRadiusE5PxF32">
+<span id="_CPPv3N19PxCapsuleController9setRadiusE5PxF32"></span><span id="_CPPv2N19PxCapsuleController9setRadiusE5PxF32"></span><span id="PxCapsuleController::setRadius__PxF32"></span><span class="target" id="class_px_capsule_controller_1aa568af92bc897e9242c063d50c71cfd2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRadius</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController9setRadiusE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s radius. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1aa54d06eec5b469d6342e8f26535e8160"><span class="std std-ref">PxCapsuleControllerDesc.radius</span></a> <a class="reference internal" href="#class_px_capsule_controller_1a8c361593760ea09b0ae84ab414520ed1"><span class="std std-ref">getRadius()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>radius</strong> – <strong>[in]</strong> The new radius for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController9getHeightEv">
+<span id="_CPPv3NK19PxCapsuleController9getHeightEv"></span><span id="_CPPv2NK19PxCapsuleController9getHeightEv"></span><span id="PxCapsuleController::getHeightC"></span><span class="target" id="class_px_capsule_controller_1a9adfe5950e68450982a07a89b5b0e8ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHeight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController9getHeightEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1a00dcfa7bd1c529bf745fdf8849746a97"><span class="std std-ref">PxCapsuleControllerDesc.height</span></a> <a class="reference internal" href="#class_px_capsule_controller_1a8068e1a64b40a6c6a96bd30ba1db0883"><span class="std std-ref">setHeight()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The height of the capsule controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController9setHeightE5PxF32">
+<span id="_CPPv3N19PxCapsuleController9setHeightE5PxF32"></span><span id="_CPPv2N19PxCapsuleController9setHeightE5PxF32"></span><span id="PxCapsuleController::setHeight__PxF32"></span><span class="target" id="class_px_capsule_controller_1a8068e1a64b40a6c6a96bd30ba1db0883"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHeight</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController9setHeightE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Resets controller’s height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1a00dcfa7bd1c529bf745fdf8849746a97"><span class="std std-ref">PxCapsuleControllerDesc.height</span></a> <a class="reference internal" href="#class_px_capsule_controller_1a9adfe5950e68450982a07a89b5b0e8ed"><span class="std std-ref">getHeight()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>height</strong> – <strong>[in]</strong> The new height for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController15getClimbingModeEv">
+<span id="_CPPv3NK19PxCapsuleController15getClimbingModeEv"></span><span id="_CPPv2NK19PxCapsuleController15getClimbingModeEv"></span><span id="PxCapsuleController::getClimbingModeC"></span><span class="target" id="class_px_capsule_controller_1a68225dcdb5577d623a0fa5250de40f0b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_capsule_climbing_mode.html#_CPPv421PxCapsuleClimbingMode" title="PxCapsuleClimbingMode"><span class="n"><span class="pre">PxCapsuleClimbingMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_capsule_climbing_mode.html#_CPPv4N21PxCapsuleClimbingMode4EnumE" title="PxCapsuleClimbingMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClimbingMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController15getClimbingModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s climbing mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1a89888e84bf3091c6c3e7818732864674"><span class="std std-ref">PxCapsuleControllerDesc.climbingMode</span></a> <a class="reference internal" href="#class_px_capsule_controller_1a256d6b281406c5bd1fa30dbc99e5a2df"><span class="std std-ref">setClimbingMode()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The capsule controller’s climbing mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController15setClimbingModeEN21PxCapsuleClimbingMode4EnumE">
+<span id="_CPPv3N19PxCapsuleController15setClimbingModeEN21PxCapsuleClimbingMode4EnumE"></span><span id="_CPPv2N19PxCapsuleController15setClimbingModeEN21PxCapsuleClimbingMode4EnumE"></span><span id="PxCapsuleController::setClimbingMode__PxCapsuleClimbingMode::Enum"></span><span class="target" id="class_px_capsule_controller_1a256d6b281406c5bd1fa30dbc99e5a2df"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setClimbingMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_capsule_climbing_mode.html#_CPPv421PxCapsuleClimbingMode" title="PxCapsuleClimbingMode"><span class="n"><span class="pre">PxCapsuleClimbingMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_capsule_climbing_mode.html#_CPPv4N21PxCapsuleClimbingMode4EnumE" title="PxCapsuleClimbingMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController15setClimbingModeEN21PxCapsuleClimbingMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s climbing mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_capsule_controller_desc.html#class_px_capsule_controller_desc_1a89888e84bf3091c6c3e7818732864674"><span class="std std-ref">PxCapsuleControllerDesc.climbingMode</span></a> <a class="reference internal" href="#class_px_capsule_controller_1a68225dcdb5577d623a0fa5250de40f0b"><span class="std std-ref">getClimbingMode()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> – <strong>[in]</strong> The capsule controller’s climbing mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController7getTypeEv">
+<span id="_CPPv3NK19PxCapsuleController7getTypeEv"></span><span id="_CPPv2NK19PxCapsuleController7getTypeEv"></span><span id="PxCapsuleController::getTypeC"></span><span class="target" id="class_px_controller_1ad98589ad22dcdcedaf1c5fa9f0f40b53"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the type of controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxControllerType </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController7releaseEv">
+<span id="_CPPv3N19PxCapsuleController7releaseEv"></span><span id="_CPPv2N19PxCapsuleController7releaseEv"></span><span id="PxCapsuleController::release"></span><span class="target" id="class_px_controller_1a0ed314c5bf5dd95f9f340de15efb5776"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the controller. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext">
+<span id="_CPPv3N19PxCapsuleController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="_CPPv2N19PxCapsuleController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="PxCapsuleController::move__PxVec3CR.PxF32.PxF32.PxControllerFiltersCR.PxObstacleContextCP"></span><span class="target" id="class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db.html#_CPPv426PxControllerCollisionFlags" title="PxControllerCollisionFlags"><span class="n"><span class="pre">PxControllerCollisionFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">move</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">disp</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minDist</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">elapsedTime</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller_filters.html#_CPPv419PxControllerFilters" title="PxControllerFilters"><span class="n"><span class="pre">PxControllerFilters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filters</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_obstacle_context.html#_CPPv417PxObstacleContext" title="PxObstacleContext"><span class="n"><span class="pre">PxObstacleContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">obstacles</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Moves the character using a “collide-and-slide” algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>disp</strong> – <strong>[in]</strong> Displacement vector </p></li>
+<li><p><strong>minDist</strong> – <strong>[in]</strong> The minimum travelled distance to consider. If travelled distance is smaller, the character doesn’t move. This is used to stop the recursive motion algorithm when remaining distance to travel is small. </p></li>
+<li><p><strong>elapsedTime</strong> – <strong>[in]</strong> Time elapsed since last call </p></li>
+<li><p><strong>filters</strong> – <strong>[in]</strong> User-defined filters for this move </p></li>
+<li><p><strong>obstacles</strong> – <strong>[in]</strong> Potential additional obstacles the CCT should collide with. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Collision flags, collection of <a class="reference internal" href="typedef_group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db.html#group__character_1ga3cb7e2aaf5144c3ed9bbf504c2fd66db"><span class="std std-ref">PxControllerCollisionFlags</span></a> </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController11setPositionERK14PxExtendedVec3">
+<span id="_CPPv3N19PxCapsuleController11setPositionERK14PxExtendedVec3"></span><span id="_CPPv2N19PxCapsuleController11setPositionERK14PxExtendedVec3"></span><span id="PxCapsuleController::setPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController11setPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s position. </p>
+<p>The position controlled by this function is the center of the collision shape.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions. </p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The character’s position must be such that it does not overlap the static geometry.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (center) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController11getPositionEv">
+<span id="_CPPv3NK19PxCapsuleController11getPositionEv"></span><span id="_CPPv2NK19PxCapsuleController11getPositionEv"></span><span id="PxCapsuleController::getPositionC"></span><span class="target" id="class_px_controller_1aca54bef0663caf75613a5542e54d318e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController11getPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the raw position of the controller. </p>
+<p>The position retrieved by this function is the center of the collision shape. To retrieve the bottom position of the shape, a.k.a. the foot position, use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> function.</p>
+<p>The position is updated by calls to <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a>. Calling this method without calling <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> will return the last position or the initial position of the controller.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s center position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController15setFootPositionERK14PxExtendedVec3">
+<span id="_CPPv3N19PxCapsuleController15setFootPositionERK14PxExtendedVec3"></span><span id="_CPPv2N19PxCapsuleController15setFootPositionERK14PxExtendedVec3"></span><span id="PxCapsuleController::setFootPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1ab09889972859bf03168d1d48434094ff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFootPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController15setFootPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set controller’s foot position. </p>
+<p>The position controlled by this function is the bottom of the collision shape, a.k.a. the foot position.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (bottom) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController15getFootPositionEv">
+<span id="_CPPv3NK19PxCapsuleController15getFootPositionEv"></span><span id="_CPPv2NK19PxCapsuleController15getFootPositionEv"></span><span id="PxCapsuleController::getFootPositionC"></span><span class="target" id="class_px_controller_1a401af38fab565432d05b87112b26b816"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__character_1ga1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFootPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController15getFootPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the “foot” position of the controller, i.e. </p>
+<p>the position of the bottom of the CCT’s shape.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1aca54bef0663caf75613a5542e54d318e"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s foot position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController8getActorEv">
+<span id="_CPPv3NK19PxCapsuleController8getActorEv"></span><span id="_CPPv2NK19PxCapsuleController8getActorEv"></span><span id="PxCapsuleController::getActorC"></span><span class="target" id="class_px_controller_1a3754e17468322484fa5fd7034a208653"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><span class="n"><span class="pre">PxRigidDynamic</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getActor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController8getActorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the rigid body actor associated with this controller (see PhysX documentation). </p>
+<p>The behavior upon manually altering this actor is undefined, you should primarily use it for reading const properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the actor associated with the controller. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController13setStepOffsetEK5PxF32">
+<span id="_CPPv3N19PxCapsuleController13setStepOffsetEK5PxF32"></span><span id="_CPPv2N19PxCapsuleController13setStepOffsetEK5PxF32"></span><span id="PxCapsuleController::setStepOffset__PxF32C"></span><span class="target" id="class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStepOffset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController13setStepOffsetEK5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a51fe254a4807b832b2d34e884d856438"><span class="std std-ref">PxControllerDesc.stepOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The new step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController13getStepOffsetEv">
+<span id="_CPPv3NK19PxCapsuleController13getStepOffsetEv"></span><span id="_CPPv2NK19PxCapsuleController13getStepOffsetEv"></span><span id="PxCapsuleController::getStepOffsetC"></span><span class="target" id="class_px_controller_1a2a46763eb7541abe5d1c73eacca4639c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStepOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController13getStepOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"><span class="std std-ref">setStepOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE">
+<span id="_CPPv3N19PxCapsuleController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="_CPPv2N19PxCapsuleController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="PxCapsuleController::setNonWalkableMode__PxControllerNonWalkableMode::Enum"></span><span class="target" id="class_px_controller_1a8f30123d5e7d45c6fdb1992cf8c748ef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setNonWalkableMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> The new value of the non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController18getNonWalkableModeEv">
+<span id="_CPPv3NK19PxCapsuleController18getNonWalkableModeEv"></span><span id="_CPPv2NK19PxCapsuleController18getNonWalkableModeEv"></span><span id="PxCapsuleController::getNonWalkableModeC"></span><span class="target" id="class_px_controller_1ad16b10c1e20376c23ce81af23b5ef880"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNonWalkableMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController18getNonWalkableModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController16getContactOffsetEv">
+<span id="_CPPv3NK19PxCapsuleController16getContactOffsetEv"></span><span id="_CPPv2NK19PxCapsuleController16getContactOffsetEv"></span><span id="PxCapsuleController::getContactOffsetC"></span><span class="target" id="class_px_controller_1a836a426813b11552b4dfb481e0ba576f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController16getContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController16setContactOffsetE5PxF32">
+<span id="_CPPv3N19PxCapsuleController16setContactOffsetE5PxF32"></span><span id="_CPPv2N19PxCapsuleController16setContactOffsetE5PxF32"></span><span id="PxCapsuleController::setContactOffset__PxF32"></span><span class="target" id="class_px_controller_1a6bf15ba0b66b3f271fdb2f2c6cb8c68b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController16setContactOffsetE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController14getUpDirectionEv">
+<span id="_CPPv3NK19PxCapsuleController14getUpDirectionEv"></span><span id="_CPPv2NK19PxCapsuleController14getUpDirectionEv"></span><span id="PxCapsuleController::getUpDirectionC"></span><span class="target" id="class_px_controller_1ad8fe2f181b59bcbee150f786bb41adfe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUpDirection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController14getUpDirectionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController14setUpDirectionERK6PxVec3">
+<span id="_CPPv3N19PxCapsuleController14setUpDirectionERK6PxVec3"></span><span id="_CPPv2N19PxCapsuleController14setUpDirectionERK6PxVec3"></span><span id="PxCapsuleController::setUpDirection__PxVec3CR"></span><span class="target" id="class_px_controller_1a3393ba5043c3534712d8f362a9872cfc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUpDirection</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController14setUpDirectionERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>up</strong> – <strong>[in]</strong> The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController13getSlopeLimitEv">
+<span id="_CPPv3NK19PxCapsuleController13getSlopeLimitEv"></span><span id="_CPPv2NK19PxCapsuleController13getSlopeLimitEv"></span><span id="PxCapsuleController::getSlopeLimitC"></span><span class="target" id="class_px_controller_1a7e03e7863dd2036f673b084f3ce94629"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSlopeLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController13getSlopeLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController13setSlopeLimitE5PxF32">
+<span id="_CPPv3N19PxCapsuleController13setSlopeLimitE5PxF32"></span><span id="_CPPv2N19PxCapsuleController13setSlopeLimitE5PxF32"></span><span id="PxCapsuleController::setSlopeLimit__PxF32"></span><span class="target" id="class_px_controller_1a5e3a554fe03319301360df65122f22c8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSlopeLimit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">slopeLimit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController13setSlopeLimitE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature can not be enabled at runtime, i.e. if the slope limit is zero when creating the CCT (which disables the feature) then changing the slope limit at runtime will not have any effect, and the call will be ignored.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>slopeLimit</strong> – <strong>[in]</strong> The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController15invalidateCacheEv">
+<span id="_CPPv3N19PxCapsuleController15invalidateCacheEv"></span><span id="_CPPv2N19PxCapsuleController15invalidateCacheEv"></span><span id="PxCapsuleController::invalidateCache"></span><span class="target" id="class_px_controller_1a4d65669022c2f65926fde8112e72c500"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invalidateCache</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController15invalidateCacheEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes internal geometry cache. </p>
+<p>The character controller uses caching in order to speed up collision testing. The cache is automatically flushed when a change to static objects is detected in the scene. For example when a static shape is added, updated, or removed from the scene, the cache is automatically invalidated.</p>
+<p>However there may be situations that cannot be automatically detected, and those require manual invalidation of the cache. Currently the user must call this when the filtering behavior changes (the <a class="reference internal" href="class_px_controller_filters.html#class_px_controller_filters"><span class="std std-ref">PxControllerFilters</span></a> parameter of the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController::move</span></a> call). While the controller in principle could detect a change in these parameters, it cannot detect a change in the behavior of the filtering function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController.move</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController8getSceneEv">
+<span id="_CPPv3N19PxCapsuleController8getSceneEv"></span><span id="_CPPv2N19PxCapsuleController8getSceneEv"></span><span id="PxCapsuleController::getScene"></span><span class="target" id="class_px_controller_1a3a7134907855142bcae10e462958a61e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the scene associated with the controller. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The physics scene </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController11getUserDataEv">
+<span id="_CPPv3NK19PxCapsuleController11getUserDataEv"></span><span id="_CPPv2NK19PxCapsuleController11getUserDataEv"></span><span id="PxCapsuleController::getUserDataC"></span><span class="target" id="class_px_controller_1a74cdda2b323e76b66ffc6a5c02376e92"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getUserData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController11getUserDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController11setUserDataEPv">
+<span id="_CPPv3N19PxCapsuleController11setUserDataEPv"></span><span id="_CPPv2N19PxCapsuleController11setUserDataEPv"></span><span id="PxCapsuleController::setUserData__voidP"></span><span class="target" id="class_px_controller_1a2b6c1841bafa53877baa3dca8543c9ca"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUserData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userData</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController11setUserDataEPv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>userData</strong> – <strong>[in]</strong> The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController8getStateER17PxControllerState">
+<span id="_CPPv3NK19PxCapsuleController8getStateER17PxControllerState"></span><span id="_CPPv2NK19PxCapsuleController8getStateER17PxControllerState"></span><span id="PxCapsuleController::getState__PxControllerStateRC"></span><span class="target" id="class_px_controller_1ad694218683ad584f6120bc001c0d1616"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getState</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_state.html#_CPPv417PxControllerState" title="PxControllerState"><span class="n"><span class="pre">PxControllerState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController8getStateER17PxControllerState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns information about the controller’s internal state. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_state.html#struct_px_controller_state"><span class="std std-ref">PxControllerState</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>state</strong> – <strong>[out]</strong> The controller’s internal state</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxCapsuleController8getStatsER17PxControllerStats">
+<span id="_CPPv3NK19PxCapsuleController8getStatsER17PxControllerStats"></span><span id="_CPPv2NK19PxCapsuleController8getStatsER17PxControllerStats"></span><span id="PxCapsuleController::getStats__PxControllerStatsRC"></span><span class="target" id="class_px_controller_1ae98a10df99157bdaed67a05795fb3599"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStats</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_stats.html#_CPPv417PxControllerStats" title="PxControllerStats"><span class="n"><span class="pre">PxControllerStats</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stats</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxCapsuleController8getStatsER17PxControllerStats" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the controller’s internal statistics. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_stats.html#struct_px_controller_stats"><span class="std std-ref">PxControllerStats</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stats</strong> – <strong>[out]</strong> The controller’s internal statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController6resizeE6PxReal">
+<span id="_CPPv3N19PxCapsuleController6resizeE6PxReal"></span><span id="_CPPv2N19PxCapsuleController6resizeE6PxReal"></span><span id="PxCapsuleController::resize__PxReal"></span><span class="target" id="class_px_controller_1a4b982db163cd5189357eee4c26430cf6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxCapsuleController6resizeE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Resizes the controller. </p>
+<p>This function attempts to resize the controller to a given size, while making sure the bottom position of the controller remains constant. In other words the function modifies both the height and the (center) position of the controller. This is a helper function that can be used to implement a ‘crouch’ functionality for example.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>height</strong> – <strong>[in]</strong> Desired controller’s height </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleController19PxCapsuleControllerEv">
+<span id="_CPPv3N19PxCapsuleController19PxCapsuleControllerEv"></span><span id="_CPPv2N19PxCapsuleController19PxCapsuleControllerEv"></span><span id="PxCapsuleController::PxCapsuleController"></span><span class="target" id="class_px_capsule_controller_1ad3153106ef0bbdf443ded9549966cbd3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCapsuleController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCapsuleController19PxCapsuleControllerEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxCapsuleControllerD0Ev">
+<span id="_CPPv3N19PxCapsuleControllerD0Ev"></span><span id="_CPPv2N19PxCapsuleControllerD0Ev"></span><span id="PxCapsuleController::~PxCapsuleController"></span><span class="target" id="class_px_capsule_controller_1a1f391f475b656f082dbf618d549aef61"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxCapsuleController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxCapsuleControllerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

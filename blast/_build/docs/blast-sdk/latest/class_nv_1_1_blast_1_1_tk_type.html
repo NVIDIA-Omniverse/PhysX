@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::TkType &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::TkType &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,82 +64,45 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::TkType</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::TkType</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-tktype">
-<span id="exhale-class-class-nv-1-1-blast-1-1-tk-type"></span><h1>Nv::Blast::TkType<a class="headerlink" href="#nv-blast-tktype" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-tktype">
+<span id="exhale-class-class-nv-1-1-blast-1-1-tk-type"></span><h1>Nv::Blast::TkType<a class="headerlink" href="#nv-blast-tktype" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkType.h.html#file-toolkit-nvblasttktype-h"><span class="std std-ref">toolkit/NvBlastTkType.h</span></a></p>
 <dl class="cpp class">
-<dt id="_CPPv4N2Nv5Blast6TkTypeE">
-<span id="_CPPv3N2Nv5Blast6TkTypeE"></span><span id="_CPPv2N2Nv5Blast6TkTypeE"></span><span id="Nv::Blast::TkType"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkType</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast6TkTypeE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast6TkTypeE">
+<span id="_CPPv3N2Nv5Blast6TkTypeE"></span><span id="_CPPv2N2Nv5Blast6TkTypeE"></span><span id="Nv::Blast::TkType"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TkType</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast6TkTypeE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Interface for static (class) type data. </p>
 <p>This data is used for identification in streams, class-specific object queries in <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework"><span class="std std-ref">TkFramework</span></a>, etc. Only classes derived from <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#class_nv_1_1_blast_1_1_tk_identifiable"><span class="std std-ref">TkIdentifiable</span></a> use <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_type"><span class="std std-ref">TkType</span></a> data. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast6TkType7getNameEv">
-<span id="_CPPv3NK2Nv5Blast6TkType7getNameEv"></span><span id="_CPPv2NK2Nv5Blast6TkType7getNameEv"></span><span id="Nv::Blast::TkType::getNameC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1af3d9ae44f5f8234e0ccf6027dcca40ab"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <span class="pre">char</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getName</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkType7getNameEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast6TkType7getNameEv">
+<span id="_CPPv3NK2Nv5Blast6TkType7getNameEv"></span><span id="_CPPv2NK2Nv5Blast6TkType7getNameEv"></span><span id="Nv::Blast::TkType::getNameC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1a33a6a044d524d268f0596902d1f5b614"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkType7getNameEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>The class name. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -195,8 +112,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast6TkType10getVersionEv">
-<span id="_CPPv3NK2Nv5Blast6TkType10getVersionEv"></span><span id="_CPPv2NK2Nv5Blast6TkType10getVersionEv"></span><span id="Nv::Blast::TkType::getVersionC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1ada004286c609b55824a712b518ddb23c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getVersion</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkType10getVersionEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast6TkType10getVersionEv">
+<span id="_CPPv3NK2Nv5Blast6TkType10getVersionEv"></span><span id="_CPPv2NK2Nv5Blast6TkType10getVersionEv"></span><span id="Nv::Blast::TkType::getVersionC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1ada004286c609b55824a712b518ddb23c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkType10getVersionEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>The data format version for this class. </p>
 <p>When deserializing, this version must match the current version. If not, the user may convert the data format using the format conversion extension.</p>
 <dl class="field-list simple">
@@ -207,8 +124,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast6TkTypeeqERK6TkType">
-<span id="_CPPv3NK2Nv5Blast6TkTypeeqERK6TkType"></span><span id="_CPPv2NK2Nv5Blast6TkTypeeqERK6TkType"></span><span id="Nv::Blast::TkType::eq-operator__TkTypeCRC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1aec7c0da2124e245c4e0ef01c3b7b54c6"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">operator==</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">&amp;</span><em><span class="pre">type</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkTypeeqERK6TkType" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast6TkTypeeqERK6TkType">
+<span id="_CPPv3NK2Nv5Blast6TkTypeeqERK6TkType"></span><span id="_CPPv2NK2Nv5Blast6TkTypeeqERK6TkType"></span><span id="Nv::Blast::TkType::eq-operator__TkTypeCRC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_type_1aec7c0da2124e245c4e0ef01c3b7b54c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="n"><span class="pre">TkType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">type</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast6TkTypeeqERK6TkType" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Test for equality. </p>
 <p>This type is used in static (per-class) data, so types are equal exactly when their addresses are equal.</p>
 <dl class="field-list simple">
@@ -224,45 +141,36 @@
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxCollection &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxCollection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcollection">
+<span id="exhale-class-class-px-collection"></span><h1>PxCollection<a class="headerlink" href="#pxcollection" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxCollection.h.html#file-include-common-pxcollection-h"><span class="std std-ref">include/common/PxCollection.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv412PxCollection">
+<span id="_CPPv312PxCollection"></span><span id="_CPPv212PxCollection"></span><span id="PxCollection"></span><span class="target" id="class_px_collection"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCollection</span></span></span><a class="headerlink" href="#_CPPv412PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Collection class for serialization. </p>
+<p>A collection is a set of <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects. <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects can be added to the collection regardless of other objects they depend on. Objects may be named using PxSerialObjectId values in order to resolve dependencies between objects of different collections.</p>
+<p>Serialization and deserialization only work through collections.</p>
+<p>A scene is typically serialized using the following steps:</p>
+<p><ol class="loweralpha simple">
+<li><p>create a serialization registry</p></li>
+<li><p>create a collection for scene objects</p></li>
+<li><p>complete the scene objects (adds all dependent objects, e.g. meshes)</p></li>
+<li><p>serialize collection</p></li>
+<li><p>release collection</p></li>
+<li><p>release serialization registry</p></li>
+</ol>
+</p>
+<p>For example the code may look like this:</p>
+<p><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="p">;</span><span class="w"> </span><span class="c1">// The physics</span>
+<span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w">     </span><span class="c1">// The physics scene</span>
+<span class="n">SerialStream</span><span class="w"> </span><span class="n">s</span><span class="p">;</span><span class="w">     </span><span class="c1">// The user-defined stream doing the actual write to disk</span>
+
+<span class="n">PxSerializationRegistry</span><span class="o">*</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSerialization</span><span class="o">::</span><span class="n">createSerializationRegistry</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w"> </span><span class="c1">// step 1)</span>
+<span class="n">PxCollection</span><span class="o">*</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSerialization</span><span class="o">::</span><span class="n">createCollection</span><span class="p">(</span><span class="o">*</span><span class="n">scene</span><span class="p">);</span><span class="w">                       </span><span class="c1">// step 2)</span>
+<span class="n">PxSerialization</span><span class="o">::</span><span class="n">complete</span><span class="p">(</span><span class="o">*</span><span class="n">collection</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">registry</span><span class="p">);</span><span class="w">                                          </span><span class="c1">// step 3)</span>
+<span class="n">PxSerialization</span><span class="o">::</span><span class="n">serializeCollectionToBinary</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">collection</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">registry</span><span class="p">);</span><span class="w">                    </span><span class="c1">// step 4)</span>
+<span class="n">collection</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w">                                                                      </span><span class="c1">// step 5)</span>
+<span class="n">registry</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w">                                                                        </span><span class="c1">// step 6)</span>
+</pre></div>
+</div>
+</p>
+<p>A scene is typically deserialized using the following steps:</p>
+<p><ol class="loweralpha simple">
+<li><p>load a serialized collection into memory</p></li>
+<li><p>create a serialization registry</p></li>
+<li><p>create a collection by passing the serialized memory block</p></li>
+<li><p>add collected objects to scene</p></li>
+<li><p>release collection</p></li>
+<li><p>release serialization registry</p></li>
+</ol>
+</p>
+<p>For example the code may look like this:</p>
+<p><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="p">;</span><span class="w"> </span><span class="c1">// The physics</span>
+<span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w">     </span><span class="c1">// The physics scene</span>
+<span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">memory128</span><span class="p">;</span><span class="w">    </span><span class="c1">// a 128-byte aligned buffer previously loaded from disk by the user    - step 1)</span>
+
+<span class="n">PxSerializationRegistry</span><span class="o">*</span><span class="w"> </span><span class="n">registry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSerialization</span><span class="o">::</span><span class="n">createSerializationRegistry</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w">     </span><span class="c1">// step 2)</span>
+<span class="n">PxCollection</span><span class="o">*</span><span class="w"> </span><span class="n">collection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxSerialization</span><span class="o">::</span><span class="n">createCollectionFromBinary</span><span class="p">(</span><span class="n">memory128</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">registry</span><span class="p">);</span><span class="w">   </span><span class="c1">// step 3)</span>
+<span class="n">scene</span><span class="o">-&gt;</span><span class="n">addCollection</span><span class="p">(</span><span class="o">*</span><span class="n">collection</span><span class="p">);</span><span class="w">                                                              </span><span class="c1">// step 4)</span>
+<span class="n">collection</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w">                                                                          </span><span class="c1">// step 5)</span>
+<span class="n">registry</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w">                                                                            </span><span class="c1">// step 6)</span>
+</pre></div>
+</div>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a>, <a class="reference internal" href="function_group__common_1ga56ecc052c0b3e1b475406395a8033ee7.html#group__common_1ga56ecc052c0b3e1b475406395a8033ee7"><span class="std std-ref">PxCreateCollection()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection3addER6PxBase16PxSerialObjectId">
+<span id="_CPPv3N12PxCollection3addER6PxBase16PxSerialObjectId"></span><span id="_CPPv2N12PxCollection3addER6PxBase16PxSerialObjectId"></span><span id="PxCollection::add__PxBaseR.PxSerialObjectId"></span><span class="target" id="class_px_collection_1ad201723a5d59909e3a8c7b68204e1d49"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">object</span></span>, <a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">PX_SERIAL_OBJECT_ID_INVALID</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection3addER6PxBase16PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object to the collection. </p>
+<p>Adds a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object to the collection. Optionally a PxSerialObjectId can be provided in order to resolve dependencies between collections. A PxSerialObjectId value of PX_SERIAL_OBJECT_ID_INVALID means the object remains without id. Objects can be added regardless of other objects they require. If the object is already in the collection, the ID will be set if it was PX_SERIAL_OBJECT_ID_INVALID previously, otherwise the operation fails.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>object</strong> – <strong>[in]</strong> Object to be added to the collection </p></li>
+<li><p><strong>id</strong> – <strong>[in]</strong> Optional PxSerialObjectId id </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection6removeER6PxBase">
+<span id="_CPPv3N12PxCollection6removeER6PxBase"></span><span id="_CPPv2N12PxCollection6removeER6PxBase"></span><span id="PxCollection::remove__PxBaseR"></span><span class="target" id="class_px_collection_1a195f984e3dd4d33b09712452b550c382"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remove</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">object</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection6removeER6PxBase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> member object from the collection. </p>
+<p>Object needs to be contained by the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>object</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object to be removed </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection8containsER6PxBase">
+<span id="_CPPv3NK12PxCollection8containsER6PxBase"></span><span id="_CPPv2NK12PxCollection8containsER6PxBase"></span><span id="PxCollection::contains__PxBaseRC"></span><span class="target" id="class_px_collection_1acb3a641713d42126264b88fc47cd9fc4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">object</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection8containsER6PxBase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether the collection contains a certain <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>object</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Whether object is contained. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection5addIdER6PxBase16PxSerialObjectId">
+<span id="_CPPv3N12PxCollection5addIdER6PxBase16PxSerialObjectId"></span><span id="_CPPv2N12PxCollection5addIdER6PxBase16PxSerialObjectId"></span><span id="PxCollection::addId__PxBaseR.PxSerialObjectId"></span><span class="target" id="class_px_collection_1ad53f79454edff13a2a2d648ad6b21492"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addId</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">object</span></span>, <a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection5addIdER6PxBase16PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds an id to a member <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object. </p>
+<p>If the object is already associated with an id within the collection, the id is replaced. May only be called for objects that are members of the collection. The id needs to be unique within the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>object</strong> – <strong>[in]</strong> Member <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object </p></li>
+<li><p><strong>id</strong> – <strong>[in]</strong> PxSerialObjectId id to be given to the object </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection8removeIdE16PxSerialObjectId">
+<span id="_CPPv3N12PxCollection8removeIdE16PxSerialObjectId"></span><span id="_CPPv2N12PxCollection8removeIdE16PxSerialObjectId"></span><span id="PxCollection::removeId__PxSerialObjectId"></span><span class="target" id="class_px_collection_1aed9ec331226d0aa2156efa6bec0e3ecb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeId</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection8removeIdE16PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes id from a contained <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object. </p>
+<p>May only be called for ids that are associated with an object in the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – <strong>[in]</strong> PxSerialObjectId value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection3addER12PxCollection">
+<span id="_CPPv3N12PxCollection3addER12PxCollection"></span><span id="_CPPv2N12PxCollection3addER12PxCollection"></span><span id="PxCollection::add__PxCollectionR"></span><span class="target" id="class_px_collection_1aef86f7f33db62840e237e6881363501b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection3addER12PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds all <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects and their ids of collection to this collection. </p>
+<p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects already in this collection are ignored. Object ids need to be conflict free, i.e. the same object may not have two different ids within the two collections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>collection</strong> – <strong>[in]</strong> Collection to be added </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection6removeER12PxCollection">
+<span id="_CPPv3N12PxCollection6removeER12PxCollection"></span><span id="_CPPv2N12PxCollection6removeER12PxCollection"></span><span id="PxCollection::remove__PxCollectionR"></span><span class="target" id="class_px_collection_1ab06fbb729d1b88190672da888e330a34"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">remove</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection6removeER12PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes all <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects of collection from this collection. </p>
+<p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects not present in this collection are ignored. Ids of objects which are removed are also removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>collection</strong> – <strong>[in]</strong> Collection to be removed </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection12getNbObjectsEv">
+<span id="_CPPv3NK12PxCollection12getNbObjectsEv"></span><span id="_CPPv2NK12PxCollection12getNbObjectsEv"></span><span id="PxCollection::getNbObjectsC"></span><span class="target" id="class_px_collection_1a5642c14ef12fe69f887f829e47e133a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbObjects</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection12getNbObjectsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets number of <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects in this collection. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of objects in this collection </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection9getObjectE5PxU32">
+<span id="_CPPv3NK12PxCollection9getObjectE5PxU32"></span><span id="_CPPv2NK12PxCollection9getObjectE5PxU32"></span><span id="PxCollection::getObject__PxU32C"></span><span class="target" id="class_px_collection_1aeed5696e38989d4c4bd0293c45f625e9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getObject</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection9getObjectE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object of this collection given its index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> index in [0, <a class="reference internal" href="#class_px_collection_1a5642c14ef12fe69f887f829e47e133a1"><span class="std std-ref">getNbObjects()</span></a>) </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object at index index </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection10getObjectsEPP6PxBase5PxU325PxU32">
+<span id="_CPPv3NK12PxCollection10getObjectsEPP6PxBase5PxU325PxU32"></span><span id="_CPPv2NK12PxCollection10getObjectsEPP6PxBase5PxU325PxU32"></span><span id="PxCollection::getObjects__PxBasePP.PxU32.PxU32C"></span><span class="target" id="class_px_collection_1af245a69b1af2a7c50bbf79bbfab5e516"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getObjects</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection10getObjectsEPP6PxBase5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies member <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> pointers to a user specified buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> Array of <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> pointers </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Capacity of userBuffer </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Offset into list of member <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of members <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects that have been written to the userBuffer </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection4findE16PxSerialObjectId">
+<span id="_CPPv3NK12PxCollection4findE16PxSerialObjectId"></span><span id="_CPPv2NK12PxCollection4findE16PxSerialObjectId"></span><span id="PxCollection::find__PxSerialObjectIdC"></span><span class="target" id="class_px_collection_1a9ed25e50544a1ef14870fb7bfc1187ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection4findE16PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Looks for a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object given a PxSerialObjectId value. </p>
+<p>If there is no <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object in the collection with the given id, NULL is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – <strong>[in]</strong> PxSerialObjectId value to look for </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object with the given id value or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection8getNbIdsEv">
+<span id="_CPPv3NK12PxCollection8getNbIdsEv"></span><span id="_CPPv2NK12PxCollection8getNbIdsEv"></span><span id="PxCollection::getNbIdsC"></span><span class="target" id="class_px_collection_1a082b4d10a5cc5c1fafb9f94f59f0923f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbIds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection8getNbIdsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets number of PxSerialObjectId names in this collection. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of PxSerialObjectId names in this collection </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection6getIdsEP16PxSerialObjectId5PxU325PxU32">
+<span id="_CPPv3NK12PxCollection6getIdsEP16PxSerialObjectId5PxU325PxU32"></span><span id="_CPPv2NK12PxCollection6getIdsEP16PxSerialObjectId5PxU325PxU32"></span><span id="PxCollection::getIds__PxSerialObjectIdP.PxU32.PxU32C"></span><span class="target" id="class_px_collection_1acd8ba2bfe77bae84d578ff9335f342fd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getIds</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection6getIdsEP16PxSerialObjectId5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies member PxSerialObjectId values to a user specified buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>userBuffer</strong> – <strong>[out]</strong> Array of PxSerialObjectId values </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Capacity of userBuffer </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Offset into list of member PxSerialObjectId values </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of members PxSerialObjectId values that have been written to the userBuffer </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK12PxCollection5getIdERK6PxBase">
+<span id="_CPPv3NK12PxCollection5getIdERK6PxBase"></span><span id="_CPPv2NK12PxCollection5getIdERK6PxBase"></span><span id="PxCollection::getId__PxBaseCRC"></span><span class="target" id="class_px_collection_1aa59a87c2ed2a69552f43c83dcbc3c6e2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getId</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">object</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK12PxCollection5getIdERK6PxBase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the PxSerialObjectId name of a <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object within the collection. </p>
+<p>The <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object needs to be a member of the collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>object</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> object to get id for </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>PxSerialObjectId name of the object or PX_SERIAL_OBJECT_ID_INVALID if the object is unnamed </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection7releaseEv">
+<span id="_CPPv3N12PxCollection7releaseEv"></span><span id="_CPPv2N12PxCollection7releaseEv"></span><span id="PxCollection::release"></span><span class="target" id="class_px_collection_1aebf358855b8e054c907f49f85288a68d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N12PxCollection7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deletes a collection object. </p>
+<p>This function only deletes the collection object, i.e. the container class. It doesn’t delete objects that are part of the collection.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__common_1ga56ecc052c0b3e1b475406395a8033ee7.html#group__common_1ga56ecc052c0b3e1b475406395a8033ee7"><span class="std std-ref">PxCreateCollection()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollection12PxCollectionEv">
+<span id="_CPPv3N12PxCollection12PxCollectionEv"></span><span id="_CPPv2N12PxCollection12PxCollectionEv"></span><span id="PxCollection::PxCollection"></span><span class="target" id="class_px_collection_1a3cf81c15b4dcd6e16f56c1d0bc383ba3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCollection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxCollection12PxCollectionEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N12PxCollectionD0Ev">
+<span id="_CPPv3N12PxCollectionD0Ev"></span><span id="_CPPv2N12PxCollectionD0Ev"></span><span id="PxCollection::~PxCollection"></span><span class="target" id="class_px_collection_1a3d6a12201cf8a03da20c74c1c1cb548c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxCollection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N12PxCollectionD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

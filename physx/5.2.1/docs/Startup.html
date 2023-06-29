@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Startup and Shutdown &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+        <script src="../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Threading" href="Threading.html" />
+    <link rel="prev" title="PhysX API Basics" href="API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html">
+            <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Startup and Shutdown</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#foundation-and-physics">Foundation and Physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#extensions">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-sdk-components">Optional SDK Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#delay-loading-dlls">Delay-Loading DLLs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#physxcommon-dll-and-physxfoundation-dll-load">PhysXCommon DLL and PhysXFoundation DLL load</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxdelayloadhook">PxDelayLoadHook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgpuloadhook">PxGpuLoadHook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physxcommon-secure-load">PhysXCommon Secure Load</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#shutting-down">Shutting Down</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_build/physx/latest/physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Startup and Shutdown</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="startup-and-shutdown">
+<span id="startup"></span><h1>Startup and Shutdown<a class="headerlink" href="#startup-and-shutdown" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>The first step in using the PhysX SDK in a program is the initialization of some global objects.  These objects can be released when PhysX is no longer needed to free resources.  This chapter describes how to do this.</p>
+</section>
+<section id="foundation-and-physics">
+<h2>Foundation and Physics<a class="headerlink" href="#foundation-and-physics" title="Permalink to this headline"></a></h2>
+<p>First, in some startup code, create a <a class="reference internal" href="../_build/physx/latest/class_px_foundation.html#_CPPv412PxFoundation" title="PxFoundation"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFoundation</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="n">PxDefaultErrorCallback</span><span class="w"> </span><span class="n">gDefaultErrorCallback</span><span class="p">;</span><span class="w"></span>
+<span class="k">static</span><span class="w"> </span><span class="n">PxDefaultAllocator</span><span class="w"> </span><span class="n">gDefaultAllocatorCallback</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">mFoundation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateFoundation</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="n">gDefaultAllocatorCallback</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">gDefaultErrorCallback</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mFoundation</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxCreateFoundation failed!&quot;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Every PhysX module requires a <a class="reference internal" href="../_build/physx/latest/class_px_foundation.html#_CPPv412PxFoundation" title="PxFoundation"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFoundation</span></code></a> instance to be available. The required parameters are a version ID, an allocator callback and an error callback. PX_PHYSICS_VERSION, is a macro predefined in our headers to enable PhysX to check for a version mismatch between the headers and the corresponding SDK DLLs.</p>
+<p>Usually, the allocator callback and error callback are specific to the application, but PhysX provides default implementations that make it easy to get started. See <a class="reference internal" href="API.html#memorymanagement"><span class="std std-ref">Memory Management</span></a> and <a class="reference internal" href="API.html#errorreporting"><span class="std std-ref">Error Reporting</span></a> for more details of these callbacks. (The actual sample code supports an advanced memory allocator that tracks allocations instead of the default, but we have omitted that detail here.)</p>
+<p>Now create the top-level <a class="reference internal" href="../_build/physx/latest/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="n">recordMemoryAllocations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">mPvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePvd</span><span class="p">(</span><span class="o">*</span><span class="n">gFoundation</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxPvdTransport</span><span class="o">*</span><span class="w"> </span><span class="n">transport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultPvdSocketTransportCreate</span><span class="p">(</span><span class="n">PVD_HOST</span><span class="p">,</span><span class="w"> </span><span class="mi">5425</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">);</span><span class="w"></span>
+<span class="n">mPvd</span><span class="o">-&gt;</span><span class="n">connect</span><span class="p">(</span><span class="o">*</span><span class="n">transport</span><span class="p">,</span><span class="n">PxPvdInstrumentationFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">);</span><span class="w"></span>
+
+
+<span class="n">mPhysics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">mFoundation</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxTolerancesScale</span><span class="p">(),</span><span class="w"> </span><span class="n">recordMemoryAllocations</span><span class="p">,</span><span class="w"> </span><span class="n">mPvd</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mPhysics</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxCreatePhysics failed!&quot;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Again, the version ID has to be passed in. The <a class="reference internal" href="../_build/physx/latest/class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> parameter makes it easier to author content at different scales and still have PhysX work as expected, but to get started simply pass a default object of this type. The recordMemoryAllocations parameter specifies whether to perform memory profiling. The optional PVD instance enables the debugging and profiling with the PhysX Visual Debugger.</p>
+</section>
+<section id="cooking">
+<h2>Cooking<a class="headerlink" href="#cooking" title="Permalink to this headline"></a></h2>
+<p>The PhysX cooking library provides functions for creating, converting, and serializing bulk data. Depending on your application, you may wish to link to the cooking library in order to process such data at runtime. Alternatively you may be able to process all such data in advance and just load it into memory as required. The <a class="reference internal" href="../_build/physx/latest/struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a> struct captures all the cooking parameters, used by cooking functions. It is important to use consistent <a class="reference internal" href="../_build/physx/latest/class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a> values everywhere in your application (see <a class="reference internal" href="API.html#pxtolerancescale"><span class="std std-ref">Using Different Units</span></a> for more details).</p>
+<p>The cooking functions typically generate data through a streaming interface. See <a class="reference internal" href="../_build/physx/latest/file_include_extensions_PxDefaultStreams.h.html#file-include-extensions-pxdefaultstreams-h"><span class="std std-ref">PxDefaultStreams.h</span></a> for example implementations of streams to read and write from files and memory buffers. Alternatively some objects like heightfield or triangle meshes can be directly inserted into <a class="reference internal" href="../_build/physx/latest/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> without serialization using the <code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxPhysicsInsertionCallback</span></code>. The default callback must be used and can be obtained using the <a class="reference internal" href="../_build/physx/latest/class_px_physics.html#_CPPv4N9PxPhysics27getPhysicsInsertionCallbackEv" title="PxPhysics::getPhysicsInsertionCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::getPhysicsInsertionCallback()</span></code></a>.</p>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline"></a></h2>
+<p>The extensions library  contains many functions that may be useful to a large class of users, but which some users may prefer to omit from their application either for code size reasons or to avoid use of certain subsystems, such as those pertaining to networking. Initializing the extensions library requires the <a class="reference internal" href="../_build/physx/latest/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">PxInitExtensions</span><span class="p">(</span><span class="o">*</span><span class="n">mPhysics</span><span class="p">,</span><span class="w"> </span><span class="n">mPvd</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;PxInitExtensions failed!&quot;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="optional-sdk-components">
+<span id="optionalsdkcomponents"></span><h2>Optional SDK Components<a class="headerlink" href="#optional-sdk-components" title="Permalink to this headline"></a></h2>
+<p>When linking PhysX as a static library on memory constrained platforms, it is possible to avoid linking the code of some PhysX features that are not always used in order to save memory.  Currently the optional features are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Articulations</p></li>
+<li><p>Height Fields</p></li>
+</ul>
+</div></blockquote>
+<p>If your application requires a subset of this functionality, it is recommended that you call <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreateBasePhysics()</span></code> as opposed to <a class="reference internal" href="../_build/physx/latest/function_group__physics_1gad4570e95f9c2141e75775aafc07227eb.html#_CPPv415PxCreatePhysicsN5physx5PxU32ERN5physx12PxFoundationERKN5physx17PxTolerancesScaleEbPN5physx5PxPvdEPN5physx9PxOmniPvdE" title="PxCreatePhysics"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreatePhysics()</span></code></a> and then manually register the components you require.  Below is an example that registers some of the options:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="nf">customCreatePhysics</span><span class="p">(</span><span class="n">physx</span><span class="o">::</span><span class="n">PxU32</span><span class="w"> </span><span class="n">version</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxFoundation</span><span class="o">&amp;</span><span class="w"> </span><span class="n">foundation</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">physx</span><span class="o">::</span><span class="n">PxTolerancesScale</span><span class="o">&amp;</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">trackOutstandingAllocations</span><span class="w"></span>
+<span class="w">    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPvd</span><span class="o">*</span><span class="w"> </span><span class="n">pvd</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">physx</span><span class="o">::</span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateBasePhysics</span><span class="p">(</span><span class="n">version</span><span class="p">,</span><span class="w"> </span><span class="n">foundation</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">trackOutstandingAllocations</span><span class="p">,</span><span class="w"> </span><span class="n">pvd</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">physics</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxRegisterArticulations</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxRegisterHeightFields</span><span class="p">(</span><span class="o">*</span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">physics</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that this will only save memory when linking PhysX as a static library, as we rely on the linker to strip out the unused code.</p>
+</section>
+<section id="delay-loading-dlls">
+<h2>Delay-Loading DLLs<a class="headerlink" href="#delay-loading-dlls" title="Permalink to this headline"></a></h2>
+<p>The PhysXCommon DLL and PhysXFoundation DLL are marked as delay-loaded inside of the PhysX, PhysXCooking and PhysXCommon projects. So it is possible to have delay-loaded PhysXFoundation, PhysXCommon, PhysX and PhysXCooking DLLs.</p>
+<section id="physxcommon-dll-and-physxfoundation-dll-load">
+<h3>PhysXCommon DLL and PhysXFoundation DLL load<a class="headerlink" href="#physxcommon-dll-and-physxfoundation-dll-load" title="Permalink to this headline"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>If delay load hook is specified the PhysXCommon name or PhysXFoundation name provided by user is used</p></li>
+<li><p>If delay load hook is not specified, the corresponding PhysXCommon DLL or PhysXFoundation DLL is used</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="pxdelayloadhook">
+<h3>PxDelayLoadHook<a class="headerlink" href="#pxdelayloadhook" title="Permalink to this headline"></a></h3>
+<p>The <a class="reference internal" href="../_build/physx/latest/class_px_delay_load_hook.html#_CPPv415PxDelayLoadHook" title="PxDelayLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDelayLoadHook</span></code></a> class supports loading of the PhysXCommon, PhysXFoundation DLLs with different names and paths. This can be achieved by providing different DLL paths to the PhysX SDK through a custom subclass of <a class="reference internal" href="../_build/physx/latest/class_px_delay_load_hook.html#_CPPv415PxDelayLoadHook" title="PxDelayLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDelayLoadHook</span></code></a>, see the following example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SnippetDelayLoadHook</span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxDelayLoadHook</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXCommonDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXCommon_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXFoundationDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXFoundation_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"> </span><span class="n">gDelayLoadHook</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now the hook must be set for PhysX, PhysXCooking, PhysXCommon:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSetPhysXDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxSetPhysXCookingDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxSetPhysXCommonDelayLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gDelayLoadHook</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For more information please see the SnippetDelayLoadHook.</p>
+</section>
+<section id="pxgpuloadhook">
+<h3>PxGpuLoadHook<a class="headerlink" href="#pxgpuloadhook" title="Permalink to this headline"></a></h3>
+<p>The <a class="reference internal" href="../_build/physx/latest/class_px_gpu_load_hook.html#_CPPv413PxGpuLoadHook" title="PxGpuLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGpuLoadHook</span></code></a> class supports loading of the PhysXGpu DLL with a different name or path. This can be achieved by providing a different DLL path to the PhysX SDK through a custom subclass of <a class="reference internal" href="../_build/physx/latest/class_px_gpu_load_hook.html#_CPPv413PxGpuLoadHook" title="PxGpuLoadHook"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGpuLoadHook</span></code></a>, see the following example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">SnippetGpuLoadHook</span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxGpuLoadHook</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="nf">getPhysXGpuDllName</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;customPath</span><span class="se">\\</span><span class="s">PhysXGpu_x64_Renamed.dll&quot;</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"> </span><span class="n">gGpuLoadHook</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now the hook must be set for PhysX:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSetPhysXGpuLoadHook</span><span class="p">(</span><span class="o">&amp;</span><span class="n">gGpuLoadHook</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For more information please see the SnippetDelayLoadHook.</p>
+</section>
+<section id="physxcommon-secure-load">
+<h3>PhysXCommon Secure Load<a class="headerlink" href="#physxcommon-secure-load" title="Permalink to this headline"></a></h3>
+<p>All PhysX DLLs distributed by NVIDIA are signed. The PhysXCommon DLL signature is checked, when it is loaded by PhysX or PhysXCooking. If signature test fails the application is terminated.</p>
+</section>
+</section>
+<section id="shutting-down">
+<h2>Shutting Down<a class="headerlink" href="#shutting-down" title="Permalink to this headline"></a></h2>
+<p>To dispose of any PhysX object, call its release() method.  This will destroy the object, and all contained objects.  The precise behavior depends on the object type being released, so refer to the reference guide for details.  To shut down the extensions library, call the function <a class="reference internal" href="../_build/physx/latest/function_group__extensions_1ga96cac5e32f05a4294677712ae4831f1e.html#_CPPv417PxCloseExtensionsv" title="PxCloseExtensions"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCloseExtensions()</span></code></a>. To shut down physics, call release() on the <a class="reference internal" href="../_build/physx/latest/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> object, and this will clean up all of the physics objects:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Do not forget to release the foundation object as well, but only after all other PhysX modules have been released:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mFoundation</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

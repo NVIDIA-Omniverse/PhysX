@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSyncT &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSyncT</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsynct">
+<span id="exhale-class-class-px-sync-t"></span><h1>PxSyncT<a class="headerlink" href="#pxsynct" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxSync.h.html#file-include-foundation-pxsync-h"><span class="std std-ref">include/foundation/PxSync.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">protected</span> <span class="pre">PxReflectionAllocator&lt;</span> <span class="pre">PxSyncImpl</span> <span class="pre">&gt;</span></code> (<a class="reference internal" href="class_px_reflection_allocator.html#exhale-class-class-px-reflection-allocator"><span class="std std-ref">PxReflectionAllocator</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0E7PxSyncT">
+<span id="_CPPv3I0E7PxSyncT"></span><span id="_CPPv2I0E7PxSyncT"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="class_px_reflection_allocator.html#_CPPv4I0E21PxReflectionAllocator" title="PxReflectionAllocator"><span class="n"><span class="pre">PxReflectionAllocator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="class_px_sync_impl.html#_CPPv410PxSyncImpl" title="PxSyncImpl"><span class="n"><span class="pre">PxSyncImpl</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_sync_t"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSyncT</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">protected</span></span><span class="w"> </span><a class="reference internal" href="class_px_reflection_allocator.html#_CPPv4I0E21PxReflectionAllocator" title="PxReflectionAllocator"><span class="n"><span class="pre">PxReflectionAllocator</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="class_px_sync_impl.html#_CPPv410PxSyncImpl" title="PxSyncImpl"><span class="n"><span class="pre">PxSyncImpl</span></span></a><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4I0E7PxSyncT" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Implementation notes:<ul class="simple">
+<li><p>Calling <a class="reference internal" href="#class_px_sync_t_1a0a447c23ac962c2e8ba6d2da33668040"><span class="std std-ref">set()</span></a> on an already signaled Sync does not change its state.</p></li>
+<li><p>Calling <a class="reference internal" href="#class_px_sync_t_1a0c2180be0dab16b3d540f232936269fe"><span class="std std-ref">reset()</span></a> on an already reset Sync does not change its state.</p></li>
+<li><p>Calling <a class="reference internal" href="#class_px_sync_t_1a0a447c23ac962c2e8ba6d2da33668040"><span class="std std-ref">set()</span></a> on a reset Sync wakes all waiting threads (potential for thread contention).</p></li>
+<li><p>Calling <a class="reference internal" href="#class_px_sync_t_1afe5351f68a9113c6183bd72803de3ae9"><span class="std std-ref">wait()</span></a> on an already signaled Sync will return true immediately.</p></li>
+<li><p>NOTE: be careful when pulsing an event with <a class="reference internal" href="#class_px_sync_t_1a0a447c23ac962c2e8ba6d2da33668040"><span class="std std-ref">set()</span></a> followed by <a class="reference internal" href="#class_px_sync_t_1a0c2180be0dab16b3d540f232936269fe"><span class="std std-ref">reset()</span></a>, because a thread that is not waiting on the event will miss the signal. </p></li>
+</ul>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT7PxSyncTERK5Alloc">
+<span id="_CPPv3N7PxSyncT7PxSyncTERK5Alloc"></span><span id="_CPPv2N7PxSyncT7PxSyncTERK5Alloc"></span><span id="PxSyncT::PxSyncT__AllocCR"></span><span class="target" id="class_px_sync_t_1a44669ec1d597254745f275bd5f1bdeed"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSyncT</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxSyncT" title="PxSyncT::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alloc</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0E7PxSyncT" title="PxSyncT::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT7PxSyncTERK5Alloc" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncTD0Ev">
+<span id="_CPPv3N7PxSyncTD0Ev"></span><span id="_CPPv2N7PxSyncTD0Ev"></span><span id="PxSyncT::~PxSyncT"></span><span class="target" id="class_px_sync_t_1a70261290ee33b8153f73426d247e9ad0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSyncT</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncTD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT4waitE8uint32_t">
+<span id="_CPPv3N7PxSyncT4waitE8uint32_t"></span><span id="_CPPv2N7PxSyncT4waitE8uint32_t"></span><span id="PxSyncT::wait__uint32_t"></span><span class="target" id="class_px_sync_t_1afe5351f68a9113c6183bd72803de3ae9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">wait</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">milliseconds</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="class_px_sync_impl.html#_CPPv410PxSyncImpl" title="PxSyncImpl"><span class="n"><span class="pre">PxSyncImpl</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="class_px_sync_impl.html#_CPPv4N10PxSyncImpl11waitForeverE" title="PxSyncImpl::waitForever"><span class="n"><span class="pre">waitForever</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT4waitE8uint32_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Wait on the object for at most the given number of ms. </p>
+<p>Returns true if the object is signaled. Sync::waitForever will block forever or until the object is signaled. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT3setEv">
+<span id="_CPPv3N7PxSyncT3setEv"></span><span id="_CPPv2N7PxSyncT3setEv"></span><span id="PxSyncT::set"></span><span class="target" id="class_px_sync_t_1a0a447c23ac962c2e8ba6d2da33668040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT3setEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Signal the synchronization object, waking all threads waiting on it. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT5resetEv">
+<span id="_CPPv3N7PxSyncT5resetEv"></span><span id="_CPPv2N7PxSyncT5resetEv"></span><span id="PxSyncT::reset"></span><span class="target" id="class_px_sync_t_1a0c2180be0dab16b3d540f232936269fe"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT5resetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reset the synchronization object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT11waitForeverE">
+<span id="_CPPv3N7PxSyncT11waitForeverE"></span><span id="_CPPv2N7PxSyncT11waitForeverE"></span><span id="PxSyncT::waitForever__uint32_tC"></span><span class="target" id="class_px_sync_t_1a13d8d24548d82241b28a389f91208aa3"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">waitForever</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="class_px_sync_impl.html#_CPPv410PxSyncImpl" title="PxSyncImpl"><span class="n"><span class="pre">PxSyncImpl</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="class_px_sync_impl.html#_CPPv4N10PxSyncImpl11waitForeverE" title="PxSyncImpl::waitForever"><span class="n"><span class="pre">waitForever</span></span></a><a class="headerlink" href="#_CPPv4N7PxSyncT11waitForeverE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT8allocateE6size_tPKci">
+<span id="_CPPv3N7PxSyncT8allocateE6size_tPKci"></span><span id="_CPPv2N7PxSyncT8allocateE6size_tPKci"></span><span id="PxSyncT::allocate__s.cCP.i"></span><span class="target" id="class_px_reflection_allocator_1a1ffb32b7c379731a48a11a8a02fc3728"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT8allocateE6size_tPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N7PxSyncT10deallocateEPv">
+<span id="_CPPv3N7PxSyncT10deallocateEPv"></span><span id="_CPPv2N7PxSyncT10deallocateEPv"></span><span id="PxSyncT::deallocate__voidP"></span><span class="target" id="class_px_reflection_allocator_1aa9ebafc2de825458cb7c1524f43e8e1a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deallocate</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N7PxSyncT10deallocateEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

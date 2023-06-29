@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxFilterObjectType &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxFilterObjectType</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxfilterobjecttype">
+<span id="exhale-struct-struct-px-filter-object-type"></span><h1>PxFilterObjectType<a class="headerlink" href="#pxfilterobjecttype" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxFiltering.h.html#file-include-pxfiltering-h"><span class="std std-ref">include/PxFiltering.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv418PxFilterObjectType">
+<span id="_CPPv318PxFilterObjectType"></span><span id="_CPPv218PxFilterObjectType"></span><span id="PxFilterObjectType"></span><span class="target" id="struct_px_filter_object_type"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFilterObjectType</span></span></span><a class="headerlink" href="#_CPPv418PxFilterObjectType" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Identifies each type of filter object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="function_group__physics_1gaa265647aed8289fd77aa61fdb102c387.html#group__physics_1gaa265647aed8289fd77aa61fdb102c387"><span class="std std-ref">PxGetFilterObjectType()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4EnumE">
+<span id="_CPPv3N18PxFilterObjectType4EnumE"></span><span id="_CPPv2N18PxFilterObjectType4EnumE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cf"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum13eRIGID_STATICE">
+<span id="_CPPv3N18PxFilterObjectType4Enum13eRIGID_STATICE"></span><span id="_CPPv2N18PxFilterObjectType4Enum13eRIGID_STATICE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfaa2d4fccb6fa60f821cb7661a7d100124"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRIGID_STATIC</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum13eRIGID_STATICE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A static rigid body. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum14eRIGID_DYNAMICE">
+<span id="_CPPv3N18PxFilterObjectType4Enum14eRIGID_DYNAMICE"></span><span id="_CPPv2N18PxFilterObjectType4Enum14eRIGID_DYNAMICE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa25cf98409a3028d306afcdb07dc9bada"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eRIGID_DYNAMIC</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum14eRIGID_DYNAMICE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A dynamic rigid body. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum13eARTICULATIONE">
+<span id="_CPPv3N18PxFilterObjectType4Enum13eARTICULATIONE"></span><span id="_CPPv2N18PxFilterObjectType4Enum13eARTICULATIONE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa84733c8624de6217f448a4bdde30d219"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eARTICULATION</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum13eARTICULATIONE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>An articulation. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum15ePARTICLESYSTEME">
+<span id="_CPPv3N18PxFilterObjectType4Enum15ePARTICLESYSTEME"></span><span id="_CPPv2N18PxFilterObjectType4Enum15ePARTICLESYSTEME"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa2614795221317980156d57888a7eabfd"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ePARTICLESYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum15ePARTICLESYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A particle system. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_particle_system.html#class_px_particle_system"><span class="std std-ref">PxParticleSystem</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum9eSOFTBODYE">
+<span id="_CPPv3N18PxFilterObjectType4Enum9eSOFTBODYE"></span><span id="_CPPv2N18PxFilterObjectType4Enum9eSOFTBODYE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfaacef750336772ed0ba0573194f3917f4"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSOFTBODY</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum9eSOFTBODYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A FEM-based soft body. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum9eFEMCLOTHE">
+<span id="_CPPv3N18PxFilterObjectType4Enum9eFEMCLOTHE"></span><span id="_CPPv2N18PxFilterObjectType4Enum9eFEMCLOTHE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa2838422e8c64a782c8675446a901b191"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFEMCLOTH</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum9eFEMCLOTHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A FEM-based cloth. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxFEMCloth </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In development </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum11eHAIRSYSTEME">
+<span id="_CPPv3N18PxFilterObjectType4Enum11eHAIRSYSTEME"></span><span id="_CPPv2N18PxFilterObjectType4Enum11eHAIRSYSTEME"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfaeb86a3c3c133c1e730bf3ec010dbb1c8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eHAIRSYSTEM</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum11eHAIRSYSTEME" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A hair system. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxHairSystem </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In development </p>
+</div>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum15eMAX_TYPE_COUNTE">
+<span id="_CPPv3N18PxFilterObjectType4Enum15eMAX_TYPE_COUNTE"></span><span id="_CPPv2N18PxFilterObjectType4Enum15eMAX_TYPE_COUNTE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa744d025c426b25ca3261d860f6538fd9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMAX_TYPE_COUNT</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum15eMAX_TYPE_COUNTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>internal use only! </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxFilterObjectType4Enum10eUNDEFINEDE">
+<span id="_CPPv3N18PxFilterObjectType4Enum10eUNDEFINEDE"></span><span id="_CPPv2N18PxFilterObjectType4Enum10eUNDEFINEDE"></span><span class="target" id="struct_px_filter_object_type_1a6b94c22981119369d08ce8b13838a3cfa3c8b1ac55d0538b1a062f683ae76a131"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUNDEFINED</span></span></span><a class="headerlink" href="#_CPPv4N18PxFilterObjectType4Enum10eUNDEFINEDE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>internal use only! </p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

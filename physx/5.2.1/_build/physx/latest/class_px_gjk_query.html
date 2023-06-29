@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxGjkQuery &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxGjkQuery</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxgjkquery">
+<span id="exhale-class-class-px-gjk-query"></span><h1>PxGjkQuery<a class="headerlink" href="#pxgjkquery" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxGjkQuery.h.html#file-include-geometry-pxgjkquery-h"><span class="std std-ref">include/geometry/PxGjkQuery.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv410PxGjkQuery">
+<span id="_CPPv310PxGjkQuery"></span><span id="_CPPv210PxGjkQuery"></span><span id="PxGjkQuery"></span><span class="target" id="class_px_gjk_query"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGjkQuery</span></span></span><a class="headerlink" href="#_CPPv410PxGjkQuery" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Collection of GJK query functions (sweeps, raycasts, overlaps, …). </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal">
+<span id="_CPPv3N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal"></span><span id="_CPPv2N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal"></span><span id="PxGjkQuery::proximityInfo__SupportCR.SupportCR.PxTransformCR.PxTransformCR.PxReal.PxReal.PxVec3R.PxVec3R.PxVec3R.PxRealR"></span><span class="target" id="class_px_gjk_query_1abe2c53aa4bec603aa858d128b7bad814"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">proximityInfo</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseA</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseB</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactDistance</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">toleranceLength</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pointA</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pointB</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">separatingAxis</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">separation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes proximity information for two shapes using GJK-EPA algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – <strong>[in]</strong> Shape A support mapping </p></li>
+<li><p><strong>b</strong> – <strong>[in]</strong> Shape B support mapping </p></li>
+<li><p><strong>poseA</strong> – <strong>[in]</strong> Shape A transformation </p></li>
+<li><p><strong>poseB</strong> – <strong>[in]</strong> Shape B transformation </p></li>
+<li><p><strong>contactDistance</strong> – <strong>[in]</strong> The distance at which proximity info begins to be computed between the shapes </p></li>
+<li><p><strong>toleranceLength</strong> – <strong>[in]</strong> The toleranceLength. Used for scaling distance-based thresholds internally to produce appropriate results given simulations in different units </p></li>
+<li><p><strong>pointA</strong> – <strong>[out]</strong> The closest/deepest point on shape A surface </p></li>
+<li><p><strong>pointB</strong> – <strong>[out]</strong> The closest/deepest point on shape B surface </p></li>
+<li><p><strong>separatingAxis</strong> – <strong>[out]</strong> Translating shape B along ‘separatingAxis’ by ‘separation’ makes the shapes touching </p></li>
+<li><p><strong>separation</strong> – <strong>[out]</strong> Translating shape B along ‘separatingAxis’ by ‘separation’ makes the shapes touching</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>False if the distance greater than contactDistance. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery7raycastERK7SupportRK11PxTransformRK6PxVec3RK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3">
+<span id="_CPPv3N10PxGjkQuery7raycastERK7SupportRK11PxTransformRK6PxVec3RK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3"></span><span id="_CPPv2N10PxGjkQuery7raycastERK7SupportRK11PxTransformRK6PxVec3RK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3"></span><span id="PxGjkQuery::raycast__SupportCR.PxTransformCR.PxVec3CR.PxVec3CR.PxReal.PxRealR.PxVec3R.PxVec3R"></span><span class="target" id="class_px_gjk_query_1ad85fc75aeb7614fdb770e8959e24e14e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rayStart</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxDist</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxGjkQuery7raycastERK7SupportRK11PxTransformRK6PxVec3RK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast test against the given shape. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <strong>[in]</strong> Shape support mapping </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Shape transformation </p></li>
+<li><p><strong>rayStart</strong> – <strong>[in]</strong> The start point of the ray to test the shape against </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray to test the shape against </p></li>
+<li><p><strong>maxDist</strong> – <strong>[in]</strong> Maximum ray length, has to be in the [0, inf) range </p></li>
+<li><p><strong>t</strong> – <strong>[out]</strong> Hit distance </p></li>
+<li><p><strong>n</strong> – <strong>[out]</strong> Hit normal </p></li>
+<li><p><strong>p</strong> – <strong>[out]</strong> Hit point</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if there is a hit. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery7overlapERK7SupportRK7SupportRK11PxTransformRK11PxTransform">
+<span id="_CPPv3N10PxGjkQuery7overlapERK7SupportRK7SupportRK11PxTransformRK11PxTransform"></span><span id="_CPPv2N10PxGjkQuery7overlapERK7SupportRK7SupportRK11PxTransformRK11PxTransform"></span><span id="PxGjkQuery::overlap__SupportCR.SupportCR.PxTransformCR.PxTransformCR"></span><span class="target" id="class_px_gjk_query_1a50e08d7914cda50ad54960dc8d303cc1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseA</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseB</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxGjkQuery7overlapERK7SupportRK7SupportRK11PxTransformRK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Overlap test for two shapes. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – <strong>[in]</strong> Shape A support mapping </p></li>
+<li><p><strong>b</strong> – <strong>[in]</strong> Shape B support mapping </p></li>
+<li><p><strong>poseA</strong> – <strong>[in]</strong> Shape A transformation </p></li>
+<li><p><strong>poseB</strong> – <strong>[in]</strong> Shape B transformation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the shapes overlap. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery5sweepERK7SupportRK7SupportRK11PxTransformRK11PxTransformRK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3">
+<span id="_CPPv3N10PxGjkQuery5sweepERK7SupportRK7SupportRK11PxTransformRK11PxTransformRK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3"></span><span id="_CPPv2N10PxGjkQuery5sweepERK7SupportRK7SupportRK11PxTransformRK11PxTransformRK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3"></span><span id="PxGjkQuery::sweep__SupportCR.SupportCR.PxTransformCR.PxTransformCR.PxVec3CR.PxReal.PxRealR.PxVec3R.PxVec3R"></span><span class="target" id="class_px_gjk_query_1a2b07f564c268329578b5b82d0834d312"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseA</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseB</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxDist</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">n</span></span>, <a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxGjkQuery5sweepERK7SupportRK7SupportRK11PxTransformRK11PxTransformRK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep the shape B in space and test for collision with the shape A. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – <strong>[in]</strong> Shape A support mapping </p></li>
+<li><p><strong>b</strong> – <strong>[in]</strong> Shape B support mapping </p></li>
+<li><p><strong>poseA</strong> – <strong>[in]</strong> Shape A transformation </p></li>
+<li><p><strong>poseB</strong> – <strong>[in]</strong> Shape B transformation </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray to test the shape against </p></li>
+<li><p><strong>maxDist</strong> – <strong>[in]</strong> Maximum ray length, has to be in the [0, inf) range </p></li>
+<li><p><strong>t</strong> – <strong>[out]</strong> Hit distance </p></li>
+<li><p><strong>n</strong> – <strong>[out]</strong> Hit normal </p></li>
+<li><p><strong>p</strong> – <strong>[out]</strong> Hit point</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if there is a hit. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery7SupportE">
+<span id="_CPPv3N10PxGjkQuery7SupportE"></span><span id="_CPPv2N10PxGjkQuery7SupportE"></span><span id="PxGjkQuery::Support"></span><span class="target" id="struct_px_gjk_query_1_1_support"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Support</span></span></span><a class="headerlink" href="#_CPPv4N10PxGjkQuery7SupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Abstract interface for a user defined shape GJK mapping support. </p>
+<p>A user defined shape consists of a core shape and a margin. If the distance between two shapes’ cores is equal to the sum of their margins, these shapes are considered touching. </p>
+<p>Subclassed by <a class="reference internal" href="class_px_gjk_query_ext.html#struct_px_gjk_query_ext_1_1_box_support"><span class="std std-ref">PxGjkQueryExt::BoxSupport</span></a>, <a class="reference internal" href="class_px_gjk_query_ext.html#struct_px_gjk_query_ext_1_1_capsule_support"><span class="std std-ref">PxGjkQueryExt::CapsuleSupport</span></a>, <a class="reference internal" href="class_px_gjk_query_ext.html#struct_px_gjk_query_ext_1_1_convex_geom_support"><span class="std std-ref">PxGjkQueryExt::ConvexGeomSupport</span></a>, <a class="reference internal" href="class_px_gjk_query_ext.html#struct_px_gjk_query_ext_1_1_convex_mesh_support"><span class="std std-ref">PxGjkQueryExt::ConvexMeshSupport</span></a>, <a class="reference internal" href="class_px_gjk_query_ext.html#struct_px_gjk_query_ext_1_1_sphere_support"><span class="std std-ref">PxGjkQueryExt::SphereSupport</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N10PxGjkQuery7SupportD0Ev">
+<span id="_CPPv3N10PxGjkQuery7SupportD0Ev"></span><span id="_CPPv2N10PxGjkQuery7SupportD0Ev"></span><span id="PxGjkQuery::Support::~Support"></span><span class="target" id="struct_px_gjk_query_1_1_support_1ac82f89a66e67b164abcf09b9c5c8416f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~Support</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N10PxGjkQuery7SupportD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxGjkQuery7Support9getMarginEv">
+<span id="_CPPv3NK10PxGjkQuery7Support9getMarginEv"></span><span id="_CPPv2NK10PxGjkQuery7Support9getMarginEv"></span><span id="PxGjkQuery::Support::getMarginC"></span><span class="target" id="struct_px_gjk_query_1_1_support_1af318b89509d31e473199a0fdff53ce83"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK10PxGjkQuery7Support9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK10PxGjkQuery7Support12supportLocalERK6PxVec3">
+<span id="_CPPv3NK10PxGjkQuery7Support12supportLocalERK6PxVec3"></span><span id="_CPPv2NK10PxGjkQuery7Support12supportLocalERK6PxVec3"></span><span id="PxGjkQuery::Support::supportLocal__PxVec3CRC"></span><span class="target" id="struct_px_gjk_query_1_1_support_1af9da02f05dfb80aac472f1b3745d8e6f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK10PxGjkQuery7Support12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

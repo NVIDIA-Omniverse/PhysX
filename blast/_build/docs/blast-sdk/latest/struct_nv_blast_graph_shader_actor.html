@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>NvBlastGraphShaderActor &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>NvBlastGraphShaderActor &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,204 +64,158 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>NvBlastGraphShaderActor</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>NvBlastGraphShaderActor</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nvblastgraphshaderactor">
-<span id="exhale-struct-struct-nv-blast-graph-shader-actor"></span><h1>NvBlastGraphShaderActor<a class="headerlink" href="#nvblastgraphshaderactor" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nvblastgraphshaderactor">
+<span id="exhale-struct-struct-nv-blast-graph-shader-actor"></span><h1>NvBlastGraphShaderActor<a class="headerlink" href="#nvblastgraphshaderactor" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
 <dl class="cpp struct">
-<dt id="_CPPv423NvBlastGraphShaderActor">
-<span id="_CPPv323NvBlastGraphShaderActor"></span><span id="_CPPv223NvBlastGraphShaderActor"></span><span id="NvBlastGraphShaderActor"></span><span class="target" id="struct_nv_blast_graph_shader_actor"></span><em class="property"><span class="pre">struct</span> </em><code class="sig-name descname"><span class="pre">NvBlastGraphShaderActor</span></code><a class="headerlink" href="#_CPPv423NvBlastGraphShaderActor" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv423NvBlastGraphShaderActor">
+<span id="_CPPv323NvBlastGraphShaderActor"></span><span id="_CPPv223NvBlastGraphShaderActor"></span><span id="NvBlastGraphShaderActor"></span><span class="target" id="struct_nv_blast_graph_shader_actor"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastGraphShaderActor</span></span></span><a class="headerlink" href="#_CPPv423NvBlastGraphShaderActor" title="Permalink to this definition"></a><br /></dt>
 <dd><p>A single actor’s representation used by NvBlastGraphShaderFunction. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor10actorIndexE">
-<span id="_CPPv3N23NvBlastGraphShaderActor10actorIndexE"></span><span id="_CPPv2N23NvBlastGraphShaderActor10actorIndexE"></span><span id="NvBlastGraphShaderActor::actorIndex__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a2692d368ec1c3a96345643b744920a4b"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">actorIndex</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor10actorIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor10actorIndexE">
+<span id="_CPPv3N23NvBlastGraphShaderActor10actorIndexE"></span><span id="_CPPv2N23NvBlastGraphShaderActor10actorIndexE"></span><span id="NvBlastGraphShaderActor::actorIndex__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a2692d368ec1c3a96345643b744920a4b"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">actorIndex</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor10actorIndexE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Actor’s index. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor14graphNodeCountE">
-<span id="_CPPv3N23NvBlastGraphShaderActor14graphNodeCountE"></span><span id="_CPPv2N23NvBlastGraphShaderActor14graphNodeCountE"></span><span id="NvBlastGraphShaderActor::graphNodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a67e59c295b84a97dc493e2ac824fb0d7"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">graphNodeCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor14graphNodeCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor14graphNodeCountE">
+<span id="_CPPv3N23NvBlastGraphShaderActor14graphNodeCountE"></span><span id="_CPPv2N23NvBlastGraphShaderActor14graphNodeCountE"></span><span id="NvBlastGraphShaderActor::graphNodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a67e59c295b84a97dc493e2ac824fb0d7"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">graphNodeCount</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor14graphNodeCountE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Actor’s graph node count. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor14assetNodeCountE">
-<span id="_CPPv3N23NvBlastGraphShaderActor14assetNodeCountE"></span><span id="_CPPv2N23NvBlastGraphShaderActor14assetNodeCountE"></span><span id="NvBlastGraphShaderActor::assetNodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1aeb7929bcf27fd95c49fdd5bd8909a9b9"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">assetNodeCount</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor14assetNodeCountE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor14assetNodeCountE">
+<span id="_CPPv3N23NvBlastGraphShaderActor14assetNodeCountE"></span><span id="_CPPv2N23NvBlastGraphShaderActor14assetNodeCountE"></span><span id="NvBlastGraphShaderActor::assetNodeCount__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1aeb7929bcf27fd95c49fdd5bd8909a9b9"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">assetNodeCount</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor14assetNodeCountE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Asset node count. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor19firstGraphNodeIndexE">
-<span id="_CPPv3N23NvBlastGraphShaderActor19firstGraphNodeIndexE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19firstGraphNodeIndexE"></span><span id="NvBlastGraphShaderActor::firstGraphNodeIndex__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ac504dff11ba8d936e7dc508ce1e4d71e"></span><span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">firstGraphNodeIndex</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19firstGraphNodeIndexE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor19firstGraphNodeIndexE">
+<span id="_CPPv3N23NvBlastGraphShaderActor19firstGraphNodeIndexE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19firstGraphNodeIndexE"></span><span id="NvBlastGraphShaderActor::firstGraphNodeIndex__uint32_t"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ac504dff11ba8d936e7dc508ce1e4d71e"></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">firstGraphNodeIndex</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19firstGraphNodeIndexE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Entry index for graphNodeIndexLinks. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor19graphNodeIndexLinksE">
-<span id="_CPPv3N23NvBlastGraphShaderActor19graphNodeIndexLinksE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19graphNodeIndexLinksE"></span><span id="NvBlastGraphShaderActor::graphNodeIndexLinks__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ab33f3af55cf81d8cb0b3cce0504c2e51"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">graphNodeIndexLinks</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19graphNodeIndexLinksE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor19graphNodeIndexLinksE">
+<span id="_CPPv3N23NvBlastGraphShaderActor19graphNodeIndexLinksE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19graphNodeIndexLinksE"></span><span id="NvBlastGraphShaderActor::graphNodeIndexLinks__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ab33f3af55cf81d8cb0b3cce0504c2e51"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">graphNodeIndexLinks</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19graphNodeIndexLinksE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Linked index list of connected nodes. Traversable with nextIndex = graphNodeIndexLinks[currentIndex], terminates with 0xFFFFFFFF. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor12chunkIndicesE">
-<span id="_CPPv3N23NvBlastGraphShaderActor12chunkIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor12chunkIndicesE"></span><span id="NvBlastGraphShaderActor::chunkIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a7d93e1fd93ea0d30f9e7c580fabd89fa"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">chunkIndices</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor12chunkIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor12chunkIndicesE">
+<span id="_CPPv3N23NvBlastGraphShaderActor12chunkIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor12chunkIndicesE"></span><span id="NvBlastGraphShaderActor::chunkIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a7d93e1fd93ea0d30f9e7c580fabd89fa"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">chunkIndices</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor12chunkIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Graph’s map from node index to support chunk index. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor18adjacencyPartitionE">
-<span id="_CPPv3N23NvBlastGraphShaderActor18adjacencyPartitionE"></span><span id="_CPPv2N23NvBlastGraphShaderActor18adjacencyPartitionE"></span><span id="NvBlastGraphShaderActor::adjacencyPartition__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a6e4ce5f47dabfa8657173e085f1708c9"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacencyPartition</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor18adjacencyPartitionE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor18adjacencyPartitionE">
+<span id="_CPPv3N23NvBlastGraphShaderActor18adjacencyPartitionE"></span><span id="_CPPv2N23NvBlastGraphShaderActor18adjacencyPartitionE"></span><span id="NvBlastGraphShaderActor::adjacencyPartition__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a6e4ce5f47dabfa8657173e085f1708c9"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacencyPartition</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor18adjacencyPartitionE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>See <a class="reference internal" href="struct_nv_blast_support_graph.html#struct_nv_blast_support_graph_1aa1f5c4dc460ae44650e955b3ef1f7d57"><span class="std std-ref">NvBlastSupportGraph::adjacencyPartition</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor19adjacentNodeIndicesE">
-<span id="_CPPv3N23NvBlastGraphShaderActor19adjacentNodeIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19adjacentNodeIndicesE"></span><span id="NvBlastGraphShaderActor::adjacentNodeIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a80b1bd8d6d2a405ddb24959ca7c066bf"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacentNodeIndices</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19adjacentNodeIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor19adjacentNodeIndicesE">
+<span id="_CPPv3N23NvBlastGraphShaderActor19adjacentNodeIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19adjacentNodeIndicesE"></span><span id="NvBlastGraphShaderActor::adjacentNodeIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a80b1bd8d6d2a405ddb24959ca7c066bf"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacentNodeIndices</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19adjacentNodeIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>See <a class="reference internal" href="struct_nv_blast_support_graph.html#struct_nv_blast_support_graph_1aa7c1f66e9cd717b941272e739aed2931"><span class="std std-ref">NvBlastSupportGraph::adjacentNodeIndices</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor19adjacentBondIndicesE">
-<span id="_CPPv3N23NvBlastGraphShaderActor19adjacentBondIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19adjacentBondIndicesE"></span><span id="NvBlastGraphShaderActor::adjacentBondIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a71d549a44c8aa5a13f9d3e36f7ff27a3"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">adjacentBondIndices</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19adjacentBondIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor19adjacentBondIndicesE">
+<span id="_CPPv3N23NvBlastGraphShaderActor19adjacentBondIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19adjacentBondIndicesE"></span><span id="NvBlastGraphShaderActor::adjacentBondIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a71d549a44c8aa5a13f9d3e36f7ff27a3"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">adjacentBondIndices</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19adjacentBondIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>See <a class="reference internal" href="struct_nv_blast_support_graph.html#struct_nv_blast_support_graph_1ae659d7f25dd6ae780f8cf14d7bf3925a"><span class="std std-ref">NvBlastSupportGraph::adjacentBondIndices</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor10assetBondsE">
-<span id="_CPPv3N23NvBlastGraphShaderActor10assetBondsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor10assetBondsE"></span><span id="NvBlastGraphShaderActor::assetBonds__NvBlastBondCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1aebb7e8d55ddf8cb2ef71326632952cfe"></span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="pre">NvBlastBond</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">assetBonds</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor10assetBondsE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor10assetBondsE">
+<span id="_CPPv3N23NvBlastGraphShaderActor10assetBondsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor10assetBondsE"></span><span id="NvBlastGraphShaderActor::assetBonds__NvBlastBondCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1aebb7e8d55ddf8cb2ef71326632952cfe"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="n"><span class="pre">NvBlastBond</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">assetBonds</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor10assetBondsE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>NvBlastBonds geometry in the <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor11assetChunksE">
-<span id="_CPPv3N23NvBlastGraphShaderActor11assetChunksE"></span><span id="_CPPv2N23NvBlastGraphShaderActor11assetChunksE"></span><span id="NvBlastGraphShaderActor::assetChunks__NvBlastChunkCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a57bf267baa9b5397af645203592a0a40"></span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_chunk.html#_CPPv412NvBlastChunk" title="NvBlastChunk"><span class="pre">NvBlastChunk</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">assetChunks</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor11assetChunksE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor11assetChunksE">
+<span id="_CPPv3N23NvBlastGraphShaderActor11assetChunksE"></span><span id="_CPPv2N23NvBlastGraphShaderActor11assetChunksE"></span><span id="NvBlastGraphShaderActor::assetChunks__NvBlastChunkCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a57bf267baa9b5397af645203592a0a40"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_chunk.html#_CPPv412NvBlastChunk" title="NvBlastChunk"><span class="n"><span class="pre">NvBlastChunk</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">assetChunks</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor11assetChunksE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>NvBlastChunks geometry in the <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor17familyBondHealthsE">
-<span id="_CPPv3N23NvBlastGraphShaderActor17familyBondHealthsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor17familyBondHealthsE"></span><span id="NvBlastGraphShaderActor::familyBondHealths__floatCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a0d24558f3c19292188acb08665500390"></span><em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">familyBondHealths</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor17familyBondHealthsE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor17familyBondHealthsE">
+<span id="_CPPv3N23NvBlastGraphShaderActor17familyBondHealthsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor17familyBondHealthsE"></span><span id="NvBlastGraphShaderActor::familyBondHealths__floatCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a0d24558f3c19292188acb08665500390"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">familyBondHealths</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor17familyBondHealthsE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Actual bond health values for broken bond detection. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor19supportChunkHealthsE">
-<span id="_CPPv3N23NvBlastGraphShaderActor19supportChunkHealthsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19supportChunkHealthsE"></span><span id="NvBlastGraphShaderActor::supportChunkHealths__floatCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a2dcbf1a8af0917a3989d356e1691ab26"></span><em class="property"><span class="pre">const</span></em> <span class="pre">float</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">supportChunkHealths</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19supportChunkHealthsE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor19supportChunkHealthsE">
+<span id="_CPPv3N23NvBlastGraphShaderActor19supportChunkHealthsE"></span><span id="_CPPv2N23NvBlastGraphShaderActor19supportChunkHealthsE"></span><span id="NvBlastGraphShaderActor::supportChunkHealths__floatCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1a2dcbf1a8af0917a3989d356e1691ab26"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">supportChunkHealths</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor19supportChunkHealthsE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Actual chunk health values for dead chunk detection. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N23NvBlastGraphShaderActor16nodeActorIndicesE">
-<span id="_CPPv3N23NvBlastGraphShaderActor16nodeActorIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor16nodeActorIndicesE"></span><span id="NvBlastGraphShaderActor::nodeActorIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ae890e417040d5998f4b6a0bc7a317aec"></span><em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">nodeActorIndices</span></code><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor16nodeActorIndicesE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N23NvBlastGraphShaderActor16nodeActorIndicesE">
+<span id="_CPPv3N23NvBlastGraphShaderActor16nodeActorIndicesE"></span><span id="_CPPv2N23NvBlastGraphShaderActor16nodeActorIndicesE"></span><span id="NvBlastGraphShaderActor::nodeActorIndices__uint32_tCP"></span><span class="target" id="struct_nv_blast_graph_shader_actor_1ae890e417040d5998f4b6a0bc7a317aec"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">nodeActorIndices</span></span></span><a class="headerlink" href="#_CPPv4N23NvBlastGraphShaderActor16nodeActorIndicesE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Family’s map from node index to actor index. </p>
 </dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleSuspensionComponent &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleSuspensionComponent</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclesuspensioncomponent">
+<span id="exhale-class-class-px-vehicle-suspension-component"></span><h1>PxVehicleSuspensionComponent<a class="headerlink" href="#pxvehiclesuspensioncomponent" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_suspension_PxVehicleSuspensionComponents.h.html#file-include-vehicle2-suspension-pxvehiclesuspensioncomponents-h"><span class="std std-ref">include/vehicle2/suspension/PxVehicleSuspensionComponents.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxVehicleComponent</span></code> (<a class="reference internal" href="class_px_vehicle_component.html#exhale-class-class-px-vehicle-component"><span class="std std-ref">PxVehicleComponent</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv428PxVehicleSuspensionComponent">
+<span id="_CPPv328PxVehicleSuspensionComponent"></span><span id="_CPPv228PxVehicleSuspensionComponent"></span><span id="PxVehicleSuspensionComponent"></span><span class="target" id="class_px_vehicle_suspension_component"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleSuspensionComponent</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_vehicle_component.html#_CPPv418PxVehicleComponent" title="PxVehicleComponent"><span class="n"><span class="pre">PxVehicleComponent</span></span></a><a class="headerlink" href="#_CPPv428PxVehicleSuspensionComponent" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxVehicleSuspensionComponent28PxVehicleSuspensionComponentEv">
+<span id="_CPPv3N28PxVehicleSuspensionComponent28PxVehicleSuspensionComponentEv"></span><span id="_CPPv2N28PxVehicleSuspensionComponent28PxVehicleSuspensionComponentEv"></span><span id="PxVehicleSuspensionComponent::PxVehicleSuspensionComponent"></span><span class="target" id="class_px_vehicle_suspension_component_1a5bf8db5d91abd1a8d038b59bd2d361fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleSuspensionComponent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N28PxVehicleSuspensionComponent28PxVehicleSuspensionComponentEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxVehicleSuspensionComponentD0Ev">
+<span id="_CPPv3N28PxVehicleSuspensionComponentD0Ev"></span><span id="_CPPv2N28PxVehicleSuspensionComponentD0Ev"></span><span id="PxVehicleSuspensionComponent::~PxVehicleSuspensionComponent"></span><span class="target" id="class_px_vehicle_suspension_component_1a4377b4e40d20ed8406e77a6329bcae33"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxVehicleSuspensionComponent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N28PxVehicleSuspensionComponentD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxVehicleSuspensionComponent29getDataForSuspensionComponentERPK24PxVehicleAxleDescriptionRPK24PxVehicleRigidBodyParamsRPK41PxVehicleSuspensionStateCalculationParamsR18PxVehicleArrayDataIK6PxRealERPK23PxVehicleRigidBodyStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsER18PxVehicleArrayDataIK25PxVehicleSuspensionParamsER18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsER18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsER23PxVehicleSizedArrayDataIK28PxVehicleAntiRollForceParamsER18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateER18PxVehicleArrayDataI24PxVehicleSuspensionStateER18PxVehicleArrayDataI34PxVehicleSuspensionComplianceStateER18PxVehicleArrayDataI24PxVehicleSuspensionForceERP23PxVehicleAntiRollTorque">
+<span id="_CPPv3N28PxVehicleSuspensionComponent29getDataForSuspensionComponentERPK24PxVehicleAxleDescriptionRPK24PxVehicleRigidBodyParamsRPK41PxVehicleSuspensionStateCalculationParamsR18PxVehicleArrayDataIK6PxRealERPK23PxVehicleRigidBodyStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsER18PxVehicleArrayDataIK25PxVehicleSuspensionParamsER18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsER18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsER23PxVehicleSizedArrayDataIK28PxVehicleAntiRollForceParamsER18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateER18PxVehicleArrayDataI24PxVehicleSuspensionStateER18PxVehicleArrayDataI34PxVehicleSuspensionComplianceStateER18PxVehicleArrayDataI24PxVehicleSuspensionForceERP23PxVehicleAntiRollTorque"></span><span id="_CPPv2N28PxVehicleSuspensionComponent29getDataForSuspensionComponentERPK24PxVehicleAxleDescriptionRPK24PxVehicleRigidBodyParamsRPK41PxVehicleSuspensionStateCalculationParamsR18PxVehicleArrayDataIK6PxRealERPK23PxVehicleRigidBodyStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsER18PxVehicleArrayDataIK25PxVehicleSuspensionParamsER18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsER18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsER23PxVehicleSizedArrayDataIK28PxVehicleAntiRollForceParamsER18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateER18PxVehicleArrayDataI24PxVehicleSuspensionStateER18PxVehicleArrayDataI34PxVehicleSuspensionComplianceStateER18PxVehicleArrayDataI24PxVehicleSuspensionForceERP23PxVehicleAntiRollTorque"></span><span id="PxVehicleSuspensionComponent::getDataForSuspensionComponent__PxVehicleAxleDescriptionCPR.PxVehicleRigidBodyParamsCPR.PxVehicleSuspensionStateCalculationParamsCPR.PxVehicleArrayData:PxRealC:R.PxVehicleRigidBodyStateCPR.PxVehicleArrayData:PxVehicleWheelParamsC:R.PxVehicleArrayData:PxVehicleSuspensionParamsC:R.PxVehicleArrayData:PxVehicleSuspensionComplianceParamsC:R.PxVehicleArrayData:PxVehicleSuspensionForceParamsC:R.PxVehicleSizedArrayData:PxVehicleAntiRollForceParamsC:R.PxVehicleArrayData:PxVehicleRoadGeometryStateC:R.PxVehicleArrayData:PxVehicleSuspensionState:R.PxVehicleArrayData:PxVehicleSuspensionComplianceState:R.PxVehicleArrayData:PxVehicleSuspensionForce:R.PxVehicleAntiRollTorquePR"></span><span class="target" id="class_px_vehicle_suspension_component_1a11a676111ace264f8e75180a3eb94546"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDataForSuspensionComponent</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDescription</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_rigid_body_params.html#_CPPv424PxVehicleRigidBodyParams" title="PxVehicleRigidBodyParams"><span class="n"><span class="pre">PxVehicleRigidBodyParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rigidBodyParams</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_suspension_state_calculation_params.html#_CPPv441PxVehicleSuspensionStateCalculationParams" title="PxVehicleSuspensionStateCalculationParams"><span class="n"><span class="pre">PxVehicleSuspensionStateCalculationParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionStateCalculationParams</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">steerResponseStates</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#_CPPv423PxVehicleRigidBodyState" title="PxVehicleRigidBodyState"><span class="n"><span class="pre">PxVehicleRigidBodyState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rigidBodyState</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_wheel_params.html#_CPPv420PxVehicleWheelParams" title="PxVehicleWheelParams"><span class="n"><span class="pre">PxVehicleWheelParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelParams</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_suspension_params.html#_CPPv425PxVehicleSuspensionParams" title="PxVehicleSuspensionParams"><span class="n"><span class="pre">PxVehicleSuspensionParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionParams</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_suspension_compliance_params.html#_CPPv435PxVehicleSuspensionComplianceParams" title="PxVehicleSuspensionComplianceParams"><span class="n"><span class="pre">PxVehicleSuspensionComplianceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionComplianceParams</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_suspension_force_params.html#_CPPv430PxVehicleSuspensionForceParams" title="PxVehicleSuspensionForceParams"><span class="n"><span class="pre">PxVehicleSuspensionForceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionForceParams</span></span>, <a class="reference internal" href="struct_px_vehicle_sized_array_data.html#_CPPv4I0E23PxVehicleSizedArrayData" title="PxVehicleSizedArrayData"><span class="n"><span class="pre">PxVehicleSizedArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_anti_roll_force_params.html#_CPPv428PxVehicleAntiRollForceParams" title="PxVehicleAntiRollForceParams"><span class="n"><span class="pre">PxVehicleAntiRollForceParams</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">antiRollForceParams</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#_CPPv426PxVehicleRoadGeometryState" title="PxVehicleRoadGeometryState"><span class="n"><span class="pre">PxVehicleRoadGeometryState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wheelRoadGeomStates</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_vehicle_suspension_state.html#_CPPv424PxVehicleSuspensionState" title="PxVehicleSuspensionState"><span class="n"><span class="pre">PxVehicleSuspensionState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionStates</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_vehicle_suspension_compliance_state.html#_CPPv434PxVehicleSuspensionComplianceState" title="PxVehicleSuspensionComplianceState"><span class="n"><span class="pre">PxVehicleSuspensionComplianceState</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionComplianceStates</span></span>, <a class="reference internal" href="struct_px_vehicle_array_data.html#_CPPv4I0E18PxVehicleArrayData" title="PxVehicleArrayData"><span class="n"><span class="pre">PxVehicleArrayData</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_vehicle_suspension_force.html#_CPPv424PxVehicleSuspensionForce" title="PxVehicleSuspensionForce"><span class="n"><span class="pre">PxVehicleSuspensionForce</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">suspensionForces</span></span>, <a class="reference internal" href="struct_px_vehicle_anti_roll_torque.html#_CPPv423PxVehicleAntiRollTorque" title="PxVehicleAntiRollTorque"><span class="n"><span class="pre">PxVehicleAntiRollTorque</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">antiRollTorque</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N28PxVehicleSuspensionComponent29getDataForSuspensionComponentERPK24PxVehicleAxleDescriptionRPK24PxVehicleRigidBodyParamsRPK41PxVehicleSuspensionStateCalculationParamsR18PxVehicleArrayDataIK6PxRealERPK23PxVehicleRigidBodyStateR18PxVehicleArrayDataIK20PxVehicleWheelParamsER18PxVehicleArrayDataIK25PxVehicleSuspensionParamsER18PxVehicleArrayDataIK35PxVehicleSuspensionComplianceParamsER18PxVehicleArrayDataIK30PxVehicleSuspensionForceParamsER23PxVehicleSizedArrayDataIK28PxVehicleAntiRollForceParamsER18PxVehicleArrayDataIK26PxVehicleRoadGeometryStateER18PxVehicleArrayDataI24PxVehicleSuspensionStateER18PxVehicleArrayDataI34PxVehicleSuspensionComplianceStateER18PxVehicleArrayDataI24PxVehicleSuspensionForceERP23PxVehicleAntiRollTorque" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve pointers to the parameter and state data required to compute the suspension state and the forces/torques that arise from the suspension state. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>antiRollForceParams and antiRollTorque should be returned either both non-NULL or both NULL. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axleDescription</strong> – <strong>[out]</strong> must be returned as a non-null pointer to a single <a class="reference internal" href="struct_px_vehicle_axle_description.html#struct_px_vehicle_axle_description"><span class="std std-ref">PxVehicleAxleDescription</span></a> instance that describes the wheels and axles of the vehicle. </p></li>
+<li><p><strong>rigidBodyParams</strong> – <strong>[out]</strong> must be returned as a a non-null pointer to a single <a class="reference internal" href="struct_px_vehicle_rigid_body_params.html#struct_px_vehicle_rigid_body_params"><span class="std std-ref">PxVehicleRigidBodyParams</span></a> instance that describes the mass and moment of inertia of the vehicle’s rigid body. </p></li>
+<li><p><strong>suspensionStateCalculationParams</strong> – <strong>[out]</strong> must be returned as a non-null pointer to a single <a class="reference internal" href="struct_px_vehicle_suspension_state_calculation_params.html#struct_px_vehicle_suspension_state_calculation_params"><span class="std std-ref">PxVehicleSuspensionStateCalculationParams</span></a> instance that describes the jounce computation type etc. </p></li>
+<li><p><strong>steerResponseStates</strong> – <strong>[out]</strong> must be returned as a non-null pointer to a single PxVehicleSteerCommandResponseStates instance that describes the steer state of the wheels. </p></li>
+<li><p><strong>rigidBodyState</strong> – <strong>[out]</strong> must be returned as a non-null pointer to a single <a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#struct_px_vehicle_rigid_body_state"><span class="std std-ref">PxVehicleRigidBodyState</span></a> instance that describes the pose and momentum of the vehicle’s rigid body. </p></li>
+<li><p><strong>wheelParams</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_wheel_params.html#struct_px_vehicle_wheel_params"><span class="std std-ref">PxVehicleWheelParams</span></a> containing per-wheel parameters for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionParams</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_params.html#struct_px_vehicle_suspension_params"><span class="std std-ref">PxVehicleSuspensionParams</span></a> containing per-wheel parameters for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionComplianceParams</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_compliance_params.html#struct_px_vehicle_suspension_compliance_params"><span class="std std-ref">PxVehicleSuspensionComplianceParams</span></a> containing per-wheel parameters for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionForceParams</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_force_params.html#struct_px_vehicle_suspension_force_params"><span class="std std-ref">PxVehicleSuspensionForceParams</span></a> containing per-wheel parameters for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>antiRollForceParams</strong> – <strong>[out]</strong> is optionally returned as a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_anti_roll_force_params.html#struct_px_vehicle_anti_roll_force_params"><span class="std std-ref">PxVehicleAntiRollForceParams</span></a> with each element in the array describing a unique anti-roll bar connecting a pair of wheels. </p></li>
+<li><p><strong>wheelRoadGeomStates</strong> – <strong>[out]</strong> must be set to non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#struct_px_vehicle_road_geometry_state"><span class="std std-ref">PxVehicleRoadGeometryState</span></a> containing per-wheel road geometry for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionStates</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_state.html#struct_px_vehicle_suspension_state"><span class="std std-ref">PxVehicleSuspensionState</span></a> containing per-wheel suspension state for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionComplianceStates</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_compliance_state.html#struct_px_vehicle_suspension_compliance_state"><span class="std std-ref">PxVehicleSuspensionComplianceState</span></a> containing per-wheel suspension compliance state for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>suspensionForces</strong> – <strong>[out]</strong> must be set to a non-null pointer to an array of <a class="reference internal" href="struct_px_vehicle_suspension_force.html#struct_px_vehicle_suspension_force"><span class="std std-ref">PxVehicleSuspensionForce</span></a> containing per-wheel suspension forces for each wheel referenced by axleDescription. </p></li>
+<li><p><strong>antiRollTorque</strong> – <strong>[out]</strong> is optionally returned as a non-null pointer to a single <a class="reference internal" href="struct_px_vehicle_anti_roll_torque.html#struct_px_vehicle_anti_roll_torque"><span class="std std-ref">PxVehicleAntiRollTorque</span></a> instance that will store the accumulated anti-roll torque to be applied to the vheicle’s rigid body. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N28PxVehicleSuspensionComponent6updateEK6PxRealRK26PxVehicleSimulationContext">
+<span id="_CPPv3N28PxVehicleSuspensionComponent6updateEK6PxRealRK26PxVehicleSimulationContext"></span><span id="_CPPv2N28PxVehicleSuspensionComponent6updateEK6PxRealRK26PxVehicleSimulationContext"></span><span id="PxVehicleSuspensionComponent::update__PxRealC.PxVehicleSimulationContextCR"></span><span class="target" id="class_px_vehicle_suspension_component_1a736ccfd50f3c7d33740b313c1a745ccf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_simulation_context.html#_CPPv426PxVehicleSimulationContext" title="PxVehicleSimulationContext"><span class="n"><span class="pre">PxVehicleSimulationContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">context</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N28PxVehicleSuspensionComponent6updateEK6PxRealRK26PxVehicleSimulationContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Update the suspension state and suspension compliance state and use those updated states to compute suspension and anti-roll forces/torques to apply to the vehicle’s rigid body. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The suspension and anti-roll forces/torques are computed in the world frame. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dt</strong> – <strong>[in]</strong> is the simulation time that has passed since the last call to <a class="reference internal" href="#class_px_vehicle_suspension_component_1a736ccfd50f3c7d33740b313c1a745ccf"><span class="std std-ref">PxVehicleSuspensionComponent::update()</span></a> </p></li>
+<li><p><strong>context</strong> – <strong>[in]</strong> describes a variety of global simulation constants such as frame and scale of the simulation and the gravitational acceleration of the simulated environment. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

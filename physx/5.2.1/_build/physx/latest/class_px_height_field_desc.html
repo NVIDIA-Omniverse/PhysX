@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxHeightFieldDesc &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxHeightFieldDesc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxheightfielddesc">
+<span id="exhale-class-class-px-height-field-desc"></span><h1>PxHeightFieldDesc<a class="headerlink" href="#pxheightfielddesc" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxHeightFieldDesc.h.html#file-include-geometry-pxheightfielddesc-h"><span class="std std-ref">include/geometry/PxHeightFieldDesc.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv417PxHeightFieldDesc">
+<span id="_CPPv317PxHeightFieldDesc"></span><span id="_CPPv217PxHeightFieldDesc"></span><span id="PxHeightFieldDesc"></span><span class="target" id="class_px_height_field_desc"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></span><a class="headerlink" href="#_CPPv417PxHeightFieldDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Descriptor class for <a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> <a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a1806546c22306e8d44b7ff7719fbcc99"><span class="std std-ref">PxPhysics.createHeightField()</span></a> PxCooking.createHeightField() </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The heightfield data is <em>copied</em> when a <a class="reference internal" href="class_px_height_field.html#class_px_height_field"><span class="std std-ref">PxHeightField</span></a> object is created from this descriptor. After the call the user may discard the height data.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc17PxHeightFieldDescEv">
+<span id="_CPPv3N17PxHeightFieldDesc17PxHeightFieldDescEv"></span><span id="_CPPv2N17PxHeightFieldDesc17PxHeightFieldDescEv"></span><span id="PxHeightFieldDesc::PxHeightFieldDesc"></span><span class="target" id="group__geomutils_1ga5c41ffadb88928b0d23464469e3b58e1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxHeightFieldDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc17PxHeightFieldDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor sets to default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc12setToDefaultEv">
+<span id="_CPPv3N17PxHeightFieldDesc12setToDefaultEv"></span><span id="_CPPv2N17PxHeightFieldDesc12setToDefaultEv"></span><span id="PxHeightFieldDesc::setToDefault"></span><span class="target" id="group__geomutils_1ga1eabdc03a7fa81c053d9a461a2f9ff07"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setToDefault</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc12setToDefaultEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>(re)sets the structure to the default. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxHeightFieldDesc7isValidEv">
+<span id="_CPPv3NK17PxHeightFieldDesc7isValidEv"></span><span id="_CPPv2NK17PxHeightFieldDesc7isValidEv"></span><span id="PxHeightFieldDesc::isValidC"></span><span class="target" id="group__geomutils_1ga4405e16410b9d05c50d0c251c1994889"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxHeightFieldDesc7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns true if the descriptor is valid. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the current settings are valid. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc6nbRowsE">
+<span id="_CPPv3N17PxHeightFieldDesc6nbRowsE"></span><span id="_CPPv2N17PxHeightFieldDesc6nbRowsE"></span><span id="PxHeightFieldDesc::nbRows__PxU32"></span><span class="target" id="class_px_height_field_desc_1ac701700af3c4597a4a39a76e3331dd08"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbRows</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc6nbRowsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of sample rows in the height field samples array. </p>
+<p><strong>Range:</strong> &gt;1<strong>Default:</strong> 0 </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Local space X-axis corresponds to rows.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc9nbColumnsE">
+<span id="_CPPv3N17PxHeightFieldDesc9nbColumnsE"></span><span id="_CPPv2N17PxHeightFieldDesc9nbColumnsE"></span><span id="PxHeightFieldDesc::nbColumns__PxU32"></span><span class="target" id="class_px_height_field_desc_1a8426b15eb6ad44c11fcb84bb9e3350c0"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbColumns</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc9nbColumnsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Number of sample columns in the height field samples array. </p>
+<p><strong>Range:</strong> &gt;1<strong>Default:</strong> 0 </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Local space Z-axis corresponds to columns.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc6formatE">
+<span id="_CPPv3N17PxHeightFieldDesc6formatE"></span><span id="_CPPv2N17PxHeightFieldDesc6formatE"></span><span id="PxHeightFieldDesc::format__PxHeightFieldFormat::Enum"></span><span class="target" id="class_px_height_field_desc_1a8743d198a4db234d353c1f4d2734d43d"></span><a class="reference internal" href="struct_px_height_field_format.html#_CPPv419PxHeightFieldFormat" title="PxHeightFieldFormat"><span class="n"><span class="pre">PxHeightFieldFormat</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_height_field_format.html#_CPPv4N19PxHeightFieldFormat4EnumE" title="PxHeightFieldFormat::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">format</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc6formatE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Format of the sample data. </p>
+<p>Currently the only supported format is <a class="reference internal" href="struct_px_height_field_format.html#struct_px_height_field_format_1ad28e3afa439f8ff1df6067288c46d9c5aa8ba1edf74a561d830b5f40e2c3e64e7"><span class="std std-ref">PxHeightFieldFormat::eS16_TM</span></a>:</p>
+<p><strong>Default:</strong> <a class="reference internal" href="struct_px_height_field_format.html#struct_px_height_field_format_1ad28e3afa439f8ff1df6067288c46d9c5aa8ba1edf74a561d830b5f40e2c3e64e7"><span class="std std-ref">PxHeightFieldFormat::eS16_TM</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxHeightFormat <a class="reference internal" href="#class_px_height_field_desc_1affbec0b3ed43d041b12152648d13821b"><span class="std std-ref">PxHeightFieldDesc.samples</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc7samplesE">
+<span id="_CPPv3N17PxHeightFieldDesc7samplesE"></span><span id="_CPPv2N17PxHeightFieldDesc7samplesE"></span><span id="PxHeightFieldDesc::samples__PxStridedData"></span><span class="target" id="class_px_height_field_desc_1affbec0b3ed43d041b12152648d13821b"></span><a class="reference internal" href="struct_px_strided_data.html#_CPPv413PxStridedData" title="PxStridedData"><span class="n"><span class="pre">PxStridedData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">samples</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc7samplesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The samples array. </p>
+<p>It is copied to the SDK’s storage at creation time.</p>
+<p>There are nbRows * nbColumn samples in the array, which define nbRows * nbColumn vertices and cells, of which (nbRows - 1) * (nbColumns - 1) cells are actually used.</p>
+<p>The array index of sample(row, column) = row * nbColumns + column. The byte offset of sample(row, column) = sampleStride * (row * nbColumns + column). The sample data follows at the offset and spans the number of bytes defined by the format. Then there are zero or more unused bytes depending on sampleStride before the next sample.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxHeightFormat </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc19convexEdgeThresholdE">
+<span id="_CPPv3N17PxHeightFieldDesc19convexEdgeThresholdE"></span><span id="_CPPv2N17PxHeightFieldDesc19convexEdgeThresholdE"></span><span id="PxHeightFieldDesc::convexEdgeThreshold__PxReal"></span><span class="target" id="class_px_height_field_desc_1a2c40081aa73ec042021785dbe52f75fb"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convexEdgeThreshold</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc19convexEdgeThresholdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This threshold is used by the collision detection to determine if a height field edge is convex and can generate contact points. </p>
+<p>Usually the convexity of an edge is determined from the angle (or cosine of the angle) between the normals of the faces sharing that edge. The height field allows a more efficient approach by comparing height values of neighboring vertices. This parameter offsets the comparison. Smaller changes than 0.5 will not alter the set of convex edges. The rule of thumb is that larger values will result in fewer edge contacts.</p>
+<p>This parameter is ignored in contact generation with sphere and capsule primitives.</p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0 </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxHeightFieldDesc5flagsE">
+<span id="_CPPv3N17PxHeightFieldDesc5flagsE"></span><span id="_CPPv2N17PxHeightFieldDesc5flagsE"></span><span id="PxHeightFieldDesc::flags__PxHeightFieldFlags"></span><span class="target" id="class_px_height_field_desc_1aec8940d776191d6ca950025836481360"></span><a class="reference internal" href="typedef_group__geomutils_1ga93b547b1968a59b2d23c91aab533e2c8.html#_CPPv418PxHeightFieldFlags" title="PxHeightFieldFlags"><span class="n"><span class="pre">PxHeightFieldFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flags</span></span></span><a class="headerlink" href="#_CPPv4N17PxHeightFieldDesc5flagsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags bits, combined from values of the enum <a class="reference internal" href="struct_px_height_field_flag.html#struct_px_height_field_flag"><span class="std std-ref">PxHeightFieldFlag</span></a>. </p>
+<p><strong>Default:</strong> 0</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_height_field_flag.html#struct_px_height_field_flag"><span class="std std-ref">PxHeightFieldFlag</span></a> <a class="reference internal" href="typedef_group__geomutils_1ga93b547b1968a59b2d23c91aab533e2c8.html#group__geomutils_1ga93b547b1968a59b2d23c91aab533e2c8"><span class="std std-ref">PxHeightFieldFlags</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

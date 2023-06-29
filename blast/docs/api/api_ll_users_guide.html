@@ -1,85 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Low Level API (NvBlast) &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Low Level API (NvBlast) &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/mermaid-init.js"></script>
         <script src="../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../_static/version.js"></script>
         <script src="../../_static/social-media.js"></script>
         <script src="../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Globals API (NvBlastGlobals)" href="api_globals_users_guide.html" />
-    <link rel="prev" title="Introduction" href="introduction.html" /> 
+    <link rel="prev" title="Introduction" href="introduction.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../index.html">
-          
-
-          
-            
-            <img src="../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -87,19 +52,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Low Level API (NvBlast)</a><ul>
@@ -133,79 +87,42 @@
 <li class="toctree-l1"><a class="reference internal" href="../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Low Level API (NvBlast)</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Low Level API (NvBlast)</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="low-level-api-nvblast">
-<span id="pagellapi"></span><h1>Low Level API (NvBlast)<a class="headerlink" href="#low-level-api-nvblast" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="low-level-api-nvblast">
+<span id="pagellapi"></span><h1>Low Level API (NvBlast)<a class="headerlink" href="#low-level-api-nvblast" title="Permalink to this headline"></a></h1>
 <p><strong>Table of Contents</strong></p>
 <p><a class="reference internal" href="#llintroduction"><span class="std std-ref">Introduction</span></a></p>
 <p><a class="reference internal" href="#include-and-library"><span class="std std-ref">Linking and Header Files</span></a></p>
 <p><a class="reference internal" href="#assets"><span class="std std-ref">Creating an Asset from a Descriptor (Authoring)</span></a></p>
 <p><a class="reference internal" href="#actors-and-families"><span class="std std-ref">Creating Actors and Families</span></a></p>
 <p><a class="reference internal" href="#splitting"><span class="std std-ref">Damage and Fracturing</span></a></p>
-<div class="section" id="introduction">
-<span id="llintroduction"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<section id="introduction">
+<span id="llintroduction"></span><h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
 <p>The low-level API is the core of Blast destruction.  It is designed to be a minimal API that allows an experienced user to incorporate destruction
 into their application.  Summarizing what the low-level API has, and <em>doesn’t</em> have:</p>
 <ul class="simple">
@@ -236,9 +153,9 @@ serialization model for a particular application.  To deserialize a single actor
 asset.  If none exists already, the user may create an empty family.  After that, all actors that had been in that family may be deserialized
 into it one-at-a-time, in any order.</p></li>
 </ul>
-</div>
-<div class="section" id="linking-and-header-files">
-<span id="include-and-library"></span><h2>Linking and Header Files<a class="headerlink" href="#linking-and-header-files" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="linking-and-header-files">
+<span id="include-and-library"></span><h2>Linking and Header Files<a class="headerlink" href="#linking-and-header-files" title="Permalink to this headline"></a></h2>
 <p>To use the low-level Blast SDK, the application need only inlclude the header NvBlast.h, found in the top-level <strong>include</strong> folder, and link
 against the appropriate version of the NvBlast library.  Depending on the platform and configuration, various suffixes will be added to the library
 name.  The general naming scheme is</p>
@@ -246,9 +163,9 @@ name.  The general naming scheme is</p>
 <p>(config) is DEBUG, CHECKED, OR PROFILE for the corresponding configurations.  For a release configuration there is no (config) suffix.</p>
 <p>(arch) is _x86 or _x64 for Windows 32- and 64-bit builds, respectively, and empty for non-Windows platforms.</p>
 <p>(ext) is .lib for static linking and .dll for dynamic linking on Windows.</p>
-</div>
-<div class="section" id="creating-an-asset-from-a-descriptor-authoring">
-<span id="assets"></span><h2>Creating an Asset from a Descriptor (Authoring)<a class="headerlink" href="#creating-an-asset-from-a-descriptor-authoring" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="creating-an-asset-from-a-descriptor-authoring">
+<span id="assets"></span><h2>Creating an Asset from a Descriptor (Authoring)<a class="headerlink" href="#creating-an-asset-from-a-descriptor-authoring" title="Permalink to this headline"></a></h2>
 <p>The NvBlastAsset is an opaque type pointing to an object constructed by Blast in memory allocated by the user.
 To create an asset from a descriptor, use the function <strong>NvBlastCreateAsset</strong> (<a class="reference internal" href="#assets"><span class="std std-ref">Creating an Asset from a Descriptor (Authoring)</span></a>).  See the function documentation for a
 description of its parameters.</p>
@@ -328,8 +245,8 @@ NvBlastAsset* asset = NvBlastCreateAsset( mem, &amp;assetDesc, scratch.data(), l
 <p>It should be noted that the geometric information (centroid, volume, area, normal) in chunks and bonds is only used by damage
 shader functions (see <a class="reference internal" href="extensions/ext_shaders.html#pageextshaders"><span class="std std-ref">Damage Shaders (NvBlastExtShaders)</span></a>).  Depending on the shader, some, all, or none of the geometric information will be needed.
 The user may write damage shader functions that interpret this data in any way they wish.</p>
-<div class="section" id="cloning-an-asset">
-<span id="asset-copying"></span><h3>Cloning an Asset<a class="headerlink" href="#cloning-an-asset" title="Permalink to this headline">¶</a></h3>
+<section id="cloning-an-asset">
+<span id="asset-copying"></span><h3>Cloning an Asset<a class="headerlink" href="#cloning-an-asset" title="Permalink to this headline"></a></h3>
 <p>To clone an asset, one only needs to copy the memory associated with the NvBlastAsset.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>uint32_t assetSize = NvBlastAssetGetSize( asset );
 
@@ -338,19 +255,19 @@ memcpy( newAsset, asset, assetSize );   // this data may be copied into a buffer
 </pre></div>
 </div>
 <p>N.B. the comment after the malloc call above.  NvBlastAsset memory <strong>must</strong> be 16-byte aligned.</p>
-</div>
-<div class="section" id="releasing-an-asset">
-<span id="asset-releasing"></span><h3>Releasing an Asset<a class="headerlink" href="#releasing-an-asset" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="releasing-an-asset">
+<span id="asset-releasing"></span><h3>Releasing an Asset<a class="headerlink" href="#releasing-an-asset" title="Permalink to this headline"></a></h3>
 <p>Blast low-level does no internal allocation; since the memory is allocated by the user, one simply has to free the memory they’ve
 allocated.  The asset pointer returned by NvBlastCreateAsset has the same numerical value as the mem block passed in (if the function
 is successful, or NULL otherwise).  So releasing an asset with memory allocated by <strong>malloc</strong> is simply done with a call to <strong>free</strong>:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>free( asset );
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="creating-actors-and-families">
-<span id="actors-and-families"></span><h2>Creating Actors and Families<a class="headerlink" href="#creating-actors-and-families" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="creating-actors-and-families">
+<span id="actors-and-families"></span><h2>Creating Actors and Families<a class="headerlink" href="#creating-actors-and-families" title="Permalink to this headline"></a></h2>
 <p>Actors live within a family created from asset data.  To create an actor, one must first create a family.  This family is used by the initial actor created from
 the asset, as well as all of the descendant actors created by recursively fracturing the initial actor.  As with assets, family allocation is done by the user.</p>
 <p>To create a family, use:</p>
@@ -374,21 +291,21 @@ std::vector&lt;char&gt; scratch( NvBlastFamilyGetRequiredScratchForCreateFirstAc
 NvBlastActor* actor = NvBlastFamilyCreateFirstActor( family, &amp;actorDesc, scratch.data(), logFn );   // ready to be associated with physics and graphics by the user
 </pre></div>
 </div>
-<div class="section" id="copying-actors-serialization-and-deserialization">
-<span id="actor-copying"></span><h3>Copying Actors (Serialization and Deserialization)<a class="headerlink" href="#copying-actors-serialization-and-deserialization" title="Permalink to this headline">¶</a></h3>
+<section id="copying-actors-serialization-and-deserialization">
+<span id="actor-copying"></span><h3>Copying Actors (Serialization and Deserialization)<a class="headerlink" href="#copying-actors-serialization-and-deserialization" title="Permalink to this headline"></a></h3>
 <p>There are two ways to copy NvBlastActors: cloning an NvBlastFamily, and single-actor serialization.  Cloning an NvBlastFamily is extremely fast as it only requires
 a single memory copy.  All actors in the family may be saved, loaded, or copied at once in this way.</p>
-</div>
-<div class="section" id="cloning-a-family">
-<span id="family-serialization"></span><h3>Cloning a Family<a class="headerlink" href="#cloning-a-family" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="cloning-a-family">
+<span id="family-serialization"></span><h3>Cloning a Family<a class="headerlink" href="#cloning-a-family" title="Permalink to this headline"></a></h3>
 <p>To clone a family, use the family pointer which may be retrieved
 from any active actor in the family if needed, using the NvBlastActorGetFamily function:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>const NvBlastFamily* family = NvBlastActorGetFamily( &amp;actor, logFn );
 </pre></div>
 </div>
-</div>
-<div class="section" id="id1">
-<h3>Cloning a Family<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="id1">
+<h3>Cloning a Family<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h3>
 <p>Then the size of the family may be obtained using:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>size_t size = NvBlastFamilyGetSize( family, logFn );
 </pre></div>
@@ -414,9 +331,9 @@ uint32_t actorsWritten = NvBlastFamilyGetActors( actors.data(), actorCount, fami
 </pre></div>
 </div>
 <p>In the code above, actorsWritten should equal actorCount.</p>
-</div>
-<div class="section" id="single-actor-serialization">
-<span id="id2"></span><h3>Single Actor Serialization<a class="headerlink" href="#single-actor-serialization" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="single-actor-serialization">
+<span id="id2"></span><h3>Single Actor Serialization<a class="headerlink" href="#single-actor-serialization" title="Permalink to this headline"></a></h3>
 <p>To perform single-actor serialization, first find the buffer size required to store the serialization data:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>size_t bufferSize = NvBlastActorGetSerializationSize( actor, logFn );
 </pre></div>
@@ -441,10 +358,10 @@ NvBlastFamily* family = NvBlastAssetCreateFamily( mem, asset, logFn );
 </pre></div>
 </div>
 <p>If newActor is not NULL, then the actor was successfully deserialized.</p>
-</div>
-</div>
-<div class="section" id="deactivating-an-actor">
-<span id="actor-deactivating"></span><h2>Deactivating an Actor<a class="headerlink" href="#deactivating-an-actor" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="deactivating-an-actor">
+<span id="actor-deactivating"></span><h2>Deactivating an Actor<a class="headerlink" href="#deactivating-an-actor" title="Permalink to this headline"></a></h2>
 <p>Actors may not be released in the usual sense of deallocation.  This is because actors’ memory is stored as a block within the owning family.  The
 memory is only released when the family is released.  However, one may deactivate an actor using NvBlastActorDeactivate.
 This clears the actor’s chunk lists and marks it as invalid, effectively disassociating it from the family.  The user should consider this actor
@@ -452,8 +369,8 @@ to be destroyed.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>bool success = NvBlastActorDeactivate( actor, logFn );
 </pre></div>
 </div>
-<div class="section" id="releasing-a-family">
-<span id="family-releasing"></span><h3>Releasing a family<a class="headerlink" href="#releasing-a-family" title="Permalink to this headline">¶</a></h3>
+<section id="releasing-a-family">
+<span id="family-releasing"></span><h3>Releasing a family<a class="headerlink" href="#releasing-a-family" title="Permalink to this headline"></a></h3>
 <p>As mentioned above, releasing an actor does not actually do any deallocation; it simply invalidates the actor within its family.
 To actually deallocate memory, you must deallocate the family.  Note, this will invalidate all actors in the family.  This is
 a fast way to delete all actors that were created from repeated fracturing of a single instance.  As with NvBlastAsset, memory is
@@ -466,10 +383,10 @@ the number of active actors in a family using</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>uint32_t actorCount = NvBlastFamilyGetActorCount( family, logFn );
 </pre></div>
 </div>
-</div>
-</div>
-<div class="section" id="damage-and-fracturing">
-<span id="splitting"></span><h2>Damage and Fracturing<a class="headerlink" href="#damage-and-fracturing" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="damage-and-fracturing">
+<span id="splitting"></span><h2>Damage and Fracturing<a class="headerlink" href="#damage-and-fracturing" title="Permalink to this headline"></a></h2>
 <p>Damaging and fracturing is a staged process.
 In a first step, a <strong>NvBlastDamageProgram</strong> creates lists of Bonds and Chunks to damage - so called Fracture Commands.
 The lists are created from input specific to the NvBlastDamageProgram.&lt;br&gt;
@@ -526,46 +443,37 @@ std::vector&lt;char&gt; scratch( NvBlastActorGetRequiredScratchForSplit( actor, 
 size_t newActorCount = NvBlastActorSplit( &amp;splitEvent, actor, maxNewActorCount, scratch.data(), logFn, &amp;timers );
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

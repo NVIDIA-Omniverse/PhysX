@@ -1,85 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Stress Solver (NvBlastExtStress) &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Stress Solver (NvBlastExtStress) &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
         <script src="../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../_static/version.js"></script>
         <script src="../../../_static/social-media.js"></script>
         <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Asset Utilities (NvBlastExtAssetUtils)" href="ext_assetutils.html" />
-    <link rel="prev" title="Damage Shaders (NvBlastExtShaders)" href="ext_shaders.html" /> 
+    <link rel="prev" title="Damage Shaders (NvBlastExtShaders)" href="ext_shaders.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html">
-          
-
-          
-            
-            <img src="../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -87,19 +52,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -125,73 +79,35 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
-        
-      <li>Stress Solver (NvBlastExtStress)</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
+<li>Stress Solver (NvBlastExtStress)</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="stress-solver-nvblastextstress">
-<span id="pageextstress"></span><h1>Stress Solver (NvBlastExtStress)<a class="headerlink" href="#stress-solver-nvblastextstress" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="stress-solver-nvblastextstress">
+<span id="pageextstress"></span><h1>Stress Solver (NvBlastExtStress)<a class="headerlink" href="#stress-solver-nvblastextstress" title="Permalink to this headline"></a></h1>
 <p>The Blast stress solver extension provides an implementation of a fast and easy to use stress solver which works directly with the bond graph.
 It simulates iteratively spreading forces across bonds that connect nodes of the support graph (where nodes typically represent chunks)
 and allows bond limits to be specified for tension, compression, and shear independently.</p>
@@ -204,8 +120,8 @@ Without this, the algorithm will stabilize with no internal force due to gravity
 by adding the impulse of collisions to the nearest node in the graph.</p>
 <p>Dynamic actors are also supported, you could for example add centrifugal force so that rotating an object fast enough will break bonds.  Keep in mind that for gravity to work with dynamic actors,
 an opposing force or static node(s) must be added to the system to provide resistance to the force.</p>
-<div class="section" id="features">
-<span id="stresssolverfeatures"></span><h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<section id="features">
+<span id="stresssolverfeatures"></span><h2>Features<a class="headerlink" href="#features" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Requires only core a NvBlast</p></li>
 <li><p>Supports both static and dynamic actors</p></li>
@@ -214,15 +130,15 @@ an opposing force or static node(s) must be added to the system to provide resis
 <li><p>Apply stress damage on Blast actor</p></li>
 <li><p>Debug Render</p></li>
 </ul>
-</div>
-<div class="section" id="settings-tuning">
-<span id="stresssolvertuning"></span><h2>Settings Tuning<a class="headerlink" href="#settings-tuning" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="settings-tuning">
+<span id="stresssolvertuning"></span><h2>Settings Tuning<a class="headerlink" href="#settings-tuning" title="Permalink to this headline"></a></h2>
 <p>Computation time is linearly proportional to the a maxSolverIterationsPerFrame setting. Higher values will converge to a solution sooner, but at processing cost.
 a graphReductionLevel should be considered experimental at this point, it has not been heavily tested.</p>
 <p>Debug render can help a lot for tuning, consider using a stressSolver-&gt;fillDebugRender(…) for that.</p>
-</div>
-<div class="section" id="usage">
-<span id="stresssolverusage"></span><h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="usage">
+<span id="stresssolverusage"></span><h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h2>
 <p>In order to use the stress solver, create an instance with a ExtStressSolver::create(…).</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>ExtStressSolver* stressSolver = ExtStressSolver::create(family, settings);
 </pre></div>
@@ -245,46 +161,37 @@ In that case a notifyActorCreated(actor) returns ‘false’ as a hint.  It mean
 -# Call a stressSolver-&gt;update(). This is where all expensive computation takes place.
 -# If a stressSolver-&gt;getOverstressedBondCount() &gt; 0, use one of a stressSolver-&gt;generateFractureCommands() methods to get bond fracture commands and apply them on actors.
 -# If split happened, call relevant stressSolver-&gt;notifyActorCreated(actor) and stressSolver-&gt;notifyActorDestroyed(actor)</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

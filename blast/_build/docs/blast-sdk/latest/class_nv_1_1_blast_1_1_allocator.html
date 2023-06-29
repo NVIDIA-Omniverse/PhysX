@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::Allocator &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::Allocator &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,135 +64,89 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::Allocator</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::Allocator</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-allocator">
-<span id="exhale-class-class-nv-1-1-blast-1-1-allocator"></span><h1>Nv::Blast::Allocator<a class="headerlink" href="#nv-blast-allocator" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-allocator">
+<span id="exhale-class-class-nv-1-1-blast-1-1-allocator"></span><h1>Nv::Blast::Allocator<a class="headerlink" href="#nv-blast-allocator" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_globals_NvBlastAllocator.h.html#file-globals-nvblastallocator-h"><span class="std std-ref">globals/NvBlastAllocator.h</span></a></p>
 <dl class="cpp class">
-<dt id="_CPPv4N2Nv5Blast9AllocatorE">
-<span id="_CPPv3N2Nv5Blast9AllocatorE"></span><span id="_CPPv2N2Nv5Blast9AllocatorE"></span><span id="Nv::Blast::Allocator"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">Allocator</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast9AllocatorE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast9AllocatorE">
+<span id="_CPPv3N2Nv5Blast9AllocatorE"></span><span id="_CPPv2N2Nv5Blast9AllocatorE"></span><span id="Nv::Blast::Allocator"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Allocator</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast9AllocatorE" title="Permalink to this definition"></a><br /></dt>
 <dd><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_allocator"><span class="std std-ref">Allocator</span></a> uses global nvidia::NvAllocatorCallback. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast9Allocator9AllocatorEPKc">
-<span id="_CPPv3N2Nv5Blast9Allocator9AllocatorEPKc"></span><span id="_CPPv2N2Nv5Blast9Allocator9AllocatorEPKc"></span><span id="Nv::Blast::Allocator::Allocator__cCP"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1a27443f120df80394ff9800159b366eea"></span><em class="property"><span class="pre">inline</span></em> <code class="sig-name descname"><span class="pre">Allocator</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <span class="pre">char</span><span class="pre">*</span> <span class="pre">=</span> <span class="pre">0</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator9AllocatorEPKc" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast9Allocator9AllocatorEPKc">
+<span id="_CPPv3N2Nv5Blast9Allocator9AllocatorEPKc"></span><span id="_CPPv2N2Nv5Blast9Allocator9AllocatorEPKc"></span><span id="Nv::Blast::Allocator::Allocator__cCP"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1a27443f120df80394ff9800159b366eea"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Allocator</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="p"><span class="pre">*</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator9AllocatorEPKc" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast9Allocator8allocateE6size_tPKci">
-<span id="_CPPv3N2Nv5Blast9Allocator8allocateE6size_tPKci"></span><span id="_CPPv2N2Nv5Blast9Allocator8allocateE6size_tPKci"></span><span id="Nv::Blast::Allocator::allocate__s.cCP.i"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1afdd1a23ef5c703cf4440db709536b6dd"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">allocate</span></code><span class="sig-paren">(</span><span class="pre">size_t</span> <em><span class="pre">size</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">char</span> <span class="pre">*</span><em><span class="pre">filename</span></em>, <span class="pre">int</span> <em><span class="pre">line</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator8allocateE6size_tPKci" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast9Allocator8allocateE6size_tPKci">
+<span id="_CPPv3N2Nv5Blast9Allocator8allocateE6size_tPKci"></span><span id="_CPPv2N2Nv5Blast9Allocator8allocateE6size_tPKci"></span><span id="Nv::Blast::Allocator::allocate__s.cCP.i"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1a63c4ba0f986df98f37b504c5df84997a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocate</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator8allocateE6size_tPKci" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast9Allocator10deallocateEPv">
-<span id="_CPPv3N2Nv5Blast9Allocator10deallocateEPv"></span><span id="_CPPv2N2Nv5Blast9Allocator10deallocateEPv"></span><span id="Nv::Blast::Allocator::deallocate__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1a59db4bb86390f4a5560f50d7a1b1e202"></span><em class="property"><span class="pre">inline</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">deallocate</span></code><span class="sig-paren">(</span><span class="pre">void</span> <span class="pre">*</span><em><span class="pre">ptr</span></em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator10deallocateEPv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast9Allocator10deallocateEPv">
+<span id="_CPPv3N2Nv5Blast9Allocator10deallocateEPv"></span><span id="_CPPv2N2Nv5Blast9Allocator10deallocateEPv"></span><span id="Nv::Blast::Allocator::deallocate__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_allocator_1a59db4bb86390f4a5560f50d7a1b1e202"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deallocate</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast9Allocator10deallocateEPv" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniPvdDataType &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>OmniPvdDataType</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omnipvddatatype">
+<span id="exhale-struct-struct-omni-pvd-data-type"></span><h1>OmniPvdDataType<a class="headerlink" href="#omnipvddatatype" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdDefines.h.html#file-pvdruntime-include-omnipvddefines-h"><span class="std std-ref">pvdruntime/include/OmniPvdDefines.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv415OmniPvdDataType">
+<span id="_CPPv315OmniPvdDataType"></span><span id="_CPPv215OmniPvdDataType"></span><span id="OmniPvdDataType"></span><span class="target" id="struct_omni_pvd_data_type"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdDataType</span></span></span><a class="headerlink" href="#_CPPv415OmniPvdDataType" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4EnumE">
+<span id="_CPPv3N15OmniPvdDataType4EnumE"></span><span id="_CPPv2N15OmniPvdDataType4EnumE"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39b"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum5eINT8E">
+<span id="_CPPv3N15OmniPvdDataType4Enum5eINT8E"></span><span id="_CPPv2N15OmniPvdDataType4Enum5eINT8E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba5e66ec1b1f96c4c7ed0c185bb2d91bbf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINT8</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum5eINT8E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum6eINT16E">
+<span id="_CPPv3N15OmniPvdDataType4Enum6eINT16E"></span><span id="_CPPv2N15OmniPvdDataType4Enum6eINT16E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39bae90f0fd024431b3adce18e53defde078"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINT16</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum6eINT16E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum6eINT32E">
+<span id="_CPPv3N15OmniPvdDataType4Enum6eINT32E"></span><span id="_CPPv2N15OmniPvdDataType4Enum6eINT32E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba751d11959c4aa9ad9bcc6f84a508b497"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINT32</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum6eINT32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum6eINT64E">
+<span id="_CPPv3N15OmniPvdDataType4Enum6eINT64E"></span><span id="_CPPv2N15OmniPvdDataType4Enum6eINT64E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39baf64cb48bf474205d172d0e3c3b378aae"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eINT64</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum6eINT64E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum6eUINT8E">
+<span id="_CPPv3N15OmniPvdDataType4Enum6eUINT8E"></span><span id="_CPPv2N15OmniPvdDataType4Enum6eUINT8E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39baf33eee6bb18f6288e5895b25b0a0c043"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUINT8</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum6eUINT8E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum7eUINT16E">
+<span id="_CPPv3N15OmniPvdDataType4Enum7eUINT16E"></span><span id="_CPPv2N15OmniPvdDataType4Enum7eUINT16E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39badaec2c973475a6015631263f7ccaa354"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUINT16</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum7eUINT16E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum7eUINT32E">
+<span id="_CPPv3N15OmniPvdDataType4Enum7eUINT32E"></span><span id="_CPPv2N15OmniPvdDataType4Enum7eUINT32E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39baa172f7fd05881fdef9c6c79c8e7282f3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUINT32</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum7eUINT32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum7eUINT64E">
+<span id="_CPPv3N15OmniPvdDataType4Enum7eUINT64E"></span><span id="_CPPv2N15OmniPvdDataType4Enum7eUINT64E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba32573faf90b19fdac674c72ca90ce593"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eUINT64</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum7eUINT64E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum8eFLOAT32E">
+<span id="_CPPv3N15OmniPvdDataType4Enum8eFLOAT32E"></span><span id="_CPPv2N15OmniPvdDataType4Enum8eFLOAT32E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba91dbd8bb1ecc40ba9245c944b8fc66db"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFLOAT32</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum8eFLOAT32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum8eFLOAT64E">
+<span id="_CPPv3N15OmniPvdDataType4Enum8eFLOAT64E"></span><span id="_CPPv2N15OmniPvdDataType4Enum8eFLOAT64E"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba14d31fb5ec6d7a6d1ed86b711ea010de"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFLOAT64</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum8eFLOAT64E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum7eSTRINGE">
+<span id="_CPPv3N15OmniPvdDataType4Enum7eSTRINGE"></span><span id="_CPPv2N15OmniPvdDataType4Enum7eSTRINGE"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba5cc8fe7a8685726791849cdbed2f2c4b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSTRING</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum7eSTRINGE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum14eOBJECT_HANDLEE">
+<span id="_CPPv3N15OmniPvdDataType4Enum14eOBJECT_HANDLEE"></span><span id="_CPPv2N15OmniPvdDataType4Enum14eOBJECT_HANDLEE"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39ba288e7c55771c64dc236cecbe750f2146"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eOBJECT_HANDLE</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum14eOBJECT_HANDLEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum11eENUM_VALUEE">
+<span id="_CPPv3N15OmniPvdDataType4Enum11eENUM_VALUEE"></span><span id="_CPPv2N15OmniPvdDataType4Enum11eENUM_VALUEE"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39baa63c5408026cee5945e2808812782de0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eENUM_VALUE</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum11eENUM_VALUEE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N15OmniPvdDataType4Enum11eFLAGS_WORDE">
+<span id="_CPPv3N15OmniPvdDataType4Enum11eFLAGS_WORDE"></span><span id="_CPPv2N15OmniPvdDataType4Enum11eFLAGS_WORDE"></span><span class="target" id="struct_omni_pvd_data_type_1a14a4d503bedcd47e2483131aa67da39bae7da1e1b2ccb547a5602869d7b91a22e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFLAGS_WORD</span></span></span><a class="headerlink" href="#_CPPv4N15OmniPvdDataType4Enum11eFLAGS_WORDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBVH &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxBVH</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbvh">
+<span id="exhale-class-class-px-b-v-h"></span><h1>PxBVH<a class="headerlink" href="#pxbvh" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxBVH.h.html#file-include-geometry-pxbvh-h"><span class="std std-ref">include/geometry/PxBVH.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxBase</span></code> (<a class="reference internal" href="class_px_base.html#exhale-class-class-px-base"><span class="std std-ref">PxBase</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv45PxBVH">
+<span id="_CPPv35PxBVH"></span><span id="_CPPv25PxBVH"></span><span id="PxBVH"></span><span class="target" id="class_px_b_v_h"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_base.html#_CPPv46PxBase" title="PxBase"><span class="n"><span class="pre">PxBase</span></span></a><a class="headerlink" href="#_CPPv45PxBVH" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Class representing a bounding volume hierarchy. </p>
+<p><a class="reference internal" href="#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> can be provided to <a class="reference internal" href="class_px_scene.html#class_px_scene_1a4823e61b00a895a9b013269b598c6863"><span class="std std-ref">PxScene::addActor</span></a>. In this case the scene query pruning structure inside PhysX SDK will store/update one bound per actor. The scene queries against such an actor will query actor bounds and then make a local space query against the provided BVH, which is in actor’s local space.</p>
+<p><a class="reference internal" href="#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> can also be used as a standalone data-structure for arbitrary purposes, unrelated to <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> / <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a4823e61b00a895a9b013269b598c6863"><span class="std std-ref">PxScene::addActor</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH7raycastERK6PxVec3RK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags">
+<span id="_CPPv3NK5PxBVH7raycastERK6PxVec3RK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags"></span><span id="_CPPv2NK5PxBVH7raycastERK6PxVec3RK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags"></span><span id="PxBVH::raycast__PxVec3CR.PxVec3CR.float.RaycastCallbackR.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_b_v_h_1a1f2113b0da780fc285875e435d1e893c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxDist</span></span>, <a class="reference internal" href="#_CPPv4N5PxBVH15RaycastCallbackE" title="PxBVH::RaycastCallback"><span class="n"><span class="pre">RaycastCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cb</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH7raycastERK6PxVec3RK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast test against a BVH. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – <strong>[in]</strong> The origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>maxDist</strong> – <strong>[in]</strong> Maximum ray length, has to be in the [0, inf) range </p></li>
+<li><p><strong>cb</strong> – <strong>[in]</strong> Raycast callback, called once per hit </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>false if query has been aborted </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH5sweepERK10PxGeometryRK11PxTransformRK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags">
+<span id="_CPPv3NK5PxBVH5sweepERK10PxGeometryRK11PxTransformRK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags"></span><span id="_CPPv2NK5PxBVH5sweepERK10PxGeometryRK11PxTransformRK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags"></span><span id="PxBVH::sweep__PxGeometryCR.PxTransformCR.PxVec3CR.float.RaycastCallbackR.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_b_v_h_1a4cb5800fd85103958bac8c8cf20e8a14"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxDist</span></span>, <a class="reference internal" href="#_CPPv4N5PxBVH15RaycastCallbackE" title="PxBVH::RaycastCallback"><span class="n"><span class="pre">RaycastCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cb</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH5sweepERK10PxGeometryRK11PxTransformRK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep test against a BVH. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> – <strong>[in]</strong> The query volume </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> The pose of the query volume </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>maxDist</strong> – <strong>[in]</strong> Maximum sweep length, has to be in the [0, inf) range </p></li>
+<li><p><strong>cb</strong> – <strong>[in]</strong> Raycast callback, called once per hit </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>false if query has been aborted </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH7overlapERK10PxGeometryRK11PxTransformR15OverlapCallback20PxGeometryQueryFlags">
+<span id="_CPPv3NK5PxBVH7overlapERK10PxGeometryRK11PxTransformR15OverlapCallback20PxGeometryQueryFlags"></span><span id="_CPPv2NK5PxBVH7overlapERK10PxGeometryRK11PxTransformR15OverlapCallback20PxGeometryQueryFlags"></span><span id="PxBVH::overlap__PxGeometryCR.PxTransformCR.OverlapCallbackR.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_b_v_h_1a7660f9c5a0b37b638504615613b8bea5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="#_CPPv4N5PxBVH15OverlapCallbackE" title="PxBVH::OverlapCallback"><span class="n"><span class="pre">OverlapCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cb</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH7overlapERK10PxGeometryRK11PxTransformR15OverlapCallback20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Overlap test against a BVH. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> – <strong>[in]</strong> The query volume </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> The pose of the query volume </p></li>
+<li><p><strong>cb</strong> – <strong>[in]</strong> Overlap callback, called once per hit </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>false if query has been aborted </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags">
+<span id="_CPPv3NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags"></span><span id="_CPPv2NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags"></span><span id="PxBVH::cull__PxU32.PxPlaneCP.OverlapCallbackR.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_b_v_h_1afbeda308c04d0024ade04d8ec9150006"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cull</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPlanes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_plane.html#_CPPv47PxPlane" title="PxPlane"><span class="n"><span class="pre">PxPlane</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">planes</span></span>, <a class="reference internal" href="#_CPPv4N5PxBVH15OverlapCallbackE" title="PxBVH::OverlapCallback"><span class="n"><span class="pre">OverlapCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cb</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frustum culling test against a BVH. </p>
+<p>This is similar in spirit to an overlap query using a convex object around the frustum. However this specialized query has better performance, and can support more than the 6 planes of a frustum, which can be useful in portal-based engines.</p>
+<p>On the other hand this test only returns a conservative number of bounds, i.e. some of the returned bounds may actually be outside the frustum volume, close to it but not touching it. This is usually an ok performance trade-off when the function is used for view-frustum culling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nbPlanes</strong> – <strong>[in]</strong> Number of planes. Only 32 planes max are supported. </p></li>
+<li><p><strong>planes</strong> – <strong>[in]</strong> Array of planes, should be in the same space as the BVH. </p></li>
+<li><p><strong>cb</strong> – <strong>[in]</strong> Overlap callback, called once per visible object </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>false if query has been aborted </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH11getNbBoundsEv">
+<span id="_CPPv3NK5PxBVH11getNbBoundsEv"></span><span id="_CPPv2NK5PxBVH11getNbBoundsEv"></span><span id="PxBVH::getNbBoundsC"></span><span class="target" id="class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH11getNbBoundsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of bounds in the BVH. </p>
+<p>You can use <a class="reference internal" href="#class_px_b_v_h_1aa43612eb1fa8d7f0e064908841b69db8"><span class="std std-ref">getBounds()</span></a> to retrieve the bounds.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_b_v_h_1aa43612eb1fa8d7f0e064908841b69db8"><span class="std std-ref">getBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These are the user-defined bounds passed to the BVH builder, not the internal bounds around each BVH node.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Number of bounds in the BVH.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH9getBoundsEv">
+<span id="_CPPv3NK5PxBVH9getBoundsEv"></span><span id="_CPPv2NK5PxBVH9getBoundsEv"></span><span id="PxBVH::getBoundsC"></span><span class="target" id="class_px_b_v_h_1aa43612eb1fa8d7f0e064908841b69db8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH9getBoundsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the read-only bounds in the BVH. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> <a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These are the user-defined bounds passed to the BVH builder, not the internal bounds around each BVH node.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH24getBoundsForModificationEv">
+<span id="_CPPv3N5PxBVH24getBoundsForModificationEv"></span><span id="_CPPv2N5PxBVH24getBoundsForModificationEv"></span><span id="PxBVH::getBoundsForModification"></span><span class="target" id="class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getBoundsForModification</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH24getBoundsForModificationEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the bounds in the BVH. </p>
+<p>These bounds can be modified. Call <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> after modifications are done.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> <a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1aa43612eb1fa8d7f0e064908841b69db8"><span class="std std-ref">getBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"><span class="std std-ref">partialRefit()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These are the user-defined bounds passed to the BVH builder, not the internal bounds around each BVH node.</p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH5refitEv">
+<span id="_CPPv3N5PxBVH5refitEv"></span><span id="_CPPv2N5PxBVH5refitEv"></span><span id="PxBVH::refit"></span><span class="target" id="class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">refit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH5refitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Refit the BVH. </p>
+<p>This function “refits” the tree, i.e. takes the new (leaf) bounding boxes into account and recomputes all the BVH bounds accordingly. This is an O(n) operation with n = number of bounds in the BVH.</p>
+<p>This works best with minor bounds modifications, i.e. when the bounds remain close to their initial values. With large modifications the tree quality degrades more and more, and subsequent query performance suffers. It might be a better strategy to create a brand new BVH if bounds change drastically.</p>
+<p>This function refits the whole tree after an arbitrary number of bounds have potentially been modified by users (via <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a>). If you only have a small number of bounds to update, it might be more efficient to use setBounds() and <a class="reference internal" href="#class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"><span class="std std-ref">partialRefit()</span></a> instead.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"><span class="std std-ref">partialRefit()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH12updateBoundsE5PxU32RK9PxBounds3">
+<span id="_CPPv3N5PxBVH12updateBoundsE5PxU32RK9PxBounds3"></span><span id="_CPPv2N5PxBVH12updateBoundsE5PxU32RK9PxBounds3"></span><span id="PxBVH::updateBounds__PxU32.PxBounds3CR"></span><span class="target" id="class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateBounds</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">boundsIndex</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">newBounds</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH12updateBoundsE5PxU32RK9PxBounds3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Update single bounds. </p>
+<p>This is an alternative to <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> / <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a>. If you only have a small set of bounds to update, it can be inefficient to call the <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> function, because it refits the whole BVH.</p>
+<p>Instead, one can update individual bounds with this <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> function. It sets the new bounds and marks the corresponding BVH nodes for partial refit. Once all the individual bounds have been updated, call <a class="reference internal" href="#class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"><span class="std std-ref">partialRefit()</span></a> to only refit the subset of marked nodes.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"><span class="std std-ref">partialRefit()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>boundsIndex</strong> – <strong>[in]</strong> Index of updated bounds. Valid range is between 0 and <a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a>. </p></li>
+<li><p><strong>newBounds</strong> – <strong>[in]</strong> Updated bounds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH12partialRefitEv">
+<span id="_CPPv3N5PxBVH12partialRefitEv"></span><span id="_CPPv2N5PxBVH12partialRefitEv"></span><span id="PxBVH::partialRefit"></span><span class="target" id="class_px_b_v_h_1a2deeb9c30de9f0474e229dab2b0adf0a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">partialRefit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH12partialRefitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Refits subset of marked nodes. </p>
+<p>This is an alternative to the <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> function, to be called after <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> calls. See <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> for details.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_b_v_h_1a92cb6d173ae9eb96dcb28845586fd068"><span class="std std-ref">getNbBounds()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a50fbbb451cbd8961e50a4570de28fa18"><span class="std std-ref">getBoundsForModification()</span></a> <a class="reference internal" href="#class_px_b_v_h_1a3daa3fc7ba513c2b0b792344fe807ef8"><span class="std std-ref">refit()</span></a> <a class="reference internal" href="#class_px_b_v_h_1ac3a3943550524590ac668e9398fd87f5"><span class="std std-ref">updateBounds()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH8traverseER17TraversalCallback">
+<span id="_CPPv3NK5PxBVH8traverseER17TraversalCallback"></span><span id="_CPPv2NK5PxBVH8traverseER17TraversalCallback"></span><span id="PxBVH::traverse__TraversalCallbackRC"></span><span class="target" id="class_px_b_v_h_1a93a66d78600a91cf21a9e3656ca0c609"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">traverse</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N5PxBVH17TraversalCallbackE" title="PxBVH::TraversalCallback"><span class="n"><span class="pre">TraversalCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cb</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH8traverseER17TraversalCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Generic BVH traversal function. </p>
+<p>This can be used to implement custom BVH traversal functions if provided ones are not enough. In particular this can be used to visualize the tree’s bounds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cb</strong> – <strong>[in]</strong> Traversal callback, called for each visited node </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>false if query has been aborted </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH19getConcreteTypeNameEv">
+<span id="_CPPv3NK5PxBVH19getConcreteTypeNameEv"></span><span id="_CPPv2NK5PxBVH19getConcreteTypeNameEv"></span><span id="PxBVH::getConcreteTypeNameC"></span><span class="target" id="class_px_b_v_h_1a118fe634a2c0f061e590cdd9653d1085"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH7releaseEv">
+<span id="_CPPv3N5PxBVH7releaseEv"></span><span id="_CPPv2N5PxBVH7releaseEv"></span><span id="PxBVH::release"></span><span class="target" id="class_px_base_1afe6aedda1df0d6d29b1a28213a5ee25a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> instance, please check documentation of release in derived class. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5PxBVH2isEP1Tv">
+<span id="_CPPv3I0EN5PxBVH2isEv"></span><span id="_CPPv2I0EN5PxBVH2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5PxBVH2isEP1Tv" title="PxBVH::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5PxBVH2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK5PxBVH2isEPK1Tv">
+<span id="_CPPv3I0ENK5PxBVH2isEv"></span><span id="_CPPv2I0ENK5PxBVH2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK5PxBVH2isEPK1Tv" title="PxBVH::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK5PxBVH2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH15getConcreteTypeEv">
+<span id="_CPPv3NK5PxBVH15getConcreteTypeEv"></span><span id="_CPPv2NK5PxBVH15getConcreteTypeEv"></span><span id="PxBVH::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N5PxBVH11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N5PxBVH11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxBVH::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N5PxBVH12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N5PxBVH12setBaseFlagsE11PxBaseFlags"></span><span id="PxBVH::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH12getBaseFlagsEv">
+<span id="_CPPv3NK5PxBVH12getBaseFlagsEv"></span><span id="_CPPv2NK5PxBVH12getBaseFlagsEv"></span><span id="PxBVH::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH12isReleasableEv">
+<span id="_CPPv3NK5PxBVH12isReleasableEv"></span><span id="_CPPv2NK5PxBVH12isReleasableEv"></span><span id="PxBVH::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH5PxBVHE6PxType11PxBaseFlags">
+<span id="_CPPv3N5PxBVH5PxBVHE6PxType11PxBaseFlags"></span><span id="_CPPv2N5PxBVH5PxBVHE6PxType11PxBaseFlags"></span><span id="PxBVH::PxBVH__PxType.PxBaseFlags"></span><span class="target" id="class_px_b_v_h_1a4fc389fb78c8ea4c30b1b4f8430cbdb1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH5PxBVHE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH5PxBVHE11PxBaseFlags">
+<span id="_CPPv3N5PxBVH5PxBVHE11PxBaseFlags"></span><span id="_CPPv2N5PxBVH5PxBVHE11PxBaseFlags"></span><span id="PxBVH::PxBVH__PxBaseFlags"></span><span class="target" id="class_px_b_v_h_1afd2c180c9380f4bba841078173781e68"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH5PxBVHE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVHD0Ev">
+<span id="_CPPv3N5PxBVHD0Ev"></span><span id="_CPPv2N5PxBVHD0Ev"></span><span id="PxBVH::~PxBVH"></span><span class="target" id="class_px_b_v_h_1a1a34e2a23c1749883c5f53aa30c9be93"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBVH</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVHD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5PxBVH8isKindOfEPKc">
+<span id="_CPPv3NK5PxBVH8isKindOfEPKc"></span><span id="_CPPv2NK5PxBVH8isKindOfEPKc"></span><span id="PxBVH::isKindOf__cCPC"></span><span class="target" id="class_px_b_v_h_1a09618b7a35f09304fcae385a485915e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5PxBVH8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK5PxBVH9typeMatchEbv">
+<span id="_CPPv3I0ENK5PxBVH9typeMatchEv"></span><span id="_CPPv2I0ENK5PxBVH9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK5PxBVH9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH13mConcreteTypeE">
+<span id="_CPPv3N5PxBVH13mConcreteTypeE"></span><span id="_CPPv2N5PxBVH13mConcreteTypeE"></span><span id="PxBVH::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH10mBaseFlagsE">
+<span id="_CPPv3N5PxBVH10mBaseFlagsE"></span><span id="_CPPv2N5PxBVH10mBaseFlagsE"></span><span id="PxBVH::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH16mBuiltInRefCountE">
+<span id="_CPPv3N5PxBVH16mBuiltInRefCountE"></span><span id="_CPPv2N5PxBVH16mBuiltInRefCountE"></span><span id="PxBVH::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15OverlapCallbackE">
+<span id="_CPPv3N5PxBVH15OverlapCallbackE"></span><span id="_CPPv2N5PxBVH15OverlapCallbackE"></span><span id="PxBVH::OverlapCallback"></span><span class="target" id="struct_px_b_v_h_1_1_overlap_callback"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OverlapCallback</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH15OverlapCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15OverlapCallback15OverlapCallbackEv">
+<span id="_CPPv3N5PxBVH15OverlapCallback15OverlapCallbackEv"></span><span id="_CPPv2N5PxBVH15OverlapCallback15OverlapCallbackEv"></span><span id="PxBVH::OverlapCallback::OverlapCallback"></span><span class="target" id="struct_px_b_v_h_1_1_overlap_callback_1a1b8dfe4d113b233f1394d44ce6cc4966"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OverlapCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH15OverlapCallback15OverlapCallbackEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15OverlapCallbackD0Ev">
+<span id="_CPPv3N5PxBVH15OverlapCallbackD0Ev"></span><span id="_CPPv2N5PxBVH15OverlapCallbackD0Ev"></span><span id="PxBVH::OverlapCallback::~OverlapCallback"></span><span class="target" id="struct_px_b_v_h_1_1_overlap_callback_1a4f59bb8bf6924963dcce6cfd16d21205"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OverlapCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH15OverlapCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15OverlapCallback9reportHitE5PxU32">
+<span id="_CPPv3N5PxBVH15OverlapCallback9reportHitE5PxU32"></span><span id="_CPPv2N5PxBVH15OverlapCallback9reportHitE5PxU32"></span><span id="PxBVH::OverlapCallback::reportHit__PxU32"></span><span class="target" id="struct_px_b_v_h_1_1_overlap_callback_1a447978baecc0a52a268e6de07ae84f82"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reportHit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">boundsIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH15OverlapCallback9reportHitE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15RaycastCallbackE">
+<span id="_CPPv3N5PxBVH15RaycastCallbackE"></span><span id="_CPPv2N5PxBVH15RaycastCallbackE"></span><span id="PxBVH::RaycastCallback"></span><span class="target" id="struct_px_b_v_h_1_1_raycast_callback"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RaycastCallback</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH15RaycastCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15RaycastCallback15RaycastCallbackEv">
+<span id="_CPPv3N5PxBVH15RaycastCallback15RaycastCallbackEv"></span><span id="_CPPv2N5PxBVH15RaycastCallback15RaycastCallbackEv"></span><span id="PxBVH::RaycastCallback::RaycastCallback"></span><span class="target" id="struct_px_b_v_h_1_1_raycast_callback_1a2b3ac0b46bdb8fdbae369840fdf162cd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RaycastCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH15RaycastCallback15RaycastCallbackEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15RaycastCallbackD0Ev">
+<span id="_CPPv3N5PxBVH15RaycastCallbackD0Ev"></span><span id="_CPPv2N5PxBVH15RaycastCallbackD0Ev"></span><span id="PxBVH::RaycastCallback::~RaycastCallback"></span><span class="target" id="struct_px_b_v_h_1_1_raycast_callback_1a7f66220adc810eabd220d88f9a962585"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~RaycastCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH15RaycastCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH15RaycastCallback9reportHitE5PxU32R6PxReal">
+<span id="_CPPv3N5PxBVH15RaycastCallback9reportHitE5PxU32R6PxReal"></span><span id="_CPPv2N5PxBVH15RaycastCallback9reportHitE5PxU32R6PxReal"></span><span id="PxBVH::RaycastCallback::reportHit__PxU32.PxRealR"></span><span class="target" id="struct_px_b_v_h_1_1_raycast_callback_1af202448f8809e79419da1ab735a2a794"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reportHit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">boundsIndex</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">distance</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH15RaycastCallback9reportHitE5PxU32R6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH17TraversalCallbackE">
+<span id="_CPPv3N5PxBVH17TraversalCallbackE"></span><span id="_CPPv2N5PxBVH17TraversalCallbackE"></span><span id="PxBVH::TraversalCallback"></span><span class="target" id="struct_px_b_v_h_1_1_traversal_callback"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TraversalCallback</span></span></span><a class="headerlink" href="#_CPPv4N5PxBVH17TraversalCallbackE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH17TraversalCallback17TraversalCallbackEv">
+<span id="_CPPv3N5PxBVH17TraversalCallback17TraversalCallbackEv"></span><span id="_CPPv2N5PxBVH17TraversalCallback17TraversalCallbackEv"></span><span id="PxBVH::TraversalCallback::TraversalCallback"></span><span class="target" id="struct_px_b_v_h_1_1_traversal_callback_1ac4849e8425ca00eb67a0e9404772b68f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TraversalCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH17TraversalCallback17TraversalCallbackEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH17TraversalCallbackD0Ev">
+<span id="_CPPv3N5PxBVH17TraversalCallbackD0Ev"></span><span id="_CPPv2N5PxBVH17TraversalCallbackD0Ev"></span><span id="PxBVH::TraversalCallback::~TraversalCallback"></span><span class="target" id="struct_px_b_v_h_1_1_traversal_callback_1a4d3576bb56d1663473758c2c6f35daa3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~TraversalCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5PxBVH17TraversalCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH17TraversalCallback9visitNodeERK9PxBounds3">
+<span id="_CPPv3N5PxBVH17TraversalCallback9visitNodeERK9PxBounds3"></span><span id="_CPPv2N5PxBVH17TraversalCallback9visitNodeERK9PxBounds3"></span><span id="PxBVH::TraversalCallback::visitNode__PxBounds3CR"></span><span class="target" id="struct_px_b_v_h_1_1_traversal_callback_1a5e87aa8f826930870305a86ac164603c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">visitNode</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bounds</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH17TraversalCallback9visitNodeERK9PxBounds3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5PxBVH17TraversalCallback10reportLeafE5PxU32PK5PxU32">
+<span id="_CPPv3N5PxBVH17TraversalCallback10reportLeafE5PxU32PK5PxU32"></span><span id="_CPPv2N5PxBVH17TraversalCallback10reportLeafE5PxU32PK5PxU32"></span><span id="PxBVH::TraversalCallback::reportLeaf__PxU32.PxU32CP"></span><span class="target" id="struct_px_b_v_h_1_1_traversal_callback_1a0a4ca5bb1790d3cbdfdc3d41b4415969"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reportLeaf</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPrims</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">prims</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N5PxBVH17TraversalCallback10reportLeafE5PxU32PK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

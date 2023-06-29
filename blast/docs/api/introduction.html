@@ -1,85 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Introduction &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Introduction &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/mermaid-init.js"></script>
         <script src="../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../_static/version.js"></script>
         <script src="../../_static/social-media.js"></script>
         <script src="../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-
-    
+    <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Low Level API (NvBlast)" href="api_ll_users_guide.html" />
-    <link rel="prev" title="Blast SDK Documentation" href="../../index.html" /> 
+    <link rel="prev" title="Blast SDK Documentation" href="../../index.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../index.html">
-          
-
-          
-            
-            <img src="../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -87,19 +52,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#asset-structure">Asset Structure</a></li>
@@ -117,79 +71,42 @@
 <li class="toctree-l1"><a class="reference internal" href="../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Introduction</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Introduction</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="introduction">
-<span id="pageintroduction"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="introduction">
+<span id="pageintroduction"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h1>
 <p>Blast is an NVIDIA GameWorksBlast destruction library.  It consists of a <a class="reference internal" href="api_ll_users_guide.html#pagellapi"><span class="std std-ref">Low Level API (NvBlast)</span></a>, a <a class="reference internal" href="api_hl_users_guide.html#pagehlapi"><span class="std std-ref">High Level (Toolkit) API (NvBlastTk)</span></a> (Blast Toolkit
 or BlastTk), and <a class="reference internal" href="extensions/index.html#pageextapi"><span class="std std-ref">Extensions (NvBlastExt)</span></a> (Blast Extensions or BlastExt).  This layered API is designed to allow short ramp-up time for
 first usage (through the Ext and Tk APIs) while also allowing for customization and optimization by experienced users through the
 low-level API.</p>
 <p>This library is intended to replace APEX Destruction.  It is being developed with years of user feedback and experience, with the
 goal of addressing shortcomings in performance, stability, and customizability of the APEX Destruction module.</p>
-<div class="section" id="asset-structure">
-<span id="id1"></span><h2>Asset Structure<a class="headerlink" href="#asset-structure" title="Permalink to this headline">¶</a></h2>
+<section id="asset-structure">
+<span id="id1"></span><h2>Asset Structure<a class="headerlink" href="#asset-structure" title="Permalink to this headline"></a></h2>
 <p>Blast is currently designed to support rigid body, pre-fractured destruction.  Future versions may support runtime fracturing
 or deformation.</p>
 <p>The static data associated with a destructible is stored in an <em>asset</em>.  Assets are instanced into actors, which may
@@ -202,9 +119,9 @@ chunks.  A bond is represented by a surface centroid, an average surface normal,
 need to be exact for Blast to operate effectively.</p>
 <p>Multiple chunk hierarchies may exist in a single asset.  The <em>root chunks</em> (see <a class="reference internal" href="definitions.html#pagedefinitions"><span class="std std-ref">Definitions</span></a>) will be visible when the
 asset is initially instanced.  Subsequent fracturing has the effect of breaking the root chunks into their hierarchical descendants.</p>
-</div>
-<div class="section" id="support-model">
-<span id="id2"></span><h2>Support Model<a class="headerlink" href="#support-model" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="support-model">
+<span id="id2"></span><h2>Support Model<a class="headerlink" href="#support-model" title="Permalink to this headline"></a></h2>
 <p>Blast requires that support chunks form an <em>exact cover</em> (see the definition of exact coverage in <a class="reference internal" href="definitions.html#pagedefinitions"><span class="std std-ref">Definitions</span></a>).
 The geometric interpretation of exact coverage is that the support chunks fill the space of the root (unfractured) chunk, without
 any volume being covered by more than one chunk.  A helper function is provided to modify a set of chunk descriptors so that they
@@ -223,9 +140,9 @@ chunks, or they may be ancestors of support chunks if all descendant support chu
 of support chunks will always be the sole chunk in their actor, since there are no bonds defined between them.  If an actor consists
 of a <em>subsupport chunk</em> (see <a class="reference internal" href="definitions.html#pagedefinitions"><span class="std std-ref">Definitions</span></a>), the visible chunk is the same chunk.  The same is true if an actor consists
 of a <em>single</em> support chunk.</p>
-</div>
-<div class="section" id="damage-model">
-<span id="id3"></span><h2>Damage Model<a class="headerlink" href="#damage-model" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="damage-model">
+<span id="id3"></span><h2>Damage Model<a class="headerlink" href="#damage-model" title="Permalink to this headline"></a></h2>
 <p>Damage is defined as loss of an actor’s material integrity.  This is modeled by a simple health value associated with the bonds and
 chunks in the support graph.  The user applies damage to an actor at a given location, with a maximum effect radius.  The resulting
 loss of bond and chunk health is determined by a user-defined <em>material function</em>.  In this way the user can customize the
@@ -239,46 +156,37 @@ damage.  Instead, such a chunk is considered to have its own health value, which
 chunks, if any.</p>
 <p>The effect of damage on leaf chunks depends upon which API is used.  The low-level API does not delete leaf chunks.  It is up to the
 user to delete them, and manage their physical and graphical representation outside of Blast if so desired.</p>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

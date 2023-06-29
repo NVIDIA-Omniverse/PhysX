@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxAnisotropyGenerator &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxAnisotropyGenerator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxanisotropygenerator">
+<span id="exhale-class-class-px-anisotropy-generator"></span><h1>PxAnisotropyGenerator<a class="headerlink" href="#pxanisotropygenerator" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxAnisotropy.h.html#file-include-pxanisotropy-h"><span class="std std-ref">include/PxAnisotropy.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv421PxAnisotropyGenerator">
+<span id="_CPPv321PxAnisotropyGenerator"></span><span id="_CPPv221PxAnisotropyGenerator"></span><span id="PxAnisotropyGenerator"></span><span class="target" id="class_px_anisotropy_generator"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAnisotropyGenerator</span></span></span><a class="headerlink" href="#_CPPv421PxAnisotropyGenerator" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes anisotropy information for a particle system to improve rendering quality. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator18generateAnisotropyEP19PxGpuParticleSystem5PxU328CUstream">
+<span id="_CPPv3N21PxAnisotropyGenerator18generateAnisotropyEP19PxGpuParticleSystem5PxU328CUstream"></span><span id="_CPPv2N21PxAnisotropyGenerator18generateAnisotropyEP19PxGpuParticleSystem5PxU328CUstream"></span><span id="PxAnisotropyGenerator::generateAnisotropy__PxGpuParticleSystemP.PxU32.CUstream"></span><span class="target" id="class_px_anisotropy_generator_1a927771000ad25f48d255b0d4c9d59a75"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateAnisotropy</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_gpu_particle_system.html#_CPPv419PxGpuParticleSystem" title="PxGpuParticleSystem"><span class="n"><span class="pre">PxGpuParticleSystem</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuParticleSystem</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator18generateAnisotropyEP19PxGpuParticleSystem5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules the compuation of anisotropy information on the specified cuda stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gpuParticleSystem</strong> – <strong>[in]</strong> A gpu pointer to access particle system data </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> The stream on which the cuda call gets scheduled </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator18generateAnisotropyEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream">
+<span id="_CPPv3N21PxAnisotropyGenerator18generateAnisotropyEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream"></span><span id="_CPPv2N21PxAnisotropyGenerator18generateAnisotropyEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream"></span><span id="PxAnisotropyGenerator::generateAnisotropy__PxVec4P.PxParticleNeighborhoodProviderR.PxU32.PxReal.CUstream"></span><span class="target" id="class_px_anisotropy_generator_1a2e754a316da40d7be492da8d9ad8f4b3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateAnisotropy</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">particlePositionsGpu</span></span>, <a class="reference internal" href="class_px_particle_neighborhood_provider.html#_CPPv430PxParticleNeighborhoodProvider" title="PxParticleNeighborhoodProvider"><span class="n"><span class="pre">PxParticleNeighborhoodProvider</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">neighborhoodProvider</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleContactOffset</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator18generateAnisotropyEP6PxVec4R30PxParticleNeighborhoodProvider5PxU326PxReal8CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules the compuation of anisotropy information on the specified cuda stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particlePositionsGpu</strong> – <strong>[in]</strong> A gpu pointer containing the particle positions </p></li>
+<li><p><strong>neighborhoodProvider</strong> – <strong>[in]</strong> A neighborhood provider object that supports fast neighborhood queries </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles </p></li>
+<li><p><strong>particleContactOffset</strong> – <strong>[in]</strong> The particle contact offset </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> The stream on which the cuda call gets scheduled </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator19setResultBufferHostEP6PxVec4P6PxVec4P6PxVec4">
+<span id="_CPPv3N21PxAnisotropyGenerator19setResultBufferHostEP6PxVec4P6PxVec4P6PxVec4"></span><span id="_CPPv2N21PxAnisotropyGenerator19setResultBufferHostEP6PxVec4P6PxVec4P6PxVec4"></span><span id="PxAnisotropyGenerator::setResultBufferHost__PxVec4P.PxVec4P.PxVec4P"></span><span class="target" id="class_px_anisotropy_generator_1a14772a52ae97f466ee53a6f75dcc3436"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferHost</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy1</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy2</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy3</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator19setResultBufferHostEP6PxVec4P6PxVec4P6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a host buffer that holds the anisotropy data after the timestep completed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>anisotropy1</strong> – <strong>[in]</strong> A host buffer holding the first row of the anisotropy matrix with memory for all particles already allocated </p></li>
+<li><p><strong>anisotropy2</strong> – <strong>[in]</strong> A host buffer holding the second row of the anisotropy matrix with memory for all particles already allocated </p></li>
+<li><p><strong>anisotropy3</strong> – <strong>[in]</strong> A host buffer holding the third row of the anisotropy matrix with memory for all particles already allocated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator21setResultBufferDeviceEP6PxVec4P6PxVec4P6PxVec4">
+<span id="_CPPv3N21PxAnisotropyGenerator21setResultBufferDeviceEP6PxVec4P6PxVec4P6PxVec4"></span><span id="_CPPv2N21PxAnisotropyGenerator21setResultBufferDeviceEP6PxVec4P6PxVec4P6PxVec4"></span><span id="PxAnisotropyGenerator::setResultBufferDevice__PxVec4P.PxVec4P.PxVec4P"></span><span class="target" id="class_px_anisotropy_generator_1a24e4da64b68c74e1d34b62a0bf03bed0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setResultBufferDevice</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy1</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy2</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">anisotropy3</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator21setResultBufferDeviceEP6PxVec4P6PxVec4P6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a device buffer that holds the anisotrpy data after the timestep completed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>anisotropy1</strong> – <strong>[in]</strong> A device buffer holding the first row of the anisotropy matrix with memory for all particles already allocated </p></li>
+<li><p><strong>anisotropy2</strong> – <strong>[in]</strong> A device buffer holding the second row of the anisotropy matrix with memory for all particles already allocated </p></li>
+<li><p><strong>anisotropy3</strong> – <strong>[in]</strong> A device buffer holding the third row of the anisotropy matrix with memory for all particles already allocated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator16setAnisotropyMaxEf">
+<span id="_CPPv3N21PxAnisotropyGenerator16setAnisotropyMaxEf"></span><span id="_CPPv2N21PxAnisotropyGenerator16setAnisotropyMaxEf"></span><span id="PxAnisotropyGenerator::setAnisotropyMax__float"></span><span class="target" id="class_px_anisotropy_generator_1ae9819c78f8277a2cbfcd46aeedb523ac"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAnisotropyMax</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">maxAnisotropy</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator16setAnisotropyMaxEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the maximum value anisotropy can reach in any direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maxAnisotropy</strong> – <strong>[in]</strong> The maximum anisotropy value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator16setAnisotropyMinEf">
+<span id="_CPPv3N21PxAnisotropyGenerator16setAnisotropyMinEf"></span><span id="_CPPv2N21PxAnisotropyGenerator16setAnisotropyMinEf"></span><span id="PxAnisotropyGenerator::setAnisotropyMin__float"></span><span class="target" id="class_px_anisotropy_generator_1a69126207bda0e9cc7029db7b6cf5fe69"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAnisotropyMin</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">minAnisotropy</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator16setAnisotropyMinEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the minimum value anisotropy can reach in any direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>minAnisotropy</strong> – <strong>[in]</strong> The minimum anisotropy value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator18setAnisotropyScaleEf">
+<span id="_CPPv3N21PxAnisotropyGenerator18setAnisotropyScaleEf"></span><span id="_CPPv2N21PxAnisotropyGenerator18setAnisotropyScaleEf"></span><span id="PxAnisotropyGenerator::setAnisotropyScale__float"></span><span class="target" id="class_px_anisotropy_generator_1a88edf5c9dca862f1b6704b97a8540cf9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setAnisotropyScale</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">anisotropyScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator18setAnisotropyScaleEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the anisotropy scale. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>anisotropyScale</strong> – <strong>[in]</strong> The anisotropy scale </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxAnisotropyGenerator15getMaxParticlesEv">
+<span id="_CPPv3NK21PxAnisotropyGenerator15getMaxParticlesEv"></span><span id="_CPPv2NK21PxAnisotropyGenerator15getMaxParticlesEv"></span><span id="PxAnisotropyGenerator::getMaxParticlesC"></span><span class="target" id="class_px_anisotropy_generator_1af890299a88b2c956b3cfb90045f41cb2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxParticles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxAnisotropyGenerator15getMaxParticlesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the maximal number of particles. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator15setMaxParticlesE5PxU32">
+<span id="_CPPv3N21PxAnisotropyGenerator15setMaxParticlesE5PxU32"></span><span id="_CPPv2N21PxAnisotropyGenerator15setMaxParticlesE5PxU32"></span><span id="PxAnisotropyGenerator::setMaxParticles__PxU32"></span><span class="target" id="class_px_anisotropy_generator_1a22c4f51ca788492a12f9515ff2cb49d6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxParticles</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxParticles</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator15setMaxParticlesE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the maximal number of particles. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maxParticles</strong> – <strong>[in]</strong> The maximal number of particles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxAnisotropyGenerator27getAnisotropy1DevicePointerEv">
+<span id="_CPPv3NK21PxAnisotropyGenerator27getAnisotropy1DevicePointerEv"></span><span id="_CPPv2NK21PxAnisotropyGenerator27getAnisotropy1DevicePointerEv"></span><span id="PxAnisotropyGenerator::getAnisotropy1DevicePointerC"></span><span class="target" id="class_px_anisotropy_generator_1a932792839b821b061810bba21662b247"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAnisotropy1DevicePointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxAnisotropyGenerator27getAnisotropy1DevicePointerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the device pointer for the anisotropy in x direction. </p>
+<p>Only available after calling setResultBufferHost or setResultBufferDevice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The device pointer for the anisotropy x direction and scale (w component contains the scale) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxAnisotropyGenerator27getAnisotropy2DevicePointerEv">
+<span id="_CPPv3NK21PxAnisotropyGenerator27getAnisotropy2DevicePointerEv"></span><span id="_CPPv2NK21PxAnisotropyGenerator27getAnisotropy2DevicePointerEv"></span><span id="PxAnisotropyGenerator::getAnisotropy2DevicePointerC"></span><span class="target" id="class_px_anisotropy_generator_1adf6c6c0cdb96e1e26629095a1dd5fc09"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAnisotropy2DevicePointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxAnisotropyGenerator27getAnisotropy2DevicePointerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the device pointer for the anisotropy in y direction. </p>
+<p>Only available after calling setResultBufferHost or setResultBufferDevice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The device pointer for the anisotropy y direction and scale (w component contains the scale) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxAnisotropyGenerator27getAnisotropy3DevicePointerEv">
+<span id="_CPPv3NK21PxAnisotropyGenerator27getAnisotropy3DevicePointerEv"></span><span id="_CPPv2NK21PxAnisotropyGenerator27getAnisotropy3DevicePointerEv"></span><span id="PxAnisotropyGenerator::getAnisotropy3DevicePointerC"></span><span class="target" id="class_px_anisotropy_generator_1a7278aa156a0ed63409b029a5142f92e4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAnisotropy3DevicePointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxAnisotropyGenerator27getAnisotropy3DevicePointerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the device pointer for the anisotropy in z direction. </p>
+<p>Only available after calling setResultBufferHost or setResultBufferDevice</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The device pointer for the anisotropy z direction and scale (w component contains the scale) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator10setEnabledEb">
+<span id="_CPPv3N21PxAnisotropyGenerator10setEnabledEb"></span><span id="_CPPv2N21PxAnisotropyGenerator10setEnabledEb"></span><span id="PxAnisotropyGenerator::setEnabled__b"></span><span class="target" id="class_px_anisotropy_generator_1ac8ea66c6b521d11eed673f49f7daabf8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setEnabled</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enabled</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator10setEnabledEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enables or disables the anisotropy generator. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>enabled</strong> – <strong>[in]</strong> The boolean to set the generator to enabled or disabled </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK21PxAnisotropyGenerator9isEnabledEv">
+<span id="_CPPv3NK21PxAnisotropyGenerator9isEnabledEv"></span><span id="_CPPv2NK21PxAnisotropyGenerator9isEnabledEv"></span><span id="PxAnisotropyGenerator::isEnabledC"></span><span class="target" id="class_px_anisotropy_generator_1a72f24e80d420b5ae2a6308ec9a51b15e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isEnabled</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK21PxAnisotropyGenerator9isEnabledEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allows to query if the anisotropy generator is enabled. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if enabled, false otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGenerator7releaseEv">
+<span id="_CPPv3N21PxAnisotropyGenerator7releaseEv"></span><span id="_CPPv2N21PxAnisotropyGenerator7releaseEv"></span><span id="PxAnisotropyGenerator::release"></span><span class="target" id="class_px_anisotropy_generator_1a2503f39e2eab314ab3af3134c9800b06"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGenerator7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the instance and its data. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxAnisotropyGeneratorD0Ev">
+<span id="_CPPv3N21PxAnisotropyGeneratorD0Ev"></span><span id="_CPPv2N21PxAnisotropyGeneratorD0Ev"></span><span id="PxAnisotropyGenerator::~PxAnisotropyGenerator"></span><span class="target" id="class_px_anisotropy_generator_1aef2881f65b4cdf74f601d6f79de3c234"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxAnisotropyGenerator</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxAnisotropyGeneratorD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

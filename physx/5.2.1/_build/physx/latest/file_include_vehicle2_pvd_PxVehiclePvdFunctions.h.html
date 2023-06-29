@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/vehicle2/pvd/PxVehiclePvdFunctions.h &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>include/vehicle2/pvd/PxVehiclePvdFunctions.h</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-vehicle2-pvd-pxvehiclepvdfunctions-h">
+<span id="file-include-vehicle2-pvd-pxvehiclepvdfunctions-h"></span><h1>include/vehicle2/pvd/PxVehiclePvdFunctions.h<a class="headerlink" href="#include-vehicle2-pvd-pxvehiclepvdfunctions-h" title="Permalink to this headline"></a></h1>
+<p>↰ Parent directory: <a class="reference internal" href="dir_include_vehicle2_pvd.html#dir-include-vehicle2-pvd"><span class="std std-ref">include/vehicle2/pvd/</span></a></p>
+<p>Source: <a class="reference internal" href="program_listing_file_include_vehicle2_pvd_PxVehiclePvdFunctions.h.html#program-listing-file-include-vehicle2-pvd-pxvehiclepvdfunctions-h"><span class="std std-ref">include/vehicle2/pvd/PxVehiclePvdFunctions.h</span></a></p>
+<section id="included-by">
+<h2>Included By<a class="headerlink" href="#included-by" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_include_vehicle2_PxVehicleAPI.h.html#file-include-vehicle2-pxvehicleapi-h"><span class="std std-ref">include/vehicle2/PxVehicleAPI.h</span></a></p></li>
+<li><p><a class="reference internal" href="file_include_vehicle2_pvd_PxVehiclePvdComponents.h.html#file-include-vehicle2-pvd-pxvehiclepvdcomponents-h"><span class="std std-ref">include/vehicle2/pvd/PxVehiclePvdComponents.h</span></a></p></li>
+</ul>
+</section>
+<section id="namespaces">
+<h2>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_physx.html#namespace-physx"><span class="std std-ref">physx</span></a></p></li>
+<li><p><a class="reference internal" href="namespace_physx__vehicle2.html#namespace-physx-vehicle2"><span class="std std-ref">physx::vehicle2</span></a></p></li>
+</ul>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga53de7ac5f330514487c1a1bd78fd069f.html#exhale-function-group-vehicle2-1ga53de7ac5f330514487c1a1bd78fd069f"><span class="std std-ref">PxVehiclePvdAntiRollsRegister</span></a>: Register object instances in omnipvd that will be used to reflect the antiroll bars of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga073f28063cad0d6ea67d60413e33a676.html#exhale-function-group-vehicle2-1ga073f28063cad0d6ea67d60413e33a676"><span class="std std-ref">PxVehiclePvdAntiRollsWrite</span></a>: Write antiroll data to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga08c5fcf89e1f4810e35297ad0c4dd70b.html#exhale-function-group-vehicle2-1ga08c5fcf89e1f4810e35297ad0c4dd70b"><span class="std std-ref">PxVehiclePvdCommandResponseRegister</span></a>: Register object instances in omnipvd that will be used to reflect the brake and steer command response parameters of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga752c10e7fa489c84d5071d1b941d306e.html#exhale-function-group-vehicle2-1ga752c10e7fa489c84d5071d1b941d306e"><span class="std std-ref">PxVehiclePvdCommandResponseWrite</span></a>: Write brake and steer command response parameters to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gacdf148f341a55f77ca1ce28e4e90d0bb.html#exhale-function-group-vehicle2-1gacdf148f341a55f77ca1ce28e4e90d0bb"><span class="std std-ref">PxVehiclePvdDirectDrivetrainRegister</span></a>: Register object instances in omnipvd that will be used to reflect the direct drivetrain of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga498e69f5bd5949ffeb5e95b576996935.html#exhale-function-group-vehicle2-1ga498e69f5bd5949ffeb5e95b576996935"><span class="std std-ref">PxVehiclePvdDirectDrivetrainWrite</span></a>: Write direct drivetrain data to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gaae3acb57068f39100f05afbbb33d9868.html#exhale-function-group-vehicle2-1gaae3acb57068f39100f05afbbb33d9868"><span class="std std-ref">PxVehiclePvdEngineDrivetrainRegister</span></a>: Register object instances in omnipvd that will be used to reflect the engine drivetrain of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gaae243312140fdfc95a4204d090991ff6.html#exhale-function-group-vehicle2-1gaae243312140fdfc95a4204d090991ff6"><span class="std std-ref">PxVehiclePvdEngineDrivetrainWrite</span></a>: Write engine drivetrain data of a vehicle instance to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga78192939f556ce428d7fadc84c666445.html#exhale-function-group-vehicle2-1ga78192939f556ce428d7fadc84c666445"><span class="std std-ref">PxVehiclePvdPhysXRigidActorRegister</span></a>: Register the <a class="reference internal" href="class_px_rigid_actor.html#exhale-class-class-px-rigid-actor"><span class="std std-ref">PxRigidActor</span></a> instance that represents the vehicle’s rigid body in a PhysX scene.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga827b8a4e1480b73c4c4d27e8790a7cdc.html#exhale-function-group-vehicle2-1ga827b8a4e1480b73c4c4d27e8790a7cdc"><span class="std std-ref">PxVehiclePvdPhysXRigidActorWrite</span></a>: Write the <a class="reference internal" href="class_px_rigid_actor.html#exhale-class-class-px-rigid-actor"><span class="std std-ref">PxRigidActor</span></a> instance to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga8244305c1121467bab82bd45fe26adc4.html#exhale-function-group-vehicle2-1ga8244305c1121467bab82bd45fe26adc4"><span class="std std-ref">PxVehiclePvdPhysXWheelAttachmentRegister</span></a>: Register per wheel attachment data that involves the vehicle’s integration with a PhysX scene.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gae5a5f1ee8d6269e5cc0a09f5dd07322c.html#exhale-function-group-vehicle2-1gae5a5f1ee8d6269e5cc0a09f5dd07322c"><span class="std std-ref">PxVehiclePvdPhysXWheelAttachmentWrite</span></a>: Write to omnipvd the per wheel attachment data that involves the vehicle’s integration with a PhysX scene.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga85b74611b09881b31b63aa36491ba834.html#exhale-function-group-vehicle2-1ga85b74611b09881b31b63aa36491ba834"><span class="std std-ref">PxVehiclePvdRigidBodyRegister</span></a>: Create object instances in omnipvd that will be used to reflect the parameters and state of the rigid body of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gadb1602354e20d7c162524218a9f7f9a3.html#exhale-function-group-vehicle2-1gadb1602354e20d7c162524218a9f7f9a3"><span class="std std-ref">PxVehiclePvdRigidBodyWrite</span></a>: Write the parameters and state of the rigid body of a vehicle instance to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gafcccceaccf298fa6058ff3a52fdfd5ba.html#exhale-function-group-vehicle2-1gafcccceaccf298fa6058ff3a52fdfd5ba"><span class="std std-ref">PxVehiclePvdSuspensionStateCalculationParamsRegister</span></a>: Register object instances in omnipvd that will be used to reflect the suspension state calculation parameters of a vehicle instance.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga8946a113499c9129bd9f0ca9d09e7be4.html#exhale-function-group-vehicle2-1ga8946a113499c9129bd9f0ca9d09e7be4"><span class="std std-ref">PxVehiclePvdSuspensionStateCalculationParamsWrite</span></a>: Write the parameters and state of the rigid body of a vehicle instance to omnipvd.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1gaaf835fe20fcbc6987e2fe31873314fef.html#exhale-function-group-vehicle2-1gaaf835fe20fcbc6987e2fe31873314fef"><span class="std std-ref">PxVehiclePvdWheelAttachmentsRegister</span></a>: Register object instances in omnipvd that will be used to reflect wheel attachment data such as tires, suspensions and wheels.</p></li>
+<li><p><a class="reference internal" href="function_group__vehicle2_1ga885c2da3fb15152feb6e33c29a209fb3.html#exhale-function-group-vehicle2-1ga885c2da3fb15152feb6e33c29a209fb3"><span class="std std-ref">PxVehiclePvdWheelAttachmentsWrite</span></a>: Write wheel attachment data such as tire, suspension and wheel data to omnipvd.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

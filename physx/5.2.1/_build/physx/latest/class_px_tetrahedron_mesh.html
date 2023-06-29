@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxTetrahedronMesh &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxTetrahedronMesh</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxtetrahedronmesh">
+<span id="exhale-class-class-px-tetrahedron-mesh"></span><h1>PxTetrahedronMesh<a class="headerlink" href="#pxtetrahedronmesh" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxTetrahedronMesh.h.html#file-include-geometry-pxtetrahedronmesh-h"><span class="std std-ref">include/geometry/PxTetrahedronMesh.h</span></a></p>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">PxRefCounted</span></code> (<a class="reference internal" href="class_px_ref_counted.html#exhale-class-class-px-ref-counted"><span class="std std-ref">PxRefCounted</span></a>)</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv417PxTetrahedronMesh">
+<span id="_CPPv317PxTetrahedronMesh"></span><span id="_CPPv217PxTetrahedronMesh"></span><span id="PxTetrahedronMesh"></span><span class="target" id="class_px_tetrahedron_mesh"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMesh</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_ref_counted.html#_CPPv412PxRefCounted" title="PxRefCounted"><span class="n"><span class="pre">PxRefCounted</span></span></a><a class="headerlink" href="#_CPPv417PxTetrahedronMesh" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A tetramedron mesh, also called a ‘tetrahedron soup’. </p>
+<p>It is represented as an indexed tetrahedron list. There are no restrictions on the tetrahedron data.</p>
+<p>To avoid duplicating data when you have several instances of a particular mesh positioned differently, you do not use this class to represent a mesh object directly. Instead, you create an instance of this mesh via the <a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html#class_px_tetrahedron_mesh_geometry"><span class="std std-ref">PxTetrahedronMeshGeometry</span></a> and <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> classes.</p>
+<p><em>Creation</em></p>
+<p>To create an instance of this class call <a class="reference internal" href="class_px_physics.html#class_px_physics_1a74dd1804487589805f172d951d27d8c2"><span class="std std-ref">PxPhysics::createTetrahedronMesh()</span></a>, and <a class="reference internal" href="#class_px_tetrahedron_mesh_1af8f8e24694738e144f77aeeb3f32ae57"><span class="std std-ref">release()</span></a> to delete it. This is only possible once you have released all of its <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> instances.</p>
+<p><em>Visualizations:</em></p>
+<p><ul class="simple">
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a714f24bab39d1bbe8b131bd10ef5552b"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AABBS</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a515f4c3c72ee88d7507b52d6ccd14eab"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_SHAPES</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0ad9dcb10f5f3d6ded3baecfc1e387d3"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_AXES</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10afd900f30ba421d555e7f7b087126cd92"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_FNORMALS</span></a> </p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10aa0e06ca7fa1a0445abe0f4d293feb961"><span class="std std-ref">PxVisualizationParameter::eCOLLISION_EDGES</span></a></p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html#class_px_tetrahedron_mesh_desc"><span class="std std-ref">PxTetrahedronMeshDesc</span></a> <a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html#class_px_tetrahedron_mesh_geometry"><span class="std std-ref">PxTetrahedronMeshGeometry</span></a> <a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> <a class="reference internal" href="class_px_physics.html#class_px_physics_1a74dd1804487589805f172d951d27d8c2"><span class="std std-ref">PxPhysics.createTetrahedronMesh()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh13getNbVerticesEv">
+<span id="_CPPv3NK17PxTetrahedronMesh13getNbVerticesEv"></span><span id="_CPPv2NK17PxTetrahedronMesh13getNbVerticesEv"></span><span id="PxTetrahedronMesh::getNbVerticesC"></span><span class="target" id="class_px_tetrahedron_mesh_1aa29027c766db0eb1d0ad4cafe84336c7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh13getNbVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_tetrahedron_mesh_1a82c437d770136e1c53350abf81637ace"><span class="std std-ref">getVertices()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh11getVerticesEv">
+<span id="_CPPv3NK17PxTetrahedronMesh11getVerticesEv"></span><span id="_CPPv2NK17PxTetrahedronMesh11getVerticesEv"></span><span id="PxTetrahedronMesh::getVerticesC"></span><span class="target" id="class_px_tetrahedron_mesh_1a82c437d770136e1c53350abf81637ace"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh11getVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_tetrahedron_mesh_1aa29027c766db0eb1d0ad4cafe84336c7"><span class="std std-ref">getNbVertices()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>array of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh17getNbTetrahedronsEv">
+<span id="_CPPv3NK17PxTetrahedronMesh17getNbTetrahedronsEv"></span><span id="_CPPv2NK17PxTetrahedronMesh17getNbTetrahedronsEv"></span><span id="PxTetrahedronMesh::getNbTetrahedronsC"></span><span class="target" id="class_px_tetrahedron_mesh_1acd5356aa69c76c695a2b21412cc61895"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbTetrahedrons</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh17getNbTetrahedronsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of tetrahedrons. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_tetrahedron_mesh_1a23388b760d4039f964a51df741afc802"><span class="std std-ref">getTetrahedrons()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of tetrahedrons </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh15getTetrahedronsEv">
+<span id="_CPPv3NK17PxTetrahedronMesh15getTetrahedronsEv"></span><span id="_CPPv2NK17PxTetrahedronMesh15getTetrahedronsEv"></span><span id="PxTetrahedronMesh::getTetrahedronsC"></span><span class="target" id="class_px_tetrahedron_mesh_1a23388b760d4039f964a51df741afc802"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTetrahedrons</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh15getTetrahedronsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the tetrahedron indices. </p>
+<p>The indices can be 16 or 32bit depending on the number of tetrahedrons in the mesh. Call <a class="reference internal" href="#class_px_tetrahedron_mesh_1a40ee1bd5f9513605da0fc93ce4d69cb4"><span class="std std-ref">getTetrahedronMeshFlags()</span></a> to know if the indices are 16 or 32 bits.</p>
+<p>The number of indices is the number of tetrahedrons * 4.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbTetrahedron() <a class="reference internal" href="#class_px_tetrahedron_mesh_1a40ee1bd5f9513605da0fc93ce4d69cb4"><span class="std std-ref">getTetrahedronMeshFlags()</span></a> <a class="reference internal" href="#class_px_tetrahedron_mesh_1acdf2ee4bd468f253b5df30b5d770e263"><span class="std std-ref">getTetrahedraRemap()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>array of tetrahedrons </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh23getTetrahedronMeshFlagsEv">
+<span id="_CPPv3NK17PxTetrahedronMesh23getTetrahedronMeshFlagsEv"></span><span id="_CPPv2NK17PxTetrahedronMesh23getTetrahedronMeshFlagsEv"></span><span id="PxTetrahedronMesh::getTetrahedronMeshFlagsC"></span><span class="target" id="class_px_tetrahedron_mesh_1a40ee1bd5f9513605da0fc93ce4d69cb4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__geomutils_1ga346c39a79a6e61767f14c9890da32d42.html#_CPPv422PxTetrahedronMeshFlags" title="PxTetrahedronMeshFlags"><span class="n"><span class="pre">PxTetrahedronMeshFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTetrahedronMeshFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh23getTetrahedronMeshFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reads the <a class="reference internal" href="#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> flags. </p>
+<p>See the list of flags <a class="reference internal" href="typedef_group__geomutils_1ga346c39a79a6e61767f14c9890da32d42.html#group__geomutils_1ga346c39a79a6e61767f14c9890da32d42"><span class="std std-ref">PxTetrahedronMeshFlags</span></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The values of the <a class="reference internal" href="#class_px_tetrahedron_mesh"><span class="std std-ref">PxTetrahedronMesh</span></a> flags. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh18getTetrahedraRemapEv">
+<span id="_CPPv3NK17PxTetrahedronMesh18getTetrahedraRemapEv"></span><span id="_CPPv2NK17PxTetrahedronMesh18getTetrahedraRemapEv"></span><span id="PxTetrahedronMesh::getTetrahedraRemapC"></span><span class="target" id="class_px_tetrahedron_mesh_1acdf2ee4bd468f253b5df30b5d770e263"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTetrahedraRemap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh18getTetrahedraRemapEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the tetrahedra remapping table. </p>
+<p>The tetrahedra are internally sorted according to various criteria. Hence the internal tetrahedron order does not always match the original (user-defined) order. The remapping table helps finding the old indices knowing the new ones: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">remapTable</span><span class="p">[</span><span class="w"> </span><span class="n">internalTetrahedronIndex</span><span class="w"> </span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">originalTetrahedronIndex</span><span class="w"></span>
+</pre></div>
+</div>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbTetrahedron() <a class="reference internal" href="#class_px_tetrahedron_mesh_1a23388b760d4039f964a51df741afc802"><span class="std std-ref">getTetrahedrons()</span></a> <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1a50426ff06726ccab3f5e0503077778a6"><span class="std std-ref">PxCookingParams::suppressTriangleMeshRemapTable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the remapping table (or NULL if ‘<a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1a50426ff06726ccab3f5e0503077778a6"><span class="std std-ref">PxCookingParams::suppressTriangleMeshRemapTable</span></a>’ has been used) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh14getLocalBoundsEv">
+<span id="_CPPv3NK17PxTetrahedronMesh14getLocalBoundsEv"></span><span id="_CPPv2NK17PxTetrahedronMesh14getLocalBoundsEv"></span><span id="PxTetrahedronMesh::getLocalBoundsC"></span><span class="target" id="class_px_tetrahedron_mesh_1a2dfcd4d058a29c817bedddabdc4c4499"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh14getLocalBoundsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the local-space (vertex space) AABB from the tetrahedron mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>local-space bounds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh7releaseEv">
+<span id="_CPPv3N17PxTetrahedronMesh7releaseEv"></span><span id="_CPPv2N17PxTetrahedronMesh7releaseEv"></span><span id="PxTetrahedronMesh::release"></span><span class="target" id="class_px_tetrahedron_mesh_1af8f8e24694738e144f77aeeb3f32ae57"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics_1a74dd1804487589805f172d951d27d8c2"><span class="std std-ref">PxPhysics.createTetrahedronMesh()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh17getReferenceCountEv">
+<span id="_CPPv3NK17PxTetrahedronMesh17getReferenceCountEv"></span><span id="_CPPv2NK17PxTetrahedronMesh17getReferenceCountEv"></span><span id="PxTetrahedronMesh::getReferenceCountC"></span><span class="target" id="class_px_ref_counted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh16acquireReferenceEv">
+<span id="_CPPv3N17PxTetrahedronMesh16acquireReferenceEv"></span><span id="_CPPv2N17PxTetrahedronMesh16acquireReferenceEv"></span><span id="PxTetrahedronMesh::acquireReference"></span><span class="target" id="class_px_ref_counted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted_1aaea81b277759ec01b5e0fc608c8b21dc"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh19getConcreteTypeNameEv">
+<span id="_CPPv3NK17PxTetrahedronMesh19getConcreteTypeNameEv"></span><span id="_CPPv2NK17PxTetrahedronMesh19getConcreteTypeNameEv"></span><span id="PxTetrahedronMesh::getConcreteTypeNameC"></span><span class="target" id="class_px_base_1a67fe206d8897ddce896c371ac8d789a9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN17PxTetrahedronMesh2isEP1Tv">
+<span id="_CPPv3I0EN17PxTetrahedronMesh2isEv"></span><span id="_CPPv2I0EN17PxTetrahedronMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a4bc720adef86ea68bfb5845f0e104d23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN17PxTetrahedronMesh2isEP1Tv" title="PxTetrahedronMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN17PxTetrahedronMesh2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK17PxTetrahedronMesh2isEPK1Tv">
+<span id="_CPPv3I0ENK17PxTetrahedronMesh2isEv"></span><span id="_CPPv2I0ENK17PxTetrahedronMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a85aa50ac0e5670a2be64411fea62b5e3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK17PxTetrahedronMesh2isEPK1Tv" title="PxTetrahedronMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK17PxTetrahedronMesh2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh15getConcreteTypeEv">
+<span id="_CPPv3NK17PxTetrahedronMesh15getConcreteTypeEv"></span><span id="_CPPv2NK17PxTetrahedronMesh15getConcreteTypeEv"></span><span id="PxTetrahedronMesh::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N17PxTetrahedronMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N17PxTetrahedronMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxTetrahedronMesh::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N17PxTetrahedronMesh12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N17PxTetrahedronMesh12setBaseFlagsE11PxBaseFlags"></span><span id="PxTetrahedronMesh::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh12getBaseFlagsEv">
+<span id="_CPPv3NK17PxTetrahedronMesh12getBaseFlagsEv"></span><span id="_CPPv2NK17PxTetrahedronMesh12getBaseFlagsEv"></span><span id="PxTetrahedronMesh::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh12isReleasableEv">
+<span id="_CPPv3NK17PxTetrahedronMesh12isReleasableEv"></span><span id="_CPPv2NK17PxTetrahedronMesh12isReleasableEv"></span><span id="PxTetrahedronMesh::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh17PxTetrahedronMeshE6PxType11PxBaseFlags">
+<span id="_CPPv3N17PxTetrahedronMesh17PxTetrahedronMeshE6PxType11PxBaseFlags"></span><span id="_CPPv2N17PxTetrahedronMesh17PxTetrahedronMeshE6PxType11PxBaseFlags"></span><span id="PxTetrahedronMesh::PxTetrahedronMesh__PxType.PxBaseFlags"></span><span class="target" id="class_px_tetrahedron_mesh_1ab5e84d9b0be6863611d341c9fe903b1b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh17PxTetrahedronMeshE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh17PxTetrahedronMeshE11PxBaseFlags">
+<span id="_CPPv3N17PxTetrahedronMesh17PxTetrahedronMeshE11PxBaseFlags"></span><span id="_CPPv2N17PxTetrahedronMesh17PxTetrahedronMeshE11PxBaseFlags"></span><span id="PxTetrahedronMesh::PxTetrahedronMesh__PxBaseFlags"></span><span class="target" id="class_px_tetrahedron_mesh_1aae0b1068b937d551ba13f8ca942d3341"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTetrahedronMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh17PxTetrahedronMeshE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMeshD0Ev">
+<span id="_CPPv3N17PxTetrahedronMeshD0Ev"></span><span id="_CPPv2N17PxTetrahedronMeshD0Ev"></span><span id="PxTetrahedronMesh::~PxTetrahedronMesh"></span><span class="target" id="class_px_tetrahedron_mesh_1a24685586e803869f6ffe399c4e9434bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxTetrahedronMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMeshD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK17PxTetrahedronMesh8isKindOfEPKc">
+<span id="_CPPv3NK17PxTetrahedronMesh8isKindOfEPKc"></span><span id="_CPPv2NK17PxTetrahedronMesh8isKindOfEPKc"></span><span id="PxTetrahedronMesh::isKindOf__cCPC"></span><span class="target" id="class_px_tetrahedron_mesh_1ab81644cced2b1878524fc74ec01e01b2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK17PxTetrahedronMesh8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh14onRefCountZeroEv">
+<span id="_CPPv3N17PxTetrahedronMesh14onRefCountZeroEv"></span><span id="_CPPv2N17PxTetrahedronMesh14onRefCountZeroEv"></span><span id="PxTetrahedronMesh::onRefCountZero"></span><span class="target" id="class_px_ref_counted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK17PxTetrahedronMesh9typeMatchEbv">
+<span id="_CPPv3I0ENK17PxTetrahedronMesh9typeMatchEv"></span><span id="_CPPv2I0ENK17PxTetrahedronMesh9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK17PxTetrahedronMesh9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh13mConcreteTypeE">
+<span id="_CPPv3N17PxTetrahedronMesh13mConcreteTypeE"></span><span id="_CPPv2N17PxTetrahedronMesh13mConcreteTypeE"></span><span id="PxTetrahedronMesh::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_group__common_1gac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh10mBaseFlagsE">
+<span id="_CPPv3N17PxTetrahedronMesh10mBaseFlagsE"></span><span id="_CPPv2N17PxTetrahedronMesh10mBaseFlagsE"></span><span id="PxTetrahedronMesh::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_group__common_1ga1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N17PxTetrahedronMesh16mBuiltInRefCountE">
+<span id="_CPPv3N17PxTetrahedronMesh16mBuiltInRefCountE"></span><span id="_CPPv2N17PxTetrahedronMesh16mBuiltInRefCountE"></span><span id="PxTetrahedronMesh::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N17PxTetrahedronMesh16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,85 +1,50 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Asset Authoring (NvBlastExtAuthoring) &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Asset Authoring (NvBlastExtAuthoring) &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
         <script src="../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../_static/version.js"></script>
         <script src="../../../_static/social-media.js"></script>
         <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Serialization (NvBlastExtSerialization)" href="ext_serialization.html" />
-    <link rel="prev" title="Asset Utilities (NvBlastExtAssetUtils)" href="ext_assetutils.html" /> 
+    <link rel="prev" title="Asset Utilities (NvBlastExtAssetUtils)" href="ext_assetutils.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../index.html">
-          
-
-          
-            
-            <img src="../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -87,19 +52,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -127,86 +81,48 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../_build/docs/blast-sdk/latest/blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
-        
-      <li>Asset Authoring (NvBlastExtAuthoring)</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="index.html">Extensions (NvBlastExt)</a> &raquo;</li>
+<li>Asset Authoring (NvBlastExtAuthoring)</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="asset-authoring-nvblastextauthoring">
-<span id="pageextauthoring"></span><h1>Asset Authoring (NvBlastExtAuthoring)<a class="headerlink" href="#asset-authoring-nvblastextauthoring" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="asset-authoring-nvblastextauthoring">
+<span id="pageextauthoring"></span><h1>Asset Authoring (NvBlastExtAuthoring)<a class="headerlink" href="#asset-authoring-nvblastextauthoring" title="Permalink to this headline"></a></h1>
 <p>The Authoring extension provides tools for creation of a Blast asset from a provided mesh.</p>
 <p>There are four tools for creation of Blast assets.</p>
-<div class="section" id="fracturetool">
-<span id="id1"></span><h2>FractureTool<a class="headerlink" href="#fracturetool" title="Permalink to this headline">¶</a></h2>
+<section id="fracturetool">
+<span id="id1"></span><h2>FractureTool<a class="headerlink" href="#fracturetool" title="Permalink to this headline"></a></h2>
 <p>Nv::Blast::FractureTool (see NvBlastExtAuthoringFractureTool.h) is used to fracture an input mesh.  It supports Voronoi fracturing, slicing, and “cutout” fracture (slicing based upon an image).  Internal surfaces of output chunks can be tesselated and noise can be applied to them.  The slicing method supports slicing with a noisy slicing surface, which allows the creation of a jagged slicing line.  Noisy slicing is switched on by setting a non-zero noise amplitude in slicing parameters (Nv::Blast::SlicingConfiguration).</p>
 <p>FractureTool supports two types of output:</p>
 <ol class="arabic simple">
 <li><p>Array of triangles - the tool fills provided array with triangles of chunk, ID of chunk should be provided.</p></li>
 <li><p>Buffered output - the tool fills provided array with vertices, and another array of arrays with indices. Indices form triplets of vertices of triangle.</p></li>
 </ol>
-</div>
-<div class="section" id="mesh-restrictions">
-<span id="fracturemeshrestrictions"></span><h2>Mesh Restrictions<a class="headerlink" href="#mesh-restrictions" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="mesh-restrictions">
+<span id="fracturemeshrestrictions"></span><h2>Mesh Restrictions<a class="headerlink" href="#mesh-restrictions" title="Permalink to this headline"></a></h2>
 <p>At the core of the fracturing tools is a geometric boolean algorithm based upon the paper, <strong>*A topologically robust algorithm for Boolean operations on polyhedral shapes using approximate arithmetic*</strong> by Smith and Dodgson, Computer-Aided Design 39 (2007) 149�163, Elsevier.
 The constraints for a valid input mesh are given in the paper.  Practically, the restrictions may be summarized as follows.</p>
 <p>Input meshes
@@ -215,16 +131,16 @@ The constraints for a valid input mesh are given in the paper.  Practically, the
 * must not have T-junctions,
 * <em>may</em> have multiple disconnected components.</p>
 <p>Failure to meet the constraints (first three items) above will lead to unpredictable fracturing results.</p>
-</div>
-<div class="section" id="convexmeshbuilder">
-<span id="id2"></span><h2>ConvexMeshBuilder<a class="headerlink" href="#convexmeshbuilder" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="convexmeshbuilder">
+<span id="id2"></span><h2>ConvexMeshBuilder<a class="headerlink" href="#convexmeshbuilder" title="Permalink to this headline"></a></h2>
 <p>Nv::Blast::ConvexMeshBuilder is a tool for creation of collision geometry for physics engine. It recieves mesh vertices, and returns the convex hull of those vertices. If creation of a convex hull fails, the
 tool creates collision geometry as a bounding box of provided vertices.</p>
 <p>The tool provides a method to trim convex hulls against each other. It can be used along with noisy slicing to avoid “explosive” behavior due to penetration of neighboring collision hulls into each other.
 As a drawback, penetration of render meshes into each other is possible due to trimmed collision geometry.</p>
-</div>
-<div class="section" id="bondgenerator">
-<span id="id3"></span><h2>BondGenerator<a class="headerlink" href="#bondgenerator" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="bondgenerator">
+<span id="id3"></span><h2>BondGenerator<a class="headerlink" href="#bondgenerator" title="Permalink to this headline"></a></h2>
 <p>Nv::Blast::BlastBondGenerator is a tool for creation of Blast Bond descriptors from provided geometry data.
 It has separate a method which is optimized for working FractureTool.
 .. code-block:: text</p>
@@ -237,9 +153,9 @@ It has separate a method which is optimized for working FractureTool.
 <li><p>Exact - in this mode exact common surface between chunks is found and considered as interface between them. Exact normal, area and centroid are computed.</p></li>
 <li><p>Average - this mode uses approximations of the interface, and can be used for gathering NvBlastBond data for assets, where chunks penetrate each other, e.g. chunks with noise.</p></li>
 </ol>
-</div>
-<div class="section" id="meshcleaner">
-<span id="id4"></span><h2>MeshCleaner<a class="headerlink" href="#meshcleaner" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="meshcleaner">
+<span id="id4"></span><h2>MeshCleaner<a class="headerlink" href="#meshcleaner" title="Permalink to this headline"></a></h2>
 <p>Nv::Blast::MeshCleaner can be used to remove self intersections and open edges in the interior of a mesh, making it more likely to fracture well.</p>
 <p>To use it, create a MeshCleaner using</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Nv::Blast::MeshCleaner* cleaner = NvBlastExtAuthoringCreateMeshCleaner();
@@ -255,46 +171,37 @@ It has separate a method which is optimized for working FractureTool.
 <blockquote>
 <div><p>cleaner-&gt;release();</p>
 </div></blockquote>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

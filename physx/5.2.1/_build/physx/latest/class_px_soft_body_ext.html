@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSoftBodyExt &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSoftBodyExt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsoftbodyext">
+<span id="exhale-class-class-px-soft-body-ext"></span><h1>PxSoftBodyExt<a class="headerlink" href="#pxsoftbodyext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSoftBodyExt.h.html#file-include-extensions-pxsoftbodyext-h"><span class="std std-ref">include/extensions/PxSoftBodyExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxSoftBodyExt">
+<span id="_CPPv313PxSoftBodyExt"></span><span id="_CPPv213PxSoftBodyExt"></span><span id="PxSoftBodyExt"></span><span class="target" id="class_px_soft_body_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSoftBodyExt</span></span></span><a class="headerlink" href="#_CPPv413PxSoftBodyExt" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Utility functions for use with <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> and subclasses. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt10updateMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4">
+<span id="_CPPv3N13PxSoftBodyExt10updateMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4"></span><span id="_CPPv2N13PxSoftBodyExt10updateMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4"></span><span id="PxSoftBodyExt::updateMass__PxSoftBodyR.PxRealC.PxRealC.PxVec4P"></span><span class="target" id="class_px_soft_body_ext_1a317f129b1c80b7ace05214477507613d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateMass</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxInvMassRatio</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt10updateMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the SoftBody’s vertex masses from the provided density and the volume of the tetrahedra. </p>
+<p>The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()</p>
+<p>The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh’s position buffer.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body_1a0dec4841cff104c5855cadb0a57297b5"><span class="std std-ref">PxSoftBody::getSimPositionInvMassBufferD()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which will get its mass updated </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density to used to calculate the mass from the body’s volume </p></li>
+<li><p><strong>maxInvMassRatio</strong> – <strong>[in]</strong> Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt7setMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4">
+<span id="_CPPv3N13PxSoftBodyExt7setMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4"></span><span id="_CPPv2N13PxSoftBodyExt7setMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4"></span><span id="PxSoftBodyExt::setMass__PxSoftBodyR.PxRealC.PxRealC.PxVec4P"></span><span class="target" id="class_px_soft_body_ext_1a52ae42de7c915252246dc8a1afa666f0"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMass</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mass</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxInvMassRatio</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt7setMassER10PxSoftBodyK6PxRealK6PxRealP6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the SoftBody’s vertex masses such that the sum of all masses is equal to the provided mass. </p>
+<p>The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD()) and getSimVelocityBufferD()</p>
+<p>The inverse mass is stored in the 4th component (the first three components are x, y, z coordinates) of the simulation mesh’s position buffer.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body_1a0dec4841cff104c5855cadb0a57297b5"><span class="std std-ref">PxSoftBody::getSimPositionInvMassBufferD()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which will get its mass updated </p></li>
+<li><p><strong>mass</strong> – <strong>[in]</strong> The SoftBody’s mass </p></li>
+<li><p><strong>maxInvMassRatio</strong> – <strong>[in]</strong> Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt9transformER10PxSoftBodyRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4">
+<span id="_CPPv3N13PxSoftBodyExt9transformER10PxSoftBodyRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4"></span><span id="_CPPv2N13PxSoftBodyExt9transformER10PxSoftBodyRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4"></span><span id="PxSoftBodyExt::transform__PxSoftBodyR.PxTransformCR.PxRealC.PxVec4P.PxVec4P.PxVec4P.PxVec4P"></span><span class="target" id="class_px_soft_body_ext_1af1b33e68321cd86a0bca2c4a4b5ed8b3"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transform</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simVelocitiesPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositionsPinned</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt9transformER10PxSoftBodyRK11PxTransformK6PxRealP6PxVec4P6PxVec4P6PxVec4P6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Transforms a SoftBody. </p>
+<p>The buffers affected by this operation can be obtained from the SoftBody using the methods getSimPositionInvMassBufferD() and getSimVelocityBufferD()</p>
+<p>Applies a transformation to the simulation mesh’s positions an velocities. Velocities only get rotated and scaled (translation is not applicable to direction vectors). It does not modify the body’s mass. If the method is called multiple times, the transformation will compound with the ones previously applied.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which is transformed </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform to apply </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> A scaling factor </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>simVelocitiesPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh. </p></li>
+<li><p><strong>restPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing rest positions of the collision mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt27updateEmbeddedCollisionMeshER10PxSoftBodyP6PxVec4P6PxVec4">
+<span id="_CPPv3N13PxSoftBodyExt27updateEmbeddedCollisionMeshER10PxSoftBodyP6PxVec4P6PxVec4"></span><span id="_CPPv2N13PxSoftBodyExt27updateEmbeddedCollisionMeshER10PxSoftBodyP6PxVec4P6PxVec4"></span><span id="PxSoftBodyExt::updateEmbeddedCollisionMesh__PxSoftBodyR.PxVec4P.PxVec4P"></span><span class="target" id="class_px_soft_body_ext_1a26b54403eaf1995cf165d2b99fc7a002"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateEmbeddedCollisionMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt27updateEmbeddedCollisionMeshER10PxSoftBodyP6PxVec4P6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates the collision mesh’s vertex positions to match the simulation mesh’s transformation and scale. </p>
+<p>The buffer affected by this operation can be obtained from the SoftBody using the method getPositionInvMassBufferD()</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which will get its collision mesh vertices updated </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt6commitER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream">
+<span id="_CPPv3N13PxSoftBodyExt6commitER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="_CPPv2N13PxSoftBodyExt6commitER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="PxSoftBodyExt::commit__PxSoftBodyR.PxSoftBodyDataFlags.PxVec4P.PxVec4P.PxVec4P.PxVec4P.CUstream"></span><span class="target" id="class_px_soft_body_ext_1ab0f4bd084cb64050d59a0e69e1ea800e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">commit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <a class="reference internal" href="typedef__px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f.html#_CPPv419PxSoftBodyDataFlags" title="PxSoftBodyDataFlags"><span class="n"><span class="pre">PxSoftBodyDataFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simVelocitiesPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositionsPinned</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt6commitER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Uploads prepared SoftBody data to the GPU. </p>
+<p>It ensures that the embedded collision mesh matches the simulation mesh’s transformation and scale.</p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Use <a class="reference internal" href="#class_px_soft_body_ext_1aba6f7c9b5234efbefe8ede0dda666103"><span class="std std-ref">copyToDevice()</span></a> instead. </p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which will perform the data upload </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> Specifies which buffers the data transfer should include </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>simVelocitiesPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh. </p></li>
+<li><p><strong>restPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing rest positions of the collision mesh. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> A cuda stream to perform the copies.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt12copyToDeviceER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream">
+<span id="_CPPv3N13PxSoftBodyExt12copyToDeviceER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="_CPPv2N13PxSoftBodyExt12copyToDeviceER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream"></span><span id="PxSoftBodyExt::copyToDevice__PxSoftBodyR.PxSoftBodyDataFlags.PxVec4P.PxVec4P.PxVec4P.PxVec4P.CUstream"></span><span class="target" id="class_px_soft_body_ext_1aba6f7c9b5234efbefe8ede0dda666103"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyToDevice</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <a class="reference internal" href="typedef__px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f.html#_CPPv419PxSoftBodyDataFlags" title="PxSoftBodyDataFlags"><span class="n"><span class="pre">PxSoftBodyDataFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">simVelocitiesPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">collPositionsPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositionsPinned</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt12copyToDeviceER10PxSoftBody19PxSoftBodyDataFlagsP6PxVec4P6PxVec4P6PxVec4P6PxVec48CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Uploads prepared SoftBody data to the GPU. </p>
+<p>It ensures that the embedded collision mesh matches the simulation mesh’s transformation and scale.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> The soft body which will perform the data upload </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> Specifies which buffers the data transfer should include </p></li>
+<li><p><strong>simPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh. </p></li>
+<li><p><strong>simVelocitiesPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing velocities for each vertex of the simulation mesh. </p></li>
+<li><p><strong>collPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh. </p></li>
+<li><p><strong>restPositionsPinned</strong> – <strong>[in]</strong> A pointer to a pinned host memory buffer containing rest positions of the collision mesh. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> A cuda stream to perform the copies.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb">
+<span id="_CPPv3N13PxSoftBodyExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="_CPPv2N13PxSoftBodyExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb"></span><span id="PxSoftBodyExt::createSoftBodyMesh__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxU32.PxInsertionCallbackR.bC"></span><span class="target" id="class_px_soft_body_ext_1a1ca266cfdcfb7e2fe86880f4932a9adf"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_simple_triangle_mesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt18createSoftBodyMeshERK15PxCookingParamsRK20PxSimpleTriangleMesh5PxU32R19PxInsertionCallbackKb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a full SoftBody mesh matching the shape given as input. </p>
+<p>Uses a voxel mesh for FEM simulation and a surface-matching mesh for collision detection.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – <strong>[in]</strong> Cooking params instance required for mesh processing </p></li>
+<li><p><strong>surfaceMesh</strong> – <strong>[in]</strong> Input triangle mesh that represents the surface of the SoftBody </p></li>
+<li><p><strong>numVoxelsAlongLongestAABBAxis</strong> – <strong>[in]</strong> The number of voxels along the longest bounding box axis </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> </p></li>
+<li><p><strong>validate</strong> – <strong>[in]</strong> If set to true the input triangle mesh will get analyzed to find possible deficiencies </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SoftBody mesh if cooking was successful, NULL otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb">
+<span id="_CPPv3N13PxSoftBodyExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="_CPPv2N13PxSoftBodyExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb"></span><span id="PxSoftBodyExt::createSoftBodyMeshNoVoxels__PxCookingParamsCR.PxSimpleTriangleMeshCR.PxInsertionCallbackR.PxReal.bC"></span><span class="target" id="class_px_soft_body_ext_1a6254e23a86e3f3e56d2113ee8024f5d0"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyMeshNoVoxels</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_simple_triangle_mesh.html#_CPPv420PxSimpleTriangleMesh" title="PxSimpleTriangleMesh"><span class="n"><span class="pre">PxSimpleTriangleMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">surfaceMesh</span></span>, <a class="reference internal" href="class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><span class="n"><span class="pre">PxInsertionCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">insertionCallback</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxWeightRatioInTet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.5f</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">validate</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt26createSoftBodyMeshNoVoxelsERK15PxCookingParamsRK20PxSimpleTriangleMeshR19PxInsertionCallback6PxRealKb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a full SoftBody mesh matching the shape given as input. </p>
+<p>Uses the same surface-matching mesh for collision detection and FEM simulation.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> – <strong>[in]</strong> Cooking params instance required for mesh processing </p></li>
+<li><p><strong>surfaceMesh</strong> – <strong>[in]</strong> Input triangle mesh that represents the surface of the SoftBody </p></li>
+<li><p><strong>insertionCallback</strong> – <strong>[in]</strong> The insertion interface from <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> </p></li>
+<li><p><strong>maxWeightRatioInTet</strong> – <strong>[in]</strong> Upper limit for the ratio of node weights that are adjacent to the same tetrahedron. The closer to one (while remaining larger than one), the more stable the simulation. </p></li>
+<li><p><strong>validate</strong> – <strong>[in]</strong> If set to true the input triangle mesh will get analyzed to find possible deficiencies </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SoftBody mesh if cooking was successful, NULL otherwise </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt22createSoftBodyFromMeshEP14PxSoftBodyMeshRK11PxTransformRK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal">
+<span id="_CPPv3N13PxSoftBodyExt22createSoftBodyFromMeshEP14PxSoftBodyMeshRK11PxTransformRK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal"></span><span id="_CPPv2N13PxSoftBodyExt22createSoftBodyFromMeshEP14PxSoftBodyMeshRK11PxTransformRK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal"></span><span id="PxSoftBodyExt::createSoftBodyFromMesh__PxSoftBodyMeshP.PxTransformCR.PxFEMSoftBodyMaterialCR.PxCudaContextManagerR.PxReal.PxU32.PxFEMParametersCR.PxReal"></span><span class="target" id="class_px_soft_body_ext_1ae881309af5f97dce9c24bb6c2f506350"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyFromMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body_mesh.html#_CPPv414PxSoftBodyMesh" title="PxSoftBodyMesh"><span class="n"><span class="pre">PxSoftBodyMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">softBodyMesh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#_CPPv421PxFEMSoftBodyMaterial" title="PxFEMSoftBodyMaterial"><span class="n"><span class="pre">PxFEMSoftBodyMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span>, <a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">solverIterationCount</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">30</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_f_e_m_parameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">femParams</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_f_e_m_parameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt22createSoftBodyFromMeshEP14PxSoftBodyMeshRK11PxTransformRK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal5PxU32RK15PxFEMParameters6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a SoftBody instance from a SoftBody mesh. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a>, <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBodyMesh</strong> – <strong>[in]</strong> The SoftBody mesh </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform that defines initial position and orientation of the SoftBody </p></li>
+<li><p><strong>material</strong> – <strong>[in]</strong> The material </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density used to compute the mass properties </p></li>
+<li><p><strong>solverIterationCount</strong> – <strong>[in]</strong> The number of iterations the solver should apply during simulation </p></li>
+<li><p><strong>femParams</strong> – <strong>[in]</strong> Additional parameters to specify e. g. damping </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> The scaling of the SoftBody </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SoftBody instance </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal">
+<span id="_CPPv3N13PxSoftBodyExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal"></span><span id="_CPPv2N13PxSoftBodyExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal"></span><span id="PxSoftBodyExt::createSoftBodyBox__PxTransformCR.PxVec3CR.PxFEMSoftBodyMaterialCR.PxCudaContextManagerR.PxReal.PxReal.PxU32.PxFEMParametersCR.PxU32.PxReal"></span><span class="target" id="class_px_soft_body_ext_1aa9bdb5189e527b89f9ae871746bc6a7f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSoftBodyBox</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">boxDimensions</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#_CPPv421PxFEMSoftBodyMaterial" title="PxFEMSoftBodyMaterial"><span class="n"><span class="pre">PxFEMSoftBodyMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">material</span></span>, <a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxEdgeLength</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">100.0f</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">solverIterationCount</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">30</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_f_e_m_parameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">femParams</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_f_e_m_parameters.html#_CPPv415PxFEMParameters" title="PxFEMParameters"><span class="n"><span class="pre">PxFEMParameters</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numVoxelsAlongLongestAABBAxis</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">10</span></span>, <a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt17createSoftBodyBoxERK11PxTransformRK6PxVec3RK21PxFEMSoftBodyMaterialR20PxCudaContextManager6PxReal6PxReal5PxU32RK15PxFEMParameters5PxU326PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a SoftBody instance with a box shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body_mesh.html#class_px_soft_body_mesh"><span class="std std-ref">PxSoftBodyMesh</span></a>, <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform</strong> – <strong>[in]</strong> The transform that defines initial position and orientation of the SoftBody </p></li>
+<li><p><strong>boxDimensions</strong> – <strong>[in]</strong> The dimensions (side lengths) of the box shape </p></li>
+<li><p><strong>material</strong> – <strong>[in]</strong> The material </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager </p></li>
+<li><p><strong>maxEdgeLength</strong> – <strong>[in]</strong> The maximal length of a triangle edge. Subdivision will get applied until the edge length criteria is matched. -1 means no subdivision is applied. </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density used to compute the mass properties </p></li>
+<li><p><strong>solverIterationCount</strong> – <strong>[in]</strong> The number of iterations the solver should apply during simulation </p></li>
+<li><p><strong>femParams</strong> – <strong>[in]</strong> Additional parameters to specify e. g. damping </p></li>
+<li><p><strong>numVoxelsAlongLongestAABBAxis</strong> – <strong>[in]</strong> The number of voxels to use for the simulation mesh along the longest bounding box dimension </p></li>
+<li><p><strong>scale</strong> – <strong>[in]</strong> The scaling of the SoftBody </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SoftBody instance </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt31allocateAndInitializeHostMirrorER10PxSoftBodyP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4">
+<span id="_CPPv3N13PxSoftBodyExt31allocateAndInitializeHostMirrorER10PxSoftBodyP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4"></span><span id="_CPPv2N13PxSoftBodyExt31allocateAndInitializeHostMirrorER10PxSoftBodyP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4"></span><span id="PxSoftBodyExt::allocateAndInitializeHostMirror__PxSoftBodyR.PxCudaContextManagerP.PxVec4PR.PxVec4PR.PxVec4PR.PxVec4PR"></span><span class="target" id="class_px_soft_body_ext_1a3add9f9217bc53ac99bd0b8afe92ae1a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocateAndInitializeHostMirror</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_soft_body.html#_CPPv410PxSoftBody" title="PxSoftBody"><span class="n"><span class="pre">PxSoftBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">softBody</span></span>, <a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simPositionInvMassPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">simVelocityPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collPositionInvMassPinned</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">restPositionPinned</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt31allocateAndInitializeHostMirrorER10PxSoftBodyP20PxCudaContextManagerRP6PxVec4RP6PxVec4RP6PxVec4RP6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd><p>allocates and initializes pinned host memory buffers from an actor with shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>softBody</strong> – <strong>[in]</strong> A <a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a> that has a valid shape attached to it. </p></li>
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> of the scene this soft body will be simulated in </p></li>
+<li><p><strong>simPositionInvMassPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the simPositionInvMassPinned buffer, will be set by this function. </p></li>
+<li><p><strong>simVelocityPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the simVelocityPinned buffer, will be set by this function. </p></li>
+<li><p><strong>collPositionInvMassPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the collPositionInvMassPinned buffer, will be set by this function. </p></li>
+<li><p><strong>restPositionPinned</strong> – <strong>[in]</strong> A reference to a pointer for the return value of the restPositionPinned buffer, will be set by this function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxSoftBodyExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32">
+<span id="_CPPv3N13PxSoftBodyExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="_CPPv2N13PxSoftBodyExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32"></span><span id="PxSoftBodyExt::relaxSoftBodyMesh__PxVec4CP.PxVec4P.PxU32.PxU32CP.PxU32.bCP.PxU32"></span><span class="target" id="class_px_soft_body_ext_1a5d8415b8113e74c028928b81af653db3"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">relaxSoftBodyMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesOriginal</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">verticesDeformed</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbVertices</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">tetrahedra</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbTetraheda</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexIsFixed</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numIterations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">200</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxSoftBodyExt17relaxSoftBodyMeshEPK6PxVec4P6PxVec45PxU32PK5PxU325PxU32PKb5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Given a set of points and a set of tetrahedra, it finds the equilibrium state of the softbody. </p>
+<p>Every input point is either fixed or can move freely.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>verticesOriginal</strong> – <strong>[in]</strong> Mesh vertex positions in undeformed original state. </p></li>
+<li><p><strong>verticesDeformed</strong> – <strong>[in]</strong> Mesh vertex positions in new deformed state. Only fixed vertices must have their final location, all other locations will get updated by the method. </p></li>
+<li><p><strong>nbVertices</strong> – <strong>[in]</strong> The number of vertices. </p></li>
+<li><p><strong>tetrahedra</strong> – <strong>[in]</strong> The tetrahedra. </p></li>
+<li><p><strong>nbTetraheda</strong> – <strong>[in]</strong> The number of tetrahedra. </p></li>
+<li><p><strong>vertexIsFixed</strong> – <strong>[in]</strong> Optional input that specifies which vertex is fixed and which one can move to relax the tension. If not provided, vertices from verticesOriginal which have a .w value of 0 will be considered fixed. </p></li>
+<li><p><strong>numIterations</strong> – <strong>[in]</strong> The number of stress relaxation iterations to run. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

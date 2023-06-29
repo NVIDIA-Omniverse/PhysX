@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::FractureTool &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::FractureTool &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,137 +64,100 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::FractureTool</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::FractureTool</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-fracturetool">
-<span id="exhale-class-class-nv-1-1-blast-1-1-fracture-tool"></span><h1>Nv::Blast::FractureTool<a class="headerlink" href="#nv-blast-fracturetool" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-fracturetool">
+<span id="exhale-class-class-nv-1-1-blast-1-1-fracture-tool"></span><h1>Nv::Blast::FractureTool<a class="headerlink" href="#nv-blast-fracturetool" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringFractureTool.h.html#file-extensions-authoring-nvblastextauthoringfracturetool-h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringFractureTool.h</span></a></p>
 <dl class="cpp class">
-<dt id="_CPPv4N2Nv5Blast12FractureToolE">
-<span id="_CPPv3N2Nv5Blast12FractureToolE"></span><span id="_CPPv2N2Nv5Blast12FractureToolE"></span><span id="Nv::Blast::FractureTool"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">FractureTool</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureToolE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureToolE">
+<span id="_CPPv3N2Nv5Blast12FractureToolE"></span><span id="_CPPv2N2Nv5Blast12FractureToolE"></span><span id="Nv::Blast::FractureTool"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FractureTool</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureToolE" title="Permalink to this definition"></a><br /></dt>
 <dd><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_fracture_tool"><span class="std std-ref">FractureTool</span></a> class provides methods to fracture provided mesh and generate Blast asset data. </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureToolD0Ev">
-<span id="_CPPv3N2Nv5Blast12FractureToolD0Ev"></span><span id="_CPPv2N2Nv5Blast12FractureToolD0Ev"></span><span id="Nv::Blast::FractureTool::~FractureTool"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4d00c3d53ba51d966de58ff533435cc2"></span><em class="property"><span class="pre">inline</span></em> <em class="property"><span class="pre">virtual</span></em> <code class="sig-name descname"><span class="pre">~FractureTool</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureToolD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureToolD0Ev">
+<span id="_CPPv3N2Nv5Blast12FractureToolD0Ev"></span><span id="_CPPv2N2Nv5Blast12FractureToolD0Ev"></span><span id="Nv::Blast::FractureTool::~FractureTool"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4d00c3d53ba51d966de58ff533435cc2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~FractureTool</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureToolD0Ev" title="Permalink to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool7releaseEv">
-<span id="_CPPv3N2Nv5Blast12FractureTool7releaseEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool7releaseEv"></span><span id="Nv::Blast::FractureTool::release"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a78da4a0d726ec1b541166cd3c46df67e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool7releaseEv">
+<span id="_CPPv3N2Nv5Blast12FractureTool7releaseEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool7releaseEv"></span><span id="Nv::Blast::FractureTool::release"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a78da4a0d726ec1b541166cd3c46df67e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool7releaseEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Release <a class="reference internal" href="#class_nv_1_1_blast_1_1_fracture_tool"><span class="std std-ref">FractureTool</span></a> memory. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool5resetEv">
-<span id="_CPPv3N2Nv5Blast12FractureTool5resetEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool5resetEv"></span><span id="Nv::Blast::FractureTool::reset"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ab462c92fa47a5359bf3d19cf44af80f4"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">reset</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool5resetEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool5resetEv">
+<span id="_CPPv3N2Nv5Blast12FractureTool5resetEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool5resetEv"></span><span id="Nv::Blast::FractureTool::reset"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ab462c92fa47a5359bf3d19cf44af80f4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool5resetEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Reset <a class="reference internal" href="#class_nv_1_1_blast_1_1_fracture_tool"><span class="std std-ref">FractureTool</span></a> state. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t"></span><span id="Nv::Blast::FractureTool::setSourceMeshes__MeshCPCP.uint32_t.int32_tCP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1acf00ab25daf58e08285e1b60a32d6e7d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">setSourceMeshes</span></code><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <em class="property"><span class="pre">const</span></em> <span class="pre">*</span><em class="property"><span class="pre">const</span></em> <span class="pre">*</span><em><span class="pre">meshes</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">meshesSize</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">int32_t</span> <span class="pre">*</span><em><span class="pre">ids</span></em> <span class="pre">=</span> <span class="pre">nullptr</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t"></span><span id="Nv::Blast::FractureTool::setSourceMeshes__MeshCPCP.uint32_t.int32_tCP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1acf00ab25daf58e08285e1b60a32d6e7d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSourceMeshes</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">meshes</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">meshesSize</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ids</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool15setSourceMeshesEPPCK4Mesh8uint32_tPK7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set input meshes which will be fractured, <a class="reference internal" href="#class_nv_1_1_blast_1_1_fracture_tool"><span class="std std-ref">FractureTool</span></a> will be reset. </p>
 <p>If ids != nullptr, it must point to an array of length meshSizes. Each mesh will be assigned to a chunk with ID given by the corresponding element in ids. If the corresponding element is negative, or ids is NULL, then the chunk will be assigned an arbitrary (but currently unused) ID. Returns true iff all meshes were assigned chunks with valid IDs. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t"></span><span id="Nv::Blast::FractureTool::setChunkMesh__MeshCP.int32_t.int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4efd58b2a4a442fa34018792997c886e"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">setChunkMesh</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><em><span class="pre">mesh</span></em>, <span class="pre">int32_t</span> <em><span class="pre">parentId</span></em>, <span class="pre">int32_t</span> <em><span class="pre">chunkId</span></em> <span class="pre">=</span> <span class="pre">-</span><span class="pre">1</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t"></span><span id="Nv::Blast::FractureTool::setChunkMesh__MeshCP.int32_t.int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4efd58b2a4a442fa34018792997c886e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setChunkMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">mesh</span></span>, <span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">parentId</span></span>, <span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool12setChunkMeshEPK4Mesh7int32_t7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set chunk mesh, parentId should be valid, return id of new chunk. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t"></span><span id="Nv::Blast::FractureTool::setInteriorMaterialId__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ac8c4f90133fdf32969cad6e4c520414f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setInteriorMaterialId</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">materialId</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t"></span><span id="Nv::Blast::FractureTool::setInteriorMaterialId__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ac8c4f90133fdf32969cad6e4c520414f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInteriorMaterialId</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">materialId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21setInteriorMaterialIdE7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set the material id to use for new interior faces. </p>
 <p>Defaults to kMaterialInteriorId </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv">
-<span id="_CPPv3NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv"></span><span id="_CPPv2NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv"></span><span id="Nv::Blast::FractureTool::getInteriorMaterialIdC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a820000e618005f6de1cbcb56d3e54de5"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">getInteriorMaterialId</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv">
+<span id="_CPPv3NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv"></span><span id="_CPPv2NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv"></span><span id="Nv::Blast::FractureTool::getInteriorMaterialIdC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a820000e618005f6de1cbcb56d3e54de5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInteriorMaterialId</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool21getInteriorMaterialIdEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Gets the material id to use for new interior faces. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t"></span><span id="Nv::Blast::FractureTool::replaceMaterialId__int32_t.int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a78194aeece0c12c2035c79458ff49c9f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">replaceMaterialId</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">oldMaterialId</span></em>, <span class="pre">int32_t</span> <em><span class="pre">newMaterialId</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t"></span><span id="Nv::Blast::FractureTool::replaceMaterialId__int32_t.int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a78194aeece0c12c2035c79458ff49c9f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">replaceMaterialId</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">oldMaterialId</span></span>, <span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">newMaterialId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17replaceMaterialIdE7int32_t7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Replaces an material id on faces with a new one. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb">
-<span id="_CPPv3N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb"></span><span id="Nv::Blast::FractureTool::createChunkMesh__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a193bc1245aabec3698ae113f8caac77a"></span><em class="property"><span class="pre">virtual</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">createChunkMesh</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkInfoIndex</span></em>, <span class="pre">bool</span> <em><span class="pre">splitUVs</span></em> <span class="pre">=</span> <span class="pre">true</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb">
+<span id="_CPPv3N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb"></span><span id="Nv::Blast::FractureTool::createChunkMesh__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ab03392e30cbd2d893ad7c60f4c8b0a38"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createChunkMesh</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkInfoIndex</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">splitUVs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool15createChunkMeshE7int32_tb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get chunk mesh in polygonal representation. </p>
 <p>User’s code should release it after usage. This function welds vertices based upon vertex position and normal. If splitUVs == true, UV coordinates are also considered in vertex welding. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b">
-<span id="_CPPv3N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b"></span><span id="_CPPv2N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b"></span><span id="Nv::Blast::FractureTool::voronoiFracturing__uint32_t.uint32_t.NvcVec3CP.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4c3308b909153982aded9366f9d3ee7c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">voronoiFracturing</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">cellCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">*</span><em><span class="pre">cellPoints</span></em>, <span class="pre">bool</span> <em><span class="pre">replaceChunk</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b">
+<span id="_CPPv3N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b"></span><span id="_CPPv2N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b"></span><span id="Nv::Blast::FractureTool::voronoiFracturing__uint32_t.uint32_t.NvcVec3CP.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4c3308b909153982aded9366f9d3ee7c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">voronoiFracturing</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">cellCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec3</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cellPoints</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">replaceChunk</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3b" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Fractures specified chunk with voronoi method. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -257,8 +174,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb">
-<span id="_CPPv3N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb"></span><span id="_CPPv2N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb"></span><span id="Nv::Blast::FractureTool::voronoiFracturing__uint32_t.uint32_t.NvcVec3CP.NvcVec3CR.NvcQuatCR.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a2d38fb6aac3c36d51d60dad428a43074"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">voronoiFracturing</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">cellCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">*</span><em><span class="pre">cellPoints</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">&amp;</span><em><span class="pre">scale</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcQuat</span> <span class="pre">&amp;</span><em><span class="pre">rotation</span></em>, <span class="pre">bool</span> <em><span class="pre">replaceChunk</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb">
+<span id="_CPPv3N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb"></span><span id="_CPPv2N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb"></span><span id="Nv::Blast::FractureTool::voronoiFracturing__uint32_t.uint32_t.NvcVec3CP.NvcVec3CR.NvcQuatCR.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a2d38fb6aac3c36d51d60dad428a43074"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">voronoiFracturing</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">cellCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec3</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cellPoints</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec3</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcQuat</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rotation</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">replaceChunk</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool17voronoiFracturingE8uint32_t8uint32_tPK7NvcVec3RK7NvcVec3RK7NvcQuatb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Fractures specified chunk with voronoi method. </p>
 <p>Cells can be scaled along x,y,z axes. </p>
 <dl class="field-list simple">
@@ -279,8 +196,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase">
-<span id="_CPPv3N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::slicing__uint32_t.SlicingConfigurationCR.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a45e8a5d3b6d98da1b44b6888a5054cce"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">slicing</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_slicing_configuration.html#_CPPv4N2Nv5Blast20SlicingConfigurationE" title="Nv::Blast::SlicingConfiguration"><span class="pre">SlicingConfiguration</span></a> <span class="pre">&amp;</span><em><span class="pre">conf</span></em>, <span class="pre">bool</span> <em><span class="pre">replaceChunk</span></em>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="pre">RandomGeneratorBase</span></a> <span class="pre">*</span><em><span class="pre">rnd</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase">
+<span id="_CPPv3N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::slicing__uint32_t.SlicingConfigurationCR.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a45e8a5d3b6d98da1b44b6888a5054cce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">slicing</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_1_1_blast_1_1_slicing_configuration.html#_CPPv4N2Nv5Blast20SlicingConfigurationE" title="Nv::Blast::SlicingConfiguration"><span class="n"><span class="pre">SlicingConfiguration</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">conf</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">replaceChunk</span></span>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="n"><span class="pre">RandomGeneratorBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rnd</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool7slicingE8uint32_tRK20SlicingConfigurationbP19RandomGeneratorBase" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Fractures specified chunk with slicing method. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -298,8 +215,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase">
-<span id="_CPPv3N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::cut__uint32_t.NvcVec3CR.NvcVec3CR.NoiseConfigurationCR.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a559c822041e74f034613b3afa4ad8a17"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">cut</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">&amp;</span><em><span class="pre">normal</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec3</span> <span class="pre">&amp;</span><em><span class="pre">position</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html#_CPPv4N2Nv5Blast18NoiseConfigurationE" title="Nv::Blast::NoiseConfiguration"><span class="pre">NoiseConfiguration</span></a> <span class="pre">&amp;</span><em><span class="pre">noise</span></em>, <span class="pre">bool</span> <em><span class="pre">replaceChunk</span></em>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="pre">RandomGeneratorBase</span></a> <span class="pre">*</span><em><span class="pre">rnd</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase">
+<span id="_CPPv3N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::cut__uint32_t.NvcVec3CR.NvcVec3CR.NoiseConfigurationCR.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a559c822041e74f034613b3afa4ad8a17"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cut</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec3</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">normal</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec3</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html#_CPPv4N2Nv5Blast18NoiseConfigurationE" title="Nv::Blast::NoiseConfiguration"><span class="n"><span class="pre">NoiseConfiguration</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">noise</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">replaceChunk</span></span>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="n"><span class="pre">RandomGeneratorBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rnd</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool3cutE8uint32_tRK7NvcVec3RK7NvcVec3RK18NoiseConfigurationbP19RandomGeneratorBase" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Cut chunk with plane. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -319,8 +236,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase">
-<span id="_CPPv3N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::cutout__uint32_t.CutoutConfiguration.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a247f0e36c015237002dc87675562289b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">cutout</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_cutout_configuration.html#_CPPv4N2Nv5Blast19CutoutConfigurationE" title="Nv::Blast::CutoutConfiguration"><span class="pre">CutoutConfiguration</span></a> <em><span class="pre">conf</span></em>, <span class="pre">bool</span> <em><span class="pre">replaceChunk</span></em>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="pre">RandomGeneratorBase</span></a> <span class="pre">*</span><em><span class="pre">rnd</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase">
+<span id="_CPPv3N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase"></span><span id="_CPPv2N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase"></span><span id="Nv::Blast::FractureTool::cutout__uint32_t.CutoutConfiguration.b.RandomGeneratorBaseP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a247f0e36c015237002dc87675562289b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cutout</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_cutout_configuration.html#_CPPv4N2Nv5Blast19CutoutConfigurationE" title="Nv::Blast::CutoutConfiguration"><span class="n"><span class="pre">CutoutConfiguration</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">conf</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">replaceChunk</span></span>, <a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html#_CPPv4N2Nv5Blast19RandomGeneratorBaseE" title="Nv::Blast::RandomGeneratorBase"><span class="n"><span class="pre">RandomGeneratorBase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rnd</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool6cutoutE8uint32_t19CutoutConfigurationbP19RandomGeneratorBase" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Cutout fracture for specified chunk. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -338,26 +255,26 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool18finalizeFracturingEv">
-<span id="_CPPv3N2Nv5Blast12FractureTool18finalizeFracturingEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool18finalizeFracturingEv"></span><span id="Nv::Blast::FractureTool::finalizeFracturing"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a8830959a8f7e4babc1983ea31c61ef5d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">finalizeFracturing</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool18finalizeFracturingEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool18finalizeFracturingEv">
+<span id="_CPPv3N2Nv5Blast12FractureTool18finalizeFracturingEv"></span><span id="_CPPv2N2Nv5Blast12FractureTool18finalizeFracturingEv"></span><span id="Nv::Blast::FractureTool::finalizeFracturing"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a8830959a8f7e4babc1983ea31c61ef5d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">finalizeFracturing</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool18finalizeFracturingEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Creates resulting fractured mesh geometry from intermediate format. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool13getChunkCountEv">
-<span id="_CPPv3NK2Nv5Blast12FractureTool13getChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast12FractureTool13getChunkCountEv"></span><span id="Nv::Blast::FractureTool::getChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1af07eb7960687cd912df496640bec8876"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getChunkCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool13getChunkCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool13getChunkCountEv">
+<span id="_CPPv3NK2Nv5Blast12FractureTool13getChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast12FractureTool13getChunkCountEv"></span><span id="Nv::Blast::FractureTool::getChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1af07eb7960687cd912df496640bec8876"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunkCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool13getChunkCountEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Returns overall number of chunks in fracture. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool12getChunkInfoE7int32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool12getChunkInfoE7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool12getChunkInfoE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkInfo__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a8e675ae2733bb90dcc247039cd004bd2"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_info.html#_CPPv4N2Nv5Blast9ChunkInfoE" title="Nv::Blast::ChunkInfo"><span class="pre">ChunkInfo</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getChunkInfo</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkInfoIndex</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool12getChunkInfoE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool12getChunkInfoE7int32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool12getChunkInfoE7int32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool12getChunkInfoE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkInfo__int32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a0ea486ecad7a206d852b49354646efc8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_info.html#_CPPv4N2Nv5Blast9ChunkInfoE" title="Nv::Blast::ChunkInfo"><span class="n"><span class="pre">ChunkInfo</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getChunkInfo</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkInfoIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool12getChunkInfoE7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get chunk information. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh">
-<span id="_CPPv3N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh"></span><span id="_CPPv2N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh"></span><span id="Nv::Blast::FractureTool::getMeshOverlap__MeshCR.MeshCR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1adc4037818bdb9424fe0543b59c1e2eac"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">float</span> <code class="sig-name descname"><span class="pre">getMeshOverlap</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">&amp;</span><em><span class="pre">meshA</span></em>, <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">&amp;</span><em><span class="pre">meshB</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh">
+<span id="_CPPv3N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh"></span><span id="_CPPv2N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh"></span><span id="Nv::Blast::FractureTool::getMeshOverlap__MeshCR.MeshCR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1adc4037818bdb9424fe0543b59c1e2eac"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMeshOverlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshA</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshB</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14getMeshOverlapERK4MeshRK4Mesh" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get percentage of mesh overlap. </p>
 <p>percentage computed as volume(intersection(meshA , meshB)) / volume (meshA) </p>
 <dl class="field-list simple">
@@ -374,8 +291,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle">
-<span id="_CPPv3N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle"></span><span id="_CPPv2N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle"></span><span id="Nv::Blast::FractureTool::getBaseMesh__int32_t.TrianglePR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aea8f1d386c70af0ea67bed2c353e57a1"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getBaseMesh</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkIndex</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">output</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle">
+<span id="_CPPv3N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle"></span><span id="_CPPv2N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle"></span><span id="Nv::Blast::FractureTool::getBaseMesh__int32_t.TrianglePR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aea8f1d386c70af0ea67bed2c353e57a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseMesh</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkIndex</span></span>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="n"><span class="pre">Triangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">output</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11getBaseMeshE7int32_tRP8Triangle" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get chunk base mesh. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -391,8 +308,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle">
-<span id="_CPPv3N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle"></span><span id="_CPPv2N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle"></span><span id="Nv::Blast::FractureTool::updateBaseMesh__int32_t.TriangleP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a384be45a1310ee0652d315127e62da22"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">updateBaseMesh</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkIndex</span></em>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="pre">Triangle</span></a> <span class="pre">*</span><em><span class="pre">output</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle">
+<span id="_CPPv3N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle"></span><span id="_CPPv2N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle"></span><span id="Nv::Blast::FractureTool::updateBaseMesh__int32_t.TriangleP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a384be45a1310ee0652d315127e62da22"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateBaseMesh</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkIndex</span></span>, <a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html#_CPPv4N2Nv5Blast8TriangleE" title="Nv::Blast::Triangle"><span class="n"><span class="pre">Triangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">output</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14updateBaseMeshE7int32_tP8Triangle" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Update chunk base mesh. </p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -412,8 +329,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t">
-<span id="_CPPv3NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkInfoIndex__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4664fc0992d12ead88251c6c1b00e75c"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">getChunkInfoIndex</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkId</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t">
+<span id="_CPPv3NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkInfoIndex__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a4664fc0992d12ead88251c6c1b00e75c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunkInfoIndex</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool17getChunkInfoIndexE7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Return info index of chunk with specified chunkId. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -426,8 +343,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool10getChunkIdE7int32_t">
-<span id="_CPPv3NK2Nv5Blast12FractureTool10getChunkIdE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool10getChunkIdE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkId__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a407955382acada25fa258814f936eaa2"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">getChunkId</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkInfoIndex</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool10getChunkIdE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool10getChunkIdE7int32_t">
+<span id="_CPPv3NK2Nv5Blast12FractureTool10getChunkIdE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool10getChunkIdE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkId__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a407955382acada25fa258814f936eaa2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunkId</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkInfoIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool10getChunkIdE7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Return id of chunk with specified info index. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -440,8 +357,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t">
-<span id="_CPPv3NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkDepth__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a6450231d947be878e0a4fe081652f21f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">getChunkDepth</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkId</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t">
+<span id="_CPPv3NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t"></span><span id="Nv::Blast::FractureTool::getChunkDepth__int32_tC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a6450231d947be878e0a4fe081652f21f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunkDepth</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool13getChunkDepthE7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Return depth level of the given chunk. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -454,8 +371,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t">
-<span id="_CPPv3NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t"></span><span id="Nv::Blast::FractureTool::getChunksIdAtDepth__uint32_t.int32_tPRC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1af55c170308191f7447692afb72e2d648"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getChunksIdAtDepth</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">depth</span></em>, <span class="pre">int32_t</span> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">chunkIds</span></em><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t">
+<span id="_CPPv3NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t"></span><span id="_CPPv2NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t"></span><span id="Nv::Blast::FractureTool::getChunksIdAtDepth__uint32_t.int32_tPRC"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1af55c170308191f7447692afb72e2d648"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunksIdAtDepth</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">depth</span></span>, <span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">chunkIds</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast12FractureTool18getChunksIdAtDepthE8uint32_tRP7int32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Return array of chunks IDs with given depth. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -471,8 +388,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t"></span><span id="Nv::Blast::FractureTool::getBufferedBaseMeshes__VertexPR.uint32_tPR.uint32_tPR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a7959339df1bf17419cde2428c257af1d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getBufferedBaseMeshes</span></code><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#_CPPv4N2Nv5Blast6VertexE" title="Nv::Blast::Vertex"><span class="pre">Vertex</span></a> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">vertexBuffer</span></em>, <span class="pre">uint32_t</span> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">indexBuffer</span></em>, <span class="pre">uint32_t</span> <span class="pre">*</span><span class="pre">&amp;</span><em><span class="pre">indexBufferOffsets</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t"></span><span id="Nv::Blast::FractureTool::getBufferedBaseMeshes__VertexPR.uint32_tPR.uint32_tPR"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a7959339df1bf17419cde2428c257af1d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBufferedBaseMeshes</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#_CPPv4N2Nv5Blast6VertexE" title="Nv::Blast::Vertex"><span class="n"><span class="pre">Vertex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vertexBuffer</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">indexBuffer</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">indexBufferOffsets</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21getBufferedBaseMeshesERP6VertexRP8uint32_tRP8uint32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get result geometry without noise as vertex and index buffers, where index buffers contain series of triplets which represent triangles. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -489,8 +406,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool16setRemoveIslandsEb">
-<span id="_CPPv3N2Nv5Blast12FractureTool16setRemoveIslandsEb"></span><span id="_CPPv2N2Nv5Blast12FractureTool16setRemoveIslandsEb"></span><span id="Nv::Blast::FractureTool::setRemoveIslands__b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a251738022e498b819e88536577470735"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setRemoveIslands</span></code><span class="sig-paren">(</span><span class="pre">bool</span> <em><span class="pre">isRemoveIslands</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool16setRemoveIslandsEb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool16setRemoveIslandsEb">
+<span id="_CPPv3N2Nv5Blast12FractureTool16setRemoveIslandsEb"></span><span id="_CPPv2N2Nv5Blast12FractureTool16setRemoveIslandsEb"></span><span id="Nv::Blast::FractureTool::setRemoveIslands__b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a251738022e498b819e88536577470735"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRemoveIslands</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">isRemoveIslands</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool16setRemoveIslandsEb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set automatic islands removing. </p>
 <p>May cause instabilities. </p>
 <dl class="field-list simple">
@@ -501,8 +418,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb">
-<span id="_CPPv3N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb"></span><span id="Nv::Blast::FractureTool::islandDetectionAndRemoving__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a44ad67ac96b11e7dad87b5ed7a788f21"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">int32_t</span> <code class="sig-name descname"><span class="pre">islandDetectionAndRemoving</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkId</span></em>, <span class="pre">bool</span> <em><span class="pre">createAtNewDepth</span></em> <span class="pre">=</span> <span class="pre">false</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb">
+<span id="_CPPv3N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb"></span><span id="Nv::Blast::FractureTool::islandDetectionAndRemoving__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a44ad67ac96b11e7dad87b5ed7a788f21"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">islandDetectionAndRemoving</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">createAtNewDepth</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool26islandDetectionAndRemovingE7int32_tb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Try find islands and remove them on some specifical chunk. </p>
 <p>If chunk has childs, island removing can lead to wrong results! Apply it before further chunk splitting.</p>
 <dl class="field-list simple">
@@ -516,8 +433,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh">
-<span id="_CPPv3N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh"></span><span id="_CPPv2N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh"></span><span id="Nv::Blast::FractureTool::isMeshContainOpenEdges__MeshCP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a5710c73457bcceba3f20d130e231a028"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">isMeshContainOpenEdges</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="pre">Mesh</span></a> <span class="pre">*</span><em><span class="pre">input</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh">
+<span id="_CPPv3N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh"></span><span id="_CPPv2N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh"></span><span id="Nv::Blast::FractureTool::isMeshContainOpenEdges__MeshCP"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a5710c73457bcceba3f20d130e231a028"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isMeshContainOpenEdges</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html#_CPPv4N2Nv5Blast4MeshE" title="Nv::Blast::Mesh"><span class="n"><span class="pre">Mesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool22isMeshContainOpenEdgesEPK4Mesh" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Check if input mesh contains open edges. </p>
 <p>Open edges can lead to wrong fracturing results. </p>
 <dl class="field-list simple">
@@ -528,8 +445,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb">
-<span id="_CPPv3N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb"></span><span id="Nv::Blast::FractureTool::deleteChunkSubhierarchy__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aec74731e5a147120f0536b6674fc0f42"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">deleteChunkSubhierarchy</span></code><span class="sig-paren">(</span><span class="pre">int32_t</span> <em><span class="pre">chunkId</span></em>, <span class="pre">bool</span> <em><span class="pre">deleteRoot</span></em> <span class="pre">=</span> <span class="pre">false</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb">
+<span id="_CPPv3N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb"></span><span id="Nv::Blast::FractureTool::deleteChunkSubhierarchy__int32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aec74731e5a147120f0536b6674fc0f42"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">deleteChunkSubhierarchy</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">int32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">deleteRoot</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool23deleteChunkSubhierarchyE7int32_tb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Delete all children for specified chunk (also recursively delete chidren of children). </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -545,8 +462,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb">
-<span id="_CPPv3N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb"></span><span id="Nv::Blast::FractureTool::uniteChunks__uint32_t.uint32_t.uint32_tCP.uint32_t.NvcVec2iCP.uint32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ae4bd5dab498f9e894c648d570c5b60ba"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">uniteChunks</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">threshold</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">targetClusterSize</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">uint32_t</span> <span class="pre">*</span><em><span class="pre">chunksToMerge</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">mergeChunkCount</span></em>, <em class="property"><span class="pre">const</span></em> <span class="pre">NvcVec2i</span> <span class="pre">*</span><em><span class="pre">adjChunks</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">adjChunksSize</span></em>, <span class="pre">bool</span> <em><span class="pre">removeOriginalChunks</span></em> <span class="pre">=</span> <span class="pre">false</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb">
+<span id="_CPPv3N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb"></span><span id="Nv::Blast::FractureTool::uniteChunks__uint32_t.uint32_t.uint32_tCP.uint32_t.NvcVec2iCP.uint32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1ae4bd5dab498f9e894c648d570c5b60ba"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">uniteChunks</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">threshold</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">targetClusterSize</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chunksToMerge</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">mergeChunkCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">NvcVec2i</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">adjChunks</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">adjChunksSize</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">removeOriginalChunks</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11uniteChunksE8uint32_t8uint32_tPK8uint32_t8uint32_tPK8NvcVec2i8uint32_tb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Optimize chunk hierarhy for better runtime performance. </p>
 <p>It tries to unite chunks to groups of some size in order to transform flat hierarchy (all chunks are children of single root) to tree like hieracrhy with limited number of children for each chunk. </p>
 <dl class="field-list simple">
@@ -565,8 +482,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb">
-<span id="_CPPv3N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb"></span><span id="Nv::Blast::FractureTool::setApproximateBonding__uint32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a107934c0bd96e9df42a0089392207737"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">bool</span> <code class="sig-name descname"><span class="pre">setApproximateBonding</span></code><span class="sig-paren">(</span><span class="pre">uint32_t</span> <em><span class="pre">chunkInfoIndex</span></em>, <span class="pre">bool</span> <em><span class="pre">useApproximateBonding</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb">
+<span id="_CPPv3N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb"></span><span id="_CPPv2N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb"></span><span id="Nv::Blast::FractureTool::setApproximateBonding__uint32_t.b"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1a107934c0bd96e9df42a0089392207737"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setApproximateBonding</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkInfoIndex</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">useApproximateBonding</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool21setApproximateBondingE8uint32_tb" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set the APPROXIMATE_BONDING flag in the chunk’s <a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_info.html#struct_nv_1_1_blast_1_1_chunk_info"><span class="std std-ref">ChunkInfo</span></a>. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -582,8 +499,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t">
-<span id="_CPPv3N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t"></span><span id="Nv::Blast::FractureTool::fitUvToRect__float.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1adb1c311cbb3d84c7bfbfd12abe01af0b"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">fitUvToRect</span></code><span class="sig-paren">(</span><span class="pre">float</span> <em><span class="pre">side</span></em>, <span class="pre">uint32_t</span> <em><span class="pre">chunkId</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t">
+<span id="_CPPv3N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t"></span><span id="_CPPv2N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t"></span><span id="Nv::Blast::FractureTool::fitUvToRect__float.uint32_t"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1adb1c311cbb3d84c7bfbfd12abe01af0b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fitUvToRect</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">side</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">chunkId</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool11fitUvToRectEf8uint32_t" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Rescale interior uv coordinates of given chunk to fit square of given size. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -596,8 +513,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast12FractureTool14fitAllUvToRectEf">
-<span id="_CPPv3N2Nv5Blast12FractureTool14fitAllUvToRectEf"></span><span id="_CPPv2N2Nv5Blast12FractureTool14fitAllUvToRectEf"></span><span id="Nv::Blast::FractureTool::fitAllUvToRect__float"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aa9a87637d6d190d71678f0fb9a100bfd"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">fitAllUvToRect</span></code><span class="sig-paren">(</span><span class="pre">float</span> <em><span class="pre">side</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14fitAllUvToRectEf" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast12FractureTool14fitAllUvToRectEf">
+<span id="_CPPv3N2Nv5Blast12FractureTool14fitAllUvToRectEf"></span><span id="_CPPv2N2Nv5Blast12FractureTool14fitAllUvToRectEf"></span><span id="Nv::Blast::FractureTool::fitAllUvToRect__float"></span><span class="target" id="class_nv_1_1_blast_1_1_fracture_tool_1aa9a87637d6d190d71678f0fb9a100bfd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fitAllUvToRect</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">side</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast12FractureTool14fitAllUvToRectEf" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Rescale interior uv coordinates of all existing chunks to fit square of given size, relative sizes will be preserved. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -609,45 +526,36 @@
 </div>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

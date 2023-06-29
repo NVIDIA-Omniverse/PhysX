@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleFixedSizeLookupTable &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVehicleFixedSizeLookupTable</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclefixedsizelookuptable">
+<span id="exhale-class-class-px-vehicle-fixed-size-lookup-table"></span><h1>PxVehicleFixedSizeLookupTable<a class="headerlink" href="#pxvehiclefixedsizelookuptable" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_PxVehicleParams.h.html#file-include-vehicle2-pxvehicleparams-h"><span class="std std-ref">include/vehicle2/PxVehicleParams.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0_jE29PxVehicleFixedSizeLookupTable">
+<span id="_CPPv3I0_jE29PxVehicleFixedSizeLookupTable"></span><span id="_CPPv2I0_jE29PxVehicleFixedSizeLookupTable"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NB_ELEMENTS</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_vehicle_fixed_size_lookup_table"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></span><a class="headerlink" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Express a function as a sequence of points {(x, y)} that form a piecewise polynomial. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableEv">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableEv"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableEv"></span><span id="PxVehicleFixedSizeLookupTable::PxVehicleFixedSizeLookupTable"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a8721219d4111cf5838e4935c58738b5b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableERK29PxVehicleFixedSizeLookupTable">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableERK29PxVehicleFixedSizeLookupTable"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableERK29PxVehicleFixedSizeLookupTable"></span><span id="PxVehicleFixedSizeLookupTable::PxVehicleFixedSizeLookupTable__PxVehicleFixedSizeLookupTableCR"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a84fde7e507daa2454d1ae380505a3097"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableERK29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::PxVehicleFixedSizeLookupTable"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable29PxVehicleFixedSizeLookupTableERK29PxVehicleFixedSizeLookupTable" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTableD0Ev">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTableD0Ev"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTableD0Ev"></span><span id="PxVehicleFixedSizeLookupTable::~PxVehicleFixedSizeLookupTable"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a490d0d9ddab78c1b5d6f7401b53ab802"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxVehicleFixedSizeLookupTable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTableD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTableaSERK29PxVehicleFixedSizeLookupTable">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTableaSERK29PxVehicleFixedSizeLookupTable"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTableaSERK29PxVehicleFixedSizeLookupTable"></span><span id="PxVehicleFixedSizeLookupTable::assign-operator__PxVehicleFixedSizeLookupTableCR"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a4d29116205c6113244417275ae3fcf27"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable"><span class="n"><span class="pre">PxVehicleFixedSizeLookupTable</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">src</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTableaSERK29PxVehicleFixedSizeLookupTable" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable7addPairEK6PxRealK1T">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable7addPairEK6PxRealK1T"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable7addPairEK6PxRealK1T"></span><span id="PxVehicleFixedSizeLookupTable::addPair__PxRealC.TC"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1af463d47b7a98c51c175ca97989ebe7b7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addPair</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">x</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">y</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable7addPairEK6PxRealK1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add one more point to create one more polynomial segment of a piecewise polynomial. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK29PxVehicleFixedSizeLookupTable11interpolateEK6PxReal">
+<span id="_CPPv3NK29PxVehicleFixedSizeLookupTable11interpolateEK6PxReal"></span><span id="_CPPv2NK29PxVehicleFixedSizeLookupTable11interpolateEK6PxReal"></span><span id="PxVehicleFixedSizeLookupTable::interpolate__PxRealCC"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a330c83c4559c3d745e131269906b9709"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">interpolate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK29PxVehicleFixedSizeLookupTable11interpolateEK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Identify the segment of the piecewise polynomial that includes x and compute the corresponding y value by linearly interpolating the gradient of the segment. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> – <strong>[in]</strong> is the value on the x-axis of the piecewise polynomial. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the y value that corresponds to the input x. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable5clearEv">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable5clearEv"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable5clearEv"></span><span id="PxVehicleFixedSizeLookupTable::clear"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1aed87dd67a9594284234f62d2340e3fcd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable5clearEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK29PxVehicleFixedSizeLookupTable7isValidEv">
+<span id="_CPPv3NK29PxVehicleFixedSizeLookupTable7isValidEv"></span><span id="_CPPv2NK29PxVehicleFixedSizeLookupTable7isValidEv"></span><span id="PxVehicleFixedSizeLookupTable::isValidC"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a5679759a02b54e1554ae1bddb260dc40"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK29PxVehicleFixedSizeLookupTable7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable5xValsE">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable5xValsE"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable5xValsE"></span><span id="PxVehicleFixedSizeLookupTable::xVals__PxRealA"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1aef3ce63a535709e3794019363989111a"></span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">xVals</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::NB_ELEMENTS"><span class="n"><span class="pre">NB_ELEMENTS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable5xValsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable5yValsE">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable5yValsE"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable5yValsE"></span><span id="PxVehicleFixedSizeLookupTable::yVals__TA"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1ad1084910f74e2ffa0a26a359e3ab9217"></span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">yVals</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#_CPPv4I0_jE29PxVehicleFixedSizeLookupTable" title="PxVehicleFixedSizeLookupTable::NB_ELEMENTS"><span class="n"><span class="pre">NB_ELEMENTS</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable5yValsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N29PxVehicleFixedSizeLookupTable11nbDataPairsE">
+<span id="_CPPv3N29PxVehicleFixedSizeLookupTable11nbDataPairsE"></span><span id="_CPPv2N29PxVehicleFixedSizeLookupTable11nbDataPairsE"></span><span id="PxVehicleFixedSizeLookupTable::nbDataPairs__PxU32"></span><span class="target" id="class_px_vehicle_fixed_size_lookup_table_1a1a35e793e369ef259707677965c43c12"></span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nbDataPairs</span></span></span><a class="headerlink" href="#_CPPv4N29PxVehicleFixedSizeLookupTable11nbDataPairsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

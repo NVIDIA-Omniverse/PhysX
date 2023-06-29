@@ -1,83 +1,48 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
-  <title>Nv::Blast::TkAsset &mdash; blast-sdk 5.0.0 documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
-  <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
-
-  
-  
+  <title>Nv::Blast::TkAsset &mdash; blast-sdk 5.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  
-
-  
-  
-
-  
-
-  
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
         <script src="../../../../_static/design-tabs.js"></script>
-        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
-        <script >mermaid.initialize({startOnLoad:true});</script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
         <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
         <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
-    
-    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
-
-    
+    <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../../search.html" /> 
+    <link rel="search" title="Search" href="../../../../search.html" />
+ 
+
+
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
             <a href="../../../../index.html">
-          
-
-          
-            
-            <img src="../../../../_static/main_ov_logo_square.png" class="logo" alt="Logo"/>
-          
+            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
           </a>
 
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -85,19 +50,8 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
@@ -110,89 +64,52 @@
 <li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../../../index.html">blast-sdk</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
-      <li>Nv::Blast::TkAsset</li>
-    
-    
-      <li class="wy-breadcrumbs-aside">
-        
-          
-        
-      </li>
-    
-  </ul>
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Nv::Blast::TkAsset</li>
+<li class="wy-breadcrumbs-aside">
 
-  
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="nv-blast-tkasset">
-<span id="exhale-class-class-nv-1-1-blast-1-1-tk-asset"></span><h1>Nv::Blast::TkAsset<a class="headerlink" href="#nv-blast-tkasset" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="nv-blast-tkasset">
+<span id="exhale-class-class-nv-1-1-blast-1-1-tk-asset"></span><h1>Nv::Blast::TkAsset<a class="headerlink" href="#nv-blast-tkasset" title="Permalink to this headline"></a></h1>
 <p>Defined in <a class="reference internal" href="file_toolkit_NvBlastTkAsset.h.html#file-toolkit-nvblasttkasset-h"><span class="std std-ref">toolkit/NvBlastTkAsset.h</span></a></p>
-<div class="section" id="inheritance-relationships">
-<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="base-type">
-<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline">¶</a></h3>
+<section id="inheritance-relationships">
+<h2>Inheritance Relationships<a class="headerlink" href="#inheritance-relationships" title="Permalink to this headline"></a></h2>
+<section id="base-type">
+<h3>Base Type<a class="headerlink" href="#base-type" title="Permalink to this headline"></a></h3>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">Nv::Blast::TkIdentifiable</span></code> (<a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#exhale-class-class-nv-1-1-blast-1-1-tk-identifiable"><span class="std std-ref">Nv::Blast::TkIdentifiable</span></a>)</p></li>
 </ul>
 <dl class="cpp class">
-<dt id="_CPPv4N2Nv5Blast7TkAssetE">
-<span id="_CPPv3N2Nv5Blast7TkAssetE"></span><span id="_CPPv2N2Nv5Blast7TkAssetE"></span><span id="Nv::Blast::TkAsset"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset"></span><em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><code class="sig-prename descclassname"><span class="pre">::</span></code></code><code class="sig-name descname"><span class="pre">TkAsset</span></code> <span class="pre">:</span> <em class="property"><span class="pre">public</span></em> <span class="pre">Nv</span><span class="pre">::</span><span class="pre">Blast</span><span class="pre">::</span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#_CPPv4N2Nv5Blast14TkIdentifiableE" title="Nv::Blast::TkIdentifiable"><span class="pre">TkIdentifiable</span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAssetE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkAssetE">
+<span id="_CPPv3N2Nv5Blast7TkAssetE"></span><span id="_CPPv2N2Nv5Blast7TkAssetE"></span><span id="Nv::Blast::TkAsset"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TkAsset</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><span class="n"><span class="pre">Nv</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Blast</span></span><span class="p"><span class="pre">::</span></span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html#_CPPv4N2Nv5Blast14TkIdentifiableE" title="Nv::Blast::TkIdentifiable"><span class="n"><span class="pre">TkIdentifiable</span></span></a><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAssetE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>The static data associated with a destructible actor. </p>
 <p><a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a> encapsulates an <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>. In addition to the <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a>, the <a class="reference internal" href="#class_nv_1_1_blast_1_1_tk_asset"><span class="std std-ref">TkAsset</span></a> stores joint descriptors (see <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html#struct_nv_1_1_blast_1_1_tk_asset_joint_desc"><span class="std std-ref">TkAssetJointDesc</span></a>). </p>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset10getAssetLLEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset10getAssetLLEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset10getAssetLLEv"></span><span id="Nv::Blast::TkAsset::getAssetLLC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a92ace269cf67be367c998a0638d30b05"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_asset.html#_CPPv412NvBlastAsset" title="NvBlastAsset"><span class="pre">NvBlastAsset</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getAssetLL</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset10getAssetLLEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset10getAssetLLEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset10getAssetLLEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset10getAssetLLEv"></span><span id="Nv::Blast::TkAsset::getAssetLLC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a87bdeaa191ff1efa1f710b6b9eef1900"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_asset.html#_CPPv412NvBlastAsset" title="NvBlastAsset"><span class="n"><span class="pre">NvBlastAsset</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAssetLL</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset10getAssetLLEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Access to underlying low-level asset. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -202,8 +119,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset13getChunkCountEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset13getChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset13getChunkCountEv"></span><span id="Nv::Blast::TkAsset::getChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1ad5bde3ce821e2d90d4719d0bc61710d3"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getChunkCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset13getChunkCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset13getChunkCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset13getChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset13getChunkCountEv"></span><span id="Nv::Blast::TkAsset::getChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1ad5bde3ce821e2d90d4719d0bc61710d3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getChunkCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset13getChunkCountEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get the number of chunks in this asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetChunkCount for details.</p>
 <dl class="field-list simple">
@@ -214,8 +131,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset17getLeafChunkCountEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset17getLeafChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset17getLeafChunkCountEv"></span><span id="Nv::Blast::TkAsset::getLeafChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a4e048a978ebaa84a675abe0f8e656b11"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getLeafChunkCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset17getLeafChunkCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset17getLeafChunkCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset17getLeafChunkCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset17getLeafChunkCountEv"></span><span id="Nv::Blast::TkAsset::getLeafChunkCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a4e048a978ebaa84a675abe0f8e656b11"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLeafChunkCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset17getLeafChunkCountEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get the number of leaf chunks in the given asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetLeafChunkCount for details.</p>
 <dl class="field-list simple">
@@ -226,8 +143,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset12getBondCountEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset12getBondCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset12getBondCountEv"></span><span id="Nv::Blast::TkAsset::getBondCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a0de445e50e18aa5df7a7374c13793005"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getBondCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset12getBondCountEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset12getBondCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset12getBondCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset12getBondCountEv"></span><span id="Nv::Blast::TkAsset::getBondCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a0de445e50e18aa5df7a7374c13793005"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBondCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset12getBondCountEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Get the number of bonds in the given asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetBondCount for details.</p>
 <dl class="field-list simple">
@@ -238,8 +155,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset9getChunksEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset9getChunksEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset9getChunksEv"></span><span id="Nv::Blast::TkAsset::getChunksC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a42d4936919a993bb80476d9f7d678cf0"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_chunk.html#_CPPv412NvBlastChunk" title="NvBlastChunk"><span class="pre">NvBlastChunk</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getChunks</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset9getChunksEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset9getChunksEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset9getChunksEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset9getChunksEv"></span><span id="Nv::Blast::TkAsset::getChunksC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1aaca28bbe6068bfb9b6e41ee24dff272c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_chunk.html#_CPPv412NvBlastChunk" title="NvBlastChunk"><span class="n"><span class="pre">NvBlastChunk</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getChunks</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset9getChunksEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Access an array of chunks of the given asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetChunks for details.</p>
 <dl class="field-list simple">
@@ -250,8 +167,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset8getBondsEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset8getBondsEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset8getBondsEv"></span><span id="Nv::Blast::TkAsset::getBondsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1ad82d1f2253c71567a1b8e1c37f833322"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="pre">NvBlastBond</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getBonds</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset8getBondsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset8getBondsEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset8getBondsEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset8getBondsEv"></span><span id="Nv::Blast::TkAsset::getBondsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1ac7e5ee095177e975df9b21a996d5d406"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_bond.html#_CPPv411NvBlastBond" title="NvBlastBond"><span class="n"><span class="pre">NvBlastBond</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getBonds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset8getBondsEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Access an array of bonds of the given asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetBonds for details.</p>
 <dl class="field-list simple">
@@ -262,8 +179,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset8getGraphEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset8getGraphEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset8getGraphEv"></span><span id="Nv::Blast::TkAsset::getGraphC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1abbb0e55ac4c19b0c36eb03bfa73cc1f7"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_support_graph.html#_CPPv419NvBlastSupportGraph" title="NvBlastSupportGraph"><span class="pre">NvBlastSupportGraph</span></a> <code class="sig-name descname"><span class="pre">getGraph</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset8getGraphEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset8getGraphEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset8getGraphEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset8getGraphEv"></span><span id="Nv::Blast::TkAsset::getGraphC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1abbb0e55ac4c19b0c36eb03bfa73cc1f7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_support_graph.html#_CPPv419NvBlastSupportGraph" title="NvBlastSupportGraph"><span class="n"><span class="pre">NvBlastSupportGraph</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGraph</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset8getGraphEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Access an support graph for the given asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetSupportGraph for details.</p>
 <dl class="field-list simple">
@@ -274,8 +191,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset11getDataSizeEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset11getDataSizeEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset11getDataSizeEv"></span><span id="Nv::Blast::TkAsset::getDataSizeC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a108f015330d03fb870bff1a5fd1d849f"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getDataSize</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset11getDataSizeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset11getDataSizeEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset11getDataSizeEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset11getDataSizeEv"></span><span id="Nv::Blast::TkAsset::getDataSizeC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a108f015330d03fb870bff1a5fd1d849f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDataSize</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset11getDataSizeEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Retrieve the size (in bytes) of the LL asset. </p>
 <p>NOTE: Wrapper function over low-level function call, see NvBlastAssetGetSize for details.</p>
 <dl class="field-list simple">
@@ -286,9 +203,9 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset17getJointDescCountEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset17getJointDescCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset17getJointDescCountEv"></span><span id="Nv::Blast::TkAsset::getJointDescCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a8d255a5bcb16849788085df6c571018d"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">uint32_t</span> <code class="sig-name descname"><span class="pre">getJointDescCount</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset17getJointDescCountEv" title="Permalink to this definition">¶</a><br /></dt>
-<dd><p>The number of internal <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> objects that will be created when this asset is instanced into a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> (see <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework_1a30b4f2c95a00aa2cd98a3ba4001b0cb8"><span class="std std-ref">TkFramework::createActor</span></a>). </p>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset17getJointDescCountEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset17getJointDescCountEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset17getJointDescCountEv"></span><span id="Nv::Blast::TkAsset::getJointDescCountC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1a8d255a5bcb16849788085df6c571018d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getJointDescCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset17getJointDescCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The number of internal <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html#class_nv_1_1_blast_1_1_tk_joint"><span class="std std-ref">TkJoint</span></a> objects that will be created when this asset is instanced into a <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html#class_nv_1_1_blast_1_1_tk_actor"><span class="std std-ref">TkActor</span></a> (see <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html#class_nv_1_1_blast_1_1_tk_framework_1adede30b6ce55d2517851fccea9cae7d3"><span class="std std-ref">TkFramework::createActor</span></a>). </p>
 <p>These joints will not trigger <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#struct_nv_1_1_blast_1_1_tk_joint_update_event"><span class="std std-ref">TkJointUpdateEvent</span></a> events until this actor is split into actors such that a joint connects two actors. At this time the actor’s family will dispatch a <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html#struct_nv_1_1_blast_1_1_tk_joint_update_event_1ab7f4bb03fd3e37d487b6baa02104db7da0b71861440e6e4a16b3567c74cfca6d8"><span class="std std-ref">TkJointUpdateEvent::External</span></a> event during a call to <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#class_nv_1_1_blast_1_1_tk_group_1a4d21bd8b0225ae57b81bb8fe09df39ff"><span class="std std-ref">TkGroup::endProcess()</span></a> (see <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html#class_nv_1_1_blast_1_1_tk_group"><span class="std std-ref">TkGroup</span></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -298,8 +215,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset13getJointDescsEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset13getJointDescsEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset13getJointDescsEv"></span><span id="Nv::Blast::TkAsset::getJointDescsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1acff92f94a8168cc5370c44aafdcff13f"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html#_CPPv4N2Nv5Blast16TkAssetJointDescE" title="Nv::Blast::TkAssetJointDesc"><span class="pre">TkAssetJointDesc</span></a> <span class="pre">*</span><code class="sig-name descname"><span class="pre">getJointDescs</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset13getJointDescsEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset13getJointDescsEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset13getJointDescsEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset13getJointDescsEv"></span><span id="Nv::Blast::TkAsset::getJointDescsC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_asset_1ad22f45ad9e57ec2df4c8b8875e531bcf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html#_CPPv4N2Nv5Blast16TkAssetJointDescE" title="Nv::Blast::TkAssetJointDesc"><span class="n"><span class="pre">TkAssetJointDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getJointDescs</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset13getJointDescsEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>The descriptors for the internal joints created when this asset is instanced. </p>
 <p>(See getJointDescCount.)</p>
 <dl class="field-list simple">
@@ -310,8 +227,8 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset5getIDEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset5getIDEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset5getIDEv"></span><span id="Nv::Blast::TkAsset::getIDC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a610a75ccff6579e5e54a59f2840f6630"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="pre">NvBlastID</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getID</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset5getIDEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset5getIDEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset5getIDEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset5getIDEv"></span><span id="Nv::Blast::TkAsset::getIDC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a06e04c4bb5897b660ac89621b820b8d4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="n"><span class="pre">NvBlastID</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getID</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset5getIDEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Return the ID associated with this object. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -321,14 +238,14 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast7TkAsset5setIDERK9NvBlastID">
-<span id="_CPPv3N2Nv5Blast7TkAsset5setIDERK9NvBlastID"></span><span id="_CPPv2N2Nv5Blast7TkAsset5setIDERK9NvBlastID"></span><span id="Nv::Blast::TkAsset::setID__NvBlastIDCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a630e37302f7c8747373431d747415642"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">setID</span></code><span class="sig-paren">(</span><em class="property"><span class="pre">const</span></em> <a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="pre">NvBlastID</span></a> <span class="pre">&amp;</span><em><span class="pre">id</span></em><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset5setIDERK9NvBlastID" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkAsset5setIDERK9NvBlastID">
+<span id="_CPPv3N2Nv5Blast7TkAsset5setIDERK9NvBlastID"></span><span id="_CPPv2N2Nv5Blast7TkAsset5setIDERK9NvBlastID"></span><span id="Nv::Blast::TkAsset::setID__NvBlastIDCR"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a630e37302f7c8747373431d747415642"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setID</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_i_d.html#_CPPv49NvBlastID" title="NvBlastID"><span class="n"><span class="pre">NvBlastID</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset5setIDERK9NvBlastID" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Set the ID for this object. </p>
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4NK2Nv5Blast7TkAsset7getTypeEv">
-<span id="_CPPv3NK2Nv5Blast7TkAsset7getTypeEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset7getTypeEv"></span><span id="Nv::Blast::TkAsset::getTypeC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1ad156c3e85ee665c251e26ac86d3cf03b"></span><em class="property"><span class="pre">virtual</span></em> <em class="property"><span class="pre">const</span></em> <a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="pre">TkType</span></a> <span class="pre">&amp;</span><code class="sig-name descname"><span class="pre">getType</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property"><span class="pre">const</span></em> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset7getTypeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NK2Nv5Blast7TkAsset7getTypeEv">
+<span id="_CPPv3NK2Nv5Blast7TkAsset7getTypeEv"></span><span id="_CPPv2NK2Nv5Blast7TkAsset7getTypeEv"></span><span id="Nv::Blast::TkAsset::getTypeC"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1aab33d1a39143fe49e4ac41d29ac41926"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html#_CPPv4N2Nv5Blast6TkTypeE" title="Nv::Blast::TkType"><span class="n"><span class="pre">TkType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK2Nv5Blast7TkAsset7getTypeEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Access to the static (class) type data for this object. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -338,70 +255,61 @@
 </dd></dl>
 
 <dl class="cpp function">
-<dt id="_CPPv4N2Nv5Blast7TkAsset7releaseEv">
-<span id="_CPPv3N2Nv5Blast7TkAsset7releaseEv"></span><span id="_CPPv2N2Nv5Blast7TkAsset7releaseEv"></span><span id="Nv::Blast::TkAsset::release"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1a848b4a7ade17edc49a071c472cbfad12"></span><em class="property"><span class="pre">virtual</span></em> <span class="pre">void</span> <code class="sig-name descname"><span class="pre">release</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="pre">=</span> <span class="pre">0</span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset7releaseEv" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkAsset7releaseEv">
+<span id="_CPPv3N2Nv5Blast7TkAsset7releaseEv"></span><span id="_CPPv2N2Nv5Blast7TkAsset7releaseEv"></span><span id="Nv::Blast::TkAsset::release"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1a848b4a7ade17edc49a071c472cbfad12"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset7releaseEv" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Release this object and free associated memory. </p>
 </dd></dl>
 
 </div>
 <div class="breathe-sectiondef docutils container">
-<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast7TkAsset11userIntDataE">
-<span id="_CPPv3N2Nv5Blast7TkAsset11userIntDataE"></span><span id="_CPPv2N2Nv5Blast7TkAsset11userIntDataE"></span><span id="Nv::Blast::TkAsset::userIntData__uint64_t"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a65dbac714ebfdc9f0a4d7a905bbbcdf4"></span><span class="pre">uint64_t</span> <code class="sig-name descname"><span class="pre">userIntData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset11userIntDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkAsset11userIntDataE">
+<span id="_CPPv3N2Nv5Blast7TkAsset11userIntDataE"></span><span id="_CPPv2N2Nv5Blast7TkAsset11userIntDataE"></span><span id="Nv::Blast::TkAsset::userIntData__uint64_t"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_identifiable_1a65dbac714ebfdc9f0a4d7a905bbbcdf4"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">userIntData</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset11userIntDataE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Integer field available to the user which may be serialized. </p>
 </dd></dl>
 
 <dl class="cpp var">
-<dt id="_CPPv4N2Nv5Blast7TkAsset8userDataE">
-<span id="_CPPv3N2Nv5Blast7TkAsset8userDataE"></span><span id="_CPPv2N2Nv5Blast7TkAsset8userDataE"></span><span id="Nv::Blast::TkAsset::userData__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1ae1a1d9f53d372a748f615fc47b730a42"></span><span class="pre">void</span> <span class="pre">*</span><code class="sig-name descname"><span class="pre">userData</span></code><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset8userDataE" title="Permalink to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast7TkAsset8userDataE">
+<span id="_CPPv3N2Nv5Blast7TkAsset8userDataE"></span><span id="_CPPv2N2Nv5Blast7TkAsset8userDataE"></span><span id="Nv::Blast::TkAsset::userData__voidP"></span><span class="target" id="class_nv_1_1_blast_1_1_tk_object_1ae1a1d9f53d372a748f615fc47b730a42"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast7TkAsset8userDataE" title="Permalink to this definition"></a><br /></dt>
 <dd><p>Pointer field available to the user. </p>
 </dd></dl>
 
 </div>
 </dd></dl>
 
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
            </div>
-           
           </div>
           <footer>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        &#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">
-        Last updated on Feb 21, 2023.
-      </span>
+    <p>&#169; Copyright 2017-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 26, 2023.
+      </span></p>
+  </div>
 
-    </p>
-  </div> 
+   
 
 </footer>
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+ 
 
-  
-  
-    
-   
+
 
 </body>
 </html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVisualizationParameter &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxVisualizationParameter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvisualizationparameter">
+<span id="exhale-struct-struct-px-visualization-parameter"></span><h1>PxVisualizationParameter<a class="headerlink" href="#pxvisualizationparameter" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxVisualizationParameter.h.html#file-include-pxvisualizationparameter-h"><span class="std std-ref">include/PxVisualizationParameter.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv424PxVisualizationParameter">
+<span id="_CPPv324PxVisualizationParameter"></span><span id="_CPPv224PxVisualizationParameter"></span><span id="PxVisualizationParameter"></span><span class="target" id="struct_px_visualization_parameter"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVisualizationParameter</span></span></span><a class="headerlink" href="#_CPPv424PxVisualizationParameter" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Debug visualization parameters. </p>
+<p><a class="reference internal" href="#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ad99be0a109ed09164555c5767f4bed11"><span class="std std-ref">PxVisualizationParameter::eSCALE</span></a> is the master switch for enabling visualization, please read the corresponding documentation for further details.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene_1a4055d302466a1f5cd9d481028b66b20a"><span class="std std-ref">PxScene.setVisualizationParameter()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a7c036458140a45b23facb9cf2a9cdb84"><span class="std std-ref">PxScene.getVisualizationParameter()</span></a> <a class="reference internal" href="class_px_scene.html#class_px_scene_1a35f231796a325fcf587e681831c5fcb5"><span class="std std-ref">PxScene.getRenderBuffer()</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4EnumE">
+<span id="_CPPv3N24PxVisualizationParameter4EnumE"></span><span id="_CPPv2N24PxVisualizationParameter4EnumE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Enum</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum6eSCALEE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum6eSCALEE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum6eSCALEE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ad99be0a109ed09164555c5767f4bed11"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSCALE</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum6eSCALEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This overall visualization scale gets multiplied with the individual scales. </p>
+<p>Setting to zero ignores all visualizations. Default is 0.</p>
+<p>The below settings permit the debug visualization of various simulation properties. The setting is either zero, in which case the property is not drawn. Otherwise it is a scaling factor that determines the size of the visualization widgets.</p>
+<p>Only objects for which visualization is turned on using setFlag(eVISUALIZATION) are visualized (see <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag_1a1bc4c717e79cd547bdbe09a179ee9f1da03bcf1cfcfcf30af05daa888272e0477"><span class="std std-ref">PxActorFlag::eVISUALIZATION</span></a>, <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa1b3a6f33eb84ee2dc74eac63aa86f2a4"><span class="std std-ref">PxShapeFlag::eVISUALIZATION</span></a>, …). Contacts are visualized if they involve a body which is being visualized. Default is 0.</p>
+<p>Notes:<ul class="simple">
+<li><p>to see any visualization, you have to set <a class="reference internal" href="#struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ad99be0a109ed09164555c5767f4bed11"><span class="std std-ref">PxVisualizationParameter::eSCALE</span></a> to nonzero first.</p></li>
+<li><p>the scale factor has been introduced because it’s difficult (if not impossible) to come up with a good scale for 3D vectors. Normals are normalized and their length is always 1. But it doesn’t mean we should render a line of length 1. Depending on your objects/scene, this might be completely invisible or extremely huge. That’s why the scale factor is here, to let you tune the length until it’s ok in your scene.</p></li>
+<li><p>however, things like collision shapes aren’t ambiguous. They are clearly defined for example by the triangles &amp; polygons themselves, and there’s no point in scaling that. So the visualization widgets are only scaled when it makes sense.</p></li>
+</ul>
+</p>
+<p><strong>Range:</strong> [0, PX_MAX_F32)<strong>Default:</strong> 0 </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum11eWORLD_AXESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum11eWORLD_AXESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum11eWORLD_AXESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a9c6880e52a2d9c0bb48677de71621719"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eWORLD_AXES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum11eWORLD_AXESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize the world axes. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum10eBODY_AXESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum10eBODY_AXESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum10eBODY_AXESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a3e5a40d8a90d56caa62e6c483e00c9cb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBODY_AXES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum10eBODY_AXESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize a bodies axes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxActor.globalPose <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum15eBODY_MASS_AXESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum15eBODY_MASS_AXESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum15eBODY_MASS_AXESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a8e73c99660d921ad7dc81069ff0b2a3c"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBODY_MASS_AXES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum15eBODY_MASS_AXESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize a body’s mass axes. </p>
+<p>This visualization is also useful for visualizing the sleep state of bodies. Sleeping bodies are drawn in black, while awake bodies are drawn in white. If the body is sleeping and part of a sleeping group, it is drawn in red.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBodyDesc.massLocalPose <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum18eBODY_LIN_VELOCITYE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum18eBODY_LIN_VELOCITYE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum18eBODY_LIN_VELOCITYE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a9e57301b7b1ed3722334f04b9bb6f4bc"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBODY_LIN_VELOCITY</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum18eBODY_LIN_VELOCITYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize the bodies linear velocity. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBodyDesc.linearVelocity <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum18eBODY_ANG_VELOCITYE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum18eBODY_ANG_VELOCITYE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum18eBODY_ANG_VELOCITYE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0d326f5ea2be6379999dd3b0e80a0552"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eBODY_ANG_VELOCITY</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum18eBODY_ANG_VELOCITYE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize the bodies angular velocity. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBodyDesc.angularVelocity <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_POINTE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum14eCONTACT_POINTE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum14eCONTACT_POINTE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a706ccc0cb4deca751588dcf1a4a9a361"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTACT_POINT</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_POINTE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize contact points. </p>
+<p>Will enable contact information. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum15eCONTACT_NORMALE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum15eCONTACT_NORMALE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum15eCONTACT_NORMALE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a2a3d188a70b93dee7585f995e8be2494"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTACT_NORMAL</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum15eCONTACT_NORMALE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize contact normals. </p>
+<p>Will enable contact information. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_ERRORE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum14eCONTACT_ERRORE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum14eCONTACT_ERRORE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ab033fa2817b492268eaf5476a715a0d0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTACT_ERROR</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_ERRORE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize contact errors. </p>
+<p>Will enable contact information. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_FORCEE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum14eCONTACT_FORCEE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum14eCONTACT_FORCEE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a4c8d383ccf06759f8c9a102a18ba9d4b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCONTACT_FORCE</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum14eCONTACT_FORCEE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize Contact forces. </p>
+<p>Will enable contact information. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum11eACTOR_AXESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum11eACTOR_AXESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum11eACTOR_AXESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a71d96779e81c1ac240f4cdd8188c55ec"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eACTOR_AXES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum11eACTOR_AXESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize actor axes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a> <a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref">PxArticulationLink</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum16eCOLLISION_AABBSE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum16eCOLLISION_AABBSE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum16eCOLLISION_AABBSE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a714f24bab39d1bbe8b131bd10ef5552b"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_AABBS</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum16eCOLLISION_AABBSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize bounds (AABBs in world space) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum17eCOLLISION_SHAPESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum17eCOLLISION_SHAPESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum17eCOLLISION_SHAPESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a515f4c3c72ee88d7507b52d6ccd14eab"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_SHAPES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum17eCOLLISION_SHAPESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shape visualization. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum15eCOLLISION_AXESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum15eCOLLISION_AXESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum15eCOLLISION_AXESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0ad9dcb10f5f3d6ded3baecfc1e387d3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_AXES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum15eCOLLISION_AXESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shape axis visualization. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum20eCOLLISION_COMPOUNDSE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum20eCOLLISION_COMPOUNDSE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum20eCOLLISION_COMPOUNDSE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ad849475e6cebed2c6a90bac6b372ab73"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_COMPOUNDS</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum20eCOLLISION_COMPOUNDSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compound visualization (compound AABBs in world space) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum19eCOLLISION_FNORMALSE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum19eCOLLISION_FNORMALSE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum19eCOLLISION_FNORMALSE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10afd900f30ba421d555e7f7b087126cd92"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_FNORMALS</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum19eCOLLISION_FNORMALSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh &amp; convex face normals. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> <a class="reference internal" href="class_px_convex_mesh.html#class_px_convex_mesh"><span class="std std-ref">PxConvexMesh</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum16eCOLLISION_EDGESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum16eCOLLISION_EDGESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum16eCOLLISION_EDGESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10aa0e06ca7fa1a0445abe0f4d293feb961"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_EDGES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum16eCOLLISION_EDGESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Active edges for meshes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle_mesh.html#class_px_triangle_mesh"><span class="std std-ref">PxTriangleMesh</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum17eCOLLISION_STATICE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum17eCOLLISION_STATICE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum17eCOLLISION_STATICE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a815278fef57a54a0b563891611aa3908"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_STATIC</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum17eCOLLISION_STATICE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Static pruning structures. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum18eCOLLISION_DYNAMICE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum18eCOLLISION_DYNAMICE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum18eCOLLISION_DYNAMICE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a20e10f3c548336018c22c52639f64ab0"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCOLLISION_DYNAMIC</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum18eCOLLISION_DYNAMICE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Dynamic pruning structures. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum19eJOINT_LOCAL_FRAMESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum19eJOINT_LOCAL_FRAMESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum19eJOINT_LOCAL_FRAMESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0a3fa4551d29ec02582c0eb1165c9df8"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eJOINT_LOCAL_FRAMES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum19eJOINT_LOCAL_FRAMESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Joint local axes. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum13eJOINT_LIMITSE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum13eJOINT_LIMITSE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum13eJOINT_LIMITSE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a53d370f2bafd9f9434013b3668ea41cf"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eJOINT_LIMITS</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum13eJOINT_LIMITSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Joint limits. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum9eCULL_BOXE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum9eCULL_BOXE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum9eCULL_BOXE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ad79ee3e849c6acfb058f2768d61f1838"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eCULL_BOX</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum9eCULL_BOXE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualize culling box. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum12eMBP_REGIONSE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum12eMBP_REGIONSE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum12eMBP_REGIONSE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10ae388a13d5b1b741b469a6f0d594f7e84"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eMBP_REGIONS</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum12eMBP_REGIONSE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>MBP regions. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum16eSIMULATION_MESHE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum16eSIMULATION_MESHE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum16eSIMULATION_MESHE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a78ae503d9479270c1351e3eb25feb4fb"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSIMULATION_MESH</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum16eSIMULATION_MESHE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Renders the simulation mesh instead of the collision mesh (only available for tetmeshes) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum4eSDFE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum4eSDFE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum4eSDFE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a609d68bdd49386c80504cb1ac13f5fce"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eSDF</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum4eSDFE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Renders the SDF of a mesh instead of the collision mesh (only available for triangle meshes with SDFs) </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum11eNUM_VALUESE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum11eNUM_VALUESE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum11eNUM_VALUESE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10a0c40daf35b0de6c839d05bd35c0cf5da"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eNUM_VALUES</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum11eNUM_VALUESE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>This is not a parameter, it just records the current number of parameters (as maximum(PxVisualizationParameter)+1) for use in loops. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N24PxVisualizationParameter4Enum12eFORCE_DWORDE">
+<span id="_CPPv3N24PxVisualizationParameter4Enum12eFORCE_DWORDE"></span><span id="_CPPv2N24PxVisualizationParameter4Enum12eFORCE_DWORDE"></span><span class="target" id="struct_px_visualization_parameter_1adce8e8a77c144356b0968d2b9f79eb10acac9e863525b516ca84acf281515acd6"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">eFORCE_DWORD</span></span></span><a class="headerlink" href="#_CPPv4N24PxVisualizationParameter4Enum12eFORCE_DWORDE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

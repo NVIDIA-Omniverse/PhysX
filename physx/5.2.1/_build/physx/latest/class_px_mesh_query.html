@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxMeshQuery &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxMeshQuery</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxmeshquery">
+<span id="exhale-class-class-px-mesh-query"></span><h1>PxMeshQuery<a class="headerlink" href="#pxmeshquery" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxMeshQuery.h.html#file-include-geometry-pxmeshquery-h"><span class="std std-ref">include/geometry/PxMeshQuery.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv411PxMeshQuery">
+<span id="_CPPv311PxMeshQuery"></span><span id="_CPPv211PxMeshQuery"></span><span id="PxMeshQuery"></span><span class="target" id="class_px_mesh_query"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMeshQuery</span></span></span><a class="headerlink" href="#_CPPv411PxMeshQuery" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32">
+<span id="_CPPv3N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32"></span><span id="_CPPv2N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32"></span><span id="PxMeshQuery::getTriangle__PxTriangleMeshGeometryCR.PxTransformCR.PxTriangleID.PxTriangleR.PxU32P.PxU32P"></span><span class="target" id="class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">triGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <a class="reference internal" href="typedef_group__common_1ga19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span>, <a class="reference internal" href="class_px_triangle.html#_CPPv410PxTriangle" title="PxTriangle"><span class="n"><span class="pre">PxTriangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">triangle</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexIndices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">adjacencyIndices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves triangle data from a triangle ID. </p>
+<p>This function can be used together with <a class="reference internal" href="#class_px_mesh_query_1adb807570be5873ab9bb898ce6c48da4b"><span class="std std-ref">findOverlapTriangleMesh()</span></a> to retrieve triangle properties.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle.html#class_px_triangle"><span class="std std-ref">PxTriangle</span></a> PxTriangleFlags PxTriangleID <a class="reference internal" href="#class_px_mesh_query_1adb807570be5873ab9bb898ce6c48da4b"><span class="std std-ref">findOverlapTriangleMesh()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function will flip the triangle normal whenever triGeom.scale.hasNegativeDeterminant() is true.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>triGeom</strong> – <strong>[in]</strong> Geometry of the triangle mesh to extract the triangle from. </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> Transform for the triangle mesh </p></li>
+<li><p><strong>triangleIndex</strong> – <strong>[in]</strong> The index of the triangle to retrieve. </p></li>
+<li><p><strong>triangle</strong> – <strong>[out]</strong> Triangle points in world space. </p></li>
+<li><p><strong>vertexIndices</strong> – <strong>[out]</strong> Returned vertex indices for given triangle </p></li>
+<li><p><strong>adjacencyIndices</strong> – <strong>[out]</strong> Returned 3 triangle adjacency internal face indices (0xFFFFFFFF if no adjacency). The mesh must be cooked with cooking param buildTriangleAdjacencies enabled.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery11getTriangleERK21PxHeightFieldGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32">
+<span id="_CPPv3N11PxMeshQuery11getTriangleERK21PxHeightFieldGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32"></span><span id="_CPPv2N11PxMeshQuery11getTriangleERK21PxHeightFieldGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32"></span><span id="PxMeshQuery::getTriangle__PxHeightFieldGeometryCR.PxTransformCR.PxTriangleID.PxTriangleR.PxU32P.PxU32P"></span><span class="target" id="class_px_mesh_query_1ae5ade7a18241d3c046c29003f5e8b730"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><span class="n"><span class="pre">PxHeightFieldGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hfGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <a class="reference internal" href="typedef_group__common_1ga19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span>, <a class="reference internal" href="class_px_triangle.html#_CPPv410PxTriangle" title="PxTriangle"><span class="n"><span class="pre">PxTriangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">triangle</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">vertexIndices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">adjacencyIndices</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery11getTriangleERK21PxHeightFieldGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves triangle data from a triangle ID. </p>
+<p>This function can be used together with <a class="reference internal" href="#class_px_mesh_query_1acd98fa40482697cb274df8f93e155752"><span class="std std-ref">findOverlapHeightField()</span></a> to retrieve triangle properties.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle.html#class_px_triangle"><span class="std std-ref">PxTriangle</span></a> PxTriangleFlags PxTriangleID <a class="reference internal" href="#class_px_mesh_query_1acd98fa40482697cb274df8f93e155752"><span class="std std-ref">findOverlapHeightField()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function will flip the triangle normal whenever triGeom.scale.hasNegativeDeterminant() is true. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>TriangleIndex is an index used in internal format, which does have an index out of the bounds in last row. To traverse all tri indices in the HF, the following code can be applied: for (PxU32 row = 0; row &lt; (nbRows - 1); row++) { for (PxU32 col = 0; col &lt; (nbCols - 1); col++) { for (PxU32 k = 0; k &lt; 2; k++) { const PxU32 triIndex = 2 * (row*nbCols + col) + k; …. } } } </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hfGeom</strong> – <strong>[in]</strong> Geometry of the height field to extract the triangle from. </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> Transform for the height field. </p></li>
+<li><p><strong>triangleIndex</strong> – <strong>[in]</strong> The index of the triangle to retrieve. </p></li>
+<li><p><strong>triangle</strong> – <strong>[out]</strong> Triangle points in world space. </p></li>
+<li><p><strong>vertexIndices</strong> – <strong>[out]</strong> Returned vertex indices for given triangle </p></li>
+<li><p><strong>adjacencyIndices</strong> – <strong>[out]</strong> Returned 3 triangle adjacency triangle indices (0xFFFFFFFF if no adjacency).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery23findOverlapTriangleMeshERK10PxGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags">
+<span id="_CPPv3N11PxMeshQuery23findOverlapTriangleMeshERK10PxGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags"></span><span id="_CPPv2N11PxMeshQuery23findOverlapTriangleMeshERK10PxGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags"></span><span id="PxMeshQuery::findOverlapTriangleMesh__PxGeometryCR.PxTransformCR.PxTriangleMeshGeometryCR.PxTransformCR.PxU32P.PxU32.PxU32.bR.PxGeometryQueryFlags"></span><span class="target" id="class_px_mesh_query_1adb807570be5873ab9bb898ce6c48da4b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">findOverlapTriangleMesh</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geomPose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshPose</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">results</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxResults</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">overflow</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery23findOverlapTriangleMeshERK10PxGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Find the mesh triangles which touch the specified geometry object. </p>
+<p>For mesh-vs-mesh overlap tests, please use the specialized function below.</p>
+<p>Returned triangle indices can be used with <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> to retrieve the triangle properties.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> PxGeometryQueryFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> – <strong>[in]</strong> The geometry object to test for mesh triangle overlaps. Supported geometries are <a class="reference internal" href="class_px_sphere_geometry.html#class_px_sphere_geometry"><span class="std std-ref">PxSphereGeometry</span></a>, <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a> and <a class="reference internal" href="class_px_box_geometry.html#class_px_box_geometry"><span class="std std-ref">PxBoxGeometry</span></a> </p></li>
+<li><p><strong>geomPose</strong> – <strong>[in]</strong> Pose of the geometry object </p></li>
+<li><p><strong>meshGeom</strong> – <strong>[in]</strong> The triangle mesh geometry to check overlap against </p></li>
+<li><p><strong>meshPose</strong> – <strong>[in]</strong> Pose of the triangle mesh </p></li>
+<li><p><strong>results</strong> – <strong>[out]</strong> Indices of overlapping triangles </p></li>
+<li><p><strong>maxResults</strong> – <strong>[in]</strong> Size of ‘results’ buffer </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first result to be retrieved. Previous indices are skipped. </p></li>
+<li><p><strong>overflow</strong> – <strong>[out]</strong> True if a buffer overflow occurred </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of overlaps found, i.e. number of elements written to the results buffer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery23findOverlapTriangleMeshER16PxReportCallbackI15PxGeomIndexPairERK22PxTriangleMeshGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransform20PxGeometryQueryFlags20PxMeshMeshQueryFlags">
+<span id="_CPPv3N11PxMeshQuery23findOverlapTriangleMeshER16PxReportCallbackI15PxGeomIndexPairERK22PxTriangleMeshGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransform20PxGeometryQueryFlags20PxMeshMeshQueryFlags"></span><span id="_CPPv2N11PxMeshQuery23findOverlapTriangleMeshER16PxReportCallbackI15PxGeomIndexPairERK22PxTriangleMeshGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransform20PxGeometryQueryFlags20PxMeshMeshQueryFlags"></span><span id="PxMeshQuery::findOverlapTriangleMesh__PxReportCallback:PxGeomIndexPair:R.PxTriangleMeshGeometryCR.PxTransformCR.PxTriangleMeshGeometryCR.PxTransformCR.PxGeometryQueryFlags.PxMeshMeshQueryFlags"></span><span class="target" id="class_px_mesh_query_1a32c0882394c370be23c9db42132d5eb6"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">findOverlapTriangleMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_report_callback.html#_CPPv4I0E16PxReportCallback" title="PxReportCallback"><span class="n"><span class="pre">PxReportCallback</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_geom_index_pair.html#_CPPv415PxGeomIndexPair" title="PxGeomIndexPair"><span class="n"><span class="pre">PxGeomIndexPair</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">callback</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshGeom0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshPose0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><span class="n"><span class="pre">PxTriangleMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshGeom1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">meshPose1</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="n"><span class="pre">PxMeshMeshQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">meshMeshFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_mesh_mesh_query_flag.html#_CPPv419PxMeshMeshQueryFlag" title="PxMeshMeshQueryFlag"><span class="n"><span class="pre">PxMeshMeshQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_mesh_mesh_query_flag.html#_CPPv4N19PxMeshMeshQueryFlag4Enum8eDEFAULTE" title="PxMeshMeshQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery23findOverlapTriangleMeshER16PxReportCallbackI15PxGeomIndexPairERK22PxTriangleMeshGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransform20PxGeometryQueryFlags20PxMeshMeshQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Mesh-vs-mesh overlap test. </p>
+<p>A specialized findOverlapTriangleMesh function for mesh-vs-mesh. The other <a class="reference internal" href="#class_px_mesh_query_1adb807570be5873ab9bb898ce6c48da4b"><span class="std std-ref">findOverlapTriangleMesh()</span></a> function above cannot be used directly since it only returns a single set of triangle indices that belongs to one of the meshes only. This function returns pairs of triangle indices that belong to both the first &amp; second input meshes.</p>
+<p>Returned triangle indices can be used with <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> to retrieve the triangle properties.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle_mesh_geometry.html#class_px_triangle_mesh_geometry"><span class="std std-ref">PxTriangleMeshGeometry</span></a> <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> <a class="reference internal" href="class_px_report_callback.html#class_px_report_callback"><span class="std std-ref">PxReportCallback</span></a> PxGeometryQueryFlags PxMeshMeshQueryFlags </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only implemented for the <a class="reference internal" href="struct_px_mesh_mid_phase.html#struct_px_mesh_mid_phase_1a49f740883fbfb1a49631c28818c219f4a42051af73b6c6b3a5ac4df2928b6d446"><span class="std std-ref">PxMeshMidPhase::eBVH34</span></a> data structure.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> – <strong>[in]</strong> The callback object used to report results </p></li>
+<li><p><strong>meshGeom0</strong> – <strong>[in]</strong> First triangle mesh geometry </p></li>
+<li><p><strong>meshPose0</strong> – <strong>[in]</strong> Pose of first triangle mesh geometry </p></li>
+<li><p><strong>meshGeom1</strong> – <strong>[in]</strong> Second triangle mesh geometry </p></li>
+<li><p><strong>meshPose1</strong> – <strong>[in]</strong> Pose of second triangle mesh geometry </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+<li><p><strong>meshMeshFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if an overlap has been detected, false if the meshes are disjoint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery22findOverlapHeightFieldERK10PxGeometryRK11PxTransformRK21PxHeightFieldGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags">
+<span id="_CPPv3N11PxMeshQuery22findOverlapHeightFieldERK10PxGeometryRK11PxTransformRK21PxHeightFieldGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags"></span><span id="_CPPv2N11PxMeshQuery22findOverlapHeightFieldERK10PxGeometryRK11PxTransformRK21PxHeightFieldGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags"></span><span id="PxMeshQuery::findOverlapHeightField__PxGeometryCR.PxTransformCR.PxHeightFieldGeometryCR.PxTransformCR.PxU32P.PxU32.PxU32.bR.PxGeometryQueryFlags"></span><span class="target" id="class_px_mesh_query_1acd98fa40482697cb274df8f93e155752"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">findOverlapHeightField</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geomPose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><span class="n"><span class="pre">PxHeightFieldGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hfGeom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hfPose</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">results</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxResults</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">overflow</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery22findOverlapHeightFieldERK10PxGeometryRK11PxTransformRK21PxHeightFieldGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Find the height field triangles which touch the specified geometry object. </p>
+<p>Returned triangle indices can be used with <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> to retrieve the triangle properties.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_height_field_geometry.html#class_px_height_field_geometry"><span class="std std-ref">PxHeightFieldGeometry</span></a> <a class="reference internal" href="#class_px_mesh_query_1ae3275cdb2be428a6c17c6ea8194bdf06"><span class="std std-ref">getTriangle()</span></a> PxGeometryQueryFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom</strong> – <strong>[in]</strong> The geometry object to test for height field overlaps. Supported geometries are <a class="reference internal" href="class_px_sphere_geometry.html#class_px_sphere_geometry"><span class="std std-ref">PxSphereGeometry</span></a>, <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a> and <a class="reference internal" href="class_px_box_geometry.html#class_px_box_geometry"><span class="std std-ref">PxBoxGeometry</span></a>. The sphere and capsule queries are currently conservative estimates. </p></li>
+<li><p><strong>geomPose</strong> – <strong>[in]</strong> Pose of the geometry object </p></li>
+<li><p><strong>hfGeom</strong> – <strong>[in]</strong> The height field geometry to check overlap against </p></li>
+<li><p><strong>hfPose</strong> – <strong>[in]</strong> Pose of the height field </p></li>
+<li><p><strong>results</strong> – <strong>[out]</strong> Indices of overlapping triangles </p></li>
+<li><p><strong>maxResults</strong> – <strong>[in]</strong> Size of ‘results’ buffer </p></li>
+<li><p><strong>startIndex</strong> – <strong>[in]</strong> Index of first result to be retrieved. Previous indices are skipped. </p></li>
+<li><p><strong>overflow</strong> – <strong>[out]</strong> True if a buffer overflow occurred </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of overlaps found, i.e. number of elements written to the results buffer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N11PxMeshQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransform5PxU32PK10PxTriangleR14PxGeomSweepHit10PxHitFlagsPK5PxU32K6PxRealb20PxGeometryQueryFlags">
+<span id="_CPPv3N11PxMeshQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransform5PxU32PK10PxTriangleR14PxGeomSweepHit10PxHitFlagsPK5PxU32K6PxRealb20PxGeometryQueryFlags"></span><span id="_CPPv2N11PxMeshQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransform5PxU32PK10PxTriangleR14PxGeomSweepHit10PxHitFlagsPK5PxU32K6PxRealb20PxGeometryQueryFlags"></span><span id="PxMeshQuery::sweep__PxVec3CR.PxRealC.PxGeometryCR.PxTransformCR.PxU32.PxTriangleCP.PxGeomSweepHitR.PxHitFlags.PxU32CP.PxRealC.b.PxGeometryQueryFlags"></span><span class="target" id="class_px_mesh_query_1a23468dc764decf2a1893dc2bce1a79e1"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_triangle.html#_CPPv410PxTriangle" title="PxTriangle"><span class="n"><span class="pre">PxTriangle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triangles</span></span>, <a class="reference internal" href="struct_px_geom_sweep_hit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><span class="n"><span class="pre">PxGeomSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sweepHit</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cachedIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gaebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">doubleSided</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N11PxMeshQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransform5PxU32PK10PxTriangleR14PxGeomSweepHit10PxHitFlagsPK5PxU32K6PxRealb20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep a specified geometry object in space and test for collision with a set of given triangles. </p>
+<p>This function simply sweeps input geometry against each input triangle, in the order they are given. This is an O(N) operation with N = number of input triangles. It does not use any particular acceleration structure.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_triangle.html#class_px_triangle"><span class="std std-ref">PxTriangle</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> <a class="reference internal" href="class_px_geometry.html#class_px_geometry"><span class="std std-ref">PxGeometry</span></a> PxTransform PxGeometryQueryFlags </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only the following geometry types are currently supported: <a class="reference internal" href="class_px_sphere_geometry.html#class_px_sphere_geometry"><span class="std std-ref">PxSphereGeometry</span></a>, <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a>, <a class="reference internal" href="class_px_box_geometry.html#class_px_box_geometry"><span class="std std-ref">PxBoxGeometry</span></a> </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, the hit is returned unless eASSUME_NO_INITIAL_OVERLAP was specified. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function returns a single closest hit across all the input triangles. Multiple hits are not supported. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Supported hitFlags are PxHitFlag::eDEFAULT, <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a7ec4e2f321d4fe4e3d02c4e4b532cc9b"><span class="std std-ref">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></a>, <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64af903d9ed69a9b2d397ca289752aaeef1"><span class="std std-ref">PxHitFlag::ePRECISE_SWEEP</span></a>, <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"><span class="std std-ref">PxHitFlag::eMESH_BOTH_SIDES</span></a>, <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a639d134a27861f74e3721dbd7be65bbc"><span class="std std-ref">PxHitFlag::eMESH_ANY</span></a>. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>ePOSITION is only defined when there is no initial overlap (sweepHit.hadInitialOverlap() == false) </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The returned normal for initially overlapping sweeps is set to -unitDir. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Otherwise the returned normal is the front normal of the triangle even if <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64aaff8ff06630f9388c0ff8f20b7bbd9d3"><span class="std std-ref">PxHitFlag::eMESH_BOTH_SIDES</span></a> is set. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The returned <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_query_hit_1ae3462529024eafa98ed2abe1b3b9146c"><span class="std std-ref">PxGeomSweepHit::faceIndex</span></a> parameter will hold the index of the hit triangle in input array, i.e. the range is [0; triangleCount). For initially overlapping sweeps, this is the index of overlapping triangle. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The inflation parameter is not compatible with <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64af903d9ed69a9b2d397ca289752aaeef1"><span class="std std-ref">PxHitFlag::ePRECISE_SWEEP</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. Clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>geom</strong> – <strong>[in]</strong> The geometry object to sweep. Supported geometries are <a class="reference internal" href="class_px_sphere_geometry.html#class_px_sphere_geometry"><span class="std std-ref">PxSphereGeometry</span></a>, <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a> and <a class="reference internal" href="class_px_box_geometry.html#class_px_box_geometry"><span class="std std-ref">PxBoxGeometry</span></a> </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the geometry object to sweep. </p></li>
+<li><p><strong>triangleCount</strong> – <strong>[in]</strong> Number of specified triangles </p></li>
+<li><p><strong>triangles</strong> – <strong>[in]</strong> Array of triangles to sweep against </p></li>
+<li><p><strong>sweepHit</strong> – <strong>[out]</strong> The sweep hit information. See the notes below for limitations about returned results. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specification of the kind of information to retrieve on hit. Combination of <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> flags. See the notes below for limitations about supported flags. </p></li>
+<li><p><strong>cachedIndex</strong> – <strong>[in]</strong> Cached triangle index for subsequent calls. Cached triangle is tested first. Optional parameter. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. </p></li>
+<li><p><strong>doubleSided</strong> – <strong>[in]</strong> Counterpart of <a class="reference internal" href="struct_px_mesh_geometry_flag.html#struct_px_mesh_geometry_flag_1aa4f762855200599fc014b0654f7ce2c9ae50426f8f858ae161427c24276eb3014"><span class="std std-ref">PxMeshGeometryFlag::eDOUBLE_SIDED</span></a> for input triangles. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the swept geometry object hits the specified triangles</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

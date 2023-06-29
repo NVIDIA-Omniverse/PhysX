@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSimulationFilterCallback &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxSimulationFilterCallback</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxsimulationfiltercallback">
+<span id="exhale-class-class-px-simulation-filter-callback"></span><h1>PxSimulationFilterCallback<a class="headerlink" href="#pxsimulationfiltercallback" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxFiltering.h.html#file-include-pxfiltering-h"><span class="std std-ref">include/PxFiltering.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv426PxSimulationFilterCallback">
+<span id="_CPPv326PxSimulationFilterCallback"></span><span id="_CPPv226PxSimulationFilterCallback"></span><span id="PxSimulationFilterCallback"></span><span class="target" id="class_px_simulation_filter_callback"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationFilterCallback</span></span></span><a class="headerlink" href="#_CPPv426PxSimulationFilterCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filter callback to specify handling of collision pairs. </p>
+<p>This class is provided to implement more complex and flexible collision pair filtering logic, for instance, taking the state of the user application into account. Filter callbacks also give the user the opportunity to track collision pairs and update their filter state.</p>
+<p>You might want to check the documentation on <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> as well since it includes more general information on filtering.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1af7b94475075eb9b43ca32650cd169cc1"><span class="std std-ref">PxSceneDesc.filterCallback</span></a> <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SDK state should not be modified from within the callbacks. In particular objects should not be created or destroyed. If state modification is needed then the changes should be stored to a buffer and performed after the simulation step.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The callbacks may execute in user threads or simulation threads, possibly simultaneously. The corresponding objects may have been deleted by the application earlier in the frame. It is the application’s responsibility to prevent race conditions arising from using the SDK API in the callback while an application thread is making write calls to the scene, and to ensure that the callbacks are thread-safe. Return values which depend on when the callback is called during the frame will introduce nondeterminism into the simulation.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags">
+<span id="_CPPv3N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags"></span><span id="_CPPv2N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags"></span><span id="PxSimulationFilterCallback::pairFound__PxU64.PxFilterObjectAttributes.PxFilterData.PxActorCP.PxShapeCP.PxFilterObjectAttributes.PxFilterData.PxActorCP.PxShapeCP.PxPairFlagsR"></span><span class="target" id="class_px_simulation_filter_callback_1a1daa55823bf72c17d0e70fa6b42fed0f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pairFound</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pairID</span></span>, <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes0</span></span>, <a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">a0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">s0</span></span>, <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes1</span></span>, <a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">a1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">s1</span></span>, <a class="reference internal" href="typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback9pairFoundE5PxU6424PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShape24PxFilterObjectAttributes12PxFilterDataPK7PxActorPK7PxShapeR11PxPairFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filter method to specify how a pair of potentially colliding objects should be processed. </p>
+<p>This method gets called when the filter flags returned by the filter shader (see <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a>) indicate that the filter callback should be invoked (<a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083a62c42e8178d44dc0ead47699f9df87b8"><span class="std std-ref">PxFilterFlag::eCALLBACK</span></a> or <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> set). Return the <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> flags and set the <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> flags to define what the simulation should do with the given collision pair.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a> <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[in]</strong> Unique ID of the collision pair used to issue filter status changes for the pair (see <a class="reference internal" href="#class_px_simulation_filter_callback_1aef8aa797bf9d7df987e9ad5b2a719754"><span class="std std-ref">statusChange()</span></a>) </p></li>
+<li><p><strong>attributes0</strong> – <strong>[in]</strong> The filter attribute of the first object </p></li>
+<li><p><strong>filterData0</strong> – <strong>[in]</strong> The custom filter data of the first object </p></li>
+<li><p><strong>a0</strong> – <strong>[in]</strong> Actor pointer of the first object </p></li>
+<li><p><strong>s0</strong> – <strong>[in]</strong> Shape pointer of the first object (NULL if the object has no shapes) </p></li>
+<li><p><strong>attributes1</strong> – <strong>[in]</strong> The filter attribute of the second object </p></li>
+<li><p><strong>filterData1</strong> – <strong>[in]</strong> The custom filter data of the second object </p></li>
+<li><p><strong>a1</strong> – <strong>[in]</strong> Actor pointer of the second object </p></li>
+<li><p><strong>s1</strong> – <strong>[in]</strong> Shape pointer of the second object (NULL if the object has no shapes) </p></li>
+<li><p><strong>pairFlags</strong> – <strong>[inout]</strong> In: Pair flags returned by the filter shader. Out: Additional information on how an accepted pair should get processed </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Filter flags defining whether the pair should be discarded, temporarily ignored or processed and whether the pair should be tracked and send a report on pair deletion through the filter callback</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab">
+<span id="_CPPv3N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab"></span><span id="_CPPv2N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab"></span><span id="PxSimulationFilterCallback::pairLost__PxU64.PxFilterObjectAttributes.PxFilterData.PxFilterObjectAttributes.PxFilterData.b"></span><span class="target" id="class_px_simulation_filter_callback_1af566e6be26bdc307854aa3405af8477c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pairLost</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pairID</span></span>, <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes0</span></span>, <a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData0</span></span>, <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attributes1</span></span>, <a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">filterData1</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">objectRemoved</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback8pairLostE5PxU6424PxFilterObjectAttributes12PxFilterData24PxFilterObjectAttributes12PxFilterDatab" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Callback to inform that a tracked collision pair is gone. </p>
+<p>This method gets called when a collision pair disappears or gets re-filtered. Only applies to collision pairs which have been marked as filter callback pairs (<a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> set in <a class="reference internal" href="#class_px_simulation_filter_callback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a>).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_simulation_filter_callback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> <a class="reference internal" href="typedef_group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33.html#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="typedef_group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069.html#group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[in]</strong> Unique ID of the collision pair that disappeared </p></li>
+<li><p><strong>attributes0</strong> – <strong>[in]</strong> The filter attribute of the first object </p></li>
+<li><p><strong>filterData0</strong> – <strong>[in]</strong> The custom filter data of the first object </p></li>
+<li><p><strong>attributes1</strong> – <strong>[in]</strong> The filter attribute of the second object </p></li>
+<li><p><strong>filterData1</strong> – <strong>[in]</strong> The custom filter data of the second object </p></li>
+<li><p><strong>objectRemoved</strong> – <strong>[in]</strong> True if the pair was lost because one of the objects got removed from the scene</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags">
+<span id="_CPPv3N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags"></span><span id="_CPPv2N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags"></span><span id="PxSimulationFilterCallback::statusChange__PxU64R.PxPairFlagsR.PxFilterFlagsR"></span><span class="target" id="class_px_simulation_filter_callback_1aef8aa797bf9d7df987e9ad5b2a719754"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">statusChange</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gafa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairID</span></span>, <a class="reference internal" href="typedef_group__physics_1gacacbeccf757e60dbf45089ef382681d9.html#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pairFlags</span></span>, <a class="reference internal" href="typedef_group__physics_1ga675117fb97324a28d3b982b47430ea02.html#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallback12statusChangeER5PxU64R11PxPairFlagsR13PxFilterFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Callback to give the opportunity to change the filter state of a tracked collision pair. </p>
+<p>This method gets called once per simulation step to let the application change the filter and pair flags of a collision pair that has been reported in <a class="reference internal" href="#class_px_simulation_filter_callback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> and requested callbacks by setting <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a>. To request a change of filter status, the target pair has to be specified by its ID, the new filter and pair flags have to be provided and the method should return true.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_simulation_filter_callback_1a1daa55823bf72c17d0e70fa6b42fed0f"><span class="std std-ref">pairFound()</span></a> <a class="reference internal" href="#class_px_simulation_filter_callback_1af566e6be26bdc307854aa3405af8477c"><span class="std std-ref">pairLost()</span></a> <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this method changes the filter status of a collision pair and the pair should keep being tracked by the filter callbacks then <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a> has to be set.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The application is responsible to ensure that this method does not get called for pairs that have been reported as lost, see <a class="reference internal" href="#class_px_simulation_filter_callback_1af566e6be26bdc307854aa3405af8477c"><span class="std std-ref">pairLost()</span></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pairID</strong> – <strong>[out]</strong> ID of the collision pair for which the filter status should be changed </p></li>
+<li><p><strong>pairFlags</strong> – <strong>[out]</strong> The new pairFlags to apply to the collision pair </p></li>
+<li><p><strong>filterFlags</strong> – <strong>[out]</strong> The new filterFlags to apply to the collision pair </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the changes should be applied. In this case the method will get called again. False if no more status changes should be done in the current simulation step. In that case the provided flags will be discarded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N26PxSimulationFilterCallbackD0Ev">
+<span id="_CPPv3N26PxSimulationFilterCallbackD0Ev"></span><span id="_CPPv2N26PxSimulationFilterCallbackD0Ev"></span><span id="PxSimulationFilterCallback::~PxSimulationFilterCallback"></span><span class="target" id="class_px_simulation_filter_callback_1a385041a8854edf7e7e2281fd56eb9b6b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSimulationFilterCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N26PxSimulationFilterCallbackD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

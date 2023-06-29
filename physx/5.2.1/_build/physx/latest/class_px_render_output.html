@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxRenderOutput &mdash; physx 5.2.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/api-styles.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/mermaid-init.js"></script>
+        <script src="../../../_static/design-tabs.js"></script>
+        <script src="https://unpkg.com/mermaid@9.1.5/dist/mermaid.min.js"></script>
+        <script>initMermaid();</script>
+        <script src="../../../_static/version.js"></script>
+        <script src="../../../_static/social-media.js"></script>
+        <script src="../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
+        <script src="../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html">
+            <img src="../../../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/Changelog.html">Changelog Link</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physx_api.html">C++ API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>PxRenderOutput</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxrenderoutput">
+<span id="exhale-class-class-px-render-output"></span><h1>PxRenderOutput<a class="headerlink" href="#pxrenderoutput" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxRenderOutput.h.html#file-include-common-pxrenderoutput-h"><span class="std std-ref">include/common/PxRenderOutput.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxRenderOutput">
+<span id="_CPPv314PxRenderOutput"></span><span id="_CPPv214PxRenderOutput"></span><span id="PxRenderOutput"></span><span class="target" id="class_px_render_output"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRenderOutput</span></span></span><a class="headerlink" href="#_CPPv414PxRenderOutput" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Output stream to fill RenderBuffer. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9PrimitiveE">
+<span id="_CPPv3N14PxRenderOutput9PrimitiveE"></span><span id="_CPPv2N14PxRenderOutput9PrimitiveE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Primitive</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9PrimitiveE" title="Permalink to this definition"></a><br /></dt>
+<dd><p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9Primitive6POINTSE">
+<span id="_CPPv3N14PxRenderOutput9Primitive6POINTSE"></span><span id="_CPPv2N14PxRenderOutput9Primitive6POINTSE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43a28deadea64bee0107df5f7a2f821fcb2"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">POINTS</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9Primitive6POINTSE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9Primitive5LINESE">
+<span id="_CPPv3N14PxRenderOutput9Primitive5LINESE"></span><span id="_CPPv2N14PxRenderOutput9Primitive5LINESE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43a359f2aa6fc75f32b1d767f6613a80f3d"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">LINES</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9Primitive5LINESE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9Primitive9LINESTRIPE">
+<span id="_CPPv3N14PxRenderOutput9Primitive9LINESTRIPE"></span><span id="_CPPv2N14PxRenderOutput9Primitive9LINESTRIPE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43a1eec2e7eb8c7f6dbaf658959bbc2c0b3"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">LINESTRIP</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9Primitive9LINESTRIPE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9Primitive9TRIANGLESE">
+<span id="_CPPv3N14PxRenderOutput9Primitive9TRIANGLESE"></span><span id="_CPPv2N14PxRenderOutput9Primitive9TRIANGLESE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43a0d0e96524d3bc790b7f18dd9d2ae0a70"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TRIANGLES</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9Primitive9TRIANGLESE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput9Primitive13TRIANGLESTRIPE">
+<span id="_CPPv3N14PxRenderOutput9Primitive13TRIANGLESTRIPE"></span><span id="_CPPv2N14PxRenderOutput9Primitive13TRIANGLESTRIPE"></span><span class="target" id="class_px_render_output_1a030d415647296cf3751c1fe235b51e43ae4c49aedb877fc21271a732ba3de90ec"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TRIANGLESTRIP</span></span></span><a class="headerlink" href="#_CPPv4N14PxRenderOutput9Primitive13TRIANGLESTRIPE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput14PxRenderOutputER14PxRenderBuffer">
+<span id="_CPPv3N14PxRenderOutput14PxRenderOutputER14PxRenderBuffer"></span><span id="_CPPv2N14PxRenderOutput14PxRenderOutputER14PxRenderBuffer"></span><span id="PxRenderOutput::PxRenderOutput__PxRenderBufferR"></span><span class="target" id="class_px_render_output_1a5ed112ab4e0550ea985cf69fe7c4fb52"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRenderOutput</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_render_buffer.html#_CPPv414PxRenderBuffer" title="PxRenderBuffer"><span class="n"><span class="pre">PxRenderBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">buffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutput14PxRenderOutputER14PxRenderBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutputlsE9Primitive">
+<span id="_CPPv3N14PxRenderOutputlsE9Primitive"></span><span id="_CPPv2N14PxRenderOutputlsE9Primitive"></span><span id="PxRenderOutput::lshift-operator__Primitive"></span><span class="target" id="class_px_render_output_1af0e40c65e92184b45cedb6c638076d7b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N14PxRenderOutput9PrimitiveE" title="PxRenderOutput::Primitive"><span class="n"><span class="pre">Primitive</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prim</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutputlsE9Primitive" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutputlsE5PxU32">
+<span id="_CPPv3N14PxRenderOutputlsE5PxU32"></span><span id="_CPPv2N14PxRenderOutputlsE5PxU32"></span><span id="PxRenderOutput::lshift-operator__PxU32"></span><span class="target" id="class_px_render_output_1a165159a6f9091b90bc59c636ec2fe9e0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">color</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutputlsE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutputlsERK7PxMat44">
+<span id="_CPPv3N14PxRenderOutputlsERK7PxMat44"></span><span id="_CPPv2N14PxRenderOutputlsERK7PxMat44"></span><span id="PxRenderOutput::lshift-operator__PxMat44CR"></span><span class="target" id="class_px_render_output_1a0335007c1d0d5c5c6b1efde7d356ac96"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga95751c2e7256308fbd285e798495f8ee.html#_CPPv47PxMat44" title="PxMat44"><span class="n"><span class="pre">PxMat44</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutputlsERK7PxMat44" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutputlsERK11PxTransform">
+<span id="_CPPv3N14PxRenderOutputlsERK11PxTransform"></span><span id="_CPPv2N14PxRenderOutputlsERK11PxTransform"></span><span id="PxRenderOutput::lshift-operator__PxTransformCR"></span><span class="target" id="class_px_render_output_1ae5e1f17ad7de99161cdec12358cd7420"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">t</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutputlsERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutputlsERK6PxVec3">
+<span id="_CPPv3N14PxRenderOutputlsERK6PxVec3"></span><span id="_CPPv2N14PxRenderOutputlsERK6PxVec3"></span><span id="PxRenderOutput::lshift-operator__PxVec3CR"></span><span class="target" id="class_px_render_output_1a449726ab8e79109f1d1d6e90a15e383f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">vertex</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutputlsERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput15reserveSegmentsE5PxU32">
+<span id="_CPPv3N14PxRenderOutput15reserveSegmentsE5PxU32"></span><span id="_CPPv2N14PxRenderOutput15reserveSegmentsE5PxU32"></span><span id="PxRenderOutput::reserveSegments__PxU32"></span><span class="target" id="class_px_render_output_1ab67aededa7a2220bde08f25c5ca152ce"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_line.html#_CPPv411PxDebugLine" title="PxDebugLine"><span class="n"><span class="pre">PxDebugLine</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">reserveSegments</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSegments</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutput15reserveSegmentsE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput13reservePointsE5PxU32">
+<span id="_CPPv3N14PxRenderOutput13reservePointsE5PxU32"></span><span id="_CPPv2N14PxRenderOutput13reservePointsE5PxU32"></span><span id="PxRenderOutput::reservePoints__PxU32"></span><span class="target" id="class_px_render_output_1aed6cfb342f691340f7e28681e7e3f857"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_debug_point.html#_CPPv412PxDebugPoint" title="PxDebugPoint"><span class="n"><span class="pre">PxDebugPoint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">reservePoints</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1gacce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSegments</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutput13reservePointsE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput13outputSegmentERK6PxVec3RK6PxVec3">
+<span id="_CPPv3N14PxRenderOutput13outputSegmentERK6PxVec3RK6PxVec3"></span><span id="_CPPv2N14PxRenderOutput13outputSegmentERK6PxVec3RK6PxVec3"></span><span id="PxRenderOutput::outputSegment__PxVec3CR.PxVec3CR"></span><span class="target" id="class_px_render_output_1a9fee5b4e19614e86b201428c3062fdc7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">outputSegment</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1gae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v1</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutput13outputSegmentERK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRenderOutput13outputCapsuleE5PxF325PxF32RK7PxMat44">
+<span id="_CPPv3N14PxRenderOutput13outputCapsuleE5PxF325PxF32RK7PxMat44"></span><span id="_CPPv2N14PxRenderOutput13outputCapsuleE5PxF325PxF32RK7PxMat44"></span><span id="PxRenderOutput::outputCapsule__PxF32.PxF32.PxMat44CR"></span><span class="target" id="class_px_render_output_1ace03a8283c1c4da7ebbc2b1c8975d97c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">outputCapsule</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span>, <a class="reference internal" href="typedef_group__foundation_1ga0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfHeight</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_group__foundation_1ga95751c2e7256308fbd285e798495f8ee.html#_CPPv47PxMat44" title="PxMat44"><span class="n"><span class="pre">PxMat44</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">absPose</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRenderOutput13outputCapsuleE5PxF325PxF32RK7PxMat44" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Jun 29, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
