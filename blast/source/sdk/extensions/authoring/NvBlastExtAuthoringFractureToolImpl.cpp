@@ -851,8 +851,8 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
     ch.isChanged        = true;
     ch.flags            = ChunkInfo::NO_FLAGS;
     ch.parentChunkId    = replaceChunk ? mChunkData[chunkInfoIndex].parentChunkId : chunkId;
-    std::vector<ChunkInfo> xSlicedChunks;
-    std::vector<ChunkInfo> ySlicedChunks;
+    std::vector<Mesh*> xSlicedChunks;
+    std::vector<Mesh*> ySlicedChunks;
     std::vector<uint32_t> newlyCreatedChunksIds;
     /**
     Slice along x direction
@@ -865,12 +865,12 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
 
         setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
         bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_INTERSECTION());
-        setChunkInfoMesh(ch, bTool.createNewMesh());
-
-        if (ch.getMesh() != 0)
+        Mesh* xSlice = bTool.createNewMesh();
+        if (xSlice != nullptr)
         {
-            xSlicedChunks.push_back(ch);
+            xSlicedChunks.push_back(xSlice);
         }
+
         inverseNormalAndIndices(slBox);
         ++mPlaneIndexerOffset;
         bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_DIFFERENCE());
@@ -883,19 +883,17 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
         }
         center.x += x_offset + (rnd->getRandomValue()) * conf.offset_variations * x_offset;
     }
-    if (mesh != 0)
+    if (mesh != nullptr)
     {
-        setChunkInfoMesh(ch, mesh);
-        xSlicedChunks.push_back(ch);
+        xSlicedChunks.push_back(mesh);
     }
-
 
     for (uint32_t chunk = 0; chunk < xSlicedChunks.size(); ++chunk)
     {
         center = NvVec3(0, sourceBBox.minimum.y, 0);
         center.y += y_offset;
         dir  = NvVec3(0, 1, 0);
-        mesh = xSlicedChunks[chunk].getMesh();
+        mesh = xSlicedChunks[chunk];
 
         for (int32_t slice = 0; slice < y_slices; ++slice)
         {
@@ -903,14 +901,14 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
                 NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
             NvVec3 lDir = dir + randVect * conf.angle_variations;
 
-
             setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
             bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_INTERSECTION());
-            setChunkInfoMesh(ch, bTool.createNewMesh());
-            if (ch.getMesh() != 0)
+            Mesh* ySlice = bTool.createNewMesh();
+            if (ySlice != nullptr)
             {
-                ySlicedChunks.push_back(ch);
+                ySlicedChunks.push_back(ySlice);
             }
+
             inverseNormalAndIndices(slBox);
             ++mPlaneIndexerOffset;
             bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_DIFFERENCE());
@@ -923,35 +921,36 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
             }
             center.y += y_offset + (rnd->getRandomValue()) * conf.offset_variations * y_offset;
         }
-        if (mesh != 0)
+        if (mesh != nullptr)
         {
-            setChunkInfoMesh(ch, mesh);
-            ySlicedChunks.push_back(ch);
+            ySlicedChunks.push_back(mesh);
         }
     }
-
 
     for (uint32_t chunk = 0; chunk < ySlicedChunks.size(); ++chunk)
     {
         center = NvVec3(0, 0, sourceBBox.minimum.z);
         center.z += z_offset;
         dir  = NvVec3(0, 0, 1);
-        mesh = ySlicedChunks[chunk].getMesh();
+        mesh = ySlicedChunks[chunk];
 
         for (int32_t slice = 0; slice < z_slices; ++slice)
         {
             NvVec3 randVect =
                 NvVec3(2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1, 2 * rnd->getRandomValue() - 1);
             NvVec3 lDir = dir + randVect * conf.angle_variations;
+
             setCuttingBox(center, -lDir, slBox, 20, mPlaneIndexerOffset);
             bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_INTERSECTION());
-            setChunkInfoMesh(ch, bTool.createNewMesh());
-            if (ch.getMesh() != 0)
+            Mesh* ySlice = bTool.createNewMesh();
+            if (ySlice != nullptr)
             {
+                setChunkInfoMesh(ch, ySlice);
                 ch.chunkId = createId();
                 newlyCreatedChunksIds.push_back(ch.chunkId);
                 mChunkData.push_back(ch);
             }
+
             inverseNormalAndIndices(slBox);
             ++mPlaneIndexerOffset;
             bTool.performFastCutting(mesh, slBox, BooleanConfigurations::BOOLEAN_DIFFERENCE());
@@ -964,15 +963,14 @@ int32_t FractureToolImpl::slicing(uint32_t chunkId, const SlicingConfiguration& 
             }
             center.z += z_offset + (rnd->getRandomValue()) * conf.offset_variations * z_offset;
         }
-        if (mesh != 0)
+        if (mesh != nullptr)
         {
-            ch.chunkId  = createId();
             setChunkInfoMesh(ch, mesh);
-            mChunkData.push_back(ch);
+            ch.chunkId  = createId();
             newlyCreatedChunksIds.push_back(ch.chunkId);
+            mChunkData.push_back(ch);
         }
     }
-
 
     delete slBox;
 
@@ -1047,8 +1045,8 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
     ch.isChanged        = true;
     ch.flags            = ChunkInfo::NO_FLAGS;
     ch.parentChunkId    = replaceChunk ? mChunkData[chunkInfoIndex].parentChunkId : chunkId;
-    std::vector<ChunkInfo> xSlicedChunks;
-    std::vector<ChunkInfo> ySlicedChunks;
+    std::vector<Mesh*> xSlicedChunks;
+    std::vector<Mesh*> ySlicedChunks;
     std::vector<uint32_t> newlyCreatedChunksIds;
     float noisyPartSize = 1.2f;
     //  int32_t acceleratorRes = 8;
@@ -1068,11 +1066,12 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
         SweepingAccelerator accel(mesh);
         SweepingAccelerator dummy(slBox);
         bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_DIFFERENCE());
-        setChunkInfoMesh(ch, bTool.createNewMesh());
-        if (ch.getMesh() != 0)
+        Mesh* xSlice = bTool.createNewMesh();
+        if (xSlice != nullptr)
         {
-            xSlicedChunks.push_back(ch);
+            xSlicedChunks.push_back(xSlice);
         }
+
         inverseNormalAndIndices(slBox);
         ++mPlaneIndexerOffset;
         bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_INTERSECTION());
@@ -1086,11 +1085,11 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
         }
         center.x += x_offset + (rnd->getRandomValue()) * conf.offset_variations * x_offset;
     }
-    if (mesh != 0)
+    if (mesh != nullptr)
     {
-        setChunkInfoMesh(ch, mesh);
-        xSlicedChunks.push_back(ch);
+        xSlicedChunks.push_back(mesh);
     }
+
     slBox                    = getCuttingBox(center, dir, 20, 0, mInteriorMaterialId);
     uint32_t slicedChunkSize = xSlicedChunks.size();
     for (uint32_t chunk = 0; chunk < slicedChunkSize; ++chunk)
@@ -1098,7 +1097,7 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
         center = NvVec3(0, sourceBBox.minimum.y, 0);
         center.y += y_offset;
         dir  = NvVec3(0, 1, 0);
-        mesh = xSlicedChunks[chunk].getMesh();
+        mesh = xSlicedChunks[chunk];
 
         for (int32_t slice = 0; slice < y_slices; ++slice)
         {
@@ -1114,11 +1113,12 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
             SweepingAccelerator accel(mesh);
             SweepingAccelerator dummy(slBox);
             bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_DIFFERENCE());
-            setChunkInfoMesh(ch, bTool.createNewMesh());
-            if (ch.getMesh() != 0)
+            Mesh* ySlice = bTool.createNewMesh();
+            if (ySlice != nullptr)
             {
-                ySlicedChunks.push_back(ch);
+                ySlicedChunks.push_back(ySlice);
             }
+
             inverseNormalAndIndices(slBox);
             ++mPlaneIndexerOffset;
             bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_INTERSECTION());
@@ -1132,10 +1132,9 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
             }
             center.y += y_offset + (rnd->getRandomValue()) * conf.offset_variations * y_offset;
         }
-        if (mesh != 0)
+        if (mesh != nullptr)
         {
-            setChunkInfoMesh(ch, mesh);
-            ySlicedChunks.push_back(ch);
+            ySlicedChunks.push_back(mesh);
         }
     }
 
@@ -1144,7 +1143,7 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
         center = NvVec3(0, 0, sourceBBox.minimum.z);
         center.z += z_offset;
         dir  = NvVec3(0, 0, 1);
-        mesh = ySlicedChunks[chunk].getMesh();
+        mesh = ySlicedChunks[chunk];
 
         for (int32_t slice = 0; slice < z_slices; ++slice)
         {
@@ -1159,13 +1158,15 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
             SweepingAccelerator accel(mesh);
             SweepingAccelerator dummy(slBox);
             bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_DIFFERENCE());
-            setChunkInfoMesh(ch, bTool.createNewMesh());
-            if (ch.getMesh() != 0)
+            Mesh* ySlice = bTool.createNewMesh();
+            if (ySlice != nullptr)
             {
+                setChunkInfoMesh(ch, ySlice);
                 ch.chunkId = createId();
                 mChunkData.push_back(ch);
                 newlyCreatedChunksIds.push_back(ch.chunkId);
             }
+
             inverseNormalAndIndices(slBox);
             ++mPlaneIndexerOffset;
             bTool.performBoolean(mesh, slBox, &accel, &dummy, BooleanConfigurations::BOOLEAN_INTERSECTION());
@@ -1179,12 +1180,12 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
             }
             center.z += z_offset + (rnd->getRandomValue()) * conf.offset_variations * z_offset;
         }
-        if (mesh != 0)
+        if (mesh != nullptr)
         {
-            ch.chunkId  = createId();
             setChunkInfoMesh(ch, mesh);
-            mChunkData.push_back(ch);
+            ch.chunkId  = createId();
             newlyCreatedChunksIds.push_back(ch.chunkId);
+            mChunkData.push_back(ch);
         }
     }
 
@@ -1206,6 +1207,7 @@ int32_t FractureToolImpl::slicingNoisy(uint32_t chunkId, const SlicingConfigurat
 
     return 0;
 }
+
 int32_t FractureToolImpl::cut(uint32_t chunkId, const NvcVec3& normal, const NvcVec3& point,
                               const NoiseConfiguration& noise, bool replaceChunk, RandomGeneratorBase* rnd)
 {

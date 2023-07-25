@@ -398,9 +398,9 @@ class FractureTool
         \param[in] chunkId              Chunk to fracture
         \param[in] conf                 Slicing parameters, see SlicingConfiguration.
         \param[in] replaceChunk         if 'true', newly generated chunks will replace source chunk, if 'false', newly
-       generated chunks will be at next depth level, source chunk will be parent for them. Case replaceChunk == true &&
-       chunkId == 0 considered as wrong input parameters \param[in] rnd                 User supplied random number
-       generator
+                                        generated chunks will be at next depth level, source chunk will be parent for
+                                        them. Case replaceChunk == true && chunkId == 0 considered as wrong input parameters
+        \param[in] rnd                  User supplied random number generator
 
         \return   If 0, fracturing is successful.
     */
@@ -414,9 +414,9 @@ class FractureTool
         \param[in] position             Point on plane
         \param[in] noise                Noise configuration for plane-chunk intersection, see NoiseConfiguration.
         \param[in] replaceChunk         if 'true', newly generated chunks will replace source chunk, if 'false', newly
-       generated chunks will be at next depth level, source chunk will be parent for them. Case replaceChunk == true &&
-       chunkId == 0 considered as wrong input parameters \param[in] rnd                 User supplied random number
-       generator
+                                        generated chunks will be at next depth level, source chunk will be parent for
+                                        them. Case replaceChunk == true && chunkId == 0 considered as wrong input parameters
+        \param[in] rnd                  User supplied random number generator
 
         \return   If 0, fracturing is successful.
     */
@@ -428,9 +428,10 @@ class FractureTool
         \param[in] chunkId              Chunk to fracture
         \param[in] conf                 Cutout parameters, see CutoutConfiguration.
         \param[in] replaceChunk         if 'true', newly generated chunks will replace source chunk, if 'false', newly
-       generated chunks will be at next depth level, source chunk will be parent for them. Case replaceChunk == true &&
-       chunkId == 0 considered as wrong input parameters \param[in] rnd                 User supplied random number
-       generator
+        \param[in] replaceChunk         if 'true', newly generated chunks will replace source chunk, if 'false', newly
+                                        generated chunks will be at next depth level, source chunk will be parent for
+                                        them. Case replaceChunk == true && chunkId == 0 considered as wrong input parameters
+        \param[in] rnd                  User supplied random number generator
 
         \return   If 0, fracturing is successful.
     */

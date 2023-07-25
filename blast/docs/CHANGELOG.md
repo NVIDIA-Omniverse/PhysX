@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.0.2] - 25-July-2023
+
+### Bugfixes
+- Fixed slice fracturing bug which set the local chunk transform to the identity in some cases
+
+
 ## [5.0.1] - 22-June-2023
 
 ### Bugfixes
