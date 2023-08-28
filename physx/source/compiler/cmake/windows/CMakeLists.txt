@@ -28,6 +28,8 @@ OPTION(PX_COPY_EXTERNAL_DLL "Copy external dlls into SDK bin directory" OFF)
 OPTION(PX_FLOAT_POINT_PRECISE_MATH "Float point precise math" OFF)
 OPTION(PX_USE_NVTX "Enabled NVTX profiling" OFF)
 
+SET(PHYSX_BIN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE STRING "Physx bin dir")
+
 # We define the CXX flags for this CMakeLists and all others that are included afterwards. This is a GLOBAL setting.
 # If/when the solutions go standalone (say, samples and visual tests) - those CMakeLists will need to be fixed.
 
