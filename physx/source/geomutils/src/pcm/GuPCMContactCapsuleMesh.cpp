@@ -43,13 +43,13 @@ namespace
 struct PCMCapsuleVsMeshContactGenerationCallback : PCMMeshContactGenerationCallback< PCMCapsuleVsMeshContactGenerationCallback >
 {
 	PCMCapsuleVsMeshContactGenerationCallback& operator=(const PCMCapsuleVsMeshContactGenerationCallback&);
-public:
-	PCMCapsuleVsMeshContactGeneration		mGeneration;
+
+	PCMCapsuleVsMeshContactGeneration	mGeneration;
 
 	PCMCapsuleVsMeshContactGenerationCallback(
 		const CapsuleV& capsule,
-		const aos::FloatVArg contactDist,
-		const aos::FloatVArg replaceBreakingThreshold,
+		const FloatVArg contactDist,
+		const FloatVArg replaceBreakingThreshold,
 		const PxTransformV& sphereTransform,
 		const PxTransformV& meshTransform,
 		MultiplePersistentContactManifold& multiManifold,
@@ -76,7 +76,7 @@ public:
 };
 }
 
-bool physx::Gu::pcmContactCapsuleMesh(GU_CONTACT_METHOD_ARGS)
+bool Gu::pcmContactCapsuleMesh(GU_CONTACT_METHOD_ARGS)
 {
 	MultiplePersistentContactManifold& multiManifold = cache.getMultipleManifold();
 	const PxCapsuleGeometry& shapeCapsule = checkedCast<PxCapsuleGeometry>(shape0);
@@ -166,9 +166,9 @@ bool physx::Gu::pcmContactCapsuleMesh(GU_CONTACT_METHOD_ARGS)
 	return multiManifold.addManifoldContactsToContactBuffer(contactBuffer, capsuleTransform, meshTransform, capsuleRadius);
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg sqInflatedRadius,
-													   const aos::Vec3VArg normal, const PxU32 triangleIndex, const aos::Vec3VArg a, const aos::Vec3VArg b,
-														Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const Vec3VArg p, const Vec3VArg q, const FloatVArg sqInflatedRadius,
+														const Vec3VArg normal, PxU32 triangleIndex, const Vec3VArg a, const Vec3VArg b,
+														MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
 	const FloatV zero = FZero();
 	const Vec3V ab = V3Sub(b, a);
@@ -221,11 +221,11 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const aos::Vec3VArg p, co
 	}
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,
-															   const aos::Vec3VArg c, const aos::Vec3VArg normal,
-															   const PxU32 triangleIndex, const aos::Vec3VArg p, 
-															   const aos::Vec3VArg q, const aos::FloatVArg sqInflatedRadius,
-															   const PxU32 previousNumContacts, Gu::MeshPersistentContact* manifoldContacts, 
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContacts(const Vec3VArg a, const Vec3VArg b,
+															   const Vec3VArg c, const Vec3VArg normal,
+															   PxU32 triangleIndex, const Vec3VArg p, 
+															   const Vec3VArg q, const FloatVArg sqInflatedRadius,
+															   PxU32 previousNumContacts, MeshPersistentContact* manifoldContacts, 
 															   PxU32& numContacts)
 {
 	if((numContacts - previousNumContacts) < 2)
@@ -236,9 +236,9 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContacts(const aos::Vec3VA
 		generateEE(p, q, sqInflatedRadius, normal, triangleIndex, a, c, manifoldContacts, numContacts);
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(	const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
-															const aos::Vec3VArg normal, const PxU32 triangleIndex, const aos::Vec3VArg a, const aos::Vec3VArg b,
-															Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(	const Vec3VArg p, const Vec3VArg q, const FloatVArg inflatedRadius,
+															const Vec3VArg normal, PxU32 triangleIndex, const Vec3VArg a, const Vec3VArg b,
+															MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
 	const FloatV zero = FZero();
 	const Vec3V ab = V3Sub(b, a);
@@ -283,23 +283,23 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(	const aos::Vec3VArg p
 	}
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContactsMTD(	const aos::Vec3VArg a, const aos::Vec3VArg b,
-																	const aos::Vec3VArg c, const aos::Vec3VArg normal,
-																	const PxU32 triangleIndex, const aos::Vec3VArg p, 
-																	const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius,
-																	Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateEEContactsMTD(	const Vec3VArg a, const Vec3VArg b,
+																	const Vec3VArg c, const Vec3VArg normal,
+																	PxU32 triangleIndex, const Vec3VArg p, 
+																	const Vec3VArg q, const FloatVArg inflatedRadius,
+																	MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {	
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, a, b, manifoldContacts, numContacts);
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, b, c, manifoldContacts, numContacts);
 	generateEEMTD(p, q, inflatedRadius, normal, triangleIndex, a, c, manifoldContacts, numContacts);
 }
 
-void Gu::PCMCapsuleVsMeshContactGeneration::generateContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,
-															 const aos::Vec3VArg c, const aos::Vec3VArg planeNormal, 
-															 const aos::Vec3VArg normal, const PxU32 triangleIndex,
-															 const aos::Vec3VArg p, const aos::Vec3VArg q,
-															 const aos::FloatVArg inflatedRadius,
-															 Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+void Gu::PCMCapsuleVsMeshContactGeneration::generateContacts(const Vec3VArg a, const Vec3VArg b,
+															 const Vec3VArg c, const Vec3VArg planeNormal, 
+															 const Vec3VArg normal, PxU32 triangleIndex,
+															 const Vec3VArg p, const Vec3VArg q,
+															 const FloatVArg inflatedRadius,
+															 MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
 	const Vec3V ab = V3Sub(b, a);
 	const Vec3V ac = V3Sub(c, a);
@@ -370,12 +370,12 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateContacts(const aos::Vec3VArg
 	}
 }
 
-static PX_FORCE_INLINE aos::Vec4V pcmDistanceSegmentSegmentSquared4(const aos::Vec3VArg p, const aos::Vec3VArg d0, 
-																	const aos::Vec3VArg p02, const aos::Vec3VArg d02, 
-								                                    const aos::Vec3VArg p12, const aos::Vec3VArg d12, 
-																	const aos::Vec3VArg p22, const aos::Vec3VArg d22,
-														            const aos::Vec3VArg p32, const aos::Vec3VArg d32,
-																	aos::Vec4V& s, aos::Vec4V& t)
+static PX_FORCE_INLINE Vec4V pcmDistanceSegmentSegmentSquared4(const Vec3VArg p, const Vec3VArg d0, 
+																const Vec3VArg p02, const Vec3VArg d02, 
+																const Vec3VArg p12, const Vec3VArg d12, 
+																const Vec3VArg p22, const Vec3VArg d22,
+																const Vec3VArg p32, const Vec3VArg d32,
+																Vec4V& s, Vec4V& t)
 {
 	const Vec4V zero = V4Zero();
 	const Vec4V one = V4One();
@@ -471,9 +471,9 @@ static PX_FORCE_INLINE aos::Vec4V pcmDistanceSegmentSegmentSquared4(const aos::V
 //	t is the barycenteric coordinate of a segment
 //	u is the barycenteric coordinate of a triangle
 //	v is the barycenteric coordinate of a triangle
-static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, const aos::Vec3VArg q,
-														const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
-														aos::FloatV& t, aos::FloatV& u, aos::FloatV& v)
+static FloatV pcmDistanceSegmentTriangleSquared(const Vec3VArg p, const Vec3VArg q,
+												const Vec3VArg a, const Vec3VArg b, const Vec3VArg c,
+												FloatV& t, FloatV& u, FloatV& v)
 {
 	const FloatV one = FOne();
 	const FloatV zero = FZero();
@@ -629,7 +629,7 @@ static aos::FloatV pcmDistanceSegmentTriangleSquared(	const aos::Vec3VArg p, con
 	}
 }
 
-static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
+static bool selectNormal(const FloatVArg u, FloatVArg v, PxU8 data)
 {
 	const FloatV zero = FLoad(1e-6f);
 	const FloatV one = FLoad(0.999999f);
@@ -639,19 +639,19 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 		if(FAllGrtr(zero, v))
 		{
 			// Vertex 0
-			if(!(data & (Gu::ETD_CONVEX_EDGE_01|Gu::ETD_CONVEX_EDGE_20)))
+			if(!(data & (ETD_CONVEX_EDGE_01|ETD_CONVEX_EDGE_20)))
 				return true;
 		}
 		else if(FAllGrtr(v, one))
 		{
 			// Vertex 2
-			if(!(data & (Gu::ETD_CONVEX_EDGE_12|Gu::ETD_CONVEX_EDGE_20)))
+			if(!(data & (ETD_CONVEX_EDGE_12|ETD_CONVEX_EDGE_20)))
 				return true;
 		}
 		else
 		{
 			// Edge 0-2
-			if(!(data & Gu::ETD_CONVEX_EDGE_20))
+			if(!(data & ETD_CONVEX_EDGE_20))
 				return true;
 		}
 	}
@@ -660,7 +660,7 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 		if(FAllGrtr(zero, v))
 		{
 			// Vertex 1
-			if(!(data & (Gu::ETD_CONVEX_EDGE_01|Gu::ETD_CONVEX_EDGE_12)))
+			if(!(data & (ETD_CONVEX_EDGE_01|ETD_CONVEX_EDGE_12)))
 				return true;
 		}
 	}
@@ -669,7 +669,7 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 		if(FAllGrtr(zero, v))
 		{
 			// Edge 0-1
-			if(!(data & Gu::ETD_CONVEX_EDGE_01))
+			if(!(data & ETD_CONVEX_EDGE_01))
 				return true;
 		}
 		else
@@ -679,7 +679,7 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 			if(FAllGrtrOrEq(temp, threshold))
 			{
 				// Edge 1-2
-				if(!(data & Gu::ETD_CONVEX_EDGE_12))
+				if(!(data & ETD_CONVEX_EDGE_12))
 					return true;
 			}
 			else
@@ -692,7 +692,7 @@ static bool selectNormal(const aos::FloatVArg u, aos::FloatVArg v, PxU8 data)
 	return false;
 }
 
-bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const PxVec3* verts, const PxU32 triangleIndex, PxU8 triFlags, const PxU32* vertInds)
+bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const PxVec3* verts, PxU32 triangleIndex, PxU8 triFlags, const PxU32* vertInds)
 {
 	PX_UNUSED(vertInds);
 
@@ -795,8 +795,8 @@ bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const PxVec3* verts,
 	return true;
 }
 
-bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const TriangleV& triangleV, const PxU32 triangleIndex, const CapsuleV& capsule, const aos::FloatVArg inflatedRadius, const PxU8 trigFlag,
-															Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts)
+bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const TriangleV& triangleV, PxU32 triangleIndex, const CapsuleV& capsule, const FloatVArg inflatedRadius, const PxU8 trigFlag,
+															MeshPersistentContact* manifoldContacts, PxU32& numContacts)
 {
 	const FloatV zero = FZero();
 
@@ -842,11 +842,10 @@ bool Gu::PCMCapsuleVsMeshContactGeneration::processTriangle(const TriangleV& tri
 	return true;
 }
 
-
 // PT: below is just for internal testing
-PX_PHYSX_COMMON_API aos::FloatV pcmDistanceSegmentTriangleSquaredExported(	const aos::Vec3VArg p, const aos::Vec3VArg q,
-																			const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg c,
-																			aos::FloatV& t, aos::FloatV& u, aos::FloatV& v)
+PX_PHYSX_COMMON_API FloatV pcmDistanceSegmentTriangleSquaredExported(	const Vec3VArg p, const Vec3VArg q,
+																		const Vec3VArg a, const Vec3VArg b, const Vec3VArg c,
+																		FloatV& t, FloatV& u, FloatV& v)
 {
 	return pcmDistanceSegmentTriangleSquared(p, q, a, b, c, t, u, v);
 }

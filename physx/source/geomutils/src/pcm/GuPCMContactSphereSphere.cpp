@@ -29,6 +29,7 @@
 #include "geomutils/PxContactBuffer.h"
 #include "GuContactMethodImpl.h"
 #include "foundation/PxVecTransform.h"
+#include "GuPCMContactGenUtil.h"
 
 using namespace physx;
 
@@ -62,15 +63,7 @@ bool Gu::pcmContactSphereSphere(GU_CONTACT_METHOD_ARGS)
 		const Vec3V point = V3ScaleAdd(normal, r1, p1);
 		const FloatV pen = FSub(dist, radiusSum);
 		
-		PX_ASSERT(contactBuffer.count < PxContactBuffer::MAX_CONTACTS);
-		PxContactPoint& contact = contactBuffer.contacts[contactBuffer.count++];
-		V4StoreA(Vec4V_From_Vec3V(normal), &contact.normal.x);
-		V4StoreA(Vec4V_From_Vec3V(point), &contact.point.x);
-		FStore(pen, &contact.separation);
-
-		contact.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
-
-		return true;
+		return outputSimplePCMContact(contactBuffer, point, normal, pen);
 	}
 	return false;
 }

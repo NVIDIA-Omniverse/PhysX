@@ -123,12 +123,22 @@ struct WheelResponseStates
 	OmniPvdAttributeHandle responseStates16To19AH;
 };
 
+struct AckermannParams
+{
+	OmniPvdClassHandle CH;
+	OmniPvdAttributeHandle wheelIdsAH;
+	OmniPvdAttributeHandle wheelBaseAH;
+	OmniPvdAttributeHandle trackWidthAH;
+	OmniPvdAttributeHandle strengthAH;
+};
+
 
 
 WheelResponseParams registerSteerResponseParams(OmniPvdWriter& omniWriter);
 WheelResponseParams registerBrakeResponseParams(OmniPvdWriter& omniWriter);
 WheelResponseStates registerSteerResponseStates(OmniPvdWriter& omniWriter);
 WheelResponseStates registerBrakeResponseStates(OmniPvdWriter& omniWriter);
+AckermannParams registerAckermannParams(OmniPvdWriter&);
 
 void writeSteerResponseParams
 (const PxVehicleAxleDescription& axleDesc,
@@ -149,6 +159,10 @@ void writeBrakeResponseStates
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const OmniPvdObjectHandle oh, const WheelResponseStates& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+
+void writeAckermannParams
+(const PxVehicleAckermannParams&,
+ const OmniPvdObjectHandle, const AckermannParams&, OmniPvdWriter&, OmniPvdContextHandle);
 
 /////////////////////////////////////////////
 //WHEEL ATTACHMENTS
@@ -523,6 +537,7 @@ struct DirectDrivetrain
 	OmniPvdClassHandle CH;
 	OmniPvdAttributeHandle throttleResponseParamsAH;
 	OmniPvdAttributeHandle commandStateAH;
+	OmniPvdAttributeHandle transmissionCommandStateAH;
 	OmniPvdAttributeHandle throttleResponseStateAH;
 };
 
@@ -567,6 +582,12 @@ struct EngineDriveTransmissionCommandState
 	OmniPvdClassHandle CH;
 	OmniPvdAttributeHandle gearAH;
 	OmniPvdAttributeHandle clutchAH;
+};
+
+struct TankDriveTransmissionCommandState
+{
+	OmniPvdClassHandle CH;
+	OmniPvdAttributeHandle thrustsAH;
 };
 
 struct ClutchResponseParams	
@@ -628,8 +649,9 @@ struct MultiWheelDiffParams
 	OmniPvdAttributeHandle aveWheelSpeedRatios16To19AH;
 };
 
-struct FourWheelDiffParams : public MultiWheelDiffParams
+struct FourWheelDiffParams
 {
+	OmniPvdClassHandle CH;
 	OmniPvdAttributeHandle frontWheelsAH;
 	OmniPvdAttributeHandle rearWheelsAH;
 	OmniPvdAttributeHandle frontBiasAH;
@@ -638,6 +660,16 @@ struct FourWheelDiffParams : public MultiWheelDiffParams
 	OmniPvdAttributeHandle rearTargetAH;
 	OmniPvdAttributeHandle centreBiasAH;
 	OmniPvdAttributeHandle centreTargetAH;
+};
+
+struct TankDiffParams
+{
+	OmniPvdClassHandle CH;
+	OmniPvdAttributeHandle nbTracksAH;
+	OmniPvdAttributeHandle thrustIdPerTrackAH;
+	OmniPvdAttributeHandle nbWheelsPerTrackAH;
+	OmniPvdAttributeHandle trackToWheelIdsAH;
+	OmniPvdAttributeHandle wheelIdsInTrackOrderAH;
 };
 
 struct ClutchResponseState
@@ -705,8 +737,7 @@ struct EngineDrivetrain
 	OmniPvdAttributeHandle engineParamsAH;
 	OmniPvdAttributeHandle gearboxParamsAH;
 	OmniPvdAttributeHandle autoboxParamsAH;
-	OmniPvdAttributeHandle multiWheelDiffParamsAH;
-	OmniPvdAttributeHandle fourWheelDiffParamsAH;
+	OmniPvdAttributeHandle differentialParamsAH;
 	OmniPvdAttributeHandle clutchResponseStateAH;
 	OmniPvdAttributeHandle throttleResponseStateAH;
 	OmniPvdAttributeHandle engineStateAH;
@@ -718,13 +749,15 @@ struct EngineDrivetrain
 
 EngineDriveCommandState registerEngineDriveCommandState(OmniPvdWriter& omniWriter);
 EngineDriveTransmissionCommandState registerEngineDriveTransmissionCommandState(OmniPvdWriter& omniWriter);
+TankDriveTransmissionCommandState registerTankDriveTransmissionCommandState(OmniPvdWriter&, OmniPvdClassHandle baseClass);
 ClutchResponseParams registerClutchResponseParams(OmniPvdWriter& omniWriter);
 ClutchParams registerClutchParams(OmniPvdWriter& omniWriter);
 EngineParams registerEngineParams(OmniPvdWriter& omniWriter);
 GearboxParams registerGearboxParams(OmniPvdWriter& omniWriter);
 AutoboxParams registerAutoboxParams(OmniPvdWriter& omniWriter);
 MultiWheelDiffParams registerMultiWheelDiffParams(OmniPvdWriter& omniWriter);
-FourWheelDiffParams registerFourWheelDiffParams(OmniPvdWriter& omniWriter);
+FourWheelDiffParams registerFourWheelDiffParams(OmniPvdWriter& omniWriter, OmniPvdClassHandle baseClass);
+TankDiffParams registerTankDiffParams(OmniPvdWriter& omniWriter, OmniPvdClassHandle baseClass);
 //TankDiffParams registerTankDiffParams(OmniPvdWriter& omniWriter);
 ClutchResponseState registerClutchResponseState(OmniPvdWriter& omniWriter);
 ThrottleResponseState registerThrottleResponseState(OmniPvdWriter& omniWriter);
@@ -742,6 +775,11 @@ void writeEngineDriveCommandState
 void writeEngineDriveTransmissionCommandState
 (const PxVehicleEngineDriveTransmissionCommandState& transmission,
  const OmniPvdObjectHandle oh, const EngineDriveTransmissionCommandState& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+
+void writeTankDriveTransmissionCommandState
+(const PxVehicleTankDriveTransmissionCommandState&,	const OmniPvdObjectHandle,
+ const EngineDriveTransmissionCommandState&, const TankDriveTransmissionCommandState&,
+ OmniPvdWriter&, OmniPvdContextHandle);
 
 void writeClutchResponseParams
 (const PxVehicleClutchCommandResponseParams& clutchResponseParams, 
@@ -769,7 +807,13 @@ void writeMultiWheelDiffParams
 
 void writeFourWheelDiffParams
 (const PxVehicleFourWheelDriveDifferentialParams& diffParams, 
- const OmniPvdObjectHandle oh, const FourWheelDiffParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+ const OmniPvdObjectHandle oh, const MultiWheelDiffParams&, const FourWheelDiffParams& ah, 
+ OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+
+void writeTankDiffParams
+(const PxVehicleTankDriveDifferentialParams&, 
+ const OmniPvdObjectHandle, const MultiWheelDiffParams&, const TankDiffParams&, 
+ OmniPvdWriter&, OmniPvdContextHandle);
 
 void writeClutchResponseState
 (const PxVehicleClutchCommandResponseState& clutchResponseState, 
@@ -894,10 +938,23 @@ void writePhysXMaterialFriction
 //PHYSX RIGID ACTOR
 //////////////////////////////
 
+struct PhysXRoadGeometryQueryFilterData
+{
+	OmniPvdClassHandle CH;
+	OmniPvdAttributeHandle word0AH;
+	OmniPvdAttributeHandle word1AH;
+	OmniPvdAttributeHandle word2AH;
+	OmniPvdAttributeHandle word3AH;
+	OmniPvdAttributeHandle flagsAH;
+};
+
 struct PhysXRoadGeometryQueryParams
 {
 	OmniPvdClassHandle CH;
 	OmniPvdAttributeHandle queryTypeAH;
+	PhysXRoadGeometryQueryFilterData filterDataParams;
+	OmniPvdAttributeHandle defaultFilterDataAH;
+	OmniPvdAttributeHandle filterDataSetAH;
 };
 
 struct PhysXRigidActor
@@ -906,17 +963,33 @@ struct PhysXRigidActor
 	OmniPvdAttributeHandle rigidActorAH;
 };
 
+struct PhysXSteerState
+{
+	OmniPvdClassHandle CH;
+	OmniPvdAttributeHandle previousSteerCommandAH;
+};
+
 
 PhysXRoadGeometryQueryParams registerPhysXRoadGeometryQueryParams(OmniPvdWriter& omniWriter);
 PhysXRigidActor registerPhysXRigidActor(OmniPvdWriter& omniWriter);
+PhysXSteerState registerPhysXSteerState(OmniPvdWriter& omniWriter);
 
 void writePhysXRigidActor
 (const PxRigidActor* actor, 
  const OmniPvdObjectHandle oh, const PhysXRigidActor& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
 
+void writePhysXRoadGeometryQueryFilterData
+(const PxQueryFilterData&, 
+ const OmniPvdObjectHandle, const PhysXRoadGeometryQueryFilterData&, OmniPvdWriter&, OmniPvdContextHandle);
+
 void writePhysXRoadGeometryQueryParams
-(const PxVehiclePhysXRoadGeometryQueryParams& actor, 
- const OmniPvdObjectHandle oh, const PhysXRoadGeometryQueryParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+(const PxVehiclePhysXRoadGeometryQueryParams&, const PxVehicleAxleDescription& axleDesc,
+ const OmniPvdObjectHandle queryParamsOH, const OmniPvdObjectHandle defaultFilterDataOH, const OmniPvdObjectHandle* filterDataOHs,
+ const PhysXRoadGeometryQueryParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+
+void writePhysXSteerState
+(const PxVehiclePhysXSteerState&, 
+ const OmniPvdObjectHandle, const PhysXSteerState&, OmniPvdWriter&, OmniPvdContextHandle);
 
 //////////////////////////////
 //VEHICLE
@@ -935,6 +1008,7 @@ struct Vehicle
 	OmniPvdAttributeHandle steerResponseParamsAH;
 	OmniPvdAttributeHandle brakeResponseStatesAH;
 	OmniPvdAttributeHandle steerResponseStatesAH;
+	OmniPvdAttributeHandle ackermannParamsAH;
 
 	OmniPvdAttributeHandle wheelAttachmentSetAH;
 
@@ -948,6 +1022,7 @@ struct Vehicle
 
 	OmniPvdAttributeHandle physxRoadGeometryQueryParamsAH;
 	OmniPvdAttributeHandle physxRigidActorAH;
+	OmniPvdAttributeHandle physxSteerStateAH;
 };
 
 Vehicle registerVehicle(OmniPvdWriter& omniWriter);

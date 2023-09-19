@@ -70,7 +70,7 @@ void Sn::ConvX::displayMessage(PxErrorCode::Enum code, const char* format, ...)
 	{
 		va_list va;
 		va_start(va, format);
-		PxGetFoundation().error(code, __FILE__, __LINE__, format, va);
+		PxGetFoundation().error(code, PX_FL, format, va);
 		va_end(va);
 	}
 
@@ -78,11 +78,11 @@ void Sn::ConvX::displayMessage(PxErrorCode::Enum code, const char* format, ...)
 	{
 		if( sum == 0)
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, __FILE__, __LINE__, "Hit warnings or errors: skipping further verbose output.\n");		    
+			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "Hit warnings or errors: skipping further verbose output.\n");		    
 		}
 		else if(sum == MAX_DISPLAYED_ISSUES-1)
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, __FILE__, __LINE__, "Exceeding 10 warnings or errors: skipping further output.\n");		    
+			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "Exceeding 10 warnings or errors: skipping further output.\n");		    
 		}
 	}
 

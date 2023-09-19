@@ -42,23 +42,22 @@
 
 using namespace physx;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
-namespace physx
+namespace
 {
-
 struct PCMConvexVsHeightfieldContactGenerationCallback
 	: PCMHeightfieldContactGenerationCallback< PCMConvexVsHeightfieldContactGenerationCallback >
 {
 	PCMConvexVsHeightfieldContactGenerationCallback& operator=(const PCMConvexVsHeightfieldContactGenerationCallback&);
-public:
+
 	PCMConvexVsMeshContactGeneration	mGeneration;
 
 	PCMConvexVsHeightfieldContactGenerationCallback(
-		const aos::FloatVArg contactDistance,
-		const aos::FloatVArg replaceBreakingThreshold,
+		const FloatVArg contactDistance,
+		const FloatVArg replaceBreakingThreshold,
 		const PolygonalData& polyData,
-		SupportLocal* polyMap,
+		const SupportLocal* polyMap,
 		const Cm::FastVertex2ShapeScaling& convexScaling,
 		bool idtConvexScale,
 		const PxTransformV& convexTransform, 
@@ -83,18 +82,16 @@ public:
 		mGeneration.processTriangleCache<CacheSize, PCMConvexVsMeshContactGeneration>(cache);
 	}
 };
+}
 
 bool Gu::PCMContactConvexHeightfield(
-	const PolygonalData& polyData, SupportLocal* polyMap, const aos::FloatVArg minMargin,
+	const PolygonalData& polyData, const SupportLocal* polyMap, const FloatVArg minMargin,
 	const PxBounds3& hullAABB, const PxHeightFieldGeometry& shapeHeightfield,
 	const PxTransform& transform0, const PxTransform& transform1,
 	PxReal contactDistance, PxContactBuffer& contactBuffer,
 	const Cm::FastVertex2ShapeScaling& convexScaling, bool idtConvexScale,
 	MultiplePersistentContactManifold& multiManifold, PxRenderOutput* renderOutput)
 {
-	using namespace aos;
-	using namespace Gu;
-
 	const QuatV q0 = QuatVLoadA(&transform0.q.x);
 	const Vec3V p0 = V3LoadA(&transform0.p.x);
 
@@ -167,8 +164,6 @@ bool Gu::PCMContactConvexHeightfield(
 
 bool Gu::pcmContactConvexHeightField(GU_CONTACT_METHOD_ARGS)
 {
-	using namespace aos;
-	
 	const PxConvexMeshGeometry& shapeConvex = checkedCast<PxConvexMeshGeometry>(shape0);
 	const PxHeightFieldGeometry& shapeHeightField = checkedCast<PxHeightFieldGeometry>(shape1);
 
@@ -215,8 +210,6 @@ bool Gu::pcmContactConvexHeightField(GU_CONTACT_METHOD_ARGS)
 
 bool Gu::pcmContactBoxHeightField(GU_CONTACT_METHOD_ARGS)
 {
-	using namespace aos;
-
 	MultiplePersistentContactManifold& multiManifold = cache.getMultipleManifold();
 
 	const PxBoxGeometry& shapeBox = checkedCast<PxBoxGeometry>(shape0);
@@ -249,5 +242,4 @@ bool Gu::pcmContactBoxHeightField(GU_CONTACT_METHOD_ARGS)
 
 	return PCMContactConvexHeightfield(polyData, &boxMap, minMargin, hullAABB, shapeHeightField, transform0, transform1, params.mContactDistance, contactBuffer, 
 		idtScaling, true, multiManifold, renderOutput);
-}
 }

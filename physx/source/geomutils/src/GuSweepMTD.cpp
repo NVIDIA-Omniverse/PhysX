@@ -426,7 +426,7 @@ bool physx::Gu::computeCapsule_HeightFieldMTD(const PxHeightFieldGeometry& heigh
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool calculateMTD(	const PolygonalData& polyData, SupportLocal* polyMap, PxTransformV& convexTransform, const PxMatTransformV& meshToConvex, bool isDoubleSided, const FloatVArg inflation, const MTDTriangle* triangles, const PxU32 nbTriangles, const PxU32 startIndex, 
+static bool calculateMTD(	const PolygonalData& polyData, const SupportLocal* polyMap, const PxTransformV& convexTransform, const PxMatTransformV& meshToConvex, bool isDoubleSided, const FloatVArg inflation, const MTDTriangle* triangles, PxU32 nbTriangles, PxU32 startIndex, 
 							MeshPersistentContact* manifoldContacts, PxU32& numContacts, Vec3V& normal, Vec3V& closestA, Vec3V& closestB, PxU32& faceIndex, FloatV& mtd)
 {
 	bool hadContacts = false;

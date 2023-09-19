@@ -64,7 +64,7 @@
 // - Inherit from PxUserAllocated to PX_NEW something. Do it even on small classes, it's free.
 // - You cannot PX_NEW a POD. Use PX_ALLOC.
 
-#define PX_ALLOC(n, name) physx::PxAllocator().allocate(n, __FILE__, __LINE__)
+#define PX_ALLOC(n, name) physx::PxAllocator().allocate(n, PX_FL)
 
 // PT: use this one to reduce the amount of visible reinterpret_cast
 #define PX_ALLOCATE(type, count, name)	reinterpret_cast<type*>(PX_ALLOC(count*sizeof(type), name))
@@ -78,7 +78,7 @@
 
 #define PX_FREE_THIS	physx::PxAllocator().deallocate(this)
 
-#define PX_NEW(T)				new (physx::PxReflectionAllocator<T>(), __FILE__, __LINE__) T
+#define PX_NEW(T)				new (physx::PxReflectionAllocator<T>(), PX_FL) T
 #define PX_PLACEMENT_NEW(p, T)	new (p) T
 #define PX_DELETE_THIS			delete this
 #define PX_DELETE(x)			if(x)	{ delete x;		x = NULL;	}

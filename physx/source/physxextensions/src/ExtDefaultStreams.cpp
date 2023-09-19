@@ -116,7 +116,7 @@ PxDefaultFileOutputStream::PxDefaultFileOutputStream(const char* filename)
 	// - the file does not already exist. If it does, check that it is not write protected.
 	if(NULL == mFile)
 	{
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, 
 			"Unable to open file %s, errno 0x%x\n",filename,errno);
 	}
 	PX_ASSERT(mFile);

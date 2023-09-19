@@ -29,7 +29,7 @@
 #include "NpMaterial.h"
 #include "NpPhysics.h"
 #include "CmUtils.h"
-#include "omnipvd/OmniPvdPxSampler.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 using namespace Cm;
@@ -43,7 +43,7 @@ NpMaterial::NpMaterial(const PxsMaterialCore& desc) :
 
 NpMaterial::~NpMaterial()
 {
-	OMNI_PVD_DESTROY(PxMaterial, static_cast<PxMaterial &>(*this))
+	OMNI_PVD_DESTROY(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, static_cast<PxMaterial &>(*this))
 
 	NpPhysics::getInstance().removeMaterialFromTable(*this);
 }
@@ -110,7 +110,7 @@ void NpMaterial::setDynamicFriction(PxReal x)
 	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxMaterial::setDynamicFriction: invalid float");
 	mMaterial.dynamicFriction = x;
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, dynamicFriction, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, dynamicFriction, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getDynamicFriction() const
@@ -125,7 +125,7 @@ void NpMaterial::setStaticFriction(PxReal x)
 	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxMaterial::setStaticFriction: invalid float");
 	mMaterial.staticFriction = x;
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, staticFriction, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, staticFriction, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getStaticFriction() const
@@ -142,11 +142,11 @@ void NpMaterial::setRestitution(PxReal x)
 	if ((!(mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT) && x < 0.0f) || (x > 1.0f))
 	{
 		PxClamp(x, 0.0f, 1.0f);
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxMaterial::setRestitution: Invalid value %f was clamped to [0,1]!", PxF64(x));
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxMaterial::setRestitution: Invalid value %f was clamped to [0,1]!", PxF64(x));
 	}
 	mMaterial.restitution = x;
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, restitution, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, restitution, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getRestitution() const
@@ -163,11 +163,11 @@ void NpMaterial::setDamping(PxReal x)
 	if ((!(mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT) && x != 0.0f))
 	{
 		x = 0.f;
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxMaterial::setDamping: Attempting to set a non-zero damping coefficient without raising PxMaterialFlag::eCOMPLIANT_CONTACT first!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxMaterial::setDamping: Attempting to set a non-zero damping coefficient without raising PxMaterialFlag::eCOMPLIANT_CONTACT first!");
 	}
 	mMaterial.damping = x;
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, damping, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, damping, static_cast<PxMaterial &>(*this), x)
 }
 
 PxReal NpMaterial::getDamping() const
@@ -184,14 +184,14 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 	else
 		mMaterial.flags &= ~PxMaterialFlags(flag);
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
 
 void NpMaterial::setFlags(PxMaterialFlags inFlags)
 {
 	mMaterial.flags = inFlags;
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
 
 PxMaterialFlags NpMaterial::getFlags() const
@@ -205,7 +205,7 @@ void NpMaterial::setFrictionCombineMode(PxCombineMode::Enum x)
 {
 	mMaterial.setFrictionCombineMode(x);
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, frictionCombineMode, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, frictionCombineMode, static_cast<PxMaterial &>(*this), x)
 }
 
 PxCombineMode::Enum NpMaterial::getFrictionCombineMode() const
@@ -219,7 +219,7 @@ void NpMaterial::setRestitutionCombineMode(PxCombineMode::Enum x)
 {
 	mMaterial.setRestitutionCombineMode(x);
 	updateMaterial();
-	OMNI_PVD_SET(PxMaterial, restitutionCombineMode, static_cast<PxMaterial &>(*this), x)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, restitutionCombineMode, static_cast<PxMaterial &>(*this), x)
 }
 
 PxCombineMode::Enum NpMaterial::getRestitutionCombineMode() const

@@ -40,6 +40,7 @@
 #include "vehicle2/suspension/PxVehicleSuspensionStates.h"
 #include "vehicle2/wheel/PxVehicleWheelStates.h"
 #include "vehicle2/wheel/PxVehicleWheelParams.h"
+#include "vehicle2/wheel/PxVehicleWheelHelpers.h"
 
 #include "PxVehicleTireFunctions.h"
 #include "PxVehicleTireParams.h"
@@ -115,11 +116,14 @@ public:
 		{
 			const PxU32 wheelId = axleDescription->wheelIdsInAxleOrder[i];
 
+			const bool isWheelOnGround = PxVehicleIsWheelOnGround(suspensionStates[wheelId]);
+
 			//Compute the tire slip directions
 			PxVehicleTireDirsUpdate(
 				suspensionParams[wheelId],
 				steerResponseStates[wheelId],
-				roadGeomStates[wheelId], suspensionComplianceStates[wheelId],
+				roadGeomStates[wheelId].plane.n, isWheelOnGround,
+				suspensionComplianceStates[wheelId],
 				*rigidBodyState,
 				context.frame,
 				tireDirectionStates[wheelId]);
@@ -141,15 +145,16 @@ public:
 
 			//Update the camber angle
 			PxVehicleTireCamberAnglesUpdate(
-				suspensionParams[wheelId], steerResponseStates[wheelId], roadGeomStates[wheelId],
+				suspensionParams[wheelId], steerResponseStates[wheelId],
+				roadGeomStates[wheelId].plane.n, isWheelOnGround,
 				suspensionComplianceStates[wheelId], *rigidBodyState,
 				context.frame,
 				tireCamberAngleStates[wheelId]);
 
 			//Compute the friction
 			PxVehicleTireGripUpdate(
-				tireForceParams[wheelId], roadGeomStates[wheelId], 
-				suspensionStates[wheelId], suspensionForces[wheelId],
+				tireForceParams[wheelId], roadGeomStates[wheelId].friction, 
+				isWheelOnGround, suspensionForces[wheelId],
 				tireSlipStates[wheelId], tireGripStates[wheelId]);
 
 			//Update the tire sticky state
@@ -253,6 +258,10 @@ public:
 		{
 			const PxU32 wheelId = axleDescription->wheelIdsInAxleOrder[i];
 
+			const bool isWheelOnGround = roadGeomStates[wheelId].hitState;
+			// note: since this is the legacy component, PxVehicleIsWheelOnGround() is not used
+			//       here
+
 			//Compute the tire slip directions
 			PxVehicleTireDirsLegacyUpdate(
 				suspensionParams[wheelId],
@@ -278,16 +287,19 @@ public:
 
 			//Update the camber angle
 			PxVehicleTireCamberAnglesUpdate(
-				suspensionParams[wheelId], steerResponseStates[wheelId], roadGeomStates[wheelId],
+				suspensionParams[wheelId], steerResponseStates[wheelId],
+				roadGeomStates[wheelId].plane.n, isWheelOnGround,
 				suspensionComplianceStates[wheelId], *rigidBodyState,
 				context.frame,
 				tireCamberAngleStates[wheelId]);
 
 			//Compute the friction
 			PxVehicleTireGripUpdate(
-				tireForceParams[wheelId], roadGeomStates[wheelId], 
-				suspensionStates[wheelId], suspensionForces[wheelId],
+				tireForceParams[wheelId], roadGeomStates[wheelId].friction, 
+				PxVehicleIsWheelOnGround(suspensionStates[wheelId]), suspensionForces[wheelId],
 				tireSlipStates[wheelId], tireGripStates[wheelId]);
+			// note: PxVehicleIsWheelOnGround() used here to reflect previous behavior since this is
+			//       the legacy component after all
 
 			//Update the tire sticky state
 			//

@@ -121,7 +121,7 @@ namespace physx { namespace profile {
 			{
 				const uint32_t allocSize = mBegin ? newSize * 2 : newSize;
 
-				uint8_t* newData = static_cast<uint8_t*>(TAllocator::allocate(allocSize, __FILE__, __LINE__));
+				uint8_t* newData = static_cast<uint8_t*>(TAllocator::allocate(allocSize, PX_FL));
 				memset(newData, 0xf,allocSize);
 				if ( mBegin )
 				{

@@ -47,19 +47,6 @@ namespace physx
 	}
 
 
-
-	PX_ALIGN_PREFIX(16) struct PxsFEMSoftBodyMaterialAuxData
-	{
-		// derived for co-rotational (computed internally)
-		float	rows[6][6];				//144			
-
-		// derived quantities (computed internally)
-		float	lambda;					//148
-		float	mu;						//152
-		float	alpha;					//156
-		float	volumeLambda;			//160
-	}PX_ALIGN_SUFFIX(16);
-
 	PX_ALIGN_PREFIX(16) struct PxsFEMSoftBodyMaterialData
 	{
 		PxReal	youngs;					//4

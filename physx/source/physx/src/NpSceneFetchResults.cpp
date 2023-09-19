@@ -48,6 +48,7 @@
 #include "common/PxProfileZone.h"
 #include "BpBroadPhase.h"
 #include "BpAABBManagerBase.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 
@@ -178,7 +179,8 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 			PxCUresult res = mCudaContextManager->getCudaContext()->getLastError();
 			if (res)
 			{
-				outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PhysX Internal CUDA error. Simulation can not continue!");
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PhysX Internal CUDA error. Simulation can not continue! Error code %i!\n", PxI32(res));
+				//outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PhysX Internal CUDA error. Simulation can not continue!");
 				if(errorState)
 					*errorState = res;
 			}
@@ -220,6 +222,8 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 		OmniPvdPxSampler* omniPvdSampler = NpPhysics::getInstance().mOmniPvdSampler;
 		if (omniPvdSampler && omniPvdSampler->isSampling())
 		{
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 			//send all xforms updated by the sim:
 			PxU32 nActiveActors;
 			PxActor ** activeActors = mScene.getActiveActors(nActiveActors);
@@ -230,8 +234,8 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 				{
 					PxRigidActor* ra = static_cast<PxRigidActor*>(a);
 					PxTransform t = ra->getGlobalPose();
-					OMNI_PVD_SET(PxRigidActor, translation, *ra, t.p)
-					OMNI_PVD_SET(PxRigidActor, rotation, *ra, t.q)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, *ra, t.p)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, *ra, t.q)
 
 					if (a->getType() == PxActorType::eRIGID_DYNAMIC)
 					{
@@ -239,13 +243,15 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 						PxRigidBody& rb = *static_cast<PxRigidBody*>(a);
 						
 						const PxVec3 linVel = rdyn->getLinearVelocity();
-						OMNI_PVD_SET(PxRigidBody, linearVelocity, rb, linVel)
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, rb, linVel)
 
 						const PxVec3 angVel = rdyn->getAngularVelocity();
-						OMNI_PVD_SET(PxRigidBody, angularVelocity, rb, angVel)
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, rb, angVel)
 
 						const PxRigidBodyFlags rFlags = rdyn->getRigidBodyFlags();
-						OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, rb, rFlags)
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, rb, rFlags)
+
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, wakeCounter, *rdyn, rdyn->getWakeCounter());
 					}
 					
 				}
@@ -259,13 +265,13 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 						pxArticulationParentLink = &(pxArticulationJoint->getParentArticulationLink());
 
 						PxArticulationJointReducedCoordinate& jcord = *pxArticulationJoint;
-						PxReal vals[6];
-						for (PxU32 ax = 0; ax < 6; ++ax)
+						PxReal vals[PxArticulationAxis::eCOUNT];
+						for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 							vals[ax] = jcord.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointPosition, jcord, vals, sizeof(vals));
-						for (PxU32 ax = 0; ax < 6; ++ax)
+						OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointPosition, jcord, vals, PxArticulationAxis::eCOUNT);
+						for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 							vals[ax] = jcord.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
-						OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointVelocity, jcord, vals, sizeof(vals));
+						OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointVelocity, jcord, vals, PxArticulationAxis::eCOUNT);
 					}
 
 					physx::PxTransform TArtLinkLocal;
@@ -281,25 +287,26 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 						// PT:: tag: scalar transform*transform
 						TArtLinkLocal = TParentGlobalInv * TArtLinkGlobal;
 					}
-					else {
+					else
+					{
 						TArtLinkLocal = pxArticulationLink->getGlobalPose();
-						OMNI_PVD_SET(PxArticulationReducedCoordinate, worldBounds, pxArticulationLink->getArticulation(), pxArticulationLink->getArticulation().getWorldBounds());
+						OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, worldBounds, pxArticulationLink->getArticulation(), pxArticulationLink->getArticulation().getWorldBounds());
 					}
-					OMNI_PVD_SET(PxRigidActor, translation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.p)
-					OMNI_PVD_SET(PxRigidActor, rotation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.q)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.p)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, static_cast<PxRigidActor&>(*a), TArtLinkLocal.q)
 					
 					const PxVec3 linVel = pxArticulationLink->getLinearVelocity();
-					OMNI_PVD_SET(PxRigidBody, linearVelocity, static_cast<PxRigidBody&>(*a), linVel)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, static_cast<PxRigidBody&>(*a), linVel)
 
 					const PxVec3 angVel = pxArticulationLink->getAngularVelocity();
-					OMNI_PVD_SET(PxRigidBody, angularVelocity, static_cast<PxRigidBody&>(*a), angVel)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, static_cast<PxRigidBody&>(*a), angVel)
 
 					const PxRigidBodyFlags rFlags = pxArticulationLink->getRigidBodyFlags();
-					OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*a), rFlags)
+					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*a), rFlags)
 				}
 
 				const PxBounds3 worldBounds = a->getWorldBounds();
-				OMNI_PVD_SET(PxActor, worldBounds, *a, worldBounds)
+				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, *a, worldBounds)
 
 				// update active actors' joints
 				const PxRigidActor* ra = a->is<PxRigidActor>();
@@ -335,6 +342,8 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 
 			//end frame
 			omniPvdSampler->sampleScene(this);
+
+			OMNI_PVD_WRITE_SCOPE_END
 		}
 #endif
 	}
@@ -420,9 +429,11 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 	{
 		if (mScene.isUsingGpuDynamicsOrBp())
 		{
-			if (mCudaContextManager->getCudaContext()->getLastError())
+			PxCUresult res = mCudaContextManager->getCudaContext()->getLastError();
+			if (res)
 			{
-				outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PhysX Internal CUDA error. Simulation can not continue!");
+				PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PhysX Internal CUDA error. Simulation can not continue! Error code %i!\n", PxI32(res));
+				//outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PhysX Internal CUDA error. Simulation can not continue!");
 				if (errorState)
 					*errorState = mCudaContextManager->getCudaContext()->getLastError();
 			}

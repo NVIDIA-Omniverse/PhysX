@@ -540,10 +540,13 @@ Cm::SpatialVectorF* Z)
 			//minResponseThreshold = PxMax(minResponseThreshold, DY_ARTICULATION_MIN_RESPONSE);
 		}
 
+	
 		setSolverConstants(s.constant, s.unbiasedConstant, s.velMultiplier, s.impulseMultiplier, 
 			c, normalVel, unitResponse, minResponseThreshold, erp, dt, invdt);
 
-		//s.targetVelocity = initVel;
+		//If we have a spring then we will do the following:
+		//s.constant = -dt*kd*(vTar - v0)/denom  - dt*ks*(xTar - x0)/denom
+		//s.unbiasedConstant = -dt*kd*(vTar - v0)/denom  - dt*ks*(xTar - x0)/denom
 		const PxReal velBias = initVel * s.velMultiplier;
 		s.constant += velBias;
 		s.unbiasedConstant += velBias;

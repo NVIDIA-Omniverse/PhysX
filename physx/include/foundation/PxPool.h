@@ -202,7 +202,7 @@ class PxPoolBase : public PxUserAllocated, public Alloc
 	// Allocate a slab and segregate it into the freelist
 	void allocateSlab()
 	{
-		T* slab = reinterpret_cast<T*>(Alloc::allocate(mSlabSize, __FILE__, __LINE__));
+		T* slab = reinterpret_cast<T*>(Alloc::allocate(mSlabSize, PX_FL));
 
 		mSlabs.pushBack(slab);
 

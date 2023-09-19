@@ -232,7 +232,7 @@ protected:
 	PX_INLINE			PxHeightField(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags) {}
 	PX_INLINE			PxHeightField(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 	virtual				~PxHeightField() {}
-	virtual	bool		isKindOf(const char* name) const { return !::strcmp("PxHeightField", name) || PxRefCounted::isKindOf(name); }
+	virtual	bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxHeightField", PxRefCounted); }
 };
 
 #if !PX_DOXYGEN

@@ -40,6 +40,8 @@
 #include "PxIsosurfaceExtraction.h"
 #include "foundation/PxArray.h"
 
+#define USE_CUDA_INTEROP (!PX_PUBLIC_RELEASE)
+
 #define CUDA_SUCCESS 0
 #define SHOW_SOLID_SDF_SLICE 0
 #define IDX(i, j, k, offset) ((i) + dimX * ((j) + dimY * ((k) + dimZ * (offset))))
@@ -58,9 +60,9 @@ extern PxArray<PxVec4> gIsosurfaceVertices;
 extern PxArray<PxU32> gIsosurfaceIndices;
 extern PxArray<PxVec4> gIsosurfaceNormals;
 extern PxIsosurfaceExtractor* gIsosurfaceExtractor;
-void* gVerticesGpu;
-void* gNormalsGpu;
-void* gInterleavedVerticesAndNormalsGpu;
+extern void* gVerticesGpu;
+extern void* gNormalsGpu;
+extern void* gInterleavedVerticesAndNormalsGpu;
 #endif
 
 namespace

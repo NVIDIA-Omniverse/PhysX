@@ -117,7 +117,7 @@ public:
 	virtual								~PxvNphaseImplementationContext() {}
 
 	virtual void						destroy() = 0;
-	virtual void						updateContactManager(PxReal dt, bool hasBoundsArrayChanged, bool hasContactDistanceChanged, PxBaseTask* continuation, PxBaseTask* firstPassContinuation, Cm::FanoutTask* updateBoundAndShapeTask) = 0;
+	virtual void						updateContactManager(PxReal dt, bool hasContactDistanceChanged, PxBaseTask* continuation, PxBaseTask* firstPassContinuation, Cm::FanoutTask* updateBoundAndShapeTask) = 0;
 	virtual void						postBroadPhaseUpdateContactManager(PxBaseTask* continuation) = 0;
 	virtual void						secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation) = 0;
 	virtual void						fetchUpdateContactManager() = 0;

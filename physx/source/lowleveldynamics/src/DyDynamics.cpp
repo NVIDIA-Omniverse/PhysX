@@ -275,7 +275,7 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 			if (type == PxsIndexedInteraction::eARTICULATION)
 			{
 				desc.articulationA = a;
-				desc.linkIndexA =node1.articulationLinkId();
+				desc.linkIndexA = node1.articulationLinkId();
 			}
 			else
 			{
@@ -1200,7 +1200,6 @@ public:
 						constraints[accumulatedCount++] = mThreadContext.tempContactList[a];
 					}
 				}
-
 #if 1
 				PxSort(constraints + articulationStartIndex, accumulatedCount - articulationStartIndex, ArticulationSortPredicate());
 #endif
@@ -1270,7 +1269,7 @@ public:
 							header.originalContactPatches = startManagerOutput->contactPatches;
 							header.originalContactPoints = startManagerOutput->contactPoints;
 							header.originalContactCount = startManagerOutput->nbContacts;
-							header.originalPatchCount	= startManagerOutput->nbPatches;
+							header.originalPatchCount = startManagerOutput->nbPatches;
 							header.originalForceBuffer = reinterpret_cast<PxReal*>(startManagerOutput->contactForces);
 							header.originalStatusFlags = startManagerOutput->statusFlag;
 						}
@@ -1305,7 +1304,7 @@ public:
 					header.originalContactPatches = startManagerOutput->contactPatches;
 					header.originalContactPoints = startManagerOutput->contactPoints;
 					header.originalContactCount = startManagerOutput->nbContacts;
-					header.originalPatchCount	= startManagerOutput->nbPatches;
+					header.originalPatchCount = startManagerOutput->nbPatches;
 					header.originalForceBuffer = reinterpret_cast<PxReal*>(startManagerOutput->contactForces);
 					header.originalStatusFlags = startManagerOutput->statusFlag;
 				}
@@ -1771,14 +1770,13 @@ public:
 						integrateCore(mThreadContext.motionVelocityArray[k].linear, mThreadContext.motionVelocityArray[k].angular,
 							solverBodies[k], solverBodyData, mContext.mDt, core.lockFlags);
 
-						
 						rBody.mLastTransform = core.body2World;
 						core.body2World = solverBodyData.body2World;
 						core.linearVelocity = solverBodyData.linearVelocity;
 						core.angularVelocity = solverBodyData.angularVelocity;
 
 						const bool hasStaticTouch = mIslandSim.getIslandStaticTouchCount(PxNodeIndex(solverBodyData.nodeIndex)) != 0;
-						sleepCheck(const_cast<PxsRigidBody*>(mObjects.bodies[k]), mContext.mDt, mContext.mEnableStabilization, mThreadContext.motionVelocityArray[k], hasStaticTouch);
+						sleepCheck(mObjects.bodies[k], mContext.mDt, mContext.mEnableStabilization, mThreadContext.motionVelocityArray[k], hasStaticTouch);
 					}
 
 					for(PxU32 cnt=0;cnt<mIslandContext.mCounts.articulations;cnt++)

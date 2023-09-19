@@ -109,7 +109,7 @@ namespace physx
 		readProperty( inReader, "NumWheels", numWheels );
 		if( numWheels == 0)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"PxSerialization::createCollectionFromXml: PxVehicleRepXSerializer: Xml field NumWheels is zero!");
 			return PxRepXObject();
 		}

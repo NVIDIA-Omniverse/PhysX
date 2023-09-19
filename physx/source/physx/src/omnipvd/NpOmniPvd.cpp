@@ -83,7 +83,7 @@ namespace physx
 		else
 		{
 			/*
-			mInstance->error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__,
+			mInstance->error(PxErrorCode::eINVALID_OPERATION, PX_FL,
 				"Foundation destruction failed due to pending module references. Close/release all depending "
 				"modules first.");
 				*/

@@ -243,7 +243,7 @@ public:
 				PxFEMSoftBodyMaterial*					createFEMSoftBodyMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction);
 				void									releaseFEMMaterialToPool(PxFEMSoftBodyMaterial& material);
 
-				PxFEMClothMaterial*						createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction);
+				PxFEMClothMaterial*						createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness);
 				void									releaseFEMClothMaterialToPool(PxFEMClothMaterial& material);
 
 				PxPBDMaterial*							createPBDMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal vorticityConfinement, PxReal surfaceTension, PxReal cohesion, PxReal lift, PxReal drag, PxReal cflCoefficient, PxReal gravityScale);

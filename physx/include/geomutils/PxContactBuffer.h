@@ -53,11 +53,7 @@ namespace physx
 			count = 0;
 		}
 
-		PX_FORCE_INLINE bool contact(const PxVec3& worldPoint, 
-					 const PxVec3& worldNormalIn, 
-					 PxReal separation, 
-					 PxU32 faceIndex1 = PXC_CONTACT_NO_FACE_INDEX
-					 )
+		PX_FORCE_INLINE bool contact(const PxVec3& worldPoint, const PxVec3& worldNormalIn, PxReal separation, PxU32 faceIndex1 = PXC_CONTACT_NO_FACE_INDEX)
 		{
 			PX_ASSERT(PxAbs(worldNormalIn.magnitude()-1)<1e-3f);
 

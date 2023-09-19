@@ -29,6 +29,8 @@
 #include "ExtDistanceJoint.h"
 #include "ExtConstraintHelper.h"
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -56,7 +58,7 @@ void DistanceJoint::setMinDistance(PxReal distance)
 	data().minDistance = distance;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, minDistance, static_cast<PxDistanceJoint&>(*this), distance)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, minDistance, static_cast<PxDistanceJoint&>(*this), distance)
 }
 
 PxReal DistanceJoint::getMinDistance() const
@@ -70,7 +72,7 @@ void DistanceJoint::setMaxDistance(PxReal distance)
 	data().maxDistance = distance;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, maxDistance, static_cast<PxDistanceJoint&>(*this), distance)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, maxDistance, static_cast<PxDistanceJoint&>(*this), distance)
 }
 
 PxReal DistanceJoint::getMaxDistance() const	
@@ -84,7 +86,7 @@ void DistanceJoint::setTolerance(PxReal tolerance)
 	data().tolerance = tolerance;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, tolerance, static_cast<PxDistanceJoint&>(*this), tolerance)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, tolerance, static_cast<PxDistanceJoint&>(*this), tolerance)
 }
 
 PxReal DistanceJoint::getTolerance() const
@@ -98,7 +100,7 @@ void DistanceJoint::setStiffness(PxReal stiffness)
 	data().stiffness = stiffness;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, stiffness, static_cast<PxDistanceJoint&>(*this), stiffness)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, stiffness, static_cast<PxDistanceJoint&>(*this), stiffness)
 }
 
 PxReal DistanceJoint::getStiffness() const	
@@ -112,7 +114,7 @@ void DistanceJoint::setDamping(PxReal damping)
 	data().damping = damping;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, damping, static_cast<PxDistanceJoint&>(*this), damping)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, damping, static_cast<PxDistanceJoint&>(*this), damping)
 }
 
 PxReal DistanceJoint::getDamping() const
@@ -130,7 +132,7 @@ void DistanceJoint::setDistanceJointFlags(PxDistanceJointFlags flags)
 	data().jointFlags = flags; 
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, jointFlags, static_cast<PxDistanceJoint&>(*this), flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, jointFlags, static_cast<PxDistanceJoint&>(*this), flags)
 }
 
 void DistanceJoint::setDistanceJointFlag(PxDistanceJointFlag::Enum flag, bool value)
@@ -141,7 +143,7 @@ void DistanceJoint::setDistanceJointFlag(PxDistanceJointFlag::Enum flag, bool va
 		data().jointFlags &= ~flag;
 	markDirty();
 
-	OMNI_PVD_SET(PxDistanceJoint, jointFlags, static_cast<PxDistanceJoint&>(*this), getDistanceJointFlags())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, jointFlags, static_cast<PxDistanceJoint&>(*this), getDistanceJointFlags())
 }
 
 static void DistanceJointVisualize(PxConstraintVisualizer& viz, const void* constantBlock, const PxTransform& body0Transform, const PxTransform& body1Transform, PxU32 flags)
@@ -301,24 +303,28 @@ void DistanceJoint::resolveReferences(PxDeserializationContext& context)
 
 void DistanceJoint::updateOmniPvdProperties() const
 {
-	const PxJoint& j = static_cast<const PxJoint&>(*this);
-	OMNI_PVD_SET(PxDistanceJoint, distance, j, getDistance())
+	const PxDistanceJoint& j = static_cast<const PxDistanceJoint&>(*this);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, distance, j, getDistance())
 }
 
 template<>
-void physx::Ext::omniPvdInitJoint<DistanceJoint>(DistanceJoint* joint)
-{	
-	PxDistanceJoint& j = static_cast<PxDistanceJoint&>(*joint);
-	OMNI_PVD_CREATE(PxDistanceJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eDISTANCE);
+void physx::Ext::omniPvdInitJoint<DistanceJoint>(DistanceJoint& joint)
+{
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	OMNI_PVD_SET(PxDistanceJoint, minDistance, j, joint->getMinDistance())
-	OMNI_PVD_SET(PxDistanceJoint, maxDistance, j, joint->getMaxDistance())
-	OMNI_PVD_SET(PxDistanceJoint, tolerance, j, joint->getTolerance())
-	OMNI_PVD_SET(PxDistanceJoint, stiffness, j, joint->getStiffness())
-	OMNI_PVD_SET(PxDistanceJoint, damping, j, joint->getDamping())
-	OMNI_PVD_SET(PxDistanceJoint, jointFlags, j, joint->getDistanceJointFlags())
-	OMNI_PVD_SET(PxDistanceJoint, distance, j, joint->getDistance())
+	PxDistanceJoint& j = static_cast<PxDistanceJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eDISTANCE);
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, minDistance, j, joint.getMinDistance())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, maxDistance, j, joint.getMaxDistance())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, tolerance, j, joint.getTolerance())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, stiffness, j, joint.getStiffness())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, damping, j, joint.getDamping())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, jointFlags, j, joint.getDistanceJointFlags())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxDistanceJoint, distance, j, joint.getDistance())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

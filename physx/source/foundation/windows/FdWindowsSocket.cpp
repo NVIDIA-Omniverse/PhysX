@@ -37,7 +37,6 @@
 
 namespace physx
 {
-
 const uint32_t PxSocket::DEFAULT_BUFFER_SIZE = 32768;
 
 class SocketImpl

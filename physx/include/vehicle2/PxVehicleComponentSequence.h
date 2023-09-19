@@ -129,7 +129,7 @@ struct PxVehicleComponentSequence
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxVehicleComponentSequence::update: The timestep must be positive!");
 		}
 	}

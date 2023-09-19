@@ -89,6 +89,7 @@ SET(LLDYNAMICS_SOURCE
 	${LLDYNAMICS_BASE_DIR}/src/DyTGSContactPrep.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyTGSContactPrepBlock.cpp
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationContactPrep.h
+	${LLDYNAMICS_BASE_DIR}/src/DyArticulationCpuGpu.h
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationPImpl.h
 	${LLDYNAMICS_BASE_DIR}/src/DyArticulationUtils.h
 	${LLDYNAMICS_BASE_DIR}/src/DyFeatherstoneArticulationLink.h
@@ -167,14 +168,12 @@ TARGET_COMPILE_DEFINITIONS(LowLevelDynamics
 	PRIVATE ${LOWLEVELDYNAMICS_COMPILE_DEFS}
 )
 
-IF(NV_USE_GAMEWORKS_OUTPUT_DIRS)	
-	SET_TARGET_PROPERTIES(LowLevelDynamics PROPERTIES 
-		ARCHIVE_OUTPUT_NAME_DEBUG "LowLevelDynamics_static"
-		ARCHIVE_OUTPUT_NAME_CHECKED "LowLevelDynamics_static"
-		ARCHIVE_OUTPUT_NAME_PROFILE "LowLevelDynamics_static"
-		ARCHIVE_OUTPUT_NAME_RELEASE "LowLevelDynamics_static"
-	)
-ENDIF()
+SET_TARGET_PROPERTIES(LowLevelDynamics PROPERTIES 
+    ARCHIVE_OUTPUT_NAME_DEBUG "LowLevelDynamics_static"
+    ARCHIVE_OUTPUT_NAME_CHECKED "LowLevelDynamics_static"
+    ARCHIVE_OUTPUT_NAME_PROFILE "LowLevelDynamics_static"
+    ARCHIVE_OUTPUT_NAME_RELEASE "LowLevelDynamics_static"
+)
 
 IF(LLDYNAMICS_COMPILE_PDB_NAME_DEBUG)
 	SET_TARGET_PROPERTIES(LowLevelDynamics PROPERTIES 

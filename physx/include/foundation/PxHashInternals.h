@@ -367,7 +367,7 @@ class PxHashBase : private PxAllocator
 			newEntriesByteOffset += (16 - (newEntriesByteOffset & 15)) & 15;
 			uint32_t newBufferByteSize = newEntriesByteOffset + newEntriesCapacity * sizeof(Entry);
 
-			newBuffer = reinterpret_cast<uint8_t*>(PxAllocator::allocate(newBufferByteSize, __FILE__, __LINE__));
+			newBuffer = reinterpret_cast<uint8_t*>(PxAllocator::allocate(newBufferByteSize, PX_FL));
 			PX_ASSERT(newBuffer);
 
 			newHash = reinterpret_cast<uint32_t*>(newBuffer + newHashByteOffset);

@@ -324,7 +324,7 @@ namespace physx { namespace Sn {
 
 			if ( strstr( newItem.liveObject.typeName, "PxCloth" ) || strstr( newItem.liveObject.typeName, "PxClothFabric" ) )
 			{  
-				PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "Didn't suppot PxCloth upgrate from 3.2 to 3.3! ");
+				PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "Didn't suppot PxCloth upgrate from 3.2 to 3.3! ");
 				continue;
 			}
 

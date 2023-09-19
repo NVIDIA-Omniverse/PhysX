@@ -84,10 +84,11 @@ PX_C_EXPORT PX_PHYSX_CORE_API int PX_CALL_CONV PxGetSuggestedCudaDeviceOrdinal(p
  \param[in] foundation PhysXFoundation instance.
  \param[in] desc Cuda context manager desc.
  \param[in] profilerCallback PhysX profiler callback instance.
+ \param[in] launchSynchronous Set launchSynchronous to true for CUDA to report the actual point of failure.
 
  @see PxGetProfilerCallback()
  */
-PX_C_EXPORT PX_PHYSX_CORE_API physx::PxCudaContextManager* PX_CALL_CONV PxCreateCudaContextManager(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback = NULL);
+PX_C_EXPORT PX_PHYSX_CORE_API physx::PxCudaContextManager* PX_CALL_CONV PxCreateCudaContextManager(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback = NULL, bool launchSynchronous = false);
 
 /**
  * \brief Sets profiler callback to PhysX GPU

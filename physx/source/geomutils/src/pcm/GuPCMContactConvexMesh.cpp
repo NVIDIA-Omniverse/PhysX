@@ -44,27 +44,26 @@
 using namespace physx;
 using namespace Gu;
 using namespace Cm;
-using namespace physx::aos;
+using namespace aos;
 
-namespace physx
+namespace
 {
-
 struct PCMConvexVsMeshContactGenerationCallback : PCMMeshContactGenerationCallback<PCMConvexVsMeshContactGenerationCallback>
 {
 	PCMConvexVsMeshContactGenerationCallback& operator=(const PCMConvexVsMeshContactGenerationCallback&);
-public:
+
 	PCMConvexVsMeshContactGeneration	mGeneration;
 	const BoxPadded&					mBox;
 
 	PCMConvexVsMeshContactGenerationCallback(
-		const aos::FloatVArg contactDistance,
-		const aos::FloatVArg replaceBreakingThreshold,
+		const FloatVArg contactDistance,
+		const FloatVArg replaceBreakingThreshold,
 		const PxTransformV& convexTransform, 
 		const PxTransformV& meshTransform,
 		MultiplePersistentContactManifold& multiManifold,
 		PxContactBuffer& contactBuffer,
 		const PolygonalData& polyData,
-		SupportLocal* polyMap,
+		const SupportLocal* polyMap,
 		PxInlineArray<PxU32, LOCAL_PCM_CONTACTS_SIZE>* delayedContacts,
 		const FastVertex2ShapeScaling& convexScaling,
 		bool idtConvexScale,
@@ -94,17 +93,15 @@ public:
 		mGeneration.processTriangleCache<CacheSize, PCMConvexVsMeshContactGeneration>(cache);
 	}
 };
+}
 
-bool Gu::PCMContactConvexMesh(const PolygonalData& polyData, SupportLocal* polyMap, const aos::FloatVArg minMargin, const PxBounds3& hullAABB, const PxTriangleMeshGeometry& shapeMesh,
+bool Gu::PCMContactConvexMesh(const PolygonalData& polyData, const SupportLocal* polyMap, const FloatVArg minMargin, const PxBounds3& hullAABB, const PxTriangleMeshGeometry& shapeMesh,
 						const PxTransform& transform0, const PxTransform& transform1,
 						PxReal contactDistance, PxContactBuffer& contactBuffer,
 						const FastVertex2ShapeScaling& convexScaling, const FastVertex2ShapeScaling& meshScaling,
-						bool idtConvexScale, bool idtMeshScale, Gu::MultiplePersistentContactManifold& multiManifold,
+						bool idtConvexScale, bool idtMeshScale, MultiplePersistentContactManifold& multiManifold,
 						PxRenderOutput* renderOutput)
-
 {
-	using namespace aos;
-
 	const QuatV q0 = QuatVLoadA(&transform0.q.x);
 	const Vec3V p0 = V3LoadA(&transform0.p.x);
 
@@ -117,14 +114,12 @@ bool Gu::PCMContactConvexMesh(const PolygonalData& polyData, SupportLocal* polyM
 	const PxTransformV meshTransform(p1, q1);//triangleMesh  
 	const PxTransformV curTransform = meshTransform.transformInv(convexTransform);
 	
-	
 	if(multiManifold.invalidate(curTransform, minMargin))
 	{
 		const FloatV replaceBreakingThreshold = FMul(minMargin, FLoad(0.05f));
 		multiManifold.mNumManifolds = 0;
 		multiManifold.setRelativeTransform(curTransform); 
 
-	
 		////////////////////
 		const TriangleMesh* PX_RESTRICT meshData = _getMeshData(shapeMesh);
 
@@ -168,7 +163,6 @@ bool Gu::PCMContactConvexMesh(const PolygonalData& polyData, SupportLocal* polyM
 
 bool Gu::pcmContactConvexMesh(GU_CONTACT_METHOD_ARGS)
 {
-	using namespace aos;
 	PX_UNUSED(renderOutput);
 
 	const PxConvexMeshGeometry& shapeConvex = checkedCast<PxConvexMeshGeometry>(shape0);
@@ -200,21 +194,20 @@ bool Gu::pcmContactConvexMesh(GU_CONTACT_METHOD_ARGS)
 
 	if(idtScaleConvex)
 	{
-		SupportLocalImpl<Gu::ConvexHullNoScaleV> convexMap(static_cast<const ConvexHullNoScaleV&>(convexHull), convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, true);
-		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		SupportLocalImpl<ConvexHullNoScaleV> convexMap(static_cast<const ConvexHullNoScaleV&>(convexHull), convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, true);
+		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 	else
 	{
-		SupportLocalImpl<Gu::ConvexHullV> convexMap(convexHull, convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, false);
-		return Gu::PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		SupportLocalImpl<ConvexHullV> convexMap(convexHull, convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, false);
+		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 }
 
 bool Gu::pcmContactBoxMesh(GU_CONTACT_METHOD_ARGS)
 {
-	using namespace aos;
 	PX_UNUSED(renderOutput);
 
 	MultiplePersistentContactManifold& multiManifold = cache.getMultipleManifold();
@@ -234,9 +227,9 @@ bool Gu::pcmContactBoxMesh(GU_CONTACT_METHOD_ARGS)
 
 	const Vec3V boxExtents = V3LoadU(shapeBox.halfExtents);
 	const PxReal toleranceLength = params.mToleranceLength;
-	const FloatV minMargin = Gu::CalculatePCMBoxMargin(boxExtents, toleranceLength, GU_PCM_MESH_MANIFOLD_EPSILON);
+	const FloatV minMargin = CalculatePCMBoxMargin(boxExtents, toleranceLength, GU_PCM_MESH_MANIFOLD_EPSILON);
 
-	BoxV boxV(V3Zero(), boxExtents);
+	const BoxV boxV(V3Zero(), boxExtents);
 
 	const PxTransformV boxTransform = loadTransformA(transform0);//box
 
@@ -247,8 +240,6 @@ bool Gu::pcmContactBoxMesh(GU_CONTACT_METHOD_ARGS)
 	const Mat33V identity = M33Identity();
 	SupportLocalImpl<BoxV> boxMap(boxV, boxTransform, identity, identity, true);
 
-	return Gu::PCMContactConvexMesh(polyData, &boxMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, idtScaling,  meshScaling, 
+	return PCMContactConvexMesh(polyData, &boxMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, idtScaling,  meshScaling, 
 		true, idtMeshScale, multiManifold, renderOutput);
-}
-
 }

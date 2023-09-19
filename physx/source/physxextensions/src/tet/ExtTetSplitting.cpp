@@ -262,7 +262,9 @@ namespace Ext
 		for (PxI32 i = startAt; i < 4; ++i)
 			if (list[i] == value)
 				return i;
-		return -1;
+
+		PX_ASSERT(false); // we should never reach this line
+		return 0;
 	}
 
 	//Counts how many times every corner is referenced by the specified set of edges - useful for corner classification

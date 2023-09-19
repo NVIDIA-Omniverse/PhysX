@@ -32,6 +32,8 @@
 #include "ExtConstraintHelper.h"
 #include "CmConeLimitHelper.h"
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -78,10 +80,10 @@ void D6Joint::setMotion(PxD6Axis::Enum index, PxD6Motion::Enum t)
 	mRecomputeMotion = true; 
 	markDirty(); 
 #if PX_SUPPORT_OMNI_PVD
-	PxD6Motion::Enum motions[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	PxD6Motion::Enum motions[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 		motions[i] = getMotion(PxD6Axis::Enum(i));
-	OMNI_PVD_SETB(PxD6Joint, motions, static_cast<PxD6Joint&>(*this), motions, sizeof(motions))
+	OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, motions, static_cast<PxD6Joint&>(*this), motions, PxD6Axis::eCOUNT)
 #endif
 }
 
@@ -113,23 +115,27 @@ void D6Joint::setDrive(PxD6Drive::Enum index, const PxD6JointDrive& d)
 	mRecomputeMotion = true; 
 	markDirty(); 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	PxReal forceLimit[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	PxReal forceLimit[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 		forceLimit[i] = getDrive(PxD6Drive::Enum(i)).forceLimit;
-	OMNI_PVD_SETB(PxD6Joint, driveForceLimit, j, forceLimit, sizeof(forceLimit))
-	PxD6JointDriveFlags flags[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveForceLimit, j, forceLimit, PxD6Axis::eCOUNT)
+	PxD6JointDriveFlags flags[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 		flags[i] = getDrive(PxD6Drive::Enum(i)).flags;
-	OMNI_PVD_SETB(PxD6Joint, driveFlags, j, flags, sizeof(flags))
-	PxReal stiffness[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveFlags, j, flags, PxD6Axis::eCOUNT)
+	PxReal stiffness[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 		stiffness[i] = getDrive(PxD6Drive::Enum(i)).stiffness;
-	OMNI_PVD_SETB(PxD6Joint, driveStiffness, j, stiffness, sizeof(stiffness))
-	PxReal damping[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveStiffness, j, stiffness, PxD6Axis::eCOUNT)
+	PxReal damping[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 		damping[i] = getDrive(PxD6Drive::Enum(i)).damping;
-	OMNI_PVD_SETB(PxD6Joint, driveDamping, j, damping, sizeof(damping))
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveDamping, j, damping, PxD6Axis::eCOUNT)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -140,12 +146,16 @@ void D6Joint::setDistanceLimit(const PxJointLinearLimit& l)
 	data().mUseDistanceLimit = true;
 	markDirty(); 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, distanceLimitValue, j, l.value)
-	OMNI_PVD_SET(PxD6Joint, distanceLimitRestitution, j, l.restitution)
-	OMNI_PVD_SET(PxD6Joint, distanceLimitBounceThreshold, j, l.bounceThreshold)
-	OMNI_PVD_SET(PxD6Joint, distanceLimitStiffness, j, l.stiffness)
-	OMNI_PVD_SET(PxD6Joint, distanceLimitDamping, j, l.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, distanceLimitValue, j, l.value)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, distanceLimitRestitution, j, l.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, distanceLimitBounceThreshold, j, l.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, distanceLimitStiffness, j, l.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, distanceLimitDamping, j, l.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -170,26 +180,31 @@ void D6Joint::setLinearLimit(PxD6Axis::Enum axis, const PxJointLinearLimitPair& 
 	d.mUseNewLinearLimits = true;
 	markDirty(); 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	PxReal values[3];
-	for (PxU32 i = 0; i < 3; ++i)
+	const PxU32 valueCount = 3;
+	PxReal values[valueCount];
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).lower;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitLower, j, values, sizeof(values))
-	for (PxU32 i = 0; i < 3; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitLower, j, values, valueCount)
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).upper;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitUpper, j, values, sizeof(values))
-	for (PxU32 i = 0; i < 3; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitUpper, j, values, valueCount)
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).restitution;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitRestitution, j, values, sizeof(values))
-	for (PxU32 i = 0; i < 3; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitRestitution, j, values, valueCount)
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).bounceThreshold;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitBounceThreshold, j, values, sizeof(values))
-	for (PxU32 i = 0; i < 3; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitBounceThreshold, j, values, valueCount)
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).stiffness;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitStiffness, j, values, sizeof(values))
-	for (PxU32 i = 0; i < 3; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitStiffness, j, values, valueCount)
+	for (PxU32 i = 0; i < valueCount; ++i)
 		values[i] = getLinearLimit(PxD6Axis::Enum(i)).damping;
-	OMNI_PVD_SETB(PxD6Joint, linearLimitDamping, j, values, sizeof(values))
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, linearLimitDamping, j, values, valueCount)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -223,13 +238,17 @@ void D6Joint::setTwistLimit(const PxJointAngularLimitPair& l)
 	markDirty(); 
 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, twistLimitLower, j, l.lower)
-	OMNI_PVD_SET(PxD6Joint, twistLimitUpper, j, l.upper)
-	OMNI_PVD_SET(PxD6Joint, twistLimitRestitution, j, l.restitution)
-	OMNI_PVD_SET(PxD6Joint, twistLimitBounceThreshold, j, l.bounceThreshold)
-	OMNI_PVD_SET(PxD6Joint, twistLimitStiffness, j, l.stiffness)
-	OMNI_PVD_SET(PxD6Joint, twistLimitDamping, j, l.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitLower, j, l.lower)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitUpper, j, l.upper)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitRestitution, j, l.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitBounceThreshold, j, l.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitStiffness, j, l.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistLimitDamping, j, l.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -247,15 +266,19 @@ void D6Joint::setPyramidSwingLimit(const PxJointLimitPyramid& l)
 	markDirty(); 
 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitYAngleMin, j, l.yAngleMin)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitYAngleMax, j, l.yAngleMax)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitZAngleMin, j, l.zAngleMin)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitZAngleMax, j, l.zAngleMax)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitRestitution, j, l.restitution)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitBounceThreshold, j, l.bounceThreshold)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitStiffness, j, l.stiffness)
-	OMNI_PVD_SET(PxD6Joint, pyramidSwingLimitDamping, j, l.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitYAngleMin, j, l.yAngleMin)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitYAngleMax, j, l.yAngleMax)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitZAngleMin, j, l.zAngleMin)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitZAngleMax, j, l.zAngleMax)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitRestitution, j, l.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitBounceThreshold, j, l.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitStiffness, j, l.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, pyramidSwingLimitDamping, j, l.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -273,13 +296,17 @@ void D6Joint::setSwingLimit(const PxJointLimitCone& l)
 	markDirty(); 
 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, swingLimitYAngle, j, l.yAngle)
-	OMNI_PVD_SET(PxD6Joint, swingLimitZAngle, j, l.zAngle)
-	OMNI_PVD_SET(PxD6Joint, swingLimitRestitution, j, l.restitution)
-	OMNI_PVD_SET(PxD6Joint, swingLimitBounceThreshold, j, l.bounceThreshold)
-	OMNI_PVD_SET(PxD6Joint, swingLimitStiffness, j, l.stiffness)
-	OMNI_PVD_SET(PxD6Joint, swingLimitDamping, j, l.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitYAngle, j, l.yAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitZAngle, j, l.zAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitRestitution, j, l.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitBounceThreshold, j, l.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitStiffness, j, l.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingLimitDamping, j, l.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -296,7 +323,7 @@ void D6Joint::setDrivePosition(const PxTransform& pose, bool autowake)
 		wakeUpActors();
 	markDirty(); 
 
-	OMNI_PVD_SET(PxD6Joint, drivePosition, static_cast<PxD6Joint&>(*this), pose)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, drivePosition, static_cast<PxD6Joint&>(*this), pose)
 }
 
 void D6Joint::getDriveVelocity(PxVec3& linear, PxVec3& angular)	const
@@ -314,9 +341,13 @@ void D6Joint::setDriveVelocity(const PxVec3& linear, const PxVec3& angular, bool
 		wakeUpActors();
 	markDirty();
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, driveLinVelocity, j, linear)
-	OMNI_PVD_SET(PxD6Joint, driveAngVelocity, j, angular)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveLinVelocity, j, linear)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveAngVelocity, j, angular)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -910,56 +941,68 @@ void D6Joint::resolveReferences(PxDeserializationContext& context)
 
 void D6Joint::updateOmniPvdProperties() const
 {
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxD6Joint& j = static_cast<const PxD6Joint&>(*this);
-	OMNI_PVD_SET(PxD6Joint, twistAngle, j, getTwistAngle())
-	OMNI_PVD_SET(PxD6Joint, swingYAngle, j, getSwingYAngle())
-	OMNI_PVD_SET(PxD6Joint, swingZAngle, j, getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, getTwistAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, getSwingYAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, getSwingZAngle())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 template<>
-void physx::Ext::omniPvdInitJoint<D6Joint>(D6Joint* joint)
+void physx::Ext::omniPvdInitJoint<D6Joint>(D6Joint& joint)
 {
-	const PxD6Joint& j = static_cast<const PxD6Joint&>(*joint);
-	OMNI_PVD_CREATE(PxD6Joint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eD6);
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	PxD6Motion::Enum motions[6];
-	for (PxU32 i = 0; i < 6; ++i)
-		motions[i] = joint->getMotion(PxD6Axis::Enum(i));
-	OMNI_PVD_SETB(PxD6Joint, motions, j, motions, sizeof(motions))
+	const PxD6Joint& j = static_cast<const PxD6Joint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eD6);
 
-	PxReal forceLimit[6];
-	for (PxU32 i = 0; i < 6; ++i)
-		forceLimit[i] = joint->getDrive(PxD6Drive::Enum(i)).forceLimit;
-	OMNI_PVD_SETB(PxD6Joint, driveForceLimit, j, forceLimit, sizeof(forceLimit))
-	PxD6JointDriveFlags flags[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	PxD6Motion::Enum motions[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
+		motions[i] = joint.getMotion(PxD6Axis::Enum(i));
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, motions, j, motions, PxD6Axis::eCOUNT)
+
+	PxReal forceLimit[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
+		forceLimit[i] = joint.getDrive(PxD6Drive::Enum(i)).forceLimit;
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveForceLimit, j, forceLimit, PxD6Axis::eCOUNT)
+
+	PxD6JointDriveFlags flags[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 	{
-		flags[i] = joint->getDrive(PxD6Drive::Enum(i)).flags;
+		flags[i] = joint.getDrive(PxD6Drive::Enum(i)).flags;
 	}
-	OMNI_PVD_SETB(PxD6Joint, driveFlags, j, flags, sizeof(flags))
-	PxReal stiffness[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveFlags, j, flags, PxD6Axis::eCOUNT)
+
+	PxReal stiffness[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 	{
-		stiffness[i] = joint->getDrive(PxD6Drive::Enum(i)).stiffness;
+		stiffness[i] = joint.getDrive(PxD6Drive::Enum(i)).stiffness;
 	}
-	OMNI_PVD_SETB(PxD6Joint, driveStiffness, j, stiffness, sizeof(stiffness))
-	PxReal damping[6];
-	for (PxU32 i = 0; i < 6; ++i)
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveStiffness, j, stiffness, PxD6Axis::eCOUNT)
+
+	PxReal damping[PxD6Axis::eCOUNT];
+	for (PxU32 i = 0; i < PxD6Axis::eCOUNT; ++i)
 	{
-		damping[i] = joint->getDrive(PxD6Drive::Enum(i)).damping;
+		damping[i] = joint.getDrive(PxD6Drive::Enum(i)).damping;
 	}
-	OMNI_PVD_SETB(PxD6Joint, driveDamping, j, damping, sizeof(damping))
-	OMNI_PVD_SET(PxD6Joint, drivePosition, j, joint->getDrivePosition())
+	OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveDamping, j, damping, PxD6Axis::eCOUNT)
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, drivePosition, j, joint.getDrivePosition())
 	
 	PxVec3 driveLinVel, driveAngVel;
-	joint->getDriveVelocity(driveLinVel, driveAngVel);
-	OMNI_PVD_SET(PxD6Joint, driveLinVelocity, j, driveLinVel)
-	OMNI_PVD_SET(PxD6Joint, driveAngVelocity, j, driveAngVel)
+	joint.getDriveVelocity(driveLinVel, driveAngVel);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveLinVelocity, j, driveLinVel)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, driveAngVelocity, j, driveAngVel)
 
-	OMNI_PVD_SET(PxD6Joint, twistAngle, j, joint->getTwistAngle())
-	OMNI_PVD_SET(PxD6Joint, swingYAngle, j, joint->getSwingYAngle())
-	OMNI_PVD_SET(PxD6Joint, swingZAngle, j, joint->getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, twistAngle, j, joint.getTwistAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingYAngle, j, joint.getSwingYAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxD6Joint, swingZAngle, j, joint.getSwingZAngle())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

@@ -79,10 +79,11 @@ public:
 	\param[out] outTetIndices The indices to store the voxel-based tetrahedral mesh
 	\param[out] inputPointToOutputTetIndex Buffer with the size of nbTetVerts that contains the tetrahedron index containing the input point with the same index
 	\param[in] anchorNodeIndices Some input vertices may not be referenced by any tetrahedron. They can be mapped to another input vertex that is used by a tetrahedron to support embedding of additional points.
+	\param[in] numTetsPerVoxel The number of tetrahedra used to fill a voxel. Only a value of 5 or 6 is supported. 5 is recommended because it mostly avoids mesh anisotropy.
 	\return True if success
 	*/
 	static bool createVoxelTetrahedronMesh(const PxTetrahedronMeshDesc& tetMesh, const PxU32 numVoxelsAlongLongestBoundingBoxAxis,
-		physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* inputPointToOutputTetIndex = NULL, const PxU32* anchorNodeIndices = NULL);
+		physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* inputPointToOutputTetIndex = NULL, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
 
 	/**
 	\brief Create voxel-based tetrahedron mesh using TetMaker
@@ -93,10 +94,11 @@ public:
 	\param[out] outTetIndices The indices to store the voxel-based tetrahedral mesh	
 	\param[out] inputPointToOutputTetIndex Buffer with the size of nbTetVerts that contains the tetrahedron index containing the input point with the same index
 	\param[in] anchorNodeIndices Some input vertices may not be referenced by any tetrahedron. They can be mapped to another input vertex that is used by a tetrahedron to support embedding of additional points.
+	\param[in] numTetsPerVoxel The number of tetrahedra used to fill a voxel. Only a value of 5 or 6 is supported. 5 is recommended because it mostly avoids mesh anisotropy.
 	\return True if success
 	*/
 	static bool createVoxelTetrahedronMeshFromEdgeLength(const PxTetrahedronMeshDesc& tetMesh, const PxReal voxelEdgeLength,
-		 physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* inputPointToOutputTetIndex = NULL, const PxU32* anchorNodeIndices = NULL);
+		 physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* inputPointToOutputTetIndex = NULL, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
 
 	/**
 	\brief Analyzes the triangle mesh to get a report about deficiencies. Some deficiencies can be handled by the tetmesher, others cannot.

@@ -91,7 +91,7 @@ class PxSListT : protected Alloc
   public:
 	PxSListT(const Alloc& alloc = Alloc()) : Alloc(alloc)
 	{
-		mImpl = reinterpret_cast<PxSListImpl*>(Alloc::allocate(PxSListImpl::getSize(), __FILE__, __LINE__));
+		mImpl = reinterpret_cast<PxSListImpl*>(Alloc::allocate(PxSListImpl::getSize(), PX_FL));
 		PX_ASSERT((size_t(mImpl) & (PX_SLIST_ALIGNMENT - 1)) == 0);
 		PX_PLACEMENT_NEW(mImpl, PxSListImpl)();
 	}

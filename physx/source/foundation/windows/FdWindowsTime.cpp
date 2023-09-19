@@ -29,27 +29,23 @@
 #include "foundation/PxTime.h"
 #include "foundation/windows/PxWindowsInclude.h"
 
-namespace
-{
-int64_t getTimeTicks()
+using namespace physx;
+
+static int64_t getTimeTicks()
 {
 	LARGE_INTEGER a;
 	QueryPerformanceCounter(&a);
 	return a.QuadPart;
 }
 
-double getTickDuration()
+static double getTickDuration()
 {
 	LARGE_INTEGER a;
 	QueryPerformanceFrequency(&a);
 	return 1.0f / double(a.QuadPart);
 }
 
-double sTickDuration = getTickDuration();
-} // namespace
-
-namespace physx
-{
+static double sTickDuration = getTickDuration();
 
 static const PxCounterFrequencyToTensOfNanos gCounterFreq = PxTime::getCounterFrequency();
 
@@ -94,4 +90,3 @@ PxTime::Second PxTime::getLastTime() const
 	return mTickCount * sTickDuration;
 }
 
-} // namespace physx

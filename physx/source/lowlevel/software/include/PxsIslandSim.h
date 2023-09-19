@@ -670,7 +670,7 @@ private:
 	void activateNodeInternal(PxNodeIndex index);
 	void deactivateNodeInternal(PxNodeIndex index);
 
-	PX_FORCE_INLINE  void notifyReadyForSleeping(const PxNodeIndex nodeIndex)
+/*	PX_FORCE_INLINE  void notifyReadyForSleeping(const PxNodeIndex nodeIndex)
 	{
 		Node& node = mNodes[nodeIndex.index()];
 		//PX_ASSERT(node.isActive());
@@ -682,7 +682,7 @@ private:
 		Node& node = mNodes[nodeIndex.index()];
 		PX_ASSERT(node.isActive() || node.isActivating());
 		node.clearIsReadyForSleeping();
-	}
+	}*/
 
 	PX_FORCE_INLINE void markIslandActive(IslandId islandId)
 	{

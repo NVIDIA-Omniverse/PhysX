@@ -834,9 +834,9 @@ bool immediate::PxCreateJointConstraintsWithImmediateShaders(PxConstraintBatchHe
 	class immConstraintAdapter
 	{
 	public:
-		static PX_FORCE_INLINE bool getData(PxImmediateConstraint* constraints, PxU32 i, PxConstraintSolverPrep* prep, const void** constantBlock)
+		static PX_FORCE_INLINE bool getData(PxImmediateConstraint* constraints_, PxU32 i, PxConstraintSolverPrep* prep, const void** constantBlock)
 		{
-			const PxImmediateConstraint& ic = constraints[i];
+			const PxImmediateConstraint& ic = constraints_[i];
 			*prep = ic.prep;
 			*constantBlock = ic.constantBlock;
 			return false;
@@ -887,27 +887,27 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 
 	struct PGS
 	{
-		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt, float invDt, PxU32 nbSolverArticulations, Dy::FeatherstoneArticulation** solverArticulations, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV, bool velIter)
+		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_, bool velIter_)
 		{
-			while(nbSolverArticulations--)
+			while(nbSolverArticulations_--)
 			{
-				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations++);
-				immArt->immSolveInternalConstraints(dt, invDt, Z, deltaV, 0.0f, velIter, false);
+				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
+				immArt->immSolveInternalConstraints(dt_, invDt_, Z_, deltaV_, 0.0f, velIter_, false);
 			}
 		}
 
-		static PX_FORCE_INLINE void runIter(const PxConstraintBatchHeader* batchHeaders, PxU32 nbBatchHeaders, const PxSolverConstraintDesc* solverConstraintDescs,
-											PxU32 nbSolverArticulations, Dy::FeatherstoneArticulation** articulations, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV,
-											const Dy::SolveBlockMethod* solveTable, Dy::SolverContext& cache, float dt, float invDt, bool doFriction, bool velIter)
+		static PX_FORCE_INLINE void runIter(const PxConstraintBatchHeader* batchHeaders_, PxU32 nbBatchHeaders_, const PxSolverConstraintDesc* solverConstraintDescs_,
+											PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** articulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_,
+											const Dy::SolveBlockMethod* solveTable_, Dy::SolverContext& solverCache_, float dt_, float invDt_, bool doFriction, bool velIter_)
 		{
-			cache.doFriction = doFriction;
-			for(PxU32 a=0; a<nbBatchHeaders; ++a)
+			solverCache_.doFriction = doFriction;
+			for(PxU32 a=0; a<nbBatchHeaders_; ++a)
 			{
-				const PxConstraintBatchHeader& batch = batchHeaders[a];
-				solveTable[batch.constraintType](solverConstraintDescs + batch.startIndex, batch.stride, cache);
+				const PxConstraintBatchHeader& batch = batchHeaders_[a];
+				solveTable_[batch.constraintType](solverConstraintDescs_ + batch.startIndex, batch.stride, solverCache_);
 			}
 
-			solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, Z, deltaV, velIter);
+			solveArticulationInternalConstraints(dt_, invDt_, nbSolverArticulations_, articulations_, Z_, deltaV_, velIter_);
 		}
 	};
 
@@ -1219,7 +1219,8 @@ void immArticulation::complete()
 
 	const PxU32 linkSize = mLinks.size();
 	setupLinks(linkSize, const_cast<ArticulationLink*>(mLinks.begin()));
-	jcalc(mArticulationData);
+	jcalc<true>(mArticulationData);
+	mJCalcDirty = false;
 	initPathToRoot();
 
 	mTempDeltaV.resize(linkSize);
@@ -1357,7 +1358,7 @@ void immediate::PxComputeUnconstrainedVelocities(PxArticulationHandle articulati
 	if(immArt->mJCalcDirty)
 	{
 		immArt->mJCalcDirty = false;
-		immArt->jcalc(immArt->mArticulationData);
+		immArt->jcalc<true>(immArt->mArticulationData);
 	}
 	immArt->immComputeUnconstrainedVelocities(dt, gravity, invLengthScale);
 }
@@ -1383,7 +1384,7 @@ void immediate::PxComputeUnconstrainedVelocitiesTGS(PxArticulationHandle articul
 	if(immArt->mJCalcDirty)
 	{
 		immArt->mJCalcDirty = false;
-		immArt->jcalc(immArt->mArticulationData);
+		immArt->jcalc<true>(immArt->mArticulationData);
 	}
 	immArt->immComputeUnconstrainedVelocitiesTGS(dt, totalDt, invDt, invTotalDt, gravity, invLengthScale);
 }
@@ -1562,11 +1563,9 @@ bool immediate::PxSetJointData(const PxArticulationLinkHandle& link, const PxArt
 	for(PxU32 i=0;i<PxArticulationAxis::eCOUNT;i++)
 	{
 		// PT: we don't need to recompute jcalc for these
-		// Seems that ArticulationJointCoreDirtyFlag::eLIMIT & ArticulationJointCoreDirtyFlag::eDRIVE are not used
 		core.limits[i]	= data.limits[i];
 		core.drives[i]	= data.drives[i];
 
-		// PT: TODO: what's going on with ArticulationJointCoreDirtyFlag::eJOINT_POS?
 		core.jointPos[i] = data.jointPos[i];
 		core.jointVel[i] = data.jointVel[i];
 
@@ -1869,9 +1868,9 @@ bool immediate::PxCreateJointConstraintsWithImmediateShadersTGS(PxConstraintBatc
 	class immConstraintAdapter
 	{
 	public:
-		static PX_FORCE_INLINE bool getData(PxImmediateConstraint* constraints, PxU32 i, PxConstraintSolverPrep* prep, const void** constantBlock)
+		static PX_FORCE_INLINE bool getData(PxImmediateConstraint* constraints_, PxU32 i, PxConstraintSolverPrep* prep, const void** constantBlock)
 		{
-			const PxImmediateConstraint& ic = constraints[i];
+			const PxImmediateConstraint& ic = constraints_[i];
 			*prep = ic.prep;
 			*constantBlock = ic.constantBlock;
 			return false;
@@ -1907,13 +1906,13 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	struct TGS
 	{
-		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt, float invDt, PxU32 nbSolverArticulations, Dy::FeatherstoneArticulation** solverArticulations, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV,
-			PxReal elapsedTime, bool velIter)
+		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_,
+			PxReal elapsedTime, bool velIter_)
 		{
-			while(nbSolverArticulations--)
+			while(nbSolverArticulations_--)
 			{
-				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations++);
-				immArt->immSolveInternalConstraints(dt, invDt, Z, deltaV, elapsedTime, velIter, true);
+				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
+				immArt->immSolveInternalConstraints(dt_, invDt_, Z_, deltaV_, elapsedTime, velIter_, true);
 			}
 		}
 	};

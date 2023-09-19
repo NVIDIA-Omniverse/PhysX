@@ -50,5 +50,16 @@ namespace Gu
 	{
 		Gu::precomputeClusterInformation<PxF32, PxVec3>(tree, triangles, numTriangles, points, result, rootNodeIndex);
 	}
+
+	PxF32 computeWindingNumber(const PxVec3& q, const PxU32* triangles, const PxU32 numTriangles, const PxVec3* points)
+	{
+		PxReal windingNumber = 0.0f;
+		for (PxU32 i = 0; i < numTriangles; ++i) 
+		{
+			const PxU32* tri = &triangles[3 * i];
+			windingNumber += Gu::evaluateExact<PxReal, PxVec3>(points[tri[0]], points[tri[1]], points[tri[2]], q);
+		}
+		return windingNumber;
+	}
 }
 }

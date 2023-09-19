@@ -44,7 +44,7 @@ static bool fullContactsGenerationConvexConvex(const GjkConvex* relativeConvex, 
 											   PersistentContactManifold& manifold, Vec3VArg normal, const Vec3VArg closestA, const Vec3VArg closestB,
 											   const FloatVArg contactDist, bool doOverlapTest, PxRenderOutput* renderOutput, PxReal toleranceLength)
 {
-	Gu::PolygonalData polyData0, polyData1;
+	PolygonalData polyData0, polyData1;
 	const ConvexHullV& convexHull0 = relativeConvex->getConvex<ConvexHullV>();
 	const ConvexHullV& convexHull1 = localConvex->getConvex<ConvexHullV>();
 	getPCMConvexData(convexHull0, idtScale0, polyData0);
@@ -64,7 +64,7 @@ static bool fullContactsGenerationConvexConvex(const GjkConvex* relativeConvex, 
 	if(generateFullContactManifold(polyData0, polyData1, map0, map1, manifoldContacts, numContacts, contactDist, normal, closestA, closestB, convexHull0.getMarginF(), 
 		convexHull1.getMarginF(), doOverlapTest, renderOutput, toleranceLength))
 	{
-		if (numContacts > 0)
+		if(numContacts > 0)
 		{
 			//reduce contacts
 			manifold.addBatchManifoldContacts(manifoldContacts, numContacts, toleranceLength);
@@ -81,7 +81,7 @@ static bool fullContactsGenerationConvexConvex(const GjkConvex* relativeConvex, 
 		else
 		{
 			//if doOverlapTest is true, which means GJK/EPA degenerate so we won't have any contact in the manifoldContacts array
-			if (!doOverlapTest)
+			if(!doOverlapTest)
 			{
 				const Vec3V worldNormal = manifold.getWorldNormal(transf1);
 
@@ -98,13 +98,13 @@ static bool generateOrProcessContactsConvexConvex(	const GjkConvex* relativeConv
 													PxU32 initialContacts, const FloatV minMargin, const FloatV contactDist,
 													bool idtScale0, bool idtScale1, PxReal toleranceLength, PxRenderOutput* renderOutput)
 {
-	if (status == GJK_NON_INTERSECT)
+	if(status == GJK_NON_INTERSECT)
 	{
 		return false;
 	}
 	else
 	{
-		Gu::PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
+		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
 
 		const Vec3V localNor = manifold.mNumContacts ? manifold.getLocalNormal() : V3Zero();
 
@@ -123,7 +123,7 @@ static bool generateOrProcessContactsConvexConvex(	const GjkConvex* relativeConv
 		//which means we should throw away the existing contacts and do full contact gen
 		const bool fullContactGen = FAllGrtr(FLoad(0.707106781f), V3Dot(localNor, output.normal)) || (manifold.mNumContacts < initialContacts);
 
-		if (fullContactGen || doOverlapTest)
+		if(fullContactGen || doOverlapTest)
 		{
 			return fullContactsGenerationConvexConvex(relativeConvex, localConvex, transf0, transf1, idtScale0, idtScale1, manifoldContacts, contactBuffer,
 				manifold, output.normal, output.closestA, output.closestB, contactDist, doOverlapTest, renderOutput, toleranceLength);
@@ -198,8 +198,8 @@ bool Gu::pcmContactConvexConvex(GU_CONTACT_METHOD_ARGS)
 
 	PersistentContactManifold& manifold = cache.getManifold();
 
-	const Gu::ConvexHullData* hullData0 = _getHullData(shapeConvex0);
-	const Gu::ConvexHullData* hullData1 = _getHullData(shapeConvex1);
+	const ConvexHullData* hullData0 = _getHullData(shapeConvex0);
+	const ConvexHullData* hullData1 = _getHullData(shapeConvex1);
 	PxPrefetchLine(hullData0);
 	PxPrefetchLine(hullData1);
 
@@ -217,8 +217,8 @@ bool Gu::pcmContactConvexConvex(GU_CONTACT_METHOD_ARGS)
 	const PxMatTransformV aToB(curRTrans);
 	
 	const PxReal toleranceLength = params.mToleranceLength;
-	const FloatV convexMargin0 = Gu::CalculatePCMConvexMargin(hullData0, vScale0, toleranceLength);
-	const FloatV convexMargin1 = Gu::CalculatePCMConvexMargin(hullData1, vScale1, toleranceLength);
+	const FloatV convexMargin0 = CalculatePCMConvexMargin(hullData0, vScale0, toleranceLength);
+	const FloatV convexMargin1 = CalculatePCMConvexMargin(hullData1, vScale1, toleranceLength);
 	
 	const PxU32 initialContacts = manifold.mNumContacts;
 
@@ -245,8 +245,9 @@ bool Gu::pcmContactConvexConvex(GU_CONTACT_METHOD_ARGS)
 		const QuatV vQuat0 = QuatVLoadU(&shapeConvex0.scale.rotation.x);
 		const QuatV vQuat1 = QuatVLoadU(&shapeConvex1.scale.rotation.x);
 		
-		const Gu::ConvexHullV convexHull0(hullData0, V3LoadU(hullData0->mCenterOfMass), vScale0, vQuat0, idtScale0);
-		const Gu::ConvexHullV convexHull1(hullData1, V3LoadU(hullData1->mCenterOfMass), vScale1, vQuat1, idtScale1);
+		// PT: safe loads because mCenterOfMass isn't the last data in the structure
+		const ConvexHullV convexHull0(hullData0, V3LoadU_SafeReadW(hullData0->mCenterOfMass), vScale0, vQuat0, idtScale0);
+		const ConvexHullV convexHull1(hullData1, V3LoadU_SafeReadW(hullData1->mCenterOfMass), vScale1, vQuat1, idtScale1);
 
 		GjkOutput output;
 		
@@ -260,7 +261,6 @@ bool Gu::pcmContactConvexConvex(GU_CONTACT_METHOD_ARGS)
 			return convexHullHasScale0(convexHull0, convexHull1, transf0, transf1, aToB, output, manifold,
 				contactBuffer, initialContacts, minMargin, contactDist, idtScale1, toleranceLength, renderOutput);
 		}
-	
 	}
 	else if(manifold.getNumContacts()> 0)
 	{

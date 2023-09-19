@@ -247,7 +247,7 @@ void PxParticleAttachmentBuffer::addRigidAttachment(PxRigidActor* rigidActor, co
 
 	if (rigidActor == NULL)
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleAttachmentBuffer::addRigidAttachment: rigidActor cannot be NULL.");
 			return;
 	}
@@ -256,11 +256,6 @@ void PxParticleAttachmentBuffer::addRigidAttachment(PxRigidActor* rigidActor, co
 	{
 		attachment.mConeLimitParams.axisAngle = PxVec4(coneLimit->mAxis, coneLimit->mAngle);
 		attachment.mConeLimitParams.lowHighLimits = PxVec4(coneLimit->mLowLimit, coneLimit->mHighLimit, 0.f, 0.f);
-	}
-	else
-	{
-		attachment.mConeLimitParams.axisAngle = PxVec4(0.f, 0.f, 0.f, -1.f);
-		attachment.mConeLimitParams.lowHighLimits = PxVec4(0.f);
 	}
 
 	if (rigidActor->getType() == PxActorType::eRIGID_STATIC)
@@ -321,7 +316,7 @@ bool PxParticleAttachmentBuffer::removeRigidAttachment(PxRigidActor* rigidActor,
 
 	if (rigidActor == NULL)
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleAttachmentBuffer::removeRigidAttachment: rigidActor cannot be NULL.");
 		return false;
 	}
@@ -481,28 +476,28 @@ struct ParticleClothBuffersImpl : public PxParticleClothBufferHelper, public PxU
 	{
 		if (mClothDesc.nbCloths + 1 > mMaxCloths)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleClothBufferHelper::addCloth: exceeding maximal number of cloths that can be added.");
 			return;
 		}
 
 		if (mClothDesc.nbSprings + numSprings > mMaxSprings)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleClothBufferHelper::addCloth: exceeding maximal number of springs that can be added.");
 			return;
 		}
 
 		if (mClothDesc.nbTriangles + numTriangles > mMaxTriangles)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleClothBufferHelper::addCloth: exceeding maximal number of triangles that can be added.");
 			return;
 		}
 
 		if (mClothDesc.nbParticles + numParticles > mMaxParticles)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 				"PxParticleClothBufferHelper::addCloth: exceeding maximal number of particles that can be added.");
 			return;
 		}

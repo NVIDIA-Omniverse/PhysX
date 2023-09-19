@@ -41,15 +41,13 @@ namespace
 {
 struct PCMSphereVsMeshContactGenerationCallback : PCMMeshContactGenerationCallback< PCMSphereVsMeshContactGenerationCallback >
 {
-
-public:
 	PCMSphereVsMeshContactGeneration	mGeneration;
 	
 	PCMSphereVsMeshContactGenerationCallback(
-		const aos::Vec3VArg sphereCenter,
-		const aos::FloatVArg sphereRadius,
-		const aos::FloatVArg contactDist,
-		const aos::FloatVArg replaceBreakingThreshold,
+		const Vec3VArg sphereCenter,
+		const FloatVArg sphereRadius,
+		const FloatVArg contactDist,
+		const FloatVArg replaceBreakingThreshold,
 		const PxTransformV& sphereTransform,
 		const PxTransformV& meshTransform,
 		MultiplePersistentContactManifold& multiManifold,
@@ -75,7 +73,7 @@ public:
 };
 }
 
-bool physx::Gu::pcmContactSphereMesh(GU_CONTACT_METHOD_ARGS)
+bool Gu::pcmContactSphereMesh(GU_CONTACT_METHOD_ARGS)
 {
 	PX_UNUSED(renderOutput);
 
@@ -161,12 +159,12 @@ bool physx::Gu::pcmContactSphereMesh(GU_CONTACT_METHOD_ARGS)
 	return multiManifold.addManifoldContactsToContactBuffer(contactBuffer, sphereTransform, meshTransform, sphereRadius);
 }
 
-static aos::FloatV pcmDistancePointTriangleSquared(	const aos::Vec3VArg p, 
-													const aos::Vec3VArg a, 
-													const aos::Vec3VArg b, 
-													const aos::Vec3VArg c,
-													aos::Vec3V& closestP,
-													FeatureCode& fc)
+static FloatV pcmDistancePointTriangleSquared(	const Vec3VArg p, 
+												const Vec3VArg a, 
+												const Vec3VArg b, 
+												const Vec3VArg c,
+												Vec3V& closestP,
+												FeatureCode& fc)
 {
 	const FloatV zero = FZero();
 	const Vec3V ab = V3Sub(b, a);
@@ -375,8 +373,7 @@ bool Gu::PCMSphereVsMeshContactGeneration::processTriangle(const PxVec3* verts, 
 	return true;
 }
 
-void Gu::PCMSphereVsMeshContactGeneration::addToPatch(const aos::Vec3VArg contactP, const aos::Vec3VArg patchNormal, const aos::FloatV dist,
-	const PxU32 triangleIndex)
+void Gu::PCMSphereVsMeshContactGeneration::addToPatch(const Vec3VArg contactP, const Vec3VArg patchNormal, const FloatV dist, PxU32 triangleIndex)
 {
 	PX_ASSERT(mNumContactPatch < PCM_MAX_CONTACTPATCH_SIZE);
 

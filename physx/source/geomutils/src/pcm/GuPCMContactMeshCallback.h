@@ -39,7 +39,6 @@ namespace physx
 {
 namespace Gu
 {
-
 template <typename Derived>
 struct PCMMeshContactGenerationCallback : MeshHitCallback<PxGeomRaycastHit>
 {
@@ -215,7 +214,7 @@ struct PCMTetMeshContactGenerationCallback : TetMeshHitCallback<PxGeomRaycastHit
 public:
 		
 	static const PxU32 CacheSize = 16;
-	Gu::TetrahedronCache<CacheSize>			mCache;
+	Gu::TetrahedronCache<CacheSize>	mCache;
 
 	PCMTetMeshContactGenerationCallback(): TetMeshHitCallback<PxGeomRaycastHit>(CallbackMode::eMULTIPLE)
 	{

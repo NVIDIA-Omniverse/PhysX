@@ -48,7 +48,7 @@ namespace physx
 
 int32_t Pxstrcmp(const char* str1, const char* str2)
 {
-	return ::strcmp(str1, str2);
+	return (str1 && str2) ? ::strcmp(str1, str2) : -1;
 }
 
 int32_t Pxstrncmp(const char* str1, const char* str2, size_t count)

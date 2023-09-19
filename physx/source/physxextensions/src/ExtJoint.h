@@ -48,7 +48,7 @@
 	#include "PxPvdClient.h"
 #endif
 
-#include "omnipvd/OmniPvdPxExtensionsSampler.h"
+#include "omnipvd/ExtOmniPvdSetData.h"
 
 namespace physx
 {
@@ -78,7 +78,7 @@ namespace Ext
 #if PX_SUPPORT_OMNI_PVD
 		if (j)
 		{
-			omniPvdInitJoint(j);
+			omniPvdInitJoint(*j);
 		}
 #endif
 
@@ -211,8 +211,10 @@ namespace Ext
 			mData->c2b[1] = getCom(actor1).transformInv(mLocalPose[1]);
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, actor0, static_cast<PxJoint&>(*this), actor0)
-			OMNI_PVD_SET(PxJoint, actor1, static_cast<PxJoint&>(*this), actor1)
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor0, static_cast<PxJoint&>(*this), actor0)
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor1, static_cast<PxJoint&>(*this), actor1)
+			OMNI_PVD_WRITE_SCOPE_END
 		}
 
 		// PxJoint
@@ -239,8 +241,10 @@ namespace Ext
 			mData->c2b[actor] = getCom(actor).transformInv(p); 
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, actor0LocalPose, static_cast<PxJoint&>(*this), mLocalPose[0])
-			OMNI_PVD_SET(PxJoint, actor1LocalPose, static_cast<PxJoint&>(*this), mLocalPose[1])
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor0LocalPose, static_cast<PxJoint&>(*this), mLocalPose[0])
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor1LocalPose, static_cast<PxJoint&>(*this), mLocalPose[1])
+			OMNI_PVD_WRITE_SCOPE_END
 		}
 
 		// PxJoint
@@ -314,8 +318,10 @@ namespace Ext
 			PX_CHECK_AND_RETURN(PxIsFinite(force) && PxIsFinite(torque), "PxJoint::setBreakForce: invalid float");
 			mPxConstraint->setBreakForce(force,torque);
 
-			OMNI_PVD_SET(PxJoint, breakForce, static_cast<PxJoint&>(*this), force)
-			OMNI_PVD_SET(PxJoint, breakTorque, static_cast<PxJoint&>(*this), torque)
+			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, breakForce, static_cast<PxJoint&>(*this), force)
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, breakTorque, static_cast<PxJoint&>(*this), torque)
+			OMNI_PVD_WRITE_SCOPE_END
 		}
 
 		// PxJoint
@@ -329,7 +335,7 @@ namespace Ext
 		{
 			mPxConstraint->setFlags(flags);
 
-			OMNI_PVD_SET(PxJoint, constraintFlags, static_cast<PxJoint&>(*this), flags)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, constraintFlags, static_cast<PxJoint&>(*this), flags)
 		}
 
 		// PxJoint
@@ -337,7 +343,7 @@ namespace Ext
 		{
 			mPxConstraint->setFlag(flag, value);
 
-			OMNI_PVD_SET(PxJoint, constraintFlags, static_cast<PxJoint&>(*this), getConstraintFlags())
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, constraintFlags, static_cast<PxJoint&>(*this), getConstraintFlags())
 		}
 
 		// PxJoint
@@ -353,7 +359,7 @@ namespace Ext
 			mData->invMassScale.linear0 = invMassScale;
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, invMassScale0, static_cast<PxJoint&>(*this), invMassScale)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, invMassScale0, static_cast<PxJoint&>(*this), invMassScale)
 		}
 
 		// PxJoint
@@ -369,7 +375,7 @@ namespace Ext
 			mData->invMassScale.angular0 = invInertiaScale;
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, invInertiaScale0, static_cast<PxJoint&>(*this), invInertiaScale)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, invInertiaScale0, static_cast<PxJoint&>(*this), invInertiaScale)
 		}
 
 		// PxJoint
@@ -385,7 +391,7 @@ namespace Ext
 			mData->invMassScale.linear1 = invMassScale;
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, invMassScale1, static_cast<PxJoint&>(*this), invMassScale)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, invMassScale1, static_cast<PxJoint&>(*this), invMassScale)
 		}
 
 		// PxJoint
@@ -401,7 +407,7 @@ namespace Ext
 			mData->invMassScale.angular1 = invInertiaScale;
 			mPxConstraint->markDirty();
 
-			OMNI_PVD_SET(PxJoint, invInertiaScale1, static_cast<PxJoint&>(*this), invInertiaScale)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxJoint, invInertiaScale1, static_cast<PxJoint&>(*this), invInertiaScale)
 		}
 
 		// PxJoint
@@ -423,7 +429,7 @@ namespace Ext
 #if PX_SUPPORT_OMNI_PVD
 			const char* n = name ? name : "";
 			PxU32 nLen = PxU32(strlen(n)) + 1;
-			OMNI_PVD_SETB(PxJoint, name, static_cast<PxJoint&>(*this), n, nLen)
+			OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxJoint, name, static_cast<PxJoint&>(*this), n, nLen)
 #endif
 		}
 
@@ -561,7 +567,7 @@ namespace Ext
 			if(Base::getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
 				PX_FREE(mData);
 
-			OMNI_PVD_DESTROY(PxJoint, static_cast<PxJoint&>(*this))
+			OMNI_PVD_DESTROY(OMNI_PVD_CONTEXT_HANDLE, PxJoint, static_cast<Base&>(*this))
 		}
 
 		PX_FORCE_INLINE DataClass& data() const
@@ -687,7 +693,7 @@ namespace Ext
 
 #if PX_SUPPORT_OMNI_PVD
 	void omniPvdSetBaseJointParams(PxJoint& joint, PxJointConcreteType::Enum cType);
-	template<typename JointType> void omniPvdInitJoint(JointType* joint);
+	template<typename JointType> void omniPvdInitJoint(JointType& joint);
 #endif
 
 } // namespace Ext

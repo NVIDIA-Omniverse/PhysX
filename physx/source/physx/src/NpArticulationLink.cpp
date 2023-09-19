@@ -29,6 +29,8 @@
 #include "NpArticulationReducedCoordinate.h"
 #include "NpRigidActorTemplateInternal.h"
 
+#include "omnipvd/NpOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Cm;
 
@@ -116,7 +118,7 @@ void NpArticulationLink::release()
 {
 	if(getNpScene())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationLink::release() not allowed while the articulation link is in a scene. Call will be ignored.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::release() not allowed while the articulation link is in a scene. Call will be ignored.");
 		return;
 	}
 
@@ -129,7 +131,7 @@ void NpArticulationLink::release()
 	}
 	else
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationLink::release(): Only leaf articulation links can be released. Call will be ignored.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::release(): Only leaf articulation links can be released. Call will be ignored.");
 	}
 }
 
@@ -194,15 +196,11 @@ PxU32 NpArticulationLink::getLinkIndex() const
 
 void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 {
-	NP_WRITE_CHECK(getNpScene());
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(pose.isSane(), "PxArticulationLink::setCMassLocalPose: invalid parameter");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationLink::setCMassLocalPose() not allowed while simulation is running. Call will be ignored.")
-
-	if (getNpScene() && getNpScene()->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationLink::setCMassLocalPose() : it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
-	}
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationLink::setCMassLocalPose() not allowed while simulation is running. Call will be ignored.")
 
 	const PxTransform p = pose.getNormalized();
 	const PxTransform oldpose = mCore.getBody2Actor();
@@ -227,11 +225,17 @@ void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 
 void NpArticulationLink::addForce(const PxVec3& force, PxForceMode::Enum mode, bool autowake)
 {
-	NP_WRITE_CHECK(getNpScene());
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(force.isFinite(), "PxArticulationLink::addForce: force is not valid.");
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationLink::addForce: Articulation link must be in a scene.");
+	PX_CHECK_AND_RETURN(npScene, "PxArticulationLink::addForce: Articulation link must be in a scene.");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationLink::addForce() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.")
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxArticulationLink::addForce() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.")
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::addForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 	addSpatialForce(&force, NULL, mode);
 
@@ -240,11 +244,17 @@ void NpArticulationLink::addForce(const PxVec3& force, PxForceMode::Enum mode, b
 
 void NpArticulationLink::addTorque(const PxVec3& torque, PxForceMode::Enum mode, bool autowake)
 {
-	NP_WRITE_CHECK(getNpScene());
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(torque.isFinite(), "PxArticulationLink::addTorque: force is not valid.");
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationLink::addTorque: Articulation link must be in a scene.");
+	PX_CHECK_AND_RETURN(npScene, "PxArticulationLink::addTorque: Articulation link must be in a scene.");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationLink::addTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.")
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxArticulationLink::addTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.")
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::addTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 	addSpatialForce(NULL, &torque, mode);
 
@@ -253,12 +263,18 @@ void NpArticulationLink::addTorque(const PxVec3& torque, PxForceMode::Enum mode,
 
 void NpArticulationLink::setForceAndTorque(const PxVec3& force, const PxVec3& torque, PxForceMode::Enum mode)
 {
-	NP_WRITE_CHECK(getNpScene());
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
 	PX_CHECK_AND_RETURN(torque.isFinite(), "PxArticulationLink::setForceAndTorque: torque is not valid.");
 	PX_CHECK_AND_RETURN(force.isFinite(), "PxArticulationLink::setForceAndTorque: force is not valid.");
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationLink::addTorque: Articulation link must be in a scene.");
+	PX_CHECK_AND_RETURN(npScene, "PxArticulationLink::addTorque: Articulation link must be in a scene.");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationLink::setForceAndTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxArticulationLink::setForceAndTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::setForceAndTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 	setSpatialForce(&force, &torque, mode);
 
@@ -267,20 +283,32 @@ void NpArticulationLink::setForceAndTorque(const PxVec3& force, const PxVec3& to
 
 void NpArticulationLink::clearForce(PxForceMode::Enum mode)
 {
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationLink::clearForce: Articulation link must be in a scene.");
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
+	PX_CHECK_AND_RETURN(npScene, "PxArticulationLink::clearForce: Articulation link must be in a scene.");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationLink::clearForce() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxArticulationLink::clearForce() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::clearForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 	clearSpatialForce(mode, true, false);
 }
 
 void NpArticulationLink::clearTorque(PxForceMode::Enum mode)
 {
-	NP_WRITE_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN(getNpScene(), "PxArticulationLink::clearTorque: Articulation link must be in a scene.");
+	NpScene* npScene = getNpScene();
+	NP_WRITE_CHECK(npScene);
+	PX_CHECK_AND_RETURN(npScene, "PxArticulationLink::clearTorque: Articulation link must be in a scene.");
 
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(getNpScene(), "PxArticulationLink::clearTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxArticulationLink::clearTorque() not allowed while simulation is running, except in a split simulation in-between PxScene::fetchCollision() and PxScene::advance().Call will be ignored.");
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::clearTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 	clearSpatialForce(mode, false, true);
 }
@@ -293,7 +321,7 @@ void NpArticulationLink::setCfmScale(const PxReal cfmScale)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationLink::setCfmScale() not allowed while simulation is running. Call will be ignored.")
 
 	mCore.getCore().cfmScale = cfmScale;
-	OMNI_PVD_SET(PxArticulationLink, CFMScale, static_cast<PxArticulationLink&>(*this), cfmScale); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationLink, CFMScale, static_cast<PxArticulationLink&>(*this), cfmScale); // @@@
 }
 
 PxReal NpArticulationLink::getCfmScale() const
@@ -309,6 +337,11 @@ void NpArticulationLink::setGlobalPoseInternal(const PxTransform& pose, bool aut
 	PX_CHECK_AND_RETURN(pose.isSane(), "PxArticulationLink::setGlobalPose: pose is not valid.");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationLink::setGlobalPose() not allowed while simulation is running. Call will be ignored.")
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationLink::setGlobalPose(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+	}
 
 #if PX_CHECKED
 	if (npScene)

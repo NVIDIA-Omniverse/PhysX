@@ -131,7 +131,7 @@ void computeRestPoses(PxVec4* pInvMasses, PxMat33* tetraRestPoses, const I* cons
 
 		if (fabsf(det) <= 1.e-9f)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeRestPoses(): Degenerate or inverted tetrahedron\n");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "computeRestPoses(): Degenerate or inverted tetrahedron\n");
 		}
 #endif
 	}
@@ -429,6 +429,21 @@ void Sc::SoftBodyCore::removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, P
 	Sc::SoftBodySim* sim = getSim();
 	if (sim)
 		sim->getScene().removeClothFilter(core, triIdx, *sim, tetIdx);
+}
+
+void Sc::SoftBodyCore::addVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, PxU32 tetIdx)
+{
+	Sc::SoftBodySim* sim = getSim();
+
+	if (sim)
+		sim->getScene().addVertClothFilter(core, vertIdx, *sim, tetIdx);
+}
+
+void Sc::SoftBodyCore::removeVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, PxU32 tetIdx)
+{
+	Sc::SoftBodySim* sim = getSim();
+	if (sim)
+		sim->getScene().removeVertClothFilter(core, vertIdx, *sim, tetIdx);
 }
 
 PxU32 Sc::SoftBodyCore::addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,

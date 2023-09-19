@@ -88,7 +88,7 @@ namespace physx
 		PX_INLINE						PxSoftBodyAuxData(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 		virtual							~PxSoftBodyAuxData() {}
 
-		virtual	bool					isKindOf(const char* name) const { return !::strcmp("PxSoftBodyAuxData", name) || PxRefCounted::isKindOf(name); }
+		virtual	bool					isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxSoftBodyAuxData", PxRefCounted); }
 	};
 
 	/**
@@ -199,7 +199,7 @@ namespace physx
 		PX_INLINE						PxTetrahedronMesh(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 		virtual							~PxTetrahedronMesh() {}
 
-		virtual	bool					isKindOf(const char* name) const { return !::strcmp("PxTetrahedronMesh", name) || PxRefCounted::isKindOf(name); }
+		virtual	bool					isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxTetrahedronMesh", PxRefCounted); }
 	};
 	
 	/**
@@ -276,7 +276,7 @@ namespace physx
 		PX_INLINE						PxSoftBodyMesh(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 		virtual							~PxSoftBodyMesh() {}
 
-		virtual	bool					isKindOf(const char* name) const { return !::strcmp("PxSoftBodyMesh", name) || PxRefCounted::isKindOf(name); }
+		virtual	bool					isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxSoftBodyMesh", PxRefCounted); }
 	};
 
 

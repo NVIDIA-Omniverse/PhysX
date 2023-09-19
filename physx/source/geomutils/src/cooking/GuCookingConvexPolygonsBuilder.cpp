@@ -318,7 +318,7 @@ static bool CleanFaces(PxU32& nbFaces, IndexedTriangle32* faces, PxU32& nbVerts,
 {
 	// Brute force mesh cleaning.
 	// PT: I added this back on Feb-18-05 because it fixes bugs with hulls from QHull.	
-	MeshCleaner cleaner(nbVerts, verts, nbFaces, faces->mRef, 0.0f);
+	MeshCleaner cleaner(nbVerts, verts, nbFaces, faces->mRef, 0.0f, 0.0f);
 	if (!cleaner.mNbTris)
 		return false;
 

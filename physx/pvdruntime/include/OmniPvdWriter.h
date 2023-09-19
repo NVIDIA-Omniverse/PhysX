@@ -103,7 +103,7 @@ public:
 	 *
 	 * @see OmniPvdWriter::registerClass()
 	 */
-	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, uint32_t value) = 0;
+	virtual OmniPvdAttributeHandle OMNI_PVD_CALL registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdEnumValueType value) = 0;
 	
 	/**
 	 * @brief Registers an attribute.

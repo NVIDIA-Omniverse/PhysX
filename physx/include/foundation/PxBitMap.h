@@ -432,7 +432,7 @@ namespace physx
 			const PxU32 newWordCount = (size + 31) >> 5;
 			if (newWordCount > getWordCount())
 			{
-				PxU32* newMap = reinterpret_cast<PxU32*>(mAllocator.allocate(newWordCount * sizeof(PxU32), __FILE__, __LINE__));
+				PxU32* newMap = reinterpret_cast<PxU32*>(mAllocator.allocate(newWordCount * sizeof(PxU32), PX_FL));
 				if (mMap)
 				{
 					PxMemCopy(newMap, mMap, getWordCount() * sizeof(PxU32));
@@ -455,7 +455,7 @@ namespace physx
 					mAllocator.deallocate(mMap);
 				// also resets the isInUserMemory bit
 				mWordCount = newWordCount;
-				mMap = reinterpret_cast<PxU32*>(mAllocator.allocate(mWordCount * sizeof(PxU32), __FILE__, __LINE__));
+				mMap = reinterpret_cast<PxU32*>(mAllocator.allocate(mWordCount * sizeof(PxU32), PX_FL));
 			}
 		}
 

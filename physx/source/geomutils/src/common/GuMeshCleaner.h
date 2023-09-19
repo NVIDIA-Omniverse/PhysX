@@ -39,7 +39,7 @@ namespace Gu
 	class MeshCleaner
 	{
 		public:
-			MeshCleaner(PxU32 nbVerts, const PxVec3* verts, PxU32 nbTris, const PxU32* indices, PxF32 meshWeldTolerance);
+			MeshCleaner(PxU32 nbVerts, const PxVec3* verts, PxU32 nbTris, const PxU32* indices, PxF32 meshWeldTolerance, PxF32 areaLimit);
 			~MeshCleaner();
 
 			PxU32	mNbVerts;

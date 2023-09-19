@@ -137,6 +137,8 @@ void Sc::ArticulationCore::setArticulationFlags(PxArticulationFlags flags)
 	mCore.flags = flags;
 	if(mSim)
 	{
+		mSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_USER_FLAGS);
+
 		const bool isFixedBaseLink = flags & PxArticulationFlag::eFIX_BASE;
 		mSim->setFixedBaseLink(isFixedBaseLink);
 	}

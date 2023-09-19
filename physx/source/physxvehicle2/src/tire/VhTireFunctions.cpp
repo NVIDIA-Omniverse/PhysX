@@ -107,15 +107,16 @@ void PxVehicleTireDirsLegacyUpdate
 
 void PxVehicleTireDirsUpdate
 (const PxVehicleSuspensionParams& suspParams,
- const PxReal steerAngle, const PxVehicleRoadGeometryState& rdGeomState, const PxVehicleSuspensionComplianceState& compState,
+ const PxReal steerAngle, const PxVec3& groundNormal, bool isWheelOnGround,
+ const PxVehicleSuspensionComplianceState& compState,
  const PxVehicleRigidBodyState& rigidBodyState,
  const PxVehicleFrame& frame,
  PxVehicleTireDirectionState& trSlipDirs)
 {
 	trSlipDirs.setToDefault();
 
-	//If there are no hits we'll have no ground plane.
-	if (!rdGeomState.hitState)
+	//Skip if the suspension could not push the wheel to the ground.
+	if (!isWheelOnGround)
 		return;
 
 	//Compute the wheel quaternion in the world frame.
@@ -125,11 +126,10 @@ void PxVehicleTireDirsUpdate
 
 	//We need lateral dir and hit norm to project wheel into ground plane.
 	const PxVec3 latDir = wheelOrientation.rotate(frame.getLatAxis());
-	const PxVec3& hitNorm = rdGeomState.plane.n;
 
 	//Compute the tire axes in the ground plane.
-	PxVec3 lng = latDir.cross(hitNorm);
-	PxVec3 lat = hitNorm.cross(lng);
+	PxVec3 lng = latDir.cross(groundNormal);
+	PxVec3 lat = groundNormal.cross(lng);
 	lng.normalize();
 	lat.normalize();
 
@@ -302,15 +302,16 @@ void PxVehicleTireSlipsLegacyUpdate
 
 void PxVehicleTireCamberAnglesUpdate
 (const PxVehicleSuspensionParams& suspParams,
- const PxReal steerAngle, const PxVehicleRoadGeometryState& rdGeomState, const PxVehicleSuspensionComplianceState& compState,
+ const PxReal steerAngle, const PxVec3& groundNormal, bool isWheelOnGround,
+ const PxVehicleSuspensionComplianceState& compState,
  const PxVehicleRigidBodyState& rigidBodyState,
  const PxVehicleFrame& frame,
  PxVehicleTireCamberAngleState& trCamberAngleState)
 {
 	trCamberAngleState.setToDefault();
 
-	//If there are no hits then carry on with zero camber.
-	if (!rdGeomState.hitState)
+	//Use zero camber if the suspension could not push the wheel to the ground.
+	if (!isWheelOnGround)
 		return;
 
 	//Compute the wheel quaternion in the world frame.
@@ -334,9 +335,8 @@ void PxVehicleTireCamberAnglesUpdate
 	//However, the cosine destroys the sign of the angle, thus we
 	//use:
 	//T.latDir = cos(pi/2 - theta) = sin(theta)  (latDir and vrtDir are perpendicular)
-	const PxVec3& hitNorm = rdGeomState.plane.n;
-	const PxF32 beta = hitNorm.dot(lngDir);
-	PxVec3 T = hitNorm - lngDir * beta;
+	const PxF32 beta = groundNormal.dot(lngDir);
+	PxVec3 T = groundNormal - lngDir * beta;
 	T.normalize();
 	const PxF32 sinTheta = T.dot(latDir);
 	const PxF32 theta = PxAsin(sinTheta);
@@ -372,8 +372,7 @@ PX_FORCE_INLINE void activateStickyFrictionLngConstraint
 	//Only do this if we can guarantee that the intention is to bring the car to rest (no accel pedal applied).
 	//We're going to replace the longitudinal tire force with the sticky friction so set the long slip to zero to ensure zero long force.
 	//Apply sticky friction to this tire if 
-	//(1) the wheel is locked (this means the brake/handbrake must be on) and the longitudinal speed at the tire contact point is vanishingly small and
-	//    the drive of vehicle has no intention to accelerate the vehicle.
+	//(1) the wheel is locked (this means the brake/handbrake must be on) and the longitudinal speed at the tire contact point is vanishingly small.
 	//(2) the accumulated time of low longitudinal speed is greater than a threshold.
 	stickyTireActiveFlag = false;
 	if (((PxAbs(longSpeed) < thresholdSpeed) && (0.0f == wheelOmega) && isIntentionToBrake) || (lowLngSpeedTime > thresholdTime))
@@ -518,7 +517,7 @@ PX_FORCE_INLINE PxF32 computeTireLoad
 
 PX_FORCE_INLINE PxF32 computeTireFriction
 (const PxVehicleTireForceParams& trForceParams, 
- const PxVehicleRoadGeometryState& rdGeomState, const PxVehicleTireSlipState& tireSlipState)
+ const PxReal frictionCoefficient, const PxVehicleTireSlipState& tireSlipState)
 {
 	//Interpolate the friction using the long slip value.
 	const PxF32 x0 = trForceParams.frictionVsSlip[0][0];
@@ -543,29 +542,25 @@ PX_FORCE_INLINE PxF32 computeTireFriction
 	}
 	PX_ASSERT(mu >= 0);
 
-	const PxF32 tireFriction = rdGeomState.friction*mu;
+	const PxF32 tireFriction = frictionCoefficient * mu;
 	return tireFriction;
 }
 
 void PxVehicleTireGripUpdate
 (const PxVehicleTireForceParams& trForceParams,
- const PxVehicleRoadGeometryState& rdGeomState, const PxVehicleSuspensionState& suspState, const PxVehicleSuspensionForce& suspForce,
+ const PxReal frictionCoefficient, bool isWheelOnGround, const PxVehicleSuspensionForce& suspForce,
  const PxVehicleTireSlipState& trSlipState,
  PxVehicleTireGripState& trGripState)
 {
 	trGripState.setToDefault();
 
-	//If there are no road hits then carry on with zero grip state.
-	if (!rdGeomState.hitState)
-		return;
-
 	//If the wheel is not touching the ground then carry on with zero grip state.
-	if (!PxVehicleIsWheelOnGround(suspState))
+	if (!isWheelOnGround)
 		return;
 
 	//Compute load and friction.
 	trGripState.load = computeTireLoad(trForceParams, suspForce);
-	trGripState.friction = computeTireFriction(trForceParams, rdGeomState, trSlipState);
+	trGripState.friction = computeTireFriction(trForceParams, frictionCoefficient, trSlipState);
 }
 
 void PxVehicleTireSlipsAccountingForStickyStatesUpdate

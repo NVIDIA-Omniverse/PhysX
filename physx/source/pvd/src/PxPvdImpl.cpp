@@ -126,7 +126,7 @@ bool PvdImpl::connect(PxPvdTransport& transport, PxPvdInstrumentationFlags flags
 {
 	if(mIsConnected)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxPvd::connect - recall connect! Should call disconnect before re-connect.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxPvd::connect - recall connect! Should call disconnect before re-connect.");
 	    return false;
 	}
 

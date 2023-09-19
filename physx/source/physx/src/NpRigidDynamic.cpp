@@ -28,6 +28,7 @@
 
 #include "NpRigidDynamic.h"
 #include "NpRigidActorTemplateInternal.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 
@@ -96,10 +97,21 @@ void NpRigidDynamic::setGlobalPose(const PxTransform& pose, bool autowake)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setGlobalPose() not allowed while simulation is running. Call will be ignored.")
 
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setGlobalPose(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
+
 	const PxTransform newPose = pose.getNormalized();	//AM: added to fix 1461 where users read and write orientations for no reason.
 	
 	const PxTransform body2World = newPose * mCore.getBody2Actor();
 	scSetBody2World(body2World);
+
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, *static_cast<PxRigidActor*>(this), newPose.p);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, *static_cast<PxRigidActor*>(this), newPose.q);
+	OMNI_PVD_WRITE_SCOPE_END
 
 	if(npScene)
 		mShapeManager.markActorForSQUpdate(npScene->getSQAPI(), *this);
@@ -198,7 +210,15 @@ void NpRigidDynamic::setLinearVelocity(const PxVec3& velocity, bool autowake)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setLinearVelocity() not allowed while simulation is running. Call will be ignored.")
 
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setLinearVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
+
 	scSetLinearVelocity(velocity);
+
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, *static_cast<PxRigidBody*>(this), velocity);
 
 	if(npScene)
 		wakeUpInternalNoKinematicTest((!velocity.isZero()), autowake);
@@ -215,6 +235,14 @@ void NpRigidDynamic::setAngularVelocity(const PxVec3& velocity, bool autowake)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setAngularVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	scSetAngularVelocity(velocity);
+
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, *static_cast<PxRigidBody*>(this), velocity);
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setAngularVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
 
 	if(npScene)
 		wakeUpInternalNoKinematicTest((!velocity.isZero()), autowake);
@@ -236,6 +264,12 @@ void NpRigidDynamic::addForce(const PxVec3& force, PxForceMode::Enum mode, bool 
 		return;
 	}
 
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::addForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
+
 	addSpatialForce(&force, NULL, mode);
 
 	wakeUpInternalNoKinematicTest(!force.isZero(), autowake);
@@ -251,6 +285,12 @@ void NpRigidDynamic::setForceAndTorque(const PxVec3& force, const PxVec3& torque
 	PX_CHECK_AND_RETURN(!(mCore.getActorFlags().isSet(PxActorFlag::eDISABLE_SIMULATION)), "PxRigidDynamic::setForceAndTorque: Not allowed if PxActorFlag::eDISABLE_SIMULATION is set!");
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setForceAndTorque() not allowed while simulation is running. Call will be ignored.")
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::setForceAndTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
 
 	if(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC)
 	{
@@ -279,6 +319,12 @@ void NpRigidDynamic::addTorque(const PxVec3& torque, PxForceMode::Enum mode, boo
 		return;
 	}
 
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::addTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
+
 	addSpatialForce(NULL, &torque, mode);
 
 	wakeUpInternalNoKinematicTest(!torque.isZero(), autowake);
@@ -298,6 +344,12 @@ void NpRigidDynamic::clearForce(PxForceMode::Enum mode)
 		outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRigidDynamic::clearForce: Body must be non-kinematic!");
 		return;
 	}
+	
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::clearForce(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		return;
+	}
 
 	clearSpatialForce(mode, true, false);
 }
@@ -314,6 +366,12 @@ void NpRigidDynamic::clearTorque(PxForceMode::Enum mode)
 	if(mCore.getFlags() & PxRigidBodyFlag::eKINEMATIC)
 	{
 		outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRigidDynamic::clearTorque: Body must be non-kinematic!");
+		return;
+	}
+
+	if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxRigidDynamic::clearTorque(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
 		return;
 	}
 
@@ -339,7 +397,7 @@ void NpRigidDynamic::setSleepThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setSleepThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(PxRigidDynamic, sleepThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, sleepThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setSleepThreshold(threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -361,7 +419,7 @@ void NpRigidDynamic::setStabilizationThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setStabilizationThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(PxRigidDynamic, stabilizationThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, stabilizationThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setFreezeThreshold(threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -387,7 +445,7 @@ void NpRigidDynamic::setWakeCounter(PxReal wakeCounterValue)
 
 	scSetWakeCounter(wakeCounterValue);
 
-	OMNI_PVD_SET(PxRigidDynamic, wakeCounter, static_cast<PxRigidDynamic&>(*this), wakeCounterValue); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, wakeCounter, static_cast<PxRigidDynamic&>(*this), wakeCounterValue); // @@@
 }
 
 PxReal NpRigidDynamic::getWakeCounter() const
@@ -437,8 +495,10 @@ void NpRigidDynamic::setSolverIterationCounts(PxU32 positionIters, PxU32 velocit
 
 	scSetSolverIterationCounts((velocityIters & 0xff) << 8 | (positionIters & 0xff));
 
-	OMNI_PVD_SET(PxRigidDynamic, positionIterations, static_cast<PxRigidDynamic&>(*this), positionIters); // @@@
-	OMNI_PVD_SET(PxRigidDynamic, velocityIterations, static_cast<PxRigidDynamic&>(*this), velocityIters); // @@@
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, positionIterations, static_cast<PxRigidDynamic&>(*this), positionIters); // @@@
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, velocityIterations, static_cast<PxRigidDynamic&>(*this), velocityIters); // @@@
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 void NpRigidDynamic::getSolverIterationCounts(PxU32 & positionIters, PxU32 & velocityIters) const
@@ -459,7 +519,7 @@ void NpRigidDynamic::setContactReportThreshold(PxReal threshold)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidDynamic::setContactReportThreshold() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(PxRigidDynamic, contactReportThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, contactReportThreshold, static_cast<PxRigidDynamic&>(*this), threshold); // @@@
 
 	mCore.setContactReportThreshold(threshold<0 ? 0 : threshold);
 	UPDATE_PVD_PROPERTY_BODY
@@ -521,7 +581,7 @@ void NpRigidDynamic::setRigidDynamicLockFlags(PxRigidDynamicLockFlags flags)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxRigidDynamic::setRigidDynamicLockFlags() not allowed while simulation is running. Call will be ignored.")
 	scSetLockFlags(flags);
 
-	OMNI_PVD_SET(PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
 }
 
 void NpRigidDynamic::setRigidDynamicLockFlag(PxRigidDynamicLockFlag::Enum flag, bool value)
@@ -535,6 +595,6 @@ void NpRigidDynamic::setRigidDynamicLockFlag(PxRigidDynamicLockFlag::Enum flag, 
 
 	scSetLockFlags(flags);
 
-	OMNI_PVD_SET(PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, rigidDynamicLockFlags, static_cast<PxRigidDynamic&>(*this), flags); // @@@
 }
 

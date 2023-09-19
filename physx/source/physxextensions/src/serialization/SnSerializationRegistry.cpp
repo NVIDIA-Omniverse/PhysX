@@ -161,13 +161,13 @@ SerializationRegistry::~SerializationRegistry()
 
 	if(mSerializers.size() > 0)
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::release(): some registered PxSerializer instances were not unregistered");	
 	}
 
 	if(mRepXSerializers.size() > 0)
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::release(): some registered PxRepXSerializer instances were not unregistered");	
 	}
 }
@@ -176,7 +176,7 @@ void SerializationRegistry::registerSerializer(PxType type, PxSerializer& serial
 {
 	if(mSerializers.find(type))
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::registerSerializer: Type %d has already been registered", type);		
 	}
 
@@ -190,7 +190,7 @@ PxSerializer* SerializationRegistry::unregisterSerializer(PxType type)
 
 	if(!mSerializers.erase(type))
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::unregisterSerializer: failed to find PxSerializer instance for type %d", type);
 	}
 	return s;
@@ -202,7 +202,7 @@ const PxSerializer* SerializationRegistry::getSerializer(PxType type) const
 #if PX_CHECKED
 	if (!e)
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::getSerializer: failed to find PxSerializer instance for type %d", type);
 	}
 #endif
@@ -238,7 +238,7 @@ void SerializationRegistry::registerRepXSerializer(PxType type, PxRepXSerializer
 {
 	if(mRepXSerializers.find(type))
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::registerRepXSerializer: Type %d has already been registered", type);	
 	}
 
@@ -263,7 +263,7 @@ PxRepXSerializer* SerializationRegistry::unregisterRepXSerializer(PxType type)
 
 	if(!mRepXSerializers.erase(type))
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL, 
 			"PxSerializationRegistry::unregisterRepXSerializer: failed to find PxRepXSerializer instance for type %d", type);	
 	}
 	return s;

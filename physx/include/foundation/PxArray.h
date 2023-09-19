@@ -560,7 +560,7 @@ class PxArray : protected Alloc
 	{
 		if(size > 0)
 		{
-			T* p = reinterpret_cast<T*>(Alloc::allocate(sizeof(T) * size, __FILE__, __LINE__));
+			T* p = reinterpret_cast<T*>(Alloc::allocate(sizeof(T) * size, PX_FL));
 			PxMarkSerializedMemory(p, sizeof(T) * size);
 			return p;
 		}

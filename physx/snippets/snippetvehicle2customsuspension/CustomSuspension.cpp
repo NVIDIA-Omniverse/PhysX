@@ -35,14 +35,14 @@ void addCustomSuspensionForce
 (const PxReal dt,
  const PxVehicleSuspensionParams& suspParams,
  const CustomSuspensionParams& customParams,
- const PxVehicleRoadGeometryState& roadGeomState, const PxVehicleSuspensionComplianceState& suspComplianceState, const PxVehicleRigidBodyState& rigidBodyState,
+ const PxVec3& groundNormal, bool isWheelOnGround, const PxVehicleSuspensionComplianceState& suspComplianceState, const PxVehicleRigidBodyState& rigidBodyState,
  PxVehicleSuspensionForce& suspForce, CustomSuspensionState& customState)
 {
 	//Work out the oscillating force magnitude at time t.
 	const PxF32 magnitude = (1.0f + PxCos(customParams.phase + customState.theta))*0.5f*customParams.amplitude;
 
 	//Compute the custom force and torque.
-	const PxVec3 suspDir = roadGeomState.hitState ? roadGeomState.plane.n : PxVec3(PxZero);
+	const PxVec3 suspDir = isWheelOnGround ? groundNormal : PxVec3(PxZero);
 	const PxVec3 customForce = suspDir * magnitude;
 	const PxVec3 r = rigidBodyState.pose.rotate(suspParams.suspensionAttachment.transform(suspComplianceState.suspForceAppPoint));
 	const PxVec3 customTorque = r.cross(customForce);

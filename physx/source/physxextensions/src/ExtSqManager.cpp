@@ -97,7 +97,7 @@ void ExtPrunerManager::preallocate(PxU32 prunerIndex, PxU32 nbShapes)
 	{
 		if(prunerIndex>=mPrunerExt.size())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 			return;
 		}
 
@@ -121,7 +121,7 @@ PrunerHandle ExtPrunerManager::addPrunerShape(const PrunerPayload& payload, PxU3
 {
 	if(compoundId==INVALID_COMPOUND_ID && prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return INVALID_PRUNERHANDLE;
 	}
 
@@ -151,7 +151,7 @@ void ExtPrunerManager::removePrunerShape(PxU32 prunerIndex, bool dynamic, Pruner
 {
 	if(compoundId==INVALID_COMPOUND_ID && prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return;
 	}
 
@@ -179,7 +179,7 @@ void ExtPrunerManager::markForUpdate(PxU32 prunerIndex, bool dynamic, PrunerComp
 { 
 	if(compoundId==INVALID_COMPOUND_ID && prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return;
 	}
 
@@ -319,7 +319,7 @@ void ExtPrunerManager::forceRebuildDynamicTree(PxU32 prunerIndex)
 
 	if(prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return;
 	}
 
@@ -341,7 +341,7 @@ void* ExtPrunerManager::prepareSceneQueriesUpdate(PxU32 prunerIndex)
 
 	if(prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return NULL;
 	}
 
@@ -388,7 +388,7 @@ void ExtPrunerManager::visualize(PxU32 prunerIndex, PxRenderOutput& out) const
 	{
 		if(prunerIndex>=mPrunerExt.size())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 			return;
 		}
 
@@ -460,7 +460,7 @@ void ExtPrunerManager::sync(PxU32 prunerIndex, const PrunerHandle* handles, cons
 
 	if(prunerIndex>=mPrunerExt.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "Invalid pruner index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Invalid pruner index");
 		return;
 	}
 

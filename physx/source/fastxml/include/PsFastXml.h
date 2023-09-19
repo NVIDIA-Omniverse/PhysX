@@ -132,7 +132,7 @@ class FastXml
 
 		virtual void* allocate(uint32_t size)
 		{
-			return PxGetBroadcastAllocator()->allocate(size, "FastXml", __FILE__, __LINE__);
+			return PxGetBroadcastAllocator()->allocate(size, "FastXml", PX_FL);
 		}
 
 		virtual void deallocate(void* ptr)

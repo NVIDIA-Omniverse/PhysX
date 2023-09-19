@@ -34,6 +34,7 @@
 #include "GuBVH.h"
 #include "CmUtils.h"
 #include "NpArticulationReducedCoordinate.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 using namespace Gu;
@@ -271,7 +272,7 @@ bool NpAggregate::addActor(PxActor& actor, const PxBVH* bvh)
 
 	mNbShapes += numShapes;
 
-	OMNI_PVD_ADD(PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
 
 	// PT: when an object is added to a aggregate at runtime, i.e. when the aggregate has already been added to the scene,
 	// we need to immediately add the newcomer to the scene as well.
@@ -335,7 +336,7 @@ bool NpAggregate::removeActor(PxActor& actor)
 		}
 	}
 
-	OMNI_PVD_REMOVE(PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxAggregate, actors, static_cast<PxAggregate&>(*this), actor);
 
 	// PT: there are really 2 cases here:
 	// a) the user just wants to remove the actor from the aggregate, but the actor is still alive so if the aggregate has been added to a scene,

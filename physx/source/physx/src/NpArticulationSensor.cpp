@@ -68,7 +68,7 @@ void NpArticulationSensor::release()
 {
 	if (getNpScene())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationSensor::release() not allowed while the articulation is in a scene. Call will be ignored.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationSensor::release() not allowed while the articulation is in a scene. Call will be ignored.");
 		return;
 	}
 

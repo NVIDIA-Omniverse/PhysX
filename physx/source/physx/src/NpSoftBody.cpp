@@ -70,7 +70,7 @@ namespace physx
 
 		if (!getNpScene())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Querying bounds of a PxSoftBody which is not part of a PxScene is not supported.");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Querying bounds of a PxSoftBody which is not part of a PxScene is not supported.");
 			return PxBounds3::empty();
 		}
 
@@ -671,6 +671,43 @@ namespace physx
 	void NpSoftBody::removeClothFilter(PxFEMCloth*, PxU32, PxU32) {}
 #endif
 
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+	void NpSoftBody::addVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx)
+	{
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(cloth != NULL, "NpSoftBody::addClothFilter: actor must not be null");
+		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpSoftBody::addClothFilter: Soft body must be inserted into the scene.");
+		PX_CHECK_AND_RETURN(cloth->getScene() != NULL, "NpSoftBody::addClothFilter: actor must be inserted into the scene.");
+
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpSoftBody::addClothFilter: Illegal to call while simulation is running.");
+
+		NpFEMCloth* dyn = static_cast<NpFEMCloth*>(cloth);
+		Sc::FEMClothCore* core = &dyn->getCore();
+
+		return mCore.addVertClothFilter(*core, vertIdx, tetIdx);
+	}
+#else
+	void NpSoftBody::addVertClothFilter(PxFEMCloth*, PxU32, PxU32) {}
+#endif
+
+#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
+	void NpSoftBody::removeVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx)
+	{
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(cloth != NULL, "NpSoftBody::removeClothFilter: actor must not be null");
+		PX_CHECK_AND_RETURN(getNpScene() != NULL, "NpSoftBody::removeClothFilter: soft body must be inserted into the scene.");
+		PX_CHECK_AND_RETURN(cloth->getScene() != NULL, "NpSoftBody::removeClothFilter: actor must be inserted into the scene.");
+
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "NpSoftBody::removeClothFilter: Illegal to call while simulation is running.");
+
+		NpFEMCloth* dyn = static_cast<NpFEMCloth*>(cloth);
+		Sc::FEMClothCore* core = &dyn->getCore();
+
+		mCore.removeVertClothFilter(*core, vertIdx, tetIdx);
+	}
+#else
+	void NpSoftBody::removeVertClothFilter(PxFEMCloth*, PxU32, PxU32) {}
+#endif
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	PxU32 NpSoftBody::addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 

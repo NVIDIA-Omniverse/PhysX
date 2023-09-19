@@ -118,7 +118,7 @@ namespace physx
 
 		PX_INLINE			PxGearJoint(PxBaseFlags baseFlags) : PxJoint(baseFlags)	{}
 
-		virtual	bool		isKindOf(const char* name) const { return !::strcmp("PxGearJoint", name) || PxJoint::isKindOf(name);	}
+		virtual	bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxGearJoint", PxJoint);	}
 	};
 
 #if !PX_DOXYGEN

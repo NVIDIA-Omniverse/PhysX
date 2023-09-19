@@ -138,7 +138,7 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 		NpScene* scene = NpActor::getFromPxActor(actor).getNpScene();
 		if(scene)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PrunerStructure::build: Actor already assigned to a scene!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Actor already assigned to a scene!");
 			return false;
 		}
 
@@ -161,7 +161,7 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 		// each provided actor must have a query shape
 		if(!hasQueryShape)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PrunerStructure::build: Provided actor has no scene query shape!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Provided actor has no scene query shape!");
 			return false;
 		}
 
@@ -170,7 +170,7 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 			NpRigidStatic* rs = static_cast<NpRigidStatic*>(actors[actorsDone]);
 			if(rs->getShapeManager().getPruningStructure())
 			{
-				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PrunerStructure::build: Provided actor has already a pruning structure!");
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Provided actor has already a pruning structure!");
 				return false;
 			}			
 			rs->getShapeManager().setPruningStructure(this);
@@ -180,14 +180,14 @@ bool PruningStructure::build(PxRigidActor*const* actors, PxU32 nbActors)
 			NpRigidDynamic* rd = static_cast<NpRigidDynamic*>(actors[actorsDone]);			
 			if (rd->getShapeManager().getPruningStructure())
 			{
-				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PrunerStructure::build: Provided actor has already a pruning structure!");
+				PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Provided actor has already a pruning structure!");
 				return false;
 			}
 			rd->getShapeManager().setPruningStructure(this);
 		}
 		else 
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PrunerStructure::build: Provided actor is not a rigid actor!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PrunerStructure::build: Provided actor is not a rigid actor!");
 			return false;
 		}
 	}
@@ -290,7 +290,7 @@ void PruningStructure::exportExtraData(PxSerializationContext& stream)
 {
 	if (!isValid())
 	{
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "PrunerStructure::exportExtraData: Pruning structure is invalid!");
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PrunerStructure::exportExtraData: Pruning structure is invalid!");
 		return;
 	}
 
@@ -325,7 +325,7 @@ void PruningStructure::importExtraData(PxDeserializationContext& context)
 {
 	if (!isValid())
 	{
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "PrunerStructure::importExtraData: Pruning structure is invalid!");
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PrunerStructure::importExtraData: Pruning structure is invalid!");
 		return;
 	}
 
@@ -365,7 +365,7 @@ PxU32 PruningStructure::getRigidActors(PxRigidActor** userBuffer, PxU32 bufferSi
 {	
 	if(!isValid())
 	{
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "PrunerStructure::getRigidActors: Pruning structure is invalid!");
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PrunerStructure::getRigidActors: Pruning structure is invalid!");
 		return 0;
 	}
 

@@ -64,6 +64,7 @@
 #include "extensions/PxConvexMeshExt.h"
 #include "extensions/PxSamplingExt.h"
 #include "extensions/PxTetrahedronMeshExt.h"
+#include "extensions/PxCustomGeometryExt.h"
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #include "extensions/PxFEMClothExt.h"
 #endif

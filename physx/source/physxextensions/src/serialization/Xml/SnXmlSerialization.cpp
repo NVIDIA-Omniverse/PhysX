@@ -280,7 +280,7 @@ namespace physx { namespace Sn {
 
 		virtual XmlReader* getParentReader()
 		{
-			XmlReader* retval = PX_PLACEMENT_NEW((mWrapper.getAllocator().allocate(sizeof(XmlNodeReader), "createNodeEditor",  __FILE__, __LINE__ )), XmlNodeReader) 
+			XmlReader* retval = PX_PLACEMENT_NEW((mWrapper.getAllocator().allocate(sizeof(XmlNodeReader), "createNodeEditor",  PX_FL)), XmlNodeReader) 
 				( mTopNode, mWrapper.getAllocator(), mManager );
 			return retval;
 		}
@@ -347,10 +347,15 @@ namespace physx { namespace Sn {
 		// Return true to continue processing the XML file.
 		// Return false to stop processing the XML file; leaves the read pointer of the stream right after this close tag.
 		// The bool 'isError' indicates whether processing was stopped due to an error, or intentionally canceled early.
-		virtual bool processClose(const char* /*element*/,physx::PxU32 /*depth*/,bool& /*isError*/)
+		virtual bool processClose(const char* /*element*/,physx::PxU32 /*depth*/,bool& isError)
 		{
-			mCurrentNode = mCurrentNode->mParent;
-			return true;
+			if (NULL != mCurrentNode)
+			{
+				mCurrentNode = mCurrentNode->mParent;
+				return true;
+			}
+			isError = true;
+			return false;
 		}
 
 		// return true to continue processing the XML document, false to skip.
@@ -561,7 +566,7 @@ namespace physx { namespace Sn {
 				}
 				else
 				{
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, 
+					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, 
 						"PxSerialization::createCollectionFromXml: "
 						"PxRepXSerializer missing for type %s", theItem.liveObject.typeName);
 					return false;					
@@ -652,7 +657,7 @@ namespace physx { namespace Sn {
 			}
 			else
 			{
-				PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+				PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, 
 				"Cannot parse any object from the input buffer, please check the input repx data.");
 			}
 			theFastXml->release();
@@ -672,7 +677,7 @@ namespace physx { namespace Sn {
 		virtual RepXCollection& createCollection( const char* inVersionStr )
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
-			RepXCollectionImpl* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(RepXCollectionImpl), "createCollection",  __FILE__, __LINE__ )), RepXCollectionImpl) ( mSerializationRegistry, *this, inVersionStr );
+			RepXCollectionImpl* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(RepXCollectionImpl), "createCollection",  PX_FL)), RepXCollectionImpl) ( mSerializationRegistry, *this, inVersionStr );
 		
 			return *retval;
 		}
@@ -700,7 +705,7 @@ namespace physx { namespace Sn {
 		virtual XmlReaderWriter& createNodeEditor()
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
-			XmlReaderWriter* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(XmlNodeReader), "createNodeEditor",  __FILE__, __LINE__ )), XmlNodeReader) ( NULL, allocator, mAllocator.mManager );
+			XmlReaderWriter* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(XmlNodeReader), "createNodeEditor",  PX_FL)), XmlNodeReader) ( NULL, allocator, mAllocator.mManager );
 			return *retval;
 		}
 	};
@@ -717,7 +722,7 @@ namespace physx { namespace Sn {
 
 	static RepXCollection* create(SerializationRegistry& s, PxAllocatorCallback& inAllocator, PxCollection& inCollection )
 	{
-		return PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(RepXCollectionImpl), "RepXCollection::create",  __FILE__, __LINE__ )), RepXCollectionImpl) ( s, inAllocator, inCollection );
+		return PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(RepXCollectionImpl), "RepXCollection::create",  PX_FL)), RepXCollectionImpl) ( s, inAllocator, inCollection );
 	}
 
 	static RepXCollection* create(SerializationRegistry& s, PxInputData &data, PxAllocatorCallback& inAllocator, PxCollection& inCollection )

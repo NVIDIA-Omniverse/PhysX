@@ -103,6 +103,7 @@ SET(PHYSX_HEADERS
     ${PHYSX_ROOT_DIR}/include/PxParticleNeighborhoodProvider.h
     ${PHYSX_ROOT_DIR}/include/PxArrayConverter.h
     ${PHYSX_ROOT_DIR}/include/PxLineStripSkinning.h
+	${PHYSX_ROOT_DIR}/include/PxSDFBuilder.h
 )
 IF(NOT PX_GENERATE_SOURCE_DISTRO AND NOT PUBLIC_RELEASE)
 	LIST(APPEND PHYSX_HEADERS
@@ -191,6 +192,9 @@ SOURCE_GROUP(metadata\\src FILES ${PHYSX_METADATA_SOURCE})
 SET(PHYSX_OMNIPVD_SOURCE
 	${PX_SOURCE_DIR}/omnipvd/NpOmniPvd.h
 	${PX_SOURCE_DIR}/omnipvd/NpOmniPvd.cpp
+    ${PX_SOURCE_DIR}/omnipvd/NpOmniPvdRegistrationData.h
+	${PX_SOURCE_DIR}/omnipvd/NpOmniPvdRegistrationData.cpp
+    ${PX_SOURCE_DIR}/omnipvd/NpOmniPvdSetData.h
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdPxSampler.cpp
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdPxSampler.h
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdChunkAlloc.cpp
@@ -403,7 +407,7 @@ SET_TARGET_PROPERTIES(PhysX PROPERTIES
 
 )
 
-IF(NV_USE_GAMEWORKS_OUTPUT_DIRS AND PHYSX_LIBTYPE STREQUAL "STATIC")
+IF(PHYSX_LIBTYPE STREQUAL "STATIC")
 	SET_TARGET_PROPERTIES(PhysX PROPERTIES
 		ARCHIVE_OUTPUT_NAME_DEBUG "PhysX_static"
 		ARCHIVE_OUTPUT_NAME_CHECKED "PhysX_static"

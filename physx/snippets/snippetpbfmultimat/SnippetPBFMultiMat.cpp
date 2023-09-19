@@ -71,7 +71,7 @@ static void initScene()
 	}
 	if (cudaContextManager == NULL)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Failed to initialize CUDA!\n");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Failed to initialize CUDA!\n");
 	}
 
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());

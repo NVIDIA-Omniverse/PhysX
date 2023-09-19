@@ -54,7 +54,6 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Wstrict-aliasing=2 -W
     -Wno-old-style-cast \
     -Wno-padded \
     -Wno-reserved-id-macro \
-    -Wno-shadow \
     -Wno-suggest-destructor-override \
     -Wno-suggest-override \
     -Wno-switch-enum \
@@ -155,17 +154,20 @@ IF(PUBLIC_RELEASE)
 	IF(NOT GPU_LIB_COPIED)
 		IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
 				SET(GPU_LIB_COPIED 1 CACHE INTERNAL "PhysX GPU so files copied")
-					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
-					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
-					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
-					FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
-		ENDIF()
-		IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
+				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
+				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
+				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
+				INSTALL(PROGRAMS ${PHYSX_PHYSXGPU_PATH}/linux.aarch64/$<$<CONFIG:debug>:checked>$<$<CONFIG:release>:release>$<$<CONFIG:checked>:checked>$<$<CONFIG:profile>:profile>/libPhysXGpu_64.so
+					DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
+		ELSEIF(UNIX)
 			SET(GPU_LIB_COPIED 1 CACHE INTERNAL "PhysX GPU so files copied")
-				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
-				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
-				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
-				FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
+			FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_DEBUG})
+			FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/checked/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_CHECKED})
+			FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/profile/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_PROFILE})
+			FILE(COPY ${PHYSX_PHYSXGPU_PATH}/linux.clang/release/libPhysXGpu_64.so DESTINATION ${PX_EXE_OUTPUT_DIRECTORY_RELEASE})
+			INSTALL(PROGRAMS ${PHYSX_PHYSXGPU_PATH}/linux.clang/$<$<CONFIG:debug>:checked>$<$<CONFIG:release>:release>$<$<CONFIG:checked>:checked>$<$<CONFIG:profile>:profile>/libPhysXGpu_64.so
+				DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
 		ENDIF()
 	ENDIF()
 ENDIF()

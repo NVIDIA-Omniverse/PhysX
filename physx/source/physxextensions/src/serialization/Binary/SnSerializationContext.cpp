@@ -74,7 +74,7 @@ void SerializationContext::registerReference(PxBase& serializable, PxU32 kind, s
 #if PX_CHECKED
 	if ((kind & PX_SERIAL_REF_KIND_PTR_TYPE_BIT) == 0 && reference > 0xffff)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxSerializationContext::registerReference: only 16 bit handles supported.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxSerializationContext::registerReference: only 16 bit handles supported.");
 		return;
 	}
 #endif

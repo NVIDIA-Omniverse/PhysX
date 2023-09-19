@@ -169,11 +169,11 @@ OmniPvdCommand::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getNextCommand()
 					mCmdAttributeDataType = readDataType(*mStream);
 					if (mCmdAttributeDataType == OmniPvdDataType::eENUM_VALUE)
 					{
-						mStream->readBytes((uint8_t*)&mCmdEnumValue, sizeof(uint32_t));
+						mStream->readBytes((uint8_t*)&mCmdEnumValue, sizeof(OmniPvdEnumValueType));
 					}
 					else if (mCmdAttributeDataType == OmniPvdDataType::eFLAGS_WORD)
 					{
-						mStream->readBytes((uint8_t*)&mCmdEnumClassHandle, sizeof(uint32_t));
+						mStream->readBytes((uint8_t*)&mCmdEnumClassHandle, sizeof(OmniPvdClassHandle));
 					}
 					else
 					{

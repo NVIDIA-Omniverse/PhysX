@@ -201,7 +201,7 @@ class PxThreadT : protected Alloc, public PxUserAllocated, public PxRunnable
 	*/
 	PxThreadT(const Alloc& alloc = Alloc()) : Alloc(alloc)
 	{
-		mImpl = reinterpret_cast<PxThreadImpl*>(Alloc::allocate(PxThreadImpl::getSize(), __FILE__, __LINE__));
+		mImpl = reinterpret_cast<PxThreadImpl*>(Alloc::allocate(PxThreadImpl::getSize(), PX_FL));
 		PX_PLACEMENT_NEW(mImpl, PxThreadImpl)();
 	}
 
@@ -210,7 +210,7 @@ class PxThreadT : protected Alloc, public PxUserAllocated, public PxRunnable
 	*/
 	PxThreadT(PxThreadImpl::ExecuteFn fn, void* arg, const char* name, const Alloc& alloc = Alloc()) : Alloc(alloc)
 	{
-		mImpl = reinterpret_cast<PxThreadImpl*>(Alloc::allocate(PxThreadImpl::getSize(), __FILE__, __LINE__));
+		mImpl = reinterpret_cast<PxThreadImpl*>(Alloc::allocate(PxThreadImpl::getSize(), PX_FL));
 		PX_PLACEMENT_NEW(mImpl, PxThreadImpl)(fn, arg, name);
 	}
 

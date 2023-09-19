@@ -40,9 +40,9 @@ using namespace Gu;
 
 #define LOCAL_EPSILON 0.00001f	// PT: this value makes the 'basicAngleTest' pass. Fails because of a ray almost parallel to a triangle
 
-static void edgeEdgeDist(PxVec3& x, PxVec3& y,				// closest points
-						 const PxVec3& p, const PxVec3& a,	// seg 1 origin, vector
-						 const PxVec3& q, const PxVec3& b)	// seg 2 origin, vector
+void edgeEdgeDist(PxVec3& x, PxVec3& y,				// closest points
+				 const PxVec3& p, const PxVec3& a,	// seg 1 origin, vector
+				 const PxVec3& q, const PxVec3& b)	// seg 2 origin, vector
 {
 	const PxVec3 T = q - p;
 	const PxReal ADotA = a.dot(a);
@@ -57,19 +57,11 @@ static void edgeEdgeDist(PxVec3& x, PxVec3& y,				// closest points
 	// Compute t for the closest point on ray (p, a) to ray (q, b)
 	const PxReal Denom = ADotA*BDotB - ADotB*ADotB;
 
-	PxReal t;
+	PxReal t;	// We will clamp result so t is on the segment (p, a)
 	if(Denom!=0.0f)	
-	{
-		t = (ADotT*BDotB - BDotT*ADotB) / Denom;
-
-		// Clamp result so t is on the segment (p, a)
-				if(t<0.0f)	t = 0.0f;
-		else	if(t>1.0f)	t = 1.0f;
-	}
+		t = PxClamp((ADotT*BDotB - BDotT*ADotB) / Denom, 0.0f, 1.0f);
 	else
-	{
 		t = 0.0f;
-	}
 
 	// find u for point on ray (q, b) closest to point at t
 	PxReal u;
@@ -82,48 +74,26 @@ static void edgeEdgeDist(PxVec3& x, PxVec3& y,				// closest points
 		{
 			u = 0.0f;
 			if(ADotA!=0.0f)
-			{
-				t = ADotT / ADotA;
-
-						if(t<0.0f)	t = 0.0f;
-				else	if(t>1.0f)	t = 1.0f;
-			}
+				t = PxClamp(ADotT / ADotA, 0.0f, 1.0f);
 			else
-			{
 				t = 0.0f;
-			}
 		}
 		else if(u > 1.0f)
 		{
 			u = 1.0f;
 			if(ADotA!=0.0f)
-			{
-				t = (ADotB + ADotT) / ADotA;
-
-						if(t<0.0f)	t = 0.0f;
-				else	if(t>1.0f)	t = 1.0f;
-			}
+				t = PxClamp((ADotB + ADotT) / ADotA, 0.0f, 1.0f);
 			else
-			{
 				t = 0.0f;
-			}
 		}
 	}
 	else
 	{
 		u = 0.0f;
-
 		if(ADotA!=0.0f)
-		{
-			t = ADotT / ADotA;
-
-					if(t<0.0f)	t = 0.0f;
-			else	if(t>1.0f)	t = 1.0f;
-		}
+			t = PxClamp(ADotT / ADotA, 0.0f, 1.0f);
 		else
-		{
 			t = 0.0f;
-		}
 	}
 
 	x = p + a * t;

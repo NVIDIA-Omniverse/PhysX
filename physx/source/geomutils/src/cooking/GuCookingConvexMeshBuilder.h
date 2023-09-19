@@ -76,6 +76,8 @@ namespace physx
 // TEST_INTERNAL_OBJECTS
 				// internal objects
 				void				computeInternalObjects();
+				bool				checkExtentRadiusRatio();
+
 //~TEST_INTERNAL_OBJECTS
 
 				void				computeSDF(const PxConvexMeshDesc& desc);

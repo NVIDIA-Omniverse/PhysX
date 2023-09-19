@@ -36,6 +36,7 @@
 #include "NpScene.h"
 #include "CmVisualization.h"
 #include "NpDebugViz.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 #if PX_SUPPORT_PVD
 	// PT: updatePvdProperties() is overloaded and the compiler needs to know 'this' type to do the right thing.
@@ -181,6 +182,13 @@ public:
 										{
 											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbidden());
 											mCore.setBody2World(p);
+											UPDATE_PVD_PROPERTY_BODY
+										}
+
+	PX_INLINE		void				scSetCMassLocalPose(const PxTransform& newBody2Actor)
+										{
+											PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbidden());
+											mCore.setCMassLocalPose(newBody2Actor);
 											UPDATE_PVD_PROPERTY_BODY
 										}
 
@@ -383,20 +391,14 @@ void NpRigidBodyTemplate<APIClass>::setCMassLocalPoseInternal(const PxTransform&
 {
 	//the point here is to change the mass distribution w/o changing the actors' pose in the world
 
-	const PxTransform newBody2World = getGlobalPose() * body2Actor;
-
-	scSetBody2World(newBody2World);
-
-	// PT: TODO: assert & PVD update already done in scSetBody2World...
-	{
-		PX_ASSERT(!RigidActorTemplateClass::isAPIWriteForbidden());
-		mCore.setBody2Actor(body2Actor);
-		UPDATE_PVD_PROPERTY_BODY
-	}
+	// AD note: I added an interface directly into the bodycore and pushed calculations there to avoid
+	// NP and BP transform/bounds update notifications because this does not change the global pose.
+	
+	scSetCMassLocalPose(body2Actor);
 
 	RigidActorTemplateClass::updateShaderComs();
 
-	OMNI_PVD_SET(PxRigidBody, cMassLocalPose, static_cast<PxRigidBody&>(*this), body2Actor)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, cMassLocalPose, static_cast<PxRigidBody&>(*this), body2Actor)
 }
 
 template<class APIClass>
@@ -422,7 +424,7 @@ void NpRigidBodyTemplate<APIClass>::setMass(PxReal mass)
 
 	UPDATE_PVD_PROPERTY_BODY
 
-	OMNI_PVD_SET(PxRigidBody, mass, static_cast<PxRigidBody&>(*this), mass)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, mass, static_cast<PxRigidBody&>(*this), mass)
 }
 
 template<class APIClass>
@@ -456,7 +458,7 @@ void NpRigidBodyTemplate<APIClass>::setMassSpaceInertiaTensor(const PxVec3& m)
 	mCore.setInverseInertia(invertDiagInertia(m));
 	UPDATE_PVD_PROPERTY_BODY
 
-	OMNI_PVD_SET(PxRigidBody, massSpaceInertiaTensor, static_cast<PxRigidBody&>(*this), m)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, massSpaceInertiaTensor, static_cast<PxRigidBody&>(*this), m)
 }
 
 template<class APIClass>
@@ -634,7 +636,7 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 	//Test to ensure we are not enabling both CCD and kinematic state on a body. This is unsupported
 	if((filteredNewFlags & PxRigidBodyFlag::eENABLE_CCD) && (filteredNewFlags & PxRigidBodyFlag::eKINEMATIC))
 	{
-		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 			"PxRigidBody::setRigidBodyFlag(): kinematic bodies with CCD enabled are not supported! CCD will be ignored.");
 		filteredNewFlags &= PxRigidBodyFlags(~PxRigidBodyFlag::eENABLE_CCD);
 	}
@@ -665,7 +667,7 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 		}
 		if(hasTriangleMesh)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRigidBody::setRigidBodyFlag(): dynamic meshes/planes/heightfields are not supported!");
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxRigidBody::setRigidBodyFlag(): dynamic meshes/planes/heightfields are not supported!");
 			return;
 		}
 
@@ -684,7 +686,7 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 		if (this->getType() == PxActorType::eARTICULATION_LINK)
 		{
 			//We're an articulation, raise an issue
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxRigidBody::setRigidBodyFlag(): kinematic articulation links are not supported!");
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxRigidBody::setRigidBodyFlag(): kinematic articulation links are not supported!");
 			return;
 		}
 
@@ -706,7 +708,7 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 
 	scSetFlags(filteredNewFlags);
 
-	OMNI_PVD_SET(PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*this), filteredNewFlags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, rigidBodyFlags, static_cast<PxRigidBody&>(*this), filteredNewFlags)
 
 	// PT: the SQ update should be done after the scSetFlags() call
 	if(mustUpdateSQ)
@@ -750,7 +752,7 @@ void NpRigidBodyTemplate<APIClass>::setMinCCDAdvanceCoefficient(PxReal minCCDAdv
 
 	mCore.setCCDAdvanceCoefficient(minCCDAdvanceCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, minAdvancedCCDCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, minAdvancedCCDCoefficient, static_cast<PxRigidBody&>(*this), minCCDAdvanceCoefficient)
 
 }
 
@@ -772,7 +774,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxDepenetrationVelocity(PxReal maxDepenV
 
 	mCore.setMaxPenetrationBias(-maxDepenVel);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, maxDepenetrationVelocity, static_cast<PxRigidBody&>(*this), maxDepenVel)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, maxDepenetrationVelocity, static_cast<PxRigidBody&>(*this), maxDepenVel)
 }
 
 template<class APIClass>
@@ -793,7 +795,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxContactImpulse(const PxReal maxImpulse
 
 	mCore.setMaxContactImpulse(maxImpulse);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, maxContactImpulse, static_cast<PxRigidBody&>(*this), maxImpulse)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, maxContactImpulse, static_cast<PxRigidBody&>(*this), maxImpulse)
 }
 
 template<class APIClass>
@@ -814,7 +816,7 @@ void NpRigidBodyTemplate<APIClass>::setContactSlopCoefficient(const PxReal conta
 
 	mCore.setOffsetSlop(contactSlopCoefficient);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, contactSlopCoefficient, static_cast<PxRigidBody&>(*this), contactSlopCoefficient)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, contactSlopCoefficient, static_cast<PxRigidBody&>(*this), contactSlopCoefficient)
 }
 
 template<class APIClass>
@@ -843,7 +845,7 @@ void NpRigidBodyTemplate<APIClass>::setLinearDamping(PxReal linearDamping)
 
 	mCore.setLinearDamping(linearDamping);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, linearDamping, static_cast<PxRigidBody&>(*this), linearDamping)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearDamping, static_cast<PxRigidBody&>(*this), linearDamping)
 }
 
 template<class APIClass>
@@ -866,7 +868,7 @@ void NpRigidBodyTemplate<APIClass>::setAngularDamping(PxReal angularDamping)
 
 	mCore.setAngularDamping(angularDamping);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, angularDamping, static_cast<PxRigidBody&>(*this), angularDamping)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularDamping, static_cast<PxRigidBody&>(*this), angularDamping)
 }
 
 template<class APIClass>
@@ -889,7 +891,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxAngularVelocity(PxReal maxAngularVeloc
 
 	mCore.setMaxAngVelSq(maxAngularVelocity * maxAngularVelocity);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, maxAngularVelocity, static_cast<PxRigidBody&>(*this), maxAngularVelocity)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, maxAngularVelocity, static_cast<PxRigidBody&>(*this), maxAngularVelocity)
 }
 
 template<class APIClass>
@@ -913,7 +915,7 @@ void NpRigidBodyTemplate<APIClass>::setMaxLinearVelocity(PxReal maxLinearVelocit
 
 	mCore.setMaxLinVelSq(maxLinearVelocity * maxLinearVelocity);
 	UPDATE_PVD_PROPERTY_BODY
-	OMNI_PVD_SET(PxRigidBody, maxLinearVelocity, static_cast<PxRigidBody&>(*this), maxLinearVelocity)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, maxLinearVelocity, static_cast<PxRigidBody&>(*this), maxLinearVelocity)
 }
 
 template<class APIClass>

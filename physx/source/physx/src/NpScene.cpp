@@ -48,6 +48,7 @@
 #include "common/PxProfileZone.h"
 #include "BpBroadPhase.h"
 #include "BpAABBManagerBase.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 
@@ -114,7 +115,7 @@ static PX_FORCE_INLINE bool removeFromSceneCheck(NpScene* npScene, PxScene* scen
 	if(scene == static_cast<PxScene*>(npScene))
 		return true;
 	else
-		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "%s not assigned to scene or assigned to another scene. Call will be ignored!", name);
+		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "%s not assigned to scene or assigned to another scene. Call will be ignored!", name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -122,7 +123,7 @@ static PX_FORCE_INLINE bool removeFromSceneCheck(NpScene* npScene, PxScene* scen
 #if PX_SUPPORT_OMNI_PVD
 static void SleepingStateChanged(PxRigidDynamic& actor, bool sleeping)
 {
-	OMNI_PVD_SET(PxRigidDynamic, isSleeping, actor, sleeping)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidDynamic, isSleeping, actor, sleeping)
 }
 #endif
 
@@ -136,38 +137,38 @@ NpScene::NpScene(const PxSceneDesc& desc, NpPhysics& physics) :
 		getContextId()),
 	mSceneQueriesStaticPrunerUpdate	(getContextId(), 0, "NpScene.sceneQueriesStaticPrunerUpdate"),
 	mSceneQueriesDynamicPrunerUpdate(getContextId(), 0, "NpScene.sceneQueriesDynamicPrunerUpdate"),
-	mRigidDynamics			("sceneRigidDynamics"),
-	mRigidStatics			("sceneRigidStatics"),
-	mArticulations			("sceneArticulations"),
-	mAggregates				("sceneAggregates"),
-	mSanityBounds			(desc.sanityBounds),
-	mNbClients				(1),			//we always have the default client.
-	mSceneCompletion		(getContextId(), mPhysicsDone),
-	mCollisionCompletion	(getContextId(), mCollisionDone),
-	mSceneQueriesCompletion	(getContextId(), mSceneQueriesDone),
-	mSceneExecution			(getContextId(), 0, "NpScene.execution"),
-	mSceneCollide			(getContextId(), 0, "NpScene.collide"),
-	mSceneAdvance			(getContextId(), 0, "NpScene.solve"),
-	mStaticBuildStepHandle	(NULL),
-	mDynamicBuildStepHandle	(NULL),
-	mControllingSimulation	(false),
-	mIsAPIReadForbidden		(false),
-	mIsAPIWriteForbidden	(false),
-	mSimThreadStackSize		(0),
-	mConcurrentWriteCount	(0),
-	mConcurrentReadCount	(0),
-	mConcurrentErrorCount	(0),	
-	mCurrentWriter			(0),
-	mSQUpdateRunning		(false),
-	mBetweenFetchResults	(false),
-	mBuildFrozenActors		(false),
-	mScene					(desc, getContextId()),
+	mRigidDynamics				("sceneRigidDynamics"),
+	mRigidStatics				("sceneRigidStatics"),
+	mArticulations				("sceneArticulations"),
+	mAggregates					("sceneAggregates"),
+	mSanityBounds				(desc.sanityBounds),
+	mNbClients					(1),			//we always have the default client.
+	mSceneCompletion			(getContextId(), mPhysicsDone),
+	mCollisionCompletion		(getContextId(), mCollisionDone),
+	mSceneQueriesCompletion		(getContextId(), mSceneQueriesDone),
+	mSceneExecution				(getContextId(), 0, "NpScene.execution"),
+	mSceneCollide				(getContextId(), 0, "NpScene.collide"),
+	mSceneAdvance				(getContextId(), 0, "NpScene.solve"),
+	mStaticBuildStepHandle		(NULL),
+	mDynamicBuildStepHandle		(NULL),
+	mControllingSimulation		(false),
+	mIsAPIReadForbidden			(false),
+	mIsAPIWriteForbidden		(false),
+	mSimThreadStackSize			(0),
+	mConcurrentWriteCount		(0),
+	mConcurrentReadCount		(0),
+	mConcurrentErrorCount		(0),	
+	mCurrentWriter				(0),
+	mSQUpdateRunning			(false),
+	mBetweenFetchResults		(false),
+	mBuildFrozenActors			(false),
+	mScene						(desc, getContextId()),
 #if PX_SUPPORT_PVD
-	mScenePvdClient			(*this),
+	mScenePvdClient				(*this),
 #endif
-	mWakeCounterResetValue	(desc.wakeCounterResetValue),
-	mPhysics				(physics),
-	mName					(NULL)
+	mWakeCounterResetValue		(desc.wakeCounterResetValue),
+	mPhysics					(physics),
+	mName						(NULL)
 {
 	mGpuDynamicsConfig = desc.gpuDynamicsConfig;
 	mSceneQueriesStaticPrunerUpdate.setObject(this);
@@ -196,7 +197,7 @@ NpScene::NpScene(const PxSceneDesc& desc, NpPhysics& physics) :
 
 NpScene::~NpScene()
 {
-	OMNI_PVD_DESTROY(PxScene, static_cast<PxScene &>(*this))
+	OMNI_PVD_DESTROY(OMNI_PVD_CONTEXT_HANDLE, PxScene, static_cast<PxScene &>(*this))
 
 	// PT: we need to do that one first, now that we don't release the objects anymore. Otherwise we end up with a sequence like:
 	// - actor is part of an aggregate, and part of a scene
@@ -272,7 +273,7 @@ void NpScene::release()
 {
 	// need to acquire lock for release, note this is unlocked in the destructor
 	if (mScene.getFlags() & PxSceneFlag::eREQUIRE_RW_LOCK)
-		lockWrite(__FILE__, __LINE__);
+		lockWrite(PX_FL);
 
 	// It will be hard to do a write check here since all object release calls in the scene destructor do it and would mess
 	// up the test. If we really want it on scene destruction as well, we need to either have internal and external release
@@ -324,7 +325,7 @@ void NpScene::setGravity(const PxVec3& g)
 
 	mScene.setGravity(g);
 
-	OMNI_PVD_SET(PxScene, gravity, static_cast<PxScene&>(*this), g)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, gravity, static_cast<PxScene&>(*this), g)
 
 	updatePvdProperties();
 }
@@ -346,7 +347,7 @@ void NpScene::setBounceThresholdVelocity(const PxReal t)
 
 	mScene.setBounceThresholdVelocity(t);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, bounceThresholdVelocity, static_cast<PxScene&>(*this), t)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, bounceThresholdVelocity, static_cast<PxScene&>(*this), t)
 }
 
 PxReal NpScene::getBounceThresholdVelocity() const
@@ -377,16 +378,16 @@ void NpScene::setLimits(const PxSceneLimits& limits)
 
 	updatePvdProperties();
 
-	OMNI_PVD_SET(PxScene, limitsMaxNbActors, static_cast<PxScene&>(*this), limits.maxNbActors)
-	OMNI_PVD_SET(PxScene, limitsMaxNbBodies, static_cast<PxScene&>(*this), limits.maxNbBodies)
-	OMNI_PVD_SET(PxScene, limitsMaxNbStaticShapes, static_cast<PxScene&>(*this), limits.maxNbStaticShapes)
-	OMNI_PVD_SET(PxScene, limitsMaxNbDynamicShapes, static_cast<PxScene&>(*this), limits.maxNbDynamicShapes)
-	OMNI_PVD_SET(PxScene, limitsMaxNbAggregates, static_cast<PxScene&>(*this), limits.maxNbAggregates)
-	OMNI_PVD_SET(PxScene, limitsMaxNbConstraints, static_cast<PxScene&>(*this), limits.maxNbConstraints)
-	OMNI_PVD_SET(PxScene, limitsMaxNbRegions, static_cast<PxScene&>(*this), limits.maxNbRegions)
-	OMNI_PVD_SET(PxScene, limitsMaxNbBroadPhaseOverlaps, static_cast<PxScene&>(*this), limits.maxNbBroadPhaseOverlaps)
-
-
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbActors, static_cast<PxScene&>(*this), limits.maxNbActors)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbBodies, static_cast<PxScene&>(*this), limits.maxNbBodies)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbStaticShapes, static_cast<PxScene&>(*this), limits.maxNbStaticShapes)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbDynamicShapes, static_cast<PxScene&>(*this), limits.maxNbDynamicShapes)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbAggregates, static_cast<PxScene&>(*this), limits.maxNbAggregates)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbConstraints, static_cast<PxScene&>(*this), limits.maxNbConstraints)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbRegions, static_cast<PxScene&>(*this), limits.maxNbRegions)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbBroadPhaseOverlaps, static_cast<PxScene&>(*this), limits.maxNbBroadPhaseOverlaps)
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -422,7 +423,7 @@ void NpScene::setFlag(PxSceneFlag::Enum flag, bool value)
 	mScene.setContactCache(contactCache);
 	updatePvdProperties();
 
-	OMNI_PVD_SET(PxScene, flags,	static_cast<PxScene&>(*this), getFlags())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, flags, static_cast<PxScene&>(*this), getFlags())
 }
 
 PxSceneFlags NpScene::getFlags() const
@@ -655,7 +656,7 @@ bool NpScene::addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActor
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "PxScene::addActors(): Batch addition is not permitted for this actor type, aborting at index %u!", actorsDone);
+			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PxScene::addActors(): Batch addition is not permitted for this actor type, aborting at index %u!", actorsDone);
 			break;
 		}
 	}
@@ -740,7 +741,7 @@ static void removeActorT(NpScene* npScene, ActorT& actor, PxArray<ActorT*>& acto
 	npScene->scRemoveActor(actor, wakeOnLostTouch, noSim);
 	removeFromRigidActorListT(actor, actors, npScene->mRigidActorIndexPool);
 
-	OMNI_PVD_REMOVE(PxScene, actors, static_cast<PxScene &>(*npScene), static_cast<PxActor &>(actor))
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*npScene), static_cast<PxActor &>(actor))
 }
 
 void NpScene::removeActors(PxActor*const* PX_RESTRICT actors, PxU32 nbActors, bool wakeOnLostTouch)
@@ -778,7 +779,7 @@ void NpScene::removeActors(PxActor*const* PX_RESTRICT actors, PxU32 nbActors, bo
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, "PxScene::removeActor(): Batch removal is not supported for this actor type, aborting at index %u!", actorsDone);
+			PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, "PxScene::removeActor(): Batch removal is not supported for this actor type, aborting at index %u!", actorsDone);
 			break;
 		}
 	}	
@@ -918,7 +919,8 @@ static PX_FORCE_INLINE bool addRigidActorT(T& rigidActor, PxArray<T*>& rigidActo
 	if(!isNoSimActor)
 		rigidActor.addConstraintsToScene();
 
-	OMNI_PVD_ADD(PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, worldBounds, static_cast<PxActor &>(rigidActor), rigidActor.getWorldBounds())
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
 
 	return true;
 }
@@ -961,7 +963,7 @@ static PX_FORCE_INLINE void removeRigidActorT(T& rigidActor, NpScene* scene, boo
 	scene->scRemoveActor(rigidActor, wakeOnLostTouch, isNoSimActor);
 	scene->removeFromRigidActorList(rigidActor);
 
-	OMNI_PVD_REMOVE(PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*scene), static_cast<PxActor &>(rigidActor))
 }
 
 void NpScene::removeRigidStatic(NpRigidStatic& actor, bool wakeOnLostTouch, bool removeFromAggregate)
@@ -1048,13 +1050,12 @@ bool NpScene::addSpatialTendonInternal(NpArticulationReducedCoordinate* npaRC, S
 
 	PxU32 stackSize = 1;
 	// Add spatial tendons
-	PX_ALLOCA(attachementStack, NpArticulationAttachment*, maxAttachments);
+	PX_ALLOCA(attachmentStack, NpArticulationAttachment*, maxAttachments);
 
 	for (PxU32 i = 0; i < nbTendons; ++i)
 	{
 		NpArticulationSpatialTendon* tendon = npaRC->getSpatialTendon(i);
 
-		//addTendon(npaRC->getImpl(), *tendon);
 		scAddArticulationSpatialTendon(*tendon);
 
 		//add tendon sim to articulation sim
@@ -1063,22 +1064,25 @@ bool NpScene::addSpatialTendonInternal(NpArticulationReducedCoordinate* npaRC, S
 
 		const PxU32 numAttachments = tendon->getNbAttachments();
 
-		NpArticulationAttachment* attchment = tendon->getAttachment(0);
+		// Np check on addArticulation does not allow empty tendons, but assert here.
+		PX_ASSERT(numAttachments);
 
-		NpArticulationLink* pLink = static_cast<NpArticulationLink*>(attchment->mLink);
+		NpArticulationAttachment* attachment = tendon->getAttachment(0);
 
-		Sc::ArticulationAttachmentCore& lcore = attchment->getCore();
+		NpArticulationLink* pLink = static_cast<NpArticulationLink*>(attachment->mLink);
+
+		Sc::ArticulationAttachmentCore& lcore = attachment->getCore();
 		lcore.mLLLinkIndex = pLink->getLinkIndex();
 
 		tendonSim->addAttachment(lcore);
 
-		attachementStack[0] = attchment;
+		attachmentStack[0] = attachment;
 		PxU32 curAttachment = 0;
 		stackSize = 1;
 		while (curAttachment < (numAttachments - 1))
 		{
 			PX_ASSERT(curAttachment < stackSize);
-			NpArticulationAttachment* p = attachementStack[curAttachment];
+			NpArticulationAttachment* p = attachmentStack[curAttachment];
 
 			const PxU32 numChildrens = p->getNumChildren();
 
@@ -1095,7 +1099,7 @@ bool NpScene::addSpatialTendonInternal(NpArticulationReducedCoordinate* npaRC, S
 
 				tendonSim->addAttachment(cCore);
 
-				attachementStack[stackSize] = child;
+				attachmentStack[stackSize] = child;
 				stackSize++;
 			}
 
@@ -1135,6 +1139,9 @@ bool NpScene::addFixedTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc:
 		scArtSim->addTendon(tendonSim);
 
 		const PxU32 numTendonJoints = tendon->getNbTendonJoints();
+
+		// Np check on addArticulation does not allow empty tendons, but assert here.
+		PX_ASSERT(numTendonJoints);
 
 		NpArticulationTendonJoint* tendonJoint = tendon->getTendonJoint(0);
 
@@ -1371,8 +1378,10 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 		}
 	}
 
-	OMNI_PVD_ADD(PxScene, articulations, static_cast<PxScene &>(*this), static_cast<PxArticulationReducedCoordinate&>(npa));
-	OMNI_PVD_SET(PxArticulationReducedCoordinate, dofs, static_cast<PxArticulationReducedCoordinate&>(npa), npa.getDofs());
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_ADD_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, articulations, static_cast<PxScene &>(*this), static_cast<PxArticulationReducedCoordinate&>(npa));
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, dofs, static_cast<PxArticulationReducedCoordinate&>(npa), npa.getDofs());
+	OMNI_PVD_WRITE_SCOPE_END
 
 	return true;
 }
@@ -1448,8 +1457,10 @@ void NpScene::removeArticulationInternal(PxArticulationReducedCoordinate& pxa, b
 	scRemoveArticulation(npArticulation);
 	removeFromArticulationList(npArticulation);
 	
-	OMNI_PVD_REMOVE(PxScene, articulations, static_cast<PxScene &>(*this), pxa)
-	OMNI_PVD_SET(PxArticulationReducedCoordinate, dofs, pxa, pxa.getDofs());
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_REMOVE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, articulations, static_cast<PxScene &>(*this), pxa)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationReducedCoordinate, dofs, pxa, pxa.getDofs());
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1526,7 +1537,7 @@ PxU32 NpScene::getSoftBodies(PxSoftBody** userBuffer, PxU32 bufferSize, PxU32 st
 bool NpScene::addFEMCloth(PxFEMCloth& femCloth)
 {
 	if (!(this->getFlags() & PxSceneFlag::eENABLE_GPU_DYNAMICS))
-		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxScene::addFEMCloth(): FEM-cloth can only be simulated by GPU-accelerated scenes!");
+		return PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxScene::addFEMCloth(): FEM-cloth can only be simulated by GPU-accelerated scenes!");
 
 #if PX_SUPPORT_GPU_PHYSX
 	// Add FEM-cloth
@@ -2073,8 +2084,10 @@ bool NpScene::addAggregate(PxAggregate& aggregate)
 
 	mAggregates.insert(&aggregate);
 
-	OMNI_PVD_ADD(PxScene, aggregates, static_cast<PxScene&>(*this), aggregate);
-	OMNI_PVD_SET(PxAggregate, scene, aggregate, static_cast<PxScene const*>(this));
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_ADD_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, aggregates, static_cast<PxScene&>(*this), aggregate);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxAggregate, scene, aggregate, static_cast<PxScene const*>(this));
+	OMNI_PVD_WRITE_SCOPE_END
 
 	return true;
 }
@@ -2126,8 +2139,10 @@ void NpScene::removeAggregate(PxAggregate& aggregate, bool wakeOnLostTouch)
 
 	removeFromAggregateList(aggregate);
 
-	OMNI_PVD_REMOVE(PxScene, aggregates, static_cast<PxScene&>(*this), aggregate);
-	OMNI_PVD_SET(PxAggregate, scene, aggregate, static_cast<PxScene const*>(NULL));
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_REMOVE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, aggregates, static_cast<PxScene&>(*this), aggregate);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxAggregate, scene, aggregate, static_cast<PxScene const*>(NULL));
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 PxU32 NpScene::getNbAggregates() const
@@ -2503,7 +2518,7 @@ void NpScene::setSimulationEventCallback(PxSimulationEventCallback* callback)
 
 	mScene.setSimulationEventCallback(callback);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, hasSimulationEventCallback, static_cast<PxScene&>(*this), callback ? true : false)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, hasSimulationEventCallback, static_cast<PxScene&>(*this), callback ? true : false)
 }
 
 PxSimulationEventCallback* NpScene::getSimulationEventCallback() const
@@ -2520,7 +2535,7 @@ void NpScene::setContactModifyCallback(PxContactModifyCallback* callback)
 
 	mScene.setContactModifyCallback(callback);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, hasContactModifyCallback, static_cast<PxScene&>(*this), callback ? true : false)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, hasContactModifyCallback, static_cast<PxScene&>(*this), callback ? true : false)
 }
 
 PxContactModifyCallback* NpScene::getContactModifyCallback() const
@@ -2537,7 +2552,7 @@ void NpScene::setCCDContactModifyCallback(PxCCDContactModifyCallback* callback)
 
 	mScene.setCCDContactModifyCallback(callback);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, hasCCDContactModifyCallback, static_cast<PxScene&>(*this), callback ? true : false)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, hasCCDContactModifyCallback, static_cast<PxScene&>(*this), callback ? true : false)
 }
 
 PxCCDContactModifyCallback* NpScene::getCCDContactModifyCallback() const
@@ -2554,7 +2569,7 @@ void NpScene::setBroadPhaseCallback(PxBroadPhaseCallback* callback)
 
 	mScene.getBroadphaseManager().setBroadPhaseCallback(callback);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, hasBroadPhaseCallback, static_cast<PxScene&>(*this), callback ? true : false)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, hasBroadPhaseCallback, static_cast<PxScene&>(*this), callback ? true : false)
 }
 
 PxBroadPhaseCallback* NpScene::getBroadPhaseCallback() const
@@ -2572,7 +2587,7 @@ void NpScene::setCCDMaxPasses(PxU32 ccdMaxPasses)
 
 	mScene.setCCDMaxPasses(ccdMaxPasses);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, ccdMaxPasses, static_cast<PxScene&>(*this), ccdMaxPasses)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdMaxPasses, static_cast<PxScene&>(*this), ccdMaxPasses)
 }
 
 PxU32 NpScene::getCCDMaxPasses() const
@@ -2590,7 +2605,7 @@ void NpScene::setCCDMaxSeparation(const PxReal separation)
 
 	mScene.setCCDMaxSeparation(separation);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, ccdMaxSeparation, static_cast<PxScene&>(*this), separation)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdMaxSeparation, static_cast<PxScene&>(*this), separation)
 }
 
 PxReal NpScene::getCCDMaxSeparation() const
@@ -2608,7 +2623,7 @@ void NpScene::setCCDThreshold(const PxReal t)
 
 	mScene.setCCDThreshold(t);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, ccdThreshold, static_cast<PxScene&>(*this), t)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdThreshold, static_cast<PxScene&>(*this), t)
 }
 
 PxReal NpScene::getCCDThreshold() const
@@ -2964,7 +2979,7 @@ bool NpScene::simulateOrCollide(PxReal elapsedTime, PxBaseTask* completionTask, 
 				PxCUresult lastError = mCudaContextManager->getCudaContext()->getLastError();
 				if (lastError)
 				{
-					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, "PhysX Internal CUDA error. Simulation can not continue! Error code %i!\n", PxI32(lastError));
+					PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PhysX Internal CUDA error. Simulation can not continue! Error code %i!\n", PxI32(lastError));
 					//return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "PhysX Internal CUDA error. Simulation can not continue!");
 				}
 			}
@@ -3250,7 +3265,7 @@ void NpScene::setSolverBatchSize(PxU32 solverBatchSize)
 
 	mScene.setSolverBatchSize(solverBatchSize);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, solverBatchSize, static_cast<PxScene&>(*this), solverBatchSize)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, solverBatchSize, static_cast<PxScene&>(*this), solverBatchSize)
 }
 
 PxU32 NpScene::getSolverBatchSize(void) const
@@ -3268,7 +3283,7 @@ void NpScene::setSolverArticulationBatchSize(PxU32 solverBatchSize)
 
 	mScene.setSolverArticBatchSize(solverBatchSize);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, solverArticulationBatchSize, static_cast<PxScene&>(*this), solverBatchSize)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, solverArticulationBatchSize, static_cast<PxScene&>(*this), solverBatchSize)
 }
 
 PxU32 NpScene::getSolverArticulationBatchSize(void) const
@@ -3332,7 +3347,7 @@ void NpScene::setNbContactDataBlocks(PxU32 numBlocks)
 		"PxScene::setNbContactDataBlock: This call is not allowed while the simulation is running. Call will be ignored!");
 	
 	mScene.setNbContactDataBlocks(numBlocks);
-	OMNI_PVD_SET(PxScene, nbContactDataBlocks, static_cast<PxScene&>(*this), numBlocks)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, nbContactDataBlocks, static_cast<PxScene&>(*this), numBlocks)
 }
 
 PxU32 NpScene::getNbContactDataBlocksUsed() const
@@ -3375,7 +3390,7 @@ void NpScene::setMaxBiasCoefficient(const PxReal coeff)
 
 	mScene.setMaxBiasCoefficient(coeff);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, maxBiasCoefficient, static_cast<PxScene&>(*this), coeff)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, maxBiasCoefficient, static_cast<PxScene&>(*this), coeff)
 }
 
 PxReal NpScene::getMaxBiasCoefficient() const
@@ -3393,7 +3408,7 @@ void NpScene::setFrictionOffsetThreshold(const PxReal t)
 
 	mScene.setFrictionOffsetThreshold(t);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, frictionOffsetThreshold, static_cast<PxScene&>(*this), t)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionOffsetThreshold, static_cast<PxScene&>(*this), t)
 }
 
 PxReal NpScene::getFrictionOffsetThreshold() const
@@ -3411,7 +3426,7 @@ void NpScene::setFrictionCorrelationDistance(const PxReal t)
 
 	mScene.setFrictionCorrelationDistance(t);
 	updatePvdProperties();
-	OMNI_PVD_SET(PxScene, frictionCorrelationDistance, static_cast<PxScene&>(*this), t)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionCorrelationDistance, static_cast<PxScene&>(*this), t)
 }
 
 PxReal NpScene::getFrictionCorrelationDistance() const
@@ -3430,7 +3445,7 @@ PxU32 NpScene::getContactReportStreamBufferSize() const
 void NpScene::checkPositionSanity(const PxRigidActor& a, const PxTransform& pose, const char* fnName) const
 {
 	if(!mSanityBounds.contains(pose.p))
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL,
 			"%s: actor pose for %lp is outside sanity bounds\n", fnName, &a);
 }
 #endif
@@ -3770,22 +3785,31 @@ PxPvdSceneClient* NpScene::getScenePvdClient()
 #endif
 }
 
-void NpScene::copyArticulationData(void* jointData, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, void* copyEvent)
+void NpScene::copyArticulationData(void* jointData, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, CUevent copyEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyArticulationData() not allowed while simulation is running. Call will be ignored.");
 
-	if (dataType == PxArticulationGpuDataType::eJOINT_FORCE || dataType == PxArticulationGpuDataType::eLINK_FORCE ||
-		dataType == PxArticulationGpuDataType::eLINK_TORQUE)
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyArticulationData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	if (dataType == PxArticulationGpuDataType::eLINK_FORCE ||
+		dataType == PxArticulationGpuDataType::eLINK_TORQUE ||
+		dataType == PxArticulationGpuDataType::eFIXED_TENDON ||
+		dataType == PxArticulationGpuDataType::eFIXED_TENDON_JOINT ||
+		dataType == PxArticulationGpuDataType::eSPATIAL_TENDON ||
+		dataType == PxArticulationGpuDataType::eSPATIAL_TENDON_ATTACHMENT)
 	{
 		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyArticulationData, specified data is write only.");
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->copyArticulationData(jointData, index, dataType, nbCopyArticulations, copyEvent);
+	mScene.getSimulationController()->copyArticulationData(jointData, index, dataType, nbCopyArticulations, copyEvent);
 }
 
-void NpScene::applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, void* waitEvent, void* signalEvent)
+void NpScene::applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, CUevent waitEvent, CUevent signalEvent)
 {
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applyArticulationData() not allowed while simulation is running. Call will be ignored.");
 	
@@ -3795,26 +3819,57 @@ void NpScene::applyArticulationData(void* data, void* index, PxArticulationGpuDa
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) &&  mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->applyArticulationData(data,index, dataType, nbUpdatedArticulations, waitEvent, signalEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyArticulationData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	if (dataType == PxArticulationGpuDataType::eJOINT_ACCELERATION ||
+		dataType == PxArticulationGpuDataType::eJOINT_SOLVER_FORCE ||
+		dataType == PxArticulationGpuDataType::eSENSOR_FORCE ||
+		dataType == PxArticulationGpuDataType::eLINK_TRANSFORM ||
+		dataType == PxArticulationGpuDataType::eLINK_VELOCITY ||
+		dataType == PxArticulationGpuDataType::eLINK_ACCELERATION ||
+		dataType == PxArticulationGpuDataType::eLINK_INCOMING_JOINT_FORCE
+	)
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyArticulationData, specified data is read only.");
+		return;
+	}
+
+	mScene.getSimulationController()->applyArticulationData(data,index, dataType, nbUpdatedArticulations, waitEvent, signalEvent);
 }
 
-void NpScene::copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, void* copyEvent)
+void NpScene::updateArticulationsKinematic(CUevent signalEvent)
+{
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::updateArticulationsKinematic() not allowed while simulation is running. Call will be ignored.");
+
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::updateArticulationsKinematic(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->updateArticulationsKinematic(signalEvent);
+}
+
+void NpScene::copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copySoftBodyData() not allowed while simulation is running. Call will be ignored.");
 	
 	//if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuRigidBodies())
 		mScene.getSimulationController()->copySoftBodyData(data, dataSizes, softBodyIndices, flag, nbCopySoftBodies, maxSize, copyEvent);
 }
-void NpScene::applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, void* applyEvent)
+void NpScene::applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent)
 {
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applySoftBodyData() not allowed while simulation is running. Call will be ignored.");
 	
 	//if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuRigidBodies())
-		mScene.getSimulationController()->applySoftBodyData(data, dataSizes, softBodyIndices, flag, nbUpdatedSoftBodies, maxSize, applyEvent);
+		mScene.getSimulationController()->applySoftBodyData(data, dataSizes, softBodyIndices, flag, nbUpdatedSoftBodies, maxSize, applyEvent, signalEvent);
 }
 
-void NpScene::copyContactData(void* data, const PxU32 maxContactPairs, void* numContactPairs, void* copyEvent)
+void NpScene::copyContactData(void* data, const PxU32 maxContactPairs, void* numContactPairs, CUevent copyEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyContactData() not allowed while simulation is running. Call will be ignored.");
 	
@@ -3824,11 +3879,16 @@ void NpScene::copyContactData(void* data, const PxU32 maxContactPairs, void* num
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) &&  mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->copyContactData(mScene.getDynamicsContext(), data, maxContactPairs, numContactPairs, copyEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyContactData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->copyContactData(mScene.getDynamicsContext(), data, maxContactPairs, numContactPairs, copyEvent);
 }
 
-void NpScene::copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, void* copyEvent)
+void NpScene::copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, CUevent copyEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::copyBodyData() not allowed while simulation is running. Call will be ignored.");
 
@@ -3838,11 +3898,16 @@ void NpScene::copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->copyBodyData(data, index, nbCopyActors, copyEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::copyBodyData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->copyBodyData(data, index, nbCopyActors, copyEvent);
 }
 
-void NpScene::applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, void* waitEvent, void* signalEvent)
+void NpScene::applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, CUevent waitEvent, CUevent signalEvent)
 {
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applyActorData() not allowed while simulation is running. Call will be ignored.");
 
@@ -3852,19 +3917,31 @@ void NpScene::applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->applyActorData(data, index, flag, nbUpdatedActors, waitEvent, signalEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyActorData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->applyActorData(data, index, flag, nbUpdatedActors, waitEvent, signalEvent);
 }
 
 void NpScene::evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* samplePointsConcatenated,
-	const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, void* event)
+	const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event)
 {
-	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::evaluateSDFDistances() not allowed while simulation is running. Call will be ignored.");	
+	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::evaluateSDFDistances() not allowed while simulation is running. Call will be ignored.");
+
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::evaluateSDFDistances(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
 	mScene.getSimulationController()->evaluateSDFDistances(sdfShapeIds, nbShapes, samplePointsConcatenated, 
 		samplePointCountPerShape, maxPointCount, localGradientAndSDFConcatenated, event);
 }
 
-void NpScene::computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, void* computeEvent)
+void NpScene::computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeDenseJacobians() not allowed while simulation is running. Call will be ignored.");
 
@@ -3874,11 +3951,16 @@ void NpScene::computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndi
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->computeDenseJacobians(indices, nbIndices, computeEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeDenseJacobians(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->computeDenseJacobians(indices, nbIndices, computeEvent);
 }
 
-void NpScene::computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, void* computeEvent)
+void NpScene::computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeGeneralizedMassMatrices() not allowed while simulation is running. Call will be ignored.");
 
@@ -3888,11 +3970,16 @@ void NpScene::computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->computeGeneralizedMassMatrices(indices, nbIndices, computeEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedMassMatrices(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->computeGeneralizedMassMatrices(indices, nbIndices, computeEvent);
 }
 
-void NpScene::computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, void* computeEvent)
+void NpScene::computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeGeneralizedGravityForces() not allowed while simulation is running. Call will be ignored.");
 
@@ -3902,11 +3989,16 @@ void NpScene::computeGeneralizedGravityForces(const PxIndexDataPair* indices, Px
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->computeGeneralizedGravityForces(indices, nbIndices, getGravity(), computeEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeGeneralizedGravityForces(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->computeGeneralizedGravityForces(indices, nbIndices, getGravity(), computeEvent);
 }
 
-void NpScene::computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, void* computeEvent)
+void NpScene::computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)
 {
 	PX_CHECK_SCENE_API_READ_FORBIDDEN(this, "PxScene::computeCoriolisAndCentrifugalForces() not allowed while simulation is running. Call will be ignored.");
 
@@ -3916,11 +4008,16 @@ void NpScene::computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->computeCoriolisAndCentrifugalForces(indices, nbIndices, computeEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::computeCoriolisAndCentrifugalForces(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->computeCoriolisAndCentrifugalForces(indices, nbIndices, computeEvent);
 }
 
-void NpScene::applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* indexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, void* waitEvent, void* signalEvent)
+void NpScene::applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* indexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)
 {
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(this, "PxScene::applyParticleBufferData() not allowed while simulation is running. Call will be ignored.");
 
@@ -3930,8 +4027,13 @@ void NpScene::applyParticleBufferData(const PxU32* indices, const PxGpuParticleB
 		return;
 	}
 
-	if ((mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && mScene.isUsingGpuDynamicsOrBp())
-		mScene.getSimulationController()->applyParticleBufferData(indices, indexPairs, flags, nbUpdatedBuffers, waitEvent, signalEvent);
+	if (!isDirectGPUAPIInitialized())
+	{
+		outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxScene::applyParticleBufferData(): it is illegal to call this function if the scene is not configured for direct-GPU access or the direct-GPU API has not been initialized yet.");
+		return;
+	}
+
+	mScene.getSimulationController()->applyParticleBufferData(indices, indexPairs, flags, nbUpdatedBuffers, waitEvent, signalEvent);
 }
 
 PxsSimulationController* NpScene::getSimulationController()
@@ -4468,7 +4570,7 @@ static PX_FORCE_INLINE void addActorT(NpScene* npScene, T& actor, bool noSim, Px
 			PvdFns<T>::createInstance(*npScene, pvdClient, &actor);		
 #endif
 
-		OMNI_PVD_ADD(PxScene, actors, static_cast<PxScene &>(*npScene), static_cast<PxActor &>(actor))
+		OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxScene, actors, static_cast<PxScene &>(*npScene), static_cast<PxActor &>(actor))
 
 		addNonSimActor(actor);
 	}
@@ -4735,53 +4837,56 @@ void NpScene::createInOmniPVD(const PxSceneDesc& desc)
 {
 	PX_UNUSED(desc);
 
-	OMNI_PVD_CREATE(PxScene, static_cast<PxScene &>(*this))
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	OMNI_PVD_SET(PxScene, gravity, static_cast<PxScene &>(*this), getGravity())
-	OMNI_PVD_SET(PxScene, flags,	static_cast<PxScene&>(*this), getFlags())
-	OMNI_PVD_SET(PxScene, frictionType,	static_cast<PxScene&>(*this), getFrictionType())
-	OMNI_PVD_SET(PxScene, broadPhaseType,	static_cast<PxScene&>(*this), getBroadPhaseType())
-	OMNI_PVD_SET(PxScene, kineKineFilteringMode,	static_cast<PxScene&>(*this), getKinematicKinematicFilteringMode())
-	OMNI_PVD_SET(PxScene, staticKineFilteringMode,	static_cast<PxScene&>(*this), getStaticKinematicFilteringMode())
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, static_cast<PxScene &>(*this))
 
-	OMNI_PVD_SET(PxScene, solverType, static_cast<PxScene&>(*this), getSolverType())
-	OMNI_PVD_SET(PxScene, bounceThresholdVelocity, static_cast<PxScene&>(*this), getBounceThresholdVelocity())
-	OMNI_PVD_SET(PxScene, frictionOffsetThreshold, static_cast<PxScene&>(*this), getFrictionOffsetThreshold())
-	OMNI_PVD_SET(PxScene, frictionCorrelationDistance, static_cast<PxScene&>(*this), getFrictionCorrelationDistance())
-	OMNI_PVD_SET(PxScene, solverBatchSize, static_cast<PxScene&>(*this), getSolverBatchSize())
-	OMNI_PVD_SET(PxScene, solverArticulationBatchSize, static_cast<PxScene&>(*this), getSolverArticulationBatchSize())
-	OMNI_PVD_SET(PxScene, nbContactDataBlocks, static_cast<PxScene&>(*this), getNbContactDataBlocksUsed())
-	OMNI_PVD_SET(PxScene, maxNbContactDataBlocks, static_cast<PxScene&>(*this), getMaxNbContactDataBlocksUsed())//naming problem of functions
-	OMNI_PVD_SET(PxScene, maxBiasCoefficient, static_cast<PxScene&>(*this), getMaxBiasCoefficient())
-	OMNI_PVD_SET(PxScene, contactReportStreamBufferSize, static_cast<PxScene&>(*this), getContactReportStreamBufferSize())
-	OMNI_PVD_SET(PxScene, ccdMaxPasses, static_cast<PxScene&>(*this), getCCDMaxPasses())
-	OMNI_PVD_SET(PxScene, ccdThreshold, static_cast<PxScene&>(*this), getCCDThreshold())
-	OMNI_PVD_SET(PxScene, ccdMaxSeparation, static_cast<PxScene&>(*this), getCCDMaxSeparation())
-	OMNI_PVD_SET(PxScene, wakeCounterResetValue, static_cast<PxScene&>(*this), getWakeCounterResetValue())
-	//OMNI_PVD_SET(PxScene, sceneQuerySystem, static_cast<PxScene&>(*this), getSQAPI())//needs class
-	//OMNI_PVD_CREATE(scenelimits, limits)//owned temp object .. would be cool if this could be automated
-	OMNI_PVD_SET(PxScene, limitsMaxNbActors, static_cast<PxScene&>(*this), desc.limits.maxNbActors)
-	OMNI_PVD_SET(PxScene, limitsMaxNbBodies, static_cast<PxScene&>(*this), desc.limits.maxNbBodies)
-	OMNI_PVD_SET(PxScene, limitsMaxNbStaticShapes, static_cast<PxScene&>(*this), desc.limits.maxNbStaticShapes)
-	OMNI_PVD_SET(PxScene, limitsMaxNbDynamicShapes, static_cast<PxScene&>(*this), desc.limits.maxNbDynamicShapes)
-	OMNI_PVD_SET(PxScene, limitsMaxNbAggregates, static_cast<PxScene&>(*this), desc.limits.maxNbAggregates)
-	OMNI_PVD_SET(PxScene, limitsMaxNbConstraints, static_cast<PxScene&>(*this), desc.limits.maxNbConstraints)
-	OMNI_PVD_SET(PxScene, limitsMaxNbRegions, static_cast<PxScene&>(*this), desc.limits.maxNbRegions)
-	OMNI_PVD_SET(PxScene, limitsMaxNbBroadPhaseOverlaps, static_cast<PxScene&>(*this), desc.limits.maxNbBroadPhaseOverlaps)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gravity, static_cast<PxScene &>(*this), getGravity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, flags,	static_cast<PxScene&>(*this), getFlags())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionType,	static_cast<PxScene&>(*this), getFrictionType())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, broadPhaseType,	static_cast<PxScene&>(*this), getBroadPhaseType())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, kineKineFilteringMode,	static_cast<PxScene&>(*this), getKinematicKinematicFilteringMode())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, staticKineFilteringMode,	static_cast<PxScene&>(*this), getStaticKinematicFilteringMode())
 
-	OMNI_PVD_SET(PxScene, hasCPUDispatcher, static_cast<PxScene&>(*this), getCpuDispatcher() ? true : false)
-	OMNI_PVD_SET(PxScene, hasCUDAContextManager, static_cast<PxScene&>(*this), getCudaContextManager()  ? true : false)
-	OMNI_PVD_SET(PxScene, hasSimulationEventCallback, static_cast<PxScene&>(*this), getSimulationEventCallback() ? true : false)
-	OMNI_PVD_SET(PxScene, hasContactModifyCallback, static_cast<PxScene&>(*this), getContactModifyCallback() ? true : false)
-	OMNI_PVD_SET(PxScene, hasCCDContactModifyCallback, static_cast<PxScene&>(*this), getCCDContactModifyCallback() ? true : false)
-	OMNI_PVD_SET(PxScene, hasBroadPhaseCallback, static_cast<PxScene&>(*this), getBroadPhaseCallback() ? true : false)
-	OMNI_PVD_SET(PxScene, hasFilterCallback, static_cast<PxScene&>(*this), getFilterCallback() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, solverType, static_cast<PxScene&>(*this), getSolverType())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, bounceThresholdVelocity, static_cast<PxScene&>(*this), getBounceThresholdVelocity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionOffsetThreshold, static_cast<PxScene&>(*this), getFrictionOffsetThreshold())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, frictionCorrelationDistance, static_cast<PxScene&>(*this), getFrictionCorrelationDistance())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, solverBatchSize, static_cast<PxScene&>(*this), getSolverBatchSize())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, solverArticulationBatchSize, static_cast<PxScene&>(*this), getSolverArticulationBatchSize())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, nbContactDataBlocks, static_cast<PxScene&>(*this), getNbContactDataBlocksUsed())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, maxNbContactDataBlocks, static_cast<PxScene&>(*this), getMaxNbContactDataBlocksUsed())//naming problem of functions
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, maxBiasCoefficient, static_cast<PxScene&>(*this), getMaxBiasCoefficient())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, contactReportStreamBufferSize, static_cast<PxScene&>(*this), getContactReportStreamBufferSize())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdMaxPasses, static_cast<PxScene&>(*this), getCCDMaxPasses())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdThreshold, static_cast<PxScene&>(*this), getCCDThreshold())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, ccdMaxSeparation, static_cast<PxScene&>(*this), getCCDMaxSeparation())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, wakeCounterResetValue, static_cast<PxScene&>(*this), getWakeCounterResetValue())
 	
-	OMNI_PVD_SET(PxScene, sanityBounds, static_cast<PxScene&>(*this), desc.sanityBounds)
-	OMNI_PVD_SET(PxScene, gpuDynamicsConfig, static_cast<PxScene&>(*this), desc.gpuDynamicsConfig)
-	OMNI_PVD_SET(PxScene, gpuMaxNumPartitions, static_cast<PxScene&>(*this), desc.gpuMaxNumPartitions)
-	OMNI_PVD_SET(PxScene, gpuMaxNumStaticPartitions, static_cast<PxScene&>(*this), desc.gpuMaxNumStaticPartitions)
-	OMNI_PVD_SET(PxScene, gpuComputeVersion, static_cast<PxScene&>(*this), desc.gpuComputeVersion)
-	OMNI_PVD_SET(PxScene, contactPairSlabSize, static_cast<PxScene&>(*this), desc.contactPairSlabSize)
-	OMNI_PVD_SET(PxScene, tolerancesScale, static_cast<PxScene&>(*this), desc.getTolerancesScale())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbActors, static_cast<PxScene&>(*this), desc.limits.maxNbActors)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbBodies, static_cast<PxScene&>(*this), desc.limits.maxNbBodies)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbStaticShapes, static_cast<PxScene&>(*this), desc.limits.maxNbStaticShapes)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbDynamicShapes, static_cast<PxScene&>(*this), desc.limits.maxNbDynamicShapes)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbAggregates, static_cast<PxScene&>(*this), desc.limits.maxNbAggregates)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbConstraints, static_cast<PxScene&>(*this), desc.limits.maxNbConstraints)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbRegions, static_cast<PxScene&>(*this), desc.limits.maxNbRegions)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, limitsMaxNbBroadPhaseOverlaps, static_cast<PxScene&>(*this), desc.limits.maxNbBroadPhaseOverlaps)
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasCPUDispatcher, static_cast<PxScene&>(*this), getCpuDispatcher() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasCUDAContextManager, static_cast<PxScene&>(*this), getCudaContextManager()  ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasSimulationEventCallback, static_cast<PxScene&>(*this), getSimulationEventCallback() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasContactModifyCallback, static_cast<PxScene&>(*this), getContactModifyCallback() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasCCDContactModifyCallback, static_cast<PxScene&>(*this), getCCDContactModifyCallback() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasBroadPhaseCallback, static_cast<PxScene&>(*this), getBroadPhaseCallback() ? true : false)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, hasFilterCallback, static_cast<PxScene&>(*this), getFilterCallback() ? true : false)
+	
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, sanityBounds, static_cast<PxScene&>(*this), desc.sanityBounds)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gpuDynamicsConfig, static_cast<PxScene&>(*this), desc.gpuDynamicsConfig)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gpuMaxNumPartitions, static_cast<PxScene&>(*this), desc.gpuMaxNumPartitions)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gpuMaxNumStaticPartitions, static_cast<PxScene&>(*this), desc.gpuMaxNumStaticPartitions)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, gpuComputeVersion, static_cast<PxScene&>(*this), desc.gpuComputeVersion)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, contactPairSlabSize, static_cast<PxScene&>(*this), desc.contactPairSlabSize)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxScene, tolerancesScale, static_cast<PxScene&>(*this), desc.getTolerancesScale())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }

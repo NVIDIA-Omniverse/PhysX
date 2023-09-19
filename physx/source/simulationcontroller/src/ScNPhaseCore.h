@@ -78,6 +78,8 @@ namespace Sc
 
 	class ActorSim;
 
+	class TriggerContactTask;
+
 	struct PairReleaseFlag
 	{
 		enum Enum
@@ -96,8 +98,10 @@ namespace Sc
 
 	struct BodyPairKey
 	{
-		PxU32 mSim0;
-		PxU32 mSim1;
+		PX_FORCE_INLINE	BodyPairKey(PxU32 sim0, PxU32 sim1) : mSim0(sim0), mSim1(sim1)	{}
+
+		const PxU32 mSim0;
+		const PxU32 mSim1;
 
 		PX_FORCE_INLINE	bool operator == (const BodyPairKey& pair) const { return mSim0 == pair.mSim0 && mSim1 == pair.mSim1; }
 	};
@@ -178,6 +182,47 @@ namespace Sc
 		}
 	};
 
+	class TriggerProcessingContext
+	{
+	public:
+		TriggerProcessingContext()
+			: mTmpTriggerProcessingBlock(NULL)
+			, mTmpTriggerPairCount(0)
+		{
+		}
+
+		bool initialize(TriggerInteraction**, PxU32 pairCount, PxcScratchAllocator&);
+
+		void deinitialize(PxcScratchAllocator&);
+
+		PX_FORCE_INLINE TriggerInteraction* const* getTriggerInteractions() const
+		{
+			return reinterpret_cast<TriggerInteraction**>(mTmpTriggerProcessingBlock);
+		}
+
+		PX_FORCE_INLINE PxU32 getTriggerInteractionCount() const
+		{
+			return mTmpTriggerPairCount;
+		}
+
+		PX_FORCE_INLINE TriggerContactTask* getTriggerContactTasks()
+		{
+			const PxU32 offset = mTmpTriggerPairCount * sizeof(TriggerInteraction*);
+			return reinterpret_cast<TriggerContactTask*>(mTmpTriggerProcessingBlock + offset);
+		}
+
+		PX_FORCE_INLINE PxMutex& getTriggerWriteBackLock()
+		{
+			return mTriggerWriteBackLock;
+		}
+
+	private:
+		PxU8* mTmpTriggerProcessingBlock;  // temporary memory block to process trigger pairs in parallel
+		                                   // (see comment in Sc::Scene::postIslandGen too)
+		PxU32 mTmpTriggerPairCount;
+		PxMutex mTriggerWriteBackLock;
+	};
+
 	class NPhaseCore : public PxUserAllocated
 	{
 		PX_NOCOPY(NPhaseCore)
@@ -206,11 +251,22 @@ namespace Sc
 		void removeFromDirtyInteractionList(Interaction* interaction);
 		void updateDirtyInteractions(PxsContactManagerOutputIterator& outputs);
 
-		// Perform trigger overlap tests.
-		void processTriggerInteractions(PxBaseTask* continuation);
+		/**
+		\brief Allocate buffers for trigger overlap test.
 
-		// Gather results from trigger overlap tests and clean up.
-		void mergeProcessedTriggerInteractions(PxBaseTask* continuation);
+		See comment in Sc::Scene::postIslandGen for why this is split up into multiple parts.
+
+		\param[in] continuation The task to run after trigger processing.
+		\return The concluding trigger processing task if there is work to do, else NULL.
+		*/
+		PxBaseTask* prepareForTriggerInteractionProcessing(PxBaseTask* continuation);
+
+		// Perform trigger overlap tests.
+		void processTriggerInteractions(PxBaseTask& continuation);
+		
+		// Deactivate trigger interactions if possible, free buffers from overlap tests and clean up.
+		// See comment in Sc::Scene::postIslandGen for why this is split up into multiple parts.
+		void concludeTriggerInteractionProcessing(PxBaseTask* continuation);
 
 		// Check candidates for persistent touch contact events and create those events if necessary.
 		void processPersistentContactEvents(PxsContactManagerOutputIterator& outputs);
@@ -311,10 +367,8 @@ namespace Sc
 		PxPool<ActorPairContactReportData>			mActorPairContactReportDataPool;
 		PxPool<ElementInteractionMarker>			mInteractionMarkerPool;
 
-		Cm::DelegateTask<Sc::NPhaseCore, &Sc::NPhaseCore::mergeProcessedTriggerInteractions> mMergeProcessedTriggerInteractions;
-		void*										mTmpTriggerProcessingBlock;  // temporary memory block to process trigger pairs in parallel
-		PxMutex										mTriggerWriteBackLock;
-		volatile PxI32								mTriggerPairsToDeactivateCount;
+		Cm::DelegateTask<Sc::NPhaseCore, &Sc::NPhaseCore::concludeTriggerInteractionProcessing> mConcludeTriggerInteractionProcessingTask;
+		TriggerProcessingContext					mTriggerProcessingContext;
 		PxHashMap<BodyPairKey, ActorPair*>			mActorPairMap; 
 
 		PxHashMap<ElementSimKey, ElementSimInteraction*> mElementSimMap;

@@ -37,8 +37,6 @@
 #include "foundation/PxAllocator.h"
 #include "foundation/PxUserAllocated.h"
 
-#define DY_MAX_VELOCITY_COUNT 4
-
 namespace physx
 {
 class PxcNpMemBlockPool;

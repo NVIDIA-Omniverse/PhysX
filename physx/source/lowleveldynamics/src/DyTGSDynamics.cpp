@@ -1929,15 +1929,6 @@ public:
 	{
 		PxReal dt = mContext.getDt();
 
-		//ML: TGS can't work well with high velocity iteration counts, so we should limit the velocity iteration counts to be DY_MAX_ITERATION_COUNT. However,
-		//we should put the extra iterations to the position iteration count so the users will see some behaviour improvements
-
-		const PxU32 newVelIters = PxMin(mIslandContext.mVelIters, PxU32(DY_MAX_VELOCITY_COUNT));
-		const PxU32 remainVelIters = mIslandContext.mVelIters - newVelIters;
-
-		mIslandContext.mVelIters = newVelIters;
-		mIslandContext.mPosIters = mIslandContext.mPosIters + remainVelIters;
-
 		mIslandContext.mStepDt = dt / PxReal(mIslandContext.mPosIters);
 		mIslandContext.mInvStepDt = 1.f/mIslandContext.mStepDt;//PxMin(1000.f, 1.f / mIslandContext.mStepDt);
 		mIslandContext.mBiasCoefficient = 2.f * PxSqrt(1.f/mIslandContext.mPosIters);

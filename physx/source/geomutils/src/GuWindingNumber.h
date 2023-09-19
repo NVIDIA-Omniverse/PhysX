@@ -53,7 +53,10 @@ namespace Gu
 		const PxU32* triangles, const PxVec3* points);
 
 	PX_PHYSX_COMMON_API void precomputeClusterInformation(const Gu::BVHNode* tree, const PxU32* triangles, const PxU32 numTriangles,
-		const PxVec3* points, PxHashMap<PxU32, ClusterApproximation>& result, PxI32 rootNodeIndex = 0);
+		const PxVec3* points, PxHashMap<PxU32, ClusterApproximation>& result, PxI32 rootNodeIndex = 0);	
+
+	//Quite slow, only useful for few query points, otherwise it is worth to construct a tree for acceleration
+	PX_PHYSX_COMMON_API PxF32 computeWindingNumber(const PxVec3& q, const PxU32* triangles, const PxU32 numTriangles, const PxVec3* points);
 }
 }
 

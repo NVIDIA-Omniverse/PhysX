@@ -212,11 +212,15 @@ public:
 	\note Setting an unrealistic center of mass which is a long way from the body can make it difficult for
 	the SDK to solve constraints. Perhaps leading to instability and jittering bodies.
 
+	\note Changing this transform will not update the linear velocity reported by getLinearVelocity() to account
+	for the shift in center of mass. If the shift should be accounted for, the user should update the velocity
+	using setLinearVelocity().
+
 	<b>Default:</b> the identity transform
 
 	\param[in] pose Mass frame offset transform relative to the actor frame. <b>Range:</b> rigid body transform.
 
-	@see getCMassLocalPose() PxRigidBodyDesc.massLocalPose
+	@see getCMassLocalPose() getLinearVelocity()
 	*/
 	virtual		void	setCMassLocalPose(const PxTransform& pose) = 0;
 
@@ -225,7 +229,7 @@ public:
 
 	\return The center of mass pose relative to the actor frame.
 
-	@see setCMassLocalPose() PxRigidBodyDesc.massLocalPose
+	@see setCMassLocalPose()
 	*/
 	virtual		PxTransform 	getCMassLocalPose() const = 0;
 
@@ -246,7 +250,7 @@ public:
 
 	\param[in] mass New mass value for the actor. <b>Range:</b> [0, PX_MAX_F32)
 
-	@see getMass() PxRigidBodyDesc.mass setMassSpaceInertiaTensor()
+	@see getMass() setMassSpaceInertiaTensor()
 	*/
 	virtual		void	setMass(PxReal mass) = 0;
 
@@ -257,7 +261,7 @@ public:
 
 	\return The mass of this actor.
 
-	@see setMass() PxRigidBodyDesc.mass setMassSpaceInertiaTensor()
+	@see setMass() setMassSpaceInertiaTensor()
 	*/
 	virtual		PxReal	getMass() const = 0;
 
@@ -266,7 +270,7 @@ public:
 
 	\return The inverse mass of this actor.
 
-	@see setMass() PxRigidBodyDesc.mass setMassSpaceInertiaTensor()
+	@see setMass() setMassSpaceInertiaTensor()
 	*/
 	virtual		PxReal	getInvMass() const = 0;
 
@@ -289,7 +293,7 @@ public:
 
 	\param[in] m New mass space inertia tensor for the actor.
 
-	@see PxRigidBodyDesc.massSpaceInertia getMassSpaceInertia() setMass() setCMassLocalPose()
+	@see getMassSpaceInertia() setMass() setCMassLocalPose()
 	*/
 	virtual		void	setMassSpaceInertiaTensor(const PxVec3& m) = 0;
 
@@ -302,7 +306,7 @@ public:
 
 	\note A value of 0 in an element is interpreted as infinite inertia along that axis.
 
-	@see PxRigidBodyDesc.massSpaceInertia setMassSpaceInertiaTensor() setMass() setCMassLocalPose()
+	@see setMassSpaceInertiaTensor() setMass() setCMassLocalPose()
 	*/
 	virtual		PxVec3	getMassSpaceInertiaTensor()			const = 0;
 
@@ -315,7 +319,7 @@ public:
 
 	\return The mass space inverse inertia tensor of this actor.
 
-	@see PxRigidBodyDesc.massSpaceInertia setMassSpaceInertiaTensor() setMass() setCMassLocalPose()
+	@see setMassSpaceInertiaTensor() setMass() setCMassLocalPose()
 	*/
 	virtual		PxVec3	getMassSpaceInvInertiaTensor()			const = 0;
 
@@ -379,6 +383,8 @@ public:
 
 	\note It is not allowed to use this method while the simulation is running (except during PxScene::collide(),
 	in PxContactModifyCallback or in contact report callbacks).
+
+	\note The linear velocity is reported with respect to the rigid body's center of mass and not the actor frame origin.
 
 	\return The linear velocity of the actor.
 
@@ -701,7 +707,7 @@ protected:
 	PX_INLINE			PxRigidBody(PxType concreteType, PxBaseFlags baseFlags) : PxRigidActor(concreteType, baseFlags) {}
 	PX_INLINE			PxRigidBody(PxBaseFlags baseFlags) : PxRigidActor(baseFlags) {}
 	virtual				~PxRigidBody()	{}
-	virtual		bool	isKindOf(const char* name)	const	{ return !::strcmp("PxRigidBody", name) || PxRigidActor::isKindOf(name); }
+	virtual		bool	isKindOf(const char* name)	const	{ PX_IS_KIND_OF(name, "PxRigidBody", PxRigidActor); }
 };
 
 #if !PX_DOXYGEN

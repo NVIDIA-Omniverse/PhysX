@@ -235,6 +235,8 @@ PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const P
 #pragma warning ( disable : 4324 )
 #endif
 
+namespace
+{
 struct RayParams
 {
 	BV4_ALIGN16(PxVec3p			mCenterOrMinCoeff_PaddedAligned);
@@ -263,6 +265,7 @@ struct RayParams
 	BV4_ALIGN16(PxVec3p			mP1_PaddedAligned);
 	BV4_ALIGN16(PxVec3p			mP2_PaddedAligned);
 };
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

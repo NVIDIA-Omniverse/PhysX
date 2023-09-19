@@ -26,63 +26,28 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#ifdef RENDER_SNIPPET
+#include "ExtOmniPvdRegistrationData.h"
 
-#include <vector>
+#if PX_SUPPORT_OMNI_PVD
 
-#include "PxPhysicsAPI.h"
-
-#include "../snippetrender/SnippetRender.h"
-#include "../snippetrender/SnippetCamera.h"
-
-using namespace physx;
-
-extern bool initPhysics();
-extern void stepPhysics();	
-extern void cleanupPhysics();
-
-extern PxScene* gScene;
-
-namespace
+namespace physx
 {
-Snippets::Camera* sCamera;
-
-void renderCallback()
+namespace Ext
 {
-	stepPhysics();
 
-	Snippets::startRender(sCamera);
+void OmniPvdPxExtensionsRegistrationData::registerData(OmniPvdWriter& writer)
+{
+	// auto-generate class/attribute registration code from object definition file
+#define OMNI_PVD_WRITER_VAR writer
 
-	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
-	if(nbActors)
-	{
-		const PxVec3 dynColor(1.0f, 0.5f, 0.25f);
+#include "omnipvd/CmOmniPvdAutoGenRegisterData.h"
+#include "OmniPvdPxExtensionsTypes.h"
+#include "omnipvd/CmOmniPvdAutoGenClearDefines.h"
 
-		std::vector<PxRigidActor*> actors(nbActors);
-		gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
-		Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true, dynColor);
-	}
-
-	Snippets::finishRender();
+#undef OMNI_PVD_WRITER_VAR
 }
 
-void exitCallback(void)
-{
-	delete sCamera;
-	cleanupPhysics();
 }
-}
-
-void renderLoop()
-{
-	sCamera = new Snippets::Camera(PxVec3(10.0f, 10.0f, 10.0f), PxVec3(-0.6f,-0.2f,-0.7f));
-
-	Snippets::setupDefault("PhysX Snippet Vehicle2", sCamera, NULL, renderCallback, exitCallback);
-
-	if (initPhysics())
-	{
-		glutMainLoop();
-	}
 }
 
 #endif

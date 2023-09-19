@@ -239,7 +239,7 @@ namespace physx
 
 			virtual void writeName(const char*)
 			{
-				PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, 
+				PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL, 
 					"Cannot export names during exportData.");
 			}
 

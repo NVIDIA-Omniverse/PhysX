@@ -45,6 +45,7 @@
 #include "DyContactPrep.h"
 #include "DySolverContext.h"
 #include "DyTGSContactPrep.h"
+#include "DyArticulationCpuGpu.h"
 
 #ifndef FEATURESTONE_DEBUG
 #define FEATURESTONE_DEBUG 0
@@ -64,7 +65,6 @@ namespace Dy
 	{
 		PX_FREE(mLinksData);
 		PX_FREE(mJointData);
-		PX_FREE(mJointTranData);
 		PX_FREE(mPathToRootElements);
 	}
 
@@ -166,19 +166,15 @@ namespace Dy
 		{
 			ArticulationLinkData* oldLinks = mLinksData;
 			ArticulationJointCoreData* oldJoints = mJointData;
-			ArticulationJointTargetData* oldJointTran = mJointTranData;
 
 			mLinksData = PX_ALLOCATE(ArticulationLinkData, linkCount, "ArticulationLinkData");
 			mJointData = PX_ALLOCATE(ArticulationJointCoreData, linkCount, "ArticulationJointCoreData");
-			mJointTranData = PX_ALLOCATE(ArticulationJointTargetData, linkCount, "ArticulationJointTargetData");
 
 			PxMemCopy(mLinksData, oldLinks, sizeof(ArticulationLinkData)*oldSize);
 			PxMemCopy(mJointData, oldJoints, sizeof(ArticulationJointCoreData)*oldSize);
-			PxMemCopy(mJointTranData, oldJointTran, sizeof(ArticulationJointTargetData)*oldSize);
 
 			PX_FREE(oldLinks);
 			PX_FREE(oldJoints);
-			PX_FREE(oldJointTran);
 
 			const PxU32 newElems = (linkCount - oldSize);
 
@@ -189,7 +185,6 @@ namespace Dy
 			{
 				PX_PLACEMENT_NEW(mLinksData + linkID, ArticulationLinkData)();
 				PX_PLACEMENT_NEW(mJointData + linkID, ArticulationJointCoreData)();
-				PX_PLACEMENT_NEW(mJointTranData + linkID, ArticulationJointTargetData)();
 			}
 		}
 	}
@@ -213,6 +208,12 @@ namespace Dy
 
 		mJointForce.reserve(dofs);
 		mJointForce.forceSize_Unsafe(dofs);
+
+		mJointTargetPositions.reserve(dofs);
+		mJointTargetPositions.forceSize_Unsafe(dofs);
+
+		mJointTargetVelocities.reserve(dofs);
+		mJointTargetVelocities.forceSize_Unsafe(dofs);
 
 		mMotionMatrix.resize(dofs);
 
@@ -252,6 +253,8 @@ namespace Dy
 		PxMemZero(mJointVelocity.begin(), sizeof(PxReal) * dofs);
 		PxMemZero(mJointPosition.begin(), sizeof(PxReal) * dofs);
 		PxMemZero(mJointForce.begin(), sizeof(PxReal) * dofs);
+		PxMemZero(mJointTargetPositions.begin(), sizeof(PxReal) * dofs);
+		PxMemZero(mJointTargetVelocities.begin(), sizeof(PxReal) * dofs);
 	}
 
 	ArticulationLinkData& ArticulationData::getLinkData(PxU32 index) const
@@ -260,22 +263,9 @@ namespace Dy
 		return mLinksData[index];
 	}
 
-	void ArticulationJointCore::setJointFrame(ArticulationJointCoreData& jointDatum, Cm::UnAlignedSpatialVector* motionMatrix, 
-		const Cm::UnAlignedSpatialVector* jointAxis, bool forceUpdate, PxQuat& relativeQuat)
-	{
-		if (jointDirtyFlag & ArticulationJointCoreDirtyFlag::eFRAME || forceUpdate)
-		{
-			relativeQuat = (childPose.q * (parentPose.q.getConjugate())).getNormalized();
-
-			jointDatum.computeMotionMatrix(this, motionMatrix, jointAxis);
-
-			jointDirtyFlag &= ~ArticulationJointCoreDirtyFlag::eFRAME;
-		}
-	}
-
 	FeatherstoneArticulation::FeatherstoneArticulation(void* userData)
 		: mUserData(userData), mContext(NULL), mUpdateSolverData(true),
-		mMaxDepth(0)
+		mMaxDepth(0), mJcalcDirty(true)
 	{
 		mGPUDirtyFlags = 0;
 	}
@@ -452,8 +442,8 @@ namespace Dy
 
 	bool FeatherstoneArticulation::applyCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag, bool& shouldWake)
 	{
-		return applyCacheToDest(mArticulationData, cache, mArticulationData.getJointVelocities(), mArticulationData.getJointAccelerations(),
-			mArticulationData.getJointPositions(), mArticulationData.getJointForces(), flag, shouldWake);
+		return applyCacheToDest(mArticulationData, cache, mArticulationData.getJointVelocities(), mArticulationData.getJointPositions(),
+			mArticulationData.getJointForces(), mArticulationData.getJointTargetPositions(), mArticulationData.getJointTargetVelocities(), flag, shouldWake);
 	}
 
 	void FeatherstoneArticulation::copyInternalStateToCache(PxArticulationCache& cache, const PxArticulationCacheFlags flag, const bool isGpuSimEnabled)
@@ -481,6 +471,16 @@ namespace Dy
 		if (flag & PxArticulationCacheFlag::eJOINT_SOLVER_FORCES)
 		{
 			copyJointData(mArticulationData, cache.jointSolverForces, mArticulationData.getJointConstraintForces());
+		}
+
+		if (flag & PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS)
+		{
+			copyJointData(mArticulationData, cache.jointTargetPositions, mArticulationData.getJointTargetPositions());
+		}
+
+		if (flag & PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES)
+		{
+			copyJointData(mArticulationData, cache.jointTargetVelocities, mArticulationData.getJointTargetVelocities());
 		}
 
 		if (flag & PxArticulationCacheFlag::eLINK_VELOCITY)
@@ -630,11 +630,13 @@ namespace Dy
 			+ sizeof(PxReal) * (6 + totalDofs) * (linkCount * 6)	// Free floating base dofs = 6 + totalDofs, and each link (incl. base) velocity has 6 elements
 																	// == offset to end of dense jacobian (assuming free floating base)
 			+ sizeof(PxReal) * totalDofs * totalDofs				// mass matrix
-			+ sizeof(PxReal) * totalDofs * 5						// jointVelocity (PxArticulationCacheFlag::eVELOCITY)
+			+ sizeof(PxReal) * totalDofs * 7						// jointVelocity (PxArticulationCacheFlag::eVELOCITY)
 																	// jointAcceleration (PxArticulationCacheFlag::eACCELERATION)
 																	// jointPosition (PxArticulationCacheFlag::ePOSITION)
 																	// joint force (PxArticulationCacheFlag::eFORCE)
 																	// joint constraint force (PxArticulationCacheFlag::eJOINT_SOLVER_FORCES)
+																	// joint target positions (PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS)
+																	// joint target velocities (PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES)
 			+ sizeof(PxSpatialVelocity) * linkCount * 2				// link velocity, (PxArticulationCacheFlag::eLINK_VELOCITY)
 																	// link acceleration (PxArticulationCacheFlag::eLINK_ACCELERATION)
 			+ sizeof(PxSpatialForce) * linkCount					// link incoming joint forces (PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE)
@@ -721,17 +723,25 @@ namespace Dy
 		cache->jointSolverForces = reinterpret_cast<PxReal*>(tCache + offset);
 		offset += sizeof(PxReal) * totalDofs;
 
+		// PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS
+		cache->jointTargetPositions = reinterpret_cast<PxReal*>(tCache + offset);
+		offset += sizeof(PxReal) * totalDofs;
+
+		// PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES
+		cache->jointTargetVelocities = reinterpret_cast<PxReal*>(tCache + offset);
+		offset += sizeof(PxReal) * totalDofs;
+
 		// PT: PxArticulationCacheFlag::eROOT_TRANSFORM, PxArticulationCacheFlag::eROOT_VELOCITIES
 		cache->rootLinkData = reinterpret_cast<PxArticulationRootLinkData*>(tCache + offset);
 		PX_ASSERT((offset + sizeof(PxArticulationRootLinkData)) == totalSize);
 
 		cache->coefficientMatrix = NULL;
-		cache->lambda =NULL;
+		cache->lambda = NULL;
 
 		PxU32 scratchMemorySize =
 			sizeof(Cm::SpatialVectorF) * linkCount * 5	//motionVelocity, motionAccelerations, coriolisVectors, spatialZAVectors, externalAccels;
 			+ sizeof(Dy::SpatialMatrix) * linkCount		//compositeSpatialInertias;
-			+ sizeof(PxReal) * totalDofs * 5;			//jointVelocity, jointAcceleration, jointForces, jointPositions, jointFrictionForces
+			+ sizeof(PxReal) * totalDofs * 7;			//jointVelocity, jointAcceleration, jointForces, jointPositions, jointFrictionForces, jointTargetPositions, jointTargetVelocities
 
 		scratchMemorySize = (scratchMemorySize+15)&~15;
 
@@ -2632,84 +2642,6 @@ namespace Dy
 		}
 	}
 
-	static void setupDrive(ArticulationInternalConstraint* constraints,
-		bool hasDrive, PxArticulationDriveType::Enum driveType, PxReal stiffness, PxReal damping, const PxReal dt,
-		const PxReal unitResponse, const PxReal recipResponse, const PxReal error, const PxReal targetVelocity, const bool isTGS,
-		const PxReal maxForce)
-	{
-		if (hasDrive)
-		{
-			PxReal x = 0.f;
-
-			if (driveType == PxArticulationDriveType::eTARGET)
-			{
-				stiffness = 1e+25f;
-				damping = 0.f;
-				driveType = PxArticulationDriveType::eFORCE;
-			}
-			else if (driveType == PxArticulationDriveType::eVELOCITY)
-			{
-				damping = 1e+25f;
-				stiffness = 0.f;
-				driveType = PxArticulationDriveType::eFORCE;
-			}
-
-			const PxReal a = dt * (dt*stiffness + damping);
-			const PxReal b = dt * (damping * targetVelocity);// + stiffness * (targetPos - jointPos));
-			const PxReal aDamp = dt * dt * (damping + stiffness);// + stiffness * (targetPos - jointPos));
-
-			PxReal driveBiasCoefficient = 0.f;
-
-			switch (driveType)
-			{
-			case PxArticulationDriveType::eFORCE:
-			{
-
-				x = unitResponse > 0.f ? 1.0f / (1.0f + a*unitResponse) : 0.f;
-				PxReal xDamp = unitResponse > 0.f ? 1.0f / (1.0f + aDamp*unitResponse) : 0.f;
-				constraints->driveTargetVel = x * b;
-				constraints->driveVelMultiplier = -x * a;
-				driveBiasCoefficient = stiffness * x * dt;
-				constraints->driveBiasCoefficient = driveBiasCoefficient + xDamp * damping * dt;
-				break;
-			}
-
-			case PxArticulationDriveType::eACCELERATION:
-			{
-				x = 1.0f / (1.0f + a);
-				PxReal xDamp = 1.0f / (1.0f + aDamp);
-				constraints->driveTargetVel = x * b*recipResponse;
-				constraints->driveVelMultiplier = -x * a*recipResponse;
-				driveBiasCoefficient = stiffness * x * recipResponse * dt;
-				constraints->driveBiasCoefficient = driveBiasCoefficient + xDamp * damping * dt * recipResponse;
-				break;
-			}
-			//KS - this is required to avoid a warning on Linux
-			case PxArticulationDriveType::eTARGET:
-			case PxArticulationDriveType::eVELOCITY:
-			case PxArticulationDriveType::eNONE:
-				break;
-
-			}
-
-			const PxReal im = 1.0f - x;
-			constraints->driveInitialBias = error * driveBiasCoefficient;
-			constraints->driveImpulseMultiplier = isTGS ? 1.f : im;
-			constraints->maxDriveForce = maxForce;
-			constraints->driveForce = 0.f;
-		}
-		else
-		{
-			constraints->driveTargetVel = 0.f;
-			constraints->driveInitialBias = 0.f;
-			constraints->driveBiasCoefficient = 0.f;
-			constraints->driveVelMultiplier = 0.f;
-			constraints->driveImpulseMultiplier = 0.f;
-			constraints->maxDriveForce = 0.f;
-			constraints->driveForce = 0.f;
-		}
-	}
-
 	void setupComplexLimit(ArticulationLink* links, Cm::SpatialVectorF* Z, ArticulationData& data, const PxU32 linkID, 
 		const PxReal angle, const PxReal lowLimit, const PxReal highLimit, const PxVec3& axis, const PxReal cfm, ArticulationInternalConstraint& complexConstraint,
 		ArticulationInternalLimit& limit)
@@ -2761,9 +2693,6 @@ namespace Dy
 		const ArticulationLink& link = links[linkID];
 
 		ArticulationJointCoreData& jointDatum = data.getJointData(linkID);
-		ArticulationJointTargetData& jointTranDatum = data.getJointTranData(linkID);
-		const PxReal* jPosition = &data.getJointPositions()[jointDatum.jointOffset];
-		PX_UNUSED(jPosition);
 
 		const ArticulationLink& pLink = links[link.parent];
 
@@ -2833,7 +2762,7 @@ namespace Dy
 						if (hasDrive)
 						{
 							const PxVec3 axis = data.mMotionMatrix[jointDatum.jointOffset + tmpDofId].top;
-							PxReal target = jointTranDatum.targetJointPosition[tmpDofId];
+							PxReal target = data.mJointTargetPositions[jointDatum.jointOffset + tmpDofId];
 
 							driveAxis += axis * target;
 							hasAngularDrives = true;
@@ -2885,7 +2814,7 @@ namespace Dy
 				{
 					if (j.motion[i] != PxArticulationMotion::eLOCKED)
 					{
-						driveError[i] = jointTranDatum.targetJointPosition[0] - data.mJointPosition[j.jointOffset];
+						driveError[i] = data.mJointTargetPositions[j.jointOffset] - data.mJointPosition[j.jointOffset];
 						angles[i] = data.mJointPosition[j.jointOffset];
 						row[i] = data.mWorldMotionMatrix[jointDatum.jointOffset].top;
 					}
@@ -2937,12 +2866,25 @@ namespace Dy
 						constraints->isLinearConstraint = false;
 
 						constraints->frictionForce = 0.f;
-						constraints->maxFrictionForce = hasFriction ? transmissionForce : 0.f;
+						constraints->frictionMaxForce = hasFriction ? transmissionForce : 0.f;
 						constraints->frictionForceCoefficient = isTGSSolver ? 0.f : 1.f;
 
-						setupDrive(constraints, hasDrive, j.drives[i].driveType,
-							j.drives[i].stiffness, j.drives[i].damping, stepDt, unitResponse, recipResponse, driveError[i], jointTranDatum.targetJointVelocity[dofId], isTGSSolver, 
-							j.drives[i].maxForce * maxForceScale);
+						constraints->driveForce = 0.0f;
+						constraints->driveMaxForce = j.drives[i].maxForce * maxForceScale;
+						if(hasDrive)
+						{
+							constraints->setImplicitDriveDesc( 
+								computeImplicitDriveParams(
+									j.drives[i].driveType, j.drives[i].stiffness, j.drives[i].damping, 
+									isTGSSolver ? stepDt: dt, 
+									unitResponse, recipResponse, 
+									driveError[i], data.mJointTargetVelocities[j.jointOffset + dofId], 
+									isTGSSolver));
+						}
+						else
+						{
+							constraints->setImplicitDriveDesc(ArticulationImplicitDriveDesc(PxZero));
+						}
 
 						if (j.motion[i] == PxArticulationMotion::eLIMITED)
 						{
@@ -3009,14 +2951,26 @@ namespace Dy
 						constraints->isLinearConstraint = true;
 
 						constraints->frictionForce = 0.f;
-						constraints->maxFrictionForce = hasFriction ? transmissionForce : 0.f;
-
+						constraints->frictionMaxForce = hasFriction ? transmissionForce : 0.f;
 						constraints->frictionForceCoefficient = isTGSSolver ? 0.f : 1.f;
 
-						setupDrive(constraints, hasDrive, j.drives[i].driveType,
-							j.drives[i].stiffness, j.drives[i].damping, stepDt, unitResponse, recipResponse,
-							jointTranDatum.targetJointPosition[dofId] - data.mJointPosition[j.jointOffset + dofId],
-							jointTranDatum.targetJointVelocity[dofId], isTGSSolver, j.drives[i].maxForce * maxForceScale);
+						constraints->driveForce = 0.0f;
+						constraints->driveMaxForce = j.drives[i].maxForce * maxForceScale;
+						if(hasDrive)
+						{
+							constraints->setImplicitDriveDesc( 
+								computeImplicitDriveParams(
+									j.drives[i].driveType, j.drives[i].stiffness, j.drives[i].damping, 
+									isTGSSolver ? stepDt : dt,
+									unitResponse, recipResponse,
+									data.mJointTargetPositions[j.jointOffset + dofId] - data.mJointPosition[j.jointOffset + dofId], 
+									data.mJointTargetVelocities[j.jointOffset + dofId], 
+									isTGSSolver));	
+						}
+						else
+						{
+							constraints->setImplicitDriveDesc(ArticulationImplicitDriveDesc(PxZero));
+						}
 
 						if (j.motion[i] == PxArticulationMotion::eLIMITED)
 						{
@@ -3699,11 +3653,15 @@ namespace Dy
 		}
 	}
 
-	void FeatherstoneArticulation::jcalc(ArticulationData& data, bool forceUpdate)
+	// AD: needed because we define the templated function in a CPP.
+	template void FeatherstoneArticulation::jcalc<false>(ArticulationData& data);
+	template void FeatherstoneArticulation::jcalc<true>(ArticulationData& data);
+
+	template<bool immediateMode>
+	void FeatherstoneArticulation::jcalc(ArticulationData& data)
 	{	
 		const ArticulationLink* links = data.getLinks();
 		ArticulationJointCoreData* jointData = data.getJointData();
-		ArticulationJointTargetData* jointTranData = data.getJointTranData();
 		const PxU32 linkCount = data.getLinkCount();
 
 		PxU32 totalDof = 0;
@@ -3713,18 +3671,32 @@ namespace Dy
 			const ArticulationLink& link = links[linkID];
 			ArticulationJointCore* joint = link.inboundJoint;
 			ArticulationJointCoreData& jointDatum = jointData[linkID];
-			ArticulationJointTargetData& jointTranDatum = jointTranData[linkID];
 				
 			PX_CHECK_AND_RETURN(joint->jointType != PxArticulationJointType::eUNDEFINED, "FeatherstoneArticulation::jcalc application need to define valid joint type and motion");
 			
 			//compute joint dof
-			jointDatum.computeJointDof(joint, forceUpdate, data.mJointAxis.begin() + totalDof);
-			joint->setJointFrame(jointDatum, &data.mMotionMatrix[totalDof], &data.mJointAxis[totalDof], forceUpdate, mArticulationData.mRelativeQuat[linkID]);
-			const PxU8 dof = jointDatum.dof;
+			const PxU32 dof = jointDatum.computeJointDof(joint, data.mJointAxis.begin() + totalDof);
 
-			jointTranDatum.setJointVelocityDrive(joint, dof);
-			jointTranDatum.setJointPoseDrive(joint, dof);
-			jointTranDatum.setArmature(joint, dof);
+			joint->setJointFrame(&data.mMotionMatrix[totalDof], &data.mJointAxis[totalDof], mArticulationData.mRelativeQuat[linkID], dof);
+
+			// AD: only used in immediate mode because we don't have the llArticulation there to write directly.
+			if (immediateMode)
+			{
+				PxReal* PX_RESTRICT jointTargetPositions = data.getJointTargetPositions();
+				PxReal* PX_RESTRICT jointTargetVelocities = data.getJointTargetVelocities();
+
+				for (PxU32 dofId = 0; dofId < dof; ++dofId)
+				{
+					PxU32 id = totalDof + dofId;
+					PxU32 llDofId = joint->dofIds[dofId];
+					jointTargetPositions[id] = joint->targetP[llDofId];
+					jointTargetVelocities[id] = joint->targetV[llDofId];
+				}
+
+				joint->jointDirtyFlag &= ~(ArticulationJointCoreDirtyFlag::eTARGETPOSE | ArticulationJointCoreDirtyFlag::eTARGETVELOCITY);
+			}
+
+			jointDatum.setArmature(joint);
 
 			jointDatum.jointOffset = totalDof;
 			joint->jointOffset = totalDof;
@@ -4068,7 +4040,7 @@ namespace Dy
 
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Articulation::getDenseJacobian(): commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getDenseJacobian(): commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -4602,7 +4574,7 @@ namespace Dy
 		const Vec3V& linMotion0, const Vec3V& linMotion1, const Vec3V& angMotion0, const Vec3V& angMotion1,
 		const QuatV& rotA, const QuatV& rotB, const PxReal elapsedTimeF32, Vec3V& linImpulse0, Vec3V& linImpulse1, Vec3V& angImpulse0,
 		Vec3V& angImpulse1);
-	
+
 	void solveExtContactStep(const PxSolverConstraintDesc& desc, Vec3V& linVel0, Vec3V& linVel1, Vec3V& angVel0, Vec3V& angVel1,
 		Vec3V& linDelta0, Vec3V& linDelta1, Vec3V& angDelta0, Vec3V& angDelta1, Vec3V& linImpulse0, Vec3V& linImpulse1, Vec3V& angImpulse0, Vec3V& angImpulse1,
 		bool doFriction, const PxReal minPenetration, const PxReal elapsedTimeF32);
@@ -4821,7 +4793,7 @@ namespace Dy
 			limited = true;
 			if ((limit.errorLow + jointPDelta) < tolerance)
 			{
-				if (!data.velocityIteration)
+				if (!data.isVelIter)
 					newJointV = -(limit.errorLow + jointPDelta) * data.invDt*data.erp;
 			}
 			else
@@ -4839,7 +4811,7 @@ namespace Dy
 			limited = true;
 			if ((limit.errorHigh - jointPDelta) < tolerance)
 			{
-				if (!data.velocityIteration)
+				if (!data.isVelIter)
 					newJointV = (limit.errorHigh - jointPDelta) * data.invDt*data.erp;
 			}
 			else
@@ -4871,7 +4843,7 @@ namespace Dy
 		return deltaF;
 	}
 
-	Cm::SpatialVectorF FeatherstoneArticulation::solveInternalJointConstraintRecursive(InternalConstraintSolverData& data, const PxU32 linkID, const Cm::SpatialVectorF& parentDeltaV)
+	Cm::SpatialVectorF FeatherstoneArticulation::solveInternalJointConstraintRecursive(InternalConstraintSolverData& data, const PxU32 linkID, const Cm::SpatialVectorF& parentDeltaV, const bool isTGS, const bool isVelIter)
 	{
 		//PxU32 linkID = stack[stackSize];
 		const ArticulationLink* links = mArticulationData.mLinks;
@@ -4884,7 +4856,6 @@ namespace Dy
 		PX_UNUSED(linkDatum);
 
 		const ArticulationJointCoreData& jointDatum = mArticulationData.getJointData(linkID);
-	//	const ArticulationJointTargetData& jointTranDatum = mArticulationData.getJointTranData(linkID);
 
 		Cm::SpatialVectorF i1(PxVec3(0.f), PxVec3(0.f));
 
@@ -4918,16 +4889,15 @@ namespace Dy
 					ArticulationInternalConstraint& constraint = mArticulationData.mInternalConstraints[data.dofId++];
 					const PxReal jointPDelta = constraint.row1.innerProduct(mArticulationData.mDeltaMotionVector[linkID]) - constraint.row0.innerProduct(mArticulationData.mDeltaMotionVector[link.parent]);
 
-					//PxReal driveError = constraint.driveError - jointPDelta;
-
-					PxReal errorDelta = (constraint.driveTargetVel*constraint.response*data.elapsedTime) - jointPDelta;
+					const PxReal frictionForceCoefficient = constraint.frictionForceCoefficient;
 
 					PxReal jointV = constraint.row1.innerProduct(childV) - constraint.row0.innerProduct(parentV);
 
-					const PxReal appliedFriction = constraint.frictionForce*constraint.frictionForceCoefficient;
+					const PxReal appliedFriction = 
+						constraint.frictionForce * frictionForceCoefficient;
 
-					PxReal frictionForce = PxClamp(-jointV *constraint.recipResponse + appliedFriction,
-						-constraint.maxFrictionForce, constraint.maxFrictionForce);
+					PxReal frictionForce = 
+						PxClamp(-jointV *constraint.recipResponse + appliedFriction, -constraint.frictionMaxForce, constraint.frictionMaxForce);
 
 					PxReal frictionDeltaF = frictionForce - appliedFriction;
 
@@ -4935,10 +4905,10 @@ namespace Dy
 
 					jointV += frictionDeltaF * constraint.response;
 
-					PxReal unclampedForce = constraint.driveImpulseMultiplier * constraint.driveForce +
-						jointV * constraint.driveVelMultiplier + constraint.driveTargetVel + constraint.driveInitialBias + errorDelta * constraint.driveBiasCoefficient;
+					PxReal unclampedForce = (isTGS && isVelIter) ? constraint.driveForce : 
+							computeDriveImpulse(constraint.driveForce, jointV, jointPDelta, constraint.getImplicitDriveDesc());
 
-					clampedForce = PxClamp(unclampedForce, -constraint.maxDriveForce, constraint.maxDriveForce);
+					clampedForce = PxClamp(unclampedForce, -constraint.driveMaxForce, constraint.driveMaxForce);
 					PxReal driveDeltaF = (clampedForce - constraint.driveForce);
 
 					//Where we will be next frame - we use this to compute error bias terms to correct limits and drives...
@@ -4998,7 +4968,8 @@ namespace Dy
 		for (PxU32 i = 0; i < nbStatic1DConstraints; ++i)
 		{
 			PxSolverConstraintDesc& desc = mStatic1DConstraints[start1DIdx++];
-			solveStaticConstraint(desc, childV, i1, dv1, deltaMotion, deltaQ, data.isTGS, data.elapsedTime, data.velocityIteration ? 0.f : -PX_MAX_F32);
+			solveStaticConstraint(
+				desc, childV, i1, dv1, deltaMotion, deltaQ, data.isTGS, data.elapsedTime, data.isVelIter ? 0.f : -PX_MAX_F32);
 		}
 
 		const PxU32 nbStaticContactConstraints = mArticulationData.mNbStaticContactConstraints[linkID];
@@ -5006,7 +4977,8 @@ namespace Dy
 		for (PxU32 i = 0; i < nbStaticContactConstraints; ++i)
 		{
 			PxSolverConstraintDesc& desc = mStaticContactConstraints[startContactIdx++];
-			solveStaticConstraint(desc, childV, i1, dv1, deltaMotion, deltaQ, data.isTGS, data.elapsedTime, data.velocityIteration ? 0.f : -PX_MAX_F32);
+			solveStaticConstraint(
+				desc, childV, i1, dv1, deltaMotion, deltaQ, data.isTGS, data.elapsedTime, data.isVelIter ? 0.f : -PX_MAX_F32);
 		}
 
 		PxU32 numChildren = link.mNumChildren;
@@ -5016,7 +4988,7 @@ namespace Dy
 		{
 			const PxU32 child = offset+i;
 
-			Cm::SpatialVectorF childImp = solveInternalJointConstraintRecursive(data, child, dv1);
+			Cm::SpatialVectorF childImp = solveInternalJointConstraintRecursive(data, child, dv1, isTGS, isVelIter);
 			i1 += childImp;
 
 			if ((numChildren-i) > 1)
@@ -5056,7 +5028,7 @@ namespace Dy
 	}
 
 	void FeatherstoneArticulation::solveInternalJointConstraints(const PxReal dt, const PxReal invDt,
-		Cm::SpatialVectorF* impulses, Cm::SpatialVectorF* DeltaV, bool velocityIteration, bool isTGS,
+		Cm::SpatialVectorF* impulses, Cm::SpatialVectorF* DeltaV, bool isVelIter, bool isTGS,
 		const PxReal elapsedTime, const PxReal biasCoefficient)
 	{
 		//const PxU32 count = mArticulationData.getLinkCount();
@@ -5082,7 +5054,7 @@ namespace Dy
 
 		//Cm::SpatialVectorF* deferredZ = mArticulationData.getSpatialZAVectors();
 
-		const PxReal minPenetration = velocityIteration ? 0.f : -PX_MAX_F32;
+		const PxReal minPenetration = isVelIter ? 0.f : -PX_MAX_F32;
 
 		Cm::SpatialVectorF rootLinkV;
 		{
@@ -5144,7 +5116,7 @@ namespace Dy
 			
 			InternalConstraintSolverData data(dt, invDt, elapsedTime,
 				erp, impulses, DeltaV,
-				velocityIteration, isTGS);
+				isVelIter, isTGS);
 
 			data.articId = mArticulationIndex;
 
@@ -5155,7 +5127,7 @@ namespace Dy
 			{
 				const PxU32 child = offset + i;
 
-				Cm::SpatialVectorF imp = solveInternalJointConstraintRecursive(data, child, rootLinkDeltaV);
+				Cm::SpatialVectorF imp = solveInternalJointConstraintRecursive(data, child, rootLinkDeltaV, isTGS, isVelIter);
 
 				im0 += imp;
 

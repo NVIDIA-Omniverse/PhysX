@@ -37,12 +37,10 @@
 
 using namespace physx;
 using namespace Gu;
+using namespace aos;
 
-static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const aos::Vec3VArg axis, const aos::PxMatTransformV& transf1To0, 
-							const aos::Vec3VArg extents)
+static void getIncidentPolygon(Vec3V* pts, Vec3V& faceNormal, const Vec3VArg axis, const PxMatTransformV& transf1To0, const Vec3VArg extents)
 {
-	using namespace aos;
-
 	const FloatV zero = FZero();
 
 	FloatV ex = V3GetX(extents);
@@ -62,17 +60,15 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 	const FloatV absd1 = FAbs(d1);
 	const FloatV absd2 = FAbs(d2);
 
-	Vec3V r0, r1, r2;
-
 	if(FAllGrtrOrEq(absd0, absd1) && FAllGrtrOrEq(absd0, absd2))
 	{
 		//the incident face is on u0
 		const BoolV con = FIsGrtr(d0, zero);
 		faceNormal = V3Sel(con, V3Neg(u0), u0);
 		ex = FSel(con, FNeg(ex), ex);
-		r0 = V3Scale(u0, ex);
-		r1 = V3Scale(u1, ey);
-		r2 = V3Scale(u2, ez);
+		const Vec3V r0 = V3Scale(u0, ex);
+		const Vec3V r1 = V3Scale(u1, ey);
+		const Vec3V r2 = V3Scale(u2, ez);
 
 		const Vec3V temp0 = V3Add(transf1To0.p, r0);
 		const Vec3V temp1 = V3Add(r1, r2);
@@ -89,9 +85,9 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 		const BoolV con = FIsGrtr(d1, zero);
 		faceNormal = V3Sel(con, V3Neg(u1), u1);
 		ey = FSel(con, FNeg(ey), ey);
-		r0 = V3Scale(u0, ex);
-		r1 = V3Scale(u1, ey);
-		r2 = V3Scale(u2, ez);
+		const Vec3V r0 = V3Scale(u0, ex);
+		const Vec3V r1 = V3Scale(u1, ey);
+		const Vec3V r2 = V3Scale(u2, ez);
 
 		const Vec3V temp0 = V3Add(transf1To0.p, r1);
 		const Vec3V temp1 = V3Add(r0, r2);
@@ -108,9 +104,9 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 		const BoolV con = FIsGrtr(d2, zero);
 		faceNormal = V3Sel(con, V3Neg(u2), u2);
 		ez = FSel(con, FNeg(ez), ez);
-		r0 = V3Scale(u0, ex);
-		r1 = V3Scale(u1, ey);
-		r2 = V3Scale(u2, ez);
+		const Vec3V r0 = V3Scale(u0, ex);
+		const Vec3V r1 = V3Scale(u1, ey);
+		const Vec3V r2 = V3Scale(u2, ez);
 
 		const Vec3V temp0 = V3Add(transf1To0.p, r2);
 		const Vec3V temp1 = V3Add(r0, r1);
@@ -124,10 +120,8 @@ static void getIncidentPolygon(aos::Vec3V* pts, aos::Vec3V& faceNormal, const ao
 }
 
 //p0 and p1 is in the local space of AABB
-static bool intersectSegmentAABB(const aos::Vec3VArg p0, const aos::Vec3VArg d, const aos::Vec3VArg max, const aos::Vec3VArg min, aos::FloatV& tmin, aos::FloatV& tmax)
+static bool intersectSegmentAABB(const Vec3VArg p0, const Vec3VArg d, const Vec3VArg max, const Vec3VArg min, FloatV& tmin, FloatV& tmax)
 {
-	using namespace aos;
-		
 	const Vec3V eps = V3Load(1e-6f);
 	const Vec3V absV = V3Abs(d);
 	const FloatV one = FOne();
@@ -166,10 +160,8 @@ static bool intersectSegmentAABB(const aos::Vec3VArg p0, const aos::Vec3VArg d, 
 }
 
 //pts, faceNormal and contact normal are in the local space of new space
-static void calculateContacts( const aos::FloatVArg extentX_, const aos::FloatVArg extentY_, aos::Vec3V* pts, const aos::Vec3VArg incidentFaceNormalInNew, const aos::Vec3VArg localNormal, Gu::PersistentContact* manifoldContacts, PxU32& numContacts, const aos::FloatVArg contactDist)
+static void calculateContacts(const FloatVArg extentX_, const FloatVArg extentY_, Vec3V* pts, const Vec3VArg incidentFaceNormalInNew, const Vec3VArg localNormal, PersistentContact* manifoldContacts, PxU32& numContacts, const FloatVArg contactDist)
 {
-	using namespace aos;
-
 	const FloatV zero = FZero();
 	const FloatV max = FMax();
 	const FloatV eps = FLoad(1.0001f);
@@ -198,7 +190,7 @@ static void calculateContacts( const aos::FloatVArg extentX_, const aos::FloatVA
 		{
 			pPenetration[i] = true;
 
-			const Vec3V absPt= V3Abs(pts[i]);
+			const Vec3V absPt = V3Abs(pts[i]);
 			const BoolV con = V3IsGrtrOrEq(bound, absPt);
 			if(BAllEqTTTT(con))
 			{
@@ -337,10 +329,8 @@ static void calculateContacts( const aos::FloatVArg extentX_, const aos::FloatVA
 	}
 }
 
-static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos::Vec3VArg box1Extent, const aos::PxMatTransformV& transform0, const aos::PxMatTransformV& transform1, const aos::FloatVArg contactDist, Gu::PersistentContact* manifoldContacts, PxU32& numContacts)
+static PxU32 doBoxBoxGenerateContacts(const Vec3VArg box0Extent, const Vec3VArg box1Extent, const PxMatTransformV& transform0, const PxMatTransformV& transform1, const FloatVArg contactDist, PersistentContact* manifoldContacts, PxU32& numContacts)
 {
-	using namespace aos;
-
 	const FloatV ea0 = V3GetX(box0Extent);
 	const FloatV ea1 = V3GetY(box0Extent);
 	const FloatV ea2 = V3GetZ(box0Extent);
@@ -674,8 +664,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3ScaleAdd(axis00, ea0, transform0.p);
 			}
 	
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, V3Neg(localNormal), transform1ToNew, box1Extent);
 		
 			calculateContacts(ea2, ea1, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
@@ -702,8 +692,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3ScaleAdd(axis01, ea1, transform0.p);
 			}
 
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, V3Neg(localNormal), transform1ToNew, box1Extent);
 
 			calculateContacts(ea0, ea2, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
@@ -731,8 +721,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3ScaleAdd(axis02, ea2, transform0.p);
 			}
 
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform1);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, V3Neg(localNormal), transform1ToNew, box1Extent);
 
 			calculateContacts(ea0, ea1, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
@@ -759,8 +749,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3NegScaleSub(axis10, eb0, transform1.p);//transform0.p + extents0.x*axis00;
 			}
 
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, localNormal, transform1ToNew, box0Extent);
 
 			calculateContacts(eb2, eb1, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
@@ -789,8 +779,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3NegScaleSub(axis11, eb1, transform1.p); //transform0.p + extents0.x*axis00;
 			}
 
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, localNormal, transform1ToNew, box0Extent);
 			calculateContacts(eb0, eb2, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
 			break;
@@ -817,8 +807,8 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				newTransformV.p = V3NegScaleSub(axis12, eb2, transform1.p);
 			}
 
-			const aos::PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
-			const Vec3V localNormal =newTransformV.rotateInv(mtd);
+			const PxMatTransformV transform1ToNew = newTransformV.transformInv(transform0);
+			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, localNormal, transform1ToNew, box0Extent);
 		
 			calculateContacts(eb0, eb1, pts,  incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
@@ -839,10 +829,10 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 				manifoldContacts[i].mLocalPointA = localB;
 			}
 		}
-		const aos::PxMatTransformV transformNewTo1 = transform1.transformInv(newTransformV);
-		const aos::PxMatTransformV transformNewTo0 = transform0.transformInv(newTransformV);
+		const PxMatTransformV transformNewTo1 = transform1.transformInv(newTransformV);
+		const PxMatTransformV transformNewTo0 = transform0.transformInv(newTransformV);
 		//transform points to the local space of transform0 and transform1
-		const aos::Vec3V localNormalInB = transformNewTo1.rotate(Vec3V_From_Vec4V(manifoldContacts[0].mLocalNormalPen));
+		const Vec3V localNormalInB = transformNewTo1.rotate(Vec3V_From_Vec4V(manifoldContacts[0].mLocalNormalPen));
 
 		for(PxU32 i=0; i<numContacts; ++i)
 		{
@@ -858,18 +848,15 @@ static PxU32 doBoxBoxGenerateContacts(const aos::Vec3VArg box0Extent, const aos:
 bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 {
 	PX_UNUSED(renderOutput);
-
-	using namespace aos;
+	PX_ASSERT(transform1.q.isSane());
+	PX_ASSERT(transform0.q.isSane());
 
 	const PxBoxGeometry& shapeBox0 = checkedCast<PxBoxGeometry>(shape0);
 	const PxBoxGeometry& shapeBox1 = checkedCast<PxBoxGeometry>(shape1);
 
 	// Get actual shape data
-	Gu::PersistentContactManifold& manifold = cache.getManifold();
+	PersistentContactManifold& manifold = cache.getManifold();
 	PxPrefetchLine(&manifold, 256);
-
-	PX_ASSERT(transform1.q.isSane());
-	PX_ASSERT(transform0.q.isSane());
 
 	const FloatV contactDist = FLoad(params.mContactDistance);
 	const Vec3V boxExtents0 = V3LoadU(shapeBox0.halfExtents);
@@ -882,8 +869,8 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 	const PxMatTransformV aToB(curRTrans);
 
 	const PxReal toleranceLength = params.mToleranceLength;
-	const FloatV boxMargin0 = Gu::CalculatePCMBoxMargin(boxExtents0, toleranceLength);
-	const FloatV boxMargin1 = Gu::CalculatePCMBoxMargin(boxExtents1, toleranceLength);
+	const FloatV boxMargin0 = CalculatePCMBoxMargin(boxExtents0, toleranceLength);
+	const FloatV boxMargin1 = CalculatePCMBoxMargin(boxExtents1, toleranceLength);
 	const FloatV minMargin = FMin(boxMargin0, boxMargin1);
 
 	const PxU32 initialContacts = manifold.mNumContacts;
@@ -895,8 +882,6 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 
 	const bool bLostContacts = (newContacts != initialContacts);
   
-	PX_UNUSED(bLostContacts);
-
 	const FloatV radiusA = V3Length(boxExtents0);
 	const FloatV radiusB = V3Length(boxExtents1);
 	if(bLostContacts || manifold.invalidate_BoxConvex(curRTrans, transf0.q, transf1.q, minMargin, radiusA, radiusB))
@@ -914,7 +899,7 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 		transfV1.rot.col1 = V3Normalize(transfV1.rot.col1);
 		transfV1.rot.col2 = V3Normalize(transfV1.rot.col2);
 
-		Gu::PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
+		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
 		PxU32 numContacts = 0;
 	
 		if(doBoxBoxGenerateContacts(boxExtents0, boxExtents1, transfV0, transfV1, contactDist, manifoldContacts, numContacts)) 
@@ -932,8 +917,8 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 			else
 			{
 				const Vec3V zeroV = V3Zero();
-				BoxV box0(zeroV, boxExtents0);
-				BoxV box1(zeroV, boxExtents1);
+				const BoxV box0(zeroV, boxExtents0);
+				const BoxV box1(zeroV, boxExtents1);
 
 				manifold.mNumWarmStartPoints = 0;
 				const RelativeConvex<BoxV> convexA(box0, aToB);
@@ -970,7 +955,6 @@ bool Gu::pcmContactBoxBox(GU_CONTACT_METHOD_ARGS)
 #endif
 					return true;
 				}
-
 			}
 		}
 	}

@@ -1,3 +1,167 @@
+# v5.3.0
+
+## Supported Platforms
+
+### Runtime
+
+* Linux (tested on Ubuntu 20.04)
+* Microsoft Windows 10 or later (GPU acceleration: display driver and GPU supporting CUDA 11 / CUDA ARCH 3.0)
+
+### Development
+
+* Microsoft Windows 10 or later
+* Microsoft Visual Studio 2017, 2019, 2022
+
+## General
+
+### Changed
+
+* The method PxLineStripSkinning::evaluateInterpolatedVertices changed the transform argument from `PxReal*` to ` PxMat44*` to be more explicit about the underlying data that is expected.
+* The apply* and copy* functions in PxScene changed their event arguments from `void*` to `CUevent` to fix misunderstandings about the type of those arguments. This also fixes a bug where pointers to events where passed but not dereferenced when recording/awaiting them.
+* The TGS solver on CPU and GPU now computes the number of position and velocity iteration according to the requested numbers by the actors in each island, matching the behavior of the PGS solver. Previously TGS velocity iterations in excess of 4 were silently converted to position iterations. To preserve the old behavior any actor requesting more than 4 velocity iterations should convert excess velocity iteration counts to position iteration counts, e.g., formerly 10 position and 10 velocity iterations should become 16 position and 4 velocity iterations.
+* The `acquire()` and `release()` functions in `PxCudaContextManager` that manage the PhysX CUDA context now use push/pop semantics. This fixes bug that led to a wrong context being bound after `release()` when sharing an existing CUDA context with PhysX.
+* Calling `setCMassLocalPose()` on a rigid body when using the direct-GPU API is now allowed. Note that calling `updateArticulationsKinematic()` after updating CMassLocalPose but before the next call to `simulate()` will still use the old CMassLocalPose.
+
+### Fixed
+
+* A memory leak has been fixed in the actor pairs management code.
+* A race condition was fixed that led to nondeterministic contact reports in some scenarios.
+* Fix FEM cloth attachment filtering bug
+* Fix FEM narrow phase collision crash
+* Sphere-Trianglemesh collision bug is fixed
+* A bug that led to aggregated shapes being processed as part of the regular broadphase when changing transforms using the direct-GPU API has been fixed.
+* A bug that led to missed collisions and phantom collisions when changing transforms using the direct-GPU API has been fixed.
+* A bug that led to incorrect and nondeterministic behaviour for convex-trianglemesh, convex-heightfield, sphere-trianglemesh, capsule-trianglemesh, sphere-heightfield and capsule-heightfield collisions on GPU has been fixed.
+* A bug that led to contact target velocities spilling over from one contact to other contacts in the same solver batch.
+* A bug that led to incorrect and nondeterministic behaviour for trianglemesh-trianglemesh collisions on GPU has been fixed.
+* A bug that led to incorrect materials being used for convex-convex collisions on GPU has been fixed.
+
+### Removed
+
+* Context creation for CUDA/Graphics interoperability has been deprecated. interopMode has been removed from PxCudaContextManagerDesc.
+* PxSceneFlag::eFORCE_READBACK has been removed. There is no replacement.
+* PxSceneFlag::eSUPPRESS_READBACK was deprecated and has been removed. Use PxSceneFlag::eENABLE_DIRECT_GPU_API instead.
+
+## Rigid Body
+
+### Added
+
+* Possibility to use the GPU to cook an SDF making the process a lot faster.
+* Option to launch CUDA kernels synchronously when creating the CUDA Context Manager. This option is required to accurately determine the correct kernel that returns a CUDA error.
+
+### Fixed
+
+* The torsional patch radius parameter (see PxShape::setTorsionalPatchRadius()) was potentially ignored when running the simulation on GPU.
+* Potential race condition related to activating/deactivating trigger pairs.
+* A small misalignment of SDFs with the triangle mesh.
+* A small error in the gradient calculation of SDFs.
+* A sphere could tunnel through the edge between two triangles in a triangle mesh.
+* Race condition in SDF computation cuda kernel is fixed.
+* Fixed invalid access problem when selecting the SDF contact handler.
+
+### Deprecated
+
+* PxFrictionType::eONE_DIRECTIONAL has been deprecated and will be removed in the future. Please use ePATCH or eTWO_DIRECTIONAL instead.
+
+## Articulations
+
+### Changed
+
+* `PxScene::copyArticulationData()` and `PxScene::applyArticulationData()` do not allow reading write-only and writing read-only data anymore. Read/write properties are specified in the API doc of `PxArticulationGpuDataType`.
+
+### Fixed
+
+* A bug that led to wrong joint targets being set when using the direct-GPU API has been fixed.
+* A bug that led to link constraint-force-mixing scale not being included in collision constraints when using GPU dynamics has been fixed.
+* Articulation drive did not produce the same force magnitude for drives with velocity biases that were equally positive and negative.  This was true of the CPU and GPU solver pipelines. This has been fixed.
+* Articulation drive produced unphysically large forces when run in combination with PxSolverType::eTGS and non-zero velocity iteration count. This was true of the CPU and GPU solver pipelines. This has been fixed by no longer updating joint drive force during velocity iterations with PxSolverType::eTGS. The expectation is that there are sufficient position iterations such that the drive force that accumulated over the position iterations is an accurate force. This avoids numerical discrepancies arising from the difference in effective simulation timestep employed by the position and velocity iterations.  This discrepancy was particularly acute with a large number of velocity iterations.
+* Articulation drive suffered from an unphysical damping term with all combinations of PxSolverType::eTGS/PxSolverType::ePGS/PxSceneFlag::eENABLE_GPU_DYNAMICS.  This has been fixed.
+* Potential crashes due to reading uninitialized memory were fixed.
+* The function PxArticulationReducedCoordinate::setMaxCOMAngularVelocity() had no effect if called after the 1st sim step with PxSceneFlag::eENABLE_GPU_DYNAMICS raised. This has been fixed.
+* The function PxArticulationReducedCoordinate::setMaxCOMLinearVelocity() had no effect if called after the 1st sim step with PxSceneFlag::eENABLE_GPU_DYNAMICS raised. This has been fixed.
+* Raising or lowering PxArticulationFlag::eFIX_BASE had no effect if modified after the 1st sim step with PxSceneFlag::eENABLE_GPU_DYNAMICS raised. This has been fixed.
+* The root link acceleration was reported as {0} even when the root link was not fixed. This affected GPU only.  The fix has been applied to PxArticulationReducedCoordinate::copyInternalStateToCache(),  PxArticulationReducedCoordinate::getLinkAcceleration() and PxScene::copyArticulationData().
+* Only half the expected friction force was applied in certain scenarios when using PxSolverType::eTGS, PxFrictionType::ePATCH, PxMaterialFlag::eIMPROVED_PATCH_FRICTION and running on CPU.
+
+### Deprecated 
+
+* The functions PxArticulationReducedCoordinate::setMaxCOMLinearVelocity(), PxArticulationReducedCoordinate::getMaxCOMLinearVelocity(), PxArticulationReducedCoordinate::setMaxCOMAngularVelocity(), PxArticulationReducedCoordinate::getMaxCOMAngularVelocity() have all been marked as deprecated and will be removed in a future release.
+
+## Joints
+
+### Deprecated 
+
+* Px1DConstraintFlag::eDRIVE_ROW has been marked as deprecated and will be removed in a later release.  It has been renamed to Px1DConstraintFlag::eDEPRECATED_DRIVE_ROW to signal the intention to remove this flag in a later release.
+
+## Vehicles2
+
+### Added
+
+* A new snippet that shows an example of using a custom tire model has been added (see SnippetVehicle2CustomTire).
+
+### Changed
+
+* The snippet SnippetVehicle2Customization has been renamed to SnippetVehicle2CustomSuspension.
+* PxVehicleCommandNonLinearResponseParams::nbSpeedRenponsesPerCommandValue was misspelled and now renamed to nbSpeedResponsesPerCommandValue.
+* More parameters get recorded by OmniPVD. As a consequence, PxVehiclePVDComponent and some other PVD related vehicle APIs changed.
+* It is now legal to set entries in PxVehicleTankDriveDifferentialParams::nbWheelsPerTrack to 0 or 1.
+* The APIs of some methods use more specific input parameters now to decrease dependency on certain data structures. See the migration guide for more details. This applies to the methods: PxVehicleTireDirsUpdate(), PxVehicleTireCamberAnglesUpdate() and PxVehicleTireGripUpdate().
+
+### Fixed
+
+* Nonlinear command responses were broken for negative steer command values. Now they are treated symmetrically as intended.
+* PxVehiclePhysXActorDestroy() triggered a warning if the articulation link was not a leaf link.
+
+### Removed
+
+* PxVehicleTankDriveDifferentialParams::nbWheelsInTracks has been removed. The entries in ::nbWheelsPerTrack can be summed up to compute that value instead.
+
+## Cooking
+
+### Added
+
+* PxTriangleMeshCookingResult::eEMPTY_MESH has been added. This cooking result is output when the mesh cleaning process removes all the triangles of a mesh.
+* PxCookingParams::meshAreaMinLimit has been added. This is used in the mesh cleaning process to remove triangles whose area is too small.
+* PxCookingParams::meshEdgeLengthMaxLimit has been added.
+
+### Changed
+
+* The requirements for convex meshes being GPU compatible have been tightened. Overly oblong meshes are now rejected by the cooking with an error message. Collision
+detection will fall back to CPU for these meshes.
+
+### Fixed
+* Fixed out of memory crash when cooking a convex hull of a very high resolution mesh.
+
+## Soft Body
+
+### Added
+
+* Support for voxel meshes with 5 tetrahedra per voxel to counteract anisotropy in the mesh.
+
+### Changed:
+
+* Defaults of PxConeLimitedConstraint::mLowLimit, mHighLimit have been changed to -1.0 indicating no limit.
+* Soft body sleep damping is improved to minimize an effect that looks like a soft body would lower its stiffness before it goes to sleep.
+
+### Fixed
+* Overflow of the soft body contact buffer will result in a warning.
+
+## Extensions
+
+### Added
+
+* CCD support for PxCustomGeometryExt::CylinderCallbacks and PxCustomGeometryExt::ConeCallbacks.
+
+### Changed
+
+* PxCustomGeometryExt::CylinderCallbacks and PxCustomGeometryExt::ConeCallbacks classes have their public member variables (height, radius, axis and margin) replaced with setter and getter member functions.
+
+## Pvd
+
+### Fixed
+
+* Better coverage in OVD of attribute mirroring for : PxActor, PxRigidActor, PxRigidBody, PxRigidStatic and PxRigidDynamic, specifically for initial values, user set functions and post simulation updates.
+
 # v5.2.0 & v5.2.1
 
 ## Supported Platforms

@@ -288,7 +288,7 @@ float physx::computeCCDThreshold(const PxGeometry& geometry)
 		default:
 		{
 			PX_ASSERT(0);		
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, "Gu::computeBoundsWithCCDThreshold::computeBounds: Unknown shape type.");
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Gu::computeBoundsWithCCDThreshold::computeBounds: Unknown shape type.");
 		}
 	}
 	return PX_MAX_REAL;
@@ -370,6 +370,8 @@ PxsCCDContext::PxsCCDContext(PxsContext* context, Dy::ThresholdStream& threshold
 PxsCCDContext::~PxsCCDContext()
 {
 }
+
+void combineMaterials(const PxsMaterialManager* materialManager, PxU16 origMatIndex0, PxU16 origMatIndex1, PxReal& staticFriction, PxReal& dynamicFriction, PxReal& combinedRestitution, PxU32& materialFlags, PxReal& combinedDamping);
 
 PxReal PxsCCDPair::sweepFindToi(PxcNpThreadContext& context, PxReal dt, PxU32 pass, PxReal ccdThreshold)
 {
@@ -512,20 +514,18 @@ PxReal PxsCCDPair::sweepFindToi(PxcNpThreadContext& context, PxReal dt, PxU32 pa
 
 	//Work out the materials for the contact (restitution, friction etc.)
 	context.mContactBuffer.count = 0;
-	context.mContactBuffer.contact(mMinToiPoint, mMinToiNormal, 0.0f, g1 == PxGeometryType::eTRIANGLEMESH || g1 == PxGeometryType::eHEIGHTFIELD? mFaceIndex : PXC_CONTACT_NO_FACE_INDEX);
+	context.mContactBuffer.contact(mMinToiPoint, mMinToiNormal, 0.0f,
+		g0 == PxGeometryType::eTRIANGLEMESH || g0 == PxGeometryType::eHEIGHTFIELD ||
+		g1 == PxGeometryType::eTRIANGLEMESH || g1 == PxGeometryType::eHEIGHTFIELD ? mFaceIndex : PXC_CONTACT_NO_FACE_INDEX);
 
 	PxsMaterialInfo materialInfo;
 
 	g_GetSingleMaterialMethodTable[g0](ccdShape0->mShapeCore, 0, context, &materialInfo);
 	g_GetSingleMaterialMethodTable[g1](ccdShape1->mShapeCore, 1, context, &materialInfo);
 
-	const PxsMaterialData& data0 = *context.mMaterialManager->getMaterial(materialInfo.mMaterialIndex0);
-	const PxsMaterialData& data1 = *context.mMaterialManager->getMaterial(materialInfo.mMaterialIndex1);
-
-	mRestitution = PxsCombineRestitution(data0, data1);
-
-	PxU32 unused;
-	PxsCombineIsotropicFriction(data0, data1, mDynamicFriction, mStaticFriction, unused);
+	PxU32 materialFlags;
+	PxReal combinedDamping;
+	combineMaterials(context.mMaterialManager, materialInfo.mMaterialIndex0, materialInfo.mMaterialIndex1, mStaticFriction, mDynamicFriction, mRestitution, materialFlags, combinedDamping);
 
 	mMaterialIndex0 = materialInfo.mMaterialIndex0;
 	mMaterialIndex1 = materialInfo.mMaterialIndex1;

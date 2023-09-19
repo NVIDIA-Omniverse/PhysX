@@ -99,24 +99,26 @@ namespace physx
 	{
 	public:
 		PxArticulationCache() :
-			externalForces		(NULL),
-			denseJacobian		(NULL),
-			massMatrix			(NULL),
-			jointVelocity		(NULL),
-			jointAcceleration	(NULL),
-			jointPosition		(NULL),
-			jointForce			(NULL),
-			jointSolverForces	(NULL),
-			linkVelocity		(NULL),
-			linkAcceleration	(NULL),
-			linkIncomingJointForce(NULL),
-			rootLinkData		(NULL),
-			sensorForces		(NULL),
-			coefficientMatrix	(NULL),
-			lambda				(NULL),
-			scratchMemory		(NULL),
-			scratchAllocator	(NULL),
-			version				(0)
+			externalForces			(NULL),
+			denseJacobian			(NULL),
+			massMatrix				(NULL),
+			jointVelocity			(NULL),
+			jointAcceleration		(NULL),
+			jointPosition			(NULL),
+			jointForce				(NULL),
+			jointSolverForces		(NULL),
+			jointTargetPositions	(NULL),
+			jointTargetVelocities	(NULL),
+			linkVelocity			(NULL),
+			linkAcceleration		(NULL),
+			linkIncomingJointForce	(NULL),
+			rootLinkData			(NULL),
+			sensorForces			(NULL),
+			coefficientMatrix		(NULL),
+			lambda					(NULL),
+			scratchMemory			(NULL),
+			scratchAllocator		(NULL),
+			version					(0)
 		{}
 
 		/**
@@ -219,6 +221,24 @@ namespace physx
 		PX_DEPRECATED PxReal*		jointSolverForces;
 
 		/**
+		\brief The articulation joint drive target positions.
+
+		- N = getDofs().
+		- Write using PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS.
+		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
+		*/
+		PxReal*						jointTargetPositions;
+
+		/**
+		\brief The articulation joint drive target velocities.
+
+		- N = getDofs().
+		- Write using PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES.
+		- The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.
+		 */
+		PxReal*						jointTargetVelocities;
+
+		/**
 		\brief Link spatial velocity.
 
 		- N = getNbLinks().
@@ -251,6 +271,7 @@ namespace physx
 		- The force is reported in the child joint frame of the link's incoming joint.
 
 		@see PxArticulationJointReducedCoordinate::getChildPose
+		\note The root link reports a zero spatial force.
 		*/
 		PxSpatialForce*			linkIncomingJointForce;
 		
@@ -666,7 +687,7 @@ namespace physx
 
 		@see setMaxCOMAngularVelocity, PxRigidBody::setLinearDamping, PxRigidBody::setAngularDamping, PxArticulationJointReducedCoordinate::setMaxJointVelocity
 		*/
-		virtual		void				setMaxCOMLinearVelocity(const PxReal maxLinearVelocity) = 0;
+		PX_DEPRECATED virtual		void				setMaxCOMLinearVelocity(const PxReal maxLinearVelocity) = 0;
 
 		/**
 		\brief Gets the limit on the magnitude of the linear velocity of the articulation's center of mass.
@@ -675,7 +696,7 @@ namespace physx
 
 		@see setMaxCOMLinearVelocity
 		*/
-		virtual		PxReal				getMaxCOMLinearVelocity() const = 0;
+		PX_DEPRECATED virtual		PxReal				getMaxCOMLinearVelocity() const = 0;
 
 		/**
 		\brief Sets the limit on the magnitude of the angular velocity at the articulation's center of mass.
@@ -693,7 +714,7 @@ namespace physx
 
 		@see setMaxCOMLinearVelocity, PxRigidBody::setLinearDamping, PxRigidBody::setAngularDamping, PxArticulationJointReducedCoordinate::setMaxJointVelocity
 		*/
-		virtual		void				setMaxCOMAngularVelocity(const PxReal maxAngularVelocity) = 0;
+		PX_DEPRECATED virtual		void				setMaxCOMAngularVelocity(const PxReal maxAngularVelocity) = 0;
 
 		/**
 		\brief Gets the limit on the magnitude of the angular velocity at the articulation's center of mass.
@@ -702,7 +723,7 @@ namespace physx
 
 		@see setMaxCOMAngularVelocity
 		*/
-		virtual		PxReal				getMaxCOMAngularVelocity() const = 0;
+		PX_DEPRECATED virtual		PxReal				getMaxCOMAngularVelocity() const = 0;
 
 		/**
 		\brief Adds a link to the articulation with default attribute values.

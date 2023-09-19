@@ -29,6 +29,8 @@
 #include "ExtRevoluteJoint.h"
 #include "ExtConstraintHelper.h"
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -68,13 +70,17 @@ void RevoluteJoint::setLimit(const PxJointAngularLimitPair& limit)
 	markDirty();	
 
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(*this);
-	OMNI_PVD_SET(PxRevoluteJoint, limitLower, j, limit.lower)
-	OMNI_PVD_SET(PxRevoluteJoint, limitUpper, j, limit.upper)
-	OMNI_PVD_SET(PxRevoluteJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxRevoluteJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxRevoluteJoint, limitDamping, j, limit.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitDamping, j, limit.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -91,7 +97,7 @@ void RevoluteJoint::setDriveVelocity(PxReal velocity, bool autowake)
 		wakeUpActors();
 	markDirty();
 
-	OMNI_PVD_SET(PxRevoluteJoint, driveVelocity, static_cast<PxRevoluteJoint&>(*this), velocity)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveVelocity, static_cast<PxRevoluteJoint&>(*this), velocity)
 }
 
 PxReal RevoluteJoint::getDriveForceLimit() const
@@ -105,7 +111,7 @@ void RevoluteJoint::setDriveForceLimit(PxReal forceLimit)
 	data().driveForceLimit = forceLimit; 
 	markDirty();
 
-	OMNI_PVD_SET(PxRevoluteJoint, driveForceLimit, static_cast<PxRevoluteJoint&>(*this), forceLimit)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveForceLimit, static_cast<PxRevoluteJoint&>(*this), forceLimit)
 }
 
 PxReal RevoluteJoint::getDriveGearRatio() const
@@ -119,7 +125,7 @@ void RevoluteJoint::setDriveGearRatio(PxReal gearRatio)
 	data().driveGearRatio = gearRatio; 
 	markDirty();
 
-	OMNI_PVD_SET(PxRevoluteJoint, driveGearRatio, static_cast<PxRevoluteJoint&>(*this), gearRatio)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveGearRatio, static_cast<PxRevoluteJoint&>(*this), gearRatio)
 }
 
 PxRevoluteJointFlags RevoluteJoint::getRevoluteJointFlags(void)	const
@@ -131,7 +137,7 @@ void RevoluteJoint::setRevoluteJointFlags(PxRevoluteJointFlags flags)
 { 
 	data().jointFlags = flags;
 
-	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), flags)
 }
 
 void RevoluteJoint::setRevoluteJointFlag(PxRevoluteJointFlag::Enum flag, bool value)
@@ -142,7 +148,7 @@ void RevoluteJoint::setRevoluteJointFlag(PxRevoluteJointFlag::Enum flag, bool va
 		data().jointFlags &= ~flag;
 	markDirty();
 
-	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), getRevoluteJointFlags())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, jointFlags, static_cast<PxRevoluteJoint&>(*this), getRevoluteJointFlags())
 }
 
 static PxQuat computeTwist(const PxTransform& cA2w, const PxTransform& cB2w)
@@ -281,33 +287,41 @@ void RevoluteJoint::resolveReferences(PxDeserializationContext& context)
 
 void RevoluteJoint::updateOmniPvdProperties() const
 {
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxRevoluteJoint& j = static_cast<const PxRevoluteJoint&>(*this);
-	OMNI_PVD_SET(PxRevoluteJoint, angle, j, getAngle())
-	OMNI_PVD_SET(PxRevoluteJoint, velocity, j, getVelocity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, getAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, getVelocity())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 template<>
-void physx::Ext::omniPvdInitJoint<RevoluteJoint>(RevoluteJoint* joint)
+void physx::Ext::omniPvdInitJoint<RevoluteJoint>(RevoluteJoint& joint)
 {
-	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(*joint);
-	OMNI_PVD_CREATE(PxRevoluteJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eREVOLUTE);
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
+	PxRevoluteJoint& j = static_cast<PxRevoluteJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eREVOLUTE);
 	
-	PxJointAngularLimitPair limit = joint->getLimit();
-	OMNI_PVD_SET(PxRevoluteJoint, limitLower, j, limit.lower)
-	OMNI_PVD_SET(PxRevoluteJoint, limitUpper, j, limit.upper)
-	OMNI_PVD_SET(PxRevoluteJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxRevoluteJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxRevoluteJoint, limitDamping, j, limit.damping)
+	PxJointAngularLimitPair limit = joint.getLimit();
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, limitDamping, j, limit.damping)
 
-	OMNI_PVD_SET(PxRevoluteJoint, driveVelocity, j, joint->getDriveVelocity())
-	OMNI_PVD_SET(PxRevoluteJoint, driveForceLimit, j, joint->getDriveForceLimit())
-	OMNI_PVD_SET(PxRevoluteJoint, driveGearRatio, j, joint->getDriveGearRatio())
-	OMNI_PVD_SET(PxRevoluteJoint, jointFlags, j, joint->getRevoluteJointFlags())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveVelocity, j, joint.getDriveVelocity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveForceLimit, j, joint.getDriveForceLimit())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveGearRatio, j, joint.getDriveGearRatio())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, jointFlags, j, joint.getRevoluteJointFlags())
 
-	OMNI_PVD_SET(PxRevoluteJoint, angle, j, joint->getAngle())
-	OMNI_PVD_SET(PxRevoluteJoint, velocity, j, joint->getVelocity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, angle, j, joint.getAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, velocity, j, joint.getVelocity())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

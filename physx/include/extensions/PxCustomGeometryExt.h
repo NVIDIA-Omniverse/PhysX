@@ -55,8 +55,6 @@ public:
 	/// \cond PRIVATE
 	struct BaseConvexCallbacks : PxCustomGeometry::Callbacks, PxGjkQuery::Support
 	{
-		float margin;
-
 		BaseConvexCallbacks(float _margin) : margin(_margin) {}
 
 		// override PxCustomGeometry::Callbacks
@@ -74,8 +72,13 @@ public:
 
 		// override PxGjkQuery::Support
 		virtual PxReal getMargin() const { return margin; }
+		// set margin
+		void setMargin(float m);
 
 	protected:
+
+		// Shape margin
+		float margin;
 
 		// Substitute geometry
 		virtual bool useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0, const PxVec3& pos1) const = 0;
@@ -87,13 +90,6 @@ public:
 	*/
 	struct CylinderCallbacks : BaseConvexCallbacks
 	{
-		/// \brief Cylinder height
-		float height;
-		/// \brief Cylinder radius
-		float radius;
-		/// \brief Cylinder axis
-		int axis;
-
 		/**
 		\brief Construct cylinder geometry callbacks object
 
@@ -103,6 +99,27 @@ public:
 		\param[in] margin The cylinder margin.
 		*/
 		CylinderCallbacks(float height, float radius, int axis = 0, float margin = 0);
+
+		/// \brief Set cylinder height
+		/// \param[in] h The cylinder height
+		void setHeight(float h);
+		/// \brief Get cylinder height
+		/// \return	The cylinder height
+		float getHeight() const { return height; }
+
+		/// \brief Set cylinder radius
+		/// \param[in] r The cylinder radius.
+		void setRadius(float r);
+		/// \brief Get cylinder radius
+		/// \return	The cylinder radius
+		float getRadius() const { return radius; }
+
+		/// \brief Set cylinder axis
+		/// \param[in] a The cylinder axis (0 - X, 1 - Y, 2 - Z).
+		void setAxis(int a);
+		/// \brief Get cylinder axis
+		/// \return	The cylinder axis
+		int getAxis() const { return axis; }
 
 		/// \cond PRIVATE
 		// override PxCustomGeometry::Callbacks
@@ -114,6 +131,13 @@ public:
 		virtual PxVec3 supportLocal(const PxVec3& dir) const;
 
 	protected:
+
+		// Cylinder height
+		float height;
+		// Cylinder radius
+		float radius;
+		// Cylinder axis
+		int axis;
 
 		// Substitute geometry
 		virtual bool useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0, const PxVec3& pos1) const;
@@ -128,13 +152,6 @@ public:
 	*/
 	struct ConeCallbacks : BaseConvexCallbacks
 	{
-		/// \brief Cone height
-		float height;
-		/// \brief Cone radius
-		float radius;
-		/// \brief Cone axis
-		int axis;
-
 		/**
 		\brief Construct cone geometry callbacks object
 
@@ -144,6 +161,27 @@ public:
 		\param[in] margin The cylinder margin.
 		*/
 		ConeCallbacks(float height, float radius, int axis = 0, float margin = 0);
+
+		/// \brief Set cone height
+		/// \param[in] h The cone height
+		void setHeight(float h);
+		/// \brief Get cone height
+		/// \return	The cone height
+		float getHeight() const { return height; }
+
+		/// \brief Set cone radius
+		/// \param[in] r The cone radius
+		void setRadius(float r);
+		/// \brief Get cone radius
+		/// \return	The cone radius
+		float getRadius() const { return radius; }
+
+		/// \brief Set cone axis
+		/// \param[in] a The cone axis
+		void setAxis(int a);
+		/// \brief Get cone axis
+		/// \return	The cone axis
+		int getAxis() const { return axis; }
 
 		/// \cond PRIVATE
 		// override PxCustomGeometry::Callbacks
@@ -156,6 +194,13 @@ public:
 
 	protected:
 
+		// Cone height
+		float height;
+		// Cone radius
+		float radius;
+		// Cone axis
+		int axis;
+
 		// Substitute geometry
 		virtual bool useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0, const PxVec3& pos1) const;
 
@@ -164,6 +209,13 @@ public:
 		/// \endcond
 	};
 };
+
+/// \cond PRIVATE
+// OmniPVD friendly aliases
+typedef PxCustomGeometryExt::BaseConvexCallbacks PxCustomGeometryExtBaseConvexCallbacks;
+typedef PxCustomGeometryExt::CylinderCallbacks PxCustomGeometryExtCylinderCallbacks;
+typedef PxCustomGeometryExt::ConeCallbacks PxCustomGeometryExtConeCallbacks;
+/// \endcond
 
 #if !PX_DOXYGEN
 }

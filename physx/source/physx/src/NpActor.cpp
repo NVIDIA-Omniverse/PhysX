@@ -38,6 +38,7 @@
 #include "NpRigidDynamic.h"
 #include "NpArticulationLink.h"
 #include "CmTransformUtils.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpSoftBody.h"
@@ -414,7 +415,7 @@ void	NpActor::scSetDominanceGroup(PxDominanceGroup v)
 			PX_ASSERT(!isAPIWriteForbidden());
 			getActorCore().setDominanceGroup(v);
 			UPDATE_PVD_PROPERTY
-			OMNI_PVD_SET(PxActor, dominance, *getPxActor(), v)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, dominance, *getPxActor(), v)
 		}
 
 void	NpActor::scSetOwnerClient(PxClientID inId)
@@ -423,7 +424,7 @@ void	NpActor::scSetOwnerClient(PxClientID inId)
 			PX_ASSERT(!isAPIWriteForbidden());
 			getActorCore().setOwnerClient(inId);
 			UPDATE_PVD_PROPERTY
-			OMNI_PVD_SET(PxActor, ownerClient, *getPxActor(), inId)
+			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, ownerClient, *getPxActor(), inId)
 		}
 
 const PxActor* NpActor::getPxActor() const

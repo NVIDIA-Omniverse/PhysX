@@ -83,7 +83,7 @@ using namespace physx;
 #endif
 
 // Number of frames to simulate, only used when gEnableRendering == false
-static const PxU32 gNbFramesToSimulate = 256;
+static const PxU32 gNbFramesToSimulate = 100;
 
 // The PhysX tree rebuild rate hint. It is usually a *bad idea* to decrease it to 10 (the default
 // value is 100), but people do this, and it puts more stress on the build code, which fits the

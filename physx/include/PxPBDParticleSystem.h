@@ -133,7 +133,7 @@ public:
 protected:
 	PX_INLINE                           PxPBDParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxParticleSystem(concreteType, baseFlags) {}
 	PX_INLINE                           PxPBDParticleSystem(PxBaseFlags baseFlags) : PxParticleSystem(baseFlags) {}
-	virtual     bool                    isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxPBDParticleSystem", name) || PxParticleSystem::isKindOf(name); }
+	virtual     bool                    isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxPBDParticleSystem", PxParticleSystem); }
 };
 
 #if PX_VC

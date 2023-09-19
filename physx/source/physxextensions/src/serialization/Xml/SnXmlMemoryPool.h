@@ -93,7 +93,7 @@ namespace physx {
 			PxU32 itemSize = GetItemSize();
 			PxU32 itemCount = 1 << TItemCount;
 			//No free nodes, make some more.
-			PxU8* retval = reinterpret_cast<PxU8*>(mWrapper.getAllocator().allocate( itemCount * itemSize, "RepX fixed-size memory pool", __FILE__, __LINE__ ));
+			PxU8* retval = reinterpret_cast<PxU8*>(mWrapper.getAllocator().allocate( itemCount * itemSize, "RepX fixed-size memory pool", PX_FL));
 			PxU8* dataPtr = retval + itemSize;
 			//Free extra chunks
 			for( PxU32 idx = 1; idx < itemCount; ++idx, dataPtr += itemSize )
@@ -190,7 +190,7 @@ namespace physx {
 				theRequestedSize = mMinAllocationSize;
 
 			//No large enough free nodes, make some more.
-			PxU8* retval = reinterpret_cast<PxU8*>(mWrapper.getAllocator().allocate( size_t(theRequestedSize), "RepX variable sized memory pool", __FILE__, __LINE__ ));
+			PxU8* retval = reinterpret_cast<PxU8*>(mWrapper.getAllocator().allocate( size_t(theRequestedSize), "RepX variable sized memory pool", PX_FL));
 			//If we allocated it, we free it.
 			mAllMemory.pushBack( retval );
 			return MarkMem( retval, theRequestedSize );

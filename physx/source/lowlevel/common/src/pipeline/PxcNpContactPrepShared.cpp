@@ -56,8 +56,7 @@ static PX_FORCE_INLINE void copyContactPoint(PxContact* PX_RESTRICT point, const
 	point->separation = cp->separation;
 }
 
-static void combineMaterials(const PxsMaterialManager* materialManager, PxU16 origMatIndex0, PxU16 origMatIndex1, PxReal& staticFriction, PxReal& dynamicFriction, PxReal& combinedRestitution, PxU32& materialFlags,
-	PxReal& combinedDamping)
+void combineMaterials(const PxsMaterialManager* materialManager, PxU16 origMatIndex0, PxU16 origMatIndex1, PxReal& staticFriction, PxReal& dynamicFriction, PxReal& combinedRestitution, PxU32& materialFlags, PxReal& combinedDamping)
 {
 	const PxsMaterialData& data0 = *materialManager->getMaterial(origMatIndex0);
 	const PxsMaterialData& data1 = *materialManager->getMaterial(origMatIndex1);
@@ -315,8 +314,8 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	struct Local
 	{
 		static PX_FORCE_INLINE void fillPatch(PxContactPatch* PX_RESTRICT patch, const StridePatch& rootPatch, const PxVec3& normal,
-			PxU32 currentIndex, PxReal staticFriction, PxReal dynamicFriction, PxReal combinedRestitution, PxReal combinedDamping,
-			PxU32 materialFlags, PxU32 flags, PxU16 matIndex0, PxU16 matIndex1
+			PxU32 currentIndex, PxReal staticFriction_, PxReal dynamicFriction_, PxReal combinedRestitution_, PxReal combinedDamping_,
+			PxU32 materialFlags_, PxU32 flags, PxU16 matIndex0, PxU16 matIndex1
 		)
 		{
 			patch->mMassModification.linear0 = 1.0f;
@@ -325,14 +324,14 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 			patch->mMassModification.angular1 = 1.0f;
 			PX_ASSERT(PxAbs(normal.magnitude() - 1) < 1e-3f);
 			patch->normal = normal;
-			patch->restitution = combinedRestitution;
-			patch->dynamicFriction = dynamicFriction;
-			patch->staticFriction = staticFriction;
-			patch->damping = combinedDamping;
+			patch->restitution = combinedRestitution_;
+			patch->dynamicFriction = dynamicFriction_;
+			patch->staticFriction = staticFriction_;
+			patch->damping = combinedDamping_;
 			patch->startContactIndex = PxTo8(currentIndex);
 			//KS - we could probably compress this further into the header but the complexity might not be worth it
 			patch->nbContacts = rootPatch.totalCount;
-			patch->materialFlags = PxU8(materialFlags);
+			patch->materialFlags = PxU8(materialFlags_);
 			patch->internalFlags = PxU8(flags);
 			patch->materialIndex0 = matIndex0;
 			patch->materialIndex1 = matIndex1;

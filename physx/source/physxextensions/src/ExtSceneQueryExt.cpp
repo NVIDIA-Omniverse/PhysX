@@ -536,7 +536,7 @@ PxBatchQueryExt* create
 
 	PxAllocatorCallback& allocator = *PxGetAllocatorCallback();
 
-	PxU8* buf = reinterpret_cast<PxU8*>(allocator.allocate(byteSize, "NpBatchQueryExt", __FILE__, __LINE__));
+	PxU8* buf = reinterpret_cast<PxU8*>(allocator.allocate(byteSize, "NpBatchQueryExt", PX_FL));
 	PX_CHECK_AND_RETURN_NULL(buf, "PxCreateBatchQueryExt - alllocation failed");
 	ExtBatchQuery* bq = reinterpret_cast<ExtBatchQuery*>(buf);
 	buf += sizeof(ExtBatchQuery);

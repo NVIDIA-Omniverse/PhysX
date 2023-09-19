@@ -54,21 +54,20 @@ namespace physx
 				ePARAMETERS =					1 <<  0,				//!> Parameters were changed
 				eGRID_SIZE =					1 <<  1 | ePARAMETERS,	//!> Grid size was changed. sets ePARAMETERS because settings are stored there
 				eRIGID_ATTACHMENTS =			1 <<  2,				//!> Rigid attachment was changed
-				ePOSITIONS_VELOCITIES_MASS =	1 <<  3, 				//!> Positions, velocities or masses changed
-				eREST_POSITION_TRANSFORM =		1 <<  4,				//!> Transform of the rest positions changed
+				eSOFTBODY_ATTACHMENTS =			1 <<  3,				//!> Softbody attachments added or removed
+				ePOSITIONS_VELOCITIES_MASS =	1 <<  4, 				//!> Positions, velocities or masses changed
 				eLOD_SWITCH =					1 <<  5,				//!> Level of detail was changed, update lodX pos/vel from lod0
 				eLOD_DATA =						1 <<  6 | eLOD_SWITCH,	//!> Definition of detail levels changed . Must come after setting any kind of rest positions. Triggers one-off initialization of levels
 				eBENDING_REST_ANGLES =			1 <<  7 | eLOD_DATA,	//!> Bending rest angles were changed
 				eTWISTING_REST_POSITIONS =		1 <<  8 | eLOD_DATA,	//!> Twisting rest positions were changed
-				eREST_POSITIONS =				1 <<  9 | eLOD_DATA,	//!> Rest (=skinned) positions changed
+				eREST_POSITIONS =				1 <<  9 | eLOD_DATA,	//!> Rest positions changed
 				eSHAPE_MATCHING_SIZES =			1 << 10 | ePARAMETERS | eLOD_DATA,		//!> Shape matching group size or overlap changed. sets ePARAMETERS because settings are stored there
 				eSTRAND_LENGTHS  = 				1 << 11 | eLOD_DATA | eSHAPE_MATCHING_SIZES | eBENDING_REST_ANGLES | eTWISTING_REST_POSITIONS, //!> Topology of vertex arrangement was changed
 				eNUM_STRANDS_OR_VERTS =			1 << 12 | eSHAPE_MATCHING_SIZES
 				| ePOSITIONS_VELOCITIES_MASS | eBENDING_REST_ANGLES | eTWISTING_REST_POSITIONS
-				| eREST_POSITIONS | eLOD_DATA | eSTRAND_LENGTHS, //!> Number of strands or vertices changed
-				eSOFTBODY_ATTACHMENTS =			1 << 13,				//!> Softbody attachments added or removed
+				| eREST_POSITIONS | eLOD_DATA | eSTRAND_LENGTHS,		//!> Number of strands or vertices changed
 
-				eALL = (1 << 14) - 1									//!> everything needs updating
+				eALL = (1 << 13) - 1									//!> everything needs updating
 			};
 		};
 

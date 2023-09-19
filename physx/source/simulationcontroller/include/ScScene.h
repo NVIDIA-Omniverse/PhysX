@@ -606,6 +606,9 @@ namespace Sc
 		PX_FORCE_INLINE bool						isUsingGpuDynamics() const { return mUseGpuDynamics; }
 		PX_FORCE_INLINE bool						isUsingGpuBp() const { return mUseGpuBp; }
 
+		PX_FORCE_INLINE void						setDirectGPUAPIInitialized() { mIsDirectGPUAPIInitialized = true; }
+		PX_FORCE_INLINE bool						isDirectGPUAPIInitialized() const { return mIsDirectGPUAPIInitialized; }
+
 		// statistics counters increase/decrease
 		PX_FORCE_INLINE	void						increaseNumKinematicsCounter() { mNbRigidKinematic++; }
 		PX_FORCE_INLINE	void						decreaseNumKinematicsCounter() { mNbRigidKinematic--; }
@@ -973,6 +976,8 @@ namespace Sc
 					bool																mIsCollisionPhaseActive;
 					// Set to true as long as collision phase is active (used as an indicator that it is OK to read object pose, 
 					// velocity etc. compared to the solver phase where these properties might get written to).
+					bool																mIsDirectGPUAPIInitialized;
+
 
 				public:
 					// For OmniPVD. To notify NpScene that actor's sleeping state has changed.
@@ -1107,6 +1112,9 @@ namespace Sc
 
 					void								addClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
 					void								removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
+
+					void								addVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
+					void								removeVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
 
 					PxU32								addClothAttachment(FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, SoftBodySim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint, PxReal constraintOffset);
 					void								removeClothAttachment(FEMClothCore& core, SoftBodySim& sim, PxU32 handle);

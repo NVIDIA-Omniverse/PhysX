@@ -141,7 +141,7 @@ protected:
 	PX_INLINE			PxParticleMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags)	{}
 	PX_INLINE			PxParticleMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
 	virtual				~PxParticleMaterial() {}
-	virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxParticleMaterial", name) || PxBaseMaterial::isKindOf(name); }
+	virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxParticleMaterial", PxBaseMaterial); }
 };
 
 #if !PX_DOXYGEN

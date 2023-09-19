@@ -71,7 +71,7 @@ namespace physx
 		PX_INLINE					PxFEMClothMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxFEMMaterial(concreteType, baseFlags) {}
 		PX_INLINE					PxFEMClothMaterial(PxBaseFlags baseFlags) : PxFEMMaterial(baseFlags) {}
 		virtual						~PxFEMClothMaterial() {}
-		virtual		bool			isKindOf(const char* name) const { return !::strcmp("PxFEMClothMaterial", name) || PxRefCounted::isKindOf(name); }
+		virtual		bool			isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxFEMClothMaterial", PxFEMMaterial); }
 	};
 
 #if !PX_DOXYGEN

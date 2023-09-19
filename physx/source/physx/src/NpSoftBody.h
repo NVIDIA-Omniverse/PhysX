@@ -134,6 +134,9 @@ namespace physx
 		virtual		void				addClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx);
 		virtual		void				removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx);
 
+		virtual		void				addVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx);
+		virtual		void				removeVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx);
+
 		virtual		PxU32				addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
 										PxConeLimitedConstraint* constraint, PxReal constraintOffset);
 

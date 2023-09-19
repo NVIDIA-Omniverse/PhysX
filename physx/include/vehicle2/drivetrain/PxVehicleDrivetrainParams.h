@@ -855,28 +855,27 @@ struct PxVehicleTankDriveDifferentialParams : public PxVehicleMultiWheelDriveDif
 	{
 		PxVehicleMultiWheelDriveDifferentialParams::setToDefault();
 		nbTracks = 0;
-		nbWheelsInTracks = 0;
 	}
 
 	/**
-	\brief Add a tank track by specifying the number of wheels along the track track and an array of wheel ids specifying each wheel in the tank track.
+	\brief Add a tank track by specifying the number of wheels along the track and an array of wheel ids specifying each wheel in the tank track.
 	\param[in] nbWheelsInTrackToAdd is the number of wheels in the track to be added.
 	\param[in] wheelIdsInTrackToAdd is an array of wheel ids specifying all the wheels in the track to be added.
 	\param[in] thrustControllerIndex specifies the index of the thrust controller that will be used to control the tank track.
 	*/
 	void addTankTrack(const PxU32 nbWheelsInTrackToAdd, const PxU32* const wheelIdsInTrackToAdd, const PxU32 thrustControllerIndex)
 	{
-		PX_ASSERT((nbWheelsInTracks + nbWheelsInTrackToAdd) < PxVehicleLimits::eMAX_NB_WHEELS);
+		PxU32 trackToWheelIdsOffset = nbTracks ? trackToWheelIds[nbTracks - 1] + nbWheelsPerTrack[nbTracks - 1] : 0;
+		PX_ASSERT((trackToWheelIdsOffset + nbWheelsInTrackToAdd) <= PxVehicleLimits::eMAX_NB_WHEELS);
 		PX_ASSERT(nbTracks < PxVehicleLimits::eMAX_NB_WHEELS);
 		PX_ASSERT(thrustControllerIndex < 2);
 		nbWheelsPerTrack[nbTracks] = nbWheelsInTrackToAdd;
 		thrustIdPerTrack[nbTracks] = thrustControllerIndex;
-		trackToWheelIds[nbTracks] = nbWheelsInTracks;
+		trackToWheelIds[nbTracks] = trackToWheelIdsOffset;
 		for (PxU32 i = 0; i < nbWheelsInTrackToAdd; i++)
 		{
-			wheelIdsInTrackOrder[nbWheelsInTracks + i] = wheelIdsInTrackToAdd[i];
+			wheelIdsInTrackOrder[trackToWheelIdsOffset + i] = wheelIdsInTrackToAdd[i];
 		}
-		nbWheelsInTracks += nbWheelsInTrackToAdd;
 		nbTracks++;
 	}
 
@@ -951,21 +950,29 @@ struct PxVehicleTankDriveDifferentialParams : public PxVehicleMultiWheelDriveDif
 			return false;
 
 		PX_CHECK_AND_RETURN_VAL(nbTracks <= PxVehicleLimits::eMAX_NB_WHEELS, "PxVehicleTankDriveDifferentialParams.nbTracks must not exceed PxVehicleLimits::eMAX_NB_WHEELS", false);
-		PX_CHECK_AND_RETURN_VAL(nbWheelsInTracks <= PxVehicleLimits::eMAX_NB_WHEELS, "PxVehicleTankDriveDifferentialParams.nbWheelsInTracks must not exceed PxVehicleLimits::eMAX_NB_WHEELS", false);
+		
+		const PxU32 nbWheelsInTracksSize = nbTracks ? trackToWheelIds[nbTracks - 1] + nbWheelsPerTrack[nbTracks - 1] : 0;
+		PX_UNUSED(nbWheelsInTracksSize);
+		PX_CHECK_AND_RETURN_VAL(nbWheelsInTracksSize <= PxVehicleLimits::eMAX_NB_WHEELS, "PxVehicleTankDriveDifferentialParams.nbWheelsInTracks must not exceed PxVehicleLimits::eMAX_NB_WHEELS", false);
 		for (PxU32 i = 0; i < nbTracks; i++)
 		{
 			PX_CHECK_AND_RETURN_VAL(thrustIdPerTrack[i] < 2, "PxVehicleTankDriveDifferentialParams.thrustId must be less than 2", false);
-			PX_CHECK_AND_RETURN_VAL(getNbWheelsInTrack(i) >= 2, "PxVehicleTankDriveDifferentialParams.nbWheelsPerTrack must be greater than or equal to 2", false);
 		}
 
 		for (PxU32 i = 0; i < axleDesc.nbWheels; i++)
 		{
 			const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
 			PxU32 count = 0;
-			for (PxU32 j = 0; j < nbWheelsInTracks; j++)
+			for (PxU32 j = 0; j < nbTracks; j++)
 			{
-				if (wheelIdsInTrackOrder[j] == wheelId)
-					count++;
+				const PxU32 nbWheels = getNbWheelsInTrack(j);
+				const PxU32* wheelIds = getWheelsInTrack(j);
+
+				for (PxU32 k = 0; k < nbWheels; k++)
+				{
+					if (wheelIds[k] == wheelId)
+						count++;
+				}
 			}
 			PX_CHECK_AND_RETURN_VAL(count <= 1, "PxVehicleTankDriveDifferentialParams - a wheel cannot be in more than one tank track", false);
 		}
@@ -978,7 +985,6 @@ struct PxVehicleTankDriveDifferentialParams : public PxVehicleMultiWheelDriveDif
 	PxU32 trackToWheelIds[PxVehicleLimits::eMAX_NB_WHEELS];		//!< The list of wheel ids for the ith tank track begins at wheelIdsInTrackOrder[trackToWheelIds[i]]
 
 	PxU32 wheelIdsInTrackOrder[PxVehicleLimits::eMAX_NB_WHEELS];//!< The list of all wheel ids in all tracks
-	PxU32 nbWheelsInTracks;										//!< The number of wheels in all tracks.
 };
 
 

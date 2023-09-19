@@ -641,7 +641,7 @@ PX_FORCE_INLINE void BodySim::initKinematicStateBase(BodyCore&, bool asPartOfCre
 	// Need to be before setting setRigidBodyFlag::KINEMATIC
 }
 
-void BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration)
+bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration)
 {
 	PxVec3 linVelDt(0.0f), angVelDt(0.0f);
 
@@ -650,9 +650,11 @@ void BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 
 	SimStateData* simStateData = NULL;
 
+	bool forceChangeApplied = false;
+
 	//if we change the logic like this, which means we don't need to have two seperate variables in the pxgbodysim to represent linAcc and angAcc. However, this
 	//means angAcc will be always 0
-	if( (accDirty || velDirty) &&  ((simStateData = getSimStateData(false)) != NULL) )
+	if( (accDirty || velDirty) && ((simStateData = getSimStateData(false)) != NULL) )
 	{
 		VelocityMod* velmod = simStateData->getVelocityModData();
 
@@ -673,7 +675,7 @@ void BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 		{
 			linVelDt += velmod->getLinearVelModPerSec()*dt;
 			angVelDt += velmod->getAngularVelModPerSec()*dt;
-		}	
+		}
 
 		if (acceleration)
 		{
@@ -685,9 +687,13 @@ void BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 		{
 			getBodyCore().updateVelocities(linVelDt, angVelDt);
 		}
+
+		forceChangeApplied = true;
 	}
 
 	setForcesToDefaults(readVelocityModFlag(VMF_ACC_DIRTY));
+
+	return forceChangeApplied;
 }
 
 void BodySim::onConstraintDetach()

@@ -54,8 +54,7 @@ static PxMaterial*				gMaterial		= NULL;
 static PxPvd*					gPvd			= NULL;
 std::vector<SoftBody>			gSoftBodies;
 
-void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxFEMMaterial& /*femMaterial*/,
-	const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount/*, PxMaterial* tetMeshMaterial*/)
+void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxTransform& transform, const PxReal density, const PxReal scale, const PxU32 iterCount)
 {
 	PxVec4* simPositionInvMassPinned;
 	PxVec4* simVelocityPinned;
@@ -67,7 +66,6 @@ void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const P
 	const PxReal maxInvMassRatio = 50.f;
 
 	softBody->setParameter(femParams);
-	//softBody->setMaterial(femMaterial);
 	softBody->setSolverIterationCounts(iterCount);
 
 	PxSoftBodyExt::transform(*softBody, transform, scale, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
@@ -86,9 +84,6 @@ void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const P
 
 static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
 {
-	PxFEMSoftBodyMaterial* material = PxGetPhysics().createFEMSoftBodyMaterial(1e+6f, 0.45f, 0.5f);
-	material->setDamping(0.005f);
-
 	PxSoftBodyMesh* softBodyMesh;
 
 	PxU32 numVoxelsAlongLongestAABBAxis = 8;
@@ -132,7 +127,7 @@ static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<P
 		gScene->addActor(*softBody);
 
 		PxFEMParameters femParams;
-		addSoftBody(softBody, femParams, *material, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
+		addSoftBody(softBody, femParams, PxTransform(PxVec3(0.f, 0.f, 0.f), PxQuat(PxIdentity)), 100.f, 1.0f, 30);
 		softBody->setSoftBodyFlag(PxSoftBodyFlag::eDISABLE_SELF_COLLISION, true);
 	}
 	return softBody;

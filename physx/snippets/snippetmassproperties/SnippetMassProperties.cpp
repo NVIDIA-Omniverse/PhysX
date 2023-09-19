@@ -76,7 +76,10 @@ static PxRigidDynamic* createSnowMan(const PxTransform& pos, PxU32 mode)
 {
 	PxRigidDynamic* snowmanActor = gPhysics->createRigidDynamic(PxTransform(pos));
 	if(!snowmanActor)
+	{
 		printf("create snowman actor failed");
+		return NULL;
+	}
 
 	PxShape* armL = NULL; PxShape* armR = NULL;
 

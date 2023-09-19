@@ -121,7 +121,7 @@ PxController* CharacterControllerManager::getController(PxU32 index)
 {
 	if(index>=mControllers.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxControllerManager::getController(): out-of-range index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxControllerManager::getController(): out-of-range index");
 		return NULL;
 	}
 
@@ -133,7 +133,7 @@ PxController* CharacterControllerManager::createController(const PxControllerDes
 {
 	if(!desc.isValid())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxControllerManager::createController(): desc.isValid() fails.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxControllerManager::createController(): desc.isValid() fails.");
 		return NULL;
 	}
 
@@ -276,7 +276,7 @@ PxObstacleContext* CharacterControllerManager::getObstacleContext(PxU32 index)
 {
 	if(index>=mObstacleContexts.size())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxControllerManager::getObstacleContext(): out-of-range index");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxControllerManager::getObstacleContext(): out-of-range index");
 		return NULL;
 	}
 

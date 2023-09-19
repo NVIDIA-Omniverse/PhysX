@@ -38,7 +38,7 @@
 // PX_SERIALIZATION
 #include "foundation/PxErrors.h"
 //~PX_SERIALIZATION
-#include "omnipvd/OmniPvdPxSampler.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 namespace physx
 {
@@ -207,7 +207,7 @@ void NpRigidActorTemplate<APIClass>::removeShapes(PxSceneQuerySystem* sqManager)
 {
 	if(mShapeManager.getPruningStructure())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxRigidActor::release: Actor is part of a pruning structure, pruning structure is now invalid!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::release: Actor is part of a pruning structure, pruning structure is now invalid!");
 		mShapeManager.getPruningStructure()->invalidate(this);
 	}
 
@@ -230,13 +230,13 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 	// invalidate the pruning structure if the actor bounds changed
 	if (mShapeManager.getPruningStructure())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxRigidActor::attachShape: Actor is part of a pruning structure, pruning structure is now invalid!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::attachShape: Actor is part of a pruning structure, pruning structure is now invalid!");
 		mShapeManager.getPruningStructure()->invalidate(this);
 	}
 
 	mShapeManager.attachShape(npShape, *this);
 
-	OMNI_PVD_ADD(PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)
 
 	return true;
 }
@@ -249,17 +249,17 @@ void NpRigidActorTemplate<APIClass>::detachShape(PxShape& shape, bool wakeOnLost
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxRigidActor::detachShape() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_REMOVE(PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)	//this needs to happen before the actual detach happens below, because that detach might actually delete the shape, which invalidates the shape handle.
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, shapes, static_cast<PxRigidActor&>(*this), shape)	//this needs to happen before the actual detach happens below, because that detach might actually delete the shape, which invalidates the shape handle.
 
 	if (mShapeManager.getPruningStructure())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxRigidActor::detachShape: Actor is part of a pruning structure, pruning structure is now invalid!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::detachShape: Actor is part of a pruning structure, pruning structure is now invalid!");
 		mShapeManager.getPruningStructure()->invalidate(this);
 	}
 
 	if(!mShapeManager.detachShape(static_cast<NpShape&>(shape), *this, wakeOnLostTouch))
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxRigidActor::detachShape: shape is not attached to this actor!");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxRigidActor::detachShape: shape is not attached to this actor!");
 	}
 }
 

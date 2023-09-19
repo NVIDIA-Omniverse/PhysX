@@ -175,7 +175,7 @@ protected:
 	PX_INLINE			PxConvexMesh(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags) {}
 	PX_INLINE			PxConvexMesh(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 	virtual				~PxConvexMesh() {}
-	virtual	bool		isKindOf(const char* name) const { return !::strcmp("PxConvexMesh", name) || PxRefCounted::isKindOf(name); }
+	virtual	bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxConvexMesh", PxRefCounted); }
 };
 
 #if !PX_DOXYGEN

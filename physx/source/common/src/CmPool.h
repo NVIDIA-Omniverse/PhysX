@@ -128,7 +128,7 @@ public:
 			{
 
 				//KS - would be great to allocate this using a single allocation but it will make releasing slabs fail later :(
-				T * mAddr = reinterpret_cast<T*>(Alloc::allocate(mEltsPerSlab * sizeof(T), __FILE__, __LINE__));
+				T * mAddr = reinterpret_cast<T*>(Alloc::allocate(mEltsPerSlab * sizeof(T), PX_FL));
 				if (!mAddr)
 					return nbElements; //Allocation failed so only return the set of elements we could allocate from the free list
 
@@ -140,9 +140,9 @@ public:
 					mUseBitmap.resize(2 * newSlabCount*mEltsPerSlab); //set last element as not used
 					if (mFreeList)
 						Alloc::deallocate(mFreeList);
-					mFreeList = reinterpret_cast<T**>(Alloc::allocate(2 * newSlabCount * mEltsPerSlab * sizeof(T*), __FILE__, __LINE__));
+					mFreeList = reinterpret_cast<T**>(Alloc::allocate(2 * newSlabCount * mEltsPerSlab * sizeof(T*), PX_FL));
 
-					T** slabs = reinterpret_cast<T**>(Alloc::allocate(2* newSlabCount *sizeof(T*), __FILE__, __LINE__));
+					T** slabs = reinterpret_cast<T**>(Alloc::allocate(2* newSlabCount *sizeof(T*), PX_FL));
 					if (mSlabs)
 					{
 						PxMemCopy(slabs, mSlabs, sizeof(T*)*mSlabCount);
@@ -229,7 +229,7 @@ public:
 
 	bool extend()
 	{
-		T * mAddr = reinterpret_cast<T*>(Alloc::allocate(mEltsPerSlab * sizeof(T), __FILE__, __LINE__));
+		T * mAddr = reinterpret_cast<T*>(Alloc::allocate(mEltsPerSlab * sizeof(T), PX_FL));
 		if(!mAddr)
 			return false;
 
@@ -241,9 +241,9 @@ public:
 			mUseBitmap.resize(2* newSlabCount*mEltsPerSlab); //set last element as not used
 			if(mFreeList)
 				Alloc::deallocate(mFreeList);
-			mFreeList = reinterpret_cast<T**>(Alloc::allocate(2* newSlabCount * mEltsPerSlab * sizeof(T*), __FILE__, __LINE__));
+			mFreeList = reinterpret_cast<T**>(Alloc::allocate(2* newSlabCount * mEltsPerSlab * sizeof(T*), PX_FL));
 
-			T** slabs = reinterpret_cast<T**>(Alloc::allocate(2 * newSlabCount * sizeof(T*), __FILE__, __LINE__));
+			T** slabs = reinterpret_cast<T**>(Alloc::allocate(2 * newSlabCount * sizeof(T*), PX_FL));
 			if (mSlabs)
 			{
 				PxMemCopy(slabs, mSlabs, sizeof(T*)*mSlabCount);

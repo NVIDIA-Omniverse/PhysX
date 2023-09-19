@@ -115,7 +115,7 @@ namespace physx
 		PX_INLINE			PxFEMSoftBodyMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxFEMMaterial(concreteType, baseFlags) {}
 		PX_INLINE			PxFEMSoftBodyMaterial(PxBaseFlags baseFlags) : PxFEMMaterial(baseFlags) {}
 		virtual				~PxFEMSoftBodyMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxFEMSoftBodyMaterial", name) || PxFEMMaterial::isKindOf(name); }
+		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxFEMSoftBodyMaterial", PxFEMMaterial); }
 	};
 
 #if !PX_DOXYGEN

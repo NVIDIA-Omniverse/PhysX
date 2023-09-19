@@ -179,7 +179,6 @@ void PxVehiclePhysXActorDestroy
 		{
 			scene->removeArticulation(articulation);
 		}
-		link->release();
 		articulation.release();
 		vehiclePhysXActor.rigidBody = NULL;
 	}

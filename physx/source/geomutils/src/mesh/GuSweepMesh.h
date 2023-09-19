@@ -117,12 +117,12 @@ namespace Gu
 	{
 		PxTriangle							mHitTriangle;
 		ConvexHullV							mConvexHull;
-		physx::aos::PxMatTransformV	mMeshToConvex;
-		physx::aos::PxTransformV	mConvexPoseV;
+		physx::aos::PxMatTransformV			mMeshToConvex;
+		physx::aos::PxTransformV			mConvexPoseV;
 		const Cm::FastVertex2ShapeScaling&	mMeshScale;
 		PxGeomSweepHit						mSweepHit; // stores either the closest or any hit depending on value of mAnyHit
-		physx::aos::FloatV			mInitialDistance;
-		physx::aos::Vec3V			mConvexSpaceDir; // convexPose.rotateInv(-unit*distance)
+		physx::aos::FloatV					mInitialDistance;
+		physx::aos::Vec3V					mConvexSpaceDir; // convexPose.rotateInv(-unit*distance)
 		PxVec3								mUnitDir;
 		PxVec3								mMeshSpaceUnitDir;
 		PxReal								mInflation;

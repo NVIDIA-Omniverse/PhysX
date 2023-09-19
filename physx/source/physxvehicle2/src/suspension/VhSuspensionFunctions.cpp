@@ -528,10 +528,6 @@ void PxVehicleSuspensionForceUpdate
 {
 	suspForces.setToDefault();
 
-	//If there are no road geom hits then carry on with zero force.
-	if (!roadGeom.hitState)
-		return;
-
 	//If the wheel cannot touch the ground then carry on with zero force.
 	if (!PxVehicleIsWheelOnGround(suspState))
 		return;
@@ -608,10 +604,6 @@ void PxVehicleSuspensionLegacyForceUpdate
  PxVehicleSuspensionForce& suspForces)
 {
 	suspForces.setToDefault();
-
-	//If there are no road geom hits then carry on with zero force.
-	if (!roadGeomState.hitState)
-		return;
 
 	//If the wheel cannot touch the ground then carry on with zero force.
 	if (!PxVehicleIsWheelOnGround(suspState))

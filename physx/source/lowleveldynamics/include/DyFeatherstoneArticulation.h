@@ -129,24 +129,51 @@ namespace Dy
 		PxReal highImpulse;						//4		16		changed
 	};
 
+	struct ArticulationImplicitDriveDesc
+	{
+		PX_CUDA_CALLABLE PX_FORCE_INLINE ArticulationImplicitDriveDesc(PxZERO)
+			: driveTargetVelPlusInitialBias(0.0f),
+			  driveBiasCoefficient(0.0f),
+			  driveVelMultiplier(0.0f),
+			  driveImpulseMultiplier(0.0f)		
+		{
+		}
+		PX_CUDA_CALLABLE PX_FORCE_INLINE ArticulationImplicitDriveDesc
+			(const PxReal targetVelPlusInitialBias, const PxReal biasCoefficient, const PxReal velMultiplier, const PxReal impulseMultiplier)
+				:	driveTargetVelPlusInitialBias(targetVelPlusInitialBias),
+					driveBiasCoefficient(biasCoefficient),
+					driveVelMultiplier(velMultiplier),
+					driveImpulseMultiplier(impulseMultiplier)
+		{		
+		}
+		PxReal driveTargetVelPlusInitialBias;					
+		PxReal driveBiasCoefficient;			
+		PxReal driveVelMultiplier;				
+		PxReal driveImpulseMultiplier;			
+	};
+
 	struct ArticulationInternalConstraint : public ArticulationInternalConstraintBase
 	{	
-		//Joint spring drive info
-		PxReal driveTargetVel;					//4		128
-		PxReal driveInitialBias;				//4		132
-		PxReal driveBiasCoefficient;			//4		132
-		PxReal driveVelMultiplier;				//4		140
-		PxReal driveImpulseMultiplier;			//4		148
-		PxReal maxDriveForce;					//4		152
-		PxReal driveForce;						//4		156
+		ArticulationImplicitDriveDesc implicitDriveDesc;
+		PxReal driveMaxForce;					
+		PxReal driveForce;						
 
-		PxReal maxFrictionForce;				//4		160
-		PxReal frictionForce;					//4		164
-		PxReal frictionForceCoefficient;		//4		168
+		PxReal frictionForceCoefficient;
+		PxReal frictionMaxForce;				
+		PxReal frictionForce;	
 
-		bool isLinearConstraint;				//1		169
-		PxU8 padding[7];						//11	176
+		bool isLinearConstraint;
+
+		void setImplicitDriveDesc(const ArticulationImplicitDriveDesc& driveDesc)
+		{
+			implicitDriveDesc = driveDesc;
+		}
+		const ArticulationImplicitDriveDesc& getImplicitDriveDesc() const
+		{
+			return implicitDriveDesc;
+		}	
 	};
+	PX_COMPILE_TIME_ASSERT(0 == (sizeof(ArticulationInternalConstraint) & 0x0f));
 
 	//linkID can be PxU32. However, each thread is going to read 16 bytes so we just keep ArticulationSensor 16 byte align.
 	//if not, newArticulationsLaunch kernel will fail to read the sensor data correctly
@@ -174,7 +201,7 @@ namespace Dy
 	public:
 
 		ArticulationData() :  
-			mPathToRootElements(NULL), mNumPathToRootElements(0), mLinksData(NULL), mJointData(NULL), mJointTranData(NULL),
+			mPathToRootElements(NULL), mNumPathToRootElements(0), mLinksData(NULL), mJointData(NULL),
 			mSpatialTendons(NULL), mNumSpatialTendons(0), mNumTotalAttachments(0),
 			mFixedTendons(NULL), mNumFixedTendons(0), mSensors(NULL), mSensorForces(NULL),
 			mNbSensors(0), mDt(0.f), mDofs(0xffffffff),
@@ -201,7 +228,10 @@ namespace Dy
 		PX_FORCE_INLINE const PxReal*				getJointForces() const									{ return mJointForce.begin();				}
 		PX_FORCE_INLINE PxReal*						getJointConstraintForces()								{ return mJointConstraintForces.begin();	}
 		PX_FORCE_INLINE const PxReal*				getJointConstraintForces() const						{ return mJointConstraintForces.begin();	}
-		//PX_FORCE_INLINE PxReal*					getJointFrictionForces() { return mJointFrictionForce.begin(); }
+		PX_FORCE_INLINE PxReal*						getJointTargetPositions()								{ return mJointTargetPositions.begin();		}
+		PX_FORCE_INLINE const PxReal*				getJointTargetPositions() const							{ return mJointTargetPositions.begin();		}
+		PX_FORCE_INLINE PxReal*						getJointTargetVelocities()								{ return mJointTargetVelocities.begin();	}
+		PX_FORCE_INLINE const PxReal*				getJointTargetVelocities() const						{ return mJointTargetVelocities.begin();	}
 
 		PX_FORCE_INLINE ArticulationInternalConstraint&			getInternalConstraint(const PxU32 dofId)		{ return mInternalConstraints[dofId];	}
 		PX_FORCE_INLINE const ArticulationInternalConstraint&	getInternalConstraint(const PxU32 dofId) const	{ return mInternalConstraints[dofId];	}
@@ -264,8 +294,6 @@ namespace Dy
 		PX_FORCE_INLINE ArticulationJointCoreData*	getJointData()									const	{ return mJointData;						}
 		PX_FORCE_INLINE ArticulationJointCoreData&	getJointData(PxU32 index)						const	{ return mJointData[index];					}
 
-		PX_FORCE_INLINE ArticulationJointTargetData*	getJointTranData()									const { return mJointTranData; }
-		PX_FORCE_INLINE	ArticulationJointTargetData&	getJointTranData(PxU32 index)						const { return mJointTranData[index]; }
 		// PT: PX-1399
 		PX_FORCE_INLINE PxArticulationFlags			getArticulationFlags()							const	{ return *mFlags;							}
 
@@ -379,7 +407,8 @@ namespace Dy
 		PxArray<PxReal>								mJointNewVelocity;		//	joint velocity due to contacts
 		PxArray<PxReal>								mJointPosition;			//	joint position
 		PxArray<PxReal>								mJointForce;			//	joint force
-		//Ps::Array<PxReal>							mJointFrictionForce;	//	joint friction force
+		PxArray<PxReal>								mJointTargetPositions;  //	joint target positions
+		PxArray<PxReal>								mJointTargetVelocities; //	joint target velocities
 	
 		PxArray<PxReal>											mPosIterJointVelocities;	//joint delta velocity after postion iternation before velocity iteration
 		PxArray<Cm::SpatialVectorF>								mPosIterMotionVelocities;	//link motion velocites after position iteration before velocity iteration
@@ -438,7 +467,6 @@ namespace Dy
 		PxU32									mNumPathToRootElements;
 		ArticulationLinkData*					mLinksData;
 		ArticulationJointCoreData*				mJointData;
-		ArticulationJointTargetData*			mJointTranData;
 		ArticulationSpatialTendon**				mSpatialTendons;
 		PxU32									mNumSpatialTendons;
 		PxU32									mNumTotalAttachments;
@@ -515,7 +543,7 @@ namespace Dy
 		const PxReal erp;
 		Cm::SpatialVectorF* impulses;
 		Cm::SpatialVectorF* deltaV;
-		const bool velocityIteration;
+		const bool isVelIter;
 		const bool isTGS;
 		PxU32 dofId;
 		PxU32 complexId;
@@ -525,7 +553,7 @@ namespace Dy
 		InternalConstraintSolverData(const PxReal dt_, const PxReal invDt_, const PxReal elapsedTime_,
 			const PxReal erp_, Cm::SpatialVectorF* impulses_, Cm::SpatialVectorF* deltaV_,
 			bool velocityIteration_, bool isTGS_) : dt(dt_), invDt(invDt_), elapsedTime(elapsedTime_),
-			erp(erp_), impulses(impulses_), deltaV(deltaV_), velocityIteration(velocityIteration_),
+			erp(erp_), impulses(impulses_), deltaV(deltaV_), isVelIter(velocityIteration_),
 			isTGS(isTGS_), dofId(0), complexId(0), limitId(0)
 		{
 		}
@@ -557,27 +585,26 @@ namespace Dy
 			eDIRTY_JOINTS = 1 << 0,
 			eDIRTY_POSITIONS = 1 << 1,
 			eDIRTY_VELOCITIES = 1 << 2,
-			eDIRTY_ACCELERATIONS = 1 << 3,
-			eDIRTY_FORCES = 1 << 4,
-			eDIRTY_ROOT_TRANSFORM = 1 << 5,
-			eDIRTY_ROOT_VELOCITIES = 1 << 6,
-			eDIRTY_LINKS = 1 << 7,
-			eIN_DIRTY_LIST = 1 << 8,
-			eDIRTY_WAKECOUNTER = 1 << 9,
-			eDIRTY_EXT_ACCEL = 1 << 10,
-			eDIRTY_LINK_FORCE = 1 << 11,
-			eDIRTY_LINK_TORQUE = 1 << 12,
-			eDIRTY_JOINT_TARGET_VEL = 1 << 13,
-			eDIRTY_JOINT_TARGET_POS = 1 << 14,
-			ePENDING_INSERTION = 1 << 15,
-			eDIRTY_SPATIAL_TENDON = 1 << 16,
-			eDIRTY_SPATIAL_TENDON_ATTACHMENT = 1 << 17,
-			eDIRTY_FIXED_TENDON = 1 << 18,
-			eDIRTY_FIXED_TENDON_JOINT = 1 << 19,
-			eDIRTY_SENSOR = 1 << 20,
-			eDIRTY_VELOCITY_LIMITS = 1 << 21,
-			eDIRTY_DOFS = (eDIRTY_POSITIONS | eDIRTY_VELOCITIES | eDIRTY_ACCELERATIONS | eDIRTY_FORCES),
-			eALL = (1<<21)-1 
+			eDIRTY_FORCES = 1 << 3,
+			eDIRTY_ROOT_TRANSFORM = 1 << 4,
+			eDIRTY_ROOT_VELOCITIES = 1 << 5,
+			eDIRTY_LINKS = 1 << 6,
+			eIN_DIRTY_LIST = 1 << 7,
+			eDIRTY_WAKECOUNTER = 1 << 8,
+			eDIRTY_EXT_ACCEL = 1 << 9,
+			eDIRTY_LINK_FORCE = 1 << 10,
+			eDIRTY_LINK_TORQUE = 1 << 11,
+			eDIRTY_JOINT_TARGET_VEL = 1 << 12,
+			eDIRTY_JOINT_TARGET_POS = 1 << 13,
+			eDIRTY_SPATIAL_TENDON = 1 << 14,
+			eDIRTY_SPATIAL_TENDON_ATTACHMENT = 1 << 15,
+			eDIRTY_FIXED_TENDON = 1 << 16,
+			eDIRTY_FIXED_TENDON_JOINT = 1 << 17,
+			eDIRTY_SENSOR = 1 << 18,
+			eDIRTY_VELOCITY_LIMITS = 1 << 19,
+			eDIRTY_USER_FLAGS =  1 << 20,
+			eNEEDS_KINEMATIC_UPDATE = 1 << 21,
+			eALL = (1<<22)-1 
 		};
 	};
 
@@ -836,7 +863,8 @@ namespace Dy
 				PxReal* jointDofQStY = NULL);
 
 		bool applyCacheToDest(ArticulationData& data, PxArticulationCache& cache,
-			PxReal* jVelocities, PxReal* jAcceleration, PxReal* jPosition, PxReal* jointForce,
+			PxReal* jVelocities, PxReal* jPosition, PxReal* jointForce,
+			PxReal* jTargetPositions, PxReal* jTargetVelocities,
 			const PxArticulationCacheFlags flag, bool& shouldWake);
 
 		PX_FORCE_INLINE	ArticulationData&		getArticulationData()			{ return mArticulationData;	}
@@ -894,7 +922,8 @@ namespace Dy
 
 		PxU32 computeDofs();
 		//this function calculates motion subspace matrix(s) for all tree joint
-		void jcalc(ArticulationData& data, bool forceUpdate = false);
+		template<bool immediateMode = false>
+		void jcalc(ArticulationData& data);
 
 		//this function calculates loop joint constraint subspace matrix(s) and active force
 		//subspace matrix
@@ -915,7 +944,7 @@ namespace Dy
 			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient);
 
 		Cm::SpatialVectorF solveInternalJointConstraintRecursive(InternalConstraintSolverData& data, const PxU32 linkID,
-			const Cm::SpatialVectorF& parentDeltaV);
+			const Cm::SpatialVectorF& parentDeltaV, const bool isTGS, const bool isVelIter);
 
 		void solveInternalSpatialTendonConstraints(bool isTGS);
 
@@ -1110,7 +1139,6 @@ namespace Dy
 		\param[in] linkCount is the number of articulation links. 
 		\param[in] linkRsW is an array of link separations in the world frame with one entry per link.
 		\param[in] jointData is an array of joint descriptions with one entry per joint.
-		\param[in] jointTargetData is an array of joint armatures with one entry per joint.
 		\param[in] jointDofMotionMatricesW ins an array of motion matrices in the world frame with one entry per dof.
 		\param[in] linkCoriolisVectorsW is an array fo coriolis terms with one entry per link. 
 		\param[in] jointForces is an array forces to be applied to joints with one entry per dof.
@@ -1126,7 +1154,7 @@ namespace Dy
 		*/
 		static void computeArticulatedSpatialInertiaAndZ
 			(const ArticulationLink* links, const PxU32 linkCount, const PxVec3* linkRsW,
-			 const ArticulationJointCoreData* jointData, const ArticulationJointTargetData* jointTargetData,
+			 const ArticulationJointCoreData* jointData,
 			 const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW,
 			 const Cm::SpatialVectorF* linkCoriolisVectorsW, const PxReal* jointDofForces,
 			 Cm::SpatialVectorF* jointDofIsW, InvStIs* linkInvStIsW, Cm::SpatialVectorF* jointDofISInvStIS, PxReal* joIntDofMinusStZExtW, PxReal* jointDofQStZIntIcW, 
@@ -1572,6 +1600,7 @@ namespace Dy
 		PxArray<PxSolverConstraintDesc> mStaticContactConstraints;
 		PxArray<PxSolverConstraintDesc> mStatic1DConstraints;
 		PxU32							mGPUDirtyFlags;
+		bool							mJcalcDirty;
 
 	} PX_ALIGN_SUFFIX(64);
 

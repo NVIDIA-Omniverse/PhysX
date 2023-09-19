@@ -113,8 +113,8 @@ namespace physx
 			void						setMaxDepenetrationVelocity(const float maxDepenetrationVelocity) { mCore.maxDepenetrationVelocity = maxDepenetrationVelocity; }
 			PxReal						getMaxDepenetrationVelocity() const { return mCore.maxDepenetrationVelocity; }
 
-			void						setNbCollisionPairUpdatesPerTimestep(const PxU32 frequency) { mCore.NbCollisionPairUpdatesPerTimestep = frequency; }
-			PxU32						getNbCollisionPairUpdatesPerTimestep() const { return mCore.NbCollisionPairUpdatesPerTimestep; }
+			void						setNbCollisionPairUpdatesPerTimestep(const PxU32 frequency) { mCore.nbCollisionPairUpdatesPerTimestep = frequency; }
+			PxU32						getNbCollisionPairUpdatesPerTimestep() const { return mCore.nbCollisionPairUpdatesPerTimestep; }
 
 			void						setNbCollisionSubsteps(const PxU32 frequency) { mCore.nbCollisionSubsteps = frequency; }
 			PxU32						getNbCollisionSubsteps() const { return mCore.nbCollisionSubsteps; }

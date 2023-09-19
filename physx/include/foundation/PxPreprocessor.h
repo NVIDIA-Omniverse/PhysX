@@ -366,6 +366,11 @@ Override macro
 #endif
 
 /**
+Final macro
+ */
+#define PX_FINAL final
+
+/**
 Alignment macros
 
 PX_ALIGN_PREFIX and PX_ALIGN_SUFFIX can be used for type alignment instead of aligning individual variables as follows:
@@ -411,11 +416,15 @@ Use these macro definitions to create warnings for deprecated functions
 General defines
 */
 
-// static assert
-#if(defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 7))) || (PX_APPLE_FAMILY) || (PX_SWITCH) || (PX_CLANG && PX_ARM) || (PX_CLANG && PX_A64)
-	#define PX_COMPILE_TIME_ASSERT(exp) typedef char PX_CONCAT(PxCompileTimeAssert_Dummy, __COUNTER__)[(exp) ? 1 : -1] __attribute__((unused))
+
+#if PX_LINUX && PX_CLANG && !(defined __CUDACC__)
+#define PX_COMPILE_TIME_ASSERT(exp) \
+_Pragma(" clang diagnostic push") \
+_Pragma(" clang diagnostic ignored \"-Wc++98-compat\"") \
+static_assert(exp, "") \
+_Pragma(" clang diagnostic pop")
 #else
-	#define PX_COMPILE_TIME_ASSERT(exp) typedef char PxCompileTimeAssert_Dummy[(exp) ? 1 : -1]
+#define PX_COMPILE_TIME_ASSERT(exp) static_assert(exp, "")
 #endif
 
 #if PX_GCC_FAMILY

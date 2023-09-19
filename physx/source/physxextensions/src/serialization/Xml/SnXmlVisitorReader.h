@@ -105,7 +105,7 @@ namespace physx { namespace Sn {
 		TObjType* outObject = static_cast<TObjType*>(const_cast<PxBase*>(collection.find(id)));
 		if (outObject == NULL)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"PxSerialization::createCollectionFromXml: "
 				"Reference to ID %d cannot be resolved. Make sure externalRefs collection is specified if required and "
 				"check Xml file for completeness.",
@@ -170,7 +170,7 @@ namespace physx { namespace Sn {
 	{	
 		PxAllocatorCallback& inAllocator = reader.mAllocator.getAllocator();
 		
-		TGeomType* shape = PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(TGeomType), "parseGeometry",  __FILE__, __LINE__ )), TGeomType);
+		TGeomType* shape = PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(TGeomType), "parseGeometry",  PX_FL)), TGeomType);
 		PxClassInfoTraits<TGeomType> info;
 		readComplexObj( reader, shape);
 		return shape;

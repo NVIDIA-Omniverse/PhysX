@@ -536,6 +536,8 @@ static void setEmpty(CenterExtents& box)
 	box.mExtents = PxVec3(-1.0f, -1.0f, -1.0f);
 }
 
+#define PX_INVALID_U64	0xffffffffffffffff
+
 // Data:
 // 1 bit for leaf/no leaf
 // 2 bits for child-node type
@@ -556,14 +558,14 @@ struct BVData : public physx::PxUserAllocated
 {
 	BVData();
 	CenterExtents	mAABB;
-	size_t			mData;
+	size_t			mData64;
 #ifdef GU_BV4_PRECOMPUTED_NODE_SORT
 	PxU32			mTempPNS;
 #endif
 };
 //#pragma pack()
 
-BVData::BVData() : mData(PX_INVALID_U32)
+BVData::BVData() : mData64(PX_INVALID_U64)
 {
 	setEmpty(mAABB);
 #ifdef GU_BV4_PRECOMPUTED_NODE_SORT
@@ -578,16 +580,16 @@ struct BV4Node : public physx::PxUserAllocated
 
 	BVData	mBVData[4];
 
-	PX_FORCE_INLINE	size_t			isLeaf(PxU32 i)			const	{ return mBVData[i].mData&1;							}
-	PX_FORCE_INLINE	PxU32			getPrimitive(PxU32 i)	const	{ return PxU32(mBVData[i].mData>>1);					}
-	PX_FORCE_INLINE	const BV4Node*	getChild(PxU32 i)		const	{ return reinterpret_cast<BV4Node*>(mBVData[i].mData);	}
+	PX_FORCE_INLINE	size_t			isLeaf(PxU32 i)			const	{ return mBVData[i].mData64 & 1;							}
+	PX_FORCE_INLINE	PxU32			getPrimitive(PxU32 i)	const	{ return PxU32(mBVData[i].mData64 >> 1);					}
+	PX_FORCE_INLINE	const BV4Node*	getChild(PxU32 i)		const	{ return reinterpret_cast<BV4Node*>(mBVData[i].mData64);	}
 
 	PxU32	getType()	const
 	{
 		PxU32 Nb=0;
 		for(PxU32 i=0;i<4;i++)
 		{
-			if(mBVData[i].mData!=PX_INVALID_U32)
+			if(mBVData[i].mData64!=PX_INVALID_U64)
 				Nb++;
 		}
 		return Nb;
@@ -683,15 +685,15 @@ static void setPrimitive(const BV4_AABBTree& source, BV4Node* node4, PxU32 i, co
 	PX_ASSERT(nbPrims<16);
 	const PxU32* indexBase = source.getIndices();
 	const PxU32* prims = node->getPrimitives();
-	const PxU32 offset = PxU32(prims - indexBase);
+	const PxU64 offset = PxU64(prims - indexBase);
 	for(PxU32 j=0;j<nbPrims;j++)
 	{
 		PX_ASSERT(prims[j] == offset+j);
 	}
-	const PxU32 primitiveIndex = (offset<<4)|(nbPrims&15);
+	const PxU64 primitiveIndex = (offset<<4)|(nbPrims&15);
 
 	setupBounds(node4, i, node, epsilon);
-	node4->mBVData[i].mData = (primitiveIndex<<1)|1;
+	node4->mBVData[i].mData64 = (primitiveIndex<<1)|1;
 }
 
 #ifdef GU_BV4_FILL_GAPS
@@ -707,7 +709,7 @@ static bool splitPrimitives(const BV4BuildParams& params, BV4Node* node4, PxU32 
 
 	const PxU32* indexBase = params.mSource.getIndices();
 	const PxU32* prims = node->getPrimitives();
-	PxU32 offset = PxU32(prims - indexBase);
+	PxU64 offset = PxU64(prims - indexBase);
 
 	// In theory we should reshuffle the list but it would mean updating the remap table again.
 	// A way to avoid that would be to virtually split & sort the triangles directly in the BV2
@@ -737,14 +739,14 @@ static bool splitPrimitives(const BV4BuildParams& params, BV4Node* node4, PxU32 
 			j++;
 		}
 		PX_ASSERT(bounds.isInside(node->mBV));
-		const PxU32 primitiveIndex = (offset<<4)|(currentNb&15);
+		const PxU64 primitiveIndex = (offset<<4)|(currentNb&15);
 
 //		SetupBounds(node4, i, node, context.mEpsilon);
 			node4->mBVData[i+ii].mAABB = bounds;
 			if(params.mEpsilon!=0.0f)
 				node4->mBVData[i+ii].mAABB.mExtents += PxVec3(params.mEpsilon);
 
-		node4->mBVData[i+ii].mData = (primitiveIndex<<1)|1;
+		node4->mBVData[i+ii].mData64 = (primitiveIndex<<1)|1;
 
 		offset += currentNb;
 	}
@@ -769,7 +771,7 @@ static BV4Node* setNode(const BV4_AABBTree& source, BV4Node* node4, PxU32 i, con
 #else
 		child = PX_NEW(BV4Node);
 #endif
-		node4->mBVData[i].mData = size_t(child);
+		node4->mBVData[i].mData64 = size_t(child);
 	}
 	return child;
 }
@@ -1090,7 +1092,7 @@ static void computeMaxValues(const BV4Node* current, PxVec3& CMax, PxVec3& EMax)
 {
 	for(PxU32 i=0; i<4; i++)
 	{
-		if(current->mBVData[i].mData != PX_INVALID_U32)
+		if(current->mBVData[i].mData64 != PX_INVALID_U64)
 		{
 			const CenterExtents& Box = current->mBVData[i].mAABB;
 #ifdef GU_BV4_USE_SLABS
@@ -1123,10 +1125,67 @@ static void computeMaxValues(const BV4Node* current, PxVec3& CMax, PxVec3& EMax)
 	}
 }
 
-// PT: duplicated for now.... 
+template<class T>
+static PX_FORCE_INLINE bool copyData(T* PX_RESTRICT dst, const BV4Node* PX_RESTRICT src, PxU32 i)
+{
+	if(src->isLeaf(i))
+	{
+		if(src->mBVData[i].mData64 > 0xffffffff)
+			return false;
+	}
 
-static void flattenQ(	BVDataPackedQ* const dest, const PxU32 box_id, PxU32& current_id, const BV4Node* current, PxU32& max_depth, PxU32& current_depth,
-						const PxVec3& CQuantCoeff, const PxVec3& EQuantCoeff, const PxVec3& mCenterCoeff, const PxVec3& mExtentsCoeff)
+	dst->mData = PxU32(src->mBVData[i].mData64);
+
+	//dst->mData = PxTo32(src->mBVData[i].mData);
+//	dst->mData = PxU32(src->mBVData[i].mData);
+//	dst->encodePNS(src->mBVData[i].mTempPNS);
+
+	return true;
+}
+
+namespace
+{
+	struct flattenQParams
+	{
+		PxVec3	mCQuantCoeff;
+		PxVec3	mEQuantCoeff;
+		PxVec3	mCenterCoeff;
+		PxVec3	mExtentsCoeff;
+	};
+}
+
+template<class T>
+static PX_FORCE_INLINE bool processNode(T* PX_RESTRICT data, const BV4Node* PX_RESTRICT current, PxU64* PX_RESTRICT nextIDs, const BV4Node** PX_RESTRICT childNodes, PxU32 i, PxU64& current_id, PxU32& nbToGo)
+{
+	const BV4Node* childNode = current->getChild(i);
+
+	const PxU64 nextID = current_id;
+#ifdef GU_BV4_USE_SLABS
+	current_id += 4;
+#else
+	const PxU32 childSize = childNode->getType();
+	current_id += childSize;
+#endif
+	const PxU32 childType = (childNode->getType() - 2) << 1;
+	const PxU64 data64 = size_t(childType + (nextID << GU_BV4_CHILD_OFFSET_SHIFT_COUNT));
+	if(data64 <= 0xffffffff)
+		data[i].mData = PxU32(data64);
+	else
+		return false;
+
+	//PX_ASSERT(data[i].mData == size_t(childType+(nextID<<3)));
+
+	nextIDs[nbToGo] = nextID;
+	childNodes[nbToGo] = childNode;
+	nbToGo++;
+
+#ifdef GU_BV4_PRECOMPUTED_NODE_SORT
+	data[i].encodePNS(current->mBVData[i].mTempPNS);
+#endif
+	return true;
+}
+
+static bool flattenQ(const flattenQParams& params, BVDataPackedQ* const dest, const PxU64 box_id, PxU64& current_id, const BV4Node* current, PxU32& max_depth, PxU32& current_depth)
 {
 	// Entering a new node => increase depth
 	current_depth++;
@@ -1143,12 +1202,12 @@ static void flattenQ(	BVDataPackedQ* const dest, const PxU32 box_id, PxU32& curr
 		const PxVec3 m = Box.mCenter - Box.mExtents;
 		const PxVec3 M = Box.mCenter + Box.mExtents;
 
-		dest[box_id + i].mAABB.mData[0].mCenter = PxI16(m.x * CQuantCoeff.x);
-		dest[box_id + i].mAABB.mData[1].mCenter = PxI16(m.y * CQuantCoeff.y);
-		dest[box_id + i].mAABB.mData[2].mCenter = PxI16(m.z * CQuantCoeff.z);
-		dest[box_id + i].mAABB.mData[0].mExtents = PxU16(PxI16(M.x * EQuantCoeff.x));
-		dest[box_id + i].mAABB.mData[1].mExtents = PxU16(PxI16(M.y * EQuantCoeff.y));
-		dest[box_id + i].mAABB.mData[2].mExtents = PxU16(PxI16(M.z * EQuantCoeff.z));
+		dest[box_id + i].mAABB.mData[0].mCenter = PxI16(m.x * params.mCQuantCoeff.x);
+		dest[box_id + i].mAABB.mData[1].mCenter = PxI16(m.y * params.mCQuantCoeff.y);
+		dest[box_id + i].mAABB.mData[2].mCenter = PxI16(m.z * params.mCQuantCoeff.z);
+		dest[box_id + i].mAABB.mData[0].mExtents = PxU16(PxI16(M.x * params.mEQuantCoeff.x));
+		dest[box_id + i].mAABB.mData[1].mExtents = PxU16(PxI16(M.y * params.mEQuantCoeff.y));
+		dest[box_id + i].mAABB.mData[2].mExtents = PxU16(PxI16(M.z * params.mEQuantCoeff.z));
 
 		if (1)
 		{
@@ -1166,8 +1225,8 @@ static void flattenQ(	BVDataPackedQ* const dest, const PxU32 box_id, PxU32& curr
 				do
 				{
 					CanLeave = true;
-					const float qmin = float(dest[box_id + i].mAABB.mData[j].mCenter) * mCenterCoeff[j];
-					const float qmax = float(PxI16(dest[box_id + i].mAABB.mData[j].mExtents)) * mExtentsCoeff[j];
+					const float qmin = float(dest[box_id + i].mAABB.mData[j].mCenter) * params.mCenterCoeff[j];
+					const float qmax = float(PxI16(dest[box_id + i].mAABB.mData[j].mExtents)) * params.mExtentsCoeff[j];
 
 					if (qmax<M[j])
 					{
@@ -1225,47 +1284,31 @@ static void flattenQ(	BVDataPackedQ* const dest, const PxU32 box_id, PxU32& curr
 		}
 #endif	// GU_BV4_USE_SLABS
 
-		dest[box_id + i].mData = PxU32(current->mBVData[i].mData);
-//		dest[box_id+i].encodePNS(current->mBVData[i].mTempPNS);
+		if(!copyData(&dest[box_id + i], current, i))
+			return false;
 	}
 
 	PxU32 NbToGo = 0;
-	PxU32 NextIDs[4] = { PX_INVALID_U32, PX_INVALID_U32, PX_INVALID_U32, PX_INVALID_U32 };
-	const BV4Node* ChildNodes[4] = { NULL,NULL,NULL,NULL };
+	PxU64 NextIDs[4] = { PX_INVALID_U64, PX_INVALID_U64, PX_INVALID_U64, PX_INVALID_U64 };
+	const BV4Node* ChildNodes[4] = { NULL, NULL, NULL, NULL };
 
 	BVDataPackedQ* data = dest + box_id;
 	for(PxU32 i=0; i<4; i++)
 	{
-		if(current->mBVData[i].mData != PX_INVALID_U32 && !current->isLeaf(i))
+		if(current->mBVData[i].mData64 != PX_INVALID_U64 && !current->isLeaf(i))
 		{
-			const BV4Node* ChildNode = current->getChild(i);
+			if(!processNode(data, current, NextIDs, ChildNodes, i, current_id, NbToGo))
+				return false;
 
-			const PxU32 NextID = current_id;
-#ifdef GU_BV4_USE_SLABS
-			current_id += 4;
-#else
-			const PxU32 ChildSize = ChildNode->getType();
-			current_id += ChildSize;
-#endif
-			const PxU32 ChildType = (ChildNode->getType() - 2) << 1;
-			data[i].mData = size_t(ChildType + (NextID << GU_BV4_CHILD_OFFSET_SHIFT_COUNT));
-			//PX_ASSERT(data[i].mData == size_t(ChildType+(NextID<<3)));
-
-			NextIDs[NbToGo] = NextID;
-			ChildNodes[NbToGo] = ChildNode;
-			NbToGo++;
-
-#ifdef GU_BV4_PRECOMPUTED_NODE_SORT
-			data[i].encodePNS(current->mBVData[i].mTempPNS);
-#endif
 //#define DEPTH_FIRST
 #ifdef DEPTH_FIRST
-			_Flatten(dest, NextID, current_id, ChildNode, max_depth, current_depth, CQuantCoeff, EQuantCoeff, mCenterCoeff, mExtentsCoeff, quantized);
+			if(!flattenQ(params, dest, NextID, current_id, ChildNode, max_depth, current_depth, CQuantCoeff, EQuantCoeff, mCenterCoeff, mExtentsCoeff))
+				return false;
 			current_depth--;
 #endif
 		}
 #ifdef GU_BV4_USE_SLABS
-		if (current->mBVData[i].mData == PX_INVALID_U32)
+		if (current->mBVData[i].mData64 == PX_INVALID_U64)
 		{
 			data[i].mAABB.mData[0].mExtents = 0;
 			data[i].mAABB.mData[1].mExtents = 0;
@@ -1281,17 +1324,18 @@ static void flattenQ(	BVDataPackedQ* const dest, const PxU32 box_id, PxU32& curr
 #ifndef DEPTH_FIRST
 	for(PxU32 i=0; i<NbToGo; i++)
 	{
-		flattenQ(dest, NextIDs[i], current_id, ChildNodes[i], max_depth, current_depth, CQuantCoeff, EQuantCoeff, mCenterCoeff, mExtentsCoeff);
+		if(!flattenQ(params, dest, NextIDs[i], current_id, ChildNodes[i], max_depth, current_depth))
+			return false;
 		current_depth--;
 	}
 #endif
 #ifndef GU_BV4_USE_NODE_POOLS
 	PX_DELETE(current);
 #endif
+	return true;
 }
 
-static void flattenNQ(	BVDataPackedNQ* const dest, const PxU32 box_id, PxU32& current_id, const BV4Node* current, PxU32& max_depth, PxU32& current_depth,
-						const PxVec3& CQuantCoeff, const PxVec3& EQuantCoeff, const PxVec3& mCenterCoeff, const PxVec3& mExtentsCoeff)
+static bool flattenNQ(BVDataPackedNQ* const dest, const PxU64 box_id, PxU64& current_id, const BV4Node* current, PxU32& max_depth, PxU32& current_depth)
 {
 	// Entering a new node => increase depth
 	current_depth++;
@@ -1312,47 +1356,31 @@ static void flattenNQ(	BVDataPackedNQ* const dest, const PxU32 box_id, PxU32& cu
 		dest[box_id + i].mAABB = current->mBVData[i].mAABB;
 #endif	// GU_BV4_USE_SLABS
 
-		dest[box_id + i].mData = PxU32(current->mBVData[i].mData);
-//		dest[box_id+i].encodePNS(current->mBVData[i].mTempPNS);
+		if(!copyData(&dest[box_id + i], current, i))
+			return false;
 	}
 
 	PxU32 NbToGo = 0;
-	PxU32 NextIDs[4] = { PX_INVALID_U32, PX_INVALID_U32, PX_INVALID_U32, PX_INVALID_U32 };
-	const BV4Node* ChildNodes[4] = { NULL,NULL,NULL,NULL };
+	PxU64 NextIDs[4] = { PX_INVALID_U64, PX_INVALID_U64, PX_INVALID_U64, PX_INVALID_U64 };
+	const BV4Node* ChildNodes[4] = { NULL, NULL, NULL, NULL };
 
 	BVDataPackedNQ* data = dest + box_id;
 	for(PxU32 i=0; i<4; i++)
 	{
-		if(current->mBVData[i].mData != PX_INVALID_U32 && !current->isLeaf(i))
+		if(current->mBVData[i].mData64 != PX_INVALID_U64 && !current->isLeaf(i))
 		{
-			const BV4Node* ChildNode = current->getChild(i);
+			if(!processNode(data, current, NextIDs, ChildNodes, i, current_id, NbToGo))
+				return false;
 
-			const PxU32 NextID = current_id;
-#ifdef GU_BV4_USE_SLABS
-			current_id += 4;
-#else
-			const PxU32 ChildSize = ChildNode->getType();
-			current_id += ChildSize;
-#endif
-			const PxU32 ChildType = (ChildNode->getType() - 2) << 1;
-			data[i].mData = size_t(ChildType + (NextID << GU_BV4_CHILD_OFFSET_SHIFT_COUNT));
-			//PX_ASSERT(data[i].mData == size_t(ChildType+(NextID<<3)));
-
-			NextIDs[NbToGo] = NextID;
-			ChildNodes[NbToGo] = ChildNode;
-			NbToGo++;
-
-#ifdef GU_BV4_PRECOMPUTED_NODE_SORT
-			data[i].encodePNS(current->mBVData[i].mTempPNS);
-#endif
 //#define DEPTH_FIRST
 #ifdef DEPTH_FIRST
-			_Flatten(dest, NextID, current_id, ChildNode, max_depth, current_depth, CQuantCoeff, EQuantCoeff, mCenterCoeff, mExtentsCoeff, quantized);
+			if(!flattenNQ(dest, NextID, current_id, ChildNode, max_depth, current_depth))
+				return false;
 			current_depth--;
 #endif
 		}
 #ifdef GU_BV4_USE_SLABS
-		if (current->mBVData[i].mData == PX_INVALID_U32)
+		if (current->mBVData[i].mData64 == PX_INVALID_U64)
 		{
 			data[i].mAABB.mCenter = PxVec3(0.0f);
 			data[i].mAABB.mExtents = PxVec3(0.0f);
@@ -1364,13 +1392,15 @@ static void flattenNQ(	BVDataPackedNQ* const dest, const PxU32 box_id, PxU32& cu
 #ifndef DEPTH_FIRST
 	for(PxU32 i=0; i<NbToGo; i++)
 	{
-		flattenNQ(dest, NextIDs[i], current_id, ChildNodes[i], max_depth, current_depth, CQuantCoeff, EQuantCoeff, mCenterCoeff, mExtentsCoeff);
+		if(!flattenNQ(dest, NextIDs[i], current_id, ChildNodes[i], max_depth, current_depth))
+			return false;
 		current_depth--;
 	}
 #endif
 #ifndef GU_BV4_USE_NODE_POOLS
 	PX_DELETE(current);
 #endif
+	return true;
 }
 
 static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Params, bool quantized, float epsilon)
@@ -1385,7 +1415,7 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 	{
 		const PxU32 NbSingleNodes = Params.mStats[0] * 2 + (Params.mStats[1] + Params.mStats[2]) * 3 + Params.mStats[3] * 4;
 
-		PxU32 CurID = Root->getType();
+		PxU64 CurID = Root->getType();
 		PxU32 InitData = PX_INVALID_U32;
 #ifdef GU_BV4_USE_SLABS
 		PX_UNUSED(NbSingleNodes);
@@ -1396,7 +1426,6 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 //		BVDataPacked* Nodes = PX_NEW(BVDataPacked)[NbNeeded];
 		void* nodes;
 		{
-
 			const PxU32 nodeSize = T->mQuantized ? sizeof(BVDataPackedQ) : sizeof(BVDataPackedNQ);
 			const PxU32 dataSize = nodeSize*NbNeeded;
 			nodes = PX_ALLOC(dataSize, "BV4 nodes");	// PT: PX_NEW breaks alignment here
@@ -1439,10 +1468,11 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 		PxU32 MaxDepth = 0;
 		PxU32 CurrentDepth = 0;
 
-		PxVec3 CQuantCoeff(0.0f);
-		PxVec3 EQuantCoeff(0.0f);
+		bool buildStatus;
+
 		if(T->mQuantized)
 		{
+			flattenQParams params;
 #ifdef GU_BV4_USE_SLABS
 			PxVec3 MinQuantCoeff, MaxQuantCoeff;
 
@@ -1470,8 +1500,8 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 			T->mExtentsOrMaxCoeff.y = MaxMax.y / MaxCoeff;
 			T->mExtentsOrMaxCoeff.z = MaxMax.z / MaxCoeff;
 
-			CQuantCoeff = MinQuantCoeff;
-			EQuantCoeff = MaxQuantCoeff;
+			params.mCQuantCoeff = MinQuantCoeff;
+			params.mEQuantCoeff = MaxQuantCoeff;
 #else
 			// Get max values
 			PxVec3 CMax(-FLT_MAX);
@@ -1504,17 +1534,28 @@ static bool BuildBV4FromRoot(BV4Tree& tree, BV4Node* Root, BV4BuildParams& Param
 			T->mExtentsOrMaxCoeff.x = EMax.x / ECoeff;
 			T->mExtentsOrMaxCoeff.y = EMax.y / ECoeff;
 			T->mExtentsOrMaxCoeff.z = EMax.z / ECoeff;
+
+			params.mCQuantCoeff = CQuantCoeff;
+			params.mEQuantCoeff = EQuantCoeff;
 #endif
-			flattenQ(reinterpret_cast<BVDataPackedQ*>(nodes), 0, CurID, Root, MaxDepth, CurrentDepth, CQuantCoeff, EQuantCoeff, T->mCenterOrMinCoeff, T->mExtentsOrMaxCoeff);
+			params.mCenterCoeff = T->mCenterOrMinCoeff;
+			params.mExtentsCoeff = T->mExtentsOrMaxCoeff;
+
+			buildStatus = flattenQ(params, reinterpret_cast<BVDataPackedQ*>(nodes), 0, CurID, Root, MaxDepth, CurrentDepth);
 		}
 		else
 		{
-			flattenNQ(reinterpret_cast<BVDataPackedNQ*>(nodes), 0, CurID, Root, MaxDepth, CurrentDepth, CQuantCoeff, EQuantCoeff, T->mCenterOrMinCoeff, T->mExtentsOrMaxCoeff);
+			buildStatus = flattenNQ(reinterpret_cast<BVDataPackedNQ*>(nodes), 0, CurID, Root, MaxDepth, CurrentDepth);
 		}
 
 #ifdef GU_BV4_USE_NODE_POOLS
 		Params.releaseNodes();
 #endif
+		if(!buildStatus)
+		{
+			T->mNodes = nodes;
+			return false;
+		}
 
 #ifdef GU_BV4_USE_SLABS
 		// PT: TODO: revisit this, don't duplicate everything
@@ -1810,7 +1851,7 @@ bool physx::Gu::BuildBV4Ex(BV4Tree& tree, SourceMeshBase& mesh, float epsilon, P
 //			printf("%d: %d\n", i, RD.mStats[i]);
 	}
 
-	if(mesh.getNbPrimitives()<= nbPrimitivePerLeaf)
+	if(mesh.getNbPrimitives() <= nbPrimitivePerLeaf)
 		return tree.init(&mesh, Source.getBV());
 
 	return BuildBV4Internal(tree, Source, &mesh, epsilon, quantized);

@@ -482,7 +482,7 @@ protected:
 
 	PX_INLINE                       PxParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
 	PX_INLINE                       PxParticleSystem(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
-	virtual     bool                isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxParticleSystem", name) || PxActor::isKindOf(name); }
+	virtual     bool                isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxParticleSystem", PxActor); }
 };
 
 

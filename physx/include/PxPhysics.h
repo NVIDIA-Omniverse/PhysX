@@ -822,10 +822,11 @@ public:
 	\param	[in] youngs					The young's modulus
 	\param	[in] poissons				The poissons's ratio
 	\param	[in] dynamicFriction		The dynamic friction coefficient
+	\param	[in] thickness				The cloth's thickness
 
 	@see PxFEMClothMaterial
 	*/
-	virtual PxFEMClothMaterial* createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
+	virtual PxFEMClothMaterial* createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness = 0.001f) = 0;
 
 	/**
 	\brief Return the number of FEM cloth materials that currently exist.

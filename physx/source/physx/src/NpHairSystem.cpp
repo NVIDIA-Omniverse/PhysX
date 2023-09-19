@@ -34,6 +34,7 @@
 #include "ScHairSystemSim.h"
 #include "NpFactory.h"
 #include "NpRigidDynamic.h"
+#include "NpArticulationJointReducedCoordinate.h"
 #include "NpArticulationLink.h"
 #include "ScBodyCore.h"
 #include "ScBodySim.h"
@@ -57,8 +58,7 @@ namespace physx
 		mCudaContextManager(&cudaContextManager),
 		mMemoryManager(NULL),
 		mHostMemoryAllocator(NULL),
-		mDeviceMemoryAllocator(NULL),
-		mRestPositionActor(NULL)
+		mDeviceMemoryAllocator(NULL)
 	{
 		init();
 	}
@@ -69,8 +69,7 @@ namespace physx
 		mCudaContextManager(&cudaContextManager),
 		mMemoryManager(NULL),
 		mHostMemoryAllocator(NULL),
-		mDeviceMemoryAllocator(NULL),
-		mRestPositionActor(NULL)
+		mDeviceMemoryAllocator(NULL)
 	{
 		init();
 	}
@@ -102,12 +101,6 @@ namespace physx
 		if (mRestPositionsInternal.size() > 0)
 			mRestPositionsInternal.reset();
 
-		if (mRestPositionTransformPinnedBuf.size() > 0)
-		{
-			mRestPositionTransformPinnedBuf.reset();
-			mCore.getShapeCore().getLLCore().mRestPositionsTransform = NULL;
-		}
-
 		mSoftbodyAttachments.reset();
 
 		if (mMemoryManager != NULL)
@@ -125,7 +118,7 @@ namespace physx
 
 		if (!getNpScene())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Querying bounds of a PxHairSystem which is not part of a PxScene is not supported.");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Querying bounds of a PxHairSystem which is not part of a PxScene is not supported.");
 			return PxBounds3::empty();
 		}
 
@@ -263,7 +256,7 @@ namespace physx
 		NP_WRITE_CHECK(npScene);
 
 		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
-		PX_CHECK_AND_RETURN(bendingRestAngles || llCore.mRestPositions, "PxHairSystem::setBendingRestAngles() NULL bendingRestAngles only allowed if restPositions have been set.");
+		PX_CHECK_AND_RETURN(bendingRestAngles || llCore.mRestPositionsD, "PxHairSystem::setBendingRestAngles() NULL bendingRestAngles only allowed if restPositions have been set.");
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxHairSystem::setBendingRestAngles() not allowed while simulation is running. Call will be ignored.");
 
@@ -344,30 +337,6 @@ namespace physx
 		NpScene* npScene = getNpScene();
 		NP_WRITE_CHECK(npScene);
 
-	//	NpPhysics::getInstance().notifyDeletionListenersUserRelease(this, PxArticulationBase::userData);
-
-		if(mRestPositionActor)
-		{
-			// Careful: If the restPositionActor is already destroyed, we must not call removeRigidAttachment
-			PxU32 numActors = npScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC);
-			PxArray<PxActor*> userBuffer(numActors);
-			numActors = npScene->getActors(PxActorTypeFlag::eRIGID_STATIC | PxActorTypeFlag::eRIGID_DYNAMIC, &userBuffer[0], userBuffer.size(), 0);
-
-			for(PxU32 i = 0; i < numActors; i++)
-			{
-				if(userBuffer[i]->getType() == PxActorType::eRIGID_STATIC || userBuffer[i]->getType() == PxActorType::eRIGID_DYNAMIC)
-				{
-					const PxRigidActor* rigidActor = static_cast<PxRigidActor*>(userBuffer[i]);
-					if(rigidActor == mRestPositionActor)
-					{
-						removeRigidAttachment(mRestPositionActor);
-						break;
-					}
-				}
-			}
-			mRestPositionActor = NULL;
-		}
-
 		if (npScene)
 		{
 			npScene->scRemoveHairSystem(*this);
@@ -383,25 +352,17 @@ namespace physx
 		NpDestroyHairSystem(this);
 	}
 	
-	void NpHairSystem::addRigidAttachment(const PxRigidActor* actor)
+	void NpHairSystem::addRigidAttachment(const PxRigidBody& rigidBody)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxHairSystem::addRigidAttachment: Hair system must be inserted into the scene.");
-		PX_CHECK_AND_RETURN((actor != NULL && actor->getScene() != NULL), "PxHairSystem::addRigidAttachment: Actor invalid or not part of a scene.");
-		PX_CHECK_AND_RETURN(getScene() == actor->getScene(), "PxHairSystem::addRigidAttachment: Actor and hair must be part of the same scene.");
+		PX_CHECK_AND_RETURN(rigidBody.getScene() != NULL, "PxHairSystem::addRigidAttachment: Actor not part of a scene.");
+		PX_CHECK_AND_RETURN(getScene() == rigidBody.getScene(), "PxHairSystem::addRigidAttachment: Actor and hair must be part of the same scene.");
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxHairSystem::addRigidAttachment: Illegal to call while simulation is running.");
 
-		if(actor->getConcreteType() == PxConcreteType::eRIGID_STATIC)
-		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
-				"PxHairSystem::addRigidAttachment does not support attachments to static actors. Use attachment to world (NULL) instead.");
-			return;
-		}
-
-		const Sc::BodyCore* attachmentBodyCore = getBodyCore(actor);
-
-		PX_CHECK_AND_RETURN(attachmentBodyCore != NULL, "PxHairSystem::addRigidAttachment: Attachment body must be rigid dynamic or articulation.");
+		const Sc::BodyCore* attachmentBodyCore = getBodyCore(&rigidBody);
+		PX_CHECK_AND_RETURN(attachmentBodyCore != NULL, "PxHairSystem::addRigidAttachment: Attachment body must be rigid dynamic or articulation link.");
 
 		if(attachmentBodyCore != NULL)
 		{
@@ -411,15 +372,15 @@ namespace physx
 		}
 	}
 
-	void NpHairSystem::removeRigidAttachment(const PxRigidActor* actor)
+	void NpHairSystem::removeRigidAttachment(const PxRigidBody& rigidBody)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN(getNpScene() != NULL, "PxHairSystem::removeRigidAttachment: Hair system must be inserted into the scene.");
-		PX_CHECK_AND_RETURN((actor != NULL && actor->getScene() != NULL), "PxHairSystem::removeRigidAttachment: Actor invalid or not part of a scene.");
+		PX_CHECK_AND_RETURN(rigidBody.getScene() != NULL, "PxHairSystem::removeRigidAttachment: Actor not part of a scene.");
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxHairSystem::removeRigidAttachment: Illegal to call while simulation is running.");
 
-		const Sc::BodyCore* attachmentBodyCore = getBodyCore(actor);
+		const Sc::BodyCore* attachmentBodyCore = getBodyCore(&rigidBody);
 		if(attachmentBodyCore != NULL)
 		{
 			const Sc::BodySim* bodySim = attachmentBodyCore->getSim();
@@ -475,8 +436,8 @@ namespace physx
 		return llCore.mRigidAttachments;
 	}
 
-	PxU32 NpHairSystem::addSoftbodyAttachment(const PxSoftBody& softbody, const PxU32* tetIds,
-		const PxVec4* tetmeshBarycentrics, const PxU32* hairVertices, PxU32 numAttachments)
+	PxU32 NpHairSystem::addSoftbodyAttachment(const PxSoftBody& softbody, const PxU32* tetIds, const PxVec4* tetmeshBarycentrics,
+		const PxU32* hairVertices, PxConeLimitedConstraint* constraints, PxReal* constraintOffsets, PxU32 numAttachments)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(getNpScene(), "PxHairSystem::addSoftbodyAttachment: Illegal to call while simulation is running.", 0xffFFffFF);
@@ -494,7 +455,8 @@ namespace physx
 		const NpSoftBody& npSoftbody = static_cast<const NpSoftBody&>(softbody);
 		const PxU32 softbodyIdx = npSoftbody.getCore().getGpuSoftBodyIndex();
 
-		const PxTetrahedronMesh& simMesh = *softbody.getSimulationMesh();
+		const PxTetrahedronMesh* simMesh = softbody.getSimulationMesh();
+		PX_CHECK_AND_RETURN_VAL(NULL != simMesh, "PxHairSystem::addSoftbodyAttachment: The softbody doesn't have a valid simulation mesh.", 0xffFFffFF);
 
 		const PxSoftBodyAuxData* auxData = softbody.getSoftBodyAuxData();
 		PX_CHECK_AND_RETURN_VAL(auxData->getConcreteType() == PxConcreteType::eSOFT_BODY_STATE, "PxHairSystem::addSoftbodyAttachment: The softbodies aux data must be of type Gu::SoftBodyAuxData.", 0xffFFffFF);
@@ -502,7 +464,6 @@ namespace physx
 
 		// Gu::BVTetrahedronMesh does not have a concrete type
 		const PxTetrahedronMesh* collisionMesh = softbody.getCollisionMesh();
-		// PX_CHECK_AND_RETURN_VAL(collisionMesh->getConcreteType() == ???, "PxHairSystem::addSoftbodyAttachment: The softbodies collision mesh must be of type Gu::BVTetrahedronMesh.", 0xffFFffFF);
 		const Gu::BVTetrahedronMesh* bvCollisionMesh = static_cast<const Gu::BVTetrahedronMesh*>(collisionMesh);
 
 		// assign handle by finding the first nonexistent key in the hashmap
@@ -519,23 +480,43 @@ namespace physx
 
 		// new attachments will be added to the end of the contiguous array
 		mSoftbodyAttachmentsOffsets[handle] = PxPair<PxU32, PxU32>(mSoftbodyAttachments.size(), numAttachments);
-		
+
 		mSoftbodyAttachments.reserve(mSoftbodyAttachments.size() + numAttachments);
 		for(PxU32 i=0; i<numAttachments; i++)
 		{
 			// convert to sim mesh tets/barycentrics
 			PxU32 simTetId;
 			PxVec4 simBarycentric;
-			Gu::convertSoftbodyCollisionToSimMeshTets(simMesh, *guAuxData, *bvCollisionMesh,
+			Gu::convertSoftbodyCollisionToSimMeshTets(*simMesh, *guAuxData, *bvCollisionMesh,
 				tetIds[i], tetmeshBarycentrics[i], simTetId, simBarycentric);
 
-			Dy::SoftbodyHairAttachment att;
-			att.hairVtxIdx= hairVertices[i];
-			att.softbodyNodeIdx = softbodyIdx;
-			att.tetBarycentric = simBarycentric;
-			att.tetId = simTetId;
+			Dy::SoftbodyHairAttachment attachment;
+			attachment.hairVtxIdx = hairVertices[i];
+			attachment.softbodyNodeIdx = softbodyIdx;
+			attachment.tetBarycentric = simBarycentric;
+			attachment.tetId = simTetId;
 
-			mSoftbodyAttachments.pushBack(att);
+			if(constraints)
+			{
+				const PxConeLimitedConstraint* constraint = constraints + i;
+				attachment.constraintOffset = constraintOffsets ? constraintOffsets[i] : 0.0f;
+				attachment.low_high_angle = PxVec4(constraint->mLowLimit, constraint->mHighLimit, constraint->mAngle, 0.f);
+				if(constraint->mAngle >= 0.f)
+				{
+					attachment.attachmentBarycentric = Gu::addAxisToSimMeshBarycentric(*simMesh, simTetId, simBarycentric, constraint->mAxis.getNormalized());
+				}
+				else
+				{
+					attachment.attachmentBarycentric = PxVec4(0.f, 0.f, 0.f, 0.f);
+				}
+			}
+			else
+			{
+				attachment.low_high_angle = PxVec4(-1.f, -1.f, -1.f, 0.f);
+				attachment.attachmentBarycentric = PxVec4(0.f, 0.f, 0.f, 0.f);
+			}
+
+			mSoftbodyAttachments.pushBack(attachment);
 		}
 
 		mCore.addAttachment(*npSoftbody.getCore().getSim()); // add edge for island generation
@@ -591,74 +572,43 @@ namespace physx
 	}
 
 
-	void NpHairSystem::setRestPositions(PxVec4* restPos, bool isGpuPtr, const PxTransform& transf, const PxRigidBody* actor)
+	void NpHairSystem::setRestPositions(PxVec4* restPos, bool isGpuPtr)
 	{
 		NP_WRITE_CHECK(getNpScene());
-		PX_CHECK_AND_RETURN((actor == NULL || actor->getScene() != NULL), "PxHairSystem::setRestPositions: Actor invalid or not part of a scene.");
-		PX_CHECK_AND_RETURN((actor == NULL || getScene() == actor->getScene()), "PxHairSystem::setRestPositions: Actor and hair must be part of the same scene.");
-
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxHairSystem::setRestPositions: Illegal to call while simulation is running.");
+
+		if(restPos == NULL)
+			isGpuPtr = false;
 
 		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
 
-		if(restPos)
+		if(!isGpuPtr)
 		{
-			if(!isGpuPtr)
-			{
-				// create fresh buffer
-				mRestPositionsInternal.reset();
-				mRestPositionsInternal.setAllocatorCallback(mDeviceMemoryAllocator);
-				mRestPositionsInternal.allocate(llCore.mNumVertices);
-				llCore.mRestPositions = mRestPositionsInternal.begin();
+			// create fresh buffer
+			mRestPositionsInternal.reset();
+			mRestPositionsInternal.setAllocatorCallback(mDeviceMemoryAllocator);
+			mRestPositionsInternal.allocate(llCore.mNumVertices);
+			llCore.mRestPositionsD = mRestPositionsInternal.begin();
 
-				// copy H2D
-				PxScopedCudaLock lock(*mCudaContextManager);
-				mCudaContextManager->getCudaContext()->memcpyHtoD(reinterpret_cast<CUdeviceptr>(llCore.mRestPositions), restPos,
-					sizeof(PxVec4) * llCore.mNumVertices);
-			}
-			else if (mRestPositionsInternal.begin() != restPos)
-			{
-				mRestPositionsInternal.reset();
-				llCore.mRestPositions = restPos;
-			}
-			// Don't clear mRestPositionsInternal if isGpuPtr==true and user has passed in the same pointer again
-
-			llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::eREST_POSITIONS;
+			// use user-provided restPos if available, otherwise current positions
+			mCudaContextManager->copyHToD<PxVec4>(llCore.mRestPositionsD, restPos ? restPos : llCore.mPositionInvMass, llCore.mNumVertices);
 		}
-
-		if(llCore.mRestPositionsTransform == NULL)
+		else if (mRestPositionsInternal.begin() != restPos)
 		{
-			mRestPositionTransformPinnedBuf.setAllocatorCallback(mHostMemoryAllocator);
-			mRestPositionTransformPinnedBuf.allocate(1);
-			llCore.mRestPositionsTransform = mRestPositionTransformPinnedBuf.begin();
+			mRestPositionsInternal.reset();
+			llCore.mRestPositionsD = restPos;
 		}
-		*llCore.mRestPositionsTransform = transf;
+		// Don't clear mRestPositionsInternal if isGpuPtr==true and user has passed in the same pointer again
 
-		// update actor relative to which the positions are specified
-		if(mRestPositionActor && actor != mRestPositionActor)
-		{
-			removeRigidAttachment(mRestPositionActor);
-			mRestPositionActor = NULL;
-			llCore.mRestPositionBodyNodeIdx = PxNodeIndex().getInd();
-		}
-		if(actor && actor != mRestPositionActor)
-		{
-			addRigidAttachment(actor); // ensure actor is in the same island
-			mRestPositionActor = actor;
-			llCore.mRestPositionBodyNodeIdx = actor->getInternalIslandNodeIndex().getInd();
-		}
-
-		llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::eREST_POSITION_TRANSFORM;
+		llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::eREST_POSITIONS;
 	}
 
-	PxVec4* NpHairSystem::getRestPositionsGpu(PxTransform* transf)
+	PxVec4* NpHairSystem::getRestPositionsGpu()
 	{
 		NP_READ_CHECK(getNpScene());
 
 		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
-		if(transf)
-			*transf = *llCore.mRestPositionsTransform;
-		return llCore.mRestPositions;
+		return llCore.mRestPositionsD;
 	}
 
 	void NpHairSystem::setLlGridSize(const PxBounds3& bounds)
@@ -685,7 +635,7 @@ namespace physx
 		llCore.mParams.mGridSize[2] = llCore.mParams.mGridSize[0];
 
 		if (static_cast<PxU32>(dimensions.maxElement() / cellSize) > 512)
-			PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__,
+			PxGetFoundation().error(physx::PxErrorCode::eDEBUG_WARNING, PX_FL,
 				"Grid of hair system appears very large (%i by %i by %i). Double check ratio of segment"
 				" length (%f) to extent of the hair system defined by the vertices (%f, %f, %f).",
 				llCore.mParams.mGridSize[0], llCore.mParams.mGridSize[1], llCore.mParams.mGridSize[2],
@@ -747,7 +697,8 @@ namespace physx
 		PxU32 numVertices = 0;
 		for (PxU32 strandIdx = 0; strandIdx < desc.numStrands; strandIdx++)
 		{
-			numVertices += desc.numVerticesPerStrand.at<PxU32>(strandIdx);
+			PxU32 strandLength = desc.numVerticesPerStrand.at<PxU32>(strandIdx);
+			numVertices += strandLength;
 			strandPastEndIndicesLocal[strandIdx] = numVertices;
 		}
 		if (desc.flags.isSet(PxHairSystemDescFlag::eDEVICE_MEMORY))
@@ -842,8 +793,7 @@ namespace physx
 		llCore.mVelocity = vertexVelocities;
 
 		// reset rest positions
-		llCore.mRestPositions = NULL;
-		setRestPositions(NULL, false, PxTransform(PxIdentity), NULL);
+		setRestPositions(NULL, false);
 
 		setLlGridSize(bounds);
 
@@ -953,6 +903,40 @@ namespace physx
 		return llCore.mWind.getXYZ() * llCore.mWind.w;
 	}
 
+	void NpHairSystem::setAerodynamicDrag(PxReal dragCoefficient)
+	{
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(dragCoefficient >= 0.0f, "PxHairSystem::setAerodynamicDrag: dragCoefficient must be greater or equal zero.");
+
+		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+		llCore.mParams.mAeroDrag = dragCoefficient;
+		llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+	}
+
+	void NpHairSystem::setAerodynamicLift(PxReal liftCoefficient)
+	{
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(liftCoefficient >= 0.0f, "PxHairSystem::setAerodynamicLift: liftCoefficient must be greater or equal zero.");
+
+		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+		llCore.mParams.mAeroLift = liftCoefficient;
+		llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+	}
+
+	PxReal NpHairSystem::getAerodynamicDrag() const
+	{
+		NP_READ_CHECK(getNpScene());
+		const Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+		return llCore.mParams.mAeroDrag;
+	}
+
+	PxReal NpHairSystem::getAerodynamicLift() const
+	{
+		NP_READ_CHECK(getNpScene());
+		const Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+		return llCore.mParams.mAeroLift;
+	}
+
 	void NpHairSystem::setFrictionParameters(PxReal interHairVelDamping, PxReal frictionCoeff)
 	{
 		NP_WRITE_CHECK(getNpScene());
@@ -976,13 +960,32 @@ namespace physx
 		frictionCoeff = llCore.mParams.mFrictionCoeff;
 	}
 
+	void NpHairSystem::setMaxDepenetrationVelocity(PxReal maxDepenetrationVelocity)
+	{
+		NP_WRITE_CHECK(getNpScene());
+		PX_CHECK_AND_RETURN(maxDepenetrationVelocity > 0.0f, "PxHairSystem::setMaxDepenetrationVelocity maxDepenetrationVelocity must be larger than zero.");
+
+		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+
+		llCore.mParams.mMaxDepenetrationVelocity = maxDepenetrationVelocity;
+
+		llCore.mDirtyFlags |= Dy::HairSystemDirtyFlag::ePARAMETERS;
+	}
+
+	PxReal NpHairSystem::getMaxDepenetrationVelocity() const
+	{
+		NP_READ_CHECK(getNpScene());
+		const Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
+		return llCore.mParams.mMaxDepenetrationVelocity;
+	}
+
 	void NpHairSystem::setShapeCompliance(PxReal startCompliance, PxReal strandRatio)
 	{
 		NP_WRITE_CHECK(getNpScene());
 		PX_CHECK_AND_RETURN(strandRatio >= 0.0f, "PxHairSystem::setShapeCompliance strandRatio must not be negative.");
 
 		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
-		PX_CHECK_AND_RETURN(llCore.mRestPositions, "PxHairSystem::setShapeCompliance restPositions must be set before enabling shape compliance");
+		PX_CHECK_AND_RETURN(llCore.mRestPositionsD, "PxHairSystem::setShapeCompliance restPositions must be set before enabling shape compliance");
 
 		llCore.mParams.mShapeCompliance[0] = startCompliance;
 		llCore.mParams.mShapeCompliance[1] = strandRatio;
@@ -1095,7 +1098,7 @@ namespace physx
 		PX_CHECK_AND_RETURN(numVerticesPerGroup >= 2 * numVerticesOverlap, "PxHairSystem::setShapeMatchingParameters numVerticesOverlap must at most be numVerticesPerGroup/2.");
 
 		Dy::HairSystemCore& llCore = mCore.getShapeCore().getLLCore();
-		PX_CHECK_AND_RETURN(llCore.mRestPositions, "PxHairSystem::setShapeMatchingParameters restPositions must be set before enabling shape compliance");
+		PX_CHECK_AND_RETURN(llCore.mRestPositionsD, "PxHairSystem::setShapeMatchingParameters restPositions must be set before enabling shape compliance");
 
 		llCore.mParams.mShapeMatchingCompliance = compliance;
 		llCore.mParams.mShapeMatchingBeta = linearStretching;

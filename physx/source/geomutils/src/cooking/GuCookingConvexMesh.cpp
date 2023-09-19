@@ -112,8 +112,20 @@ static bool cookConvexMeshInternal(const PxCookingParams& params, const PxConvex
 	if(!meshBuilder.build(desc, params.gaussMapLimit, false, hullLib))
 		return false;
 
+	PxConvexMeshCookingResult::Enum result = PxConvexMeshCookingResult::eSUCCESS;
+	if (polygonsLimitReached)
+		result = PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED;
+
+	// AD: we check this outside of the actual convex cooking because we can still cook a valid convex hull
+	// but we won't be able to use it on GPU.
+	if (((desc.flags & PxConvexFlag::eGPU_COMPATIBLE) || params.buildGPUData) && !meshBuilder.checkExtentRadiusRatio())
+	{
+		result = PxConvexMeshCookingResult::eNON_GPU_COMPATIBLE;
+		outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Cooking::cookConvexMesh: GPU-compatible convex hull could not be built because of oblong shape. Will fall back to CPU collision, particles and deformables will not collide with this mesh!");
+	}
+
 	if(condition)
-		*condition = polygonsLimitReached ? PxConvexMeshCookingResult::ePOLYGONS_LIMIT_REACHED : PxConvexMeshCookingResult::eSUCCESS;
+		*condition = result;
 
 	return true;
 }

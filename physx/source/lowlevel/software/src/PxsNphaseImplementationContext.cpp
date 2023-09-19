@@ -514,6 +514,7 @@ static void processContactManagers(PxsContext& context, PxsContactManagers& narr
 	taskPool.lock();
 	/*const*/ PxU32 nbCmsToProcess = narrowPhasePairs.mContactManagerMapping.size();
 
+	// PT: TASK-CREATION TAG
 	if(!gUseNewTaskAllocationScheme)
 	{
 		for(PxU32 a=0; a<nbCmsToProcess;)
@@ -577,7 +578,7 @@ void PxsNphaseImplementationContext::processContactManagerSecondPass(PxReal dt, 
 	processContactManagers(mContext, mNewNarrowPhasePairs, mCmTasks, dt, mNewNarrowPhasePairs.mOutputContactManagers.begin(), continuation, mModifyCallback);
 }
 
-void PxsNphaseImplementationContext::updateContactManager(PxReal dt, bool /*hasBoundsArrayChanged*/, bool /*hasContactDistanceChanged*/, PxBaseTask* continuation, 
+void PxsNphaseImplementationContext::updateContactManager(PxReal dt, bool /*hasContactDistanceChanged*/, PxBaseTask* continuation, 
 	PxBaseTask* firstPassNpContinuation, Cm::FanoutTask* /*updateBoundAndShapeTask*/)
 {
 	PX_PROFILE_ZONE("Sim.queueNarrowPhase", mContext.mContextID);

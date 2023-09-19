@@ -222,7 +222,7 @@ namespace physx { namespace profile {
 
 } }
 
-#define PX_PROFILE_NEW( allocator, dtype ) new (physx::profile::PxProfileAllocate<dtype>( allocator, __FILE__, __LINE__ )) dtype
+#define PX_PROFILE_NEW( allocator, dtype ) new (physx::profile::PxProfileAllocate<dtype>( allocator, PX_FL)) dtype
 #define PX_PROFILE_DELETE( allocator, obj ) physx::profile::PxProfileDeleteAndDeallocate( allocator, obj );
 
 #endif

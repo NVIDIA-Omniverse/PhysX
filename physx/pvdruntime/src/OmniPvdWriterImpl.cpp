@@ -156,7 +156,7 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(O
 		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(*mStream, OmniPvdDataType::eFLAGS_WORD);
-		mStream->writeBytes((const uint8_t*)&enumClassHandle, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)&enumClassHandle, sizeof(OmniPvdClassHandle));
 		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
 		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;
@@ -166,7 +166,7 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerFlagsAttribute(O
 	}
 }
 
-OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, uint32_t value)
+OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(OmniPvdClassHandle classHandle, const char* attributeName, OmniPvdEnumValueType value)
 {
 	setVersionHelper();
 	if (mStream) {
@@ -176,7 +176,7 @@ OmniPvdAttributeHandle OMNI_PVD_CALL OmniPvdWriterImpl::registerEnumValue(OmniPv
 		mStream->writeBytes((const uint8_t*)&classHandle, sizeof(OmniPvdClassHandle));
 		mStream->writeBytes((const uint8_t*)&mLastAttributeHandle, sizeof(OmniPvdAttributeHandle));
 		writeDataType(*mStream, OmniPvdDataType::eENUM_VALUE);
-		mStream->writeBytes((const uint8_t*)&value, sizeof(uint32_t));
+		mStream->writeBytes((const uint8_t*)&value, sizeof(OmniPvdEnumValueType));
 		mStream->writeBytes((const uint8_t*)&attribNameLen, sizeof(uint16_t));
 		mStream->writeBytes((const uint8_t*)attributeName, attribNameLen);
 		return mLastAttributeHandle;

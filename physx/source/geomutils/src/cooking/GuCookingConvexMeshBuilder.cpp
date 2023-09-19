@@ -530,12 +530,17 @@ void ConvexMeshBuilder::computeInternalObjects()
 			data.mInternal.mRadius = dist;
 	}
 
-	ComputeInternalExtent(data, hullPolys);		
+	ComputeInternalExtent(data, hullPolys);
 
 	PX_ASSERT(PxVec3(mHullData.mInternal.mExtents[0], mHullData.mInternal.mExtents[1], mHullData.mInternal.mExtents[2]).isFinite());
 	PX_ASSERT(mHullData.mInternal.mExtents[0] != 0.0f);
 	PX_ASSERT(mHullData.mInternal.mExtents[1] != 0.0f);
 	PX_ASSERT(mHullData.mInternal.mExtents[2] != 0.0f);
+}
+
+bool ConvexMeshBuilder::checkExtentRadiusRatio()
+{
+	return mHullData.checkExtentRadiusRatio();
 }
 
 void ConvexMeshBuilder::computeSDF(const PxConvexMeshDesc& desc)

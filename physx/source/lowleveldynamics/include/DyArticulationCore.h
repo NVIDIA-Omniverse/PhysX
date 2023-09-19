@@ -62,11 +62,7 @@ namespace physx
 				eTARGETPOSE = 1 << 2,
 				eTARGETVELOCITY = 1 << 3,
 				eARMATURE = 1 << 4,
-				eLIMIT = 1 << 5,
-				eDRIVE = 1 << 6,
-				eJOINT_POS = 1 << 7,
-				eJOINT_VEL = 1 << 8,
-				eALL = eMOTION | eFRAME | eTARGETPOSE | eTARGETVELOCITY  | eARMATURE | eLIMIT | eDRIVE | eJOINT_POS | eJOINT_VEL
+				eALL = eMOTION | eFRAME | eTARGETPOSE | eTARGETVELOCITY | eARMATURE
 			};
 		};
 

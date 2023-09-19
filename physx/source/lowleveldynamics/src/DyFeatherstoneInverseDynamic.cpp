@@ -278,7 +278,7 @@ namespace Dy
 
 
 	bool FeatherstoneArticulation::applyCacheToDest(ArticulationData& data, PxArticulationCache& cache,
-		PxReal* jVelocities, PxReal* jAccelerations, PxReal* jPositions, PxReal* jointForces,
+		PxReal* jVelocities, PxReal* jPositions, PxReal* jointForces, PxReal* jointTargetPositions, PxReal* jointTargetVelocities,
 		const PxArticulationCacheFlags flag, bool& shouldWake)
 	{
 		bool needsScheduling = !mGPUDirtyFlags;
@@ -295,12 +295,6 @@ namespace Dy
 			}
 
 			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_VELOCITIES;
-		}
-
-		if (flag & PxArticulationCacheFlag::eACCELERATION)
-		{
-			copyJointData(data,  jAccelerations, cache.jointAcceleration);
-			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ACCELERATIONS;
 		}
 
 		if (flag & PxArticulationCacheFlag::eROOT_TRANSFORM)
@@ -320,7 +314,6 @@ namespace Dy
 			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_ROOT_VELOCITIES;
 		}
 		
-
 		if (flag & PxArticulationCacheFlag::ePOSITION)
 		{
 			copyJointData(data, jPositions, cache.jointPosition);
@@ -340,6 +333,37 @@ namespace Dy
 			}
 			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_FORCES;
 		}
+
+		if (flag & PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS)
+		{
+			const PxU32 dofCount = data.getDofs();
+			for (PxU32 i = 0; i < dofCount; ++i)
+			{
+				const PxReal jt = cache.jointTargetPositions[i];
+				localShouldWake = localShouldWake || jt != jPositions[i];
+				jointTargetPositions[i] = jt;
+			}
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_POS;
+		}
+
+		if (flag & PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES)
+		{
+			const PxU32 dofCount = data.getDofs();
+			for (PxU32 i = 0; i < dofCount; ++i)
+			{
+				const PxReal jv = cache.jointTargetVelocities[i];
+				localShouldWake = localShouldWake || jv != jVelocities[i];
+				jointTargetVelocities[i] = jv;
+			}
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_VEL;
+		}
+
+		// the updateKinematic functions rely on updated joint frames.
+		if (mJcalcDirty)
+		{
+			jcalc(data);
+		}
+		mJcalcDirty = false;
 
 		if (flag & (PxArticulationCacheFlag::ePOSITION | PxArticulationCacheFlag::eROOT_TRANSFORM))
 		{
@@ -419,7 +443,11 @@ namespace Dy
 
 	void FeatherstoneArticulation::initializeCommonData()
 	{
-		jcalc(mArticulationData);
+		if (mJcalcDirty)
+		{
+			jcalc(mArticulationData);
+			mJcalcDirty = false;
+		}
 
 		{
 			//constants
@@ -450,7 +478,7 @@ namespace Dy
 
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Articulation::getGeneralisedGravityForce() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getGeneralisedGravityForce() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -545,7 +573,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Articulation::getCoriolisAndCentrifugalForce() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getCoriolisAndCentrifugalForce() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -575,7 +603,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Articulation::getCoriolisAndCentrifugalForce() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getCoriolisAndCentrifugalForce() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -626,7 +654,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "ArticulationHelper::getJointForce() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "ArticulationHelper::getJointForce() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -926,7 +954,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "ArticulationHelper::getCoefficientMatrix() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "ArticulationHelper::getCoefficientMatrix() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -1283,7 +1311,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "ArticulationHelper::getCoefficientMatrix() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "ArticulationHelper::getCoefficientMatrix() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -2053,7 +2081,7 @@ namespace Dy
 	
 	}
 
-	//calcualte a single column of H, jointForce is equal to a single column of H
+	//calculate a single column of H, jointForce is equal to a single column of H
 	void FeatherstoneArticulation::calculateMassMatrixColInv(ScratchData& scratchData)
 	{
 		const PxU32 linkCount = mArticulationData.getLinkCount();
@@ -2098,7 +2126,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "ArticulationHelper::getGeneralizedMassMatrix() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "ArticulationHelper::getGeneralizedMassMatrix() commonInit need to be called first to initialize data!");
 			return;
 		}
 
@@ -2118,7 +2146,7 @@ namespace Dy
 	{
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "ArticulationHelper::getGeneralizedMassMatrix() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "ArticulationHelper::getGeneralizedMassMatrix() commonInit need to be called first to initialize data!");
 			return;
 		}
 

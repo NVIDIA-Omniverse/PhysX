@@ -38,7 +38,7 @@ void Collection::add(PxBase& object, PxSerialObjectId id)
 	{
 		if( originId != id)
 		{
-			 PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+			 PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 		        "PxCollection::add called for an object that has an associated id already present in the collection!");
 		}
 		return;		   
@@ -48,7 +48,7 @@ void Collection::add(PxBase& object, PxSerialObjectId id)
 	{		
 		if(!mIds.insert(id, &object))
 		{
-		   PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__,
+		   PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL,
 		        "PxCollection::add called with an id which is already used in the collection");
 		   return;	
 		}

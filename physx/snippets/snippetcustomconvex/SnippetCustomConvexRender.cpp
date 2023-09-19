@@ -96,9 +96,9 @@ RenderMesh* createRenderCylinder(float height, float radius, float margin)
 {
 	struct InternalRenderHelper
 	{
-		InternalRenderHelper(float height, float radius, float margin)
+		InternalRenderHelper(float height_, float radius_, float margin_)
 			:
-			height(height), radius(radius), margin(margin)
+			height(height_), radius(radius_), margin(margin_)
 		{
 			mesh = new RenderMesh();
 			halfHeight = height * 0.5f;
@@ -209,9 +209,9 @@ RenderMesh* createRenderCone(float height, float radius, float margin)
 {
 	struct InternalRenderHelper
 	{
-		InternalRenderHelper(float height, float radius, float margin)
+		InternalRenderHelper(float height_, float radius_, float margin_)
 			:
-			height(height), radius(radius), margin(margin)
+			height(height_), radius(radius_), margin(margin_)
 		{
 			mesh = new RenderMesh();
 

@@ -52,6 +52,9 @@ struct HairSystemSimParameters
 	PxReal mInterHairRepulsion;       // strength of the repulsion field
 	PxReal mInterHairVelocityDamping; // friction based on interpolated vel field
 	PxReal mFrictionCoeff;            // coulomb friction coefficient for collisions (internal and external)
+	PxReal mMaxDepenetrationVelocity; // max velocity delta coming out of collision responses
+	PxReal mAeroDrag;                 // the aerodynamic drag coefficient
+	PxReal mAeroLift;                 // the aerodynamic lift coefficient
 	PxReal mBendingCompliance;
 	PxReal mTwistingCompliance;
 	int mGridSize[3];                 // number of cells in x,y,z directions
@@ -65,6 +68,9 @@ struct HairSystemSimParameters
 	PxU16 mShapeMatchingNumVertsPerGroup;
 	PxU16 mShapeMatchingNumVertsOverlap;
 
+	PxU32 mRestPositionTransformNumVertsPerStrand; // how many vertices of each strand to use for computing the rest
+	                                               // position targets for global shape preservation
+
 	HairSystemSimParameters()
 	: mFlags(0)
 	, mSegmentLength(0.1f)
@@ -72,6 +78,9 @@ struct HairSystemSimParameters
 	, mInterHairRepulsion(0.0f)
 	, mInterHairVelocityDamping(0.03f)
 	, mFrictionCoeff(0.0f)
+	, mMaxDepenetrationVelocity(PX_MAX_F32)
+	, mAeroDrag(0.0f)
+	, mAeroLift(0.0f)
 	, mBendingCompliance(-1.0f)
 	, mTwistingCompliance(-1.0f)
 	, mShapeCompliance(-1.0f)
@@ -82,6 +91,7 @@ struct HairSystemSimParameters
 	, mShapeMatchingBeta(0.0f)
 	, mShapeMatchingNumVertsPerGroup(10)
 	, mShapeMatchingNumVertsOverlap(5)
+	, mRestPositionTransformNumVertsPerStrand(2)
 	{
 		// grid size must be powers of two
 		mGridSize[0] = 32;
@@ -93,12 +103,18 @@ struct HairSystemSimParameters
 PX_ALIGN_PREFIX(16)
 struct SoftbodyHairAttachment
 {
-	PxVec4 tetBarycentric; // 16 16 // must be aligned, is being loaded as float4
-	PxU32 tetId;           //  4 20
-	PxU32 softbodyNodeIdx; //  4 24
-	PxU32 hairVtxIdx;      //  4 28
-	PxU32 padding;         //  4 32
-} PX_ALIGN_SUFFIX(16);
+	PxVec4 tetBarycentric; // must be aligned, is being loaded as float4
+	PxU32 tetId;
+	PxU32 softbodyNodeIdx;
+	PxU32 hairVtxIdx;
+
+	PxReal constraintOffset;
+	PxVec4 low_high_angle;
+	PxVec4 attachmentBarycentric;
+}
+PX_ALIGN_SUFFIX(16);
+
+PX_COMPILE_TIME_ASSERT(sizeof(SoftbodyHairAttachment) % 16 == 0);
 
 struct HairSystemCore
 {
@@ -130,9 +146,7 @@ struct HairSystemCore
 	PxReal* mTwistingRestPositionsGpuSim;
 
 	// rest positions
-	PxVec4* mRestPositions; // Gpu buffer
-	PxTransform* mRestPositionsTransform;
-	PxU64 mRestPositionBodyNodeIdx;
+	PxVec4* mRestPositionsD; // Gpu buffer
 
 	// Attachments to rigids
 	PxParticleRigidAttachment* mRigidAttachments; // Gpu buffer
@@ -169,9 +183,7 @@ struct HairSystemCore
 	, mStrandPastEndIndicesGpuSim(NULL)
 	, mPositionInvMassGpuSim(NULL)
 	, mTwistingRestPositionsGpuSim(NULL)
-	, mRestPositions(NULL)
-	, mRestPositionsTransform(NULL)
-	, mRestPositionBodyNodeIdx(PxNodeIndex().getInd())
+	, mRestPositionsD(NULL)
 	, mRigidAttachments(NULL)
 	, mNumRigidAttachments(0)
 	, mSoftbodyAttachments(NULL)

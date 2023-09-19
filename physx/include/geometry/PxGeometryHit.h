@@ -181,8 +181,8 @@ struct PxGeomSweepHit : PxLocationHit
 */
 struct PxGeomIndexPair
 {
-    PX_FORCE_INLINE PxGeomIndexPair()													{}
-    PX_FORCE_INLINE PxGeomIndexPair(PxU32	_id0, PxU32 _id1) : id0(_id0), id1(_id1)	{}
+    PX_FORCE_INLINE PxGeomIndexPair()												{}
+    PX_FORCE_INLINE PxGeomIndexPair(PxU32 _id0, PxU32 _id1) : id0(_id0), id1(_id1)	{}
 
 	PxU32	id0, id1;
 };

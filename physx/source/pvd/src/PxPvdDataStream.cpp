@@ -853,7 +853,7 @@ PvdDataStream* PvdDataStream::create(PxPvd* pvd)
 {
 	if(pvd == NULL)
 	{
-        PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PvdDataStream::create - pvd must be non-NULL!");
+        PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PvdDataStream::create - pvd must be non-NULL!");
 	    return NULL;
 	}
 

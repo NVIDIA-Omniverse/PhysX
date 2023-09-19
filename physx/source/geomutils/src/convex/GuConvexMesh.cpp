@@ -99,16 +99,11 @@ ConvexMesh::~ConvexMesh()
 
 bool ConvexMesh::isGpuCompatible() const
 {
-	PxReal maxR = PxMax(mHullData.mInternal.mExtents[0], PxMax(mHullData.mInternal.mExtents[1], mHullData.mInternal.mExtents[2]));
-	PxReal minR = mHullData.mInternal.mRadius;
-
-	PxReal ratio = maxR/minR;
-
 	return mHullData.mNbHullVertices <= 64 &&
 		mHullData.mNbPolygons <= 64 &&
 		mHullData.mPolygons[0].mNbVerts <= 32 &&
 		mHullData.mNbEdges.isBitSet() &&
-		ratio < 100.f;
+		mHullData.checkExtentRadiusRatio();
 }
 
 void ConvexMesh::exportExtraData(PxSerializationContext& context)
@@ -188,6 +183,8 @@ static bool convexHullLoad(ConvexHullData& data, PxInputStream& stream, PxBitAnd
 	void* mDataMemory = PX_ALLOC(bytesNeeded, "ConvexHullData data");
 
 	PxU8* address = reinterpret_cast<PxU8*>(mDataMemory);
+
+	PX_ASSERT(address);
 
 	data.mPolygons				= reinterpret_cast<HullPolygonData*>(address);	address += sizeof(HullPolygonData) * data.mNbPolygons;
 	PxVec3* mDataHullVertices	= reinterpret_cast<PxVec3*>(address);			address += sizeof(PxVec3) * data.mNbHullVertices;

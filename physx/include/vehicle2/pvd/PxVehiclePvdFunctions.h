@@ -146,6 +146,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 \brief Register object instances in omnipvd that will be used to reflect the brake and steer command response parameters of a vehicle instance.
 \param[in] brakeResponseParams is an array of brake command response parameters.
 \param[in] steerResponseParams describes the steer command response parameters.
+\param[in] ackermannParams defines the Ackermann steer correction.
 \param[in] brakeResponseStates is an array of brake responses torqyes,
 \param[in] steerResponseStates is an array of steer response angles.
 \param[in] attributeHandles contains a general description of vehicle parameters and states that will be reflected in omnipvd.
@@ -153,6 +154,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If brakeResponseParams is empty, omnipvd will not reflect any brake command response parameters. 
 \note If steerResponseParams is NULL, omnipvd will not reflect the steer command response parameters.
+\note If ackermannParams is NULL, omnipvd will not reflect any Ackermann steer correction parameters.
 \note If brakeResponseStates is empty, omnipvd will not reflect any brake command response state.
 \note If steerResponseStates is empty, omnipvd will not reflect any steer command response state.
 @see PxVehiclePvdAttributesCreate
@@ -162,6 +164,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 void PxVehiclePvdCommandResponseRegister
 (const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams, 
+ const PxVehicleAckermannParams* ackermannParams,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& attributeHandles,
@@ -172,6 +175,7 @@ void PxVehiclePvdCommandResponseRegister
 \param[in] axleDesc is a description of the wheels and axles of a vehicle.
 \param[in] brakeResponseParams is an array of brake command response parameters.
 \param[in] steerResponseParams describes the steer command response parameters.
+\param[in] ackermannParams defines the Ackermann steer correction.
 \param[in] brakeResponseStates is an array of brake response torques.
 \param[in] steerResponseStates is an array of steer response angles.
 \param[in] attributeHandles contains a general description of vehicle parameters and states that will be reflected in omnipvd.
@@ -181,6 +185,8 @@ void PxVehiclePvdCommandResponseRegister
 the brake command response parameters will not be updated in omnipvd.
 \note If steerResponseParams is non-NULL but a NULL value was used in PxVehiclePvdCommandResponseRegister(), 
 the steer command parameters will not be updated in omnipvd. 
+\note If ackermannParams is non-NULL but a NULL value was used in PxVehiclePvdCommandResponseRegister(),
+the Ackermann steer correction parameters will not be updated in omnipvd.
 \note If brakeResponseStates is empty but a non-empty array was used in PxVehiclePvdCommandResponseRegister(), 
 the brake response states will not be updated in omnipvd.
 \note If steerResponseStates is empty but a non-empty array was used in PxVehiclePvdCommandResponseRegister(), 
@@ -194,6 +200,7 @@ void PxVehiclePvdCommandResponseWrite
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams, 
+ const PxVehicleAckermannParams* ackermannParams,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& attributeHandles,
@@ -398,7 +405,8 @@ void PxVehiclePvdDirectDrivetrainWrite
 /**
 \brief Register object instances in omnipvd that will be used to reflect the engine drivetrain of a vehicle instance.
 \param[in] commandState describes the control values applied to the vehicle.
-\param[in] transmissionCommandState describes the state of the engine drive transmission.
+\param[in] engineDriveTransmissionCommandState describes the state of the engine drive transmission.
+\param[in] tankDriveTransmissionCommandState describes the state of the tank drive transmission.
 \param[in] clutchResponseParams describes the vehicle's response to a clutch command.
 \param[in] clutchParams describes the vehicle's clutch.
 \param[in] engineParams describes the engine.
@@ -406,6 +414,7 @@ void PxVehiclePvdDirectDrivetrainWrite
 \param[in] autoboxParams describes the automatic gearbox.
 \param[in] multiWheelDiffParams describes a multiwheel differential without limited slip compensation.
 \param[in] fourWheelDiffPrams describes a differential that delivers torque to four drive wheels with limited slip compensation.
+\param[in] tankDiffParams describes the operation of the tank differential.
 \param[in] clutchResponseState is the instantaneous reponse of the clutch to a clutch command.
 \param[in] throttleResponseState is the instantaneous response to a throttle command.
 \param[in] engineState is the instantaneous state of the engine.
@@ -417,12 +426,16 @@ void PxVehiclePvdDirectDrivetrainWrite
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any pointer is NULL, the corresponding data will not be reflected in omnipvd.
+\note At most one of engineDriveTransmissionCommandState and tankDriveTransmissionCommandState is expected to be non-NULL.
+\note At most one of multiWheelDiffParams, fourWheelDiffParams and tankDiffParams is expected to be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdEngineDrivetrainWrite
 */
 void PxVehiclePvdEngineDrivetrainRegister
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParams,
  const PxVehicleEngineParams* engineParams,
@@ -430,6 +443,7 @@ void PxVehiclePvdEngineDrivetrainRegister
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
  const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffPrams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -443,14 +457,16 @@ void PxVehiclePvdEngineDrivetrainRegister
 /**
 \brief Write engine drivetrain data of a vehicle instance to omnipvd.
 \param[in] commandState describes the control values applied to the vehicle.
-\param[in] transmissionCommandState describes the state of the engine drive transmission.
+\param[in] engineDriveTransmissionCommandState describes the state of the engine drive transmission.
+\param[in] tankDriveTransmissionCommandState describes the state of the tank drive transmission.
 \param[in] clutchResponseParams describes the vehicle's response to a clutch command.
 \param[in] clutchParams describes the vehicle's clutch.
 \param[in] engineParams describes the engine.
 \param[in] gearboxParams describes the gearbox.
 \param[in] autoboxParams describes the automatic gearbox.
 \param[in] multiWheelDiffParams describes a multiwheel differential without limited slip compensation.
-\param[in] fourWheelDiffPrams describes a differential that delivers torque to four drive wheels with limited slip compensation.
+\param[in] fourWheelDiffParams describes a differential that delivers torque to four drive wheels with limited slip compensation.
+\param[in] tankDiffParams describes the operation of the tank differential.
 \param[in] clutchResponseState is the instantaneous reponse of the clutch to a clutch command.
 \param[in] throttleResponseState is the instantaneous response to a throttle command.
 \param[in] engineState is the instantaneous state of the engine.
@@ -462,19 +478,24 @@ void PxVehiclePvdEngineDrivetrainRegister
 \param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
 \param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
 \note If any pointer is NULL and the corresponding argument in PxVehiclePvdEngineDrivetrainRegister() was not NULL, the corresponding data will not be reflected in omnipvd.
+\note At most one of engineDriveTransmissionCommandState and tankDriveTransmissionCommandState is expected to be non-NULL.
+\note At most one of multiWheelDiffParams, fourWheelDiffParams and tankDiffParams is expected to be non-NULL.
 @see PxVehiclePvdAttributesCreate
 @see PxVehiclePvdObjectCreate
 @see PxVehiclePvdEngineDrivetrainRegister
 */
 void PxVehiclePvdEngineDrivetrainWrite
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParams,
  const PxVehicleEngineParams* engineParams,
  const PxVehicleGearboxParams* gearboxParams,
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
- const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffPrams,
+ const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffParams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -574,6 +595,38 @@ void PxVehiclePvdPhysXRigidActorRegister
 */
 void PxVehiclePvdPhysXRigidActorWrite
 (const PxVehiclePhysXActor* physxActor,
+ const PxVehiclePvdAttributeHandles& attributeHandles,
+ const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
+
+/**
+\brief Register the PhysX related steer state class.
+\param[in] physxSteerState describes the PxVehiclePhysXSteerState instance that holds steer related state information.
+\param[in] attributeHandles contains a general description of vehicle parameters and states that will be reflected in omnipvd.
+\param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
+\param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
+\note If physxSteerState is NULL, the corresponding data will not be reflected in omnipvd.
+@see PxVehiclePvdAttributesCreate
+@see PxVehiclePvdObjectCreate
+@see PxVehiclePvdPhysXSteerStateWrite
+*/
+void PxVehiclePvdPhysXSteerStateRegister
+(const PxVehiclePhysXSteerState* physxSteerState,
+ const PxVehiclePvdAttributeHandles& attributeHandles,
+ PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
+
+/**
+\brief Write the PxVehiclePhysXSteerState instance to omnipvd.
+\param[in] physxSteerState describes the PxVehiclePhysXSteerState instance that holds steer related state information.
+\param[in] attributeHandles contains a general description of vehicle parameters and states that will be reflected in omnipvd.
+\param[in] objectHandles contains unique handles for the parameters and states of each vehicle instance.
+\param[in] omniWriter is an OmniPvdWriter instance used to communicate state and parameter data to omnipvd.
+\note If physxSteerState is NULL and the corresponding argument in PxVehiclePvdPhysXSteerStateRegister was not NULL, the corresponding data will not be updated in omnipvd.
+@see PxVehiclePvdAttributesCreate
+@see PxVehiclePvdObjectCreate
+@see PxVehiclePvdPhysXSteerStateRegister
+*/
+void PxVehiclePvdPhysXSteerStateWrite
+(const PxVehiclePhysXSteerState* physxSteerState,
  const PxVehiclePvdAttributeHandles& attributeHandles,
  const PxVehiclePvdObjectHandles& objectHandles, OmniPvdWriter& omniWriter);
 

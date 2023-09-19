@@ -30,12 +30,13 @@
 #include "GuVecSphere.h"
 #include "GuVecCapsule.h"
 #include "GuContactMethodImpl.h"
+#include "GuPCMContactGenUtil.h"
 
 using namespace physx;
+using namespace aos;
 
-static PX_FORCE_INLINE aos::FloatV PxcDistancePointSegmentSquared(const aos::Vec3VArg a, const aos::Vec3VArg b, const aos::Vec3VArg p, aos::FloatV& param)
+static PX_FORCE_INLINE FloatV distancePointSegmentSquared(const Vec3VArg a, const Vec3VArg b, const Vec3VArg p, FloatV& param)
 {
-	using namespace aos;
 	const FloatV zero = FZero();
 	const FloatV one = FOne();
 
@@ -57,7 +58,6 @@ bool Gu::pcmContactSphereCapsule(GU_CONTACT_METHOD_ARGS)
 	PX_UNUSED(cache);
 	PX_UNUSED(renderOutput);
 
-	using namespace aos;
 	const PxSphereGeometry& shapeSphere = checkedCast<PxSphereGeometry>(shape0);
 	const PxCapsuleGeometry& shapeCapsule = checkedCast<PxCapsuleGeometry>(shape1);
 
@@ -82,7 +82,7 @@ bool Gu::pcmContactSphereCapsule(GU_CONTACT_METHOD_ARGS)
 
 	// Collision detection
 	FloatV t;
-	const FloatV squareDist = PxcDistancePointSegmentSquared(s, e, sphereCenter, t);
+	const FloatV squareDist = distancePointSegmentSquared(s, e, sphereCenter, t);
 	const FloatV sqInflatedSum = FMul(inflatedSum, inflatedSum);
 
 	if(FAllGrtr(sqInflatedSum, squareDist))//BAllEq(con, bTrue))
@@ -94,16 +94,8 @@ bool Gu::pcmContactSphereCapsule(GU_CONTACT_METHOD_ARGS)
 
 		const FloatV dist = FSub(FSqrt(squareDist), radiusSum);
 		//context.mContactBuffer.contact(point, normal, FSub(FSqrt(squareDist), radiusSum));
-		PX_ASSERT(contactBuffer.count < PxContactBuffer::MAX_CONTACTS);
-		PxContactPoint& contact = contactBuffer.contacts[contactBuffer.count++];
 
-		V4StoreA(Vec4V_From_Vec3V(normal), &contact.normal.x);
-		V4StoreA(Vec4V_From_Vec3V(point), &contact.point.x);
-		FStore(dist, &contact.separation);
-
-		contact.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
-
-		return true;
+		return outputSimplePCMContact(contactBuffer, point, normal, dist);
 	}
 	return false;
 }

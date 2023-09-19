@@ -88,7 +88,6 @@
 #include <ctype.h>
 
 #include "PxPhysicsAPI.h"
-#include "vehicle2/PxVehicleAPI.h"
 
 #include "../snippetvehicle2common/serialization/BaseSerialization.h"
 #include "../snippetvehicle2common/serialization/DirectDrivetrainSerialization.h"
@@ -291,7 +290,7 @@ void stepPhysics()
 
 int snippetMain(int argc, const char *const* argv)
 {
-	if (!parseVehicleDataPath(argc, argv, "SnippetVehicle2Customisation", gVehicleDataPath))
+	if (!parseVehicleDataPath(argc, argv, "SnippetVehicle2CustomSuspension", gVehicleDataPath))
 		return 1;
 
 	//Check that we can read from the json file before continuing.

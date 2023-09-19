@@ -91,7 +91,7 @@ class PxSyncT : protected Alloc
 
 	PxSyncT(const Alloc& alloc = Alloc()) : Alloc(alloc)
 	{
-		mImpl = reinterpret_cast<PxSyncImpl*>(Alloc::allocate(PxSyncImpl::getSize(), __FILE__, __LINE__));
+		mImpl = reinterpret_cast<PxSyncImpl*>(Alloc::allocate(PxSyncImpl::getSize(), PX_FL));
 		PX_PLACEMENT_NEW(mImpl, PxSyncImpl)();
 	}
 

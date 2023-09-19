@@ -96,7 +96,7 @@ void* PxTempAllocator::allocate(size_t size, const char* filename, PxI32 line)
 
 	chunk->mIndex = index;
 	void* ret = chunk + 1;
-	PX_ASSERT((size_t(ret) & 0xf) == 0); // SDK types require at minimum 16 byte allignment.
+	PX_ASSERT((size_t(ret) & 0xf) == 0); // SDK types require at minimum 16 byte alignment.
 	return ret;
 }
 

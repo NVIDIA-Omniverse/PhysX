@@ -250,6 +250,8 @@ public:
 	\note It is not allowed to use this method while the simulation is running (except during PxScene::collide(),
 	in PxContactModifyCallback or in contact report callbacks).
 
+	\note The linear velocity is reported with respect to the rigid dynamic's center of mass and not the actor frame origin.
+
 	\return The linear velocity of the actor.
 
 	@see PxRigidDynamic.setLinearVelocity() getAngularVelocity()
@@ -269,6 +271,8 @@ public:
 	new velocity is non-zero.
 
 	\note It is invalid to use this method if PxActorFlag::eDISABLE_SIMULATION is set.
+
+	\note The linear velocity is applied with respect to the rigid dynamic's center of mass and not the actor frame origin.
 
 	\param[in] linVel New linear velocity of actor. <b>Range:</b> velocity vector
 	\param[in] autowake Whether to wake the object up if it is asleep. If true and the current wake counter value is
@@ -442,7 +446,7 @@ protected:
 	PX_INLINE						PxRigidDynamic(PxType concreteType, PxBaseFlags baseFlags) : PxRigidBody(concreteType, baseFlags) { }
 	PX_INLINE						PxRigidDynamic(PxBaseFlags baseFlags) : PxRigidBody(baseFlags) {}
 	virtual							~PxRigidDynamic() {}
-	virtual		bool				isKindOf(const char* name) const { return !::strcmp("PxRigidDynamic", name) || PxRigidBody::isKindOf(name); }
+	virtual		bool				isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxRigidDynamic", PxRigidBody); }
 
 };
 

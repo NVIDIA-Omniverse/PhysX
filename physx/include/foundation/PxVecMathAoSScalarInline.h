@@ -33,6 +33,11 @@
 #error Scalar version should not be included when using vector intrinsics.
 #endif
 
+#if PX_GCC_FAMILY
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+
 #if !PX_DOXYGEN
 namespace physx
 {
@@ -2289,5 +2294,8 @@ PX_FORCE_INLINE VecU32V V4ConvertToU32VSaturate(const Vec4V a, PxU32 power)
 } // namespace physx
 #endif
 
+#if PX_GCC_FAMILY
+#pragma GCC diagnostic pop
 #endif
 
+#endif

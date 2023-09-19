@@ -47,6 +47,8 @@
 
 namespace physx
 {
+	class PxMeshScale;
+
 namespace Gu
 {
 	PX_FORCE_INLINE void computeCapsuleBounds(PxBounds3& bounds, const PxCapsuleGeometry& capsuleGeom, const PxTransform& pose, float contactOffset=0.0f, float inflation=1.0f)
@@ -72,6 +74,7 @@ namespace Gu
 	void computeGlobalBox(PxBounds3& bounds, PxU32 nbPrims, const PxBounds3* PX_RESTRICT boxes, const PxU32* PX_RESTRICT primitives);
 
 	PX_PHYSX_COMMON_API void computeBoundsAroundVertices(PxBounds3& bounds, PxU32 nbVerts, const PxVec3* PX_RESTRICT verts);
+	PX_PHYSX_COMMON_API void computeTightBounds(PxBounds3& bounds, PxU32 nbVerts, const PxVec3* PX_RESTRICT verts, const PxTransform& pose, const PxMeshScale& scale, float contactOffset, float inflation);
 	PX_PHYSX_COMMON_API void computeLocalBoundsAndGeomEpsilon(const PxVec3* vertices, PxU32 nbVerties, PxBounds3& localBounds, PxReal& geomEpsilon);
 
 	#define StoreBounds(bounds, minV, maxV)	\

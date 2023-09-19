@@ -194,7 +194,7 @@ namespace
 
 		virtual void	registerReference(PxBase&, PxU32, size_t)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, 
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_OPERATION, PX_FL, 
 					"Cannot register references during exportData, exportExtraData.");
 		}
 

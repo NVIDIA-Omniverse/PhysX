@@ -138,7 +138,7 @@ namespace physx
 			SoftBodyFilterArray*    mSoftBodySoftBodyFilterPairs;
 			PxArray <Dy::SoftBody*>* mDirtySoftBodyForFilterPairs; //pointer to the array of mDirtySoftBodyForFilterPairs in PxgSimulationController.cpp
 
-			PxArray<PxU32>			mSoftBodyClothAttachmentIdReferences;
+			PxArray<PxU32>			mSoftBodySoftBodyAttachmentIdReferences;
 			bool					mFilterDirty;
 			bool					mFilterInDirtyList;
 

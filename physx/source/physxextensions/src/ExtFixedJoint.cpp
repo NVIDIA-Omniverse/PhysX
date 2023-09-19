@@ -29,6 +29,8 @@
 #include "ExtFixedJoint.h"
 #include "ExtConstraintHelper.h"
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -102,11 +104,11 @@ void FixedJoint::resolveReferences(PxDeserializationContext& context)
 #if PX_SUPPORT_OMNI_PVD
 
 template<>
-void physx::Ext::omniPvdInitJoint<FixedJoint>(FixedJoint* joint)
+void physx::Ext::omniPvdInitJoint<FixedJoint>(FixedJoint& joint)
 {
-	PxFixedJoint& j = static_cast<PxFixedJoint&>(*joint);
-	OMNI_PVD_CREATE(PxFixedJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eFIXED);
+	PxFixedJoint& j = static_cast<PxFixedJoint&>(joint);
+	OMNI_PVD_CREATE(OMNI_PVD_CONTEXT_HANDLE, PxFixedJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eFIXED);
 }
 
 #endif

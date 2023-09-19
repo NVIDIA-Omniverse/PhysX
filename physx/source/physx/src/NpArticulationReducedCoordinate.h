@@ -226,7 +226,7 @@ namespace physx
 		//---------------------------------------------------------------------------------
 		NpArticulationReducedCoordinate();
 
-		virtual		bool			isKindOf(const char* name) const { return !::strcmp("PxArticulationReducedCoordinate", name) || PxBase::isKindOf(name); }
+		virtual		bool			isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxArticulationReducedCoordinate", PxBase); }
 
 		PxArticulationJointReducedCoordinate*			createArticulationJoint(PxArticulationLink& parent,
 																				const PxTransform& parentFrame,

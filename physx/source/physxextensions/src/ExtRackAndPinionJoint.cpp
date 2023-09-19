@@ -33,6 +33,8 @@
 #include "PxArticulationJointReducedCoordinate.h"
 //#include <stdio.h>
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -58,7 +60,7 @@ void RackAndPinionJoint::setRatio(float ratio)
 	resetError();
 	markDirty();
 
-	OMNI_PVD_SET(PxRackAndPinionJoint, ratio, static_cast<PxRackAndPinionJoint&>(*this), ratio)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, ratio, static_cast<PxRackAndPinionJoint&>(*this), ratio)
 }
 
 float RackAndPinionJoint::getRatio() const
@@ -126,9 +128,9 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 	markDirty();
 
 #if PX_SUPPORT_OMNI_PVD
-	const PxBase* joints[] ={ hinge, prismatic };
-	PxU32 jointsLength = sizeof(joints);
-	OMNI_PVD_SETB(PxRackAndPinionJoint, joints, static_cast<PxRackAndPinionJoint&>(*this), joints, jointsLength)
+	const PxBase* joints[] = { hinge, prismatic };
+	PxU32 jointCount = sizeof(joints) / sizeof(joints[0]);
+	OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, joints, static_cast<PxRackAndPinionJoint&>(*this), joints, jointCount)
 #endif
 		
 	return true;
@@ -373,12 +375,16 @@ void RackAndPinionJoint::resolveReferences(PxDeserializationContext& context)
 #if PX_SUPPORT_OMNI_PVD
 
 template<>
-void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(RackAndPinionJoint* joint)
+void physx::Ext::omniPvdInitJoint<RackAndPinionJoint>(RackAndPinionJoint& joint)
 {
-	PxRackAndPinionJoint& j = static_cast<PxRackAndPinionJoint&>(*joint);
-	OMNI_PVD_CREATE(PxRackAndPinionJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eRACK_AND_PINION);
-	OMNI_PVD_SET(PxRackAndPinionJoint, ratio, j, joint->getRatio())
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
+	PxRackAndPinionJoint& j = static_cast<PxRackAndPinionJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eRACK_AND_PINION);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRackAndPinionJoint, ratio, j, joint.getRatio())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

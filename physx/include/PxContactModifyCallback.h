@@ -133,7 +133,8 @@ public:
 	/**
 	\brief Alter the target velocity of a specific contact point in the set.
 	\param[in] i Index of the point in the set
-	\param[in] v The new velocity in world frame
+	\param[in] v The new velocity in world frame as seen from the second actor in the contact pair, i.e., the solver will try to achieve targetVel == (vel1 - vel2)
+	\note The sign of the velocity needs to be flipped depending on the order of the actors in the pair. There is no guarantee about the consistency of the order from frame to frame.
 
 	@see PxModifiableContact.targetVelocity
 	*/

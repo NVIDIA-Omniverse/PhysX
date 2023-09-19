@@ -498,7 +498,28 @@ static bool BuildBV32Internal(BV32Tree& bv32Tree, const BV4_AABBTree& Source, So
 	
 	{
 		GU_PROFILE_ZONE("....calculateLeafNode")
-		bv32Tree.calculateLeafNode(bv32Tree.mNodes[0]);
+
+		BV32Data* nodes = bv32Tree.mNodes;
+
+		for(PxU32 i=0; i<nbNodes; i++)
+		{
+			BV32Data& node = nodes[i];
+			if(!node.isLeaf())
+			{
+				PxU32 nbChildren = node.getNbChildren();
+				PxU32 offset = node.getChildOffset();
+				//calculate how many children nodes are leaf nodes
+				PxU32 nbLeafNodes = 0;
+				while(nbChildren--)
+				{
+					BV32Data& child = nodes[offset++];
+					if(child.isLeaf())
+						nbLeafNodes++;
+				}
+
+				node.mNbLeafNodes = nbLeafNodes;
+			}
+		}
 	}
 	
 	bv32Tree.mPackedNodes = PX_ALLOCATE(BV32DataPacked, nbNodes, "BV32DataPacked");

@@ -133,7 +133,7 @@ namespace physx
 
 		PX_INLINE			PxRackAndPinionJoint(PxBaseFlags baseFlags) : PxJoint(baseFlags)	{}
 
-		virtual	bool		isKindOf(const char* name) const { return !::strcmp("PxRackAndPinionJoint", name) || PxJoint::isKindOf(name);	}
+		virtual	bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxRackAndPinionJoint", PxJoint);	}
 	};
 
 #if !PX_DOXYGEN

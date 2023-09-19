@@ -40,6 +40,7 @@
 namespace physx
 {
 #endif
+	class PxSDFBuilder;
 
 	/**
 	\brief A helper structure to define dimensions in 3D
@@ -150,6 +151,12 @@ namespace physx
 		PxSimpleTriangleMesh baseMesh;
 
 		/**
+		\brief Optional pointer to an instance of a SDF builder. This siginificantly speeds up the construction of the SDF since the default sdf builer will do almost all computations directly on the GPU.
+		The user must release the instance of the sdfBuilder once cooking completed.
+		*/
+		PxSDFBuilder* sdfBuilder;
+
+		/**
 		\brief Constructor
 		*/
 		PX_INLINE PxSDFDesc();
@@ -176,6 +183,7 @@ namespace physx
 		bitsPerSubgridPixel = PxSdfBitsPerSubgridPixel::e16_BIT_PER_PIXEL;
 		narrowBandThicknessRelativeToSdfBoundsDiagonal = 0.01f;
 		numThreadsForSdfConstruction = 1;
+		sdfBuilder = NULL;
 	}
 
 	PX_INLINE bool PxSDFDesc::isValid() const

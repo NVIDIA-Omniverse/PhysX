@@ -258,7 +258,7 @@ protected:
 	PX_INLINE					PxBVH(PxBaseFlags baseFlags) : PxBase(baseFlags)									{}
 	virtual						~PxBVH()																			{}
 
-	virtual	bool				isKindOf(const char* name) const { return !::strcmp("PxBVH", name) || PxBase::isKindOf(name); }
+	virtual	bool				isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxBVH", PxBase); }
 };
 
 	struct PxGeomIndexPair;

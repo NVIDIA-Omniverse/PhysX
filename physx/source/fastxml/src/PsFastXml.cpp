@@ -95,7 +95,6 @@ class MyFastXml : public physx::shdfnd::FastXml
 	                   FastXml::Callback* iface, bool& isError)
 	{
 		AttributePairs attr(argc, argv);
-		isError = true; // by default, if we return null it's due to an error.
 		if(c == '/' || c == '?')
 		{
 			char* slash = const_cast<char*>(static_cast<const char*>(strchr(element, c)));
@@ -104,6 +103,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 			if(c == '?' && strcmp(element, "xml") == 0)
 			{
+				isError = true;
 				if(!iface->processXmlDeclaration(attr, 0, mLineNo))
 					return NULL;
 			}
@@ -111,6 +111,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 			{
 				if(!iface->processElement(element, 0, attr, mLineNo))
 				{
+					isError = true;
 					mError = "User aborted the parsing process";
 					return NULL;
 				}
@@ -261,8 +262,9 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 				if(!iface->processElement(element, data, attr, mLineNo))
 				{
+					isError = true;
 					mError = "User aborted the parsing process";
-					return 0;
+					return NULL;
 				}
 
 				pushElement(element);
@@ -282,8 +284,9 @@ class MyFastXml : public physx::shdfnd::FastXml
 						scan = comment_end + 3;
 						if(!iface->processComment(comment))
 						{
+							isError = true;
 							mError = "User aborted the parsing process";
-							return 0;
+							return NULL;
 						}
 					}
 				}
@@ -298,6 +301,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 			}
 			else
 			{
+				isError = true;
 				mError = "Data portion of an element wasn't terminated properly";
 				return NULL;
 			}
@@ -325,6 +329,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 		if(0 != strcmp(start, close))
 		{
+			isError = true;
 			mError = "Open and closing tags do not match";
 			return 0;
 		}
@@ -539,7 +544,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 			if(*scan == '/')
 			{
-				bool isError;
+				bool isError = false;
 				scan = processClose(scan, iface, isError);
 				if(!scan)
 				{
@@ -567,7 +572,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 						c = '>';
 					}
 					*scan++ = 0;
-					bool isError;
+					bool isError = false;
 					scan = processClose(c, element, scan, argc, argv, iface, isError);
 					if(!scan)
 					{
@@ -605,7 +610,7 @@ class MyFastXml : public physx::shdfnd::FastXml
 
 								scan++;
 							}
-							bool isError;
+							bool isError = false;
 							scan = processClose(c, element, scan, argc, argv, iface, isError);
 							if(!scan)
 							{

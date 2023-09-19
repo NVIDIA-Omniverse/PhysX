@@ -161,7 +161,6 @@ bool BV32Tree::load(PxInputStream& stream, bool mismatch_)
 		}
 	}*/
 
-
 	//read SOA format node data
 	const PxU32 nbPackedNodes = readDword(mismatch, stream);
 	mNbPackedNodes = nbPackedNodes;
@@ -205,46 +204,12 @@ bool BV32Tree::load(PxInputStream& stream, bool mismatch_)
 
 		ReadDwordBuffer(mRemapPackedNodeIndexWithDepth, nbPackedNodes, mismatch, stream);
 	}
-
-
 	return true;
 }
-
-
-void BV32Tree::calculateLeafNode(BV32Data& node)
-{
-	if (!node.isLeaf())
-	{
-		const PxU32 nbChildren = node.getNbChildren();
-		const PxU32 offset = node.getChildOffset();
-		//calcualte how many children nodes are leaf nodes
-		PxU32 nbLeafNodes = 0;
-		for (PxU32 i = 0; i < nbChildren; ++i)
-		{
-			BV32Data& child = mNodes[offset + i];
-
-			if (child.isLeaf())
-			{
-				nbLeafNodes++;
-			}
-		}
-
-		node.mNbLeafNodes = nbLeafNodes;
-		for (PxU32 i = 0; i < nbChildren; ++i)
-		{
-			BV32Data& child = mNodes[offset + i];
-			calculateLeafNode(child);
-		}
-
-	}
-}
-
-
 
 void BV32Tree::createSOAformatNode(BV32DataPacked& packedData, 
 	const BV32Data& node, const PxU32 childOffset, PxU32& currentIndex, PxU32& nbPackedNodes)
 {
-	
 	//found the next 32 nodes and fill it in SOA format
 	
 	const PxU32 nbChildren = node.getNbChildren();
@@ -269,7 +234,6 @@ void BV32Tree::createSOAformatNode(BV32DataPacked& packedData,
 	const BV32Data* ChildNodes[32];
 	PxMemSet(ChildNodes, 0, sizeof(BV32Data*) * 32);
 	
-
 	for (PxU32 i = 0; i< nbChildren; i++)
 	{
 		BV32Data& child = mNodes[offset + i];
@@ -298,9 +262,7 @@ void BV32Tree::createSOAformatNode(BV32DataPacked& packedData,
 		BV32DataPacked& childData = mPackedNodes[childOffset+i];
 		
 		createSOAformatNode(childData, child, NextIDs[i], currentIndex, nbPackedNodes);
-
 	}
-
 }
 
 bool BV32Tree::refit(float epsilon)
@@ -351,7 +313,6 @@ bool BV32Tree::refit(float epsilon)
 				do
 				{
 					PX_ASSERT(primIndex< mMeshInterface->getNbPrimitives());
-
 
 					//meshInterface->getTriangle(VP, primIndex);
 					Vec4V tMin, tMax;

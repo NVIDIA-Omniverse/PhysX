@@ -61,6 +61,7 @@ namespace physx
 	class PxArrayConverter;
 	class PxLineStripSkinning;
 	class PxSoftBodyEmbedding;
+	class PxSDFBuilder;
 
 	struct PxIsosurfaceParams;
 	struct PxSparseGridParams;
@@ -144,6 +145,15 @@ namespace physx
 		\return Pointer to a new instance of a PxLineStripSkinning
 		*/
 		virtual PxLineStripSkinning* createLineStripSkinning(PxCudaContextManager* cudaContextManager) = 0;
+
+		/**
+		\brief Creates sdf builder to construct sdfs quickly on the GPU. If not used anymore, the caller needs to delete the returned pointer.
+
+		\param[in] cudaContextManager A cuda context manager
+
+		\return Pointer to a new instance of a PxSDFBuilder
+		*/
+		virtual PxSDFBuilder* createSDFBuilder(PxCudaContextManager* cudaContextManager) = 0;
 
 		/**
 		\brief Estimates the amount of GPU memory needed to create a scene for the given descriptor.

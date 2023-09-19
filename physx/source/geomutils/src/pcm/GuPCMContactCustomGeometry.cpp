@@ -35,6 +35,7 @@
 
 using namespace physx;
 using namespace aos;
+using namespace Gu;
 
 static bool pcmContactCustomGeometryGeometry(GU_CONTACT_METHOD_ARGS)
 {
@@ -61,7 +62,7 @@ static bool pcmContactCustomGeometryGeometry(GU_CONTACT_METHOD_ARGS)
 
 	if (usePCM)
 	{
-		Gu::MultiplePersistentContactManifold& multiManifold = cache.getMultipleManifold();
+		MultiplePersistentContactManifold& multiManifold = cache.getMultipleManifold();
 
 		const PxTransformV transf0 = loadTransformA(transform0), transf1 = loadTransformA(transform1);
 		const PxTransformV curRTrans = transf1.transformInv(transf0);
@@ -82,7 +83,7 @@ static bool pcmContactCustomGeometryGeometry(GU_CONTACT_METHOD_ARGS)
 				const Vec3V cN = V3LoadU(c.normal);
 				const FloatV cD = FLoad(c.separation);
 
-				Gu::SinglePersistentContactManifold* manifold = NULL;
+				SinglePersistentContactManifold* manifold = NULL;
 				for (PxU8 mi = 0; mi < multiManifold.mNumManifolds; ++mi)
 				{
 					const Vec3V mN = multiManifold.mManifolds[mi].getWorldNormal(transf1);
@@ -102,14 +103,14 @@ static bool pcmContactCustomGeometryGeometry(GU_CONTACT_METHOD_ARGS)
 
 				if (manifold)
 				{
-					Gu::SinglePersistentContactManifold& m = *manifold;
-					Gu::MeshPersistentContact pc;
+					SinglePersistentContactManifold& m = *manifold;
+					MeshPersistentContact pc;
 					pc.mLocalPointA = transf0.transformInv(cP);
 					pc.mLocalPointB = transf1.transformInv(cP);
 					pc.mLocalNormalPen = V4SetW(transf1.rotateInv(cN), cD);
 					pc.mFaceIndex = c.internalFaceIndex1;
 					m.mContactPoints[m.mNumContacts++] = pc;
-					m.mNumContacts = Gu::SinglePersistentContactManifold::reduceContacts(m.mContactPoints, m.mNumContacts);
+					m.mNumContacts = SinglePersistentContactManifold::reduceContacts(m.mContactPoints, m.mNumContacts);
 				}
 			}
 

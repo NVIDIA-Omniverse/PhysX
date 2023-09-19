@@ -180,6 +180,15 @@ namespace Gu
 			return reinterpret_cast<const PxU8*>(tmp);
 		}
 
+		PX_FORCE_INLINE bool checkExtentRadiusRatio()	const
+		{
+			const PxReal maxR = PxMax(mInternal.mExtents[0], PxMax(mInternal.mExtents[1], mInternal.mExtents[2]));
+			const PxReal minR = mInternal.mRadius;
+			const PxReal ratio = maxR/minR;
+
+			return ratio < 100.f;
+		}
+
 	};
 	#if PX_P64_FAMILY
 	PX_COMPILE_TIME_ASSERT(sizeof(Gu::ConvexHullData) == 80);

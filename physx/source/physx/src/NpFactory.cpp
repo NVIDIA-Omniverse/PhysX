@@ -622,18 +622,19 @@ void NpFactory::releaseFEMMaterialToPool(PxFEMSoftBodyMaterial& material_)
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-PxFEMClothMaterial* NpFactory::createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)
+PxFEMClothMaterial* NpFactory::createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness)
 {
 #if PX_SUPPORT_GPU_PHYSX
 	PX_CHECK_AND_RETURN_NULL(youngs >= 0.0f, "createFEMClothMaterial: youngs must be >= 0.");
 	PX_CHECK_AND_RETURN_NULL(poissons >= 0.0f && poissons < 0.5f, "createFEMClothMaterial: poissons must be in range[0.f, 0.5f).");
 	PX_CHECK_AND_RETURN_NULL(dynamicFriction >= 0.0f, "createMaterial: dynamicFriction must be >= 0.");
-	
+	PX_CHECK_AND_RETURN_NULL(thickness >= 0.0f, "createMaterial: thickness must be > 0.");
+
 	PxsFEMClothMaterialData materialData;
 	materialData.youngs = youngs;
 	materialData.poissons = poissons;
 	materialData.dynamicFriction = dynamicFriction;
-	materialData.thickness = 0.f;
+	materialData.thickness = thickness;
 
 	NpFEMClothMaterial* npMaterial = NULL;
 	{

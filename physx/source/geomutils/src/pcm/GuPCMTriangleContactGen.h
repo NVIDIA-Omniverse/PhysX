@@ -39,26 +39,18 @@ namespace physx
 
 namespace Gu
 {
-	bool PCMContactConvexMesh(const Gu::PolygonalData& polyData0, 
-						Gu::SupportLocal* polyMap, 
-						const aos::FloatVArg minMargin, 
-						const PxBounds3& hullAABB, 
+	bool PCMContactConvexMesh(const Gu::PolygonalData& polyData0, const Gu::SupportLocal* polyMap, const aos::FloatVArg minMargin, const PxBounds3& hullAABB, 
 						const PxTriangleMeshGeometry& shapeMesh,
-						const PxTransform& transform0, const PxTransform& transform1,
-						PxReal contactDistance, PxContactBuffer& contactBuffer,
+						const PxTransform& transform0, const PxTransform& transform1, PxReal contactDistance, PxContactBuffer& contactBuffer,
 						const Cm::FastVertex2ShapeScaling& convexScaling, const Cm::FastVertex2ShapeScaling& meshScaling,
-						bool idtConvexScale, bool idtMeshScale, Gu::MultiplePersistentContactManifold& multiManifold,
-						PxRenderOutput* renderOutput);
+						bool idtConvexScale, bool idtMeshScale,
+						Gu::MultiplePersistentContactManifold& multiManifold, PxRenderOutput* renderOutput);
 
-	bool PCMContactConvexHeightfield(const Gu::PolygonalData& polyData0, 
-						Gu::SupportLocal* polyMap, 
-						const aos::FloatVArg minMargin, 
-						const PxBounds3& hullAABB, 
+	bool PCMContactConvexHeightfield(const Gu::PolygonalData& polyData0, const Gu::SupportLocal* polyMap, const aos::FloatVArg minMargin, const PxBounds3& hullAABB, 
 						const PxHeightFieldGeometry& shapeHeightfield,
-						const PxTransform& transform0, const PxTransform& transform1,
-						PxReal contactDistance, PxContactBuffer& contactBuffer,
-						const Cm::FastVertex2ShapeScaling& convexScaling, bool idtConvexScale, Gu::MultiplePersistentContactManifold& multiManifold,
-						PxRenderOutput* renderOutput);
+						const PxTransform& transform0, const PxTransform& transform1, PxReal contactDistance, PxContactBuffer& contactBuffer,
+						const Cm::FastVertex2ShapeScaling& convexScaling, bool idtConvexScale,
+						Gu::MultiplePersistentContactManifold& multiManifold, PxRenderOutput* renderOutput);
 }
 }
 

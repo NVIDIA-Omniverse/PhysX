@@ -28,7 +28,6 @@
 
 #pragma once
 
-#include "vehicle2/PxVehicleAPI.h"
 #include "PxPhysicsAPI.h"
 
 #include "../snippetvehicle2common/directdrivetrain/DirectDrivetrain.h"
@@ -60,7 +59,8 @@ void addCustomSuspensionForce
 (const PxReal dt,
 	const PxVehicleSuspensionParams& suspParams,
 	const CustomSuspensionParams& customParams,
-	const PxVehicleRoadGeometryState& roadGeomState, const PxVehicleSuspensionComplianceState& suspComplianceState, const PxVehicleRigidBodyState& rigidBodyState,
+	const PxVec3& groundNormal, bool isWheelOnGround,
+	const PxVehicleSuspensionComplianceState& suspComplianceState, const PxVehicleRigidBodyState& rigidBodyState,
 	PxVehicleSuspensionForce& suspForce, CustomSuspensionState& customState);
 
 class CustomSuspensionComponent : public PxVehicleComponent
@@ -139,7 +139,8 @@ public:
 			addCustomSuspensionForce(dt,
 				suspensionParams[wheelId],
 				customSuspensionParams[wheelId],
-				wheelRoadGeomStates[wheelId], suspensionComplianceStates[wheelId], *rigidBodyState,
+				wheelRoadGeomStates[wheelId].plane.n, PxVehicleIsWheelOnGround(suspensionStates[wheelId]),
+				suspensionComplianceStates[wheelId], *rigidBodyState,
 				suspensionForces[wheelId], customSuspensionStates[wheelId]);
 		}
 

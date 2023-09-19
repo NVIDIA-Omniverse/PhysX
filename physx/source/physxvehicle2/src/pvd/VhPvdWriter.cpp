@@ -229,6 +229,17 @@ WheelResponseStates registerBrakeResponseStates(OmniPvdWriter& omniWriter)
 	return registerWheelResponseStates("BrakeResponseState", omniWriter);
 }
 
+AckermannParams registerAckermannParams(OmniPvdWriter& omniWriter)
+{
+	AckermannParams a;
+	a.CH = omniWriter.registerClass("AckermannParams");
+	a.wheelIdsAH = omniWriter.registerAttribute(a.CH, "wheelIds", OmniPvdDataType::eUINT32, 2);
+	a.wheelBaseAH = omniWriter.registerAttribute(a.CH, "wheelBase", OmniPvdDataType::eFLOAT32, 1);
+	a.trackWidthAH = omniWriter.registerAttribute(a.CH, "trackWidth", OmniPvdDataType::eFLOAT32, 1);
+	a.strengthAH = omniWriter.registerAttribute(a.CH, "strength", OmniPvdDataType::eFLOAT32, 1);
+	return a;
+}
+
 void writeWheelResponseParams
 (const PxVehicleAxleDescription& axleDesc, const PxVehicleCommandResponseParams& responseParams,
  const OmniPvdObjectHandle oh, const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
@@ -300,6 +311,17 @@ void writeBrakeResponseStates
  const OmniPvdObjectHandle oh, const WheelResponseStates& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
 {
 	writeWheelResponseStates(axleDesc, brakeResponseStates, oh, ah, omniWriter, ch);
+}
+
+void writeAckermannParams
+(const PxVehicleAckermannParams& ackermannParams,
+ const OmniPvdObjectHandle oh, const AckermannParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+{
+	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.wheelIdsAH, ackermannParams.wheelIds, 
+		sizeof(PxVehicleAckermannParams::wheelIds) / sizeof(PxVehicleAckermannParams::wheelIds[0]));
+	writeFloatAttribute(omniWriter, ch, oh, ah.wheelBaseAH, ackermannParams.wheelBase);
+	writeFloatAttribute(omniWriter, ch, oh, ah.trackWidthAH, ackermannParams.trackWidth);
+	writeFloatAttribute(omniWriter, ch, oh, ah.strengthAH, ackermannParams.strength);
 }
 
 
@@ -966,7 +988,8 @@ DirectDrivetrain registerDirectDrivetrain(OmniPvdWriter& omniWriter)
 	DirectDrivetrain d;
 	d.CH = omniWriter.registerClass("DirectDrivetrain");
 	d.throttleResponseParamsAH = omniWriter.registerAttribute(d.CH, "throttleResponseParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
-	d.commandStateAH = omniWriter.registerAttribute(d.CH, "directDriveCommandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	d.commandStateAH = omniWriter.registerAttribute(d.CH, "commandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	d.transmissionCommandStateAH = omniWriter.registerAttribute(d.CH, "transmissionCommandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	d.throttleResponseStateAH = omniWriter.registerAttribute(d.CH, "throttleResponseState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	return d;
 }
@@ -1020,6 +1043,25 @@ void writeEngineDriveTransmissionCommandState
 {
 	writeUInt32Attribute(omniWriter, ch, oh, ah.gearAH, transmission.targetGear);
 	writeFloatAttribute(omniWriter, ch, oh, ah.clutchAH, transmission.clutch);
+}
+
+static const PxU32 tankThrustsCommandEntryCount = sizeof(PxVehicleTankDriveTransmissionCommandState::thrusts) / sizeof(PxVehicleTankDriveTransmissionCommandState::thrusts[0]);
+
+TankDriveTransmissionCommandState registerTankDriveTransmissionCommandState(OmniPvdWriter& omniWriter, OmniPvdClassHandle baseClass)
+{
+	TankDriveTransmissionCommandState t;
+	t.CH = omniWriter.registerClass("TankDriveTransmissionCommandState", baseClass);
+	t.thrustsAH = omniWriter.registerAttribute(t.CH, "thrusts", OmniPvdDataType::eFLOAT32, tankThrustsCommandEntryCount);	
+	return t;
+}
+
+void writeTankDriveTransmissionCommandState
+(const PxVehicleTankDriveTransmissionCommandState& transmission,
+ const OmniPvdObjectHandle oh, const EngineDriveTransmissionCommandState& engineDriveAH, 
+ const TankDriveTransmissionCommandState& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+{
+	writeEngineDriveTransmissionCommandState(transmission, oh, engineDriveAH, omniWriter, ch);
+	writeFloatArrayAttribute(omniWriter, ch, oh, ah.thrustsAH, transmission.thrusts, tankThrustsCommandEntryCount);
 }
 
 ClutchResponseParams registerClutchResponseParams(OmniPvdWriter& omniWriter)
@@ -1147,10 +1189,10 @@ void writeAutoboxParams
 	writeFloatAttribute(omniWriter, ch, oh, ah.latencyAH, autoboxParams.latency);
 }
 
-MultiWheelDiffParams registerMultiWheelDiffParams(const char* name, OmniPvdWriter& omniWriter)
+MultiWheelDiffParams registerMultiWheelDiffParams(OmniPvdWriter& omniWriter)
 {
 	MultiWheelDiffParams m;
-	m.CH = omniWriter.registerClass(name);
+	m.CH = omniWriter.registerClass("MultiWheelDiffParams");
 	m.torqueRatios0To3AH = omniWriter.registerAttribute(m.CH, "torqueRatios0To3", OmniPvdDataType::eFLOAT32, 4); 
 	m.torqueRatios4To7AH = omniWriter.registerAttribute(m.CH, "torqueRatios4To7", OmniPvdDataType::eFLOAT32, 4); 
 	m.torqueRatios8To11AH = omniWriter.registerAttribute(m.CH, "torqueRatios8To11", OmniPvdDataType::eFLOAT32, 4); 
@@ -1164,15 +1206,10 @@ MultiWheelDiffParams registerMultiWheelDiffParams(const char* name, OmniPvdWrite
 	return m;
 }
 
-MultiWheelDiffParams registerMultiWheelDiffParams(OmniPvdWriter& omniWriter)
-{
-	return registerMultiWheelDiffParams("MultiWheelDiffParams", omniWriter);
-}
-
-FourWheelDiffParams registerFourWheelDiffParams(OmniPvdWriter& omniWriter)
+FourWheelDiffParams registerFourWheelDiffParams(OmniPvdWriter& omniWriter, OmniPvdClassHandle baseClass)
 {
 	FourWheelDiffParams m;
-	static_cast<MultiWheelDiffParams&>(m) = registerMultiWheelDiffParams("FourWheelDiffParams", omniWriter);
+	m.CH = omniWriter.registerClass("FourWheelDiffParams", baseClass);
 	m.frontBiasAH = omniWriter.registerAttribute(m.CH, "frontBias", OmniPvdDataType::eFLOAT32, 1);
 	m.frontTargetAH = omniWriter.registerAttribute(m.CH, "frontTarget", OmniPvdDataType::eFLOAT32, 1);
 	m.rearBiasAH = omniWriter.registerAttribute(m.CH, "rearBias", OmniPvdDataType::eFLOAT32, 1);
@@ -1182,6 +1219,18 @@ FourWheelDiffParams registerFourWheelDiffParams(OmniPvdWriter& omniWriter)
 	m.frontWheelsAH = omniWriter.registerAttribute(m.CH, "frontWheels", OmniPvdDataType::eUINT32, 2);
 	m.rearWheelsAH = omniWriter.registerAttribute(m.CH, "rearWheels", OmniPvdDataType::eUINT32, 2);
 	return m;
+}
+
+TankDiffParams registerTankDiffParams(OmniPvdWriter& omniWriter, OmniPvdClassHandle baseClass)
+{
+	TankDiffParams t;
+	t.CH = omniWriter.registerClass("TankDiffParams", baseClass);
+	t.nbTracksAH = omniWriter.registerAttribute(t.CH, "nbTracks", OmniPvdDataType::eUINT32, 1);
+	t.thrustIdPerTrackAH = omniWriter.registerAttribute(t.CH, "thrustIdPerTrack", OmniPvdDataType::eUINT32, 0);
+	t.nbWheelsPerTrackAH = omniWriter.registerAttribute(t.CH, "nbWheelsPerTrack", OmniPvdDataType::eUINT32, 0);
+	t.trackToWheelIdsAH = omniWriter.registerAttribute(t.CH, "trackToWheelIds", OmniPvdDataType::eUINT32, 0);
+	t.wheelIdsInTrackOrderAH = omniWriter.registerAttribute(t.CH, "wheelIdsInTrackOrder", OmniPvdDataType::eUINT32, 0);
+	return t;
 }
 
 void writeMultiWheelDiffParams
@@ -1203,9 +1252,10 @@ void writeMultiWheelDiffParams
 
 void writeFourWheelDiffParams
 (const PxVehicleFourWheelDriveDifferentialParams& diffParams, 
- const OmniPvdObjectHandle oh, const FourWheelDiffParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+ const OmniPvdObjectHandle oh, const MultiWheelDiffParams& multiWheelDiffAH, const FourWheelDiffParams& ah, 
+ OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
 {
-	writeMultiWheelDiffParams(diffParams, oh, ah, omniWriter, ch);
+	writeMultiWheelDiffParams(diffParams, oh, multiWheelDiffAH, omniWriter, ch);
 	writeFloatAttribute(omniWriter, ch, oh, ah.frontBiasAH, diffParams.frontBias);
 	writeFloatAttribute(omniWriter, ch, oh, ah.frontTargetAH, diffParams.frontTarget);
 	writeFloatAttribute(omniWriter, ch, oh, ah.rearBiasAH, diffParams.rearBias);
@@ -1214,6 +1264,26 @@ void writeFourWheelDiffParams
 	writeFloatAttribute(omniWriter, ch, oh, ah.centreTargetAH, diffParams.centerTarget);
 	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.frontWheelsAH, diffParams.frontWheelIds, 2);
 	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.rearWheelsAH, diffParams.rearWheelIds, 2);
+}
+
+void writeTankDiffParams
+(const PxVehicleTankDriveDifferentialParams& diffParams, 
+ const OmniPvdObjectHandle oh, const MultiWheelDiffParams& multiWheelDiffAH, const TankDiffParams& ah,
+ OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+{
+	PxU32 entryCount = 0;
+	for (PxU32 i = 0; i < diffParams.nbTracks; i++)
+	{
+		entryCount = PxMax(entryCount, diffParams.trackToWheelIds[i] + diffParams.nbWheelsPerTrack[i]);
+		// users can remove tracks such that there are holes in the wheelIdsInTrackOrder buffer
+	}
+
+	writeMultiWheelDiffParams(diffParams, oh, multiWheelDiffAH, omniWriter, ch);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.nbTracksAH, diffParams.nbTracks);
+	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.thrustIdPerTrackAH, diffParams.thrustIdPerTrack, diffParams.nbTracks);
+	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.nbWheelsPerTrackAH, diffParams.nbWheelsPerTrack, diffParams.nbTracks);
+	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.trackToWheelIdsAH, diffParams.trackToWheelIds, diffParams.nbTracks);
+	writeUInt32ArrayAttribute(omniWriter, ch, oh, ah.wheelIdsInTrackOrderAH, diffParams.wheelIdsInTrackOrder, entryCount);
 }
 
 ClutchResponseState registerClutchResponseState(OmniPvdWriter& omniWriter)
@@ -1363,15 +1433,14 @@ EngineDrivetrain registerEngineDrivetrain(OmniPvdWriter& omniWriter)
 {
 	EngineDrivetrain e;
 	e.CH = omniWriter.registerClass("EngineDrivetrain");
-	e.commandStateAH = omniWriter.registerAttribute(e.CH, "engineDriveCommandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
-	e.transmissionCommandStateAH = omniWriter.registerAttribute(e.CH, "engineDriveTransmissionCommandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	e.commandStateAH = omniWriter.registerAttribute(e.CH, "commandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	e.transmissionCommandStateAH = omniWriter.registerAttribute(e.CH, "transmissionCommandState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.clutchResponseParamsAH = omniWriter.registerAttribute(e.CH, "clutchResponseParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.clutchParamsAH = omniWriter.registerAttribute(e.CH, "clutchParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.engineParamsAH = omniWriter.registerAttribute(e.CH, "engineParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.gearboxParamsAH = omniWriter.registerAttribute(e.CH, "gearboxParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.autoboxParamsAH = omniWriter.registerAttribute(e.CH, "autoboxParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
-	e.multiWheelDiffParamsAH = omniWriter.registerAttribute(e.CH, "multiWheelDiffParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
-	e.fourWheelDiffParamsAH = omniWriter.registerAttribute(e.CH, "fourWheelDiffParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	e.differentialParamsAH = omniWriter.registerAttribute(e.CH, "differentialParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.clutchResponseStateAH= omniWriter.registerAttribute(e.CH, "clutchResponseState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.throttleResponseStateAH= omniWriter.registerAttribute(e.CH, "throttleResponseState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	e.engineStateAH = omniWriter.registerAttribute(e.CH, "engineState", OmniPvdDataType::eOBJECT_HANDLE, 1);
@@ -1559,30 +1628,112 @@ void writePhysXRigidActor
 
 PhysXRoadGeometryQueryParams registerPhysXRoadGeometryQueryParams(OmniPvdWriter& omniWriter)
 {
-	struct Type
+	struct QueryType
 	{
 		OmniPvdClassHandle CH;
 		OmniPvdAttributeHandle raycastAH;
 		OmniPvdAttributeHandle sweepAH;
 		OmniPvdAttributeHandle noneAH;
 	};
-	Type type;
-	type.CH = omniWriter.registerClass("PhysXRoadGeometryQueryTpe");
-	type.raycastAH = omniWriter.registerEnumValue(type.CH, "raycast", PxVehiclePhysXRoadGeometryQueryType::eRAYCAST);
-	type.sweepAH = omniWriter.registerEnumValue(type.CH, "sweep", PxVehiclePhysXRoadGeometryQueryType::eSWEEP);
-	type.noneAH = omniWriter.registerEnumValue(type.CH, "none", PxVehiclePhysXRoadGeometryQueryType::eNONE);
+	QueryType queryType;
+	queryType.CH = omniWriter.registerClass("PhysXRoadGeometryQueryTpe");
+	queryType.raycastAH = omniWriter.registerEnumValue(queryType.CH, "raycast", PxVehiclePhysXRoadGeometryQueryType::eRAYCAST);
+	queryType.sweepAH = omniWriter.registerEnumValue(queryType.CH, "sweep", PxVehiclePhysXRoadGeometryQueryType::eSWEEP);
+	queryType.noneAH = omniWriter.registerEnumValue(queryType.CH, "none", PxVehiclePhysXRoadGeometryQueryType::eNONE);
 
 	PhysXRoadGeometryQueryParams a;
 	a.CH = omniWriter.registerClass("PhysXRoadGeomQueryParams");
-	a.queryTypeAH = omniWriter.registerFlagsAttribute(a.CH, "physxQueryType", type.CH);
+	a.queryTypeAH = omniWriter.registerFlagsAttribute(a.CH, "physxQueryType", queryType.CH);
+
+	struct QueryFlag
+	{
+		OmniPvdClassHandle CH;
+		OmniPvdAttributeHandle staticAH;
+		OmniPvdAttributeHandle dynamicAH;
+		OmniPvdAttributeHandle preFilterAH;
+		OmniPvdAttributeHandle postFilterAH;
+		OmniPvdAttributeHandle anyHitAH;
+		OmniPvdAttributeHandle noBlockAH;
+		OmniPvdAttributeHandle batchQueryLegacyBehaviourAH;
+		OmniPvdAttributeHandle disableHardcodedFilterAH;
+	};
+	QueryFlag queryFlag;
+	queryFlag.CH = omniWriter.registerClass("PhysXRoadGeometryQueryFlag");
+	queryFlag.staticAH = omniWriter.registerEnumValue(queryFlag.CH, "eSTATIC", PxQueryFlag::eSTATIC);
+	queryFlag.dynamicAH = omniWriter.registerEnumValue(queryFlag.CH, "eDYNAMIC", PxQueryFlag::eDYNAMIC);
+	queryFlag.preFilterAH = omniWriter.registerEnumValue(queryFlag.CH, "ePREFILTER", PxQueryFlag::ePREFILTER);
+	queryFlag.postFilterAH = omniWriter.registerEnumValue(queryFlag.CH, "ePOSTFILTER", PxQueryFlag::ePOSTFILTER);
+	queryFlag.anyHitAH = omniWriter.registerEnumValue(queryFlag.CH, "eANY_HIT", PxQueryFlag::eANY_HIT);
+	queryFlag.noBlockAH = omniWriter.registerEnumValue(queryFlag.CH, "eNO_BLOCK", PxQueryFlag::eNO_BLOCK);
+	queryFlag.batchQueryLegacyBehaviourAH = omniWriter.registerEnumValue(queryFlag.CH, "eBATCH_QUERY_LEGACY_BEHAVIOUR", PxQueryFlag::eBATCH_QUERY_LEGACY_BEHAVIOUR);
+	queryFlag.disableHardcodedFilterAH = omniWriter.registerEnumValue(queryFlag.CH, "eDISABLE_HARDCODED_FILTER", PxQueryFlag::eDISABLE_HARDCODED_FILTER);
+
+	a.filterDataParams.CH = omniWriter.registerClass("PhysXRoadGeometryQueryFilterData");
+	a.filterDataParams.word0AH = omniWriter.registerAttribute(a.filterDataParams.CH, "word0", OmniPvdDataType::eUINT32, 1);
+	a.filterDataParams.word1AH = omniWriter.registerAttribute(a.filterDataParams.CH, "word1", OmniPvdDataType::eUINT32, 1);
+	a.filterDataParams.word2AH = omniWriter.registerAttribute(a.filterDataParams.CH, "word2", OmniPvdDataType::eUINT32, 1);
+	a.filterDataParams.word3AH = omniWriter.registerAttribute(a.filterDataParams.CH, "word3", OmniPvdDataType::eUINT32, 1);
+	a.filterDataParams.flagsAH = omniWriter.registerFlagsAttribute(a.filterDataParams.CH, "flags", queryFlag.CH);
+
+	a.defaultFilterDataAH = omniWriter.registerAttribute(a.CH, "defaultFilterData", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	a.filterDataSetAH = omniWriter.registerUniqueListAttribute(a.CH, "filterDataSet", OmniPvdDataType::eOBJECT_HANDLE);
+
 	return a;
 }
 
-void writePhysXRoadGeometryQueryParams
-(const PxVehiclePhysXRoadGeometryQueryParams& queryParams, 
- const OmniPvdObjectHandle oh, const PhysXRoadGeometryQueryParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+void writePhysXRoadGeometryQueryFilterData
+(const PxQueryFilterData& queryFilterData,
+ const OmniPvdObjectHandle oh, const PhysXRoadGeometryQueryFilterData& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
 {
-	writeFlagAttribute(omniWriter, ch, oh, ah.queryTypeAH, queryParams.roadGeometryQueryType);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.word0AH, queryFilterData.data.word0);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.word1AH, queryFilterData.data.word1);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.word2AH, queryFilterData.data.word2);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.word3AH, queryFilterData.data.word3);
+	writeFlagAttribute(omniWriter, ch, oh, ah.flagsAH, queryFilterData.flags);
+}
+
+void writePhysXRoadGeometryQueryParams
+(const PxVehiclePhysXRoadGeometryQueryParams& queryParams, const PxVehicleAxleDescription& axleDesc,
+ const OmniPvdObjectHandle queryParamsOH, const OmniPvdObjectHandle defaultFilterDataOH, const OmniPvdObjectHandle* filterDataOHs,
+ const PhysXRoadGeometryQueryParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+{
+	writeFlagAttribute(omniWriter, ch, queryParamsOH, ah.queryTypeAH, queryParams.roadGeometryQueryType);
+
+	if (defaultFilterDataOH)  // TODO: test against invalid hanndle once it gets introduced
+	{
+		writePhysXRoadGeometryQueryFilterData(queryParams.defaultFilterData, defaultFilterDataOH, ah.filterDataParams,
+			omniWriter, ch);
+	}
+
+	if (queryParams.filterDataEntries)
+	{
+		for (PxU32 i = 0; i < axleDesc.nbWheels; i++)
+		{
+			const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[i];
+
+			const OmniPvdObjectHandle fdOH = filterDataOHs[wheelId];
+			if (fdOH)  // TODO: test against invalid hanndle once it gets introduced
+			{
+				writePhysXRoadGeometryQueryFilterData(queryParams.filterDataEntries[wheelId], fdOH, ah.filterDataParams,
+					omniWriter, ch);
+			}
+		}
+	}
+}
+
+PhysXSteerState registerPhysXSteerState(OmniPvdWriter& omniWriter)
+{
+	PhysXSteerState s;
+	s.CH = omniWriter.registerClass("PhysXSteerState");
+	s.previousSteerCommandAH = omniWriter.registerAttribute(s.CH, "previousSteerCommand", OmniPvdDataType::eFLOAT32, 1);
+	return s;
+}
+
+void writePhysXSteerState
+(const PxVehiclePhysXSteerState& steerState, 
+ const OmniPvdObjectHandle oh, const PhysXSteerState& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+{
+	writeFloatAttribute(omniWriter, ch, oh, ah.previousSteerCommandAH, steerState.previousSteerCommand);
 }
 
 
@@ -1609,14 +1760,16 @@ Vehicle registerVehicle(OmniPvdWriter& omniWriter)
 	v.steerResponseParamsAH = omniWriter.registerAttribute(v.CH, "steerResponseParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	v.brakeResponseStatesAH = omniWriter.registerAttribute(v.CH, "brakeResponseState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	v.steerResponseStatesAH = omniWriter.registerAttribute(v.CH, "steerResponseState", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	v.ackermannParamsAH = omniWriter.registerAttribute(v.CH, "ackermannParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 
 	v.directDrivetrainAH = omniWriter.registerAttribute(v.CH, "directDrivetrain", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	v.engineDriveTrainAH = omniWriter.registerAttribute(v.CH, "engineDrivetrain", OmniPvdDataType::eOBJECT_HANDLE, 1);
 
-	v.physxWheelAttachmentSetAH = omniWriter.registerUniqueListAttribute(v.CH, "physXheelAttachmentSet", OmniPvdDataType::eOBJECT_HANDLE);
+	v.physxWheelAttachmentSetAH = omniWriter.registerUniqueListAttribute(v.CH, "physxWheelAttachmentSet", OmniPvdDataType::eOBJECT_HANDLE);
 
 	v.physxRoadGeometryQueryParamsAH =  omniWriter.registerAttribute(v.CH, "physxRoadGeomQryParams", OmniPvdDataType::eOBJECT_HANDLE, 1);
 	v.physxRigidActorAH = omniWriter.registerAttribute(v.CH, "physxRigidActor", OmniPvdDataType::eOBJECT_HANDLE, 1);
+	v.physxSteerStateAH = omniWriter.registerAttribute(v.CH, "physxSteerState", OmniPvdDataType::eOBJECT_HANDLE, 1);
 
 	return v;
 }

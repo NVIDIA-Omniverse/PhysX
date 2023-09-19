@@ -63,7 +63,7 @@ protected:
 	PX_INLINE					PxRigidStatic(PxType concreteType, PxBaseFlags baseFlags) : PxRigidActor(concreteType, baseFlags) {}
 	PX_INLINE					PxRigidStatic(PxBaseFlags baseFlags) : PxRigidActor(baseFlags){}
 	virtual						~PxRigidStatic() {}
-	virtual		bool			isKindOf(const char* name)	const { return !::strcmp("PxRigidStatic", name) || PxRigidActor::isKindOf(name); }
+	virtual		bool			isKindOf(const char* name)	const { PX_IS_KIND_OF(name, "PxRigidStatic", PxRigidActor); }
 
 };
 

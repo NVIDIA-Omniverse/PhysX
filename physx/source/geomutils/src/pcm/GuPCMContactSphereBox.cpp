@@ -30,6 +30,7 @@
 #include "GuVecBox.h"
 #include "GuVecSphere.h"
 #include "GuContactMethodImpl.h"
+#include "GuPCMContactGenUtil.h"
 
 using namespace physx;
 
@@ -42,7 +43,6 @@ bool Gu::pcmContactSphereBox(GU_CONTACT_METHOD_ARGS)
 	// Get actual shape data
 	const PxSphereGeometry& shapeSphere = checkedCast<PxSphereGeometry>(shape0);
 	const PxBoxGeometry& shapeBox = checkedCast<PxBoxGeometry>(shape1);
-	//
 
 	//const PsTransformV transf0(transform0);
 	const Vec3V sphereOrigin = V3LoadA(&transform0.p.x);
@@ -102,7 +102,7 @@ bool Gu::pcmContactSphereBox(GU_CONTACT_METHOD_ARGS)
 			const Vec3V tmpY = V3Mul(V3UnitY(), sign);
 			const Vec3V tmpZ = V3Mul(V3UnitZ(), sign);
 			
-			const Vec3V locNorm= V3Sel(con0, tmpZ, V3Sel(con1, tmpX, tmpY));////local coords contact normal
+			const Vec3V locNorm = V3Sel(con0, tmpZ, V3Sel(con1, tmpX, tmpY));////local coords contact normal
 			const FloatV dist = FNeg(FSel(con0, z, FSel(con1, x, y)));
 
 			//separation so far is just the embedding of the center point; we still have to push out all of the radius.
@@ -110,13 +110,7 @@ bool Gu::pcmContactSphereBox(GU_CONTACT_METHOD_ARGS)
 			const FloatV penetration = FSub(dist, radius);
 			const Vec3V point = V3Sub(sphereOrigin , V3Scale(normal, dist));
 
-			PxContactPoint& contact = contactBuffer.contacts[contactBuffer.count++];
-			V4StoreA(Vec4V_From_Vec3V(normal), &contact.normal.x);
-			V4StoreA(Vec4V_From_Vec3V(point), &contact.point.x);
-			FStore(penetration, &contact.separation);
-
-			contact.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
-			//context.mContactBuffer.contact(point, normal, penetration);
+			outputSimplePCMContact(contactBuffer, point, normal, penetration);
 		}
 		else
 		{
@@ -128,15 +122,7 @@ bool Gu::pcmContactSphereBox(GU_CONTACT_METHOD_ARGS)
 			const Vec3V normal = transf1.rotate(locNorm);
 			const Vec3V point = transf1.transform(p);
 
-			PX_ASSERT(contactBuffer.count < PxContactBuffer::MAX_CONTACTS);
-			PxContactPoint& contact = contactBuffer.contacts[contactBuffer.count++];
-			V4StoreA(Vec4V_From_Vec3V(normal), &contact.normal.x);
-			V4StoreA(Vec4V_From_Vec3V(point), &contact.point.x);
-			FStore(penetration, &contact.separation);
-
-			contact.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
-
-			//context.mContactBuffer.contact(point, normal, penetration);
+			outputSimplePCMContact(contactBuffer, point, normal, penetration);
 		}
 		return true;
 	}

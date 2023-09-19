@@ -72,7 +72,7 @@ namespace physx
 		PX_INLINE			PxFLIPMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxParticleMaterial(concreteType, baseFlags) {}
 		PX_INLINE			PxFLIPMaterial(PxBaseFlags baseFlags) : PxParticleMaterial(baseFlags) {}
 		virtual				~PxFLIPMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxFLIPMaterial", name) || PxParticleMaterial::isKindOf(name); }
+		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxFLIPMaterial", PxParticleMaterial); }
 	};
 
 #if !PX_DOXYGEN

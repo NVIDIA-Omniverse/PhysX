@@ -149,7 +149,7 @@ class PxStack
 	{
 		mCapacity *= 2;
 		int32_t* newMem =
-		    reinterpret_cast<int32_t*>(mAllocator.allocate(sizeof(int32_t) * mCapacity, __FILE__, __LINE__));
+		    reinterpret_cast<int32_t*>(mAllocator.allocate(sizeof(int32_t) * mCapacity, PX_FL));
 		intrinsics::memCopy(newMem, mMemory, mSize * sizeof(int32_t));
 		if(mRealloc)
 			mAllocator.deallocate(mMemory);

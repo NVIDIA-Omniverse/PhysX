@@ -131,7 +131,7 @@ public:
 												if((!aFlags.isSet(PxActorFlag::eDISABLE_SIMULATION)) && v.isSet(PxActorFlag::eDISABLE_SIMULATION) &&
 													(npType != NpType::eBODY) && (npType != NpType::eRIGID_STATIC))
 												{
-													PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+													PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 														"PxActor::setActorFlag: PxActorFlag::eDISABLE_SIMULATION is only supported by PxRigidDynamic and PxRigidStatic objects.");
 												}
 #endif

@@ -155,8 +155,7 @@ namespace physx
 			PxU32 /*particleId*/, PxU32 /*userBufferId*/, PxU32 /*tetId*/, const PxVec4& /*barycentrics*/, const bool /*isActive*/) 	{ return 0; }
 		virtual void removeParticleAttachment(Dy::SoftBody* /*softBody*/, PxU32 /*handle*/) 	{}
 
-		virtual void addRigidFilter(Dy::SoftBody* /*softBodySystem*/, const PxNodeIndex& /*softBodyNodeIndex*/,
-			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/) 	{}
+		virtual void addRigidFilter(Dy::SoftBody* /*softBodySystem*/, const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/) 	{}
 		virtual void removeRigidFilter(Dy::SoftBody* /*softBodySystem*/, 
 			const PxNodeIndex& /*rigidNodeIndex*/, PxU32 /*vertIndex*/) 	{}
 
@@ -191,10 +190,11 @@ namespace physx
 
 		virtual void removeSoftBodyAttachment(Dy::SoftBody* /*softBody0*/, PxU32 /*handle*/) 	{}
 
-		virtual void addClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*triIdx*/,
-			PxU32 /*tetIdx*/) 	{}
-		virtual void removeClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth*, PxU32 /*triId*/,
-			PxU32 /*tetId*/) 	{}
+		virtual void addClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*triIdx*/, PxU32 /*tetIdx*/) 	{}
+		virtual void removeClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*triIdx*/, PxU32 /*tetIdx*/) 	{}
+
+		virtual void addVertClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*vertIdx*/, PxU32 /*tetIdx*/) 	{}
+		virtual void removeVertClothFilter(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*vertIdx*/, PxU32 /*tetIdx*/) 	{}
 
 		virtual PxU32 addClothAttachment(Dy::SoftBody* /*softBody*/, Dy::FEMCloth* /*cloth*/, PxU32 /*triIdx*/,
 			const PxVec4& /*triBarycentric*/, PxU32 /*tetIdx*/, const PxVec4& /*tetBarycentric*/, 
@@ -273,7 +273,7 @@ namespace physx
 		virtual void updateArticulationAfterIntegration(PxsContext*	/*llContext*/, Bp::AABBManagerBase* /*aabbManager*/,
 			PxArray<Sc::BodySim*>& /*ccdBodies*/, PxBaseTask* /*continuation*/, IG::IslandSim& /*islandSim*/, float /*dt*/)	{}
 
-		virtual void mergeChangedAABBMgHandle(const PxU32 /*maxAABBMgHandles*/, const bool /*enableDirectGPUAPI*/) {}
+		virtual void mergeChangedAABBMgHandle() {}
 		virtual void gpuDmabackData(PxsTransformCache& /*cache*/, Bp::BoundsArray& /*boundArray*/, PxBitMapPinned& /*changedAABBMgrHandles*/, bool /*enableDirectGPUAPI*/){}
 		virtual void	updateScBodyAndShapeSim(PxsTransformCache& cache, Bp::BoundsArray& boundArray, PxBaseTask* continuation) = 0;
 		virtual PxU32* getActiveBodies()		{ return NULL;	}
@@ -295,33 +295,32 @@ namespace physx
 		virtual PxU32   getArticulationRemapIndex(const PxU32 /*nodeIndex*/) { return PX_INVALID_U32;}
 		//virtual void	setParticleSystemManager(PxgParticleSystemCore* psCore) = 0;
 
-		virtual void	copyArticulationData(void* /*jointData*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, void* /*copyEvent*/) {}
-		virtual void	applyArticulationData(void* /*data*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, void* /*waitEvent*/, void* /*signalEvent*/) {}
+		virtual void	copyArticulationData(void* /*jointData*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*copyEvent*/) {}
+		virtual void	applyArticulationData(void* /*data*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
+		virtual void	updateArticulationsKinematic(CUevent /*signalEvent*/) {}
 
 		//KS - the methods below here should probably be wrapped in if PX_SUPPORT_GPU_PHYSX
 		// PT: isn't the whole class only needed for GPU anyway?
 
-		virtual void	copySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, void* /*copyEvent*/) {}
-		virtual void	applySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, void* /*applyEvent*/) {}
-		virtual	void	copyContactData(Dy::Context* /*dyContext*/, void* /*data*/, const PxU32 /*maxContactPairs*/, void* /*numContactPairs*/, void* /*copyEvent*/) {}
-		virtual	void	copyBodyData(PxGpuBodyData* /*data*/, PxGpuActorPair* /*index*/, const PxU32 /*nbCopyActors*/, void* /*copyEvent*/){}
-		virtual	void	applyActorData(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, void* /*waitEvent*/, void* /*signalEvent*/) {}
+		virtual void	copySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, CUevent /*copyEvent*/) {}
+		virtual void	applySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, CUevent /*applyEvent*/, CUevent /*signalEvent*/) {}
+		virtual	void	copyContactData(Dy::Context* /*dyContext*/, void* /*data*/, const PxU32 /*maxContactPairs*/, void* /*numContactPairs*/, CUevent /*copyEvent*/) {}
+		virtual	void	copyBodyData(PxGpuBodyData* /*data*/, PxGpuActorPair* /*index*/, const PxU32 /*nbCopyActors*/, CUevent /*copyEvent*/){}
+		virtual	void	applyActorData(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
 
 		virtual	void	evaluateSDFDistances(const PxU32* /*sdfShapeIds*/, const PxU32 /*nbShapes*/, const PxVec4* /*samplePointsConcatenated*/,
-			const PxU32* /*samplePointCountPerShape*/, const PxU32 /*maxPointCount*/, PxVec4* /*localGradientAndSDFConcatenated*/, void* /*event*/)	{}
+			const PxU32* /*samplePointCountPerShape*/, const PxU32 /*maxPointCount*/, PxVec4* /*localGradientAndSDFConcatenated*/, CUevent /*event*/)	{}
 		virtual	PxU32	getInternalShapeIndex(const PxsShapeCore& /*shapeCore*/)	{ return PX_INVALID_U32;	}
 
 		virtual void	syncParticleData()	{}
 
-		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool/* useGpuBp*/, bool /*useDirectApi*/){}
+		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
 
-		virtual	void	computeDenseJacobians(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, void* /*computeEvent*/){}
-		virtual	void	computeGeneralizedMassMatrices(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, void* /*computeEvent*/){}
-		virtual	void	computeGeneralizedGravityForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, const PxVec3& /*gravity*/, void* /*computeEvent*/){}
-		virtual	void	computeCoriolisAndCentrifugalForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, void* /*computeEvent*/) {}
-		virtual void    applyParticleBufferData(const PxU32* /*indices*/, const PxGpuParticleBufferIndexPair* /*indexPairs*/, const PxParticleBufferFlags* /*flags*/, PxU32 /*nbUpdatedBuffers*/, void* /*waitEvent*/, void* /*signalEvent*/) {}
-
-		virtual void	flushInsertions()	{}
+		virtual	void	computeDenseJacobians(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
+		virtual	void	computeGeneralizedMassMatrices(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
+		virtual	void	computeGeneralizedGravityForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, const PxVec3& /*gravity*/, CUevent /*computeEvent*/){}
+		virtual	void	computeCoriolisAndCentrifugalForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/) {}
+		virtual void    applyParticleBufferData(const PxU32* /*indices*/, const PxGpuParticleBufferIndexPair* /*indexPairs*/, const PxParticleBufferFlags* /*flags*/, PxU32 /*nbUpdatedBuffers*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
 
 #if PX_SUPPORT_GPU_PHYSX
 		virtual PxU32				getNbDeactivatedFEMCloth()		const	{ return 0;		}

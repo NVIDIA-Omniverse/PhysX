@@ -259,7 +259,7 @@ protected:
 	PX_INLINE					PxConstraint(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL) {}
 	PX_INLINE					PxConstraint(PxBaseFlags baseFlags) : PxBase(baseFlags), userData(NULL) {}
 	virtual						~PxConstraint() {}
-	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxConstraint", name) || PxBase::isKindOf(name); }
+	virtual	bool				isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxConstraint", PxBase); }
 };
 
 #if !PX_DOXYGEN

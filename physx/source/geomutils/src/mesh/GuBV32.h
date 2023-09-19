@@ -135,7 +135,6 @@ namespace physx
 
 			bool			load(PxInputStream& stream, bool mismatch);
 
-			void			calculateLeafNode(BV32Data& node);
 			void			createSOAformatNode(BV32DataPacked& packedData, const BV32Data& node, const PxU32 childOffset, PxU32& currentIndex, PxU32& nbPackedNodes);
 
 			void			reset();

@@ -68,7 +68,7 @@ namespace physx
 			{
 				size_t len( strlen( inSrc ) );
 				len += 1;
-				char* newMem = reinterpret_cast<char*>(mWrapper.getAllocator().allocate( len, "PxStringTableImpl: const char*", __FILE__, __LINE__ ));
+				char* newMem = reinterpret_cast<char*>(mWrapper.getAllocator().allocate( len, "PxStringTableImpl: const char*", PX_FL));
 				physx::Pxstrlcpy( newMem, len, inSrc );
 				mHashMap.insert( newMem, 1 );
 				return newMem;

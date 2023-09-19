@@ -47,15 +47,15 @@ namespace Ext
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsX, PxU32 numVoxelsY, PxU32 numVoxelsZ,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxReal voxelEdgeLength,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsAlongLongestBoundingBoxAxis,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
 
 	//Extracts the surface triangles from the specified tetrahedra
 	void extractTetmeshSurface(const PxArray<PxI32>& tets, PxArray<PxI32>& triangles);

@@ -26,63 +26,41 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#ifdef RENDER_SNIPPET
+#ifndef EXT_OMNI_PVD_SET_DATA_H
+#define EXT_OMNI_PVD_SET_DATA_H
 
-#include <vector>
 
-#include "PxPhysicsAPI.h"
+//
+// This header has to be included to use macros like OMNI_PVD_SET() (set attribute values,
+// object instance registration etc.)
+//
 
-#include "../snippetrender/SnippetRender.h"
-#include "../snippetrender/SnippetCamera.h"
 
-using namespace physx;
+#define OMNI_PVD_CONTEXT_HANDLE 1
 
-extern bool initPhysics();
-extern void stepPhysics();	
-extern void cleanupPhysics();
 
-extern PxScene* gScene;
+#if PX_SUPPORT_OMNI_PVD
 
-namespace
-{
-Snippets::Camera* sCamera;
+#include "OmniPvdPxExtensionsSampler.h"
 
-void renderCallback()
-{
-	stepPhysics();
+//
+// Define the macros needed in CmOmniPvdAutoGenSetData.h
+//
+#undef OMNI_PVD_GET_WRITER
+#define OMNI_PVD_GET_WRITER(writer) \
+OmniPvdWriter* writer = physx::Ext::OmniPvdGetWriter();
 
-	Snippets::startRender(sCamera);
 
-	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
-	if(nbActors)
-	{
-		const PxVec3 dynColor(1.0f, 0.5f, 0.25f);
+#undef OMNI_PVD_GET_REGISTRATION_DATA
+#define OMNI_PVD_GET_REGISTRATION_DATA(registrationData) \
+const OmniPvdPxExtensionsRegistrationData* registrationData = physx::Ext::OmniPvdGetPxExtensionsRegistrationData();
 
-		std::vector<PxRigidActor*> actors(nbActors);
-		gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
-		Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true, dynColor);
-	}
+#endif  // PX_SUPPORT_OMNI_PVD
 
-	Snippets::finishRender();
-}
 
-void exitCallback(void)
-{
-	delete sCamera;
-	cleanupPhysics();
-}
-}
+#include "omnipvd/CmOmniPvdAutoGenSetData.h"
+// note: included in all cases since it will provide empty definitions of the helper macros such
+//       that not all of them have to be guarded by PX_SUPPORT_OMNI_PVD
 
-void renderLoop()
-{
-	sCamera = new Snippets::Camera(PxVec3(10.0f, 10.0f, 10.0f), PxVec3(-0.6f,-0.2f,-0.7f));
 
-	Snippets::setupDefault("PhysX Snippet Vehicle2", sCamera, NULL, renderCallback, exitCallback);
-
-	if (initPhysics())
-	{
-		glutMainLoop();
-	}
-}
-
-#endif
+#endif  // EXT_OMNI_PVD_SET_DATA_H

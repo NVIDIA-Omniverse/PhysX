@@ -43,71 +43,13 @@
 namespace physx
 {
 	namespace Dy
-	{
-
-	
+	{	
 		class ArticulationJointCoreData
 		{
 		public:
 
 			ArticulationJointCoreData() : jointOffset(0xffffffff), dofInternalConstraintMask(0)
 			{
-			}
-
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE void computeMotionMatrix(ArticulationJointCore* joint,
-				Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector* jointAxis)
-			{
-				const PxVec3 childOffset = -joint->childPose.p;
-
-				//transpose(Tc)*S = 0
-				//transpose(Ta)*S = 1
-				switch (joint->jointType)
-				{
-				case PxArticulationJointType::ePRISMATIC:
-				{
-					const Cm::UnAlignedSpatialVector& jJointAxis = jointAxis[0];
-					const PxVec3 u = (joint->childPose.rotate(jJointAxis.bottom)).getNormalized();
-
-					motionMatrix[0] = Cm::UnAlignedSpatialVector(PxVec3(0.f), u);
-
-					PX_ASSERT(dof == 1);
-
-					break;
-				}
-				case PxArticulationJointType::eREVOLUTE:
-				case PxArticulationJointType::eREVOLUTE_UNWRAPPED:
-				{
-					const Cm::UnAlignedSpatialVector& jJointAxis = jointAxis[0];
-					const PxVec3 u = (joint->childPose.rotate(jJointAxis.top)).getNormalized();
-					const PxVec3 uXd = u.cross(childOffset);
-
-					motionMatrix[0] = Cm::UnAlignedSpatialVector(u, uXd);
-
-					break;
-				}
-				case PxArticulationJointType::eSPHERICAL:
-				{
-
-					for (PxU32 ind = 0; ind <dof; ++ind)
-					{
-						const Cm::UnAlignedSpatialVector& jJointAxis = jointAxis[ind];
-						const PxVec3 u = (joint->childPose.rotate(jJointAxis.top)).getNormalized();
-
-						const PxVec3 uXd = u.cross(childOffset);
-						motionMatrix[ind] = Cm::UnAlignedSpatialVector(u, uXd);
-					}
-
-					break;
-				}
-				case PxArticulationJointType::eFIX:
-				{
-					PX_ASSERT(dof == 0);
-					break;
-				}
-				default:
-					break;
-				}
 			}
 
 			PX_CUDA_CALLABLE PX_FORCE_INLINE PxU8 computeJointDofs(ArticulationJointCore* joint) const
@@ -139,10 +81,9 @@ namespace physx
 				}
 			}
 
-			PX_FORCE_INLINE PxU32 computeJointDof(ArticulationJointCore* joint, const bool forceRecompute,
-				Cm::UnAlignedSpatialVector* jointAxis)
+			PX_FORCE_INLINE PxU32 computeJointDof(ArticulationJointCore* joint, Cm::UnAlignedSpatialVector* jointAxis)
 			{
-				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eMOTION || forceRecompute)
+				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eMOTION)
 				{
 
 					dof = 0;
@@ -176,66 +117,7 @@ namespace physx
 
 			}
 
-			PxU32								jointOffset;					//4
-			//degree of freedom
-			PxU8								dof;							//1
-			PxU8								dofInternalConstraintMask;		//1
-			PxU8								limitMask;						//1	
-
-		};
-
-		
-
-		struct ArticulationJointTargetData
-		{
-			PxReal								targetJointVelocity[3];			//12
-			PxReal								targetJointPosition[3];			//24
-			PxReal								armature[3];					//36
-
-
-			ArticulationJointTargetData()
-			{
-				for (PxU32 i = 0; i < 3; ++i)
-				{
-					targetJointPosition[i] = 0.f;
-					targetJointVelocity[i] = 0.f;
-					armature[i] = 0.f;
-				}
-			}
-
-
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE void setJointVelocityDrive(ArticulationJointCore* joint, const PxU32 dof)
-			{
-				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eTARGETVELOCITY)
-				{
-					for (PxU32 i = 0; i < dof; ++i)
-					{
-						PxU32 ind = joint->dofIds[i];
-
-						targetJointVelocity[i] = joint->targetV[ind];
-					}
-					
-					joint->jointDirtyFlag &= ~ArticulationJointCoreDirtyFlag::eTARGETVELOCITY;
-				}
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE void setJointPoseDrive(ArticulationJointCore* joint, const PxU32 dof)
-			{
-				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eTARGETPOSE)
-				{
-					for (PxU32 i = 0; i < dof; ++i)
-					{
-						PxU32 ind = joint->dofIds[i];
-
-						targetJointPosition[i] = joint->targetP[ind];
-					}
-
-					joint->jointDirtyFlag &= ~ArticulationJointCoreDirtyFlag::eTARGETPOSE;
-				}
-			}
-
-			PX_CUDA_CALLABLE PX_FORCE_INLINE void setArmature(ArticulationJointCore* joint, const PxU32 dof)
+			PX_FORCE_INLINE void setArmature(ArticulationJointCore* joint)
 			{
 				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eARMATURE)
 				{
@@ -243,13 +125,19 @@ namespace physx
 					for (PxU32 i = 0; i < dof; ++i)
 					{
 						PxU32 ind = joint->dofIds[i];
-
 						armature[i] = joint->armature[ind];
 					}
 
 					joint->jointDirtyFlag &= ~ArticulationJointCoreDirtyFlag::eARMATURE;
 				}
 			}
+
+			PxU32								jointOffset;					//4
+			PxReal								armature[3];					// indexed by internal dof id.
+			//degree of freedom
+			PxU8								dof;							//1
+			PxU8								dofInternalConstraintMask;		//1
+			PxU8								limitMask;						//1	
 
 		};
 

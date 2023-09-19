@@ -65,6 +65,7 @@ typedef struct CUgraphicsResource_st* CUgraphicsResource;
 
 #else
 typedef struct CUstream_st* CUstream; // We declare some callbacks taking CUstream as an argument even when building with PX_SUPPORT_GPU_PHYSX = 0.
+typedef struct CUevent_st* CUevent;
 #endif // PX_SUPPORT_GPU_PHYSX
 #endif
 

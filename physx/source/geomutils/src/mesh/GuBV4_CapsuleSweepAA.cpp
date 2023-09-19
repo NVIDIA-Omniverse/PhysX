@@ -40,6 +40,8 @@ using namespace physx::aos;
 #define SWEEP_AABB_IMPL
 
 	// PT: TODO: refactor structure (TA34704)
+namespace
+{
 	struct RayParams
 	{
 		BV4_ALIGN16(PxVec3p	mCenterOrMinCoeff_PaddedAligned);
@@ -52,7 +54,7 @@ using namespace physx::aos;
 	#endif
 		BV4_ALIGN16(PxVec3p	mOrigin_Padded);		// PT: TODO: this one could be switched to PaddedAligned & V4LoadA (TA34704)
 	};
-
+}
 #include "GuBV4_BoxSweep_Params.h"
 
 namespace

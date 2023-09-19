@@ -82,7 +82,7 @@ SET(GPU_SNIPPET_LIST
 # Add snippets of GPU features that are under development
 IF(NOT PUBLIC_RELEASE AND NOT PX_GENERATE_SOURCE_DISTRO)
 	LIST(APPEND GPU_SNIPPET_LIST
-		BigHairSystem FLIPFluid HairSystem MPM)
+		BigHairSystem FEMCloth FLIPFluid HairSystem MPM)
 ENDIF()
 
 #TODO, create a propper define for whether GPU features are enabled or not!
@@ -90,7 +90,7 @@ IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND (NOT CMAKE_CROSSCOMPILING))
 	LIST(APPEND SNIPPETS_LIST ${GPU_SNIPPET_LIST})
 ENDIF()
 	
-SET(SNIPPETS_VEHICLE2_LIST Vehicle2DirectDrive Vehicle2FourWheelDrive Vehicle2TankDrive Vehicle2Customization Vehicle2Multithreading Vehicle2Truck)	
+SET(SNIPPETS_VEHICLE2_LIST Vehicle2DirectDrive Vehicle2FourWheelDrive Vehicle2TankDrive Vehicle2CustomSuspension Vehicle2Multithreading Vehicle2Truck Vehicle2CustomTire)
 LIST(APPEND SNIPPETS_VEHICLE2_LIST ${PLATFORM_SNIPPETS_VEHICLE2_LIST})
 	
 IF(SNIPPET_RENDER_ENABLED)
@@ -112,6 +112,13 @@ FOREACH(SNIPPET_NAME ${SNIPPETS_VEHICLE2_LIST})
 	INCLUDE(SnippetVehicle2Template.cmake)
 	SET_PROPERTY(TARGET Snippet${SNIPPET_NAME} PROPERTY FOLDER "Snippets")
 ENDFOREACH()
+
+# For internal builds, make sure the GPU lib is built (but not linked!) before GPU snippets
+IF (NOT PUBLIC_RELEASE AND (PX_GENERATE_GPU_PROJECTS OR PX_GENERATE_GPU_PROJECTS_ONLY))
+	FOREACH(SNIPPET_NAME ${GPU_SNIPPET_LIST})
+		ADD_DEPENDENCIES(Snippet${SNIPPET_NAME} PhysXGpu)
+	ENDFOREACH()
+ENDIF()
 
 IF(PX_GENERATE_SOURCE_DISTRO)
 	FOREACH(FILE_NAME ${SOURCE_DISTRO_FILE_LIST})

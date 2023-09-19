@@ -148,8 +148,8 @@ bool writeCommandResponseParams
 		writer.Key("ResponseCurve");
 		writer.StartArray();
 		const PxReal* speeds = responseParams.nonlinearResponse.speedResponses + responseParams.nonlinearResponse.speedResponsesPerCommandValue[i];
-		const PxReal* responses = speeds + responseParams.nonlinearResponse.nbSpeedRenponsesPerCommandValue[i];
-		for (PxU32 j = 0; j < responseParams.nonlinearResponse.nbSpeedRenponsesPerCommandValue[i]; j++)
+		const PxReal* responses = speeds + responseParams.nonlinearResponse.nbSpeedResponsesPerCommandValue[i];
+		for (PxU32 j = 0; j < responseParams.nonlinearResponse.nbSpeedResponsesPerCommandValue[i]; j++)
 		{
 			writer.StartArray();
 			writer.Double(static_cast<double>(speeds[j]));

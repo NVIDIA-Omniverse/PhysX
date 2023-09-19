@@ -34,11 +34,21 @@
 */
 
 #include "foundation/PxFlags.h"
+#include "foundation/PxString.h"
+#include "foundation/PxFoundation.h"
 #include "common/PxSerialFramework.h"
 #include "common/PxCollection.h"
 #include "common/PxTypeInfo.h"
-#include <string.h>	// For strcmp
 #include "foundation/PxAssert.h"
+
+#define PX_IS_KIND_OF(query, classname, baseclass)                                                                     \
+	PX_ASSERT(query != NULL);                                                                                          \
+	if(query == NULL)                                                                                                  \
+	{                                                                                                                  \
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "isKindOf called with invalid string");        \
+		return false;                                                                                                  \
+	}                                                                                                                  \
+	return !Pxstrcmp(classname, query) || baseclass::isKindOf(query)
 
 #if !PX_DOXYGEN
 namespace physx
@@ -170,7 +180,7 @@ protected:
 	/**
 	\brief Returns whether a given type name matches with the type of this instance
 	*/	
-	virtual				bool		isKindOf(const char* superClass) const { return !::strcmp(superClass, "PxBase"); }
+	virtual				bool		isKindOf(const char* superClass) const { return !Pxstrcmp(superClass, "PxBase"); }
 
 	template<class T>	bool		typeMatch() const
 									{
@@ -222,7 +232,7 @@ protected:
 	PX_INLINE						PxRefCounted(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags)	{}
 	PX_INLINE						PxRefCounted(PxBaseFlags baseFlags) : PxBase(baseFlags)										{}
 	virtual							~PxRefCounted()																				{}
-	virtual				bool		isKindOf(const char* name) const { return !::strcmp("PxRefCounted", name) || PxBase::isKindOf(name); }
+	virtual				bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxRefCounted", PxBase); }
 };
 
 #if !PX_DOXYGEN

@@ -32,7 +32,7 @@ using namespace physx;
 using namespace Gu;
 using namespace aos;
 
-bool physx::Gu::contains(aos::Vec3V* verts, PxU32 numVerts, const aos::Vec3VArg p, const aos::Vec3VArg min, const aos::Vec3VArg max)
+bool Gu::contains(Vec3V* verts, PxU32 numVerts, const Vec3VArg p, const Vec3VArg min, const Vec3VArg max)
 {
 	const BoolV tempCon = BOr(V3IsGrtr(min, p), V3IsGrtr(p, max));
 	const BoolV con = BOr(BGetX(tempCon), BGetY(tempCon));
@@ -102,7 +102,7 @@ bool physx::Gu::contains(aos::Vec3V* verts, PxU32 numVerts, const aos::Vec3VArg 
 	return intersectionPoints> 0;
 }
 
-PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal, PxI32& polyIndex2)
+PxI32 Gu::getPolygonIndex(const PolygonalData& polyData, const SupportLocal* map, const Vec3VArg normal, PxI32& polyIndex2)
 {
 	//normal is in shape space, need to transform the vertex space
 	const Vec3V n = M33TrnspsMulV3(map->vertex2Shape, normal);
@@ -198,8 +198,7 @@ PxI32 physx::Gu::getPolygonIndex(const Gu::PolygonalData& polyData, const Suppor
 	return closestFaceIndex;
 }
 
-PxU32 physx::Gu::getWitnessPolygonIndex(const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal,
-	const aos::Vec3VArg closest, PxReal tolerance)
+PxU32 Gu::getWitnessPolygonIndex(const PolygonalData& polyData, const SupportLocal* map, const Vec3VArg normal, const Vec3VArg closest, PxReal tolerance)
 {
 	PxReal pd[256];
 	//first pass : calculate the smallest distance from the closest point to the polygon face
@@ -272,7 +271,7 @@ PxU32 physx::Gu::getWitnessPolygonIndex(const Gu::PolygonalData& polyData, const
 	return closestFaceIndex;
 }
 
-/*	PX_FORCE_INLINE bool boxContainsInXY(const aos::FloatVArg x, const aos::FloatVArg y, const aos::Vec3VArg p, const aos::Vec3V* verts, const aos::Vec3VArg min, const aos::Vec3VArg max)
+/*	PX_FORCE_INLINE bool boxContainsInXY(const FloatVArg x, const FloatVArg y, const Vec3VArg p, const Vec3V* verts, const Vec3VArg min, const Vec3VArg max)
 	{
 		using namespace aos;
 

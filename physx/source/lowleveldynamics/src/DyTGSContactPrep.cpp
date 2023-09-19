@@ -1107,15 +1107,9 @@ namespace Dy
 
 			const PxContactPoint* contactBase0 = buffer + c.contactPatches[c.correlationListHeads[i]].start;
 	
-			const bool useImprovedFrictionPatch = !!(contactBase0->materialFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION) && frictionPatch.anchorCount == 2;
-		
-			PxReal coefficient = useImprovedFrictionPatch ? 1.f/frictionPatch.anchorCount : 1.f;
-
-			const PxReal staticFriction = contactBase0->staticFriction*coefficient;
-			const PxReal dynamicFriction = contactBase0->dynamicFriction*coefficient;
 			const bool disableStrongFriction = !!(contactBase0->materialFlags & PxMaterialFlag::eDISABLE_FRICTION);
-			staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(staticFriction));
-			staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(dynamicFriction));
+			staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(contactBase0->staticFriction));
+			staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(contactBase0->dynamicFriction));
 
 			const PxReal frictionBiasScale = disableStrongFriction ? 0.f : invDtF32 * 0.8f;
 
@@ -2047,7 +2041,7 @@ void setSolverConstantsStep(PxReal& error,
 		else
 		{		
 			biasScale = -recipdt*erp;// *recipResponse;
-			if (c.flags & Px1DConstraintFlag::eDRIVE_ROW)
+			if (c.flags & Px1DConstraintFlag::eDEPRECATED_DRIVE_ROW)
 			{
 				error = 0.f;
 				targetVel = c.velocityTarget - geomError *recipTotalDt;

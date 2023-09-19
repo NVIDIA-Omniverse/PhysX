@@ -25,6 +25,7 @@
 // Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
+
 #include "foundation/PxFPU.h"
 #include "float.h"
 #include "foundation/PxIntrinsics.h"

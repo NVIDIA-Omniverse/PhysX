@@ -109,7 +109,7 @@ class PxMutexT : protected Alloc
 	*/
 	PxMutexT(const Alloc& alloc = Alloc()) : Alloc(alloc)
 	{
-		mImpl = reinterpret_cast<PxMutexImpl*>(Alloc::allocate(PxMutexImpl::getSize(), __FILE__, __LINE__));
+		mImpl = reinterpret_cast<PxMutexImpl*>(Alloc::allocate(PxMutexImpl::getSize(), PX_FL));
 		PX_PLACEMENT_NEW(mImpl, PxMutexImpl)();
 	}
 

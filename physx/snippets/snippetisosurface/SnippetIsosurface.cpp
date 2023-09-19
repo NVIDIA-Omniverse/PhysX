@@ -70,9 +70,9 @@ PxArray<PxVec4> gIsosurfaceVertices;
 PxArray<PxU32> gIsosurfaceIndices;
 PxArray<PxVec4> gIsosurfaceNormals;
 PxIsosurfaceExtractor* gIsosurfaceExtractor;
-extern void* gVerticesGpu;
-extern void* gNormalsGpu;
-extern void* gInterleavedVerticesAndNormalsGpu;
+void* gVerticesGpu;
+void* gNormalsGpu;
+void* gInterleavedVerticesAndNormalsGpu;
 
 class IsosurfaceCallback : public PxParticleSystemCallback
 {
@@ -129,8 +129,9 @@ public:
 
 	virtual void onPostSolve(const PxGpuMirroredPointer<PxGpuParticleSystem>& gpuParticleSystem, CUstream stream)
 	{
-		PxGpuParticleSystem& p = *gpuParticleSystem.mHostPtr;
-		
+#if RENDER_SNIPPET
+		PxGpuParticleSystem& p = *gpuParticleSystem.mHostPtr;		
+
 		if (mAnisotropyGenerator) 
 		{
 			mAnisotropyGenerator->generateAnisotropy(gpuParticleSystem.mDevicePtr, p.mCommonData.mMaxParticles, stream);
@@ -146,6 +147,10 @@ public:
 			//Bring the data into a form that is better suited for rendering
 			mArrayConverter->interleaveGpuBuffers(static_cast<PxVec4*>(gVerticesGpu), static_cast<PxVec4*>(gNormalsGpu), mMaxVertices, static_cast<PxVec3*>(gInterleavedVerticesAndNormalsGpu), stream);
 		}
+#else
+		PX_UNUSED(gpuParticleSystem);
+		PX_UNUSED(stream);
+#endif
 	}
 
 	virtual void onBegin(const PxGpuMirroredPointer<PxGpuParticleSystem>& /*gpuParticleSystem*/, CUstream /*stream*/) { }
@@ -156,6 +161,10 @@ public:
 
 	void release()
 	{
+		gIsosurfaceVertices.reset();
+		gIsosurfaceIndices.reset();
+		gIsosurfaceNormals.reset();
+
 		mIsosurfaceExtractor->release();
 		PX_DELETE(mIsosurfaceExtractor);
 
@@ -195,7 +204,7 @@ static void initScene()
 	}
 	if (cudaContextManager == NULL)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Failed to initialize CUDA!\n");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Failed to initialize CUDA!\n");
 	}
 
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());

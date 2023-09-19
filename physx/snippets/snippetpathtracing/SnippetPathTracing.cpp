@@ -260,10 +260,10 @@ bool CustomScene::raycast(const PxVec3& origin, const PxVec3& unitDir, float max
 
 	struct LocalCB : PxBVH::RaycastCallback
 	{
-		LocalCB(const CustomScene& scene, const PxVec3& origin, const PxVec3& dir, CustomHit& hit) :
+		LocalCB(const CustomScene& scene, const PxVec3& origin_, const PxVec3& dir, CustomHit& hit_) :
 			mScene	(scene),
-			mHit	(hit),
-			mOrigin	(origin),
+			mHit	(hit_),
+			mOrigin	(origin_),
 			mDir	(dir),
 			mStatus	(false)
 		{
@@ -320,10 +320,10 @@ bool CustomScene::shadowRay(const PxVec3& origin, const PxVec3& unitDir, float m
 
 	struct LocalCB : PxBVH::RaycastCallback
 	{
-		LocalCB(const CustomScene& scene, const PxVec3& origin, const PxVec3& dir, const CustomObject* filtered) :
+		LocalCB(const CustomScene& scene, const PxVec3& origin_, const PxVec3& dir, const CustomObject* filtered_) :
 			mScene		(scene),
-			mFiltered	(filtered),
-			mOrigin		(origin),
+			mFiltered	(filtered_),
+			mOrigin		(origin_),
 			mDir		(dir),
 			mStatus		(false)
 		{

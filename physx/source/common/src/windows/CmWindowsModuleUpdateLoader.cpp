@@ -56,7 +56,7 @@ static void LogMessage(PXUL_ErrorCode messageType, char* message)
 	switch(messageType)
 	{
 	case PXUL_ERROR_MESSAGES:
-		getFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, 
+		getFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, 
 			"PhysX Update Loader Error: %s.", message);
 		break;
 	case PXUL_WARNING_MESSAGES:
@@ -66,7 +66,7 @@ static void LogMessage(PXUL_ErrorCode messageType, char* message)
 		getFoundation().error(PX_INFO, "PhysX Update Loader Information: %s.", message);
 		break;
 	default:
-		getFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__,
+		getFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 			"Unknown message type from update loader.");
 		break;
 	}

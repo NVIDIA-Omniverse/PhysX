@@ -38,8 +38,6 @@
 #define DY_ARTICULATION_MIN_RESPONSE 1e-5f
 #define DY_ARTICULATION_CFM	2e-4f
 
-#define DY_ARTICULATION_BAD_RESPONSE 0.02f
-
 namespace physx
 {
 

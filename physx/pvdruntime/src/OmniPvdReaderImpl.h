@@ -109,7 +109,7 @@ public:
 	OmniPvdDataType::Enum mCmdAttributeDataType;
 	uint32_t mCmdAttributeDataLen;
 	uint32_t mCmdAttributeNbElements;
-	uint32_t mCmdEnumValue;
+	OmniPvdEnumValueType mCmdEnumValue;
 	OmniPvdClassHandle mCmdEnumClassHandle;
 	OmniPvdClassHandle mCmdAttributeClassHandle;
 

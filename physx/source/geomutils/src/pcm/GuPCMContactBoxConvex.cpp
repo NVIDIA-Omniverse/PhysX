@@ -43,11 +43,11 @@ using namespace Gu;
 using namespace aos;
 
 static bool fullContactsGenerationBoxConvex(const GjkConvex* relativeConvex, const GjkConvex* localConvex, const PxTransformV& transf0, const PxTransformV& transf1,
-											PersistentContact* manifoldContacts, PxContactBuffer& contactBuffer, Gu::PersistentContactManifold& manifold, Vec3VArg normal, 
+											PersistentContact* manifoldContacts, PxContactBuffer& contactBuffer, PersistentContactManifold& manifold, Vec3VArg normal, 
 											const Vec3VArg closestA, const Vec3VArg closestB, const FloatVArg contactDist, bool idtScale, bool doOverlapTest, PxRenderOutput* renderOutput,
 											PxReal toleranceLength)
 {
-	Gu::PolygonalData polyData0;
+	PolygonalData polyData0;
 
 	const BoxV& box = relativeConvex->getConvex<BoxV>();
 	const ConvexHullV& convexHull = localConvex->getConvex<ConvexHullV>();
@@ -58,7 +58,7 @@ static bool fullContactsGenerationBoxConvex(const GjkConvex* relativeConvex, con
 	polyBox0.getPolygonalData(&polyData0);
 	polyData0.mPolygonVertexRefs = gPCMBoxPolygonData;
 	
-	Gu::PolygonalData polyData1;
+	PolygonalData polyData1;
 	getPCMConvexData(convexHull, idtScale, polyData1);
 	
 	const Mat33V identity = M33Identity();
@@ -112,7 +112,7 @@ static bool generateOrProcessContactsBoxConvex(	const GjkConvex* relativeConvex,
 	}
 	else
 	{
-		Gu::PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
+		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
 
 		const Vec3V localNor = manifold.mNumContacts ? manifold.getLocalNormal() : V3Zero();
 
@@ -149,18 +149,16 @@ static bool generateOrProcessContactsBoxConvex(	const GjkConvex* relativeConvex,
 
 bool Gu::pcmContactBoxConvex(GU_CONTACT_METHOD_ARGS)
 {
-	using namespace aos;
-	
-	const PxConvexMeshGeometry& shapeConvex = checkedCast<PxConvexMeshGeometry>(shape1);
-	const PxBoxGeometry& shapeBox = checkedCast<PxBoxGeometry>(shape0);
-	
-	Gu::PersistentContactManifold& manifold = cache.getManifold();
-	const Gu::ConvexHullData* hullData = _getHullData(shapeConvex);
-	PxPrefetchLine(hullData);
-	
 	PX_ASSERT(transform1.q.isSane());
 	PX_ASSERT(transform0.q.isSane());
 
+	const PxConvexMeshGeometry& shapeConvex = checkedCast<PxConvexMeshGeometry>(shape1);
+	const PxBoxGeometry& shapeBox = checkedCast<PxBoxGeometry>(shape0);
+	
+	PersistentContactManifold& manifold = cache.getManifold();
+	const ConvexHullData* hullData = _getHullData(shapeConvex);
+	PxPrefetchLine(hullData);
+	
 	const FloatV contactDist = FLoad(params.mContactDistance);
 	const Vec3V boxExtents = V3LoadU(shapeBox.halfExtents);
 
@@ -172,8 +170,8 @@ bool Gu::pcmContactBoxConvex(GU_CONTACT_METHOD_ARGS)
 	const PxMatTransformV aToB(curRTrans);
 
 	const PxReal toleranceLength = params.mToleranceLength;
-	const FloatV convexMargin = Gu::CalculatePCMConvexMargin(hullData, vScale, toleranceLength);
-	const FloatV boxMargin = Gu::CalculatePCMBoxMargin(boxExtents, toleranceLength);
+	const FloatV convexMargin = CalculatePCMConvexMargin(hullData, vScale, toleranceLength);
+	const FloatV boxMargin = CalculatePCMBoxMargin(boxExtents, toleranceLength);
 
 #if PCM_BOX_HULL_DEBUG
 	const PxVec3* verts = hullData->getHullVertices();
@@ -189,7 +187,7 @@ bool Gu::pcmContactBoxConvex(GU_CONTACT_METHOD_ARGS)
 			points[j] = V3LoadU_SafeReadW(verts[inds[j]]);
 		}
 
-		Gu::PersistentContactManifold::drawPolygon(*renderOutput, transf1, points, (PxU32)polygon.mNbVerts, 0x00ff0000);
+		PersistentContactManifold::drawPolygon(*renderOutput, transf1, points, (PxU32)polygon.mNbVerts, 0x00ff0000);
 	}
 #endif
 
@@ -214,8 +212,8 @@ bool Gu::pcmContactBoxConvex(GU_CONTACT_METHOD_ARGS)
 
 		const QuatV vQuat = QuatVLoadU(&shapeConvex.scale.rotation.x);
 		const bool idtScale = shapeConvex.scale.isIdentity();
-		const Gu::ConvexHullV convexHull(hullData, V3LoadU(hullData->mCenterOfMass), vScale, vQuat, idtScale);
-		const Gu::BoxV box(V3Zero(), boxExtents);
+		const ConvexHullV convexHull(hullData, V3LoadU(hullData->mCenterOfMass), vScale, vQuat, idtScale);
+		const BoxV box(V3Zero(), boxExtents);
 		GjkOutput output;
 		
 		const RelativeConvex<BoxV> relativeConvex(box, aToB);

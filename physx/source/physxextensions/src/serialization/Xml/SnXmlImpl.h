@@ -60,7 +60,7 @@ namespace snXmlImpl {
 			PxU32 theLen = snXmlImpl::strLen( inStr );
 			//The memory will never be released by repx.  If you want it released, you need to pass in a custom allocator
 			//that tracks all allocations and releases unreleased allocations yourself.
-			char* dest = reinterpret_cast<char* >( inAllocator.allocate( theLen + 1, "Repx::const char*", __FILE__, __LINE__ ) );
+			char* dest = reinterpret_cast<char* >( inAllocator.allocate( theLen + 1, "Repx::const char*", PX_FL ) );
 			PxMemCopy( dest, inStr, theLen );
 			dest[theLen] = 0;
 			return dest;

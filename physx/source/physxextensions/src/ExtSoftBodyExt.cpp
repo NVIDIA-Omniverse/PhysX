@@ -101,7 +101,7 @@ static void updateNodeInverseVolumes(PxSoftBody& sb, PxVec4* simPositions)
 		const PxReal det = Q.getDeterminant();
 
 		if (det <= 1.e-9f)
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "updateNodeInverseVolumes(): tetrahedron is degenerate or inverted");
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "updateNodeInverseVolumes(): tetrahedron is degenerate or inverted");
 
 		//Distribute one quarter of the volume to each vertex the tetrahedron is connected to
 		const PxReal volume = det / 6.0f;

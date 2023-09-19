@@ -63,7 +63,7 @@ namespace physx
 			if (type == PxConcreteType::eSOFTBODY_MESH)
 				return NpFactory::getInstance().createSoftBodyMesh(data);
 
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__, "Inserting object failed: "
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Inserting object failed: "
 				"Object type not supported for buildObjectFromData.");
 
 			return NULL;

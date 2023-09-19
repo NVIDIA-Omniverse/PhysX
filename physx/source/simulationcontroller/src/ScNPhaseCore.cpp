@@ -55,9 +55,7 @@ NPhaseCore::NPhaseCore(Scene& scene, const PxSceneDesc& sceneDesc) :
 	mTriggerInteractionPool						("triggerInteractionPool"),
 	mActorPairContactReportDataPool				("actorPairContactReportPool"),
 	mInteractionMarkerPool						("interactionMarkerPool"),
-	mMergeProcessedTriggerInteractions			(scene.getContextId(), this, "ScNPhaseCore.mergeProcessedTriggerInteractions"),
-	mTmpTriggerProcessingBlock					(NULL),
-	mTriggerPairsToDeactivateCount				(0)
+	mConcludeTriggerInteractionProcessingTask	(scene.getContextId(), this, "ScNPhaseCore.concludeTriggerInteractionProcessing")
 {
 }
 
@@ -302,19 +300,14 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 {
 	PX_ASSERT(!(s0->getFlags() & PxShapeFlag::eTRIGGER_SHAPE)
 		   && !(s1->getFlags() & PxShapeFlag::eTRIGGER_SHAPE));
-	// This method is only for the case where a ShapeInteraction is going to be created.
-	// Else we might create an ActorPair that does not get referenced and causes a mem leak.
 	
-	BodyPairKey key;
-
 	ActorSim* aLess = &s0->getActor();
 	ActorSim* aMore = &s1->getActor();
 
 	if(aLess->getActorID() > aMore->getActorID())
 		PxSwap(aLess, aMore);
 
-	key.mSim0 = aLess->getActorID();
-	key.mSim1 = aMore->getActorID();
+	const BodyPairKey key(aLess->getActorID(), aMore->getActorID());
 
 	ActorPair*& actorPair = mActorPairMap[key];
 	
@@ -326,9 +319,7 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 			actorPair = mActorPairReportPool.construct(s0->getActor(), s1->getActor());
 	}
 
-	PxIntBool actorPairHasReports = actorPair->isReportPair();
-
-	if(!isReportPair || actorPairHasReports)
+	if(!isReportPair || actorPair->isReportPair())
 		return actorPair;
 	else
 	{
@@ -353,6 +344,10 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 				}
 			}
 		}
+
+		PX_ASSERT(!actorPair->isReportPair());
+		mActorPairPool.destroy(actorPair);
+
 		actorPair = actorPairReport;
 	}
 	return actorPair;
@@ -547,15 +542,12 @@ class TriggerContactTask : public Cm::Task
 {
 	PX_NOCOPY(TriggerContactTask)
 public:
-	TriggerContactTask(ElementSimInteraction* const* triggerPairs, PxU32 triggerPairCount, PxMutex& lock,
-		TriggerInteraction** pairsToDeactivate, volatile PxI32& pairsToDeactivateCount,
+	TriggerContactTask(TriggerInteraction* const* triggerPairs, PxU32 triggerPairCount, PxMutex& lock,
 		Scene& scene, PxsTransformCache& transformCache) :
 		Cm::Task				(scene.getContextId()),
 		mTriggerPairs			(triggerPairs),
 		mTriggerPairCount		(triggerPairCount),
 		mLock					(lock),
-		mPairsToDeactivate		(pairsToDeactivate),
-		mPairsToDeactivateCount	(pairsToDeactivateCount),
 		mScene					(scene),
 		mTransformCache			(transformCache)
 	{
@@ -573,41 +565,16 @@ public:
 		TriggerPairExtraData triggerPairExtra[sTriggerPairsPerTask];
 		PxU32 triggerReportItemCount = 0;
 
-		TriggerInteraction* deactivatePairs[sTriggerPairsPerTask];
-		PxI32 deactivatePairCount = 0;
-
 		for(PxU32 i=0; i < mTriggerPairCount; i++)
 		{
-			TriggerInteraction* tri = static_cast<TriggerInteraction*>(mTriggerPairs[i]);
+			TriggerInteraction* tri = mTriggerPairs[i];
 
 			PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
 			
-			if(findTriggerContacts(tri, false, false, triggerPair[triggerReportItemCount], 
+			if (findTriggerContacts(tri, false, false, triggerPair[triggerReportItemCount],
 				triggerPairExtra[triggerReportItemCount], triggerPairStats, mTransformCache))
+			{
 				triggerReportItemCount++;
-
-			if(!(tri->readFlag(TriggerInteraction::PROCESS_THIS_FRAME)))
-			{
-				// active trigger pairs for which overlap tests were not forced should remain in the active list
-				// to catch transitions between overlap and no overlap
-				continue;
-			}
-			else
-			{
-				tri->clearFlag(TriggerInteraction::PROCESS_THIS_FRAME);
-
-				// explicitly scheduled overlap test is done (after object creation, teleport, ...). Check if trigger pair should remain active or not.
-
-				if(!tri->onActivate(0))
-				{
-					PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
-					// Why is the assert enough?
-					// Once an explicit overlap test is scheduled, the interaction can not get deactivated anymore until it got processed.
-
-					tri->clearInteractionFlag(InteractionFlag::eIS_ACTIVE);
-					deactivatePairs[deactivatePairCount] = tri;
-					deactivatePairCount++;
-				}
 			}
 		}
 
@@ -624,12 +591,6 @@ public:
 				PxMemCopy(triggerPairBuffer, triggerPair, sizeof(PxTriggerPair) * triggerReportItemCount);
 				PxMemCopy(triggerPairExtraBuffer, triggerPairExtra, sizeof(TriggerPairExtraData) * triggerReportItemCount);
 			}
-		}
-
-		if(deactivatePairCount)
-		{
-			PxI32 newSize = PxAtomicAdd(&mPairsToDeactivateCount, deactivatePairCount);
-			PxMemCopy(mPairsToDeactivate + newSize - deactivatePairCount, deactivatePairs, sizeof(TriggerInteraction*) * deactivatePairCount);
 		}
 
 #if PX_ENABLE_SIM_STATS
@@ -656,11 +617,9 @@ public:
 	static const PxU32 sTriggerPairsPerTask = 64;
 
 private:
-	ElementSimInteraction* const*	mTriggerPairs;
+	TriggerInteraction* const*		mTriggerPairs;
 	const PxU32						mTriggerPairCount;
 	PxMutex&						mLock;
-	TriggerInteraction**			mPairsToDeactivate;
-	volatile PxI32&					mPairsToDeactivateCount;
 	Scene&							mScene;
 	PxsTransformCache&				mTransformCache;
 };
@@ -668,89 +627,144 @@ private:
 }  // namespace Sc
 }  // namespace physx
 
-void NPhaseCore::processTriggerInteractions(PxBaseTask* continuation)
+bool TriggerProcessingContext::initialize(TriggerInteraction** interactions, PxU32 pairCount, PxcScratchAllocator& allocator)
 {
 	PX_ASSERT(!mTmpTriggerProcessingBlock);
-	PX_ASSERT(mTriggerPairsToDeactivateCount == 0);
+	PX_ASSERT(mTmpTriggerPairCount == 0);
+	PX_ASSERT(pairCount > 0);
 
-	Scene& scene = mOwnerScene;
+	const PxU32 taskCountWithoutRemainder = pairCount / TriggerContactTask::sTriggerPairsPerTask;
+	const PxU32 maxTaskCount = taskCountWithoutRemainder + 1;
+	const PxU32 pairPtrSize = pairCount * sizeof(TriggerInteraction*);
+	const PxU32 memBlockSize = pairPtrSize + (maxTaskCount * sizeof(TriggerContactTask));
+	PxU8* triggerProcessingBlock = reinterpret_cast<PxU8*>(allocator.alloc(memBlockSize, true));
+	if (triggerProcessingBlock)
+	{
+		PxMemCopy(triggerProcessingBlock, interactions, pairPtrSize);  // needs to get copied because other tasks may change the source list
+		                                                               // while trigger overlap tests run
+		mTmpTriggerProcessingBlock = triggerProcessingBlock;  // note: gets released in deinitialize
+		mTmpTriggerPairCount = pairCount;
+		return true;
+	}
+	else
+	{
+		outputError<PxErrorCode::eOUT_OF_MEMORY>(__LINE__, "Temporary memory for trigger pair processing could not be allocated. Trigger overlap tests will not take place.");
+	}
 
+	return false;
+}
+
+void TriggerProcessingContext::deinitialize(PxcScratchAllocator& allocator)
+{
+	PX_ASSERT(mTmpTriggerProcessingBlock);
+	PX_ASSERT(mTmpTriggerPairCount > 0);
+
+	allocator.free(mTmpTriggerProcessingBlock);
+	mTmpTriggerProcessingBlock = NULL;
+	mTmpTriggerPairCount = 0;
+}
+
+PxBaseTask* NPhaseCore::prepareForTriggerInteractionProcessing(PxBaseTask* continuation)
+{
 	// Triggers
-	ElementSimInteraction** triggerInteractions = mOwnerScene.getActiveInteractions(InteractionType::eTRIGGER);
+	TriggerInteraction** triggerInteractions = reinterpret_cast<TriggerInteraction**>(mOwnerScene.getActiveInteractions(InteractionType::eTRIGGER));
 	const PxU32 pairCount = mOwnerScene.getNbActiveInteractions(InteractionType::eTRIGGER);
 
-	// PT: TASK-CREATION TAG
-	if(pairCount > 0)
+	if (pairCount > 0)
 	{
-		const PxU32 taskCountWithoutRemainder = pairCount / TriggerContactTask::sTriggerPairsPerTask;
-		const PxU32 maxTaskCount = taskCountWithoutRemainder + 1;
-		const PxU32 pairPtrSize = pairCount * sizeof(TriggerInteraction*);
-		const PxU32 memBlockSize = pairPtrSize + (maxTaskCount * sizeof(TriggerContactTask));
-		void* triggerProcessingBlock = scene.getLowLevelContext()->getScratchAllocator().alloc(memBlockSize, true);
-		if(triggerProcessingBlock)
+		if (mTriggerProcessingContext.initialize(triggerInteractions, pairCount, mOwnerScene.getLowLevelContext()->getScratchAllocator()))
 		{
-			const bool hasMultipleThreads = continuation && scene.getTaskManager().getCpuDispatcher()->getWorkerCount() > 1;
-			const bool moreThanOneBatch = pairCount > TriggerContactTask::sTriggerPairsPerTask;
-			const bool scheduleTasks = hasMultipleThreads && moreThanOneBatch;
-			// when running on a single thread, the task system seems to cause the main overhead (locking and atomic operations
-			// seemed less of an issue). Hence, the tasks get run directly in that case. Same if there is only one batch.
+			mConcludeTriggerInteractionProcessingTask.setContinuation(continuation);
+			return &mConcludeTriggerInteractionProcessingTask;
+		}
+	}
 
-			mTmpTriggerProcessingBlock = triggerProcessingBlock;  // note: gets released in the continuation task
-			if(scheduleTasks)
-				mMergeProcessedTriggerInteractions.setContinuation(continuation);
+	return NULL;
+}
 
-			TriggerInteraction** triggerPairsToDeactivateWriteBack = reinterpret_cast<TriggerInteraction**>(triggerProcessingBlock);
-			TriggerContactTask* triggerContactTaskBuffer = reinterpret_cast<TriggerContactTask*>(reinterpret_cast<PxU8*>(triggerProcessingBlock) + pairPtrSize);
-			PxsTransformCache& transformCache = mOwnerScene.getLowLevelContext()->getTransformCache();
+void NPhaseCore::processTriggerInteractions(PxBaseTask& continuation)
+{
+	TriggerInteraction* const* triggerInteractions = mTriggerProcessingContext.getTriggerInteractions();
+	const PxU32 pairCount = mTriggerProcessingContext.getTriggerInteractionCount();
+	TriggerContactTask* triggerContactTaskBuffer = mTriggerProcessingContext.getTriggerContactTasks();
+	PxMutex& triggerWriteBackLock = mTriggerProcessingContext.getTriggerWriteBackLock();
 
-			PxU32 remainder = pairCount;
-			while(remainder)
-			{
-				const PxU32 nb = remainder > TriggerContactTask::sTriggerPairsPerTask ? TriggerContactTask::sTriggerPairsPerTask : remainder;
-				remainder -= nb;
+	PX_ASSERT(triggerInteractions);
+	PX_ASSERT(pairCount > 0);
+	PX_ASSERT(triggerContactTaskBuffer);
 
-				TriggerContactTask* task = triggerContactTaskBuffer;
-				task = PX_PLACEMENT_NEW(task, TriggerContactTask(	triggerInteractions, nb, mTriggerWriteBackLock,
-																	triggerPairsToDeactivateWriteBack, mTriggerPairsToDeactivateCount, scene, transformCache));
-				if(scheduleTasks)
-				{
-					task->setContinuation(&mMergeProcessedTriggerInteractions);
-					task->removeReference();
-				}
-				else
-					task->runInternal();
+	// PT: TASK-CREATION TAG
+	const bool hasMultipleThreads = mOwnerScene.getTaskManager().getCpuDispatcher()->getWorkerCount() > 1;
+	const bool moreThanOneBatch = pairCount > TriggerContactTask::sTriggerPairsPerTask;
+	const bool scheduleTasks = hasMultipleThreads && moreThanOneBatch;
+	// when running on a single thread, the task system seems to cause the main overhead (locking and atomic operations
+	// seemed less of an issue). Hence, the tasks get run directly in that case. Same if there is only one batch.
 
-				triggerContactTaskBuffer++;
-				triggerInteractions += nb;
-			}
+	PxsTransformCache& transformCache = mOwnerScene.getLowLevelContext()->getTransformCache();
 
-			if(scheduleTasks)
-				mMergeProcessedTriggerInteractions.removeReference();
-			else
-				mMergeProcessedTriggerInteractions.runInternal();
+	PxU32 remainder = pairCount;
+	while(remainder)
+	{
+		const PxU32 nb = remainder > TriggerContactTask::sTriggerPairsPerTask ? TriggerContactTask::sTriggerPairsPerTask : remainder;
+		remainder -= nb;
+
+		TriggerContactTask* task = triggerContactTaskBuffer;
+		task = PX_PLACEMENT_NEW(task, TriggerContactTask(	triggerInteractions, nb, triggerWriteBackLock,
+															mOwnerScene, transformCache));
+		if(scheduleTasks)
+		{
+			task->setContinuation(&continuation);
+			task->removeReference();
 		}
 		else
-		{
-			outputError<PxErrorCode::eOUT_OF_MEMORY>(__LINE__, "Temporary memory for trigger pair processing could not be allocated. Trigger overlap tests will not take place.");
-		}
+			task->runInternal();
+
+		triggerContactTaskBuffer++;
+		triggerInteractions += nb;
 	}
 }
 
-void NPhaseCore::mergeProcessedTriggerInteractions(PxBaseTask*)
+void NPhaseCore::concludeTriggerInteractionProcessing(PxBaseTask*)
 {
-	if(mTmpTriggerProcessingBlock)
-	{
-		// deactivate pairs that do not need trigger checks any longer (until woken up again)
-		TriggerInteraction** triggerPairsToDeactivate = reinterpret_cast<TriggerInteraction**>(mTmpTriggerProcessingBlock);
-		for(PxI32 i=0; i < mTriggerPairsToDeactivateCount; i++)
-		{
-			mOwnerScene.notifyInteractionDeactivated(triggerPairsToDeactivate[i]);
-		}
-		mTriggerPairsToDeactivateCount = 0;
+	// check if active trigger pairs can be deactivated (until woken up again)
 
-		mOwnerScene.getLowLevelContext()->getScratchAllocator().free(mTmpTriggerProcessingBlock);
-		mTmpTriggerProcessingBlock = NULL;
+	TriggerInteraction* const* triggerInteractions = mTriggerProcessingContext.getTriggerInteractions();
+	const PxU32 pairCount = mTriggerProcessingContext.getTriggerInteractionCount();
+
+	PX_ASSERT(triggerInteractions);
+	PX_ASSERT(pairCount > 0);
+
+	for (PxU32 i = 0; i < pairCount; i++)
+	{
+		TriggerInteraction* tri = triggerInteractions[i];
+
+		PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
+
+		if (!(tri->readFlag(TriggerInteraction::PROCESS_THIS_FRAME)))
+		{
+			// active trigger pairs for which overlap tests were not forced should remain in the active list
+			// to catch transitions between overlap and no overlap
+			continue;
+		}
+		else
+		{
+			tri->clearFlag(TriggerInteraction::PROCESS_THIS_FRAME);
+
+			// explicitly scheduled overlap test is done (after object creation, teleport, ...). Check if trigger pair should remain active or not.
+
+			if (!tri->onActivate(NULL))
+			{
+				PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
+				// Why is the assert enough?
+				// Once an explicit overlap test is scheduled, the interaction can not get deactivated anymore until it got processed.
+
+				tri->clearInteractionFlag(InteractionFlag::eIS_ACTIVE);
+				mOwnerScene.notifyInteractionDeactivated(tri);
+			}
+		}
 	}
+
+	mTriggerProcessingContext.deinitialize(mOwnerScene.getLowLevelContext()->getScratchAllocator());
 }
 
 #ifdef REMOVED
@@ -1011,13 +1025,10 @@ void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim*
 		RigidSim* sim0 = static_cast<RigidSim*>(&si->getActorSim0());
 		RigidSim* sim1 = static_cast<RigidSim*>(&si->getActorSim1());
 
-		BodyPairKey pair;
-
 		if(sim0->getActorID() > sim1->getActorID())
 			PxSwap(sim0, sim1);
 
-		pair.mSim0 = sim0->getActorID();
-		pair.mSim1 = sim1->getActorID();
+		const BodyPairKey pair(sim0->getActorID(), sim1->getActorID());
 
 		mActorPairMap.erase(pair);
 
@@ -1093,11 +1104,9 @@ void NPhaseCore::clearContactReportActorPairs(bool shrinkToZero)
 		}
 		else
 		{
-			BodyPairKey pair;
-			PxU32 actorAID = aPair->getActorAID();
-			PxU32 actorBID = aPair->getActorBID();
-			pair.mSim0 = PxMin(actorAID, actorBID);
-			pair.mSim1 = PxMax(actorAID, actorBID);
+			const PxU32 actorAID = aPair->getActorAID();
+			const PxU32 actorBID = aPair->getActorBID();
+			const BodyPairKey pair(PxMin(actorAID, actorBID), PxMax(actorAID, actorBID));
 
 			mActorPairMap.erase(pair);
 			destroyActorPairReport(*aPair);

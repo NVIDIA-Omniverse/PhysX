@@ -40,7 +40,7 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 
 	using namespace aos;
 
-	Gu::PersistentContactManifold& manifold = cache.getManifold();
+	PersistentContactManifold& manifold = cache.getManifold();
 	PxPrefetchLine(&manifold, 256);
 
 	// Get actual shape data
@@ -52,10 +52,10 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 	const PxTransformV curTransf(transf1.transformInv(transf0));
 	
 	const Vec3V vScale = V3LoadU_SafeReadW(shapeConvex.scale.scale);	// PT: safe because 'rotation' follows 'scale' in PxMeshScale
-	const Gu::ConvexHullData* hullData = _getHullData(shapeConvex);
+	const ConvexHullData* hullData = _getHullData(shapeConvex);
 
 	const PxReal toleranceLength = params.mToleranceLength;
-	const FloatV convexMargin = Gu::CalculatePCMConvexMargin(hullData, vScale, toleranceLength);
+	const FloatV convexMargin = CalculatePCMConvexMargin(hullData, vScale, toleranceLength);
 	
 	//in world space
 	const Vec3V planeNormal = V3Normalize(QuatGetBasisVector0(transf1.q));
@@ -72,7 +72,6 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 	const PxU32 newContacts = manifold.mNumContacts;
 	const bool bLostContacts = (newContacts != initialContacts);//((initialContacts == 0) || (newContacts != initialContacts));
 
-	
 	if(bLostContacts || manifold.invalidate_PrimitivesPlane(curTransf, convexMargin, FLoad(0.2f)))
 	{
 		const PxMatTransformV aToB(curTransf);
@@ -94,7 +93,7 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 		const Vec3V nnormal = V3Neg(n);
 		const FloatV zero = FZero();
 
-		Gu::PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
+		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
 		PxU32 numContacts = 0;
 
 		const PxMatTransformV aToBVertexSpace(aToB.p, M33MulM33(aToB.rot, vertex2Shape));
@@ -105,7 +104,7 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 
 		for (PxU32 i = 0; i < nbPolygons; ++i)
 		{
-			const Gu::HullPolygonData& polyData = hullData->mPolygons[i];
+			const HullPolygonData& polyData = hullData->mPolygons[i];
 			const Vec3V planeN = V3LoadU_SafeReadW(polyData.mPlane.n);	// PT: safe because 'd' follows 'n' in the plane class
 			const FloatV proj = V3Dot(n, planeN);
 			if (FAllGrtr(minProj, proj))
@@ -177,7 +176,7 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 
 		for (PxU32 index = closestFaceIndex; index != 0xFFFFFFFF; index = polyIndex2, polyIndex2 = 0xFFFFFFFF)
 		{
-			const Gu::HullPolygonData& face = hullData->mPolygons[closestFaceIndex];
+			const HullPolygonData& face = hullData->mPolygons[closestFaceIndex];
 			const PxU32 nbFaceVerts = face.mNbVerts;
 
 			const PxU8* vertInds = hullData->getVertexData8() + face.mVRef8;
@@ -209,7 +208,6 @@ bool Gu::pcmContactPlaneConvex(GU_CONTACT_METHOD_ARGS)
 						for (PxU32 c = 0; c < GU_MANIFOLD_CACHE_SIZE; ++c)
 							manifoldContacts[c] = manifold.mContactPoints[c];
 					}
-
 				}
 			}
 		}

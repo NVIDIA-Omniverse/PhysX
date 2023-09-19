@@ -44,7 +44,8 @@ void PxVehicleSteerCommandResponseUpdate
  const PxU32 wheelId, const PxVehicleSteerCommandResponseParams& responseParams,
  PxReal& steerResponse)
 {
-	steerResponse = PxVehicleNonLinearResponseCompute(steer, longitudinalSpeed, wheelId, responseParams);
+	PxReal sign = PxSign(steer);
+	steerResponse = sign * PxVehicleNonLinearResponseCompute(PxAbs(steer), longitudinalSpeed, wheelId, responseParams);
 }
 
 void PxVehicleAckermannSteerUpdate

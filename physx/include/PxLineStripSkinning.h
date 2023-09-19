@@ -65,13 +65,16 @@ namespace physx
 	};
 
 	/**
-	\brief Utility class to embed high resolution line strips into low resolution line strips
+	\brief Utility class to embed high resolution line strips into low resolution line strips.
+		No internal data is cached except a reference to the cuda context manager. Therefore,
+		a single instance of this class may be used for different hair systems.
 	*/
 	class PxLineStripSkinning
 	{
 	public:
 		/**
 		\brief Computes the skinning information used to update the skinned points during simulation
+		\note All computations in this function are happening on the CPU, therefore, all supplied pointers must point to CPU-accessible memory.
 
 		\param[in] simVertices The simulated vertices in the state in which the skinning information shall be computed. These vertices will eventually drive the skinned vertices
 		\param[in] simStrandPastEndIndices The index after the last strand vertex for the simulation strands (strand = line strip)
@@ -81,28 +84,34 @@ namespace physx
 		\param[out] skinnedVertexInterpolationData Must provide space for one entry per skinned vertex. Contains the location of the skinned vertex relative to the interpolated base frame. The w component encodes the location of the base frame along the line segment.
 		\param[out] skinningInfoRootStrandDirections Must provide space for one entry per line strip. Contains the direction of the first line segment per line strip during the calculation of the skinning information.
 		\param[out] skinningInfoStrandStartIndices Must provide space for one entry per line strip. Contains the index of the first skinning vertex in the buffer for every line strip. The skinned vertices must be sorted such that vertices attached to the same line strip are adjacent to each other in the buffer.
+		\param[out] skinningInfoReorderMap Can be NULL if the skinning vertices are already sorted per strand segment id. Must provide space for one entry per skinned vertex. Contains a reorder map since the skinning algorithm needs to process the skinned vertices in a specific order.
 		\param[in] transform Optional transform that gets applied to the simVertices before computing the skinning information
 		\param[in] catmullRomAlpha Optional parameter in the range 0...1 that allows to control the curve interpolation.
 		*/
 		virtual void initializeInterpolatedVertices(const PxVec4* simVertices, const PxU32* simStrandPastEndIndices, PxU32 nbLineStrips, const PxLineStripSkinnedVertex* skinnedVertices, PxU32 nbSkinnedVertices,
-			PxVec4* skinnedVertexInterpolationData, PxVec3* skinningInfoRootStrandDirections, PxU32* skinningInfoStrandStartIndices, const PxMat44& transform = PxMat44(PxIdentity), PxReal catmullRomAlpha = 0.5f) = 0;
+			PxVec4* skinnedVertexInterpolationData, PxVec3* skinningInfoRootStrandDirections, PxU32* skinningInfoStrandStartIndices, PxU32* skinningInfoReorderMap = NULL, 
+			const PxMat44& transform = PxMat44(PxIdentity), PxReal catmullRomAlpha = 0.5f) = 0;
 		
 		/**
-		\brief Evaluates and updates the skinned positions based on the interpolation data on the GPU. All input arrays are GPU arrays.
-		\param[in] simVertices The simulation vertices (device pointer) according to which the skinned positions shall be computed.
-		\param[in] simStrandPastEndIndices  Device pointer containing the index after the last strand vertex for the simulation strands (strand = line strip)
+		\brief Evaluates and updates the skinned positions based on the interpolation data on the GPU. All input and output arrays must be accessible on the GPU.
+
+		\param[in] simVerticesD The simulation vertices (device pointer) according to which the skinned positions shall be computed.
+		\param[in] simStrandPastEndIndicesD  Device pointer containing the index after the last strand vertex for the simulation strands (strand = line strip)
 		\param[in] nbSimStrands The number of line strips
-		\param[in] skinnedVertexInterpolationData Device pointer containing the location of the skinned vertex relative to the interpolated base frame. The w component encodes the location of the base frame along the line segment.
-		\param[in] skinningInfoStrandStartIndices Device pointer containing the index of the first skinning vertex in the buffer for every line strip. The skinned vertices must be sorted such that vertices attached to the same line strip are adjacent to each other in the buffer.
-		\param[in] skinningInfoRootStrandDirections Device pointer containing the direction of the first line segment per line strip during the calculation of the skinning information.
-		\param[in] nbSkinnedVertices The total number of skinned vertices	
-		\param[out] result The skinned vertex positions where the updated positions will be written
+		\param[in] skinnedVertexInterpolationDataD Device pointer containing the location of the skinned vertex relative to the interpolated base frame. The w component encodes the location of the base frame along the line segment.
+		\param[in] skinningInfoStrandStartIndicesD Device pointer containing the index of the first skinning vertex in the buffer for every line strip. The skinned vertices must be sorted such that vertices attached to the same line strip are adjacent to each other in the buffer.
+		\param[in] skinningInfoRootStrandDirectionsD Device pointer containing the direction of the first line segment per line strip during the calculation of the skinning information.
+		\param[in] skinningInfoReorderMapD Can be NULL if the skinning vertices are already sorted per strand segment id. Device pointer containing the reorder map for the skinned vertices.
+		\param[in] nbSkinnedVertices The total number of skinned vertices
+		\param[out] resultD The skinned vertex positions where the updated positions will be written
 		\param[in] stream The cuda stream on which ther kernel call gets scheduled
-		\param[in] transform Optional device array holding a transform that gets applied to the simVertices before computing the skinning information
-		\param[in] catmullRomAlpha Optional parameter in the range 0...1 that allows to control the curve interpolation.
+		\param[in] inputTransformD Optional device buffer holding a transform that gets applied to the simVertices before computing the skinning information
+		\param[in] outputTransformD Optional device buffer holding a transform that gets applied to result vertices
+		\param[in] catmullRomAlpha Optional parameter in the range 0...1 that allows to control the curve interpolation.		
 		*/
-		virtual void evaluateInterpolatedVertices(const PxVec4* simVertices, const PxU32* simStrandPastEndIndices, PxU32 nbSimStrands, const PxVec4* skinnedVertexInterpolationData, 
-			const PxU32* skinningInfoStrandStartIndices, const PxVec3* skinningInfoRootStrandDirections, PxU32 nbSkinnedVertices, PxVec3* result, CUstream stream, const PxReal* transform = NULL, PxReal catmullRomAlpha = 0.5f) = 0;
+		virtual void evaluateInterpolatedVertices(const PxVec4* simVerticesD, const PxU32* simStrandPastEndIndicesD, PxU32 nbSimStrands, const PxVec4* skinnedVertexInterpolationDataD,
+			const PxU32* skinningInfoStrandStartIndicesD, const PxVec3* skinningInfoRootStrandDirectionsD, const PxU32* skinningInfoReorderMapD, PxU32 nbSkinnedVertices, PxVec3* resultD, CUstream stream,
+			const PxMat44* inputTransformD = NULL, const PxMat44* outputTransformD = NULL, PxReal catmullRomAlpha = 0.5f) = 0;
 
 		/**
 		\brief Destructor

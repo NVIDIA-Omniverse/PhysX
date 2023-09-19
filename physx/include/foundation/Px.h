@@ -49,7 +49,6 @@ typedef uint32_t PxU32;
 class PxAllocatorCallback;
 class PxErrorCallback;
 struct PxErrorCode;
-class PxAssertHandler;
 
 class PxInputStream;
 class PxInputData;

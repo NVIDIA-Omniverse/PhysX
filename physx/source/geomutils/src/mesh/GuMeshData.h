@@ -551,7 +551,7 @@ enum InternalMeshSerialFlag
 			if (allocateGPUData)
 			{
 				const PxU32 numElements = nbGridTetrahedrons / numTetsPerElement;
-				const PxU32 numVertsPerElement = numTetsPerElement == 6 ? 8 : 4;
+				const PxU32 numVertsPerElement = (numTetsPerElement == 6 || numTetsPerElement == 5) ? 8 : 4;
 
 				mGridModelInvMass = reinterpret_cast<float*>(PX_ALLOC(nbGridVerts * sizeof(float), "mGridModelInvMass"));
 				mGridModelTetraRestPoses = reinterpret_cast<PxMat33*>(PX_ALLOC(nbGridTetrahedrons * sizeof(PxMat33), "mGridModelTetraRestPoses"));

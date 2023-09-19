@@ -87,7 +87,7 @@ void PxCloseVehicleSDK(PxSerializationRegistry* sr)
 
 	if (sr != resetSerializationRegistryPtr())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "PxCloseVehicleSDK called with different PxSerializationRegistry instance than PxInitVehicleSDK.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxCloseVehicleSDK called with different PxSerializationRegistry instance than PxInitVehicleSDK.");
 		return;
 	}
 

@@ -402,7 +402,8 @@ namespace local
 		bool findSimplex();
 
 		// add the initial simplex
-		void addSimplex(QuickHullVertex* simplex, bool flipTriangle);
+		// returns true if the operation was successful, false otherwise
+		bool addSimplex(QuickHullVertex* simplex, bool flipTriangle);
 
 		// finds next point to add
 		QuickHullVertex* nextPointToAdd(QuickHullFace*& eyeFace);
@@ -922,7 +923,8 @@ namespace local
 			return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "QuickHullConvexHullLib::findSimplex: Simplex input points appers to be coplanar.");
 
 		// now create faces from those triangles
-		addSimplex(&simplex[0], simplex[3].point.dot(normal) - d0 < 0);
+		if (!addSimplex(&simplex[0], simplex[3].point.dot(normal) - d0 < 0))
+			return false;
 
 		return true;
 	}
@@ -932,16 +934,24 @@ namespace local
 	QuickHullFace* QuickHull::createTriangle(const QuickHullVertex& v0, const QuickHullVertex& v1, const QuickHullVertex& v2)
 	{
 		QuickHullFace* face = getFreeHullFace();
+		if (!face)
+			return NULL;
 
 		QuickHullHalfEdge* he0 = getFreeHullHalfEdge();
+		if (!he0)
+			return NULL;
 		he0->face = face;
 		he0->tail = v0;
 
 		QuickHullHalfEdge* he1 = getFreeHullHalfEdge();
+		if (!he1)
+			return NULL;
 		he1->face = face;
 		he1->tail = v1;
 
 		QuickHullHalfEdge* he2 = getFreeHullHalfEdge();
+		if (!he2)
+			return NULL;
 		he2->face = face;
 		he2->tail = v2;
 
@@ -964,7 +974,7 @@ namespace local
 	//////////////////////////////////////////////////////////////////////////
 	// add initial simplex to the quickhull
 	// construct triangles from the simplex points and connect them with half edges
-	void QuickHull::addSimplex(QuickHullVertex* simplex, bool flipTriangle)
+	bool QuickHull::addSimplex(QuickHullVertex* simplex, bool flipTriangle)
 	{
 		PX_ASSERT(simplex);
 
@@ -981,9 +991,17 @@ namespace local
 		if (flipTriangle)
 		{
 			tris[0] = createTriangle(simplex[0], simplex[1], simplex[2]);
+			if (tris[0] == NULL)
+				return false;
 			tris[1] = createTriangle(simplex[3], simplex[1], simplex[0]);
+			if (tris[1] == NULL)
+				return false;
 			tris[2] = createTriangle(simplex[3], simplex[2], simplex[1]);
+			if (tris[2] == NULL)
+				return false;
 			tris[3] = createTriangle(simplex[3], simplex[0], simplex[2]);
+			if (tris[3] == NULL)
+				return false;
 
 			for (PxU32 i = 0; i < 3; i++)
 			{
@@ -995,9 +1013,17 @@ namespace local
 		else
 		{
 			tris[0] = createTriangle(simplex[0], simplex[2], simplex[1]);
+			if (tris[0] == NULL)
+				return false;
 			tris[1] = createTriangle(simplex[3], simplex[0], simplex[1]);
+			if (tris[1] == NULL)
+				return false;
 			tris[2] = createTriangle(simplex[3], simplex[1], simplex[2]);
+			if (tris[2] == NULL)
+				return false;
 			tris[3] = createTriangle(simplex[3], simplex[2], simplex[0]);
+			if (tris[3] == NULL)
+				return false;
 
 			for (PxU32 i = 0; i < 3; i++)
 			{
@@ -1041,6 +1067,7 @@ namespace local
 				addPointToFace(*maxFace, &mVerticesList[i], maxDist);
 			}
 		}
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -1476,6 +1503,7 @@ namespace local
 		} while (copyHe != face2.edge);
 
 		PX_ASSERT(heTwin);
+		PX_ASSERT(heCopy);
 
 		QuickHullHalfEdge* hedgeAdjPrev = heCopy->prev;
 		QuickHullHalfEdge* hedgeAdjNext = heCopy->next;
@@ -1669,7 +1697,9 @@ namespace local
 			newFaces.pushBack(face);
 			hedgeSidePrev = hedgeSide;
 		}
-		hedgeSideBegin->next->setTwin(hedgeSidePrev);
+
+		if(hedgeSideBegin)
+			hedgeSideBegin->next->setTwin(hedgeSidePrev);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -2004,6 +2034,7 @@ bool QuickHullConvexHullLib::cleanupForSimplex(PxVec3* vertices, PxU32 vertexCou
 	// one dimensional separation
 	simplex[0] = maximumVertex[imax].point;
 	simplex[1] = minimumVertex[imax].point;
+	simplex[2] = simplex[3] = PxVec3(0.0f);	// PT: added to silence the static analyzer
 
 	// set third vertex to be the vertex farthest from
 	// the line between simplex[0] and simplex[1]
@@ -2055,6 +2086,7 @@ bool QuickHullConvexHullLib::cleanupForSimplex(PxVec3* vertices, PxU32 vertexCou
 		if (dist > maxDist)
 		{
 			maxDist = dist;
+			// PT: simplex[3] is never used, is it?
 			simplex[3] = testPoint;
 			imax = i;
 		}

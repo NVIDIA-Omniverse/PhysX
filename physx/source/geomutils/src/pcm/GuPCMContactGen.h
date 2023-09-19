@@ -65,8 +65,6 @@ namespace Gu
 	//MTD code for capsule vs box/convexhull
 	bool computeMTD(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, aos::FloatV& penDepth, aos::Vec3V& normal);
 
-	void buildPartialHull(const Gu::PolygonalData& polyData, const SupportLocal* map, Gu::SeparatingAxes& validAxes, const aos::Vec3VArg v, const aos::Vec3VArg _dir);
-
 	//full contact gen code for sphere vs convexhull
 	bool generateSphereFullContactManifold(const Gu::CapsuleV& capsule, const Gu::PolygonalData& polyData, const Gu::SupportLocal* map, Gu::PersistentContact* manifoldContacts, PxU32& numContacts,
 		const aos::FloatVArg contactDist, aos::Vec3V& normal, bool doOverlapTest);

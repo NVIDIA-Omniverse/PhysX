@@ -758,6 +758,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	mPosePreviewBodies				("scenePosePreviewBodies"),
 	mOverlapFilterTaskHead			(NULL),
 	mIsCollisionPhaseActive			(false),
+	mIsDirectGPUAPIInitialized		(false),
 	mOnSleepingStateChanged			(NULL)
 #if PX_SUPPORT_GPU_PHYSX
 	,mSoftBodies					("sceneSoftBodies"),
@@ -938,12 +939,7 @@ Sc::Scene::Scene(const PxSceneDesc& desc, PxU64 contextID) :
 	{
 #if PX_SUPPORT_GPU_PHYSX
 
-		// TODO AD: eFORCE_READBACK is deprecated, so this this will be a direct passthrough.
 		bool directAPI = mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API;
-		bool forceReadback = mPublicFlags & PxSceneFlag::eFORCE_READBACK;
-
-		if(directAPI && forceReadback)
-			directAPI = false;
 
 		mDynamicsContext = PxvGetPhysXGpu(true)->createGpuDynamicsContext(mLLContext->getTaskPool(), mGpuWranglerManagers, mLLContext->getCudaContextManager(),
 			desc.gpuDynamicsConfig, mSimpleIslandManager, desc.gpuMaxNumPartitions, desc.gpuMaxNumStaticPartitions, mEnableStabilization, useEnhancedDeterminism, desc.maxBiasCoefficient, desc.gpuComputeVersion, mLLContext->getSimStats(),
@@ -3700,8 +3696,7 @@ void Sc::Scene::addRigidFilter(Sc::BodyCore* core, Sc::SoftBodySim& sim, PxU32 v
 		nodeIndex = core->getSim()->getNodeIndex();
 	}
 
-	mSimulationController->addRigidFilter(sim.getLowLevelSoftBody(), sim.getNodeIndex(),
-		nodeIndex, vertId);
+	mSimulationController->addRigidFilter(sim.getLowLevelSoftBody(), nodeIndex, vertId);
 }
 
 void Sc::Scene::removeRigidFilter(Sc::BodyCore* core, Sc::SoftBodySim& sim, PxU32 vertId)
@@ -3890,6 +3885,19 @@ void Sc::Scene::removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, Sc::Soft
 {
 	Sc::FEMClothSim& bSim = *core.getSim();
 	mSimulationController->removeClothFilter(sim.getLowLevelSoftBody(), bSim.getLowLevelFEMCloth(), triIdx, tetIdx);
+}
+
+void Sc::Scene::addVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx)
+{
+	Sc::FEMClothSim& bSim = *core.getSim();
+
+	mSimulationController->addVertClothFilter(sim.getLowLevelSoftBody(), bSim.getLowLevelFEMCloth(), vertIdx, tetIdx);
+}
+
+void Sc::Scene::removeVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx)
+{
+	Sc::FEMClothSim& bSim = *core.getSim();
+	mSimulationController->removeVertClothFilter(sim.getLowLevelSoftBody(), bSim.getLowLevelFEMCloth(), vertIdx, tetIdx);
 }
 
 PxU32 Sc::Scene::addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, Sc::SoftBodySim& sim, PxU32 tetIdx, 

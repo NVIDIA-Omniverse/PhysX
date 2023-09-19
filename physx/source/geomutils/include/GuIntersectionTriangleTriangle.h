@@ -39,16 +39,18 @@ namespace Gu
 	/**
 	Tests if a two triangles intersect
 
-	\param a1	[in] Fist point of the first triangle
-	\param b1	[in] Second point of the first triangle
-	\param c1	[in] Third point of the first triangle
-	\param a2	[in] Fist point of the second triangle
-	\param b2	[in] Second point of the second triangle
-	\param c2	[in] Third point of the second triangle
-	\param intersection		[out] Line segment that represents all points that lie on the first and the second triangle
+	\param a1				[in] Fist point of the first triangle
+	\param b1				[in] Second point of the first triangle
+	\param c1				[in] Third point of the first triangle
+	\param a2				[in] Fist point of the second triangle
+	\param b2				[in] Second point of the second triangle
+	\param c2				[in] Third point of the second triangle
+	\param ignoreCoplanar	[in] True to filter out coplanar triangles
 	\return	true if triangles intersect
 	*/
-	PX_PHYSX_COMMON_API bool trianglesIntersect(const PxVec3& a1, const PxVec3& b1, const PxVec3& c1, const PxVec3& a2, const PxVec3& b2, const PxVec3& c2, Segment* intersection = NULL);
+	PX_PHYSX_COMMON_API bool trianglesIntersect(const PxVec3& a1, const PxVec3& b1, const PxVec3& c1,
+												const PxVec3& a2, const PxVec3& b2, const PxVec3& c2,
+												bool ignoreCoplanar = false);
 } // namespace Gu
 }
 

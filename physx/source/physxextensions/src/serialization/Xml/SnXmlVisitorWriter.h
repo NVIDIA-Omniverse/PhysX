@@ -45,7 +45,7 @@ namespace physx { namespace Sn {
 		const PxBase* s =  static_cast<const PxBase*>( inDatatype ) ;
 		if( inDatatype && !inCollection.contains( *const_cast<PxBase*>(s) ))
 		{
-			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, __FILE__, __LINE__,
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,
 				"PxSerialization::serializeCollectionToXml: Reference \"%s\" could not be resolved.", inPropName);
 		}
 		

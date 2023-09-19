@@ -26,63 +26,48 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#ifdef RENDER_SNIPPET
+#ifndef EXT_OMNI_PVD_REGISTRATION_DATA_H
+#define EXT_OMNI_PVD_REGISTRATION_DATA_H
 
-#include <vector>
 
-#include "PxPhysicsAPI.h"
+#if PX_SUPPORT_OMNI_PVD
 
-#include "../snippetrender/SnippetRender.h"
-#include "../snippetrender/SnippetCamera.h"
+#include "../pvdruntime/include/OmniPvdWriter.h"
 
-using namespace physx;
+#include "extensions/PxD6Joint.h"  // for PxD6Motion
+#include "extensions/PxDistanceJoint.h"  // for PxDistanceJointFlags
+#include "extensions/PxPrismaticJoint.h"  // for PxPrismaticJointFlags
+#include "extensions/PxRevoluteJoint.h"  // for PxRevoluteJointFlags
+#include "extensions/PxSphericalJoint.h"  // for PxSphericalJointFlags
+#include "extensions/PxCustomGeometryExt.h"  // for PxCustomGeometryExtBaseConvexCallbacks etc.
 
-extern bool initPhysics();
-extern void stepPhysics();	
-extern void cleanupPhysics();
 
-extern PxScene* gScene;
-
-namespace
+namespace physx
 {
-Snippets::Camera* sCamera;
 
-void renderCallback()
+class PxContactJoint;
+class PxFixedJoint;
+class PxGearJoint;
+class PxRackAndPinionJoint;
+
+
+namespace Ext
 {
-	stepPhysics();
 
-	Snippets::startRender(sCamera);
-
-	PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
-	if(nbActors)
-	{
-		const PxVec3 dynColor(1.0f, 0.5f, 0.25f);
-
-		std::vector<PxRigidActor*> actors(nbActors);
-		gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
-		Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true, dynColor);
-	}
-
-	Snippets::finishRender();
-}
-
-void exitCallback(void)
+struct OmniPvdPxExtensionsRegistrationData
 {
-	delete sCamera;
-	cleanupPhysics();
+	void registerData(OmniPvdWriter&);
+
+	// auto-generate members and setter methods from object definition file
+#include "omnipvd/CmOmniPvdAutoGenCreateRegistrationStruct.h"
+#include "OmniPvdPxExtensionsTypes.h"
+#include "omnipvd/CmOmniPvdAutoGenClearDefines.h"
+
+};
+
 }
 }
 
-void renderLoop()
-{
-	sCamera = new Snippets::Camera(PxVec3(10.0f, 10.0f, 10.0f), PxVec3(-0.6f,-0.2f,-0.7f));
+#endif  // PX_SUPPORT_OMNI_PVD
 
-	Snippets::setupDefault("PhysX Snippet Vehicle2", sCamera, NULL, renderCallback, exitCallback);
-
-	if (initPhysics())
-	{
-		glutMainLoop();
-	}
-}
-
-#endif
+#endif  // EXT_OMNI_PVD_REGISTRATION_DATA_H

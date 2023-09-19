@@ -37,7 +37,7 @@ namespace physx
 	//forward declare stuff from PxPhysXGpuModuleLoader.cpp
 	void PxLoadPhysxGPUModule(const char* appGUID);
 
-	typedef physx::PxCudaContextManager* (PxCreateCudaContextManager_FUNC)(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback);
+	typedef physx::PxCudaContextManager* (PxCreateCudaContextManager_FUNC)(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback, bool launchSynchronous);
 	typedef int (PxGetSuggestedCudaDeviceOrdinal_FUNC)(physx::PxErrorCallback& errc);
 	typedef void (PxSetPhysXGpuProfilerCallback_FUNC)(physx::PxProfilerCallback* cbk);
 	typedef void (PxCudaRegisterFunction_FUNC)(int, const char*);
@@ -62,12 +62,12 @@ namespace physx
 
 
 
-physx::PxCudaContextManager* PxCreateCudaContextManager(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback)
+physx::PxCudaContextManager* PxCreateCudaContextManager(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback, bool launchSynchronous)
 {
 	physx::PxLoadPhysxGPUModule(desc.appGUID);
 
 	if (physx::g_PxCreateCudaContextManager_Func)
-		return physx::g_PxCreateCudaContextManager_Func(foundation, desc, profilerCallback);
+		return physx::g_PxCreateCudaContextManager_Func(foundation, desc, profilerCallback, launchSynchronous);
 	else
 		return NULL;
 }

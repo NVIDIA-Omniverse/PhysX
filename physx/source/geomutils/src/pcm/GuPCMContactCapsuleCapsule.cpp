@@ -30,6 +30,7 @@
 #include "GuVecCapsule.h"
 #include "GuContactMethodImpl.h"
 #include "GuDistanceSegmentSegment.h"
+#include "GuPCMContactGenUtil.h"
 
 using namespace physx;
 using namespace Gu;
@@ -72,26 +73,19 @@ static Vec4V pcmDistancePointSegmentTValue22(	const Vec3VArg a0, const Vec3VArg 
 
 static void storeContact(const Vec3VArg contact, const Vec3VArg normal, const FloatVArg separation, PxContactBuffer& buffer)
 {
-	PxContactPoint& point = buffer.contacts[buffer.count++];
-
-	const Vec4V normalSep = aos::V4SetW(Vec4V_From_Vec3V(normal), separation);
-
-	V4StoreA(normalSep, &point.normal.x);
-	V3StoreA(contact, point.point);
-	point.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
+	outputSimplePCMContact(buffer, contact, normal, separation);
 }
 
 bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 {
 	PX_UNUSED(renderOutput);
 	PX_UNUSED(cache);
+	PX_ASSERT(transform1.q.isSane());
+	PX_ASSERT(transform0.q.isSane());
 
 	// Get actual shape data
 	const PxCapsuleGeometry& shapeCapsule0 = checkedCast<PxCapsuleGeometry>(shape0);
 	const PxCapsuleGeometry& shapeCapsule1 = checkedCast<PxCapsuleGeometry>(shape1);
-
-	PX_ASSERT(transform1.q.isSane());
-	PX_ASSERT(transform0.q.isSane());
 
 	const Vec3V _p0 = V3LoadA(&transform0.p.x);
 	const QuatV q0 = QuatVLoadA(&transform0.q.x);

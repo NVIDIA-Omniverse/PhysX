@@ -1258,6 +1258,8 @@ template<> struct PxEnumTraits< physx::PxArticulationFlag::Enum > { PxEnumTraits
 		{ "eSENSOR_FORCES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eSENSOR_FORCES ) },
 		{ "eJOINT_SOLVER_FORCES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_SOLVER_FORCES ) },
 		{ "eLINK_INCOMING_JOINT_FORCE", static_cast<PxU32>( physx::PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE ) },
+		{ "eJOINT_TARGET_POSITIONS", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS ) },
+		{ "eJOINT_TARGET_VELOCITIES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES ) },
 		{ "eALL", static_cast<PxU32>( physx::PxArticulationCacheFlag::eALL ) },
 		{ NULL, 0 }
 	};
@@ -2448,8 +2450,6 @@ template<> struct PxEnumTraits< physx::PxPruningStructureType::Enum > { PxEnumTr
 		{ "eENABLE_ENHANCED_DETERMINISM", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_ENHANCED_DETERMINISM ) },
 		{ "eENABLE_FRICTION_EVERY_ITERATION", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION ) },
 		{ "eENABLE_DIRECT_GPU_API", static_cast<PxU32>( physx::PxSceneFlag::eENABLE_DIRECT_GPU_API ) },
-		{ "eSUPPRESS_READBACK", static_cast<PxU32>( physx::PxSceneFlag::eSUPPRESS_READBACK ) },
-		{ "eFORCE_READBACK", static_cast<PxU32>( physx::PxSceneFlag::eFORCE_READBACK ) },
 		{ "eMUTABLE_FLAGS", static_cast<PxU32>( physx::PxSceneFlag::eMUTABLE_FLAGS ) },
 		{ NULL, 0 }
 	};

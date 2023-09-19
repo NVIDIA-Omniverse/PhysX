@@ -451,7 +451,7 @@ namespace physx
 		PX_INLINE								PxArticulationJointReducedCoordinate(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
 		PX_INLINE								PxArticulationJointReducedCoordinate(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 		
-		virtual	bool							isKindOf(const char* name)	const { return !::strcmp("PxArticulationJointReducedCoordinate", name) || PxBase::isKindOf(name); }
+		virtual	bool							isKindOf(const char* name)	const { PX_IS_KIND_OF(name, "PxArticulationJointReducedCoordinate", PxBase); }
 	};
 
 #if !PX_DOXYGEN

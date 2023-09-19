@@ -169,9 +169,9 @@ namespace physx
 			virtual bool overlap(const PxGeometry& geom0, const PxTransform& pose0, const PxGeometry& geom1, const PxTransform& pose1, PxOverlapThreadContext* threadContext) const = 0;
 
 			/**
-			\brief Sweep. Sweep one geometry against the other.
+			\brief Sweep. Sweep geom1 against geom0.
 
-			\param[in] unitDir			Normalized direction of the sweep.
+			\param[in] unitDir			Normalized direction of the sweep. geom1 is swept along this direction.
 			\param[in] maxDist			Length of the sweep. Has to be in the [0, inf) range.
 			\param[in] geom0			This custom geometry
 			\param[in] pose0			This custom geometry pose

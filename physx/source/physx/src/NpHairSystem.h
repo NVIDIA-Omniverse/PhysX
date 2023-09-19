@@ -62,7 +62,7 @@ namespace physx
 				deallocate();
 				if (size > 0)
 				{
-					mData = reinterpret_cast<T*>(mAlloc->allocate(sizeof(T) * size, 0, __FILE__, __LINE__));
+					mData = reinterpret_cast<T*>(mAlloc->allocate(sizeof(T) * size, 0, PX_FL));
 					if (mData != NULL)
 						mSize = size;
 				}
@@ -172,16 +172,16 @@ namespace physx
 		virtual PxReal				getWakeCounter() const PX_OVERRIDE;
 		virtual bool				isSleeping() const PX_OVERRIDE;
 		
-		virtual void				setRestPositions(PxVec4* restPos, bool isGpuPtr, const PxTransform& transf, const PxRigidBody* actor) PX_OVERRIDE;
-		virtual PxVec4*				getRestPositionsGpu(PxTransform* transf) PX_OVERRIDE;
+		virtual void				setRestPositions(PxVec4* restPos, bool isGpuPtr) PX_OVERRIDE;
+		virtual PxVec4*				getRestPositionsGpu() PX_OVERRIDE;
 
-		virtual void				addRigidAttachment(const PxRigidActor* actor) PX_OVERRIDE;
-		virtual void				removeRigidAttachment(const PxRigidActor* actor) PX_OVERRIDE;
+		virtual void				addRigidAttachment(const PxRigidBody& rigidBody) PX_OVERRIDE;
+		virtual void				removeRigidAttachment(const PxRigidBody& rigidBody) PX_OVERRIDE;
 		virtual void				setRigidAttachments(PxParticleRigidAttachment* attachments, PxU32 numAttachments, bool isGpuPtr) PX_OVERRIDE;
 		virtual PxParticleRigidAttachment* getRigidAttachmentsGpu(PxU32* numAttachments = NULL) PX_OVERRIDE;
 
 		virtual PxU32				addSoftbodyAttachment(const PxSoftBody& softbody, const PxU32* tetIds, const PxVec4* tetmeshBarycentrics,
-			const PxU32* hairVertices, PxU32 numAttachments) PX_OVERRIDE;
+			const PxU32* hairVertices, PxConeLimitedConstraint* constraints, PxReal* constraintOffsets, PxU32 numAttachments) PX_OVERRIDE;
 		virtual void				removeSoftbodyAttachment(const PxSoftBody& softbody, PxU32 handle) PX_OVERRIDE;
 
 		virtual void				initFromDesc(const PxHairSystemDesc& desc) PX_OVERRIDE;
@@ -212,10 +212,17 @@ namespace physx
 		virtual PxU32				getSolverIterationCounts() const PX_OVERRIDE;
 		virtual void				setWind(const PxVec3& wind) PX_OVERRIDE;
 		virtual PxVec3				getWind() const PX_OVERRIDE;
+		virtual void				setAerodynamicDrag(PxReal dragCoefficient) PX_OVERRIDE;
+		virtual PxReal				getAerodynamicDrag() const PX_OVERRIDE;
+		virtual void				setAerodynamicLift(PxReal liftCoefficient) PX_OVERRIDE;
+		virtual PxReal				getAerodynamicLift() const PX_OVERRIDE;
+
 		virtual void				setSegmentRadius(PxReal radius) PX_OVERRIDE;
 		virtual void				getSegmentDimensions(PxReal& length, PxReal& radius) const PX_OVERRIDE;
 		virtual void				setFrictionParameters(PxReal interHairVelDamping, PxReal frictionCoeff) PX_OVERRIDE;
 		virtual void				getFrictionParameters(PxReal& interHairVelDamping, PxReal& frictionCoeff) const PX_OVERRIDE;
+		virtual void				setMaxDepenetrationVelocity(PxReal maxDepenetrationVelocity) PX_OVERRIDE;
+		virtual PxReal				getMaxDepenetrationVelocity() const PX_OVERRIDE;
 		virtual void				setShapeCompliance(PxReal startCompliance, PxReal strandRatio) PX_OVERRIDE;
 		virtual void				getShapeCompliance(PxReal& startCompliance, PxReal& strandRatio) const PX_OVERRIDE;
 		virtual void				setInterHairRepulsion(PxReal repulsion) PX_OVERRIDE;
@@ -267,15 +274,11 @@ namespace physx
 		MemoryWithAlloc<PxParticleRigidAttachment> mParticleRigidAttachmentsInternal;
 		MemoryWithAlloc<PxVec4> mRestPositionsInternal;
 
-		MemoryWithAlloc<PxTransform> mRestPositionTransformPinnedBuf;
-
 		PxArray<PxReal> mLodProportionOfStrands;
 		PxArray<PxReal> mLodProportionOfVertices;
 
 		PxHashMap<PxU32, PxPair<PxU32, PxU32>> mSoftbodyAttachmentsOffsets; // map from handle to {offset, size}
 		PxPinnedArray<Dy::SoftbodyHairAttachment> mSoftbodyAttachments;
-
-		const PxRigidActor* mRestPositionActor;
 	};
 }
 

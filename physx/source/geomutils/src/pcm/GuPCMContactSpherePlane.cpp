@@ -29,6 +29,7 @@
 #include "geomutils/PxContactBuffer.h"
 #include "foundation/PxVecTransform.h"
 #include "GuContactMethodImpl.h"
+#include "GuPCMContactGenUtil.h"
 
 using namespace physx;
 
@@ -64,14 +65,8 @@ bool Gu::pcmContactSpherePlane(GU_CONTACT_METHOD_ARGS)
 		//get the plane normal
 		const Vec3V worldNormal = QuatGetBasisVector0(q1);
 		const Vec3V worldPoint = V3NegScaleSub(worldNormal, radius, p0);
-		PxContactPoint& contact = contactBuffer.contacts[contactBuffer.count++];
-		//Fast allign store
-		V4StoreA(Vec4V_From_Vec3V(worldNormal), &contact.normal.x);
-		V4StoreA(Vec4V_From_Vec3V(worldPoint), &contact.point.x);
-		FStore(separation, &contact.separation);
-		contact.internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX;
-	
-		return true;
+
+		return outputSimplePCMContact(contactBuffer, worldPoint, worldNormal, separation);
 	}
 	return false;
 }

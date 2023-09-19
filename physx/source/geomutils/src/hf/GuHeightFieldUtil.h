@@ -282,7 +282,8 @@ namespace Gu
 				mCurrentRectangle.mMaxu = ui + mOffsetU;
 				mCurrentRectangle.mMinv = vi - mOffsetV;
 				mCurrentRectangle.mMaxv = vi + mOffsetV;
-				OverlapLine line;
+				OverlapLine line = OverlapLine();
+				line.invalidate();
 				computeRectangleDifference(mCurrentRectangle,mPreviousRectangle,line);
 				
 				if(!visitCells(line))

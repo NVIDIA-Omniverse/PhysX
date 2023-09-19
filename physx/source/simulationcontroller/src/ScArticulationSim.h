@@ -113,7 +113,7 @@ namespace Sc
 
 								void		setActive(bool b, bool asPartOfCreation=false);
 
-								void		updateForces(PxReal dt, bool notify = true);
+								void		updateForces(PxReal dt);
 								void		saveLastCCDTransform();
 
 								void		clearAcceleration(PxReal dt);

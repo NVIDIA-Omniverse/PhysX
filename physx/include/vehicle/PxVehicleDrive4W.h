@@ -244,7 +244,7 @@ private:
 protected:
 									PxVehicleDrive4W();
 									~PxVehicleDrive4W(){}
-	virtual		bool				isKindOf(const char* name)	const	{ return !::strcmp("PxVehicleDrive4W", name) || PxBase::isKindOf(name); }
+	virtual		bool				isKindOf(const char* name)	const	{ PX_IS_KIND_OF(name, "PxVehicleDrive4W", PxVehicleDrive); }
 public:
 	static		PxVehicleDrive4W*	createObject(PxU8*& address, PxDeserializationContext& context);
 	static		void				getBinaryMetaData(PxOutputStream& stream);

@@ -469,24 +469,26 @@ public:
 	/**
 	\brief Sets torsional patch radius.
 	
-	This defines the radius of the contact patch used to apply torsional friction. If the radius is 0, no torsional friction
-	will be applied. If the radius is > 0, some torsional friction will be applied. This is proportional to the penetration depth
-	so, if the shapes are separated or penetration is zero, no torsional friction will be applied. It is used to approximate 
-	rotational friction introduced by the compression of contacting surfaces.
+	This defines the radius of the contact patch used to apply torsional friction. If the radius is 0 (and minTorsionalPatchRadius
+	is 0 too, see #setMinTorsionalPatchRadius), no torsional friction will be applied. If the radius is > 0, some torsional friction
+	will be applied. This is proportional to the penetration depth so, if the shapes are separated or penetration is zero, no
+	torsional friction will be applied. It is used to approximate rotational friction introduced by the compression of contacting surfaces.
+
+	\note Will only be active, if the friction patch has a single anchor point only. This is for example the case, if a contact patch
+	      has a single contact point.
+
+	\note Only supported in combination with solver type PxSolverType::eTGS.
 
 	<b>Default:</b> 0.0
 
-	\param[in] radius	<b>Range:</b> (0, PX_MAX_F32)
+	\param[in] radius	<b>Range:</b> [0, PX_MAX_F32)
 	*/
 	virtual		void	setTorsionalPatchRadius(PxReal radius) = 0;
 
 	/**
 	\brief Gets torsional patch radius.
 
-	This defines the radius of the contact patch used to apply torsional friction. If the radius is 0, no torsional friction
-	will be applied. If the radius is > 0, some torsional friction will be applied. This is proportional to the penetration depth
-	so, if the shapes are separated or penetration is zero, no torsional friction will be applied. It is used to approximate
-	rotational friction introduced by the compression of contacting surfaces.
+	See #setTorsionalPatchRadius for more info.
 
 	\return The torsional patch radius of the shape.
 	*/
@@ -500,19 +502,18 @@ public:
 	
 	If the radius is > 0, some torsional friction will be applied regardless of the value of torsionalPatchRadius or the amount of penetration.
 
+	\note Will only be active in certain cases, see #setTorsionalPatchRadius for details.
+
 	<b>Default:</b> 0.0
 
-	\param[in] radius	<b>Range:</b> (0, PX_MAX_F32)
+	\param[in] radius	<b>Range:</b> [0, PX_MAX_F32)
 	*/
 	virtual		void	setMinTorsionalPatchRadius(PxReal radius) = 0;
 
 	/**
 	\brief Gets minimum torsional patch radius.
 
-	This defines the minimum radius of the contact patch used to apply torsional friction. If the radius is 0, the amount of torsional friction
-	that will be applied will be entirely dependent on the value of torsionalPatchRadius. 
-	
-	If the radius is > 0, some torsional friction will be applied regardless of the value of torsionalPatchRadius or the amount of penetration.
+	See #setMinTorsionalPatchRadius for more info.
 
 	\return The minimum torsional patch radius of the shape.
 	*/
@@ -601,7 +602,7 @@ protected:
 	PX_INLINE				PxShape(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 	PX_INLINE				PxShape(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags), userData(NULL) {}
 	virtual					~PxShape() {}
-	virtual		bool		isKindOf(const char* name) const { return !::strcmp("PxShape", name) || PxRefCounted::isKindOf(name); }
+	virtual		bool		isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxShape", PxRefCounted); }
 };
 
 #if !PX_DOXYGEN

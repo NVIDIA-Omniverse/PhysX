@@ -56,9 +56,6 @@ namespace physx
 #PxFrictionType::ePATCH selects the patch friction model which typically leads to the most stable results at low solver iteration counts and is also quite inexpensive, as it uses only
 up to four scalar solver constraints per pair of touching objects.  The patch friction model is the same basic strong friction algorithm as PhysX 3.2 and before.  
 
-#PxFrictionType::eONE_DIRECTIONAL is a simplification of the Coulomb friction model, in which the friction for a given point of contact is applied in the alternating tangent directions of
-the contact's normal.  This simplification allows us to reduce the number of iterations required for convergence but is not as accurate as the two directional model.
-
 #PxFrictionType::eTWO_DIRECTIONAL is identical to the one directional model, but it applies friction in both tangent directions simultaneously.  This hurts convergence a bit so it 
 requires more solver iterations, but is more accurate.  Like the one directional model, it is applied at every contact point, which makes it potentially more expensive
 than patch friction for scenarios with many contact points.
@@ -70,7 +67,7 @@ struct PxFrictionType
 	enum Enum
 	{
 		ePATCH,				//!< Select default patch-friction model.
-		eONE_DIRECTIONAL,	//!< Select one directional per-contact friction model.
+		eONE_DIRECTIONAL PX_DEPRECATED, //!< @deprecated Please do not use any longer.
 		eTWO_DIRECTIONAL,	//!< Select two directional per-contact friction model.
 		eFRICTION_COUNT		//!< The total number of friction models supported by the SDK.
 	};
@@ -293,21 +290,6 @@ struct PxSceneFlag
 
 		*/
 		eENABLE_DIRECT_GPU_API = (1 << 16),
-
-		/*
-		\brief Disables GPU readback of articulation data when running on GPU.
-		Useful if your application only needs to communicate to the GPU via GPU buffers. Can be significantly faster
-
-		@deprecated. Use PxSceneFlag::eENABLE_DIRECT_GPU_API instead.
-		*/
-		eSUPPRESS_READBACK = eENABLE_DIRECT_GPU_API,
-
-		/*
-		\brief Forces GPU readback of articulation data when user raise eSUPPRESS_READBACK.
-
-		@deprecated. There will be no replacement.
-		*/
-		eFORCE_READBACK = (1 << 17),
 
 		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};

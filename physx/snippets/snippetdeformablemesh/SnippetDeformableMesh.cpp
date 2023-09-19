@@ -232,19 +232,19 @@ void debugRender()
 	std::vector<PxVec3> gContactVertices;
 	struct AddQuad
 	{
-		static void func(std::vector<PxVec3>& v, const PxVec3* pts, PxU32 index0, PxU32 index1, PxU32 index2, PxU32 index3)
+		static void func(std::vector<PxVec3>& v, const PxVec3* pts_, PxU32 index0, PxU32 index1, PxU32 index2, PxU32 index3)
 		{
-			v.push_back(pts[index0]);
-			v.push_back(pts[index1]);
+			v.push_back(pts_[index0]);
+			v.push_back(pts_[index1]);
 
-			v.push_back(pts[index1]);
-			v.push_back(pts[index2]);
+			v.push_back(pts_[index1]);
+			v.push_back(pts_[index2]);
 
-			v.push_back(pts[index2]);
-			v.push_back(pts[index3]);
+			v.push_back(pts_[index2]);
+			v.push_back(pts_[index3]);
 
-			v.push_back(pts[index3]);
-			v.push_back(pts[index0]);
+			v.push_back(pts_[index3]);
+			v.push_back(pts_[index0]);
 		}
 	};
 

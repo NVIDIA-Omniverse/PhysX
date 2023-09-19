@@ -70,8 +70,7 @@ static PX_FORCE_INLINE const PxU16* getMaterialIndicesLL(const PxTriangleMeshGeo
 
 static void PxcGetMaterialMesh(const PxsShapeCore* shape, const PxU32 index, PxcNpThreadContext& context, PxsMaterialInfo* materialInfo)
 {
-	PX_ASSERT(index == 1);
-	PX_UNUSED(index);
+	PX_ASSERT(index == 0 || index == 1);
 	const PxTriangleMeshGeometryLL& shapeMesh = shape->mGeometry.get<const PxTriangleMeshGeometryLL>();
 	if(shapeMesh.materialsLL.numIndices <= 1)
 	{
@@ -158,8 +157,7 @@ static PxU32 GetMaterialIndex(const Gu::HeightFieldData* hfData, PxU32 triangleI
 
 static void PxcGetMaterialHeightField(const PxsShapeCore* shape, const PxU32 index, PxcNpThreadContext& context, PxsMaterialInfo* materialInfo)
 {
-	PX_ASSERT(index == 1);
-	PX_UNUSED(index);
+	PX_ASSERT(index == 0 || index == 1);
 	const PxHeightFieldGeometryLL& hfGeom = shape->mGeometry.get<const PxHeightFieldGeometryLL>();
 	if(hfGeom.materialsLL.numIndices <= 1)
 	{

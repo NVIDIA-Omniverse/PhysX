@@ -34,6 +34,12 @@ using namespace physx::aos;
 #include "GuBV4_BoxOverlap_Internal.h"
 #include "GuBV4_BoxBoxOverlapTest.h"
 
+#define USE_GU_TRI_TRI_OVERLAP_FUNCTION
+#ifdef USE_GU_TRI_TRI_OVERLAP_FUNCTION
+	#include "GuIntersectionTriangleTriangle.h"
+#endif
+#include "GuDistanceTriangleTriangle.h"
+
 #ifdef GU_BV4_USE_SLABS
 	#include "GuBV4_Slabs.h"
 #endif
@@ -45,6 +51,7 @@ using namespace physx::aos;
 //#include <stdio.h>
 #include "geometry/PxMeshQuery.h"
 
+//#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
 //! if OPC_TRITRI_EPSILON_TEST is true then we do a check (if |dv|<EPSILON then dv=0.0;) else no check is done (which is less robust, but faster)
 #define LOCAL_EPSILON 0.000001f
 
@@ -120,16 +127,16 @@ using namespace physx::aos;
 	}													\
 }
 
-//! TO BE DOCUMENTED
 static PxU32 CoplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1, const PxVec3& v2, const PxVec3& u0, const PxVec3& u1, const PxVec3& u2)
 {
+	int i0,i1;
+	{
 	float A[3];
-	short i0,i1;
 	/* first project onto an axis-aligned plane, that maximizes the area */
 	/* of the triangles, compute indices: i0,i1. */
-	A[0] = fabsf(n[0]);
-	A[1] = fabsf(n[1]);
-	A[2] = fabsf(n[2]);
+	A[0] = fabsf(n.x);
+	A[1] = fabsf(n.y);
+	A[2] = fabsf(n.z);
 	if(A[0]>A[1])
 	{
 		if(A[0]>A[2])
@@ -155,6 +162,7 @@ static PxU32 CoplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1,
 			i0=0;      /* A[1] is greatest */
 			i1=2;
 		}
+	}
 	}
 
 	/* test all edges of triangle 1 against the edges of triangle 2 */
@@ -202,6 +210,7 @@ static PxU32 CoplanarTriTri(const PxVec3& n, const PxVec3& v0, const PxVec3& v1,
 		return ignoreCoplanar ? 0 : CoplanarTriTri(N1, V0, V1, V2, U0, U1, U2);			\
 	}																					\
 }
+//#endif
 
 namespace
 {
@@ -209,9 +218,11 @@ namespace
 	struct TriangleData
 	{
 		PxVec3p	mV0, mV1, mV2;
+		PxVec3p	mXXX, mYYY, mZZZ;
+//#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
 		PxVec3	mNormal;
 		float	mD;
-
+//#endif
 		PX_FORCE_INLINE	void	init(const PxVec3& V0, const PxVec3& V1, const PxVec3& V2)
 		{
 			// 45 lines of asm (x64)
@@ -219,17 +230,19 @@ namespace
 			const Vec4V V1V = V4LoadU(&V1.x);
 			const Vec4V V2V = V4LoadU(&V2.x);
 
+//#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
 			const Vec4V E1V = V4Sub(V1V, V0V);
 			const Vec4V E2V = V4Sub(V2V, V0V);
 			const Vec4V NV = V4Cross(E1V, E2V);
 			const FloatV dV = FNeg(V4Dot3(NV, V0V));
-
+//#endif
 			V4StoreA(V0V, &mV0.x);
 			V4StoreA(V1V, &mV1.x);
 			V4StoreA(V2V, &mV2.x);
+//#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
 			V4StoreA(NV, &mNormal.x);
 			FStore(dV, &mD);
-
+//#endif
 			// 62 lines of asm (x64)
 			// const PxVec3 E1 = V1 - V0;
 			// const PxVec3 E2 = V2 - V0;
@@ -239,10 +252,20 @@ namespace
 			// mV2 = V2;
 			// mNormal = N;
 			// mD = -N.dot(V0);
+
+
+			const Vec4V tri_xs = V4LoadXYZW(V0.x, V1.x, V2.x, 0.0f);
+			const Vec4V tri_ys = V4LoadXYZW(V0.y, V1.y, V2.y, 0.0f);
+			const Vec4V tri_zs = V4LoadXYZW(V0.z, V1.z, V2.z, 0.0f);
+			V4StoreA(tri_xs, &mXXX.x);
+			V4StoreA(tri_ys, &mYYY.x);
+			V4StoreA(tri_zs, &mZZZ.x);
+
 		}
 	}PX_ALIGN_SUFFIX(16);
 }
 
+//#ifndef USE_GU_TRI_TRI_OVERLAP_FUNCTION
 static PxU32 TriTriOverlap(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
 {
 	const PxVec3& V0 = data0.mV0;
@@ -357,6 +380,311 @@ static PxU32 TriTriOverlap(const TriangleData& data0, const TriangleData& data1,
 		return 0;
 	return 1;
 }
+//#endif
+
+//////////
+
+static PX_FORCE_INLINE void projectTriangle4(
+	const TriangleData& data,
+	const Vec4V& axesX,	// axis0x axis1x axis2x axis3x
+	const Vec4V& axesY,	// axis0y axis1y axis2y axis3y
+	const Vec4V& axesZ,	// axis0z axis1z axis2z axis3z
+	Vec4V& min4,
+	Vec4V& max4
+	)
+{
+	Vec4V dp0_4 = V4Mul(V4Load(data.mV0.x), axesX);
+	dp0_4 = V4MulAdd(V4Load(data.mV0.y), axesY, dp0_4);	//dp0_4 = V4Add(dp0_4, V4Mul(V4Load(data.mV0.y), axesY));
+	dp0_4 = V4MulAdd(V4Load(data.mV0.z), axesZ, dp0_4);	//dp0_4 = V4Add(dp0_4, V4Mul(V4Load(data.mV0.z), axesZ));
+
+	Vec4V dp1_4 = V4Mul(V4Load(data.mV1.x), axesX);
+	dp1_4 = V4MulAdd(V4Load(data.mV1.y), axesY, dp1_4);	//dp1_4 = V4Add(dp1_4, V4Mul(V4Load(data.mV1.y), axesY));
+	dp1_4 = V4MulAdd(V4Load(data.mV1.z), axesZ, dp1_4);	//dp1_4 = V4Add(dp1_4, V4Mul(V4Load(data.mV1.z), axesZ));
+
+	Vec4V dp2_4 = V4Mul(V4Load(data.mV2.x), axesX);
+	dp2_4 = V4MulAdd(V4Load(data.mV2.y), axesY, dp2_4);	//dp2_4 = V4Add(dp2_4, V4Mul(V4Load(data.mV2.y), axesY));
+	dp2_4 = V4MulAdd(V4Load(data.mV2.z), axesZ, dp2_4);	//dp2_4 = V4Add(dp2_4, V4Mul(V4Load(data.mV2.z), axesZ));
+
+	min4 = V4Min(V4Min(dp0_4, dp1_4), dp2_4);
+	max4 = V4Max(V4Max(dp0_4, dp1_4), dp2_4);
+}
+
+static PX_FORCE_INLINE PxU32 V4AnyGrtrX(const Vec4V a, const Vec4V b, PxU32 mask)
+{
+	const PxU32 moveMask = BGetBitMask(V4IsGrtr(a, b));
+	return moveMask & mask;
+}
+
+static PX_FORCE_INLINE bool testSepAxis(
+	const TriangleData& data0,
+	const TriangleData& data1,
+	const Vec4V& axesX,	// axis0x axis1x axis2x axis3x
+	const Vec4V& axesY,	// axis0y axis1y axis2y axis3y
+	const Vec4V& axesZ,	// axis0z axis1z axis2z axis3z
+	PxU32 mask
+	)
+{
+	Vec4V min0, max0;
+	projectTriangle4(data0, axesX, axesY, axesZ, min0, max0);
+
+	Vec4V min1, max1;
+	projectTriangle4(data1, axesX, axesY, axesZ, min1, max1);
+
+	if(	V4AnyGrtrX(min1, max0, mask)
+	||	V4AnyGrtrX(min0, max1, mask))
+		return false;
+
+	return true;
+}
+
+static PX_FORCE_INLINE bool testEdges4(	const TriangleData& data0, const TriangleData& data1,
+										const FloatV& edge0_x,
+										const FloatV& edge0_y,
+										const FloatV& edge0_z,
+										const Vec4V& edge1_xs,
+										const Vec4V& edge1_ys,
+										const Vec4V& edge1_zs
+										)
+{
+	const Vec4V axis_xs = V4Sub(V4Scale(edge1_zs, edge0_y), V4Scale(edge1_ys, edge0_z));
+	const Vec4V axis_ys = V4Sub(V4Scale(edge1_xs, edge0_z), V4Scale(edge1_zs, edge0_x));
+	const Vec4V axis_zs = V4Sub(V4Scale(edge1_ys, edge0_x), V4Scale(edge1_xs, edge0_y));
+
+	const Vec4V eps = V4Load(1e-6f);
+
+	Vec4V maxV = V4Max(axis_ys, axis_xs);
+	maxV = V4Max(axis_zs, maxV);
+	Vec4V minV = V4Min(axis_ys, axis_xs);
+	minV = V4Min(axis_zs, minV);
+	maxV = V4Max(V4Neg(minV), maxV);
+
+	BoolV cmpV = V4IsGrtr(maxV, eps);
+	const PxU32 mask = BGetBitMask(cmpV) & 0x7;
+
+	return testSepAxis(data0, data1, axis_xs, axis_ys, axis_zs, mask);
+}
+
+//////////
+
+static PX_FORCE_INLINE void projectTriangle(const PxVec3& axis, const TriangleData& triangle, float& min, float& max)
+{
+	const float dp0 = triangle.mV0.dot(axis);
+	const float dp1 = triangle.mV1.dot(axis);
+	min = PxMin(dp0, dp1);
+	max = PxMax(dp0, dp1);
+
+	const float dp2 = triangle.mV2.dot(axis);
+	min = PxMin(min, dp2);
+	max = PxMax(max, dp2);
+}
+
+static PX_FORCE_INLINE bool testSepAxis(const PxVec3& axis, const TriangleData& triangle0, const TriangleData& triangle1)
+{
+	float min0, max0;
+	projectTriangle(axis, triangle0, min0, max0);
+
+	float min1, max1;
+	projectTriangle(axis, triangle1, min1, max1);
+
+	if(max0<min1 || max1<min0)
+		return false;
+
+	return true;
+}
+
+static PX_FORCE_INLINE bool isAlmostZero(const PxVec3& v)
+{
+	if(PxAbs(v.x)>1e-6f || PxAbs(v.y)>1e-6f || PxAbs(v.z)>1e-6f)
+		return false;
+	return true;
+}
+
+static PX_FORCE_INLINE bool testEdges(	const TriangleData& tri0, const TriangleData& tri1,
+										const PxVec3& edge0, const PxVec3& edge1)
+{
+	PxVec3 cp = edge0.cross(edge1);
+	if(!isAlmostZero(cp))
+	{
+		if(!testSepAxis(cp, tri0, tri1))
+			return false;
+	}
+	return true;
+}
+
+static bool TriTriSAT(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
+{
+	{
+		const PxReal data1_v0_dot_N0 = data1.mV0.dot(data0.mNormal);
+		const PxReal data1_v1_dot_N0 = data1.mV1.dot(data0.mNormal);
+		const PxReal data1_v2_dot_N0 = data1.mV2.dot(data0.mNormal);
+
+		const PxReal p1ToA = data1_v0_dot_N0 + data0.mD;
+		const PxReal p1ToB = data1_v1_dot_N0 + data0.mD;
+		const PxReal p1ToC = data1_v2_dot_N0 + data0.mD;
+
+		const PxReal tolerance = 1e-8f;
+
+		if(PxAbs(p1ToA) < tolerance && PxAbs(p1ToB) < tolerance && PxAbs(p1ToC) < tolerance)
+		{
+			return ignoreCoplanar ? false : CoplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
+																			data1.mV0, data1.mV1, data1.mV2)!=0;
+		}
+
+		if ((p1ToA > 0) == (p1ToB > 0) && (p1ToA > 0) == (p1ToC > 0))
+		{
+			return false; //All points of triangle 2 on same side of triangle 1 -> no intersection
+		}
+	}
+
+	{
+		const PxReal data0_v0_dot_N1 = data0.mV0.dot(data1.mNormal);
+		const PxReal data0_v1_dot_N1 = data0.mV1.dot(data1.mNormal);
+		const PxReal data0_v2_dot_N1 = data0.mV2.dot(data1.mNormal);
+
+		const PxReal p2ToA = data0_v0_dot_N1 + data1.mD;
+		const PxReal p2ToB = data0_v1_dot_N1 + data1.mD;
+		const PxReal p2ToC = data0_v2_dot_N1 + data1.mD;
+
+		if ((p2ToA > 0) == (p2ToB > 0) && (p2ToA > 0) == (p2ToC > 0))
+			return false; //All points of triangle 1 on same side of triangle 2 -> no intersection	
+	}
+
+	{
+		const PxVec3 edge1_01 = data1.mV0 - data1.mV1;
+		const PxVec3 edge1_12 = data1.mV1 - data1.mV2;
+		const PxVec3 edge1_20 = data1.mV2 - data1.mV0;
+
+		{
+			const PxVec3 edge0_01 = data0.mV0 - data0.mV1;
+
+			if(!testEdges(data0, data1, edge0_01, edge1_01))
+				return false;
+			if(!testEdges(data0, data1, edge0_01, edge1_12))
+				return false;
+			if(!testEdges(data0, data1, edge0_01, edge1_20))
+				return false;
+		}
+
+		{
+			const PxVec3 edge0_12 = data0.mV1 - data0.mV2;
+
+			if(!testEdges(data0, data1, edge0_12, edge1_01))
+				return false;
+			if(!testEdges(data0, data1, edge0_12, edge1_12))
+				return false;
+			if(!testEdges(data0, data1, edge0_12, edge1_20))
+				return false;
+		}
+
+		{
+			const PxVec3 edge0_20 = data0.mV2 - data0.mV0;
+
+			if(!testEdges(data0, data1, edge0_20, edge1_01))
+				return false;
+			if(!testEdges(data0, data1, edge0_20, edge1_12))
+				return false;
+			if(!testEdges(data0, data1, edge0_20, edge1_20))
+				return false;
+		}
+	}
+
+	return true;
+}
+
+static bool TriTriSAT_SIMD(const TriangleData& data0, const TriangleData& data1, bool ignoreCoplanar)
+{
+	const Vec4V tri1_xs = V4LoadA(&data1.mXXX.x);
+	const Vec4V tri1_ys = V4LoadA(&data1.mYYY.x);
+	const Vec4V tri1_zs = V4LoadA(&data1.mZZZ.x);
+	{
+		const Vec4V tri0_normal_x = V4Load(data0.mNormal.x);
+		const Vec4V tri0_normal_y = V4Load(data0.mNormal.y);
+		const Vec4V tri0_normal_z = V4Load(data0.mNormal.z);
+
+		Vec4V tri1_dot_N0 = V4Mul(tri1_xs, tri0_normal_x);
+		// PT: TODO: V4MulAdd
+		tri1_dot_N0 = V4Add(tri1_dot_N0, V4Mul(tri1_ys, tri0_normal_y));
+		tri1_dot_N0 = V4Add(tri1_dot_N0, V4Mul(tri1_zs, tri0_normal_z));
+
+		const Vec4V p1ToABC = V4Add(tri1_dot_N0, V4Load(data0.mD));
+		if(V4AllGrtrOrEq3(V4Load(1e-8f), V4Abs(p1ToABC)))
+		{
+			return ignoreCoplanar ? false : CoplanarTriTri(data0.mNormal,	data0.mV0, data0.mV1, data0.mV2,
+																			data1.mV0, data1.mV1, data1.mV2)!=0;
+		}
+
+		PxU32 mm = BGetBitMask(V4IsGrtr(p1ToABC, V4Zero()));
+		if((mm & 0x7) == 0x7)
+			return false;
+		mm = BGetBitMask(V4IsGrtrOrEq(V4Zero(), p1ToABC));
+		if((mm & 0x7) == 0x7)
+			return false;
+	}
+
+	{
+		const Vec4V tri0_xs = V4LoadA(&data0.mXXX.x);
+		const Vec4V tri0_ys = V4LoadA(&data0.mYYY.x);
+		const Vec4V tri0_zs = V4LoadA(&data0.mZZZ.x);
+
+		const Vec4V tri1_normal_x = V4Load(data1.mNormal.x);
+		const Vec4V tri1_normal_y = V4Load(data1.mNormal.y);
+		const Vec4V tri1_normal_z = V4Load(data1.mNormal.z);
+
+		Vec4V tri0_dot_N1 = V4Mul(tri0_xs, tri1_normal_x);
+		// PT: TODO: V4MulAdd
+		tri0_dot_N1 = V4Add(tri0_dot_N1, V4Mul(tri0_ys, tri1_normal_y));
+		tri0_dot_N1 = V4Add(tri0_dot_N1, V4Mul(tri0_zs, tri1_normal_z));
+
+		const Vec4V p2ToABC = V4Add(tri0_dot_N1, V4Load(data1.mD));
+
+		PxU32 mm = BGetBitMask(V4IsGrtr(p2ToABC, V4Zero()));
+		if((mm & 0x7) == 0x7)
+			return false; //All points of triangle 1 on same side of triangle 2 -> no intersection	
+		mm = BGetBitMask(V4IsGrtrOrEq(V4Zero(), p2ToABC));
+		if((mm & 0x7) == 0x7)
+			return false; //All points of triangle 1 on same side of triangle 2 -> no intersection	
+	}
+
+	{
+		const Vec4V tri1_xs_shuffled = V4PermYZXW(tri1_xs);
+		const Vec4V tri1_ys_shuffled = V4PermYZXW(tri1_ys);
+		const Vec4V tri1_zs_shuffled = V4PermYZXW(tri1_zs);
+
+		const Vec4V edge1_xs = V4Sub(tri1_xs, tri1_xs_shuffled);
+		const Vec4V edge1_ys = V4Sub(tri1_ys, tri1_ys_shuffled);
+		const Vec4V edge1_zs = V4Sub(tri1_zs, tri1_zs_shuffled);
+
+		const Vec4V data0_V0 = V4LoadA(&data0.mV0.x);
+		const Vec4V data0_V1 = V4LoadA(&data0.mV1.x);
+		const Vec4V data0_V2 = V4LoadA(&data0.mV2.x);
+
+		const Vec4V edge0_01 = V4Sub(data0_V0, data0_V1);
+		if(!testEdges4(data0, data1,
+			V4GetX(edge0_01), V4GetY(edge0_01), V4GetZ(edge0_01),
+			edge1_xs, edge1_ys, edge1_zs))
+			return false;
+
+		const Vec4V edge0_12 = V4Sub(data0_V1, data0_V2);
+		if(!testEdges4(data0, data1,
+			V4GetX(edge0_12), V4GetY(edge0_12), V4GetZ(edge0_12),
+			edge1_xs, edge1_ys, edge1_zs))
+			return false;
+
+		const Vec4V edge0_20 = V4Sub(data0_V2, data0_V0);
+		if(!testEdges4(data0, data1,
+			V4GetX(edge0_20), V4GetY(edge0_20), V4GetZ(edge0_20),
+			edge1_xs, edge1_ys, edge1_zs))
+			return false;
+	}
+
+	return true;
+}
+
+
+
+
+
+
 
 // PT: beware, needs padding at the end of src
 static PX_FORCE_INLINE void transformV(PxVec3p* PX_RESTRICT dst, const PxVec3* PX_RESTRICT src, const Vec4V& c0, const Vec4V& c1, const Vec4V& c2, const Vec4V& c3)
@@ -364,6 +692,7 @@ static PX_FORCE_INLINE void transformV(PxVec3p* PX_RESTRICT dst, const PxVec3* P
 	const Vec4V vertexV = V4LoadU(&src->x);
 
 	Vec4V ResV = V4Scale(c0, V4GetX(vertexV));
+	// PT: TODO: V4ScaleAdd
 	ResV = V4Add(ResV, V4Scale(c1, V4GetY(vertexV)));
 	ResV = V4Add(ResV, V4Scale(c2, V4GetZ(vertexV)));
 	ResV = V4Add(ResV, c3);
@@ -371,8 +700,163 @@ static PX_FORCE_INLINE void transformV(PxVec3p* PX_RESTRICT dst, const PxVec3* P
 	V4StoreU(ResV, &dst->x);
 }
 
-static bool doLeafVsLeaf(PxReportCallback<PxGeomIndexPair>& callback, const PxU32 prim0, const PxU32 prim1, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, bool mustFlip, bool& abort, bool ignoreCoplanar)
+static bool accumulateResults(PxReportCallback<PxGeomIndexPair>& callback, PxGeomIndexPair*& dst, PxU32& capacity, PxU32& currentSize, PxU32 primIndex0, PxU32 primIndex1, bool mustFlip, bool& abort)
 {
+	dst[currentSize].id0 = mustFlip ? primIndex1 : primIndex0;
+	dst[currentSize].id1 = mustFlip ? primIndex0 : primIndex1;
+	currentSize++;
+	if(currentSize==capacity)
+	{
+		callback.mSize = 0;
+		if(!callback.flushResults(currentSize, dst))
+		{
+			abort = true;
+			return false;
+		}
+		dst = callback.mBuffer;
+		capacity = callback.mCapacity;
+		currentSize = callback.mSize;
+	}
+	return true;
+}
+
+namespace
+{
+	struct TriVsTriParams;
+
+	typedef bool (*trisVsTrisFunction)(	const TriVsTriParams& params,
+										PxU32 nb0, PxU32 startPrim0, const TriangleData* data0,
+										PxU32 nb1, PxU32 startPrim1, const TriangleData* data1,
+										bool& abort);
+
+	enum TriVsTriImpl
+	{
+		TRI_TRI_MOLLER_REGULAR,	// https://fileadmin.cs.lth.se/cs/Personal/Tomas_Akenine-Moller/code/
+		TRI_TRI_MOLLER_NEW,		// Alternative implementation in Gu
+		TRI_TRI_NEW_SAT,		// "New" SAT-based implementation
+		TRI_TRI_NEW_SAT_SIMD,	// "New" SAT-based implementation using SIMD
+	};
+
+	struct TriVsTriParams
+	{
+		PX_FORCE_INLINE	TriVsTriParams(trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, float tolerance, bool mustFlip, bool ignoreCoplanar) :
+			mLeafFunction	(leafFunc),
+			mCallback		(callback),
+			mTolerance		(tolerance),
+			mMustFlip		(mustFlip),
+			mIgnoreCoplanar	(ignoreCoplanar)
+		{
+		}
+
+		const trisVsTrisFunction			mLeafFunction;
+		PxReportCallback<PxGeomIndexPair>&	mCallback;
+		const float							mTolerance;
+		const bool							mMustFlip;
+		const bool							mIgnoreCoplanar;
+
+		PX_NOCOPY(TriVsTriParams)
+	};
+}
+
+template<const TriVsTriImpl impl>
+static bool doTriVsTri_Overlap(	const TriVsTriParams& params,
+								PxU32 nb0, PxU32 startPrim0, const TriangleData* data0,
+								PxU32 nb1, PxU32 startPrim1, const TriangleData* data1,
+								bool& abort)
+{
+	PX_ASSERT(nb0<=16);
+	PX_ASSERT(nb1<=16);
+
+	PxReportCallback<PxGeomIndexPair>& callback = params.mCallback;
+	PxGeomIndexPair* dst = callback.mBuffer;
+	PxU32 capacity = callback.mCapacity;
+	PxU32 currentSize = callback.mSize;
+	PX_ASSERT(currentSize<capacity);
+
+	const bool ignoreCoplanar = params.mIgnoreCoplanar;
+	const bool mustFlip = params.mMustFlip;
+
+	bool foundHit = false;
+	abort = false;
+
+	for(PxU32 i=0;i<nb0;i++)
+	{
+		for(PxU32 j=0;j<nb1;j++)
+		{
+			bool ret;
+			if(impl==TRI_TRI_MOLLER_REGULAR)
+				ret = TriTriOverlap(data0[i], data1[j], ignoreCoplanar);
+			else if(impl==TRI_TRI_MOLLER_NEW)
+				ret = trianglesIntersect(data0[i].mV0, data0[i].mV1, data0[i].mV2, data1[j].mV0, data1[j].mV1, data1[j].mV2, ignoreCoplanar);
+			else if(impl==TRI_TRI_NEW_SAT)
+				ret = TriTriSAT(data0[i], data1[j], ignoreCoplanar);
+			else if(impl==TRI_TRI_NEW_SAT_SIMD)
+				ret = TriTriSAT_SIMD(data0[i], data1[j], ignoreCoplanar);
+			else
+				ret = false;
+
+			if(ret)
+			{
+				foundHit = true;
+				if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, mustFlip, abort))
+					return true;
+			}
+		}
+	}
+	
+	callback.mSize = currentSize;
+	return foundHit;
+}
+
+static bool doTriVsTri_Distance(const TriVsTriParams& params,
+								PxU32 nb0, PxU32 startPrim0, const TriangleData* data0,
+								PxU32 nb1, PxU32 startPrim1, const TriangleData* data1,
+								bool& abort)
+{
+	PX_ASSERT(nb0<=16);
+	PX_ASSERT(nb1<=16);
+
+	PxReportCallback<PxGeomIndexPair>& callback = params.mCallback;
+	PxGeomIndexPair* dst = callback.mBuffer;
+	PxU32 capacity = callback.mCapacity;
+	PxU32 currentSize = callback.mSize;
+	PX_ASSERT(currentSize<capacity);
+
+	const bool mustFlip = params.mMustFlip;
+
+	bool foundHit = false;
+	abort = false;
+
+	const float toleranceSquared = params.mTolerance * params.mTolerance;
+	for(PxU32 i=0;i<nb0;i++)
+	{
+		// PT: TODO: improve this
+		const PxVec3p pp[3] = { data0[i].mV0, data0[i].mV1, data0[i].mV2 };
+		for(PxU32 j=0;j<nb1;j++)
+		{
+			PxVec3 cp, cq;
+
+			// PT: TODO: improve this
+			const PxVec3p qq[3] = { data1[j].mV0, data1[j].mV1, data1[j].mV2 };
+
+			const float d = distanceTriangleTriangleSquared(cp, cq, pp, qq);
+			if(d<=toleranceSquared)
+			{
+				foundHit = true;
+				// PT: TODO: this is not enough here
+				if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, mustFlip, abort))
+					return true;
+			}
+		}
+	}
+
+	callback.mSize = currentSize;
+	return foundHit;
+}
+
+static bool doLeafVsLeaf(const TriVsTriParams& params, const PxU32 prim0, const PxU32 prim1, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, bool& abort)
+{
+	// PT: TODO: revisit this approach, it was fine with the original overlap code but now with the 2 additional queries, not so much
 	TriangleData data0[16];
 	TriangleData data1[16];
 
@@ -440,60 +924,20 @@ static bool doLeafVsLeaf(PxReportCallback<PxGeomIndexPair>& callback, const PxU3
 		}while(nbTris1--);
 	}
 
-	PX_ASSERT(nb0<=16);
-	PX_ASSERT(nb1<=16);
-
-	PxGeomIndexPair* dst = callback.mBuffer;
-	PxU32 capacity = callback.mCapacity;
-	PxU32 currentSize = callback.mSize;
-	PX_ASSERT(currentSize<capacity);
-
-	bool foundHit = false;
-	abort = false;
-	for(PxU32 i=0;i<nb0;i++)
-	{
-		for(PxU32 j=0;j<nb1;j++)
-		{
-			if(TriTriOverlap(data0[i], data1[j], ignoreCoplanar))
-			{
-				foundHit = true;
-
-				const PxU32 primIndex0 = startPrim0 + i;
-				const PxU32 primIndex1 = startPrim1 + j;
-				dst[currentSize].id0 = mustFlip ? primIndex1 : primIndex0;
-				dst[currentSize].id1 = mustFlip ? primIndex0 : primIndex1;
-				currentSize++;
-				if(currentSize==capacity)
-				{
-					callback.mSize = 0;
-					if(!callback.flushResults(currentSize, dst))
-					{
-						abort = true;
-						return foundHit;
-					}
-					dst = callback.mBuffer;
-					capacity = callback.mCapacity;
-					currentSize = callback.mSize;
-				}
-			}
-		}
-	}
-	callback.mSize = currentSize;
-	return foundHit;
+	return (params.mLeafFunction)(params, nb0, startPrim0, data0, nb1, startPrim1, data1, abort);
 }
 
 namespace
 {
 struct MeshMeshParams : OBBTestParams
 {
-	PX_FORCE_INLINE	MeshMeshParams(PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, const BV4Tree& tree, bool mustFlip, bool ignoreCoplanar) :
-		mCallback		(callback),
-		mMesh0			(mesh0),
-		mMesh1			(mesh1),
-		mMat0to1		(mat0to1),
-		mMustFlip		(mustFlip),
-		mStatus			(false),
-		mIgnoreCoplanar	(ignoreCoplanar)
+	PX_FORCE_INLINE	MeshMeshParams(	trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, const BV4Tree& tree,
+									bool mustFlip, bool ignoreCoplanar, float tolerance) :
+		mTriVsTriParams		(leafFunc, callback, tolerance, mustFlip, ignoreCoplanar),
+		mMesh0				(mesh0),
+		mMesh1				(mesh1),
+		mMat0to1			(mat0to1),
+		mStatus				(false)
 	{
 		V4StoreA_Safe(V4LoadU_Safe(&tree.mCenterOrMinCoeff.x), &mCenterOrMinCoeff_PaddedAligned.x);
 		V4StoreA_Safe(V4LoadU_Safe(&tree.mExtentsOrMaxCoeff.x), &mExtentsOrMaxCoeff_PaddedAligned.x);
@@ -509,7 +953,7 @@ struct MeshMeshParams : OBBTestParams
 		precomputeData(this, &mAbsRot, &mLocalBox_rot);
 	}
 
-	void	setupForTraversal(const PxVec3p& center, const PxVec3p& extents)
+	void	setupForTraversal(const PxVec3p& center, const PxVec3p& extents, float tolerance)
 	{
 		if(mMat0to1)
 		{
@@ -522,18 +966,16 @@ struct MeshMeshParams : OBBTestParams
 		else
 			mTBoxToModel_PaddedAligned = center;
 
-		setupBoxData(this, extents, &mAbsRot);
+		setupBoxData(this, extents + PxVec3(tolerance), &mAbsRot);
 	}
 
-	PxMat33										mAbsRot;	//!< Absolute rotation matrix
-	PxReportCallback<PxGeomIndexPair>&	mCallback;
-	const SourceMesh*	const					mMesh0;
-	const SourceMesh*	const					mMesh1;
-	const PxMat44*		const					mMat0to1;
-	PxU32										mPrimIndex0;
-	const bool									mMustFlip;
-	bool										mStatus;
-	const bool									mIgnoreCoplanar;
+	PxMat33						mAbsRot;	//!< Absolute rotation matrix
+	const TriVsTriParams		mTriVsTriParams;
+	const SourceMesh*	const	mMesh0;
+	const SourceMesh*	const	mMesh1;
+	const PxMat44*		const	mMat0to1;
+	PxU32						mPrimIndex0;
+	bool						mStatus;
 
 	PX_NOCOPY(MeshMeshParams)
 };
@@ -544,14 +986,14 @@ public:
 	static PX_FORCE_INLINE PxIntBool doLeafTest(MeshMeshParams* PX_RESTRICT params, PxU32 primIndex1)
 	{
 		bool abort;
-		if(doLeafVsLeaf(params->mCallback, params->mPrimIndex0, primIndex1, params->mMesh0, params->mMesh1, params->mMat0to1, params->mMustFlip, abort, params->mIgnoreCoplanar))
+		if(doLeafVsLeaf(params->mTriVsTriParams, params->mPrimIndex0, primIndex1, params->mMesh0, params->mMesh1, params->mMat0to1, abort))
 			params->mStatus = true;
 		return PxIntBool(abort);
 	}
 };
 }
 
-static PX_FORCE_INLINE void getBox(Vec4V& centerV, Vec4V& extentsV, const BVDataSwizzledQ* PX_RESTRICT node, PxU32 i, const PxVec3p* PX_RESTRICT centerOrMinCoeff_PaddedAligned, const PxVec3p* PX_RESTRICT extentsOrMaxCoeff_PaddedAligned)
+static PX_FORCE_INLINE void getNodeBounds(Vec4V& centerV, Vec4V& extentsV, const BVDataSwizzledQ* PX_RESTRICT node, PxU32 i, const PxVec3p* PX_RESTRICT centerOrMinCoeff_PaddedAligned, const PxVec3p* PX_RESTRICT extentsOrMaxCoeff_PaddedAligned)
 {
 	// Dequantize box0
 	//OPC_SLABS_GET_MIN_MAX(tn0, i)
@@ -568,7 +1010,7 @@ static PX_FORCE_INLINE void getBox(Vec4V& centerV, Vec4V& extentsV, const BVData
 	extentsV = V4Scale(V4Sub(maxV, minV), HalfV);
 }
 
-static PX_FORCE_INLINE void getBox(Vec4V& centerV, Vec4V& extentsV, const BVDataSwizzledNQ* PX_RESTRICT node, PxU32 i, const PxVec3p* PX_RESTRICT /*centerOrMinCoeff_PaddedAligned*/, const PxVec3p* PX_RESTRICT /*extentsOrMaxCoeff_PaddedAligned*/)
+static PX_FORCE_INLINE void getNodeBounds(Vec4V& centerV, Vec4V& extentsV, const BVDataSwizzledNQ* PX_RESTRICT node, PxU32 i, const PxVec3p* PX_RESTRICT /*centerOrMinCoeff_PaddedAligned*/, const PxVec3p* PX_RESTRICT /*extentsOrMaxCoeff_PaddedAligned*/)
 {
 	const FloatV HalfV = FLoad(0.5f);
 	const Vec4V minV = V4LoadXYZW(node->mMinX[i], node->mMinY[i], node->mMinZ[i], 0.0f);
@@ -587,7 +1029,7 @@ static PX_FORCE_INLINE PxIntBool doLeafVsNode(const BVDataPackedNQ* const PX_RES
 	return BV4_ProcessStreamSwizzledNoOrderNQ<LeafFunction_MeshMesh, MeshMeshParams>(root, node->getChildData(i), params);
 }
 
-static void getBox(Vec4V& centerV, Vec4V& extentsV, PxU32 nbVerts, const PxVec3* PX_RESTRICT verts)
+static void computeBoundsAroundVertices(Vec4V& centerV, Vec4V& extentsV, PxU32 nbVerts, const PxVec3* PX_RESTRICT verts)
 {
 	Vec4V minV = V4LoadU(&verts[0].x);
 	Vec4V maxV = minV;
@@ -611,16 +1053,32 @@ static PX_NOINLINE bool abortQuery(PxReportCallback<PxGeomIndexPair>& callback, 
 	return true;
 }
 
-static PX_NOINLINE bool doSmallMeshVsSmallMesh(PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1, bool& _abort, bool ignoreCoplanar)
+static PX_FORCE_INLINE trisVsTrisFunction getLeafFunc(PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
+{
+	if(tolerance!=0.0f)
+		return doTriVsTri_Distance;
+	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED1)
+		return doTriVsTri_Overlap<TRI_TRI_MOLLER_NEW>;
+	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED2)
+		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT>;
+	if(meshMeshFlags & PxMeshMeshQueryFlag::eRESERVED3)
+		return doTriVsTri_Overlap<TRI_TRI_NEW_SAT_SIMD>;
+	return doTriVsTri_Overlap<TRI_TRI_MOLLER_REGULAR>;
+}
+
+static PX_NOINLINE bool doSmallMeshVsSmallMesh(	PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, const PxMat44* mat0to1,
+												bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const PxU32 nbTris0 = mesh0->getNbTriangles();
 	PX_ASSERT(nbTris0<16);
 	const PxU32 nbTris1 = mesh1->getNbTriangles();
 	PX_ASSERT(nbTris1<16);
 
+	const TriVsTriParams params(leafFunc, callback, tolerance, false, ignoreCoplanar);
+
 	bool abort;
 	bool status = false;
-	if(doLeafVsLeaf(callback, nbTris0, nbTris1, mesh0, mesh1, mat0to1, false, abort, ignoreCoplanar))
+	if(doLeafVsLeaf(params, nbTris0, nbTris1, mesh0, mesh1, mat0to1, abort))
 		status = true;
 	if(abort)
 		return abortQuery(callback, _abort);
@@ -639,11 +1097,11 @@ static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallback<PxGeomIndexPair>& ca
 		BV4_ALIGN16(PxVec3p boxExtents);
 
 		Vec4V centerV, extentsV;
-		getBox(centerV, extentsV, mesh0->getNbVertices(), mesh0->getVerts());
+		computeBoundsAroundVertices(centerV, extentsV, mesh0->getNbVertices(), mesh0->getVerts());
 		V4StoreA(centerV, &boxCenter.x);
 		V4StoreA(extentsV, &boxExtents.x);
 
-		params.setupForTraversal(boxCenter, boxExtents);
+		params.setupForTraversal(boxCenter, boxExtents, params.mTriVsTriParams.mTolerance);
 		params.mPrimIndex0	= nbTris;
 	}
 
@@ -657,14 +1115,14 @@ static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallback<PxGeomIndexPair>& ca
 			continue;
 
 		Vec4V centerV1, extentsV1;
-		getBox(centerV1, extentsV1, tn, i, &params.mCenterOrMinCoeff_PaddedAligned, &params.mExtentsOrMaxCoeff_PaddedAligned);
+		getNodeBounds(centerV1, extentsV1, tn, i, &params.mCenterOrMinCoeff_PaddedAligned, &params.mExtentsOrMaxCoeff_PaddedAligned);
 
 		if(BV4_BoxBoxOverlap(centerV1, extentsV1, &params))
 		{
 			if(tn->isLeaf(i))
 			{
 				bool abort;
-				if(doLeafVsLeaf(callback, nbTris, tn->getPrimitive(i), mesh0, mesh1, params.mMat0to1, params.mMustFlip, abort, params.mIgnoreCoplanar))
+				if(doLeafVsLeaf(params.mTriVsTriParams, nbTris, tn->getPrimitive(i), mesh0, mesh1, params.mMat0to1, abort))
 					status = true;
 				if(abort)
 					return abortQuery(callback, _abort);
@@ -681,7 +1139,8 @@ static PX_NOINLINE bool doSmallMeshVsTree(	PxReportCallback<PxGeomIndexPair>& ca
 }
 
 template<class PackedNodeT0, class PackedNodeT1, class SwizzledNodeT0, class SwizzledNodeT1>
-static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0, bool& _abort, bool ignoreCoplanar)
+static bool BV4_OverlapMeshVsMeshT(	PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+									bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const SourceMesh* mesh0 = static_cast<const SourceMesh*>(tree0.mMeshInterface);
 	const SourceMesh* mesh1 = static_cast<const SourceMesh*>(tree1.mMeshInterface);
@@ -692,12 +1151,12 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 
 	if(!node0 && node1)
 	{
-		MeshMeshParams ParamsForTree1Traversal(callback, mesh0, mesh1, mat0to1, tree1, false, ignoreCoplanar);
+		MeshMeshParams ParamsForTree1Traversal(leafFunc, callback, mesh0, mesh1, mat0to1, tree1, false, ignoreCoplanar, tolerance);
 		return doSmallMeshVsTree<PackedNodeT1, SwizzledNodeT1>(callback, ParamsForTree1Traversal, node1, mesh0, mesh1, _abort);
 	}
 	else if(node0 && !node1)
 	{
-		MeshMeshParams ParamsForTree0Traversal(callback, mesh1, mesh0, mat1to0, tree0, true, ignoreCoplanar);
+		MeshMeshParams ParamsForTree0Traversal(leafFunc, callback, mesh1, mesh0, mat1to0, tree0, true, ignoreCoplanar, tolerance);
 		return doSmallMeshVsTree<PackedNodeT0, SwizzledNodeT0>(callback, ParamsForTree0Traversal, node0, mesh1, mesh0, _abort);
 	}
 	else
@@ -705,8 +1164,8 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 		PX_ASSERT(node0);
 		PX_ASSERT(node1);
 
-		MeshMeshParams ParamsForTree1Traversal(callback, mesh0, mesh1, mat0to1, tree1, false, ignoreCoplanar);
-		MeshMeshParams ParamsForTree0Traversal(callback, mesh1, mesh0, mat1to0, tree0, true, ignoreCoplanar);
+		MeshMeshParams ParamsForTree1Traversal(leafFunc, callback, mesh0, mesh1, mat0to1, tree1, false, ignoreCoplanar, tolerance);
+		MeshMeshParams ParamsForTree0Traversal(leafFunc, callback, mesh1, mesh0, mat1to0, tree0, true, ignoreCoplanar, tolerance);
 
 		BV4_ALIGN16(PxVec3p boxCenter0);
 		BV4_ALIGN16(PxVec3p boxExtents0);
@@ -744,11 +1203,11 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 					continue;
 
 				Vec4V centerV0, extentsV0;
-				getBox(centerV0, extentsV0, tn0, i, &ParamsForTree0Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree0Traversal.mExtentsOrMaxCoeff_PaddedAligned);
+				getNodeBounds(centerV0, extentsV0, tn0, i, &ParamsForTree0Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree0Traversal.mExtentsOrMaxCoeff_PaddedAligned);
 				V4StoreA(centerV0, &boxCenter0.x);
 				V4StoreA(extentsV0, &boxExtents0.x);
 
-				ParamsForTree1Traversal.setupForTraversal(boxCenter0, boxExtents0);
+				ParamsForTree1Traversal.setupForTraversal(boxCenter0, boxExtents0, tolerance);
 
 				for(PxU32 j=0;j<4;j++)
 				{
@@ -756,7 +1215,7 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 						continue;
 
 					Vec4V centerV1, extentsV1;
-					getBox(centerV1, extentsV1, tn1, j, &ParamsForTree1Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree1Traversal.mExtentsOrMaxCoeff_PaddedAligned);
+					getNodeBounds(centerV1, extentsV1, tn1, j, &ParamsForTree1Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree1Traversal.mExtentsOrMaxCoeff_PaddedAligned);
 
 					if(BV4_BoxBoxOverlap(centerV1, extentsV1, &ParamsForTree1Traversal))
 					{
@@ -768,7 +1227,7 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 							if(isLeaf1)
 							{
 								bool abort;
-								if(doLeafVsLeaf(callback, tn0->getPrimitive(i), tn1->getPrimitive(j), mesh0, mesh1, mat0to1, false, abort, ignoreCoplanar))
+								if(doLeafVsLeaf(ParamsForTree1Traversal.mTriVsTriParams, tn0->getPrimitive(i), tn1->getPrimitive(j), mesh0, mesh1, mat0to1, abort))
 									status = true;
 								if(abort)
 									return abortQuery(callback, _abort);
@@ -787,7 +1246,7 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 								V4StoreA(centerV1, &boxCenter1.x);
 								V4StoreA(extentsV1, &boxExtents1.x);
 
-								ParamsForTree0Traversal.setupForTraversal(boxCenter1, boxExtents1);
+								ParamsForTree0Traversal.setupForTraversal(boxCenter1, boxExtents1, tolerance);
 
 								ParamsForTree0Traversal.mPrimIndex0	= tn1->getPrimitive(j);
 								if(doLeafVsNode(root0, tn0, i, &ParamsForTree0Traversal))
@@ -832,8 +1291,13 @@ static bool BV4_OverlapMeshVsMeshT(PxReportCallback<PxGeomIndexPair>& callback, 
 // Thus we'd need 6*8 = 48 different test cases.
 //
 // This gets worse if we take scaling into account.
+//
+// UPDATE: and now we also want distance/tolerance queries so multiply this by 2. This is getting too complicated.
+// We were at 48 test cases, *2 for scaling, *2 for distance queries = 192 cases to test?
 
-bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0, PxMeshMeshQueryFlags meshMeshFlags)
+bool BV4_OverlapMeshVsMesh(
+	PxReportCallback<PxGeomIndexPair>& callback,
+	const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0, PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
 {
 	PxGeomIndexPair stackBuffer[256];
 	bool mustResetBuffer;
@@ -855,6 +1319,7 @@ bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV
 	}
 
 	const bool ignoreCoplanar = meshMeshFlags & PxMeshMeshQueryFlag::eDISCARD_COPLANAR;
+	const trisVsTrisFunction leafFunc = getLeafFunc(meshMeshFlags, tolerance);
 
 	bool status;
 	bool abort = false;
@@ -862,23 +1327,23 @@ bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV
 	{
 		const SourceMesh* mesh0 = static_cast<const SourceMesh*>(tree0.mMeshInterface);
 		const SourceMesh* mesh1 = static_cast<const SourceMesh*>(tree1.mMeshInterface);
-		status = doSmallMeshVsSmallMesh(callback, mesh0, mesh1, mat0to1, abort, ignoreCoplanar);
+		status = doSmallMeshVsSmallMesh(callback, mesh0, mesh1, mat0to1, abort, ignoreCoplanar, leafFunc, tolerance);
 	}
 	else
 	{
 		if(tree0.mQuantized)
 		{
 			if(tree1.mQuantized)
-				status = BV4_OverlapMeshVsMeshT<BVDataPackedQ, BVDataPackedQ, BVDataSwizzledQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT<BVDataPackedQ, BVDataPackedQ, BVDataSwizzledQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar, leafFunc, tolerance);
 			else
-				status = BV4_OverlapMeshVsMeshT<BVDataPackedQ, BVDataPackedNQ, BVDataSwizzledQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT<BVDataPackedQ, BVDataPackedNQ, BVDataSwizzledQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar, leafFunc, tolerance);
 		}
 		else
 		{
 			if(tree1.mQuantized)
-				status = BV4_OverlapMeshVsMeshT<BVDataPackedNQ, BVDataPackedQ, BVDataSwizzledNQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT<BVDataPackedNQ, BVDataPackedQ, BVDataSwizzledNQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar, leafFunc, tolerance);
 			else
-				status = BV4_OverlapMeshVsMeshT<BVDataPackedNQ, BVDataPackedNQ, BVDataSwizzledNQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT<BVDataPackedNQ, BVDataPackedNQ, BVDataSwizzledNQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, abort, ignoreCoplanar, leafFunc, tolerance);
 		}
 	}
 
@@ -970,8 +1435,9 @@ static void computeMeshBounds(const PxMat34& absPose, Vec4V boundsCenterV, Vec4V
 	transformNoEmptyTest(absPose, origin, extent, boundsCenterV, boundsExtentsV);
 }
 
-static bool doLeafVsLeaf_Scaled(PxReportCallback<PxGeomIndexPair>& callback, const PxU32 prim0, const PxU32 prim1, const SourceMesh* mesh0, const SourceMesh* mesh1,
-								const PxMat34& absPose0, const PxMat34& absPose1, bool mustFlip, bool& abort, bool ignoreCoplanar)
+// PT: TODO: refactor with non-scaled version
+static bool doLeafVsLeaf_Scaled(const TriVsTriParams& params, const PxU32 prim0, const PxU32 prim1, const SourceMesh* mesh0, const SourceMesh* mesh1,
+								const PxMat34& absPose0, const PxMat34& absPose1, bool& abort)
 {
 	TriangleData data0[16];
 	TriangleData data1[16];
@@ -1028,59 +1494,23 @@ static bool doLeafVsLeaf_Scaled(PxReportCallback<PxGeomIndexPair>& callback, con
 		}while(nbTris1--);
 	}
 
-	PX_ASSERT(nb0<=16);
-	PX_ASSERT(nb1<=16);
-
-	PxGeomIndexPair* dst = callback.mBuffer;
-	PxU32 capacity = callback.mCapacity;
-	PxU32 currentSize = callback.mSize;
-	PX_ASSERT(currentSize<capacity);
-
-	bool foundHit = false;
-	abort = false;
-	for(PxU32 i=0;i<nb0;i++)
-	{
-		for(PxU32 j=0;j<nb1;j++)
-		{
-			if(TriTriOverlap(data0[i], data1[j], ignoreCoplanar))
-			{
-				foundHit = true;
-
-				const PxU32 primIndex0 = startPrim0 + i;
-				const PxU32 primIndex1 = startPrim1 + j;
-				dst[currentSize].id0 = mustFlip ? primIndex1 : primIndex0;
-				dst[currentSize].id1 = mustFlip ? primIndex0 : primIndex1;
-				currentSize++;
-				if(currentSize==capacity)
-				{
-					callback.mSize = 0;
-					if(!callback.flushResults(currentSize, dst))
-					{
-						abort = true;
-						return foundHit;
-					}
-					dst = callback.mBuffer;
-					capacity = callback.mCapacity;
-					currentSize = callback.mSize;
-				}
-			}
-		}
-	}
-	callback.mSize = currentSize;
-	return foundHit;
+	return (params.mLeafFunction)(params, nb0, startPrim0, data0, nb1, startPrim1, data1, abort);
 }
 
 static PX_NOINLINE bool doSmallMeshVsSmallMesh_Scaled(	PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1,
-														const PxMat34& absPose0, const PxMat34& absPose1, bool& _abort, bool ignoreCoplanar)
+														const PxMat34& absPose0, const PxMat34& absPose1,
+														bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const PxU32 nbTris0 = mesh0->getNbTriangles();
 	PX_ASSERT(nbTris0<16);
 	const PxU32 nbTris1 = mesh1->getNbTriangles();
 	PX_ASSERT(nbTris1<16);
 
+	const TriVsTriParams params(leafFunc, callback, tolerance, false, ignoreCoplanar);
+
 	bool abort;
 	bool status = false;
-	if(doLeafVsLeaf_Scaled(callback, nbTris0, nbTris1, mesh0, mesh1, absPose0, absPose1, false, abort, ignoreCoplanar))
+	if(doLeafVsLeaf_Scaled(params, nbTris0, nbTris1, mesh0, mesh1, absPose0, absPose1, abort))
 		status = true;
 	if(abort)
 		return abortQuery(callback, _abort);
@@ -1099,23 +1529,23 @@ static PxMat34 getAbsPose(const PxTransform& meshPose, const PxMeshScale& meshSc
 
 struct MeshMeshParams_Scaled : MeshMeshParams
 {
-	PX_FORCE_INLINE	MeshMeshParams_Scaled(PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, 
+	PX_FORCE_INLINE	MeshMeshParams_Scaled(trisVsTrisFunction leafFunc, PxReportCallback<PxGeomIndexPair>& callback, const SourceMesh* mesh0, const SourceMesh* mesh1, 
 		const PxTransform& meshPose0, const PxTransform& meshPose1,
 		const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
 		const PxMat34& absPose0, const PxMat34& absPose1,
-		const PxMat44* mat0to1, const BV4Tree& tree, bool mustFlip, bool ignoreCoplanar) :
-		MeshMeshParams(callback, mesh0, mesh1, mat0to1, tree, mustFlip, ignoreCoplanar),
-		mMeshPose0(meshPose0),
-		mMeshPose1(meshPose1),
-		mMeshScale0(meshScale0),
-		mMeshScale1(meshScale1),
-		mAbsPose0(absPose0),
-		mAbsPose1(absPose1)
+		const PxMat44* mat0to1, const BV4Tree& tree, bool mustFlip, bool ignoreCoplanar, float tolerance) :
+		MeshMeshParams	(leafFunc, callback, mesh0, mesh1, mat0to1, tree, mustFlip, ignoreCoplanar, tolerance),
+		mMeshPose0		(meshPose0),
+		mMeshPose1		(meshPose1),
+		mMeshScale0		(meshScale0),
+		mMeshScale1		(meshScale1),
+		mAbsPose0		(absPose0),
+		mAbsPose1		(absPose1)
 	{
 	}
 
-	PxMat33			mRModelToBox_Padded;	//!< Rotation from model space to obb space
-	PxVec3p			mTModelToBox_Padded;	//!< Translation from model space to obb space
+	PxMat33		mRModelToBox_Padded;	//!< Rotation from model space to obb space
+	PxVec3p		mTModelToBox_Padded;	//!< Translation from model space to obb space
 
 	const PxTransform&	mMeshPose0;
 	const PxTransform&	mMeshPose1;
@@ -1142,9 +1572,7 @@ public:
 	static PX_FORCE_INLINE PxIntBool doLeafTest(MeshMeshParams_Scaled* PX_RESTRICT params, PxU32 primIndex1)
 	{
 		bool abort;
-		if(doLeafVsLeaf_Scaled(params->mCallback, params->mPrimIndex0, primIndex1, params->mMesh0, params->mMesh1,
-			params->mAbsPose0, params->mAbsPose1,			
-			params->mMustFlip, abort, params->mIgnoreCoplanar))
+		if(doLeafVsLeaf_Scaled(params->mTriVsTriParams, params->mPrimIndex0, primIndex1, params->mMesh0, params->mMesh1, params->mAbsPose0, params->mAbsPose1, abort))
 			params->mStatus = true;
 		return PxIntBool(abort);
 	}
@@ -1190,7 +1618,7 @@ static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPa
 		BV4_ALIGN16(PxVec3p boxExtents);
 
 		Vec4V centerV, extentsV;
-		getBox(centerV, extentsV, mesh0->getNbVertices(), mesh0->getVerts());
+		computeBoundsAroundVertices(centerV, extentsV, mesh0->getNbVertices(), mesh0->getVerts());
 
 		computeMeshBounds(params.mAbsPose0, centerV, extentsV, scaledCenterV, scaledExtentV);
 		centerV = scaledCenterV;
@@ -1204,7 +1632,7 @@ static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPa
 
 		computeVertexSpaceOBB(vertexOBB, box, params.mMeshPose1, params.mMeshScale1);
 
-		params.setupForTraversal(boxCenter, boxExtents);
+		params.setupForTraversal(boxCenter, boxExtents, 0.0f/*params.mTolerance*/);
 
 		setupBoxParams2(&params, vertexOBB);
 
@@ -1221,7 +1649,7 @@ static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPa
 			continue;
 
 		Vec4V centerV1, extentsV1;
-		getBox(centerV1, extentsV1, tn, i, &params.mCenterOrMinCoeff_PaddedAligned, &params.mExtentsOrMaxCoeff_PaddedAligned);
+		getNodeBounds(centerV1, extentsV1, tn, i, &params.mCenterOrMinCoeff_PaddedAligned, &params.mExtentsOrMaxCoeff_PaddedAligned);
 
 		Vec4V scaledCenterV1, scaledExtentV1;
 		computeMeshBounds(params.mAbsPose1, centerV1, extentsV1, scaledCenterV1, scaledExtentV1);
@@ -1233,7 +1661,7 @@ static PX_NOINLINE bool doSmallMeshVsTree_Scaled(	PxReportCallback<PxGeomIndexPa
 			if(tn->isLeaf(i))
 			{
 				bool abort;
-				if(doLeafVsLeaf_Scaled(callback, nbTris, tn->getPrimitive(i), mesh0, mesh1, params.mAbsPose0, params.mAbsPose1, params.mMustFlip, abort, params.mIgnoreCoplanar))
+				if(doLeafVsLeaf_Scaled(params.mTriVsTriParams, nbTris, tn->getPrimitive(i), mesh0, mesh1, params.mAbsPose0, params.mAbsPose1, abort))
 					status = true;
 				if(abort)
 					return abortQuery(callback, _abort);
@@ -1254,7 +1682,7 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 	const PxTransform& meshPose0, const PxTransform& meshPose1,
 	const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
 	const PxMat34& absPose0, const PxMat34& absPose1,
-	bool& _abort, bool ignoreCoplanar)
+	bool& _abort, bool ignoreCoplanar, trisVsTrisFunction leafFunc, float tolerance)
 {
 	const SourceMesh* mesh0 = static_cast<const SourceMesh*>(tree0.mMeshInterface);
 	const SourceMesh* mesh1 = static_cast<const SourceMesh*>(tree1.mMeshInterface);
@@ -1265,12 +1693,12 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 
 	if(!node0 && node1)
 	{
-		MeshMeshParams_Scaled ParamsForTree1Traversal(callback, mesh0, mesh1, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, mat0to1, tree1, false, ignoreCoplanar);
+		MeshMeshParams_Scaled ParamsForTree1Traversal(leafFunc, callback, mesh0, mesh1, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, mat0to1, tree1, false, ignoreCoplanar, tolerance);
 		return doSmallMeshVsTree_Scaled<PackedNodeT1, SwizzledNodeT1>(callback, ParamsForTree1Traversal, node1, mesh0, mesh1, _abort);
 	}
 	else if(node0 && !node1)
 	{
-		MeshMeshParams_Scaled ParamsForTree0Traversal(callback, mesh1, mesh0, meshPose1, meshPose0, meshScale1, meshScale0, absPose1, absPose0, mat1to0, tree0, true, ignoreCoplanar);
+		MeshMeshParams_Scaled ParamsForTree0Traversal(leafFunc, callback, mesh1, mesh0, meshPose1, meshPose0, meshScale1, meshScale0, absPose1, absPose0, mat1to0, tree0, true, ignoreCoplanar, tolerance);
 		return doSmallMeshVsTree_Scaled<PackedNodeT0, SwizzledNodeT0>(callback, ParamsForTree0Traversal, node0, mesh1, mesh0, _abort);
 	}
 	else
@@ -1279,8 +1707,8 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 		PX_ASSERT(node1);
 
 		// ### some useless computations in there now
-		MeshMeshParams_Scaled ParamsForTree1Traversal(callback, mesh0, mesh1, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, mat0to1, tree1, false, ignoreCoplanar);
-		MeshMeshParams_Scaled ParamsForTree0Traversal(callback, mesh1, mesh0, meshPose1, meshPose0, meshScale1, meshScale0, absPose1, absPose0, mat1to0, tree0, true, ignoreCoplanar);
+		MeshMeshParams_Scaled ParamsForTree1Traversal(leafFunc, callback, mesh0, mesh1, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, mat0to1, tree1, false, ignoreCoplanar, tolerance);
+		MeshMeshParams_Scaled ParamsForTree0Traversal(leafFunc, callback, mesh1, mesh0, meshPose1, meshPose0, meshScale1, meshScale0, absPose1, absPose0, mat1to0, tree0, true, ignoreCoplanar, tolerance);
 
 		const PxMat34 inverse0 = meshScale0.getInverse() * Matrix34FromTransform(meshPose0.getInverse());
 		const PxMat34 inverse1 = meshScale1.getInverse() * Matrix34FromTransform(meshPose1.getInverse());
@@ -1321,7 +1749,7 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 					continue;
 
 				Vec4V centerV0, extentsV0;
-				getBox(centerV0, extentsV0, tn0, i, &ParamsForTree0Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree0Traversal.mExtentsOrMaxCoeff_PaddedAligned);
+				getNodeBounds(centerV0, extentsV0, tn0, i, &ParamsForTree0Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree0Traversal.mExtentsOrMaxCoeff_PaddedAligned);
 
 				Vec4V scaledCenterV0, scaledExtentV0;
 				computeMeshBounds(absPose0, centerV0, extentsV0, scaledCenterV0, scaledExtentV0);
@@ -1337,7 +1765,7 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 						continue;
 
 					Vec4V centerV1, extentsV1;
-					getBox(centerV1, extentsV1, tn1, j, &ParamsForTree1Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree1Traversal.mExtentsOrMaxCoeff_PaddedAligned);
+					getNodeBounds(centerV1, extentsV1, tn1, j, &ParamsForTree1Traversal.mCenterOrMinCoeff_PaddedAligned, &ParamsForTree1Traversal.mExtentsOrMaxCoeff_PaddedAligned);
 
 					Vec4V scaledCenterV1, scaledExtentV1;
 					computeMeshBounds(absPose1, centerV1, extentsV1, scaledCenterV1, scaledExtentV1);
@@ -1354,7 +1782,7 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 							if(isLeaf1)
 							{
 								bool abort;
-								if(doLeafVsLeaf_Scaled(callback, tn0->getPrimitive(i), tn1->getPrimitive(j), mesh0, mesh1, absPose0, absPose1, false, abort, ignoreCoplanar))
+								if(doLeafVsLeaf_Scaled(ParamsForTree1Traversal.mTriVsTriParams, tn0->getPrimitive(i), tn1->getPrimitive(j), mesh0, mesh1, absPose0, absPose1, abort))
 									status = true;
 								if(abort)
 									return abortQuery(callback, _abort);
@@ -1410,10 +1838,12 @@ static bool BV4_OverlapMeshVsMeshT_Scaled(PxReportCallback<PxGeomIndexPair>& cal
 	}
 }
 
-bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
+bool BV4_OverlapMeshVsMesh(
+							PxReportCallback<PxGeomIndexPair>& callback,
+							const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
 							const PxTransform& meshPose0, const PxTransform& meshPose1,
 							const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
-							PxMeshMeshQueryFlags meshMeshFlags)
+							PxMeshMeshQueryFlags meshMeshFlags, float tolerance)
 {
 	PxGeomIndexPair stackBuffer[256];
 	bool mustResetBuffer;
@@ -1439,6 +1869,7 @@ bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV
 	const PxMat34 absPose1 = getAbsPose(meshPose1, meshScale1);
 
 	const bool ignoreCoplanar = meshMeshFlags & PxMeshMeshQueryFlag::eDISCARD_COPLANAR;
+	const trisVsTrisFunction leafFunc = getLeafFunc(meshMeshFlags, tolerance);
 
 	bool status;
 	bool abort = false;
@@ -1447,23 +1878,23 @@ bool BV4_OverlapMeshVsMesh(PxReportCallback<PxGeomIndexPair>& callback, const BV
 		const SourceMesh* mesh0 = static_cast<const SourceMesh*>(tree0.mMeshInterface);
 		const SourceMesh* mesh1 = static_cast<const SourceMesh*>(tree1.mMeshInterface);
 
-		status = doSmallMeshVsSmallMesh_Scaled(callback, mesh0, mesh1, absPose0, absPose1, abort, ignoreCoplanar);
+		status = doSmallMeshVsSmallMesh_Scaled(callback, mesh0, mesh1, absPose0, absPose1, abort, ignoreCoplanar, leafFunc, tolerance);
 	}
 	else
 	{
 		if(tree0.mQuantized)
 		{
 			if(tree1.mQuantized)
-				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedQ, BVDataPackedQ, BVDataSwizzledQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedQ, BVDataPackedQ, BVDataSwizzledQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar, leafFunc, tolerance);
 			else
-				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedQ, BVDataPackedNQ, BVDataSwizzledQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedQ, BVDataPackedNQ, BVDataSwizzledQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar, leafFunc, tolerance);
 		}
 		else
 		{
 			if(tree1.mQuantized)
-				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedNQ, BVDataPackedQ, BVDataSwizzledNQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedNQ, BVDataPackedQ, BVDataSwizzledNQ, BVDataSwizzledQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar, leafFunc, tolerance);
 			else
-				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedNQ, BVDataPackedNQ, BVDataSwizzledNQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar);
+				status = BV4_OverlapMeshVsMeshT_Scaled<BVDataPackedNQ, BVDataPackedNQ, BVDataSwizzledNQ, BVDataSwizzledNQ>(callback, tree0, tree1, mat0to1, mat1to0, meshPose0, meshPose1, meshScale0, meshScale1, absPose0, absPose1, abort, ignoreCoplanar, leafFunc, tolerance);
 		}
 	}
 

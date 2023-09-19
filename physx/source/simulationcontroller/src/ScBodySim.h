@@ -137,8 +137,8 @@ namespace Sc
 
 		PX_FORCE_INLINE PxIntBool				isFrozen()					const	{ return PxIntBool(mLLBody.mInternalFlags & PxsRigidBody::eFROZEN);									}
 
-		// External velocity changes
-						void					updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration);
+		// External velocity changes - returns true if any forces were applied to this body
+						bool					updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration);
 
 		PX_FORCE_INLINE bool					readVelocityModFlag(VelocityModFlags f) { return (mVelModState & f) != 0; }
 

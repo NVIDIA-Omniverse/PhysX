@@ -217,7 +217,7 @@ public:
 	 *
 	 * @return The enum value
 	 */
-	virtual uint32_t OMNI_PVD_CALL getEnumValue() = 0;
+	virtual OmniPvdEnumValueType OMNI_PVD_CALL getEnumValue() = 0;
 };
 
 #endif

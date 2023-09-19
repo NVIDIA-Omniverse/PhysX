@@ -358,7 +358,7 @@ protected:
 	PX_INLINE					PxActor(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags), userData(NULL) {}
 	PX_INLINE					PxActor(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	virtual						~PxActor()	{}
-	virtual		bool			isKindOf(const char* name)	const		{	return !::strcmp("PxActor", name) || PxBase::isKindOf(name); }
+	virtual		bool			isKindOf(const char* name)	const		{ PX_IS_KIND_OF(name, "PxActor", PxBase); }
 
 
 };

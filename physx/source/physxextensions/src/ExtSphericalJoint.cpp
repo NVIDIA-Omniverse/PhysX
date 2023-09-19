@@ -29,6 +29,7 @@
 #include "ExtSphericalJoint.h"
 #include "ExtConstraintHelper.h"
 #include "CmConeLimitHelper.h"
+#include "omnipvd/ExtOmniPvdSetData.h"
 
 using namespace physx;
 using namespace Ext;
@@ -48,13 +49,17 @@ void SphericalJoint::setLimitCone(const PxJointLimitCone &limit)
 	data().limit = limit; 
 	markDirty();
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(*this);
-	OMNI_PVD_SET(PxSphericalJoint, limitYAngle, j, limit.yAngle)
-	OMNI_PVD_SET(PxSphericalJoint, limitZAngle, j, limit.zAngle)
-	OMNI_PVD_SET(PxSphericalJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxSphericalJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxSphericalJoint, limitDamping, j, limit.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitYAngle, j, limit.yAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitZAngle, j, limit.zAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitDamping, j, limit.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -72,7 +77,7 @@ void SphericalJoint::setSphericalJointFlags(PxSphericalJointFlags flags)
 { 
 	data().jointFlags = flags;
 
-	OMNI_PVD_SET(PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), flags)
 }
 
 void SphericalJoint::setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool value)
@@ -83,7 +88,7 @@ void SphericalJoint::setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool
 		data().jointFlags &= ~flag;
 	markDirty();
 
-	OMNI_PVD_SET(PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), getSphericalJointFlags())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, jointFlags, static_cast<PxSphericalJoint&>(*this), getSphericalJointFlags())
 }
 
 PxReal SphericalJoint::getSwingYAngle()	const
@@ -183,30 +188,38 @@ void SphericalJoint::resolveReferences(PxDeserializationContext& context)
 
 void SphericalJoint::updateOmniPvdProperties() const
 {
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
     const PxSphericalJoint& j = static_cast<const PxSphericalJoint&>(*this);
-	OMNI_PVD_SET(PxSphericalJoint, swingYAngle, j, getSwingYAngle())
-	OMNI_PVD_SET(PxSphericalJoint, swingZAngle, j, getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, getSwingYAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, getSwingZAngle())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 template<>
-void physx::Ext::omniPvdInitJoint<SphericalJoint>(SphericalJoint* joint)
+void physx::Ext::omniPvdInitJoint<SphericalJoint>(SphericalJoint& joint)
 {
-	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(*joint);
-	OMNI_PVD_CREATE(PxSphericalJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eSPHERICAL);
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	PxJointLimitCone limit = joint->getLimitCone();
-	OMNI_PVD_SET(PxSphericalJoint, limitYAngle, j, limit.yAngle)
-	OMNI_PVD_SET(PxSphericalJoint, limitZAngle, j, limit.zAngle)
-	OMNI_PVD_SET(PxSphericalJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxSphericalJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxSphericalJoint, limitDamping, j, limit.damping)
+	PxSphericalJoint& j = static_cast<PxSphericalJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eSPHERICAL);
 
-	OMNI_PVD_SET(PxSphericalJoint, jointFlags, j, joint->getSphericalJointFlags())
+	PxJointLimitCone limit = joint.getLimitCone();
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitYAngle, j, limit.yAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitZAngle, j, limit.zAngle)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, limitDamping, j, limit.damping)
 
-	OMNI_PVD_SET(PxSphericalJoint, swingYAngle, j, joint->getSwingYAngle())
-	OMNI_PVD_SET(PxSphericalJoint, swingZAngle, j, joint->getSwingZAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, jointFlags, j, joint.getSphericalJointFlags())
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingYAngle, j, joint.getSwingYAngle())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxSphericalJoint, swingZAngle, j, joint.getSwingZAngle())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

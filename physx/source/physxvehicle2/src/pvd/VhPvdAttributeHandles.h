@@ -65,6 +65,7 @@ struct PxVehiclePvdAttributeHandles
 
 	WheelResponseParams brakeCommandResponseParams;
 	WheelResponseParams steerCommandResponseParams;
+	AckermannParams ackermannParams;
 	WheelResponseStates brakeCommandResponseStates;
 	WheelResponseStates steerCommandResponseStates;
 
@@ -116,6 +117,7 @@ struct PxVehiclePvdAttributeHandles
 	
 	EngineDriveCommandState engineDriveCommandState;
 	EngineDriveTransmissionCommandState engineDriveTransmissionCommandState;
+	TankDriveTransmissionCommandState tankDriveTransmissionCommandState;
 	ClutchResponseParams clutchCommandResponseParams;
 	ClutchParams clutchParams;
 	EngineParams engineParams;
@@ -123,6 +125,7 @@ struct PxVehiclePvdAttributeHandles
 	AutoboxParams autoboxParams;
 	MultiWheelDiffParams multiwheelDiffParams;
 	FourWheelDiffParams fourwheelDiffParams;
+	TankDiffParams tankDiffParams;
 	ClutchResponseState clutchResponseState;
 	ThrottleResponseState throttleResponseState;
 	EngineState engineState;
@@ -149,6 +152,7 @@ struct PxVehiclePvdAttributeHandles
 	
 	PhysXRoadGeometryQueryParams physxRoadGeometryQueryParams;
 	PhysXRigidActor physxRigidActor;
+	PhysXSteerState physxSteerState;
 
 	//////////////////////////////////
 	//VEHICLE ATTRIBUTES

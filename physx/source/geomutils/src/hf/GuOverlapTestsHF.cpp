@@ -76,7 +76,7 @@ bool GeomOverlapCallback_SphereHeightfield(GU_OVERLAP_FUNC_PARAMS)
 	{
 		Sphere	mLocalSphere;
 
-		SphereOverlapReport(const PxHeightFieldGeometry& hfGeom, const PxTransform& hfPose, const PxVec3& localSphereCenter, float sphereRadius) : HeightfieldOverlapReport(hfGeom, hfPose)
+		SphereOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose, const PxVec3& localSphereCenter, float sphereRadius) : HeightfieldOverlapReport(hfGeom_, hfPose)
 		{
 			mLocalSphere.center = localSphereCenter;
 			mLocalSphere.radius = sphereRadius * sphereRadius;
@@ -135,7 +135,7 @@ bool GeomOverlapCallback_CapsuleHeightfield(GU_OVERLAP_FUNC_PARAMS)
 		Capsule						mLocalCapsule;
 		CapsuleTriangleOverlapData	mData;
 
-		CapsuleOverlapReport(const PxHeightFieldGeometry& hfGeom, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom, hfPose)	{}
+		CapsuleOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
 		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
 		{
@@ -219,7 +219,7 @@ bool GeomOverlapCallback_BoxHeightfield(GU_OVERLAP_FUNC_PARAMS)
 		PxVec3p		mTModelToBox;
 		PxVec3p		mBoxExtents;
 
-		BoxOverlapReport(const PxHeightFieldGeometry& hfGeom, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom, hfPose)	{}
+		BoxOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
 		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
 		{
@@ -294,7 +294,7 @@ bool GeomOverlapCallback_ConvexHeightfield(GU_OVERLAP_FUNC_PARAMS)
 		ConvexHullV		mConvex;
 		PxMatTransformV	aToB;
 
-		ConvexOverlapReport(const PxHeightFieldGeometry& hfGeom, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom, hfPose)	{}
+		ConvexOverlapReport(const PxHeightFieldGeometry& hfGeom_, const PxTransform& hfPose) : HeightfieldOverlapReport(hfGeom_, hfPose)	{}
 
 		virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
 		{

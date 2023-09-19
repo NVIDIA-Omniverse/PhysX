@@ -478,11 +478,11 @@ void PxsContext::mergeCMDiscreteUpdateResults(PxBaseTask* /*continuation*/)
 	}
 }
 
-void PxsContext::updateContactManager(PxReal dt, bool hasBoundsArrayChanged, bool hasContactDistanceChanged, PxBaseTask* continuation, PxBaseTask* firstPassContinuation,
+void PxsContext::updateContactManager(PxReal dt, bool hasContactDistanceChanged, PxBaseTask* continuation, PxBaseTask* firstPassContinuation,
 	Cm::FanoutTask* updateBoundAndShapeTask)
 {
 	PX_ASSERT(mNpImplementationContext);
-	return mNpImplementationContext->updateContactManager(dt, hasBoundsArrayChanged, hasContactDistanceChanged, continuation, 
+	return mNpImplementationContext->updateContactManager(dt, hasContactDistanceChanged, continuation, 
 		firstPassContinuation, updateBoundAndShapeTask);
 }
 

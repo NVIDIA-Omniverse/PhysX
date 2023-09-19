@@ -29,6 +29,8 @@
 #include "ExtPrismaticJoint.h"
 #include "ExtConstraintHelper.h"
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
 using namespace Ext;
 
@@ -50,7 +52,7 @@ void PrismaticJoint::setPrismaticJointFlags(PxPrismaticJointFlags flags)
 { 
 	data().jointFlags = flags; markDirty();
 
-	OMNI_PVD_SET(PxPrismaticJoint, jointFlags, static_cast<PxPrismaticJoint&>(*this), flags)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, jointFlags, static_cast<PxPrismaticJoint&>(*this), flags)
 }
 
 void PrismaticJoint::setPrismaticJointFlag(PxPrismaticJointFlag::Enum flag, bool value)
@@ -61,7 +63,7 @@ void PrismaticJoint::setPrismaticJointFlag(PxPrismaticJointFlag::Enum flag, bool
 		data().jointFlags &= ~flag;
 	markDirty();
 
-	OMNI_PVD_SET(PxPrismaticJoint, jointFlags, static_cast<PxPrismaticJoint&>(*this), getPrismaticJointFlags())
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, jointFlags, static_cast<PxPrismaticJoint&>(*this), getPrismaticJointFlags())
 }
 
 PxJointLinearLimitPair PrismaticJoint::getLimit() const
@@ -75,13 +77,17 @@ void PrismaticJoint::setLimit(const PxJointLinearLimitPair& limit)
 	data().limit = limit;
 	markDirty();
 #if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	PxPrismaticJoint& j = static_cast<PxPrismaticJoint&>(*this);
-	OMNI_PVD_SET(PxPrismaticJoint, limitLower, j, limit.lower)
-	OMNI_PVD_SET(PxPrismaticJoint, limitUpper, j, limit.upper)
-	OMNI_PVD_SET(PxPrismaticJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxPrismaticJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxPrismaticJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxPrismaticJoint, limitDamping, j, limit.damping)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitDamping, j, limit.damping)
+
+	OMNI_PVD_WRITE_SCOPE_END
 #endif
 }
 
@@ -168,28 +174,36 @@ void PrismaticJoint::resolveReferences(PxDeserializationContext& context)
 
 void PrismaticJoint::updateOmniPvdProperties() const
 {
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	const PxPrismaticJoint& j = static_cast<const PxPrismaticJoint&>(*this);
-	OMNI_PVD_SET(PxPrismaticJoint, position, j, getPosition())
-	OMNI_PVD_SET(PxPrismaticJoint, velocity, j, getVelocity())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, position, j, getPosition())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, velocity, j, getVelocity())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 template<>
-void physx::Ext::omniPvdInitJoint<PrismaticJoint>(PrismaticJoint* joint)
+void physx::Ext::omniPvdInitJoint<PrismaticJoint>(PrismaticJoint& joint)
 {
-	PxPrismaticJoint& j = static_cast<PxPrismaticJoint&>(*joint);
-	OMNI_PVD_CREATE(PxPrismaticJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::ePRISMATIC);
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 
-	PxJointLinearLimitPair limit = joint->getLimit();
-	OMNI_PVD_SET(PxPrismaticJoint, limitLower, j, limit.lower)
-	OMNI_PVD_SET(PxPrismaticJoint, limitUpper, j, limit.upper)
-	OMNI_PVD_SET(PxPrismaticJoint, limitRestitution, j, limit.restitution)
-	OMNI_PVD_SET(PxPrismaticJoint, limitBounceThreshold, j, limit.bounceThreshold)
-	OMNI_PVD_SET(PxPrismaticJoint, limitStiffness, j, limit.stiffness)
-	OMNI_PVD_SET(PxPrismaticJoint, limitDamping, j, limit.damping)
+	PxPrismaticJoint& j = static_cast<PxPrismaticJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::ePRISMATIC);
 
-	OMNI_PVD_SET(PxPrismaticJoint, position, j, joint->getPosition())
-	OMNI_PVD_SET(PxPrismaticJoint, velocity, j, joint->getVelocity())
+	PxJointLinearLimitPair limit = joint.getLimit();
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitLower, j, limit.lower)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitUpper, j, limit.upper)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitRestitution, j, limit.restitution)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitBounceThreshold, j, limit.bounceThreshold)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitStiffness, j, limit.stiffness)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, limitDamping, j, limit.damping)
+
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, position, j, joint.getPosition())
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxPrismaticJoint, velocity, j, joint.getVelocity())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

@@ -845,9 +845,9 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 					PX_ASSERT(contactIndex3 == 0xffff || contactIndex3 < descs[3].numContacts);
 
 					Vec4V targetVel0 = V4LoadA(contactIndex0 == 0xFFFF ? &contactBase0->targetVel.x : &descs[0].contacts[contactIndex0].targetVel.x);
-					Vec4V targetVel1 = V4LoadA(contactIndex1 == 0xFFFF ? &contactBase0->targetVel.x : &descs[1].contacts[contactIndex1].targetVel.x);
-					Vec4V targetVel2 = V4LoadA(contactIndex2 == 0xFFFF ? &contactBase0->targetVel.x : &descs[2].contacts[contactIndex2].targetVel.x);
-					Vec4V targetVel3 = V4LoadA(contactIndex3 == 0xFFFF ? &contactBase0->targetVel.x : &descs[3].contacts[contactIndex3].targetVel.x);
+					Vec4V targetVel1 = V4LoadA(contactIndex1 == 0xFFFF ? &contactBase1->targetVel.x : &descs[1].contacts[contactIndex1].targetVel.x);
+					Vec4V targetVel2 = V4LoadA(contactIndex2 == 0xFFFF ? &contactBase2->targetVel.x : &descs[2].contacts[contactIndex2].targetVel.x);
+					Vec4V targetVel3 = V4LoadA(contactIndex3 == 0xFFFF ? &contactBase3->targetVel.x : &descs[3].contacts[contactIndex3].targetVel.x);
 
 					Vec4V targetVelX, targetVelY, targetVelZ;
 					PX_TRANSPOSE_44_34(targetVel0, targetVel1, targetVel2, targetVel3, targetVelX, targetVelY, targetVelZ);

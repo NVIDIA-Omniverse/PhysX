@@ -30,6 +30,8 @@
 #include "ExtConstraintHelper.h"
 #include "extensions/PxRevoluteJoint.h"
 #include "PxArticulationJointReducedCoordinate.h"
+
+#include "omnipvd/ExtOmniPvdSetData.h"
 //#include <stdio.h>
 
 using namespace physx;
@@ -91,8 +93,8 @@ bool GearJoint::setHinges(const PxBase* hinge0, const PxBase* hinge1)
 
 #if PX_SUPPORT_OMNI_PVD
 	const PxBase* joints[] ={ hinge0, hinge1 };
-	PxU32 jointsLength = sizeof(joints);
-	OMNI_PVD_SETB(PxGearJoint, hinges, static_cast<PxGearJoint&>(*this), joints, jointsLength)
+	const PxU32 hingeCount = sizeof(joints) / sizeof(joints[0]);
+	OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, hinges, static_cast<PxGearJoint&>(*this), joints, hingeCount)
 #endif
 		
 	return true;
@@ -112,7 +114,7 @@ void GearJoint::setGearRatio(float ratio)
 	resetError();
 	markDirty();
 
-	OMNI_PVD_SET(PxGearJoint, ratio, static_cast<PxGearJoint&>(*this), ratio)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, ratio, static_cast<PxGearJoint&>(*this), ratio)
 }
 
 float GearJoint::getGearRatio() const
@@ -308,12 +310,16 @@ void GearJoint::resolveReferences(PxDeserializationContext& context)
 #if PX_SUPPORT_OMNI_PVD
 
 template<>
-void physx::Ext::omniPvdInitJoint<GearJoint>(GearJoint* joint)
+void physx::Ext::omniPvdInitJoint<GearJoint>(GearJoint& joint)
 {
-	PxGearJoint& j = static_cast<PxGearJoint&>(*joint);
-	OMNI_PVD_CREATE(PxGearJoint, j);
-	omniPvdSetBaseJointParams(static_cast<PxJoint&>(*joint), PxJointConcreteType::eGEAR);
-	OMNI_PVD_SET(PxGearJoint, ratio, j , joint->getGearRatio())
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
+	PxGearJoint& j = static_cast<PxGearJoint&>(joint);
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, j);
+	omniPvdSetBaseJointParams(static_cast<PxJoint&>(joint), PxJointConcreteType::eGEAR);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxGearJoint, ratio, j , joint.getGearRatio())
+
+	OMNI_PVD_WRITE_SCOPE_END
 }
 
 #endif

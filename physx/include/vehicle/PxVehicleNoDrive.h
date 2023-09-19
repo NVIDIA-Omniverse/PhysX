@@ -187,7 +187,7 @@ public:
 	static		PxVehicleNoDrive*	createObject(PxU8*& address, PxDeserializationContext& context);
 	static		void				getBinaryMetaData(PxOutputStream& stream);
 	virtual		const char*			getConcreteTypeName() const			{ return "PxVehicleNoDrive";	}
-	virtual		bool				isKindOf(const char* name)	const	{ return !::strcmp("PxVehicleNoDrive", name) || PxBase::isKindOf(name); }
+	virtual		bool				isKindOf(const char* name)	const	{ PX_IS_KIND_OF(name, "PxVehicleNoDrive", PxVehicleWheels); }
 				PxU32				getNbSteerAngle() const { return mWheelsSimData.getNbWheels();	}
 				PxU32				getNbDriveTorque() const	{ return mWheelsSimData.getNbWheels();	}
 				PxU32				getNbBrakeTorque() const	{ return mWheelsSimData.getNbWheels();	}

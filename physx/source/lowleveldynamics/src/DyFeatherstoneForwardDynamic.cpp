@@ -654,7 +654,7 @@ namespace Dy
 	
 	void FeatherstoneArticulation::computeArticulatedSpatialInertiaAndZ
 		(const ArticulationLink* links, const PxU32 linkCount, const PxVec3* linkRsW,
-		 const ArticulationJointCoreData* jointData, const ArticulationJointTargetData* jointTargetData,
+		 const ArticulationJointCoreData* jointData,
 		 const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW,
 		 const Cm::SpatialVectorF* linkCoriolisVectors, const PxReal* jointDofForces,
 		 Cm::SpatialVectorF* jointDofISW, InvStIs* linkInvStISW, Cm::SpatialVectorF* jointDofISInvStISW, PxReal* jointDofMinusStZExtW, PxReal* jointDofQStZIntIcW, 
@@ -694,7 +694,7 @@ namespace Dy
 					computePropagateSpatialInertia_ZA_ZIc(
 						PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.dof, 
 						&jointDofMotionMatricesW[jointOffset], &jointDofISW[jointOffset], 
-						jointTargetData[linkID].armature, &jointDofForces[jointOffset],
+						&jointDatum.armature[0], &jointDofForces[jointOffset],
 						linkSpatialArticulatedInertiaW[linkID], 
 						linkZW, linkZIntIcW, 
 						linkInvStISW[linkID], &jointDofISInvStISW[jointOffset],
@@ -734,7 +734,6 @@ namespace Dy
 	{
 		const ArticulationLink* links = data.getLinks();
 		ArticulationJointCoreData* jointData = data.getJointData();
-		ArticulationJointTargetData* jointTargetData = data.getJointTranData();
 		SpatialMatrix* spatialArticulatedInertia = data.getWorldSpatialArticulatedInertia();
 		const Cm::UnAlignedSpatialVector* motionMatrix = data.getWorldMotionMatrix();
 		Cm::SpatialVectorF* Is = data.getIsW();
@@ -758,7 +757,6 @@ namespace Dy
 			ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
 			const PxU8 nbDofs = jointDatum.dof;
-			ArticulationJointTargetData& jointTarget = jointTargetData[linkID];
 
 			for (PxU8 ind = 0; ind < nbDofs; ++ind)
 			{
@@ -780,7 +778,7 @@ namespace Dy
 				spatialInertiaW = computePropagateSpatialInertia_ZA_ZIc_NonSeparated(
 					PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.dof, 
 					&motionMatrix[jointDatum.jointOffset], &Is[jointDatum.jointOffset], 
-					jointTarget.armature, &scratchData.jointForces[jointDatum.jointOffset],
+					&jointDatum.armature[0], &scratchData.jointForces[jointDatum.jointOffset], // AD what's the difference between the scratch and the articulation data?
 					spatialArticulatedInertia[linkID], 
 					Z,  
 					invStIs[linkID], &IsInvDW[jointDatum.jointOffset],
@@ -1128,7 +1126,6 @@ namespace Dy
 			const InvStIs& invStIs = linkInvStIs[linkID];
 			computeJointAccelerationW(jointDatum.dof, pMotionAcceleration, &jointDofIsWs[jointDatum.jointOffset], invStIs,
 				&jointDofQstZics[jointDatum.jointOffset], jA);
-			//printf("jA %f\n", jA[0]);
 
 			Cm::SpatialVectorF motionAcceleration = pMotionAcceleration;
 			if (doIC)
@@ -1501,6 +1498,7 @@ namespace Dy
 	//	}
 	//}
 
+	// TODO AD: the following two functions could be just one.
 	PxU32 FeatherstoneArticulation::computeUnconstrainedVelocities(
 		const ArticulationSolverDesc& desc,
 		PxReal dt,
@@ -1513,6 +1511,15 @@ namespace Dy
 		FeatherstoneArticulation* articulation = static_cast<FeatherstoneArticulation*>(desc.articulation);
 		ArticulationData& data = articulation->mArticulationData;
 		data.setDt(dt);
+
+		// AD: would be nicer to just have a list of all dirty articulations and process that one.
+		// but that means we need to add a task dependency before because we'll get problems with multithreading
+		// if we don't process the same lists.
+		if (articulation->mJcalcDirty) 
+		{	
+			articulation->mJcalcDirty = false;
+			articulation->jcalc(data);
+		}
 
 		articulation->computeUnconstrainedVelocitiesInternal(gravity, Z, deltaV, invLengthScale);
 
@@ -1532,6 +1539,15 @@ namespace Dy
 		FeatherstoneArticulation* articulation = static_cast<FeatherstoneArticulation*>(desc.articulation);
 		ArticulationData& data = articulation->mArticulationData;
 		data.setDt(dt);
+
+		// AD: would be nicer to just have a list of all dirty articulations and process that one.
+		// but that means we need to add a task dependency before because we'll get problems with multithreading
+		// if we don't process the same lists.
+		if (articulation->mJcalcDirty) 
+		{	
+			articulation->mJcalcDirty = false;
+			articulation->jcalc(data);
+		}
 
 		articulation->computeUnconstrainedVelocitiesInternal(gravity, Z, DeltaV, invLengthScale);
 	}
@@ -1701,7 +1717,6 @@ namespace Dy
 			const PxU32 linkCount = mArticulationData.getLinkCount();
 			const PxVec3* linkRsW = mArticulationData.getRw();
 			const ArticulationJointCoreData* jointData = mArticulationData.getJointData();
-			const ArticulationJointTargetData* jointTargetData = mArticulationData.getJointTranData();
 			const Cm::UnAlignedSpatialVector* jointDofMotionMatricesW = mArticulationData.getWorldMotionMatrix();
 			const Cm::SpatialVectorF* linkCoriolisVectorsW = mArticulationData.getCorioliseVectors();
 			const PxReal* jointDofForces = mArticulationData.getJointForces();
@@ -1721,7 +1736,7 @@ namespace Dy
 		
 			computeArticulatedSpatialInertiaAndZ(
 				links, linkCount, linkRsW,											//constants
-				jointData, jointTargetData,											//constants
+				jointData,															//constants
 				jointDofMotionMatricesW, linkCoriolisVectorsW, jointDofForces,		//constants
 				jointDofISW, linkInvStISW, jointDofISInvStIS,						//compute and cache for later use
 				jointDofMinusStZExtW, jointDofQStZIntIcW,							//compute and cache for later use
@@ -2674,7 +2689,7 @@ namespace Dy
 		PX_SIMD_GUARD
 		if (mArticulationData.getDataDirty())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Articulation::getJointAcceleration() commonInit need to be called first to initialize data!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Articulation::getJointAcceleration() commonInit need to be called first to initialize data!");
 			return;
 		}
 

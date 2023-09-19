@@ -78,7 +78,7 @@ SharedQueueEntryPool<Alloc>::SharedQueueEntryPool(PxU32 poolSize, const Alloc& a
 {
 	PxAlignedAllocator<PX_SLIST_ALIGNMENT, Alloc> alignedAlloc("SharedQueueEntryPool");
 
-	mTaskEntryPool = poolSize ? reinterpret_cast<SharedQueueEntry*>(alignedAlloc.allocate(sizeof(SharedQueueEntry) * poolSize, __FILE__, __LINE__)) : NULL;
+	mTaskEntryPool = poolSize ? reinterpret_cast<SharedQueueEntry*>(alignedAlloc.allocate(sizeof(SharedQueueEntry) * poolSize, PX_FL)) : NULL;
 
 	if (mTaskEntryPool)
 	{
@@ -118,7 +118,7 @@ SharedQueueEntry* SharedQueueEntryPool<Alloc>::getEntry(void* objectRef)
 	else
 	{
 		PxAlignedAllocator<PX_SLIST_ALIGNMENT, Alloc> alignedAlloc;
-		e = reinterpret_cast<SharedQueueEntry*>(alignedAlloc.allocate(sizeof(SharedQueueEntry), __FILE__, __LINE__));
+		e = reinterpret_cast<SharedQueueEntry*>(alignedAlloc.allocate(sizeof(SharedQueueEntry), PX_FL));
 		if (e)
 		{
 			PX_PLACEMENT_NEW(e, SharedQueueEntry)(objectRef);

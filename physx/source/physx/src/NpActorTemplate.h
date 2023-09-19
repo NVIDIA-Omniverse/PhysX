@@ -33,7 +33,7 @@
 #include "NpActor.h"
 #include "NpScene.h"
 
-#include "omnipvd/OmniPvdPxSampler.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 namespace physx
 {
@@ -172,7 +172,7 @@ void NpActorTemplate<APIClass>::setOwnerClient( PxClientID inId )
 {
 	if ( getNpScene() != NULL )
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, 
 				"Attempt to set the client id when an actor is already in a scene.");
 	}
 	else
@@ -201,6 +201,7 @@ template<class APIClass>
 PX_FORCE_INLINE void NpActorTemplate<APIClass>::setActorFlagsInternal(PxActorFlags inFlags)
 {
 	NpActor::scSetActorFlags(inFlags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, flags, static_cast<PxActor&>(*this), inFlags)
 }
 
 template<class APIClass>

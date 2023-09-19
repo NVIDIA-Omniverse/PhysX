@@ -129,7 +129,9 @@ namespace physx
 			CUstream hStream,
 			PxCudaKernelParam* kernelParams,
 			size_t kernelParamsSizeInBytes,
-			void** extra = NULL
+			void** extra,
+			const char* file,
+			int line
 		) = 0;
 
 		// PT: same as above but without copying the kernel params to a local stack before the launch
@@ -141,12 +143,14 @@ namespace physx
 			PxU32 sharedMemBytes,
 			CUstream hStream,
 			void** kernelParams,
-			void** extra = NULL
+			void** extra,
+			const char* file,
+			int line
 		) = 0;
 
 		virtual PxCUresult memcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount) = 0;
 
-		virtual PxCUresult memcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream) = 0;
+		virtual PxCUresult memcpyDtoHAsync(void* dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream) = 0;
 
 		virtual PxCUresult memcpyHtoD(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount) = 0;
 

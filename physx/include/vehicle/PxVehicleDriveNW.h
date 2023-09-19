@@ -205,7 +205,7 @@ public:
 	static	PxVehicleDriveNW*	createObject(PxU8*& address, PxDeserializationContext& context);
 	static	void				getBinaryMetaData(PxOutputStream& stream);
 	virtual	const char*			getConcreteTypeName() const			{ return "PxVehicleDriveNW";	}
-	virtual	bool				isKindOf(const char* name)	const	{ return !::strcmp("PxVehicleDriveNW", name) || PxBase::isKindOf(name); }
+	virtual	bool				isKindOf(const char* name)	const	{ PX_IS_KIND_OF(name, "PxVehicleDriveNW", PxVehicleDrive); }
 //~serialization
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleDriveNW) & 15));

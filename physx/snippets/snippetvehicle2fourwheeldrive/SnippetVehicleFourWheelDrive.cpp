@@ -84,7 +84,6 @@
 #include <ctype.h>
 
 #include "PxPhysicsAPI.h"
-#include "vehicle2/PxVehicleAPI.h"
 #include "../snippetvehicle2common/enginedrivetrain/EngineDrivetrain.h"
 #include "../snippetvehicle2common/serialization/BaseSerialization.h"
 #include "../snippetvehicle2common/serialization/EngineDrivetrainSerialization.h"

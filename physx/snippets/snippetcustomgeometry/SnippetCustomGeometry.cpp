@@ -280,6 +280,8 @@ void cleanupPhysics(bool /*interactive*/)
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
+	gVertices.reset();
+	gIndices.reset();
 	if (gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();

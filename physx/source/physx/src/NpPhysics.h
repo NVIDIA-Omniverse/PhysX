@@ -165,7 +165,7 @@ public:
 	virtual		PxU32						getNbFEMSoftBodyMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
-	virtual		PxFEMClothMaterial*			createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)	PX_OVERRIDE;
+	virtual		PxFEMClothMaterial*			createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness)	PX_OVERRIDE;
 	virtual		PxU32						getNbFEMClothMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getFEMClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 

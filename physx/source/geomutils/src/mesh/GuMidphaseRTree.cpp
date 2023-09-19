@@ -782,8 +782,8 @@ void physx::Gu::intersectOBB_RTREE(const TriangleMesh* mesh, const Box& obb, Mes
 
 // PT: TODO: refactor/share bits of this
 bool physx::Gu::sweepCapsule_MeshGeom_RTREE(const TriangleMesh* mesh, const PxTriangleMeshGeometry& triMeshGeom, const PxTransform& pose,
-											const Capsule& lss, const PxVec3& unitDir, const PxReal distance,
-											PxGeomSweepHit& sweepHit, PxHitFlags hitFlags, const PxReal inflation)
+											const Capsule& lss, const PxVec3& unitDir, PxReal distance,
+											PxGeomSweepHit& sweepHit, PxHitFlags hitFlags, PxReal inflation)
 {
 	PX_ASSERT(mesh->getConcreteType()==PxConcreteType::eTRIANGLE_MESH_BVH33);
 	const RTreeTriangleMesh* meshData = static_cast<const RTreeTriangleMesh*>(mesh);
@@ -825,8 +825,8 @@ bool physx::Gu::sweepCapsule_MeshGeom_RTREE(const TriangleMesh* mesh, const PxTr
 
 // PT: TODO: refactor/share bits of this
 bool physx::Gu::sweepBox_MeshGeom_RTREE(const TriangleMesh* mesh, const PxTriangleMeshGeometry& triMeshGeom, const PxTransform& pose,
-										const Box& box, const PxVec3& unitDir, const PxReal distance,
-										PxGeomSweepHit& sweepHit, PxHitFlags hitFlags, const PxReal inflation)
+										const Box& box, const PxVec3& unitDir, PxReal distance,
+										PxGeomSweepHit& sweepHit, PxHitFlags hitFlags, PxReal inflation)
 {
 	PX_ASSERT(mesh->getConcreteType()==PxConcreteType::eTRIANGLE_MESH_BVH33);
 	const RTreeTriangleMesh* meshData = static_cast<const RTreeTriangleMesh*>(mesh);
@@ -902,7 +902,7 @@ bool physx::Gu::sweepBox_MeshGeom_RTREE(const TriangleMesh* mesh, const PxTriang
 }
 
 #include "GuInternal.h"
-void physx::Gu::sweepConvex_MeshGeom_RTREE(const TriangleMesh* mesh, const Box& hullBox, const PxVec3& localDir, const PxReal distance, SweepConvexMeshHitCallback& callback, bool)
+void physx::Gu::sweepConvex_MeshGeom_RTREE(const TriangleMesh* mesh, const Box& hullBox, const PxVec3& localDir, PxReal distance, SweepConvexMeshHitCallback& callback, bool)
 {
 	PX_ASSERT(mesh->getConcreteType()==PxConcreteType::eTRIANGLE_MESH_BVH33);
 	const RTreeTriangleMesh* meshData = static_cast<const RTreeTriangleMesh*>(mesh);

@@ -1337,6 +1337,10 @@ namespace Ext
 
 	const PxI32 tets6PerVoxel[24] = { 0,1,6,2,  0,1,4,6,  1,4,6,5,  1,2,3,6,  1,3,7,6,  1,5,6,7 };
 
+	const PxU32 tets5PerVoxel[] = {
+				 0, 6, 3, 5, 0, 1, 5, 3, 6, 7, 3, 5, 4, 5, 6, 0, 2, 3, 0, 6,
+				 1, 7, 4, 2, 1, 0, 2, 4, 7, 6, 4, 2, 5, 4, 1, 7, 3, 2, 7, 1 };
+
 	struct VoxelNodes
 	{
 		PxI32 c[8];
@@ -1626,24 +1630,25 @@ namespace Ext
 				}
 
 				//Emit 5 or 6 tets
-				//if (numTetsPerVoxel == 5) {
-				//	PxI32 flip = (mLocationX + mLocationY + mLocationZ) % 2;
-				//	PxI32 offset = flip * 20;
-				//	for (PxI32 j = 0; j < 20; j += 4)
-				//	{
-				//		PxI32 a = n.c[tets5PerVoxel[j + 0 + offset]];
-				//		PxI32 b = n.c[tets5PerVoxel[j + 1 + offset]];
-				//		PxI32 c = n.c[tets5PerVoxel[j + 2 + offset]];
-				//		PxI32 d = n.c[tets5PerVoxel[j + 3 + offset]];
-				//		//Tetrahedron tet(a, b, c, d);
-				//		//voxelTets.pushBack(tet);
-				//		voxelTets.pushBack(a);
-				//		voxelTets.pushBack(b);
-				//		voxelTets.pushBack(c);
-				//		voxelTets.pushBack(d);
-				//	}
-				//}
-				//else
+				if (numTetsPerVoxel == 5) 
+				{
+					PxI32 flip = (mLocationX + mLocationY + mLocationZ) % 2;
+					PxI32 offset = flip * 20;
+					for (PxI32 j = 0; j < 20; j += 4)
+					{
+						PxI32 a = n.c[tets5PerVoxel[j + 0 + offset]];
+						PxI32 b = n.c[tets5PerVoxel[j + 1 + offset]];
+						PxI32 c = n.c[tets5PerVoxel[j + 2 + offset]];
+						PxI32 d = n.c[tets5PerVoxel[j + 3 + offset]];
+						//Tetrahedron tet(a, b, c, d);
+						//voxelTets.pushBack(tet);
+						voxelTets.pushBack(a);
+						voxelTets.pushBack(b);
+						voxelTets.pushBack(c);
+						voxelTets.pushBack(d);
+					}
+				}
+				else
 				{					
 					for (PxI32 j = 0; j < 24; j += 4)
 					{
@@ -1897,7 +1902,7 @@ namespace Ext
 	}
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPointsOrig, const PxBoundedData& inputTets, PxU32 numVoxelsX, PxU32 numVoxelsY, PxU32 numVoxelsZ,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
 	{
 		if (inputTets.count == 0)
 			return; //No input, so there is no basis for creating an output
@@ -2010,7 +2015,7 @@ namespace Ext
 			voxels[i].mapNodes(uf);
 		}
 
-		const PxU32 numTetsPerVoxel = 6;
+		//const PxU32 numTetsPerVoxel = 5;
 		voxelPoints.resize(numVertices);
 		//intputPointToOutputTetIndex.resize(numInputPoints);
 		voxelTets.clear();
@@ -2072,7 +2077,7 @@ namespace Ext
 	}	
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxReal voxelEdgeLength,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
 	{
 		PxVec3 min, max;
 		minMax(inputPoints, min, max);
@@ -2081,17 +2086,17 @@ namespace Ext
 		PxU32 numCellsY = PxMax(1u, PxU32(blockSize.y / voxelEdgeLength + 0.5f));
 		PxU32 numCellsZ = PxMax(1u, PxU32(blockSize.z / voxelEdgeLength + 0.5f));
 
-		generateVoxelTetmesh(inputPoints, inputTets, numCellsX, numCellsY, numCellsZ, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices);
+		generateVoxelTetmesh(inputPoints, inputTets, numCellsX, numCellsY, numCellsZ, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
 	}
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsAlongLongestBoundingBoxAxis,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
 	{
 		PxVec3 min, max;
 		minMax(inputPoints, min, max);	
 		PxVec3 size = max - min;
 		PxReal voxelEdgeLength = PxMax(size.x, PxMax(size.y, size.z)) / numVoxelsAlongLongestBoundingBoxAxis;
-		generateVoxelTetmesh(inputPoints, inputTets, voxelEdgeLength, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices);
+		generateVoxelTetmesh(inputPoints, inputTets, voxelEdgeLength, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
 	}
 
 

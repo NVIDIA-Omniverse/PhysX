@@ -85,7 +85,14 @@ struct PxConvexMeshCookingResult
 		/**
 		\brief Something unrecoverable happened. Check the error stream to find out what.
 		*/
-		eFAILURE
+		eFAILURE,
+
+		/**
+		\brief Convex mesh cooking succeeded, but the algorithm could not make the mesh GPU compatible because the
+			in-sphere radius is more than 100x smaller than the largest extent. Collision detection for any pair involving
+			this convex mesh will fall back to CPU.
+		*/
+		eNON_GPU_COMPATIBLE
 	};
 };
 
@@ -113,12 +120,17 @@ struct PxTriangleMeshCookingResult
 		/**
 		\brief Everything is A-OK.
 		*/
-		eSUCCESS			= 0,
+		eSUCCESS	= 0,
 
 		/**
-		\brief a triangle is too large for well-conditioned results. Tessellate the mesh for better behavior, see the user guide section on cooking for more details.
+		\brief A triangle is too large for well-conditioned results. Tessellate the mesh for better behavior, see the user guide section on cooking for more details.
 		*/
 		eLARGE_TRIANGLE,
+
+		/**
+		\brief The mesh cleaning operation removed all triangles, resulting in an empty mesh.
+		*/
+		eEMPTY_MESH,
 
 		/**
 		\brief Something unrecoverable happened. Check the error stream to find out what.
@@ -135,22 +147,21 @@ struct PxMeshPreprocessingFlag
 	enum Enum
 	{
 		/**
-		\brief When set, mesh welding is performed. See PxCookingParams::meshWeldTolerance. Clean mesh must be enabled.
+		\brief When set, mesh welding is performed. See PxCookingParams::meshWeldTolerance. Mesh cleaning must be enabled.
 		*/
-		eWELD_VERTICES						=	1 << 0, 
+		eWELD_VERTICES	=	1 << 0, 
 
 		/**
 		\brief When set, mesh cleaning is disabled. This makes cooking faster.
 
-		When clean mesh is not performed, mesh welding is also not performed. 
+		When mesh cleaning is disabled, mesh welding is also disabled.
 
-		It is recommended to use only meshes that passed during validateTriangleMesh. 
-
+		It is recommended to use only meshes that passed during validateTriangleMesh.
 		*/
-		eDISABLE_CLEAN_MESH					=	1 << 1, 
+		eDISABLE_CLEAN_MESH	=	1 << 1, 
 
 		/**
-		\brief When set, active edges are set for each triangle edge. This makes cooking faster but slow up contact generation.
+		\brief When set, active edges are not computed and just enabled for all edges. This makes cooking faster but contact generation slower.
 		*/
 		eDISABLE_ACTIVE_EDGES_PRECOMPUTE	=	1 << 2,
 
@@ -159,18 +170,17 @@ struct PxMeshPreprocessingFlag
 
 		\note By default mesh will be created with 16-bit indices for triangle count <= 0xFFFF and 32-bit otherwise.
 		*/
-		eFORCE_32BIT_INDICES				=	1 << 3,
+		eFORCE_32BIT_INDICES	=	1 << 3,
 
 		/**
-		\brief When set, a list of triangles will be created for each associated vertex in the mesh
+		\brief When set, a list of triangles will be created for each associated vertex in the mesh.
 		*/
-		eENABLE_VERT_MAPPING				=   1 << 4,
+		eENABLE_VERT_MAPPING	=   1 << 4,
 
 		/**
-		\brief When set, inertia tensor is calculated for the mesh
+		\brief When set, inertia tensor is calculated for the mesh.
 		*/
-		eENABLE_INERTIA						= 1 << 5
-
+		eENABLE_INERTIA	= 1 << 5
 	};
 };
 
@@ -286,6 +296,44 @@ struct PxCookingParams
 	PxReal		meshWeldTolerance;
 
 	/**
+	\brief "Zero-area" epsilon used in mesh cleaning.
+
+	This is similar to areaTestEpsilon, but for the mesh cleaning operation. 
+
+	If the area of a triangle is below this value, the triangle will be removed. This is only done when mesh cleaning is enabled,
+	i.e. when PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH is not set.
+
+	Default value is 0.0f to be consistent with previous PhysX versions, which only removed triangles whose area
+	was exactly zero.
+
+	@see PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH
+
+	<b>Default value:</b> 0.0f
+
+	<b>Range:</b> (0.0f, PX_MAX_F32)
+	*/
+	PxReal		meshAreaMinLimit;
+
+	/**
+	\brief Maximum edge length.
+
+	If an edge of a triangle is above this value, a warning is sent to the error stream. This is only a check,
+	corresponding triangles are not removed.
+	
+	This is only done when mesh cleaning is enabled, i.e. when PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH is not set.
+
+	Default value is 500.0f to be consistent with previous PhysX versions. This value is internally multiplied by
+	PxTolerancesScale::length before being used. Use 0.0f to disable the checks.
+
+	@see PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH
+
+	<b>Default value:</b> 500.0f
+
+	<b>Range:</b> (0.0f, PX_MAX_F32)
+	*/
+	PxReal		meshEdgeLengthMaxLimit;
+
+	/**
 	\brief Controls the desired midphase desc structure for triangle meshes.
 
 	@see PxBVH33MidphaseDesc, PxBVH34MidphaseDesc, PxMidphaseDesc
@@ -321,7 +369,9 @@ struct PxCookingParams
 		buildGPUData					(false),
 		scale							(sc),
 		meshPreprocessParams			(0),
-		meshWeldTolerance				(0.f),
+		meshWeldTolerance				(0.0f),
+		meshAreaMinLimit				(0.0f),
+		meshEdgeLengthMaxLimit			(500.0f),
 		gaussMapLimit					(32),
 		maxWeightRatioInTet             (FLT_MAX)
 	{

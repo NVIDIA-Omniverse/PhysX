@@ -122,6 +122,9 @@ namespace physx
 			void						addClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, PxU32 tetIdx);
 			void						removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, PxU32 tetIdx);
 
+			void						addVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, PxU32 tetIdx);
+			void						removeVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, PxU32 tetIdx);
+
 			PxU32						addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
 										PxConeLimitedConstraint* constraint, PxReal constraintOffset);
 			void						removeClothAttachment(Sc::FEMClothCore& core,  PxU32 handle);

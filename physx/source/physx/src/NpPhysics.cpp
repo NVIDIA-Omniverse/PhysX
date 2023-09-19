@@ -57,6 +57,7 @@
 #include "PxDeletionListener.h"
 #include "PxPhysicsSerialization.h"
 #include "PvdPhysicsClient.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 #if PX_SUPPORT_OMNI_PVD
 #include "omnipvd/NpOmniPvd.h"
@@ -216,7 +217,7 @@ NpPhysics::~NpPhysics()
 	mDeletionListenerMap.clear();
 
 #if PX_SUPPORT_OMNI_PVD
-	OMNI_PVD_DESTROY(PxPhysics, static_cast<PxPhysics&>(*this))
+	OMNI_PVD_DESTROY(OMNI_PVD_CONTEXT_HANDLE, PxPhysics, static_cast<PxPhysics&>(*this))
 	PX_DELETE(mOmniPvdSampler);
 	if (mOmniPvd)
 	{
@@ -389,7 +390,7 @@ PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 
 	npScene->loadFromDesc(desc);
 
-	OMNI_PVD_ADD(PxPhysics, scenes, static_cast<PxPhysics&>(*this), static_cast<PxScene&>(*npScene))
+	OMNI_PVD_ADD(OMNI_PVD_CONTEXT_HANDLE, PxPhysics, scenes, static_cast<PxPhysics&>(*this), static_cast<PxScene&>(*npScene))
 
 #if PX_SUPPORT_PVD
 	if(mPvd)
@@ -414,7 +415,7 @@ void NpPhysics::releaseSceneInternal(PxScene& scene)
 {
 	NpScene* pScene =  static_cast<NpScene*>(&scene);
 
-	OMNI_PVD_REMOVE(PxPhysics, scenes, static_cast<PxPhysics&>(*this), scene)
+	OMNI_PVD_REMOVE(OMNI_PVD_CONTEXT_HANDLE, PxPhysics, scenes, static_cast<PxPhysics&>(*this), scene)
 
 	PxMutex::ScopedLock lock(mSceneAndMaterialMutex);
 	for(PxU32 i=0;i<mSceneArray.size();i++)
@@ -789,9 +790,9 @@ IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpMaterial, mMasterMaterialManager, "PxPhy
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
-	PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)
+	PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness)
 	{
-		PxFEMClothMaterial* m = NpFactory::getInstance().createFEMClothMaterial(youngs, poissons, dynamicFriction);
+		PxFEMClothMaterial* m = NpFactory::getInstance().createFEMClothMaterial(youngs, poissons, dynamicFriction, thickness);
 		return addMaterial(static_cast<NpFEMClothMaterial*>(m));
 	}
 
@@ -808,7 +809,7 @@ IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpMaterial, mMasterMaterialManager, "PxPhy
 
 	IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpFEMClothMaterial, mMasterFEMClothMaterialManager, "PxPhysics::createFEMClothMaterial: limit of 64K materials reached.")
 #else
-	PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal, PxReal, PxReal)		{ return NULL;	}
+	PxFEMClothMaterial* NpPhysics::createFEMClothMaterial(PxReal, PxReal, PxReal, PxReal) { return NULL;	}
 	PxU32 NpPhysics::getNbFEMClothMaterials()									const	{ return 0;		}
 	PxU32 NpPhysics::getFEMClothMaterials(PxFEMClothMaterial**, PxU32, PxU32)	const	{ return 0;		}
 #endif
@@ -1157,12 +1158,12 @@ void NpPhysics::notifyDeletionListeners(const PxBase* base, void* userData, PxDe
 #if PX_SUPPORT_OMNI_PVD
 void NpPhysics::OmniPvdListener::onObjectAdd(const PxBase* object)
 {
-	::OmniPvdPxSampler::getInstance()->onObjectAdd(object);
+	::OmniPvdPxSampler::getInstance()->onObjectAdd(*object);
 }
 
 void NpPhysics::OmniPvdListener::onObjectRemove(const PxBase* object)
 {
-	::OmniPvdPxSampler::getInstance()->onObjectRemove(object);
+	::OmniPvdPxSampler::getInstance()->onObjectRemove(*object);
 }
 #endif
 

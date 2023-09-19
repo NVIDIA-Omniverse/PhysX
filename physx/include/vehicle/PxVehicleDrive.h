@@ -536,7 +536,7 @@ public:
 protected:
 	PxVehicleDrive(PxType concreteType, PxBaseFlags baseFlags) : PxVehicleWheels(concreteType, baseFlags) {}	
 	~PxVehicleDrive() {}
-	virtual bool isKindOf(const char* name)	const { return !::strcmp("PxVehicleDrive", name) || PxBase::isKindOf(name); }
+	virtual bool isKindOf(const char* name)	const { PX_IS_KIND_OF(name, "PxVehicleDrive", PxVehicleWheels); }
 //~serialization
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleDrive) & 15));

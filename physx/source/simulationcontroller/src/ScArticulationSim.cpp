@@ -298,6 +298,7 @@ void Sc::ArticulationSim::initializeConfiguration()
 {
 	Dy::ArticulationData& data = mLLArticulation->getArticulationData();
 	mLLArticulation->jcalc(data);
+	mLLArticulation->mJcalcDirty = false;
 
 	Dy::ArticulationLink* links = data.getLinks();
 	Dy::ArticulationJointCoreData* jointData = data.getJointData();
@@ -305,6 +306,8 @@ void Sc::ArticulationSim::initializeConfiguration()
 
 	PxReal* jointVelocites = data.getJointVelocities();
 	PxReal* jointPositions = data.getJointPositions();
+	PxReal* jointTargetPositions = data.getJointTargetPositions();
+	PxReal* jointTargetVelocities = data.getJointTargetVelocities();
 	
 	for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
 	{
@@ -315,13 +318,25 @@ void Sc::ArticulationSim::initializeConfiguration()
 
 		PxReal* jPositions = &jointPositions[jointDatum.jointOffset];
 		PxReal* jVelocites = &jointVelocites[jointDatum.jointOffset];
+		PxReal* jTargetPositions = &jointTargetPositions[jointDatum.jointOffset];
+		PxReal* jTargetVelocities = &jointTargetVelocities[jointDatum.jointOffset];
+
 		for (PxU8 i = 0; i < jointDatum.dof; ++i)
 		{
 			const PxU32 dofId = joint->dofIds[i];
 			jPositions[i] = joint->jointPos[dofId];
 			jVelocites[i] = joint->jointVel[dofId];
+			jTargetPositions[i] = joint->targetP[dofId];
+			jTargetVelocities[i] = joint->targetV[dofId];
 		}
 	}
+
+	PxU32 flags = (Dy::ArticulationDirtyFlag::eDIRTY_POSITIONS |
+				  Dy::ArticulationDirtyFlag::eDIRTY_VELOCITIES |
+				  Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_POS |
+				  Dy::ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_VEL);
+
+	mLLArticulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::Enum(flags));
 
 	mLLArticulation->initPathToRoot();
 }
@@ -329,6 +344,11 @@ void Sc::ArticulationSim::initializeConfiguration()
 void Sc::ArticulationSim::updateKinematic(PxArticulationKinematicFlags flags)
 {
 	Dy::ArticulationData& data = mLLArticulation->getArticulationData();
+	if (mLLArticulation->mJcalcDirty)
+	{
+		mLLArticulation->jcalc(data);
+		mLLArticulation->mJcalcDirty = false;
+	}
 
 	if ((flags & PxArticulationKinematicFlag::ePOSITION))
 	{
@@ -486,9 +506,10 @@ void Sc::ArticulationSim::internalWakeUp(PxReal wakeCounter)
 	}
 }
 
-void Sc::ArticulationSim::updateForces(PxReal dt, bool notify)
+void Sc::ArticulationSim::updateForces(PxReal dt)
 {
 	PxU32 count = 0;
+	bool anyForcesApplied = false;
 
 	for(PxU32 i=0;i<mBodies.size();i++)
 	{
@@ -498,16 +519,18 @@ void Sc::ArticulationSim::updateForces(PxReal dt, bool notify)
 			PxPrefetchLine(mBodies[i+1],256);
 		}
 
-		mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i]);
+		anyForcesApplied |= mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i]);
 	}
-	if(notify)
-		mScene.getSimulationController()->updateArticulationExtAccel(mLLArticulation, mIslandNodeIndex);
+	if(anyForcesApplied)
+		mLLArticulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL);
 }
 
 void Sc::ArticulationSim::clearAcceleration(PxReal dt)
 {
 	PxU32 count = 0;
 
+	bool anyBodyRetains = false;
+	
 	for (PxU32 i = 0; i < mBodies.size(); i++)
 	{
 		if (i + 1 < mBodies.size())
@@ -518,16 +541,38 @@ void Sc::ArticulationSim::clearAcceleration(PxReal dt)
 
 		const bool accDirty = mBodies[i]->readVelocityModFlag(VMF_ACC_DIRTY);
 
+		// the code restores the pre-impulse state:
+		// if we only applied an impulse and no acceleration, we clear the acceleration here.
+		// if we applied an acceleration, we re-apply the acceleration terms we have in the velMod.
+		// we cleared out the impulse here when we pushed the data at the start of the sim.
+
 		if (!accDirty)
 		{
 			mLLArticulation->getSolverDesc().acceleration[i].linear = PxVec3(0.f);
 			mLLArticulation->getSolverDesc().acceleration[i].angular = PxVec3(0.f);
 		}
 		else
+		{
 			mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i]);
-	}
+		}
 
-	mScene.getSimulationController()->updateArticulationExtAccel(mLLArticulation, mIslandNodeIndex);
+		// we need to raise the dirty flag if retain accelerations is on
+		// because in that case we need to restore the acceleration without impulses. We
+		// can only do that using the CPU->GPU codepath because we don't distinguish between
+		// acceleration and impulses on the GPU.
+		// The flag must be raised here because we don't know at the start of the next sim step
+		// that the data in velMod is actually valid and the articulation would not be added
+		// to the dirty list.
+
+		// without retain accelerations, the accelerations are cleared directly on the GPU.
+		if (mBodies[i]->getFlagsFast() & PxRigidBodyFlag::eRETAIN_ACCELERATIONS)
+			anyBodyRetains = true;
+	}
+	
+	if (anyBodyRetains)
+	{
+		mScene.getSimulationController()->updateArticulationExtAccel(mLLArticulation, mIslandNodeIndex);
+	}
 }
 
 void Sc::ArticulationSim::saveLastCCDTransform()

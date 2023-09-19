@@ -30,6 +30,8 @@
 #include "NpArticulationJointReducedCoordinate.h"
 #include "NpArticulationReducedCoordinate.h"
 
+#include "omnipvd/NpOmniPvdSetData.h"
+
 using namespace physx;
 
 namespace physx
@@ -78,12 +80,12 @@ namespace physx
 	{
 		if(getNpScene())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationJointReducedCoordinate::setJointType() not allowed while the articulation is in a scene. Call will be ignored.");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setJointType() not allowed while the articulation is in a scene. Call will be ignored.");
 			return;
 		}
 		PX_CHECK_AND_RETURN(jointType != PxArticulationJointType::eUNDEFINED, "PxArticulationJointReducedCoordinate::setJointType valid joint type(ePRISMATIC, eREVOLUTE, eREVOLUTE_UNWRAPPED, eSPHERICAL, eFIX) need to be set");
 
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, type, static_cast<PxArticulationJointReducedCoordinate&>(*this), jointType)
+		OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, type, static_cast<PxArticulationJointReducedCoordinate&>(*this), jointType)
 
 		scSetJointType(jointType);
 	}
@@ -158,7 +160,7 @@ namespace physx
 	{
 		if(getNpScene())
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxArticulationJointReducedCoordinate::setMotion() not allowed while the articulation is in a scene. Call will be ignored.");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setMotion() not allowed while the articulation is in a scene. Call will be ignored.");
 			return;
 		}
 		PX_CHECK_AND_RETURN(getJointType() != PxArticulationJointType::eUNDEFINED, "PxArticulationJointReducedCoordinate::setMotion valid joint type(ePRISMATIC, eREVOLUTE, eREVOUTE_UNWRAPPED, eSPHERICAL or eFIX) has to be set before setMotion");
@@ -167,10 +169,10 @@ namespace physx
 		scSetMotion(axis, motion);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxArticulationMotion::Enum motions[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxArticulationMotion::Enum motions[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			motions[ax] = mCore.getMotion(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, motion, static_cast<PxArticulationJointReducedCoordinate&>(*this), motions, sizeof(motions));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, motion, static_cast<PxArticulationJointReducedCoordinate&>(*this), motions, PxArticulationAxis::eCOUNT);
 #endif
 
 		static_cast<NpArticulationReducedCoordinate*>(&getChild().getArticulation())->mTopologyChanged = true;
@@ -187,7 +189,7 @@ namespace physx
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setFrictionCoefficient() not allowed while simulation is running. Call will be ignored.")
 
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, frictionCoefficient, static_cast<PxArticulationJointReducedCoordinate&>(*this), coefficient);
+		OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, frictionCoefficient, static_cast<PxArticulationJointReducedCoordinate&>(*this), coefficient);
 
 		scSetFrictionCoefficient(coefficient);
 	}
@@ -205,7 +207,7 @@ namespace physx
 
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setMaxJointVelocity() not allowed while simulation is running. Call will be ignored.")
 
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, maxJointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), maxJointV);
+		OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, maxJointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), maxJointV);
 
 		scSetMaxJointVelocity(maxJointV);
 	}
@@ -229,14 +231,18 @@ namespace physx
 		scSetLimit(axis, pair);
 
 #if PX_SUPPORT_OMNI_PVD
+		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 		PxArticulationJointReducedCoordinate& joint = *this;
-		PxReal limits[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxReal limits[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			limits[ax] = mCore.getLimit(static_cast<PxArticulationAxis::Enum>(ax)).low;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitLow, joint, limits, sizeof(limits));
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, limitLow, joint, limits, PxArticulationAxis::eCOUNT);
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			limits[ax] = mCore.getLimit(static_cast<PxArticulationAxis::Enum>(ax)).high;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, limitHigh, joint, limits, sizeof(limits));
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, limitHigh, joint, limits, PxArticulationAxis::eCOUNT);
+
+		OMNI_PVD_WRITE_SCOPE_END
 #endif
 	}
 
@@ -255,23 +261,27 @@ namespace physx
 		scSetDrive(axis, drive);
 
 #if PX_SUPPORT_OMNI_PVD
+		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 		PxArticulationJointReducedCoordinate& joint = *this;
-		PxReal stiffnesss[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxReal stiffnesss[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			stiffnesss[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).stiffness;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveStiffness, joint, stiffnesss, sizeof(stiffnesss));
-		PxReal dampings[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveStiffness, joint, stiffnesss, PxArticulationAxis::eCOUNT);
+		PxReal dampings[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			dampings[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).damping;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveDamping, joint, dampings, sizeof(dampings));
-		PxReal maxforces[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveDamping, joint, dampings, PxArticulationAxis::eCOUNT);
+		PxReal maxforces[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			maxforces[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).maxForce;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveMaxForce, joint, maxforces, sizeof(maxforces));
-		PxArticulationDriveType::Enum drivetypes[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveMaxForce, joint, maxforces, PxArticulationAxis::eCOUNT);
+		PxArticulationDriveType::Enum drivetypes[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			drivetypes[ax] = mCore.getDrive(static_cast<PxArticulationAxis::Enum>(ax)).driveType;
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveType, joint, drivetypes, sizeof(drivetypes));
+		OMNI_PVD_SET_ARRAY_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveType, joint, drivetypes, PxArticulationAxis::eCOUNT);
+
+		OMNI_PVD_WRITE_SCOPE_END
 #endif
 	}
 
@@ -284,13 +294,19 @@ namespace physx
 
 	void NpArticulationJointReducedCoordinate::setDriveTarget(PxArticulationAxis::Enum axis, const PxReal target, bool autowake)
 	{
-		NP_WRITE_CHECK(getNpScene());
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
 		PX_CHECK_AND_RETURN(getJointType() != PxArticulationJointType::eSPHERICAL || PxAbs(target) <= PxPi, "PxArticulationJointReducedCoordinate::setDriveTarget() only supports target angle in range [-Pi, Pi] for joints of type PxArticulationJointType::eSPHERICAL");		
 		PX_CHECK_AND_RETURN(getJointType() != PxArticulationJointType::eREVOLUTE || PxAbs(target) <= 2.0f*PxPi, "PxArticulationJointReducedCoordinate::setDriveTarget() only supports target angle in range [-2Pi, 2Pi] for joints of type PxArticulationJointType::eREVOLUTE");		
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setDriveTarget() not allowed while simulation is running. Call will be ignored.")
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationJointReducedCoordinate::setDriveTarget() not allowed while simulation is running. Call will be ignored.")
 
-		if (autowake && getNpScene())
+		if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setDriveTarget(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		}
+
+		if (autowake && npScene)
 		{
 			NpArticulationReducedCoordinate* npArticulation = static_cast<NpArticulationReducedCoordinate*>(&mParent->getArticulation());
 			npArticulation->autoWakeInternal();
@@ -299,20 +315,26 @@ namespace physx
 		scSetDriveTarget(axis, target);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxReal targets[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxReal targets[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			targets[ax] = mCore.getTargetP(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveTarget, static_cast<PxArticulationJointReducedCoordinate&>(*this), targets, sizeof(targets));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveTarget, static_cast<PxArticulationJointReducedCoordinate&>(*this), targets, PxArticulationAxis::eCOUNT);
 #endif
 	}
 
 	void NpArticulationJointReducedCoordinate::setDriveVelocity(PxArticulationAxis::Enum axis, const PxReal targetVel, bool autowake)
 	{
-		NP_WRITE_CHECK(getNpScene());
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setDriveVelocity() not allowed while simulation is running. Call will be ignored.")
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationJointReducedCoordinate::setDriveVelocity() not allowed while simulation is running. Call will be ignored.")
 
-		if (autowake && getNpScene())
+		if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setDriveVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		}
+
+		if (autowake && npScene)
 		{
 			NpArticulationReducedCoordinate* npArticulation = static_cast<NpArticulationReducedCoordinate*>(&mParent->getArticulation());
 			npArticulation->autoWakeInternal();
@@ -321,10 +343,10 @@ namespace physx
 		scSetDriveVelocity(axis, targetVel);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxReal velocitys[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
-			velocitys[ax] = mCore.getTargetV(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, driveVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocitys, sizeof(velocitys));
+		PxReal velocities[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+			velocities[ax] = mCore.getTargetV(static_cast<PxArticulationAxis::Enum>(ax));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, driveVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocities, PxArticulationAxis::eCOUNT);
 #endif
 	}
 
@@ -351,10 +373,10 @@ namespace physx
 		scSetArmature(axis, armature);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxReal armatures[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxReal armatures[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			armatures[ax] = mCore.getArmature(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, armature, static_cast<PxArticulationJointReducedCoordinate&>(*this), armatures, sizeof(armatures));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, armature, static_cast<PxArticulationJointReducedCoordinate&>(*this), armatures, PxArticulationAxis::eCOUNT);
 #endif
 	}
 
@@ -379,9 +401,13 @@ namespace physx
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setParentPose() not allowed while simulation is running. Call will be ignored.")
 
 #if PX_SUPPORT_OMNI_PVD
+		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 		PxArticulationJointReducedCoordinate& joint = *this;
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, parentTranslation, joint, t.p)
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, parentRotation, joint, t.q)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, parentTranslation, joint, t.p)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, parentRotation, joint, t.q)
+
+		OMNI_PVD_WRITE_SCOPE_END
 #endif
 
 		if (mParent == NULL)
@@ -406,9 +432,13 @@ namespace physx
 		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setChildPose() not allowed while simulation is running. Call will be ignored.")
 
 #if PX_SUPPORT_OMNI_PVD
+		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 		PxArticulationJointReducedCoordinate& joint = *this;
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, childTranslation, joint, t.p)
-		OMNI_PVD_SET(PxArticulationJointReducedCoordinate, childRotation, joint, t.q)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, childTranslation, joint, t.p)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, childRotation, joint, t.q)
+
+		OMNI_PVD_WRITE_SCOPE_END
 #endif
 
 		scSetChildPose(mChild->getCMassLocalPose().transformInv(t.getNormalized()));
@@ -416,20 +446,26 @@ namespace physx
 
 	void NpArticulationJointReducedCoordinate::setJointPosition(PxArticulationAxis::Enum axis, const PxReal jointPos)
 	{
-		NP_WRITE_CHECK(getNpScene());
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
 		PX_CHECK_AND_RETURN(PxIsFinite(jointPos), "PxArticulationJointReducedCoordinate::setJointPosition: jointPos is not valid.");
 		PX_CHECK_AND_RETURN(getJointType() != PxArticulationJointType::eSPHERICAL || PxAbs(jointPos) <= PxPi, "PxArticulationJointReducedCoordinate::setJointPosition() only supports jointPos in range [-Pi, Pi] for joints of type PxArticulationJointType::eSPHERICAL");	
 		PX_CHECK_AND_RETURN(getJointType() != PxArticulationJointType::eREVOLUTE || PxAbs(jointPos) <= 2.0f*PxPi, "PxArticulationJointReducedCoordinate::setJointPosition() only supports jointPos in range [-2Pi, 2Pi] for joints of type PxArticulationJointType::eREVOLUTE");	
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setJointPosition() not allowed while simulation is running. Call will be ignored.");
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationJointReducedCoordinate::setJointPosition() not allowed while simulation is running. Call will be ignored.");
+
+		if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setJointPosition(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		}
 
 		scSetJointPosition(axis, jointPos);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxReal positions[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
+		PxReal positions[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
 			positions[ax] = mCore.getJointPosition(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointPosition, static_cast<PxArticulationJointReducedCoordinate&>(*this), positions, sizeof(positions));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointPosition, static_cast<PxArticulationJointReducedCoordinate&>(*this), positions, PxArticulationAxis::eCOUNT);
 #endif
 	}
 
@@ -444,18 +480,24 @@ namespace physx
 
 	void NpArticulationJointReducedCoordinate::setJointVelocity(PxArticulationAxis::Enum axis, const PxReal jointVel)
 	{
-		NP_WRITE_CHECK(getNpScene());
+		NpScene* npScene = getNpScene();
+		NP_WRITE_CHECK(npScene);
 		PX_CHECK_AND_RETURN(PxIsFinite(jointVel), "PxArticulationJointReducedCoordinate::setJointVelocity: jointVel is not valid.");
 
-		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(getNpScene(), "PxArticulationJointReducedCoordinate::setJointVelocity() not allowed while simulation is running. Call will be ignored.");
+		PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxArticulationJointReducedCoordinate::setJointVelocity() not allowed while simulation is running. Call will be ignored.");
+
+		if (npScene && (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API) && npScene->isDirectGPUAPIInitialized())
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationJointReducedCoordinate::setJointVelocity(): it is illegal to call this method if PxSceneFlag::eENABLE_DIRECT_GPU_API is enabled!");
+		}
 
 		scSetJointVelocity(axis, jointVel);
 
 #if PX_SUPPORT_OMNI_PVD
-		PxReal velocitys[6];
-		for (PxU32 ax = 0; ax < 6; ++ax)
-			velocitys[ax] = mCore.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
-		OMNI_PVD_SETB(PxArticulationJointReducedCoordinate, jointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocitys, sizeof(velocitys));
+		PxReal velocities[PxArticulationAxis::eCOUNT];
+		for (PxU32 ax = 0; ax < PxArticulationAxis::eCOUNT; ++ax)
+			velocities[ax] = mCore.getJointVelocity(static_cast<PxArticulationAxis::Enum>(ax));
+		OMNI_PVD_SET_ARRAY(OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointVelocity, static_cast<PxArticulationJointReducedCoordinate&>(*this), velocities, PxArticulationAxis::eCOUNT);
 #endif
 	}
 

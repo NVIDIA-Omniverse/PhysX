@@ -59,6 +59,8 @@ namespace Sc
 		PX_FORCE_INLINE	const PxTransform&	getBody2World()				const	{ return mCore.body2World;			}
 						void				setBody2World(const PxTransform& p);
 
+						void				setCMassLocalPose(const PxTransform& body2Actor);
+
 		PX_FORCE_INLINE	const PxVec3&		getLinearVelocity()			const	{ return mCore.linearVelocity;		}
 						void				setLinearVelocity(const PxVec3& v, bool skipBodySimUpdate=false);
 	

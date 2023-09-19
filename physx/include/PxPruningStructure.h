@@ -119,7 +119,7 @@ protected:
 	PX_INLINE					PxPruningStructure(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
 	PX_INLINE					PxPruningStructure(PxBaseFlags baseFlags) : PxBase(baseFlags) {}
 	virtual						~PxPruningStructure()	{}
-	virtual		bool			isKindOf(const char* name)	const		{ return !::strcmp("PxPruningStructure", name) || PxBase::isKindOf(name); }
+	virtual		bool			isKindOf(const char* name)	const		{ PX_IS_KIND_OF(name, "PxPruningStructure", PxBase); }
 };
 
 

@@ -38,7 +38,7 @@
 #include "NpFEMCloth.h"
 #include "NpSoftBody.h"
 
-#include "omnipvd/OmniPvdPxSampler.h"
+#include "omnipvd/NpOmniPvdSetData.h"
 
 using namespace physx;
 using namespace Sq;
@@ -347,8 +347,11 @@ void NpShape::setLocalPose(const PxTransform& newShape2Actor)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eSHAPE2BODY);
 
-	OMNI_PVD_SET(PxShape, translation, static_cast<PxShape &>(*this), normalizedTransform.p)
-	OMNI_PVD_SET(PxShape, rotation, static_cast<PxShape &>(*this), normalizedTransform.q)
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxShape, translation, static_cast<PxShape &>(*this), normalizedTransform.p)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxShape, rotation, static_cast<PxShape &>(*this), normalizedTransform.q)
+	OMNI_PVD_WRITE_SCOPE_END
+
 	updateSQ("PxShape::setLocalPose: Shape is a part of pruning structure, pruning structure is now invalid!");
 }
 
@@ -372,7 +375,7 @@ void NpShape::setSimulationFilterData(const PxFilterData& data)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eFILTERDATA);
 
-	OMNI_PVD_SET(PxShape, simulationFilterData, static_cast<PxShape&>(*this), data);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, simulationFilterData, static_cast<PxShape&>(*this), data);
 }
 
 PxFilterData NpShape::getSimulationFilterData() const
@@ -389,7 +392,7 @@ void NpShape::setQueryFilterData(const PxFilterData& data)
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN(npScene, "PxShape::setQueryFilterData() not allowed while simulation is running. Call will be ignored.")
 
-	OMNI_PVD_SET(PxShape, queryFilterData, static_cast<PxShape&>(*this), data);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, queryFilterData, static_cast<PxShape&>(*this), data);
 
 	mQueryFilterData = data;
 	UPDATE_PVD_PROPERTY
@@ -430,7 +433,7 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 #endif
 
 #if PX_SUPPORT_OMNI_PVD
-	streamShapeMaterials(static_cast<PxShape*>(this), materials, materialCount);
+	streamShapeMaterials(static_cast<PxShape&>(*this), materials, materialCount);
 #endif
 
 	if (ret)
@@ -576,7 +579,7 @@ void NpShape::setContactOffset(PxReal contactOffset)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eCONTACTOFFSET);
 
-	OMNI_PVD_SET(PxShape, contactOffset, static_cast<PxShape&>(*this), contactOffset)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, contactOffset, static_cast<PxShape&>(*this), contactOffset)
 }
 
 PxReal NpShape::getContactOffset() const
@@ -599,7 +602,7 @@ void NpShape::setRestOffset(PxReal restOffset)
 
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eRESTOFFSET);
 
-	OMNI_PVD_SET(PxShape, restOffset, static_cast<PxShape&>(*this), restOffset)
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, restOffset, static_cast<PxShape&>(*this), restOffset)
 }
 
 PxReal NpShape::getRestOffset() const
@@ -621,7 +624,7 @@ void NpShape::setDensityForFluid(PxReal densityForFluid)
 
 	///notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eRESTOFFSET);
 
-	OMNI_PVD_SET(PxShape, densityForFluid, static_cast<PxShape &>(*this), densityForFluid);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, densityForFluid, static_cast<PxShape &>(*this), densityForFluid);
 }
 
 PxReal NpShape::getDensityForFluid() const
@@ -642,7 +645,7 @@ void NpShape::setTorsionalPatchRadius(PxReal radius)
 //	const PxShapeFlags oldShapeFlags = mShape.getFlags();
 	mCore.setTorsionalPatchRadius(radius);
 
-	OMNI_PVD_SET(PxShape, torsionalPatchRadius, static_cast<PxShape &>(*this), radius);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, torsionalPatchRadius, static_cast<PxShape &>(*this), radius);
 
 // shared shapes return NULL. But shared shapes aren't mutable when attached to an actor, so no notification needed.
 //	Sc::RigidCore* rigidCore = NpShapeGetScRigidObjectFromScSLOW();
@@ -670,7 +673,7 @@ void NpShape::setMinTorsionalPatchRadius(PxReal radius)
 //	const PxShapeFlags oldShapeFlags = mShape.getFlags();
 	mCore.setMinTorsionalPatchRadius(radius);
 
-	OMNI_PVD_SET(PxShape, minTorsionalPatchRadius, static_cast<PxShape &>(*this), radius);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, minTorsionalPatchRadius, static_cast<PxShape &>(*this), radius);
 
 //	Sc::RigidCore* rigidCore = NpShapeGetScRigidObjectFromSbSLOW();
 //	if(rigidCore)
@@ -790,7 +793,7 @@ void NpShape::setFlag(PxShapeFlag::Enum flag, bool value)
 	
 	setFlagsInternal(shapeFlags);
 
-	OMNI_PVD_SET(PxShape, shapeFlags, static_cast<PxShape&>(*this), shapeFlags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, shapeFlags, static_cast<PxShape&>(*this), shapeFlags);
 }
 
 void NpShape::setFlags(PxShapeFlags inFlags)
@@ -805,7 +808,7 @@ void NpShape::setFlags(PxShapeFlags inFlags)
 
 	setFlagsInternal(inFlags);
 
-	OMNI_PVD_SET(PxShape, shapeFlags, static_cast<PxShape&>(*this), inFlags);
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxShape, shapeFlags, static_cast<PxShape&>(*this), inFlags);
 }
 
 PxShapeFlags NpShape::getFlags() const

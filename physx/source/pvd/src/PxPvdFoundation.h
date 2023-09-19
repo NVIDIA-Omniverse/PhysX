@@ -304,7 +304,7 @@ inline void PvdDeleteAndDeallocate(TDataType* inDType)
 }
 }
 
-#define PVD_NEW(dtype) new (PvdAllocate<dtype>(#dtype, __FILE__, __LINE__)) dtype
+#define PVD_NEW(dtype) new (PvdAllocate<dtype>(#dtype, PX_FL)) dtype
 #define PVD_DELETE(obj) PvdDeleteAndDeallocate(obj);
 //#define PVD_NEW(dtype) PX_NEW(dtype)
 //#define PVD_DELETE(obj) PX_DELETE(obj)

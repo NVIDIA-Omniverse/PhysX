@@ -731,13 +731,13 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 		const PxU32 nbGridModelPartitions = readDword(mismatch, stream);
 		const PxU32 nbGMMaxTetsPerPartition = readDword(mismatch, stream);
 		const PxU32 nbGMRemapOutputSize = readDword(mismatch, stream);
-		PxU32 numTetsPerElement = 4;
+		PxU32 numTetsPerElement = 1;
 		if(version >= 2)
 			numTetsPerElement = readDword(mismatch, stream);
 		const PxU32 nbGMTotalTetReferenceCount = readDword(mismatch, stream);
 		const PxU32 nbTetRemapSize = readDword(mismatch, stream);
 
-		const PxU32 numVertsPerElement = numTetsPerElement == 6 ? 8 : 4;
+		const PxU32 numVertsPerElement = (numTetsPerElement == 5 || numTetsPerElement == 6) ? 8 : 4;
 		const PxU32 numSimElements = nbGridModelTetrahedrons / numTetsPerElement;
 
 		data.mSimulationData.mGridModelMaxTetsPerPartitions = nbGMMaxTetsPerPartition;

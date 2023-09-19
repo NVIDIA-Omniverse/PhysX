@@ -402,7 +402,7 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 			const FloatV contactDist = FLoad(contactDistance + meshContactMargin);
 			const FloatV replaceBreakingThreshold = FMul(minMargin, FLoad(0.05f));
 
-			BoxV boxV(V3Zero(), boxExtents);
+			const BoxV boxV(V3Zero(), boxExtents);
 
 			const PxTransformV boxTransform = geomTransform;
 			const PxTransformV meshTransform = triangleTransform;

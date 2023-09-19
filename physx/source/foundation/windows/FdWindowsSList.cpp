@@ -30,15 +30,12 @@
 #include "foundation/PxAllocator.h"
 #include "foundation/PxSList.h"
 
-namespace physx
-{
-namespace
-{
+using namespace physx;
+
 template <typename T>
-SLIST_HEADER* getDetail(T* impl)
+static PX_FORCE_INLINE SLIST_HEADER* getDetail(T* impl)
 {
 	return reinterpret_cast<SLIST_HEADER*>(impl);
-}
 }
 
 PxSListImpl::PxSListImpl()
@@ -69,5 +66,3 @@ uint32_t PxSListImpl::getSize()
 {
 	return sizeof(SLIST_HEADER);
 }
-
-} // namespace physx

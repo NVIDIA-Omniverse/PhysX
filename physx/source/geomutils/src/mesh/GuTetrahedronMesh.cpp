@@ -311,14 +311,14 @@ void SoftBodyMesh::release()
 
 //PxVec3* TetrahedronMesh::getVerticesForModification()
 //{
-//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxSoftBodyMesh::getVerticesForModification() is not currently supported.");
+//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxSoftBodyMesh::getVerticesForModification() is not currently supported.");
 //
 //	return NULL;
 //}
 
 //PxBounds3 BVTetrahedronMesh::refitBVH()
 //{
-//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "PxSoftBodyMesh::refitBVH() is not currently supported.");
+//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxSoftBodyMesh::refitBVH() is not currently supported.");
 //
 //	return PxBounds3(mAABB.getMin(), mAABB.getMax());
 //}

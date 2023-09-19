@@ -58,8 +58,8 @@ struct PxConeLimitedConstraint
 	{
 		mAxis = PxVec3(0.f, 0.f, 0.f);
 		mAngle = -1.f;
-		mLowLimit = 0.f;
-		mHighLimit = 0.f;
+		mLowLimit = -1.f;
+		mHighLimit = -1.f;
 	}
 
 	/**
@@ -70,7 +70,7 @@ struct PxConeLimitedConstraint
 	PX_INLINE bool isValid() const
 	{
 		//disabled
-		if (mAngle < 0.f && mLowLimit == 0.f && mHighLimit == 0.f)
+		if (mAngle < 0.f && mLowLimit < 0.f && mHighLimit < 0.f)
 		{
 			return true;
 		}
@@ -86,8 +86,8 @@ struct PxConeLimitedConstraint
 			return false;
 		}
 
-		//zero signifies that distance limits are disabled
-		if (mLowLimit < 0.f || mHighLimit < 0.f || mLowLimit > mHighLimit)
+		//negative signifies that distance limits are disabled
+		if (mLowLimit > mHighLimit && mHighLimit >= 0.0f && mLowLimit >= 0.0f)
 		{
 			return false;
 		}
@@ -97,8 +97,8 @@ struct PxConeLimitedConstraint
 
 	PxVec3 mAxis;		//!< Axis of the cone in actor space
 	PxReal mAngle;		//!< Opening angle in radians, negative indicates unlimited
-	PxReal mLowLimit;	//!< Minimum distance
-	PxReal mHighLimit;	//!< Maximum distance
+	PxReal mLowLimit;	//!< Minimum distance, negative indicates unlimited
+	PxReal mHighLimit;	//!< Maximum distance, negative indicates unlimited
 };
 
 /**

@@ -55,7 +55,11 @@ class PxTriangle;
 		enum Enum
 		{
 			eDEFAULT			= 0,		//!< Report all overlaps
-			eDISCARD_COPLANAR	= (1<<0)	//!< Ignore coplanar triangle-triangle overlaps
+			eDISCARD_COPLANAR	= (1<<0),	//!< Ignore coplanar triangle-triangle overlaps
+			eRESERVED			= (1<<1),	//!< Reserved flag
+			eRESERVED1			= (1<<1),	//!< Reserved flag
+			eRESERVED2			= (1<<2),	//!< Reserved flag
+			eRESERVED3			= (1<<3)	//!< Reserved flag
 		};
 	};
 
@@ -158,6 +162,7 @@ public:
 	\param[in] meshPose1		Pose of second triangle mesh geometry
 	\param[in] queryFlags		Optional flags controlling the query.
 	\param[in] meshMeshFlags	Optional flags controlling the query.
+	\param[in] tolerance		Optional tolerance distance
 	\return true if an overlap has been detected, false if the meshes are disjoint
 
 	@see PxTriangleMeshGeometry getTriangle() PxReportCallback PxGeometryQueryFlags PxMeshMeshQueryFlags
@@ -166,7 +171,8 @@ public:
 															const PxTriangleMeshGeometry& meshGeom0, const PxTransform& meshPose0,
 															const PxTriangleMeshGeometry& meshGeom1, const PxTransform& meshPose1,
 															PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT,
-															PxMeshMeshQueryFlags meshMeshFlags = PxMeshMeshQueryFlag::eDEFAULT);
+															PxMeshMeshQueryFlags meshMeshFlags = PxMeshMeshQueryFlag::eDEFAULT,
+															float tolerance = 0.0f);
 
 	/**
 	\brief Find the height field triangles which touch the specified geometry object.

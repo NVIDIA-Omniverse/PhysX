@@ -33,11 +33,11 @@ namespace physx
 {
 namespace vehicle2
 {
-static float interpolate(const PxReal* speedVals, const PxReal* torqueVals, const PxU16 nb, const PxReal speed)
+static float interpolate(const PxReal* speedVals, const PxReal* responseVals, const PxU16 nb, const PxReal speed)
 {
 	if (1 == nb)
 	{
-		return torqueVals[0];
+		return responseVals[0];
 	}
 	else
 	{
@@ -45,11 +45,11 @@ static float interpolate(const PxReal* speedVals, const PxReal* torqueVals, cons
 		const PxReal largestSpeed = speedVals[nb - 1];
 		if (smallestSpeed >= speed)
 		{
-			return torqueVals[0];
+			return responseVals[0];
 		}
 		else if (largestSpeed <= speed)
 		{
-			return torqueVals[nb - 1];
+			return responseVals[nb - 1];
 		}
 		else
 		{
@@ -65,7 +65,7 @@ static float interpolate(const PxReal* speedVals, const PxReal* torqueVals, cons
 			if (0 == speedId)
 				speedLowerId = 0;
 
-			return torqueVals[speedLowerId] + (speed - speedVals[speedLowerId]) * (torqueVals[speeddUpperId] - torqueVals[speedLowerId]) / (speedVals[speeddUpperId] - speedVals[speedLowerId]);
+			return responseVals[speedLowerId] + (speed - speedVals[speedLowerId]) * (responseVals[speeddUpperId] - responseVals[speedLowerId]) / (speedVals[speeddUpperId] - speedVals[speedLowerId]);
 		}
 	}
 }
@@ -83,7 +83,7 @@ PxReal PxVehicleNonLinearResponseCompute
 
 	const PxReal* commandValues = responseParams.nonlinearResponse.commandValues;
 	const PxU16* speedResponsesPerCommandValue = responseParams.nonlinearResponse.speedResponsesPerCommandValue;
-	const PxU16* nbSpeedResponsesPerCommandValue = responseParams.nonlinearResponse.nbSpeedRenponsesPerCommandValue;
+	const PxU16* nbSpeedResponsesPerCommandValue = responseParams.nonlinearResponse.nbSpeedResponsesPerCommandValue;
 	const PxU16 nbCommandValues = responseParams.nonlinearResponse.nbCommandValues;
 	const PxReal* speedResponses = responseParams.nonlinearResponse.speedResponses;
 
@@ -94,18 +94,18 @@ PxReal PxVehicleNonLinearResponseCompute
 		//there is just a single command value in the response table.
 		//No need to interpolate response of two command values.
 		const PxReal* speeds = speedResponses + 2*speedResponsesPerCommandValue[0];
-		const PxReal* torques = speeds + nbSpeedResponsesPerCommandValue[0];
+		const PxReal* responseValues = speeds + nbSpeedResponsesPerCommandValue[0];
 		const PxU16 nb = nbSpeedResponsesPerCommandValue[0];
-		normalisedResponse = interpolate(speeds, torques, nb, speed);
+		normalisedResponse = interpolate(speeds, responseValues, nb, speed);
 	}
 	else if (commandValues[nbCommandValues - 1] <= commandValue)
 	{
 		//Input command value greater than the largest value in the response table.
 		//No need to interpolate response of two command values.
 		const PxReal* speeds = speedResponses + 2*speedResponsesPerCommandValue[nbCommandValues - 1];
-		const PxReal* torques = speeds + nbSpeedResponsesPerCommandValue[nbCommandValues - 1];
+		const PxReal* responseValues = speeds + nbSpeedResponsesPerCommandValue[nbCommandValues - 1];
 		const PxU16 nb = nbSpeedResponsesPerCommandValue[nbCommandValues - 1];
-		normalisedResponse =  interpolate(speeds, torques, nb, speed);
+		normalisedResponse =  interpolate(speeds, responseValues, nb, speed);
 	}
 	else
 	{
@@ -129,16 +129,16 @@ PxReal PxVehicleNonLinearResponseCompute
 			float zLower;
 			{
 				const PxReal* speeds = speedResponses + 2*speedResponsesPerCommandValue[commandLowerId];
-				const PxReal* torques = speeds + nbSpeedResponsesPerCommandValue[commandLowerId];
+				const PxReal* responseValues = speeds + nbSpeedResponsesPerCommandValue[commandLowerId];
 				const PxU16 nb = nbSpeedResponsesPerCommandValue[commandLowerId];
-				zLower = interpolate(speeds, torques, nb, speed);
+				zLower = interpolate(speeds, responseValues, nb, speed);
 			}
 			float zUpper;
 			{
 				const PxReal* speeds = speedResponses + 2*speedResponsesPerCommandValue[commandUpperId];
-				const PxReal* torques = speeds + nbSpeedResponsesPerCommandValue[commandUpperId];
+				const PxReal* responseValues = speeds + nbSpeedResponsesPerCommandValue[commandUpperId];
 				const PxU16 nb = nbSpeedResponsesPerCommandValue[commandUpperId];
-				zUpper = interpolate(speeds, torques, nb, speed);
+				zUpper = interpolate(speeds, responseValues, nb, speed);
 			}
 			const PxReal commandUpper = commandValues[commandUpperId];
 			const PxReal commandLower = commandValues[commandLowerId];
@@ -147,9 +147,9 @@ PxReal PxVehicleNonLinearResponseCompute
 		else
 		{
 			const PxReal* speeds = speedResponses + 2*speedResponsesPerCommandValue[commandUpperId];
-			const PxReal* torques = speeds + nbSpeedResponsesPerCommandValue[commandUpperId];
+			const PxReal* responseValues = speeds + nbSpeedResponsesPerCommandValue[commandUpperId];
 			const PxU16 nb = nbSpeedResponsesPerCommandValue[commandUpperId];
-			normalisedResponse = interpolate(speeds, torques, nb, speed);
+			normalisedResponse = interpolate(speeds, responseValues, nb, speed);
 		}
 	}
 

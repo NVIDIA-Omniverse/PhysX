@@ -97,5 +97,35 @@ void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, con
 	PX_ASSERT(outTetId != 0xFFFFFFFF);
 }
 
+PxVec4 addAxisToSimMeshBarycentric(const PxTetrahedronMesh& simMesh, const PxU32 simTetId, const PxVec4& simBary, const PxVec3& axis)
+{
+	const PxVec3* simMeshVerts = simMesh.getVertices();
+	PxVec3 tetVerts[4];
+	if(simMesh.getTetrahedronMeshFlags() & PxTetrahedronMeshFlag::e16_BIT_INDICES)
+	{
+		const PxU16* indices = reinterpret_cast<const PxU16*>(simMesh.getTetrahedrons());
+		tetVerts[0] = simMeshVerts[indices[simTetId*4 + 0]];
+		tetVerts[1] = simMeshVerts[indices[simTetId*4 + 1]];
+		tetVerts[2] = simMeshVerts[indices[simTetId*4 + 2]];
+		tetVerts[3] = simMeshVerts[indices[simTetId*4 + 3]];
+	}
+	else
+	{
+		const PxU32* indices = reinterpret_cast<const PxU32*>(simMesh.getTetrahedrons());
+		tetVerts[0] = simMeshVerts[indices[simTetId*4 + 0]];
+		tetVerts[1] = simMeshVerts[indices[simTetId*4 + 1]];
+		tetVerts[2] = simMeshVerts[indices[simTetId*4 + 2]];
+		tetVerts[3] = simMeshVerts[indices[simTetId*4 + 3]];
+	}
+
+	const PxVec3 simPoint = tetVerts[0]*simBary.x + tetVerts[1]*simBary.y + tetVerts[2]*simBary.z + tetVerts[3]*simBary.w;
+	const PxVec3 offsetPoint = simPoint + axis;
+
+	PxVec4 offsetBary;
+	computeBarycentric(tetVerts[0], tetVerts[1], tetVerts[2], tetVerts[3], offsetPoint, offsetBary);
+	return offsetBary;
+}
+
+
 }
 }

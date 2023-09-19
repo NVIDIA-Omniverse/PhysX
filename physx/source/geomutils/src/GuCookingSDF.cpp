@@ -31,6 +31,7 @@
 #include "cooking/PxTriangleMeshDesc.h"
 #include "GuSDF.h"
 #include "GuCooking.h"
+#include "PxSDFBuilder.h"
 
 namespace physx
 {
@@ -129,7 +130,7 @@ namespace physx
 		}
 	}
 
-	static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdf, PxArray<PxU8>& sdfDataSubgrids,
+	static bool createSDFSparse(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdfCoarse, PxArray<PxU8>& sdfDataSubgrids,
 		PxArray<PxU32>& sdfSubgridsStartSlots)
 	{
 		PX_ASSERT(sdfDesc.subgridSize > 0);
@@ -189,36 +190,40 @@ namespace physx
 		sdfDesc.dims.z = dz;
 
 
-		PxReal narrowBandThickness = sdfDesc.narrowBandThicknessRelativeToSdfBoundsDiagonal * edges.magnitude();
-		PxReal subgridsMinSdfValue, subgridsMaxSdfValue;
-		PxArray<PxReal> denseSdf;
-		{		
-			PxArray<PxU32> indices32;
-			PxArray<PxVec3> vertices;
-			const PxVec3* verticesPtr = NULL;
-			bool baseMeshSpecified = sdfDesc.baseMesh.triangles.data && sdfDesc.baseMesh.points.data;
-			if (baseMeshSpecified)
+		PxArray<PxU32> indices32;
+		PxArray<PxVec3> vertices;
+		const PxVec3* verticesPtr = NULL;
+		bool baseMeshSpecified = sdfDesc.baseMesh.triangles.data && sdfDesc.baseMesh.points.data;
+		if (baseMeshSpecified)
+		{
+			convert16To32Bits(sdfDesc.baseMesh, indices32);
+
+			if (sdfDesc.baseMesh.points.stride != sizeof(PxVec3))
 			{
-				convert16To32Bits(sdfDesc.baseMesh, indices32);
-
-				if (sdfDesc.baseMesh.points.stride != sizeof(PxVec3))
-				{
-					vertices.resize(sdfDesc.baseMesh.points.count);
-					immediateCooking::gatherStrided(sdfDesc.baseMesh.points.data, vertices.begin(), sdfDesc.baseMesh.points.count, sizeof(PxVec3), sdfDesc.baseMesh.points.stride);
-					verticesPtr = vertices.begin();
-				}
-				else
-					verticesPtr = reinterpret_cast<const PxVec3*>(sdfDesc.baseMesh.points.data);
+				vertices.resize(sdfDesc.baseMesh.points.count);
+				immediateCooking::gatherStrided(sdfDesc.baseMesh.points.data, vertices.begin(), sdfDesc.baseMesh.points.count, sizeof(PxVec3), sdfDesc.baseMesh.points.stride);
+				verticesPtr = vertices.begin();
 			}
+			else
+				verticesPtr = reinterpret_cast<const PxVec3*>(sdfDesc.baseMesh.points.data);
+		}
 
+
+		PxReal subgridsMinSdfValue = 0.0f;
+		PxReal subgridsMaxSdfValue = 1.0f;
+		PxReal narrowBandThickness = sdfDesc.narrowBandThicknessRelativeToSdfBoundsDiagonal * edges.magnitude();
+
+		if (sdfDesc.sdfBuilder == NULL) 
+		{		
+			PxArray<PxReal> denseSdf;			
 			PxArray<PxReal> sparseSdf;
 			Gu::SDFUsingWindingNumbersSparse(
 				baseMeshSpecified ? verticesPtr : &mesh.m_positions[0],
-				baseMeshSpecified ? indices32.begin() : &mesh.m_indices[0], 
-				baseMeshSpecified ? indices32.size() : mesh.m_indices.size(), 
+				baseMeshSpecified ? indices32.begin() : &mesh.m_indices[0],
+				baseMeshSpecified ? indices32.size() : mesh.m_indices.size(),
 				dx, dy, dz,
 				meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize,
-				sdf, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, 16);
+				sdfCoarse, sdfSubgridsStartSlots, sparseSdf, denseSdf, subgridsMinSdfValue, subgridsMaxSdfValue, 16, sdfDesc.sdfBuilder);
 
 			PxArray<PxReal> uncompressedSdfDataSubgrids;
 			Gu::convertSparseSDFTo3DTextureLayout(dx, dy, dz, sdfDesc.subgridSize, sdfSubgridsStartSlots.begin(), sparseSdf.begin(), sparseSdf.size(), uncompressedSdfDataSubgrids,
@@ -231,13 +236,38 @@ namespace physx
 				subgridsMaxSdfValue = 1.0f;
 			}
 
-			quantizeSparseSDF(sdfDesc.bitsPerSubgridPixel, uncompressedSdfDataSubgrids, sdfDataSubgrids, 
-				subgridsMinSdfValue, subgridsMaxSdfValue);
+			quantizeSparseSDF(sdfDesc.bitsPerSubgridPixel, uncompressedSdfDataSubgrids, sdfDataSubgrids,
+				subgridsMinSdfValue, subgridsMaxSdfValue);			
+		}
+		else
+		{
+			PxU32* indices = baseMeshSpecified ? indices32.begin() : &mesh.m_indices[0];
+			PxU32 numTriangleIndices = baseMeshSpecified ? indices32.size() : mesh.m_indices.size();
+			const PxVec3* verts = baseMeshSpecified ? verticesPtr : &mesh.m_positions[0];
+			PxU32 numVertices = baseMeshSpecified ? sdfDesc.baseMesh.points.count : mesh.m_positions.size();
+
+			PxArray<PxU32> repairedIndices;
+			//Analyze the mesh to catch and fix some special cases
+			//There are meshes where every triangle is present once with cw and once with ccw orientation. Try to filter out only one set
+			Gu::analyzeAndFixMesh(verts, indices, numTriangleIndices, repairedIndices);
+			const PxU32* ind = repairedIndices.size() > 0 ? repairedIndices.begin() : indices;
+			if (repairedIndices.size() > 0)
+				numTriangleIndices = repairedIndices.size();
+
+			//The GPU SDF builder does sparse SDF, 3d texture layout and quantization in one go to best utilize the gpu
+			sdfDesc.sdfBuilder->buildSparseSDF(verts,
+				numVertices,
+				ind,
+				numTriangleIndices,
+				dx, dy, dz,
+				meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize, sdfDesc.bitsPerSubgridPixel,
+				sdfCoarse, sdfSubgridsStartSlots, sdfDataSubgrids, subgridsMinSdfValue, subgridsMaxSdfValue, 
+				sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z, 0);
 		}
 
-		sdfDesc.sdf.count = sdf.size();
+		sdfDesc.sdf.count = sdfCoarse.size();
 		sdfDesc.sdf.stride = sizeof(PxReal);
-		sdfDesc.sdf.data = sdf.begin();
+		sdfDesc.sdf.data = sdfCoarse.begin();
 		sdfDesc.sdfSubgrids.count = sdfDataSubgrids.size();
 		sdfDesc.sdfSubgrids.stride = sizeof(PxU8);
 		sdfDesc.sdfSubgrids.data = sdfDataSubgrids.begin();
@@ -306,8 +336,51 @@ namespace physx
 		sdfDesc.dims.z = dz;
 
 		sdf.resize(numVoxels);
-		Gu::SDFUsingWindingNumbers(&mesh.m_positions[0], &mesh.m_indices[0], mesh.m_indices.size(), dx, dy, dz, &sdf[0], meshLower,
-			meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, NULL, true, sdfDesc.numThreadsForSdfConstruction);
+
+
+		PxArray<PxU32> indices32;
+		PxArray<PxVec3> vertices;
+		const PxVec3* verticesPtr = NULL;
+		bool baseMeshSpecified = sdfDesc.baseMesh.triangles.data && sdfDesc.baseMesh.points.data;
+		if (baseMeshSpecified)
+		{
+			convert16To32Bits(sdfDesc.baseMesh, indices32);
+
+			if (sdfDesc.baseMesh.points.stride != sizeof(PxVec3))
+			{
+				vertices.resize(sdfDesc.baseMesh.points.count);
+				immediateCooking::gatherStrided(sdfDesc.baseMesh.points.data, vertices.begin(), sdfDesc.baseMesh.points.count, sizeof(PxVec3), sdfDesc.baseMesh.points.stride);
+				verticesPtr = vertices.begin();
+			}
+			else
+				verticesPtr = reinterpret_cast<const PxVec3*>(sdfDesc.baseMesh.points.data);
+		}
+
+		PxU32* indices = baseMeshSpecified ? indices32.begin() : &mesh.m_indices[0];
+		PxU32 numTriangleIndices = baseMeshSpecified ? indices32.size() : mesh.m_indices.size();
+		const PxVec3* verts = baseMeshSpecified ? verticesPtr : &mesh.m_positions[0];
+		PxU32 numVertices = baseMeshSpecified ? sdfDesc.baseMesh.points.count : mesh.m_positions.size();
+
+
+		if (sdfDesc.sdfBuilder == NULL) 
+		{			
+			Gu::SDFUsingWindingNumbers(verts, indices, numTriangleIndices, dx, dy, dz, &sdf[0], meshLower,
+				meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, NULL, true,
+				sdfDesc.numThreadsForSdfConstruction, sdfDesc.sdfBuilder);
+		}
+		else
+		{
+			PxArray<PxU32> repairedIndices;
+			//Analyze the mesh to catch and fix some special cases
+			//There are meshes where every triangle is present once with cw and once with ccw orientation. Try to filter out only one set
+			Gu::analyzeAndFixMesh(verts, indices, numTriangleIndices, repairedIndices);
+			const PxU32* ind = repairedIndices.size() > 0 ? repairedIndices.begin() : indices;
+			if (repairedIndices.size() > 0)
+				numTriangleIndices = repairedIndices.size();
+
+			sdfDesc.sdfBuilder->buildSDF(verts, numVertices, ind, numTriangleIndices, dx, dy, dz, meshLower,
+				meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, true, &sdf[0]);
+		}
 
 		sdfDesc.sdf.count = sdfDesc.dims.x * sdfDesc.dims.y * sdfDesc.dims.z;
 		sdfDesc.sdf.stride = sizeof(PxReal);

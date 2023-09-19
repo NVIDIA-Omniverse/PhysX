@@ -79,10 +79,7 @@ PxI32 PxAtomicMax(volatile PxI32* val, PxI32 val2)
 	{
 		oldValue = *val;
 
-		if(val2 > oldValue)
-			newValue = val2;
-		else
-			newValue = oldValue;
+		newValue = val2 > oldValue ? val2 : oldValue;
 
 	} while(InterlockedCompareExchange((volatile LONG*)val, newValue, oldValue) != oldValue);
 

@@ -71,6 +71,8 @@ using namespace physx::Cm;
 using namespace physx::Dy;
 using namespace Sc;
 
+PX_IMPLEMENT_OUTPUT_ERROR
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void PxcClearContactCacheStats();
@@ -128,8 +130,6 @@ void Sc::Scene::collideStep(PxBaseTask* continuation)
 
 	mStats->simStart();
 	mLLContext->beginUpdate();
-
-	mSimulationController->flushInsertions();
 
 	mPostNarrowPhase.setTaskManager(*continuation->getTaskManager());
 	mPostNarrowPhase.addReference();
@@ -283,7 +283,7 @@ void Sc::Scene::rigidBodyNarrowPhase(PxBaseTask* continuation)
 
 	mLLContext->resetThreadContexts();
 
-	mLLContext->updateContactManager(mDt, mBoundsArray->hasChanged(), mHasContactDistanceChanged, continuation, 
+	mLLContext->updateContactManager(mDt, mHasContactDistanceChanged, continuation, 
 		&mRigidBodyNPhaseUnlock, &mUpdateBoundAndShapeTask); // Starts update of contact managers
 
 	mPostBroadPhase3.removeReference();
@@ -301,8 +301,7 @@ void Sc::Scene::updateBoundsAndShapes(PxBaseTask* /*continuation*/)
 {
 	//if the scene doesn't use gpu dynamic and gpu broad phase and the user enables the direct API,
 	//the sdk will refuse to create the scene.
-	const bool useDirectGpuApi = mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API;
-	mSimulationController->updateBoundsAndShapes(*mAABBManager, mUseGpuBp, useDirectGpuApi);
+	mSimulationController->updateBoundsAndShapes(*mAABBManager, isDirectGPUAPIInitialized());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -350,9 +349,12 @@ void Sc::Scene::broadPhaseFirstPass(PxBaseTask* continuation)
 	const PxU32 numCpuTasks = continuation->getTaskManager()->getCpuDispatcher()->getWorkerCount();
 	mAABBManager->updateBPFirstPass(numCpuTasks, mLLContext->getTaskPool(), mHasContactDistanceChanged, continuation);
 	
-	const PxU32 maxAABBHandles = PxMax(mAABBManager->getChangedAABBMgActorHandleMap().getWordCount() * 32, getElementIDPool().getMaxID());
-	
-	mSimulationController->mergeChangedAABBMgHandle(maxAABBHandles, mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API);
+	// AD: we already update the aggregate bounds above, but because we just update all the aggregates all the time,
+	// this should be fine here. The important thing is that we don't mix normal and aggregate bounds in the normal BP.
+	if (isDirectGPUAPIInitialized())
+	{
+		mSimulationController->mergeChangedAABBMgHandle();
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1330,7 +1332,9 @@ void Sc::Scene::islandGen(PxBaseTask* continuation)
 	mProcessFoundPatchesTask.setContinuation(continuation);
 	mProcessFoundPatchesTask.removeReference();
 
-	processNarrowPhaseTouchEventsStage2(&mPostSolver);	
+	// extracting information for the contact callbacks must happen before the solver writes the post-solve
+	// velocities and positions into the solver bodies
+	processNarrowPhaseTouchEventsStage2(&mUpdateDynamics);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1417,11 +1421,47 @@ void Sc::Scene::postIslandGen(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Sim.postIslandGen", mContextId);
 
-	mSetEdgesConnectedTask.setContinuation(continuation);
+	//
+	// Trigger overlap processing (1) shall run in parallel with some parts of island
+	// management (2) (connecting edges, running second island gen pass, object activation...)
+	// For this to work without clashes, the work has to be split into pieces. Things to
+	// keep in mind:
+	// 
+	// (1) can deactivate trigger pairs while (2) can activate trigger pairs (both might
+	// happen for the same pair). The active interaction tracking arrays are not thread safe
+	// (Sc::Scene::notifyInteractionDeactivated, ::notifyInteractionActivated) plus the
+	// natural order is to process activation first (deactivation should be based on the
+	// state after activation). Thus, (1) is split into a part (1a) that does the overlap checks
+	// and a part (1b) that checks if trigger pairs can be deactivated. (1a) will run in parallel
+	// with (2). (1b) will run after (2).
+	// Leaves the question of what happens to the trigger pairs activated in (2)? Should those
+	// not get overlap processing too? The rational for why this does not seem necessary is:
+	// If a trigger interaction is activated, then it was inactive before. If inactive, the
+	// overlap state can not have changed since the end of last sim step, unless:
+	// - the user changed the position of one of the invovled actors or shapes
+	// - the user changed the geometry of one of the involved shapes
+	// - the pair is new
+	// However, for all these cases, the trigger interaction is marked in a way that enforces
+	// processing and the interaction gets activated too.
+	//
+
+	PxBaseTask* setEdgesConnectedContinuationTask = continuation;
+
+	PxBaseTask* concludingTriggerTask = mNPhaseCore->prepareForTriggerInteractionProcessing(continuation);
+	if (concludingTriggerTask)
+	{
+		setEdgesConnectedContinuationTask = concludingTriggerTask;
+	}
+
+	mSetEdgesConnectedTask.setContinuation(setEdgesConnectedContinuationTask);
 	mSetEdgesConnectedTask.removeReference();
 
 	// - Performs collision detection for trigger interactions
-	mNPhaseCore->processTriggerInteractions(continuation);
+	if (concludingTriggerTask)
+	{
+		mNPhaseCore->processTriggerInteractions(*concludingTriggerTask);
+		concludingTriggerTask->removeReference();
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1436,6 +1476,15 @@ void Sc::Scene::setEdgesConnected(PxBaseTask*)
 		for(PxU32 i = 0; i < newTouchCount; ++i)
 		{
 			ShapeInteraction* si = getSI(mTouchFoundEvents[i]);
+
+			// jcarius: defensive coding for OM-99507. If this assert hits, you maybe hit the same issue, please report!
+			if(si == NULL || si->getEdgeIndex() == IG_INVALID_EDGE)
+			{
+				outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene::setEdgesConnected: adding an invalid edge. Skipping.");
+				PX_ALWAYS_ASSERT();
+				continue;
+			}
+
 			if(!si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
 				mSimpleIslandManager->setEdgeConnected(si->getEdgeIndex(), IG::Edge::eCONTACT_MANAGER);
 		}
@@ -1557,7 +1606,7 @@ namespace
 			{
 				ArticulationSim* PX_RESTRICT articSim = mArticSims[a];
 				//articSim->checkResize();
-				articSim->updateForces(mDt, false);
+				articSim->updateForces(mDt);
 				articSim->setDirtyFlag(ArticulationSimDirtyFlag::eNONE);
 			}
 		}
@@ -1702,8 +1751,14 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 		}
 	}
 
-	for(PxU32 a = 0; a < nbDirtyArticulations; a++)
-		mSimulationController->updateArticulationExtAccel(artiSim[a]->getLowLevelArticulation(), artiSim[a]->getIslandNodeIndex());
+	// AD: need to raise dirty flags serially because the PxgBodySimManager::updateArticulation() is not thread-safe.
+	for (PxU32 a = 0; a < nbDirtyArticulations; ++a)
+	{
+		if (artiSim[a]->getLowLevelArticulation()->mGPUDirtyFlags & (Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL))
+		{
+			mSimulationController->updateArticulationExtAccel(artiSim[a]->getLowLevelArticulation(), artiSim[a]->getIslandNodeIndex());
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2350,6 +2405,10 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 
 	mReportShapePairTimeStamp++;	// important to do this before fetchResults() is called to make sure that delayed deleted actors/shapes get
 									// separate pair entries in contact reports
+
+	// AD: WIP, will be gone once we removed the warm-start with sim step.
+	if (mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+		setDirectGPUAPIInitialized();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -80,9 +80,10 @@ PX_DEPRECATED void PxVehicleTireDirsLegacyUpdate
 \brief Compute the longitudinal and lateral tire directions in the ground plane.
 \param[in] suspensionParams describes the frame of the suspension and wheel.
 \param[in] steerAngle is the steer angle in radians to be applied to the wheel.
-\param[in] roadGeometryState describes the plane of the road geometry under the wheel.
-\param[in] rigidBodyState describes the current pose of the vehicle's rigid body in the world frame.
+\param[in] groundNormal describes the plane normal of the road geometry under the wheel.
+\param[in] isWheelOnGround defines whether the wheel touches the road geometry.
 \param[in] complianceState is a description of the camber and toe angle that arise from suspension compliance.
+\param[in] rigidBodyState describes the current pose of the vehicle's rigid body in the world frame.
 \param[in] frame is a description of the vehicle's lateral and longitudinal axes.
 \param[out] tireDirectionState is the computed tire longitudinal and lateral directions in the world frame.
 \note The difference between PxVehicleTireDirsUpdate and PxVehicleTireDirsLegacyUpdate is that 
@@ -90,7 +91,8 @@ PxVehicleTireDirsUpdate accounts for suspension compliance while PxVehicleTireDi
 */
 void PxVehicleTireDirsUpdate
 (const PxVehicleSuspensionParams& suspensionParams,
- const PxReal steerAngle, const PxVehicleRoadGeometryState& roadGeometryState, const PxVehicleSuspensionComplianceState& complianceState,
+ const PxReal steerAngle, const PxVec3& groundNormal, bool isWheelOnGround,
+ const PxVehicleSuspensionComplianceState& complianceState,
  const PxVehicleRigidBodyState& rigidBodyState,
  const PxVehicleFrame& frame,
  PxVehicleTireDirectionState& tireDirectionState);
@@ -166,7 +168,8 @@ void PX_DEPRECATED PxVehicleTireSlipsLegacyUpdate
 \brief Compute the camber angle of  the wheel
 \param[in] suspensionParams describes the frame of the suspension and wheel.
 \param[in] steerAngle is the steer angle in radians to be applied to the wheel.
-\param[in] roadGeometryState describes the plane of the road geometry under the wheel.
+\param[in] groundNormal describes the plane normal of the road geometry under the wheel.
+\param[in] isWheelOnGround defines whether the wheel touches the road geometry.
 \param[in] complianceState is a description of the camber and toe angle that arise from suspension compliance.
 \param[in] rigidBodyState describes the current pose of the vehicle's rigid body in the world frame.
 \param[in] frame is a description of the vehicle's lateral and longitudinal axes.
@@ -174,7 +177,8 @@ void PX_DEPRECATED PxVehicleTireSlipsLegacyUpdate
 */
 void PxVehicleTireCamberAnglesUpdate
 (const PxVehicleSuspensionParams& suspensionParams,
- const PxReal steerAngle, const PxVehicleRoadGeometryState& roadGeometryState, const PxVehicleSuspensionComplianceState& complianceState,
+ const PxReal steerAngle, const PxVec3& groundNormal, bool isWheelOnGround,
+ const PxVehicleSuspensionComplianceState& complianceState,
  const PxVehicleRigidBodyState& rigidBodyState,
  const PxVehicleFrame& frame,
  PxVehicleTireCamberAngleState& tireCamberAngleState);
@@ -182,8 +186,8 @@ void PxVehicleTireCamberAnglesUpdate
 /**
 \brief Compute the load and friction experienced by the tire.
 \param[in] tireForceParams describes the tire's friction response to longitudinal lip angle and its load response.
-\param[in] roadGeometryState describes the plane of the road geometry under the wheel.
-\param[in] suspensionState is the current suspension compression state.
+\param[in] frictionCoefficient describes the friction coefficient for the tire and road geometry pair.
+\param[in] isWheelOnGround defines whether the wheel touches the road geometry.
 \param[in] suspensionForce is the force that the suspension exerts on the sprung mass of the suspension.
 \param[in] tireSlipState is the tire longitudinal and lateral slip angles.
 \param[out] tireGripState is the computed load and friction experienced by the tire.
@@ -191,7 +195,7 @@ void PxVehicleTireCamberAnglesUpdate
 */
 void PxVehicleTireGripUpdate
 (const PxVehicleTireForceParams& tireForceParams,
- const PxVehicleRoadGeometryState& roadGeometryState, const PxVehicleSuspensionState& suspensionState, const PxVehicleSuspensionForce& suspensionForce,
+ PxReal frictionCoefficient, bool isWheelOnGround, const PxVehicleSuspensionForce& suspensionForce,
  const PxVehicleTireSlipState& tireSlipState,
  PxVehicleTireGripState& tireGripState);
 

@@ -416,7 +416,7 @@ void PxTaskMgr::dispatchTask( PxTaskID taskID )
     // prevent re-submission
     if( tt.mType == PxTaskType::eCOMPLETED )
     {		
-		mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "PxTask dispatched twice", __FILE__, __LINE__);
+		mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "PxTask dispatched twice", PX_FL);
 		return;
     }
 
@@ -433,7 +433,7 @@ void PxTaskMgr::dispatchTask( PxTaskID taskID )
 		break;
 	case PxTaskType::eCOMPLETED:
     default:
-        mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "Unknown task type", __FILE__, __LINE__);
+        mErrorCallback.reportError(PxErrorCode::eDEBUG_WARNING, "Unknown task type", PX_FL);
         resolveRow( taskID );
         break;
     }

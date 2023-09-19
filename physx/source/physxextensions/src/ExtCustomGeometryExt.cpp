@@ -40,13 +40,18 @@
 #include <extensions/PxMassProperties.h>
 #include <PxImmediateMode.h>
 
+#include "omnipvd/ExtOmniPvdSetData.h"
+
 using namespace physx;
+#if PX_SUPPORT_OMNI_PVD
+using namespace Ext;
+#endif
 
 static const PxU32 gCollisionShapeColor = PxU32(PxDebugColor::eARGB_MAGENTA);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static const PxU32 MAX_TRIANGLES = 64;
+static const PxU32 MAX_TRIANGLES = 512;
 static const PxU32 MAX_TRIANGLE_CONTACTS = 6;
 const PxReal FACE_CONTACT_THRESHOLD = 0.99999f;
 
@@ -272,11 +277,15 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 		PxU32 triangleCount = (geom1.getType() == PxGeometryType::eTRIANGLEMESH) ?
 			PxMeshQuery::findOverlapTriangleMesh(boxGeom, pose0, static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow) :
 			PxMeshQuery::findOverlapHeightField(boxGeom, pose0, static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow);
+		if (overflow)
+			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "PxCustomGeometryExt::BaseConvexCallbacks::generateContacts() Too many triangles.\n");
 		for (PxU32 i = 0; i < triangleCount; ++i)
 		{
 			PxTriangle tri; PxU32 adjacent[3];
-			if (geom1.getType() == PxGeometryType::eTRIANGLEMESH) PxMeshQuery::getTriangle(static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles[i], tri, NULL, hasAdjacency ? adjacent : NULL);
-			else PxMeshQuery::getTriangle(static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles[i], tri, NULL, adjacent);
+			if (geom1.getType() == PxGeometryType::eTRIANGLEMESH)
+				PxMeshQuery::getTriangle(static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles[i], tri, NULL, hasAdjacency ? adjacent : NULL);
+			else
+				PxMeshQuery::getTriangle(static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles[i], tri, NULL, adjacent);
 			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], meshContactMargin);
 			if (PxGjkQueryExt::generateContacts(*this, triSupport, pose0, identityPose, contactDistance, toleranceLength, contactBuffer))
 			{
@@ -388,7 +397,7 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::overlap(const PxGeometry& /*geom0
 }
 
 bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, const PxReal maxDist,
-	const PxGeometry& /*geom0*/, const PxTransform& pose0, const PxGeometry& geom1, const PxTransform& pose1,
+	const PxGeometry& geom0, const PxTransform& pose0, const PxGeometry& geom1, const PxTransform& pose1,
 	PxGeomSweepHit& sweepHit, PxHitFlags /*hitFlags*/, const PxReal inflation, PxSweepThreadContext*) const
 {
 	switch (geom1.getType())
@@ -403,12 +412,55 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 		PxVec3 n, p;
 		if (PxGjkQuery::sweep(*this, geomSupport, pose0, pose1, unitDir, maxDist, t, n, p))
 		{
-			PxGeomSweepHit& hit = sweepHit;
-			hit.distance = t;
-			hit.position = p;
-			hit.normal = n;
+			sweepHit.distance = t;
+			sweepHit.position = p;
+			sweepHit.normal = n;
+			sweepHit.flags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
 			return true;
 		}
+		break;
+	}
+	// sweep against triangle meshes and height fields for CCD support
+	case PxGeometryType::eTRIANGLEMESH:
+	case PxGeometryType::eHEIGHTFIELD:
+	{
+		PxReal radius = getLocalBounds(geom0).getDimensions().magnitude() * 0.5f;
+		PxCapsuleGeometry sweepGeom(radius + inflation, maxDist * 0.5f);
+		const PxVec3 defaultCapsuleAxis(1, 0, 0);
+		PxTransform sweepGeomPose(pose0.p - unitDir * maxDist * 0.5f, PxShortestRotation(defaultCapsuleAxis, unitDir));
+		PxU32 triangles[MAX_TRIANGLES];
+		bool overflow = false;
+		PxU32 triangleCount = (geom1.getType() == PxGeometryType::eTRIANGLEMESH) ?
+			PxMeshQuery::findOverlapTriangleMesh(sweepGeom, sweepGeomPose, static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow) :
+			PxMeshQuery::findOverlapHeightField(sweepGeom, sweepGeomPose, static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow);
+		if(overflow)
+			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "PxCustomGeometryExt::BaseConvexCallbacks::sweep() Too many triangles.\n");
+		sweepHit.distance = PX_MAX_F32;
+		const PxTransform identityPose(PxIdentity);
+		for (PxU32 i = 0; i < triangleCount; ++i)
+		{
+			PxTriangle tri;
+			if (geom1.getType() == PxGeometryType::eTRIANGLEMESH)
+				PxMeshQuery::getTriangle(static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles[i], tri);
+			else
+				PxMeshQuery::getTriangle(static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles[i], tri);
+			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], inflation);
+			PxReal t;
+			PxVec3 n, p;
+			if (PxGjkQuery::sweep(*this, triSupport, pose0, identityPose, unitDir, maxDist, t, n, p))
+			{
+				if (sweepHit.distance > t)
+				{
+					sweepHit.faceIndex = triangles[i];
+					sweepHit.distance = t;
+					sweepHit.position = p;
+					sweepHit.normal = n;
+					sweepHit.flags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL | PxHitFlag::eFACE_INDEX;
+				}
+			}
+		}
+		if (sweepHit.distance < PX_MAX_F32)
+			return true;
 		break;
 	}
 	default:
@@ -423,6 +475,14 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::usePersistentContactManifold(cons
 	return false;
 }
 
+void PxCustomGeometryExt::BaseConvexCallbacks::setMargin(float m)
+{
+	margin = m;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, *this, margin);
+#endif
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 IMPLEMENT_CUSTOM_GEOMETRY_TYPE(PxCustomGeometryExt::CylinderCallbacks)
@@ -430,7 +490,41 @@ IMPLEMENT_CUSTOM_GEOMETRY_TYPE(PxCustomGeometryExt::CylinderCallbacks)
 PxCustomGeometryExt::CylinderCallbacks::CylinderCallbacks(float _height, float _radius, int _axis, float _margin)
 	:
 	BaseConvexCallbacks(_margin), height(_height), radius(_radius), axis(_axis)
-{}
+{
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, *this);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, *static_cast<BaseConvexCallbacks*>(this), margin);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, height, *this, height);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, radius, *this, radius);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, axis, *this, axis);
+	OMNI_PVD_WRITE_SCOPE_END
+#endif
+}
+
+void PxCustomGeometryExt::CylinderCallbacks::setHeight(float h)
+{
+	height = h;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, height, *this, height);
+#endif
+}
+
+void PxCustomGeometryExt::CylinderCallbacks::setRadius(float r)
+{
+	radius = r;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, radius, *this, radius);
+#endif
+}
+
+void PxCustomGeometryExt::CylinderCallbacks::setAxis(int a)
+{
+	axis = a;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtCylinderCallbacks, axis, *this, axis);
+#endif
+}
 
 void PxCustomGeometryExt::CylinderCallbacks::visualize(const PxGeometry&, PxRenderOutput& out, const PxTransform& transform, const PxBounds3&) const
 {
@@ -609,7 +703,41 @@ IMPLEMENT_CUSTOM_GEOMETRY_TYPE(PxCustomGeometryExt::ConeCallbacks)
 PxCustomGeometryExt::ConeCallbacks::ConeCallbacks(float _height, float _radius, int _axis, float _margin)
 	:
 	BaseConvexCallbacks(_margin), height(_height), radius(_radius), axis(_axis)
-{}
+{
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, *this);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtBaseConvexCallbacks, margin, *static_cast<BaseConvexCallbacks*>(this), margin);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, height, *this, height);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, radius, *this, radius);
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, axis, *this, axis);
+	OMNI_PVD_WRITE_SCOPE_END
+#endif
+}
+
+void PxCustomGeometryExt::ConeCallbacks::setHeight(float h)
+{
+	height = h;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, height, *this, height);
+#endif
+}
+
+void PxCustomGeometryExt::ConeCallbacks::setRadius(float r)
+{
+	radius = r;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, radius, *this, radius);
+#endif
+}
+
+void PxCustomGeometryExt::ConeCallbacks::setAxis(int a)
+{
+	axis = a;
+#if PX_SUPPORT_OMNI_PVD
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxCustomGeometryExtConeCallbacks, axis, *this, axis);
+#endif
+}
 
 void PxCustomGeometryExt::ConeCallbacks::visualize(const PxGeometry&, PxRenderOutput& out, const PxTransform& transform, const PxBounds3&) const
 {

@@ -60,6 +60,7 @@ struct PxVehiclePvdObjectHandles
 	OmniPvdObjectHandle steerResponseParamsOH;
 	OmniPvdObjectHandle brakeResponseStateOH;
 	OmniPvdObjectHandle steerResponseStateOH;
+	OmniPvdObjectHandle ackermannParamsOH;
 
 	OmniPvdObjectHandle directDriveCommandStateOH;
 	OmniPvdObjectHandle directDriveTransmissionCommandStateOH;
@@ -74,8 +75,7 @@ struct PxVehiclePvdObjectHandles
 	OmniPvdObjectHandle engineParamsOH;
 	OmniPvdObjectHandle gearboxParamsOH;
 	OmniPvdObjectHandle autoboxParamsOH;
-	OmniPvdObjectHandle multiWheelDiffParamsOH;
-	OmniPvdObjectHandle fourWheelDiffParamsOH;
+	OmniPvdObjectHandle differentialParamsOH;
 	OmniPvdObjectHandle clutchResponseStateOH;
 	OmniPvdObjectHandle engineDriveThrottleResponseStateOH;
 	OmniPvdObjectHandle engineStateOH;
@@ -111,10 +111,13 @@ struct PxVehiclePvdObjectHandles
 	OmniPvdObjectHandle* physxConstraintParamOHs;
 	OmniPvdObjectHandle* physxConstraintStateOHs;
 	OmniPvdObjectHandle* physxRoadGeomStateOHs;
+	OmniPvdObjectHandle physxSteerStateOH;
 	OmniPvdObjectHandle* physxMaterialFrictionSetOHs;
 	OmniPvdObjectHandle* physxMaterialFrictionOHs;
 
 	OmniPvdObjectHandle physxRoadGeomQueryParamOH;
+	OmniPvdObjectHandle physxRoadGeomQueryDefaultFilterDataOH;
+	OmniPvdObjectHandle* physxRoadGeomQueryFilterDataOHs;
 	OmniPvdObjectHandle physxRigidActorOH;
 
 	OmniPvdObjectHandle* antiRollParamOHs;

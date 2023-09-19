@@ -95,6 +95,18 @@ void Sc::BodyCore::setBody2World(const PxTransform& p)
 	}
 }
 
+void Sc::BodyCore::setCMassLocalPose(const PxTransform& newBody2Actor)
+{
+	const PxTransform oldActor2World = mCore.body2World * mCore.getBody2Actor().getInverse();
+	const PxTransform newBody2World = oldActor2World * newBody2Actor;
+
+	PX_ASSERT(newBody2World.p.isFinite());
+	PX_ASSERT(newBody2World.q.isFinite());
+	mCore.body2World = newBody2World;
+
+	setBody2Actor(newBody2Actor);
+}
+
 void Sc::BodyCore::setLinearVelocity(const PxVec3& v, bool skipBodySimUpdate)
 {
 	mCore.linearVelocity = v;
@@ -129,12 +141,7 @@ void Sc::BodyCore::setBody2Actor(const PxTransform& p)
 
 	mCore.setBody2Actor(p);
 
-	BodySim* sim = getSim();
-	if(sim)
-	{
-		sim->notifyShapesOfTransformChange();
-		sim->getScene().updateBodySim(*sim);
-	}
+	updateBodySim(*this);
 }
 
 void Sc::BodyCore::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)

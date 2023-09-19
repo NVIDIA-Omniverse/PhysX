@@ -77,7 +77,7 @@ public:
 		T* rv = static_cast<T*>(root.pop());
 		if(rv==NULL)
 		{
-			rv = reinterpret_cast<T*>(Allocator::allocate(sizeof(T), __FILE__, __LINE__));
+			rv = reinterpret_cast<T*>(Allocator::allocate(sizeof(T), PX_FL));
 			PX_PLACEMENT_NEW(rv, T(mParams));
 		}
 

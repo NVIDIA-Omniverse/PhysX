@@ -192,7 +192,7 @@ public:
 	virtual void exportData(PxBase& obj, PxSerializationContext& s) const
 	{
 		PxAllocatorCallback& allocator = *PxGetAllocatorCallback();
-		T* copy = reinterpret_cast<T*>(allocator.allocate(sizeof(T), "TmpAllocExportData", __FILE__, __LINE__));
+		T* copy = reinterpret_cast<T*>(allocator.allocate(sizeof(T), "TmpAllocExportData", PX_FL));
 		PxMemCopy(copy, &obj, sizeof(T));
 		copy->preExportDataReset();
 		s.writeData(copy, sizeof(T));
@@ -247,7 +247,7 @@ private:
 */
 #define PX_NEW_SERIALIZER_ADAPTER(x) \
 	*new( PxGetAllocatorCallback()->allocate(sizeof(PxSerializerDefaultAdapter<x>), \
-	"PxSerializerDefaultAdapter",  __FILE__, __LINE__ )) PxSerializerDefaultAdapter<x>(#x)
+	"PxSerializerDefaultAdapter",  PX_FL)) PxSerializerDefaultAdapter<x>(#x)
 
 /** 
  \brief Preprocessor Macro to simplify adapter deletion.

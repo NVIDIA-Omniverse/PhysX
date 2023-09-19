@@ -374,7 +374,7 @@ void PvdSceneClient::sendEntireScene()
 	NpScene* npScene = &mScene;
 
 	if(npScene->getFlagsFast() & PxSceneFlag::eREQUIRE_RW_LOCK) // getFlagsFast() will trigger a warning of lock check
-		npScene->lockRead(__FILE__, __LINE__);
+		npScene->lockRead(PX_FL);
 
 	PxPhysics& physics = PxGetPhysics();
 	{

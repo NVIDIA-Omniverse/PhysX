@@ -237,6 +237,22 @@ public:
 	}
 
 	/**
+	* \brief Schedules a memset operation on the device on the specified stream. Only supported for 1 byte or 4 byte data types.
+	*
+	* The cuda context will get acquired automatically
+	*/
+	template<typename T>
+	void memsetAsync(T* dstDeviceBuffer, const T& value, PxU32 numElements, CUstream stream)
+	{
+		PX_COMPILE_TIME_ASSERT(sizeof(value) == sizeof(PxU32) || sizeof(value) == sizeof(PxU8));		
+
+		if (sizeof(value) == sizeof(PxU32))		
+			memsetD32AsyncInternal(dstDeviceBuffer, reinterpret_cast<const PxU32&>(value), numElements, stream);
+		else
+			memsetD8AsyncInternal(dstDeviceBuffer, reinterpret_cast<const PxU8&>(value), numElements, stream);		
+	}
+
+	/**
 	* \brief Allocates a device buffer
 	*
 	* The cuda context will get acquired automatically
@@ -437,14 +453,17 @@ protected:
 	 
 	virtual void copyDToHInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes) = 0;
 	virtual void copyHToDInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes) = 0;
+
+	virtual void memsetD8AsyncInternal(void* dstDeviceBuffer, const PxU8& value, PxU32 numBytes, CUstream stream) = 0;
+	virtual void memsetD32AsyncInternal(void* dstDeviceBuffer, const PxU32& value, PxU32 numIntegers, CUstream stream) = 0;
 };
 
-#define PX_DEVICE_ALLOC(cudaContextManager, deviceBuffer, numElements) cudaContextManager->allocDeviceBuffer(deviceBuffer, numElements, __FILE__, __LINE__)
-#define PX_DEVICE_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocDeviceBuffer<T>(numElements, __FILE__, __LINE__)
+#define PX_DEVICE_ALLOC(cudaContextManager, deviceBuffer, numElements) cudaContextManager->allocDeviceBuffer(deviceBuffer, numElements, PX_FL)
+#define PX_DEVICE_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocDeviceBuffer<T>(numElements, PX_FL)
 #define PX_DEVICE_FREE(cudaContextManager, deviceBuffer) cudaContextManager->freeDeviceBuffer(deviceBuffer);
 
-#define PX_PINNED_HOST_ALLOC(cudaContextManager, pinnedHostBuffer, numElements) cudaContextManager->allocPinnedHostBuffer(pinnedHostBuffer, numElements, __FILE__, __LINE__)
-#define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, __FILE__, __LINE__)
+#define PX_PINNED_HOST_ALLOC(cudaContextManager, pinnedHostBuffer, numElements) cudaContextManager->allocPinnedHostBuffer(pinnedHostBuffer, numElements, PX_FL)
+#define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
 #define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
 
 /**

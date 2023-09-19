@@ -46,13 +46,12 @@ struct PCMCapsuleVsHeightfieldContactGenerationCallback : PCMHeightfieldContactG
 {
 	PCMCapsuleVsHeightfieldContactGenerationCallback& operator=(const PCMCapsuleVsHeightfieldContactGenerationCallback&);
 
-public:
 	PCMCapsuleVsMeshContactGeneration	mGeneration;
 
 	PCMCapsuleVsHeightfieldContactGenerationCallback(
 		const CapsuleV& capsule,
-		const aos::FloatVArg contactDistance,
-		const aos::FloatVArg replaceBreakingThreshold,
+		const FloatVArg contactDistance,
+		const FloatVArg replaceBreakingThreshold,
 		const PxTransformV& capsuleTransform, 
 		const PxTransformV& heightfieldTransform,
 		const PxTransform& heightfieldTransform1,

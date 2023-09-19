@@ -104,7 +104,7 @@ bool Sn::ConvX::setMetaData(PxInputStream& srcMetaData, PxInputStream& dstMetaDa
 bool Sn::ConvX::compareMetaData() const
 {
 	if (!mMetaData_Src || !mMetaData_Dst) {
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__,
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL,
 			"PxBinaryConverter: metadata not defined. Call PxBinaryConverter::setMetaData first.\n");
 		return false;
 	}
@@ -116,7 +116,7 @@ bool Sn::ConvX::convert(PxInputStream& srcStream, PxU32 srcSize, PxOutputStream&
 {
 	if(!mMetaData_Src || !mMetaData_Dst)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__,
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL,
 			"PxBinaryConverter: metadata not defined. Call PxBinaryConverter::setMetaData first.\n");
 		return false;
 	}
@@ -129,7 +129,7 @@ bool Sn::ConvX::convert(PxInputStream& srcStream, PxU32 srcSize, PxOutputStream&
 	{	
 		if(srcSize == 0)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"PxBinaryConverter: source serialized data size is zero.\n");
 			return false;
 		}
@@ -140,7 +140,7 @@ bool Sn::ConvX::convert(PxInputStream& srcStream, PxU32 srcSize, PxOutputStream&
 		const PxU32 nbBytesRead = srcStream.read(memoryA, srcSize);
 		if(nbBytesRead != srcSize)
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"PxBinaryConverter: failure on reading source serialized data.\n");
 			PX_FREE(memory);
 			return false;

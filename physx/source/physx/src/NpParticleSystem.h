@@ -107,7 +107,7 @@ namespace physx
 
 			if (!NpBase::getNpScene())
 			{
-				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "Querying bounds of a PxParticleSystem which is not part of a PxScene is not supported.");
+				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Querying bounds of a PxParticleSystem which is not part of a PxScene is not supported.");
 				return PxBounds3::empty();
 			}
 

@@ -254,7 +254,7 @@ public:
 	static		PxVehicleDriveTank*			createObject(PxU8*& address, PxDeserializationContext& context);
 	static		void						getBinaryMetaData(PxOutputStream& stream);
 	virtual		const char*					getConcreteTypeName()		const	{	return "PxVehicleDriveTank";	}
-	virtual		bool						isKindOf(const char* name)	const	{	return !::strcmp("PxVehicleDriveTank", name) || PxBase::isKindOf(name); }
+	virtual		bool						isKindOf(const char* name)	const	{	PX_IS_KIND_OF(name, "PxVehicleDriveTank", PxVehicleDrive); }
 protected:
 											PxVehicleDriveTank();
 											~PxVehicleDriveTank(){}

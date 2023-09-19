@@ -686,6 +686,26 @@ namespace physx
 		virtual		void					removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
 
 		/**
+		\brief Creates collision filter between a tetrahedron in a soft body and a vertex in a cloth.
+		\warning Feature under development, only for internal usage.
+
+		\param[in] cloth The cloth actor used for collision filter
+		\param[in] vertIdx The index of the vertex in the cloth mesh to be filtered.
+		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
+		*/
+		virtual		void					addVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
+
+		/**
+		\brief Removes collision filter between a tetrahedron in a soft body and a vertex in a cloth.
+		\warning Feature under development, only for internal usage.
+
+		\param[in] cloth The cloth actor used for collision filter
+		\param[in] vertIdx The index of the vertex in the cloth mesh to be filtered.
+		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
+		*/
+		virtual		void					removeVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
+
+		/**
 		\brief Creates an attachment between a soft body and a cloth.
 		Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash.
 		The soft body keeps track of these attachments but the cloth does not.
@@ -746,7 +766,7 @@ namespace physx
 	protected:
 		PX_INLINE					PxSoftBody(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}
 		PX_INLINE					PxSoftBody(PxBaseFlags baseFlags) : PxActor(baseFlags) {}
-		virtual		bool			isKindOf(const char* name) const PX_OVERRIDE { return !::strcmp("PxSoftBody", name) || PxActor::isKindOf(name); }
+		virtual		bool			isKindOf(const char* name) const PX_OVERRIDE { PX_IS_KIND_OF(name, "PxSoftBody", PxActor); }
 	};
 
 	/**

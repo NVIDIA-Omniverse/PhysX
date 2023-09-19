@@ -315,7 +315,11 @@ PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 #else
 	PX_ASSERT(bodySim0.isDynamicRigid());
 #endif
-	
+
+	// PT: try to prevent https://omniverse-jirasw.nvidia.com/browse/OM-103695
+	if(!bodySim0.getNodeIndex().isValid())
+		return false;
+
 	const IG::IslandSim& islandSim = getScene().getSimpleIslandManager()->getSpeculativeIslandSim();
 
 	//check whether active in the speculative sim!

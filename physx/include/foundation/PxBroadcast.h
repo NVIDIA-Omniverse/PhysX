@@ -193,13 +193,13 @@ class PxBroadcastingAllocator : public PxBroadcast<PxAllocationListener, PxAlloc
 
 		if(!mem)
 		{
-			mError.reportError(PxErrorCode::eABORT, "User allocator returned NULL.", __FILE__, __LINE__);
+			mError.reportError(PxErrorCode::eABORT, "User allocator returned NULL.", PX_FL);
 			return NULL;
 		}
 
 		if((size_t(mem) & 15))
 		{
-			mError.reportError(PxErrorCode::eABORT, "Allocations must be 16-byte aligned.", __FILE__, __LINE__);
+			mError.reportError(PxErrorCode::eABORT, "Allocations must be 16-byte aligned.", PX_FL);
 			return NULL;
 		}
 

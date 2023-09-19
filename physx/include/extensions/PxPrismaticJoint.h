@@ -165,7 +165,7 @@ protected:
 	/**
 	\brief Returns whether a given type name matches with the type of this instance
 	*/
-	virtual	bool			isKindOf(const char* name) const {	return !::strcmp("PxPrismaticJoint", name) || PxJoint::isKindOf(name); }
+	virtual	bool			isKindOf(const char* name) const {	PX_IS_KIND_OF(name, "PxPrismaticJoint", PxJoint); }
 	
 	//~serialization
 };

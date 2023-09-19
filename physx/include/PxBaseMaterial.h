@@ -51,7 +51,7 @@ namespace physx
 		PX_INLINE			PxBaseMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags), userData(NULL) {}
 		PX_INLINE			PxBaseMaterial(PxBaseFlags baseFlags) : PxRefCounted(baseFlags) {}
 		virtual				~PxBaseMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxBaseMaterial", name) || PxRefCounted::isKindOf(name); }
+		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxBaseMaterial", PxRefCounted); }
 
 					void*	userData;	//!< user can assign this to whatever, usually to create a 1:1 relationship with a user object.
 	};

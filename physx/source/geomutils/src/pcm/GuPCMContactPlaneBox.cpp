@@ -40,7 +40,7 @@ bool Gu::pcmContactPlaneBox(GU_CONTACT_METHOD_ARGS)
 
 	using namespace aos;
 
-	Gu::PersistentContactManifold& manifold = cache.getManifold();
+	PersistentContactManifold& manifold = cache.getManifold();
 	PxPrefetchLine(&manifold, 256);
 
 	// Get actual shape data
@@ -110,7 +110,7 @@ bool Gu::pcmContactPlaneBox(GU_CONTACT_METHOD_ARGS)
 
 		const FloatV acceptanceDist = FSub(contactDist, px);
 
-		Gu::PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
+		PersistentContact* manifoldContacts = PX_CP_TO_PCP(contactBuffer.contacts);
 		PxU32 numContacts = 0;
 
 		if(FAllGrtr(acceptanceDist, s0))
@@ -172,7 +172,6 @@ bool Gu::pcmContactPlaneBox(GU_CONTACT_METHOD_ARGS)
 			manifoldContacts[numContacts].mLocalPointB = V3NegScaleSub(localNormal, pen, aToB.transform(p)); 
 			manifoldContacts[numContacts++].mLocalNormalPen = V4SetW(Vec4V_From_Vec3V(localNormal), pen);
 		}
-
 	
 		if(FAllGrtr(acceptanceDist, s6))
 		{

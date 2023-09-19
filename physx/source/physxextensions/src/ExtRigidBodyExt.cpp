@@ -79,7 +79,7 @@ static bool computeMassAndDiagInertia(Ext::InertiaTensorComputer& inertiaComp,
 		return true;
 	else
 	{
-		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eDEBUG_WARNING, PX_FL, 
 								"%s: inertia tensor has negative components (ill-conditioned input expected). Approximation for inertia tensor will be used instead.", errorStr);
 
 		// keep center of mass but use the AABB as a crude approximation for the inertia tensor
@@ -120,7 +120,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 		currentMassOrDensity = masses[0];
 	}
 	if (!PxIsFinite(currentMassOrDensity))
-		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeMassAndInertia: Provided mass or density has no valid value");
+		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "computeMassAndInertia: Provided mass or density has no valid value");
 
 	for(PxU32 i=0; i < shapes.size(); i++)
 	{
@@ -134,10 +134,10 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 				currentMassOrDensity = massOrDensityArray[validShapeIndex];
 
 				if (!PxIsFinite(currentMassOrDensity))
-					return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeMassAndInertia: Provided mass or density has no valid value");
+					return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "computeMassAndInertia: Provided mass or density has no valid value");
 			}
 			else
-				return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeMassAndInertia: Not enough mass/density values provided for all (simulation) shapes");
+				return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "computeMassAndInertia: Not enough mass/density values provided for all (simulation) shapes");
 		}
 
 		Ext::InertiaTensorComputer it(false);
@@ -225,7 +225,7 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 			break;
 		default:
 			{
-				return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, "computeMassAndInertia: Dynamic actor with illegal collision shapes");
+				return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "computeMassAndInertia: Dynamic actor with illegal collision shapes");
 			}
 		}
 
@@ -269,7 +269,7 @@ static bool updateMassAndInertia(bool multipleMassOrDensity, PxRigidBody& body, 
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"%s: Mass and inertia computation failed, setting mass to 1 and inertia to (1,1,1)", errorStr);
 
 			success = false;
@@ -277,7 +277,7 @@ static bool updateMassAndInertia(bool multipleMassOrDensity, PxRigidBody& body, 
 	}
 	else
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 			"%s: No density specified, setting mass to 1 and inertia to (1,1,1)", errorStr);
 
 		success = false;
@@ -331,7 +331,7 @@ static bool setMassAndUpdateInertia(bool multipleMassOrDensity, PxRigidBody& bod
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 				"%s: Mass and inertia computation failed, setting mass to 1 and inertia to (1,1,1)", errorStr);
 
 			success = false;
@@ -339,7 +339,7 @@ static bool setMassAndUpdateInertia(bool multipleMassOrDensity, PxRigidBody& bod
 	}
 	else
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 			"%s: No mass specified, setting mass to 1 and inertia to (1,1,1)", errorStr);
 		success = false;
 	}
@@ -386,7 +386,7 @@ PX_INLINE void addForceAtPosInternal(PxRigidBody& body, const PxVec3& force, con
 {
 	if(mode == PxForceMode::eACCELERATION || mode == PxForceMode::eVELOCITY_CHANGE)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 			"PxRigidBodyExt::addForce methods do not support eACCELERATION or eVELOCITY_CHANGE modes");
 		return;
 	}

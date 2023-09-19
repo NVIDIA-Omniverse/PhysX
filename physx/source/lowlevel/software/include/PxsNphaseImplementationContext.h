@@ -86,7 +86,7 @@ public:
 
 	// PxvNphaseImplementationContext
 	virtual void							destroy()	PX_OVERRIDE;
-	virtual void							updateContactManager(PxReal dt, bool hasBoundsArrayChanged, bool hasContactDistanceChanged, PxBaseTask* continuation, 
+	virtual void							updateContactManager(PxReal dt, bool hasContactDistanceChanged, PxBaseTask* continuation, 
 																PxBaseTask* firstPassContinuation, Cm::FanoutTask* updateBoundAndShape)	PX_OVERRIDE;
 	virtual void							postBroadPhaseUpdateContactManager(PxBaseTask*) PX_OVERRIDE	{}
 	virtual void							secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation)	PX_OVERRIDE;

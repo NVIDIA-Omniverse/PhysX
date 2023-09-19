@@ -66,6 +66,7 @@ class CMakePreset:
     presetName = ''
     targetPlatform = ''
     compiler = ''
+    generator = ''
     cmakeSwitches = []
     cmakeParams = []
 
@@ -87,8 +88,11 @@ class CMakePreset:
         for platform in presetNode.findall('platform'):
             self.targetPlatform = platform.attrib['targetPlatform']
             self.compiler = platform.attrib['compiler']
+            self.generator = platform.get('generator')
             print('Target platform: ' + self.targetPlatform +
                   ' using compiler: ' + self.compiler)
+            if self.generator is not None:
+                print(' using generator: ' + self.generator)
 
         for cmakeSwitch in presetNode.find('CMakeSwitches'):
             cmSwitch = '-D' + \
@@ -127,7 +131,7 @@ class CMakePreset:
                 if os.environ.get('PM_CUDA_PATH') is not None:
                     outString = outString + ' -DCUDAToolkit_ROOT_DIR=' + \
                             os.environ['PM_CUDA_PATH']
-                    if self.compiler in ['vc15', 'vc16', 'vc17']:
+                    if self.compiler in ['vc15', 'vc16', 'vc17'] and self.generator != 'ninja':
                         outString = outString + ' -T cuda=' + os.environ['PM_CUDA_PATH']
                     # TODO: Need to do the same for gcc (aarch64) when we package it with Packman
                     elif self.compiler == 'clang':
@@ -145,21 +149,31 @@ class CMakePreset:
     def getPlatformCMakeParams(self):
         cmake_modules_root = os.environ['PHYSX_ROOT_DIR'] + '/source/compiler/cmake/modules'
         outString = ' '
-        if self.compiler == 'vc15':
-            outString = outString + '-G \"Visual Studio 15 2017\"'
-        elif self.compiler == 'vc16':
-            outString = outString + '-G \"Visual Studio 16 2019\"'
-        elif self.compiler == 'vc17':
-            outString = outString + '-G \"Visual Studio 17 2022\"'
+
+        vs_versions = {
+            'vc15': '\"Visual Studio 15 2017\"',
+            'vc16': '\"Visual Studio 16 2019\"',
+            'vc17': '\"Visual Studio 17 2022\"'
+        }
+
+        # Visual studio
+        if self.compiler in vs_versions:
+            generator = '-G \"Ninja Multi-Config\"' if self.generator == 'ninja' else '-G ' + vs_versions[self.compiler]
+            outString += generator
+        # mac
         elif self.compiler == 'xcode':
             outString = outString + '-G Xcode'
-        elif self.targetPlatform == 'linux':
-            outString = outString + '-G \"Unix Makefiles\"'
-        elif self.targetPlatform == 'linuxAarch64':
-            outString = outString + '-G \"Unix Makefiles\"'
+        # Linux
+        elif self.targetPlatform in ['linux', 'linuxAarch64']:
+            if self.generator is not None and self.generator == 'ninja':
+                outString = outString + '-G \"Ninja\"'
+                outString = outString + ' -DCMAKE_MAKE_PROGRAM=' + os.environ['PM_ninja_PATH'] + '/ninja'
+            else:
+                outString = outString + '-G \"Unix Makefiles\"'
 
         if self.targetPlatform == 'win64':
-            outString = outString + ' -Ax64'
+            if self.generator != 'ninja':
+                outString = outString + ' -Ax64'
             outString = outString + ' -DTARGET_BUILD_PLATFORM=windows'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
             return outString

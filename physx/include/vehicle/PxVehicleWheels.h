@@ -932,7 +932,7 @@ protected:
 public:
 	virtual		void			requiresObjects(PxProcessPxBaseCallback& c);
 	virtual		const char*		getConcreteTypeName() const				{	return "PxVehicleWheels"; }
-	virtual		bool			isKindOf(const char* name)	const		{	return !::strcmp("PxVehicleWheels", name) || PxBase::isKindOf(name); }
+	virtual		bool			isKindOf(const char* name)	const		{	PX_IS_KIND_OF(name, "PxVehicleWheels", PxBase); }
 	virtual		void			preExportDataReset() {}
 	virtual		void			exportExtraData(PxSerializationContext&);	
 				void			importExtraData(PxDeserializationContext&);

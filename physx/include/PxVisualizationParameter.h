@@ -71,7 +71,6 @@ struct PxVisualizationParameter
 		that determines the size of the visualization widgets.
 
 		Only objects for which visualization is turned on using setFlag(eVISUALIZATION) are visualized (see #PxActorFlag::eVISUALIZATION, #PxShapeFlag::eVISUALIZATION, ...).
-		Contacts are visualized if they involve a body which is being visualized.
 		Default is 0.
 
 		Notes:

@@ -1052,8 +1052,8 @@ PX_FORCE_INLINE PxVec3 getVec3(const physx::PxU8* data, const PxU32 index, const
 	return *reinterpret_cast<const PxVec3*>(data + index * sStrideInBytes);
 }
 
-void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 vertsStrideInBytes, physx::PxU32 nbTris, const physx::PxU32* indices, const physx::PxVec3& color, 
-	const physx::PxU8* normals, const PxU32 normalsStrideInBytes, bool flipFaceOrientation)
+void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 vertsStrideInBytes, physx::PxU32 nbTris, const void* indices, bool has16bitIndices, const physx::PxVec3& color,
+	const physx::PxU8* normals, const PxU32 normalsStrideInBytes, bool flipFaceOrientation, bool enableBackFaceCulling = true)
 {
 	if (nbTris == 0)
 		return;
@@ -1064,15 +1064,27 @@ void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 
 	glPushMatrix();						
 	glMultMatrixf(&idt.column0.x);
 	glColor4f(color.x, color.y, color.z, 1.0f);
+	if (!enableBackFaceCulling)
+		glDisable(GL_CULL_FACE);
 	{
 		prepareVertexBuffer();
 
 		PxU32 numTotalTriangles = 0;
 		for(PxU32 i=0; i <nbTris; ++i)
 		{
-			const PxU32 vref0 = *indices++;
-			const PxU32 vref1 = *indices++;
-			const PxU32 vref2 = *indices++;
+			PxU32 vref0, vref1, vref2;
+			if (has16bitIndices)
+			{
+				vref0 = ((const PxU16*)indices)[i * 3 + 0];
+				vref1 = ((const PxU16*)indices)[i * 3 + 1];
+				vref2 = ((const PxU16*)indices)[i * 3 + 2];
+			}
+			else
+			{
+				vref0 = ((const PxU32*)indices)[i * 3 + 0];
+				vref1 = ((const PxU32*)indices)[i * 3 + 1];
+				vref2 = ((const PxU32*)indices)[i * 3 + 2];
+			}
 
 			const PxVec3& v0 = getVec3(verts, vref0, vertsStrideInBytes);
 			const PxVec3& v1 = flipFaceOrientation ? getVec3(verts, vref2, vertsStrideInBytes) : getVec3(verts, vref1, vertsStrideInBytes);
@@ -1104,6 +1116,8 @@ void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 
 		glDisableClientState(GL_NORMAL_ARRAY);
 	}
 	glPopMatrix();
+	if (!enableBackFaceCulling)
+		glEnable(GL_CULL_FACE);
 
 	if(0)
 	{
@@ -1143,12 +1157,19 @@ void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 
 
 void renderMesh(physx::PxU32 nbVerts, const physx::PxVec3* verts, physx::PxU32 nbTris, const physx::PxU32* indices, const physx::PxVec3& color, const physx::PxVec3* normals, bool flipFaceOrientation)
 {
-	renderMesh(nbVerts, reinterpret_cast<const PxU8*>(verts), sizeof(PxVec3), nbTris, indices, color, reinterpret_cast<const PxU8*>(normals), sizeof(PxVec3), flipFaceOrientation);
+	renderMesh(nbVerts, reinterpret_cast<const PxU8*>(verts), sizeof(PxVec3), nbTris, indices, false, color, reinterpret_cast<const PxU8*>(normals), sizeof(PxVec3), flipFaceOrientation);
 }
 
 void renderMesh(physx::PxU32 nbVerts, const physx::PxVec4* verts, physx::PxU32 nbTris, const physx::PxU32* indices, const physx::PxVec3& color, const physx::PxVec4* normals, bool flipFaceOrientation)
 {
-	renderMesh(nbVerts, reinterpret_cast<const PxU8*>(verts), sizeof(PxVec4), nbTris, indices, color, reinterpret_cast<const PxU8*>(normals), sizeof(PxVec4), flipFaceOrientation);
+	renderMesh(nbVerts, reinterpret_cast<const PxU8*>(verts), sizeof(PxVec4), nbTris, indices, false, color, reinterpret_cast<const PxU8*>(normals), sizeof(PxVec4), flipFaceOrientation);
+}
+
+void renderMesh(physx::PxU32 nbVerts, const physx::PxVec4* verts, physx::PxU32 nbTris, const void* indices, bool hasSixteenBitIndices,
+	const physx::PxVec3& color, const physx::PxVec4* normals, bool flipFaceOrientation, bool enableBackFaceCulling)
+{
+	renderMesh(nbVerts, reinterpret_cast<const PxU8*>(verts), sizeof(PxVec4), nbTris, indices, hasSixteenBitIndices,
+		color, reinterpret_cast<const PxU8*>(normals), sizeof(PxVec4), flipFaceOrientation, enableBackFaceCulling);
 }
 
 void DrawLine(const PxVec3& p0, const PxVec3& p1, const PxVec3& color)

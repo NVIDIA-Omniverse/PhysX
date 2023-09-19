@@ -40,6 +40,10 @@ void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, con
                                            const PxVec4& inTetBarycentric, PxU32& outTetId,
                                            PxVec4& outTetBarycentric);
 
+PX_PHYSX_COMMON_API
+PxVec4 addAxisToSimMeshBarycentric(const PxTetrahedronMesh& simMesh, const PxU32 simTetId,
+                                   const PxVec4& simBarycentric, const PxVec3& axis);
+
 }
 }
 

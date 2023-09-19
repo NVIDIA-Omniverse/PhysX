@@ -46,7 +46,7 @@ PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate(PxAllocatorCallback& 
 {
 	PxVehiclePvdAttributeHandles* attributeHandles = 
 		reinterpret_cast<PxVehiclePvdAttributeHandles*>(
-	    allocator.allocate(sizeof(PxVehiclePvdAttributeHandles), "PxVehiclePvdAttributeHandles", __FILE__, __LINE__));
+	    allocator.allocate(sizeof(PxVehiclePvdAttributeHandles), "PxVehiclePvdAttributeHandles", PX_FL));
 	PxMemZero(attributeHandles, sizeof(PxVehiclePvdAttributeHandles));
 
 	//Rigid body
@@ -61,6 +61,7 @@ PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate(PxAllocatorCallback& 
 	attributeHandles->brakeCommandResponseParams = registerBrakeResponseParams(omniWriter);
 	attributeHandles->steerCommandResponseStates = registerSteerResponseStates(omniWriter);
 	attributeHandles->brakeCommandResponseStates = registerBrakeResponseStates(omniWriter);
+	attributeHandles->ackermannParams = registerAckermannParams(omniWriter);
 
 	//Wheel attachment
 	attributeHandles->wheelParams = registerWheelParams(omniWriter);
@@ -98,13 +99,16 @@ PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate(PxAllocatorCallback& 
 	//Engine drivetrain
 	attributeHandles->engineDriveCommandState = registerEngineDriveCommandState(omniWriter);
 	attributeHandles->engineDriveTransmissionCommandState = registerEngineDriveTransmissionCommandState(omniWriter);
+	attributeHandles->tankDriveTransmissionCommandState = registerTankDriveTransmissionCommandState(omniWriter,
+		attributeHandles->engineDriveTransmissionCommandState.CH);
 	attributeHandles->clutchCommandResponseParams = registerClutchResponseParams(omniWriter);
 	attributeHandles->clutchParams = registerClutchParams(omniWriter);
 	attributeHandles->engineParams = registerEngineParams(omniWriter);
 	attributeHandles->gearboxParams = registerGearboxParams(omniWriter);
 	attributeHandles->autoboxParams = registerAutoboxParams(omniWriter);
 	attributeHandles->multiwheelDiffParams = registerMultiWheelDiffParams(omniWriter);
-	attributeHandles->fourwheelDiffParams = registerFourWheelDiffParams(omniWriter);
+	attributeHandles->fourwheelDiffParams = registerFourWheelDiffParams(omniWriter, attributeHandles->multiwheelDiffParams.CH);
+	attributeHandles->tankDiffParams = registerTankDiffParams(omniWriter, attributeHandles->multiwheelDiffParams.CH);
 	attributeHandles->clutchResponseState = registerClutchResponseState(omniWriter);
 	attributeHandles->throttleResponseState = registerThrottleResponseState(omniWriter);
 	attributeHandles->engineState = registerEngineState(omniWriter);
@@ -125,6 +129,7 @@ PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate(PxAllocatorCallback& 
 	//Physx rigid actor
 	attributeHandles->physxRoadGeometryQueryParams = registerPhysXRoadGeometryQueryParams(omniWriter);
 	attributeHandles->physxRigidActor = registerPhysXRigidActor(omniWriter);
+	attributeHandles->physxSteerState = registerPhysXSteerState(omniWriter);
 	
 	//Vehicle
 	attributeHandles->vehicle = registerVehicle(omniWriter);
@@ -179,12 +184,13 @@ PxVehiclePvdObjectHandles* PxVehiclePvdObjectCreate
 			1 +								//OmniPvdObjectHandle* physxConstraintStateOHs;
 			1 +								//OmniPvdObjectHandle* physxRoadGeomStateOHs;
 			1 +								//OmniPvdObjectHandle* physxMaterialFrictionSetOHs;
-			maxNbPhysXMaterialFrictions) +	//OmniPvdObjectHandle* physxMaterialFrictionOHs;
+			maxNbPhysXMaterialFrictions +   //OmniPvdObjectHandle* physxMaterialFrictionOHs;
+			1) +	                        //OmniPvdObjectHandle* physxRoadGeomQueryFilterDataOHs;
 		sizeof(OmniPvdObjectHandle)*nbAntirolls*(
 			1);								//OmniPvdObjectHandle* antiRollParamOHs
 		 
 	
-	PxU8* buffer = reinterpret_cast<PxU8*>(allocator.allocate(byteSize, "PxVehiclePvdObjectHandles", __FILE__, __LINE__));
+	PxU8* buffer = reinterpret_cast<PxU8*>(allocator.allocate(byteSize, "PxVehiclePvdObjectHandles", PX_FL));
 #if PX_ENABLE_ASSERTS
 	PxU8* start = buffer;
 #endif
@@ -252,6 +258,8 @@ PxVehiclePvdObjectHandles* PxVehiclePvdObjectCreate
 			objectHandles->physxMaterialFrictionOHs = reinterpret_cast<OmniPvdObjectHandle*>(buffer);
 			buffer += sizeof(OmniPvdObjectHandle)*nbWheels*maxNbPhysXMaterialFrictions;
 		}
+		objectHandles->physxRoadGeomQueryFilterDataOHs = reinterpret_cast<OmniPvdObjectHandle*>(buffer);
+		buffer += sizeof(OmniPvdObjectHandle)*nbWheels;
 	}
 
 	if(nbAntirolls != 0)
@@ -306,6 +314,7 @@ void PxVehiclePvdObjectRelease
 	destroyObject(ow, ch, oh.steerResponseParamsOH);
 	destroyObject(ow, ch, oh.brakeResponseStateOH);
 	destroyObject(ow, ch, oh.steerResponseStateOH);
+	destroyObject(ow, ch, oh.ackermannParamsOH);
 
 	//Wheel attachments
 	for(PxU32 i = 0; i < oh.nbWheels; i++)
@@ -353,8 +362,7 @@ void PxVehiclePvdObjectRelease
 	destroyObject(ow, ch, oh.engineParamsOH);
 	destroyObject(ow, ch, oh.gearboxParamsOH);
 	destroyObject(ow, ch, oh.autoboxParamsOH);
-	destroyObject(ow, ch, oh.multiWheelDiffParamsOH);
-	destroyObject(ow, ch, oh.fourWheelDiffParamsOH);
+	destroyObject(ow, ch, oh.differentialParamsOH);
 	destroyObject(ow, ch, oh.clutchResponseStateOH);
 	destroyObject(ow, ch, oh.engineDriveThrottleResponseStateOH);
 	destroyObject(ow, ch, oh.engineStateOH);
@@ -381,7 +389,15 @@ void PxVehiclePvdObjectRelease
 
 	//Physx rigid actor
 	destroyObject(ow, ch, oh.physxRoadGeomQueryParamOH);
+	destroyObject(ow, ch, oh.physxRoadGeomQueryDefaultFilterDataOH);
+	for (PxU32 i = 0; i < oh.nbWheels; i++)
+	{
+		destroyObject(ow, ch, oh.physxRoadGeomQueryFilterDataOHs[i]);
+		// safe even if not using per wheel filter data since it should hold the
+		// invalid handle value and thus destroyObject will do nothing
+	}
 	destroyObject(ow, ch, oh.physxRigidActorOH);
+	destroyObject(ow, ch, oh.physxSteerStateOH);
 
 	//Free the memory.
 	allocator.deallocate(&oh);

@@ -185,6 +185,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 void PxVehiclePvdCommandResponseRegister
 (const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams,
+ const PxVehicleAckermannParams* ackermannParams,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
@@ -219,7 +220,15 @@ void PxVehiclePvdCommandResponseRegister
 		createPvdObject(ow, ch, ah.steerCommandResponseParams.CH, oh, objectName);
 		objHands.steerResponseParamsOH = oh;
 		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.steerResponseParamsAH, oh);
-	}	
+	}
+
+	if (ackermannParams)
+	{
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.ackermannParamsOH);
+		createPvdObject(ow, ch, ah.ackermannParams.CH, oh, "AckermannParams");
+		objHands.ackermannParamsOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.ackermannParamsAH, oh);
+	}
 
 	if(!brakeResponseStates.isEmpty())
 	{
@@ -244,6 +253,7 @@ void PxVehiclePvdCommandResponseWrite
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams, 
+ const PxVehicleAckermannParams* ackermannParams, 
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
@@ -269,6 +279,11 @@ void PxVehiclePvdCommandResponseWrite
 		writeSteerResponseParams(
 			axleDesc, *steerResponseParams,
 			oh.steerResponseParamsOH, ah.steerCommandResponseParams, ow, ch);
+	}
+
+	if (oh.ackermannParamsOH && ackermannParams)
+	{
+		writeAckermannParams(*ackermannParams, oh.ackermannParamsOH, ah.ackermannParams, ow, ch);
 	}
 
 	if(oh.brakeResponseStateOH && !brakeResponseStates.isEmpty())
@@ -743,6 +758,8 @@ void PxVehiclePvdDirectDrivetrainRegister
 		writeObjectHandleAttribute(
 			ow, ch, oh, ah.directDrivetrain.commandStateAH, objHands.directDriveCommandStateOH);
 		writeObjectHandleAttribute(
+			ow, ch, oh, ah.directDrivetrain.transmissionCommandStateAH, objHands.directDriveTransmissionCommandStateOH);
+		writeObjectHandleAttribute(
 			ow, ch, oh, ah.directDrivetrain.throttleResponseParamsAH, objHands.directDriveThrottleResponseParamsOH);
 		writeObjectHandleAttribute(
 			ow, ch, oh, ah.directDrivetrain.throttleResponseStateAH, objHands.directDriveThrottleResponseStateOH);
@@ -783,14 +800,17 @@ void PxVehiclePvdDirectDrivetrainWrite
 }
 
 void PxVehiclePvdEngineDrivetrainRegister
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParms,
  const PxVehicleEngineParams* engineParams,
  const PxVehicleGearboxParams* gearboxParams,
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
- const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffPrams,
+ const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffParams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -814,12 +834,21 @@ void PxVehiclePvdEngineDrivetrainRegister
 		objHands.engineDriveCommandStateOH = oh;
 	}
 
-	if(transmissionCommandState)
+	if(engineDriveTransmissionCommandState || tankDriveTransmissionCommandState)
 	{
 		//Get a unique id from a memory address in objectHandles.
 		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.engineDriveTransmissionCommandStateOH);
-		createPvdObject(ow, ch, ah.engineDriveTransmissionCommandState.CH, oh, "EngineDriveTransmissionCommandState");
 		objHands.engineDriveTransmissionCommandStateOH = oh;
+
+		if (engineDriveTransmissionCommandState)
+		{
+			createPvdObject(ow, ch, ah.engineDriveTransmissionCommandState.CH, oh, "EngineDriveTransmissionCommandState");
+		}
+		else
+		{
+			PX_ASSERT(tankDriveTransmissionCommandState);
+			createPvdObject(ow, ch, ah.tankDriveTransmissionCommandState.CH, oh, "TankDriveTransmissionCommandState");
+		}
 	}
 
 	if(clutchResponseParams)
@@ -862,20 +891,25 @@ void PxVehiclePvdEngineDrivetrainRegister
 		objHands.autoboxParamsOH = oh;
 	}
 
-	if(multiWheelDiffParams)
+	if(multiWheelDiffParams || fourWheelDiffParams || tankDiffParams)
 	{
 		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.multiWheelDiffParamsOH);
-		createPvdObject(ow, ch, ah.multiwheelDiffParams.CH, oh, "MultiWheelDiffParams");
-		objHands.multiWheelDiffParamsOH = oh;
-	}
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.differentialParamsOH);
+		objHands.differentialParamsOH = oh;
 
-	if(fourWheelDiffPrams)
-	{
-		//Get a unique id from a memory address in objectHandles.
-		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.fourWheelDiffParamsOH);
-		createPvdObject(ow, ch, ah.fourwheelDiffParams.CH, oh, "FourWheelDiffParams");
-		objHands.fourWheelDiffParamsOH = oh;
+		if(multiWheelDiffParams)
+		{
+			createPvdObject(ow, ch, ah.multiwheelDiffParams.CH, oh, "MultiWheelDiffParams");
+		}
+		else if(fourWheelDiffParams)
+		{
+			createPvdObject(ow, ch, ah.fourwheelDiffParams.CH, oh, "FourWheelDiffParams");
+		}
+		else
+		{
+			PX_ASSERT(tankDiffParams);
+			createPvdObject(ow, ch, ah.tankDiffParams.CH, oh, "TankDiffParams");
+		}
 	}
 
 	if(clutchResponseState)
@@ -948,8 +982,7 @@ void PxVehiclePvdEngineDrivetrainRegister
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineParamsAH, objHands.engineParamsOH);
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.gearboxParamsAH, objHands.gearboxParamsOH);
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.autoboxParamsAH, objHands.autoboxParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.multiWheelDiffParamsAH, objHands.multiWheelDiffParamsOH);
-		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.fourWheelDiffParamsAH, objHands.fourWheelDiffParamsOH);
+		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.differentialParamsAH, objHands.differentialParamsOH);
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.clutchResponseStateAH, objHands.clutchResponseStateOH);
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.throttleResponseStateAH, objHands.engineDriveThrottleResponseStateOH);
 		writeObjectHandleAttribute(ow, ch, oh, ah.engineDrivetrain.engineStateAH, objHands.engineStateOH);
@@ -963,7 +996,9 @@ void PxVehiclePvdEngineDrivetrainRegister
 }
 
 void PxVehiclePvdEngineDrivetrainWrite
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParms,
  const PxVehicleEngineParams* engineParams,
@@ -971,6 +1006,7 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
  const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffParams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -988,9 +1024,18 @@ void PxVehiclePvdEngineDrivetrainWrite
 		writeEngineDriveCommandState(*commandState, oh.engineDriveCommandStateOH, ah.engineDriveCommandState, omniWriter, ch);
 	}
 
-	if(oh.engineDriveTransmissionCommandStateOH && transmissionCommandState)
+	if(oh.engineDriveTransmissionCommandStateOH)
 	{
-		writeEngineDriveTransmissionCommandState(*transmissionCommandState, oh.engineDriveTransmissionCommandStateOH, ah.engineDriveTransmissionCommandState, omniWriter, ch);
+		if (engineDriveTransmissionCommandState)
+		{
+			writeEngineDriveTransmissionCommandState(*engineDriveTransmissionCommandState, 
+				oh.engineDriveTransmissionCommandStateOH, ah.engineDriveTransmissionCommandState, omniWriter, ch);
+		}
+		else if (tankDriveTransmissionCommandState)
+		{
+			writeTankDriveTransmissionCommandState(*tankDriveTransmissionCommandState, oh.engineDriveTransmissionCommandStateOH,
+				ah.engineDriveTransmissionCommandState, ah.tankDriveTransmissionCommandState, omniWriter, ch);
+		}
 	}
 	
 	if(oh.clutchResponseParamsOH && clutchResponseParams)
@@ -1018,14 +1063,23 @@ void PxVehiclePvdEngineDrivetrainWrite
 		writeAutoboxParams(*autoboxParams, oh.autoboxParamsOH, ah.autoboxParams, omniWriter, ch);
 	}
 
-	if(oh.multiWheelDiffParamsOH && multiWheelDiffParams)
+	if(oh.differentialParamsOH)
 	{
-		writeMultiWheelDiffParams(*multiWheelDiffParams, oh.multiWheelDiffParamsOH, ah.multiwheelDiffParams, omniWriter, ch);
-	}
-
-	if(oh.fourWheelDiffParamsOH && fourWheelDiffParams)
-	{
-		writeFourWheelDiffParams(*fourWheelDiffParams, oh.fourWheelDiffParamsOH, ah.fourwheelDiffParams, omniWriter, ch);
+		if (multiWheelDiffParams)
+		{
+			writeMultiWheelDiffParams(*multiWheelDiffParams, oh.differentialParamsOH,
+				ah.multiwheelDiffParams, omniWriter, ch);
+		}
+		else if (fourWheelDiffParams)
+		{
+			writeFourWheelDiffParams(*fourWheelDiffParams, oh.differentialParamsOH,
+				ah.multiwheelDiffParams, ah.fourwheelDiffParams, omniWriter, ch);
+		}
+		else if (tankDiffParams)
+		{
+			writeTankDiffParams(*tankDiffParams, oh.differentialParamsOH, 
+				ah.multiwheelDiffParams, ah.tankDiffParams, omniWriter, ch);
+		}
 	}
 
 	if(oh.clutchResponseStateOH && clutchResponseState)
@@ -1231,6 +1285,40 @@ void PxVehiclePvdPhysXWheelAttachmentRegister
 		createPvdObject(ow, ch, ah.physxRoadGeometryQueryParams.CH, oh, objectName);
 		objHands.physxRoadGeomQueryParamOH = oh;
 		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.physxRoadGeometryQueryParamsAH, oh);
+
+		const OmniPvdObjectHandle defaultFilterDataOH = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxRoadGeomQueryDefaultFilterDataOH);
+		createPvdObject(ow, ch, ah.physxRoadGeometryQueryParams.filterDataParams.CH, defaultFilterDataOH, "");
+		objHands.physxRoadGeomQueryDefaultFilterDataOH = defaultFilterDataOH;
+		writeObjectHandleAttribute(ow, ch, objHands.physxRoadGeomQueryParamOH, ah.physxRoadGeometryQueryParams.defaultFilterDataAH, defaultFilterDataOH);
+
+		if (physxRoadGeomQryParams->filterDataEntries)
+		{
+			for (PxU32 j = 0; j < axleDesc.nbWheels; j++)
+			{
+				const PxU32 wheelId = axleDesc.wheelIdsInAxleOrder[j];
+
+				const OmniPvdObjectHandle filterDataOH = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxRoadGeomQueryFilterDataOHs[wheelId]);
+				char filterDataObjectName[32] = "FilterData";
+				appendWithInt(filterDataObjectName, wheelId);
+				createPvdObject(ow, ch, ah.physxRoadGeometryQueryParams.filterDataParams.CH, filterDataOH, filterDataObjectName);
+				objHands.physxRoadGeomQueryFilterDataOHs[wheelId] = filterDataOH;
+
+				addObjectHandleToUniqueList(ow, ch, objHands.physxRoadGeomQueryParamOH, ah.physxRoadGeometryQueryParams.filterDataSetAH, filterDataOH);
+			}
+		}
+#if PX_DEBUG
+		else
+		{
+			for (PxU32 j = 0; j < axleDesc.nbWheels; j++)
+			{
+				// note: objHands.physxRoadGeomQueryFilterDataOHs entries are zero initialized
+				//       which matches the invalid handle for now.
+
+				PX_ASSERT(objHands.physxRoadGeomQueryFilterDataOHs[j] == 0);
+				// TODO: test against invalid hanndle once it gets introduced
+			}
+		}
+#endif
 	}
 }
 
@@ -1305,7 +1393,9 @@ void PxVehiclePvdPhysXWheelAttachmentWrite
 
 	if(oh.physxRoadGeomQueryParamOH  && physxRoadGeomQryParams)
 	{
-		writePhysXRoadGeometryQueryParams(*physxRoadGeomQryParams, oh.physxRoadGeomQueryParamOH, ah.physxRoadGeometryQueryParams, ow, ch);
+		writePhysXRoadGeometryQueryParams(*physxRoadGeomQryParams, axleDesc,
+			oh.physxRoadGeomQueryParamOH, oh.physxRoadGeomQueryDefaultFilterDataOH, oh.physxRoadGeomQueryFilterDataOHs,
+			ah.physxRoadGeometryQueryParams, ow, ch);
 	}
 }
 
@@ -1336,6 +1426,36 @@ void PxVehiclePvdPhysXRigidActorWrite
 	if(oh.physxRigidActorOH && physxActor)
 	{
 		writePhysXRigidActor(physxActor->rigidBody, oh.physxRigidActorOH, ah.physxRigidActor, ow, oh.contextHandle);
+	}
+}
+
+void PxVehiclePvdPhysXSteerStateRegister
+(const PxVehiclePhysXSteerState* physxSteerState,
+ const PxVehiclePvdAttributeHandles& ah,
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
+{
+	// Register the top-level vehicle object if this hasn't already been done.
+	createVehicleObject(ah, objHands, ow);
+
+	const OmniPvdContextHandle ch = objHands.contextHandle;
+
+	if(physxSteerState)
+	{
+		const OmniPvdObjectHandle oh = reinterpret_cast<OmniPvdObjectHandle>(&objHands.physxSteerStateOH);
+		createPvdObject(ow, ch, ah.physxSteerState.CH, oh, "PhysXSteerState");
+		objHands.physxSteerStateOH = oh;
+		writeObjectHandleAttribute(ow, ch, objHands.vehicleOH, ah.vehicle.physxSteerStateAH, oh);		
+	}
+}
+
+void PxVehiclePvdPhysXSteerStateWrite
+(const PxVehiclePhysXSteerState* physxSteerState,
+ const PxVehiclePvdAttributeHandles& ah,
+ const PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
+{
+	if (objHands.physxSteerStateOH && physxSteerState)  // TODO: test against invalid handle once that gets introduced
+	{
+		writePhysXSteerState(*physxSteerState, objHands.physxSteerStateOH, ah.physxSteerState, ow, objHands.contextHandle);
 	}
 }
 
@@ -1390,6 +1510,7 @@ void PxVehiclePvdSuspensionStateCalculationParamsWrite
 void PxVehiclePvdCommandResponseRegister
 (const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams,
+ const PxVehicleAckermannParams* ackermannParams,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
@@ -1397,6 +1518,7 @@ void PxVehiclePvdCommandResponseRegister
 {
 	PX_UNUSED(steerResponseParams);
 	PX_UNUSED(brakeResponseParams);
+	PX_UNUSED(ackermannParams);
 	PX_UNUSED(steerResponseStates);
 	PX_UNUSED(brakeResponseStates);
 	PX_UNUSED(ah);
@@ -1408,6 +1530,7 @@ void PxVehiclePvdCommandResponseWrite
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleSizedArrayData<const PxVehicleBrakeCommandResponseParams>& brakeResponseParams,
  const PxVehicleSteerCommandResponseParams* steerResponseParams, 
+ const PxVehicleAckermannParams* ackermannParams,
  const PxVehicleArrayData<PxReal>& brakeResponseStates,
  const PxVehicleArrayData<PxReal>& steerResponseStates,
  const PxVehiclePvdAttributeHandles& ah,
@@ -1416,6 +1539,7 @@ void PxVehiclePvdCommandResponseWrite
 	PX_UNUSED(axleDesc);
 	PX_UNUSED(steerResponseParams);
 	PX_UNUSED(brakeResponseParams);
+	PX_UNUSED(ackermannParams);
 	PX_UNUSED(steerResponseStates);
 	PX_UNUSED(brakeResponseStates);
 	PX_UNUSED(ah);
@@ -1556,7 +1680,9 @@ void PxVehiclePvdDirectDrivetrainWrite
 }
 
 void PxVehiclePvdEngineDrivetrainRegister
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParms,
  const PxVehicleEngineParams* engineParams,
@@ -1564,6 +1690,7 @@ void PxVehiclePvdEngineDrivetrainRegister
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
  const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffPrams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -1575,7 +1702,8 @@ void PxVehiclePvdEngineDrivetrainRegister
  PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
 {
 	PX_UNUSED(commandState);
-	PX_UNUSED(transmissionCommandState);
+	PX_UNUSED(engineDriveTransmissionCommandState);
+	PX_UNUSED(tankDriveTransmissionCommandState);
 	PX_UNUSED(clutchResponseParams);
 	PX_UNUSED(clutchParms);
 	PX_UNUSED(engineParams);
@@ -1583,6 +1711,7 @@ void PxVehiclePvdEngineDrivetrainRegister
 	PX_UNUSED(autoboxParams);
 	PX_UNUSED(multiWheelDiffParams);
 	PX_UNUSED(fourWheelDiffPrams);
+	PX_UNUSED(tankDiffParams);
 	PX_UNUSED(clutchResponseState);
 	PX_UNUSED(throttleResponseState);
 	PX_UNUSED(engineState);
@@ -1596,7 +1725,9 @@ void PxVehiclePvdEngineDrivetrainRegister
 }
 
 void PxVehiclePvdEngineDrivetrainWrite
-(const PxVehicleCommandState* commandState, const PxVehicleEngineDriveTransmissionCommandState* transmissionCommandState,
+(const PxVehicleCommandState* commandState,
+ const PxVehicleEngineDriveTransmissionCommandState* engineDriveTransmissionCommandState,
+ const PxVehicleTankDriveTransmissionCommandState* tankDriveTransmissionCommandState,
  const PxVehicleClutchCommandResponseParams* clutchResponseParams,
  const PxVehicleClutchParams* clutchParms,
  const PxVehicleEngineParams* engineParams,
@@ -1604,6 +1735,7 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehicleAutoboxParams* autoboxParams,
  const PxVehicleMultiWheelDriveDifferentialParams* multiWheelDiffParams,
  const PxVehicleFourWheelDriveDifferentialParams* fourWheelDiffParams,
+ const PxVehicleTankDriveDifferentialParams* tankDiffParams,
  const PxVehicleClutchCommandResponseState* clutchResponseState,
  const PxVehicleEngineDriveThrottleCommandResponseState* throttleResponseState,
  const PxVehicleEngineState* engineState,
@@ -1615,7 +1747,8 @@ void PxVehiclePvdEngineDrivetrainWrite
  const PxVehiclePvdObjectHandles& oh, OmniPvdWriter& omniWriter)
 {
 	PX_UNUSED(commandState);
-	PX_UNUSED(transmissionCommandState);
+	PX_UNUSED(engineDriveTransmissionCommandState);
+	PX_UNUSED(tankDriveTransmissionCommandState);
 	PX_UNUSED(clutchResponseParams);
 	PX_UNUSED(clutchParms);
 	PX_UNUSED(engineParams);
@@ -1623,6 +1756,7 @@ void PxVehiclePvdEngineDrivetrainWrite
 	PX_UNUSED(autoboxParams);
 	PX_UNUSED(multiWheelDiffParams);
 	PX_UNUSED(fourWheelDiffParams);
+	PX_UNUSED(tankDiffParams);
 	PX_UNUSED(clutchResponseState);
 	PX_UNUSED(throttleResponseState);
 	PX_UNUSED(engineState);
@@ -1724,6 +1858,28 @@ void PxVehiclePvdPhysXRigidActorWrite
 	PX_UNUSED(physxActor);
 	PX_UNUSED(ah);
 	PX_UNUSED(oh);
+	PX_UNUSED(ow);
+}
+
+void PxVehiclePvdPhysXSteerStateRegister
+(const PxVehiclePhysXSteerState* physxSteerState,
+ const PxVehiclePvdAttributeHandles& ah,
+ PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
+{
+	PX_UNUSED(physxSteerState);
+	PX_UNUSED(ah);
+	PX_UNUSED(objHands);
+	PX_UNUSED(ow);
+}
+
+void PxVehiclePvdPhysXSteerStateWrite
+(const PxVehiclePhysXSteerState* physxSteerState,
+ const PxVehiclePvdAttributeHandles& ah,
+ const PxVehiclePvdObjectHandles& objHands, OmniPvdWriter& ow)
+{
+	PX_UNUSED(physxSteerState);
+	PX_UNUSED(ah);
+	PX_UNUSED(objHands);
 	PX_UNUSED(ow);
 }
 

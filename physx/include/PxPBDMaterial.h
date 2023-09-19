@@ -208,7 +208,7 @@ namespace physx
 		PX_INLINE			PxPBDMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxParticleMaterial(concreteType, baseFlags) {}
 		PX_INLINE			PxPBDMaterial(PxBaseFlags baseFlags) : PxParticleMaterial(baseFlags) {}
 		virtual				~PxPBDMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxPBDMaterial", name) || PxParticleMaterial::isKindOf(name); }
+		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxPBDMaterial", PxParticleMaterial); }
 	};
 #if !PX_DOXYGEN
 } // namespace physx

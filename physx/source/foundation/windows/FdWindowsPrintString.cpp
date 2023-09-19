@@ -34,14 +34,9 @@
 #include <string.h>
 #include <stdarg.h>
 
-namespace physx
-{
-
-void PxPrintString(const char* str)
+void physx::PxPrintString(const char* str)
 {
 	puts(str); // do not use printf here, since str can contain multiple % signs that will not be printed
 	OutputDebugStringA(str);
 	OutputDebugStringA("\n");
 }
-
-} // namespace physx

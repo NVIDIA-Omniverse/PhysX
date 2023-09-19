@@ -133,7 +133,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				if(object && (object != &s))
 				{					
 					subordinateCollection->release();					
-					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 						"PxSerialization::isSerializable: Reference id %" PX_PRIu64 " used both in current collection and in externalReferences. "
 						"Please use unique identifiers.", id);	
 					return false;
@@ -173,14 +173,14 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				{
 					if(!externalReferences->contains(s0))
 					{						
-						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 							"PxSerialization::isSerializable: Object of type %s references a missing object of type %s. "
 							"The missing object needs to be added to either the current collection or the externalReferences collection.",
 							s.getConcreteTypeName(), s0.getConcreteTypeName());						
 					}
 					else if(externalReferences->getId(s0) == PX_SERIAL_OBJECT_ID_INVALID)
 					{						
-						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+						PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 							"PxSerialization::isSerializable: Object of type %s in externalReferences collection requires an id.", 
 							s0.getConcreteTypeName());
 					}
@@ -189,7 +189,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				}
 				else
 				{				
-					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 						"PxSerialization::isSerializable: Object of type %s references a missing serial object of type %s. "
 						"Please completed the collection or specify an externalReferences collection containing the object.",
 						s.getConcreteTypeName(), s0.getConcreteTypeName());					
@@ -209,7 +209,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 	{
 		PxBase& subordinate = subordinateCollection->getObject(j);
 
-		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+		PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 			"PxSerialization::isSerializable: An object of type %s is subordinate but not required "
 			"by other objects in the collection (orphan). Please remove the object from the collection or add its owner.", 
 			subordinate.getConcreteTypeName());
@@ -243,7 +243,7 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				if(collection.contains(s0))
 				{
 					oppositeRequiresCollection->release();
-					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, __FILE__, __LINE__, 
+					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
 						"PxSerialization::isSerializable: Object of type %s in externalReferences references an object "
 						"of type %s in collection (circular dependency).",
 						s.getConcreteTypeName(), s0.getConcreteTypeName());

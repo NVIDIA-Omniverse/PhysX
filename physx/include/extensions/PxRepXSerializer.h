@@ -141,7 +141,7 @@ PX_DEPRECATED PX_INLINE physx::PxRepXObject PxCreateRepXObject(const TDataType* 
 \deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 */
 #define PX_NEW_REPX_SERIALIZER(T) \
-		*PX_PLACEMENT_NEW(PxGetAllocatorCallback()->allocate(sizeof(T), "PxRepXSerializer",  __FILE__, __LINE__ ), T)(*PxGetAllocatorCallback())
+		*PX_PLACEMENT_NEW(PxGetAllocatorCallback()->allocate(sizeof(T), "PxRepXSerializer",  PX_FL ), T)(*PxGetAllocatorCallback())
 
 /**
 \brief Preprocessor Macro to simplify RepX serializer delete.

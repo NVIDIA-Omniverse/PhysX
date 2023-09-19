@@ -30,6 +30,7 @@
 #define GU_PCM_CONTACT_GEN_UTIL_H
 
 #include "foundation/PxVecMath.h"
+#include "geomutils/PxContactBuffer.h"
 #include "GuShapeConvex.h"
 #include "GuVecCapsule.h"
 #include "GuConvexSupportTable.h"
@@ -76,6 +77,33 @@ namespace Gu
 
 	PxU32 getWitnessPolygonIndex(	const Gu::PolygonalData& polyData, const SupportLocal* map, const aos::Vec3VArg normal,
 									const aos::Vec3VArg closest, PxReal tolerance);
+
+	PX_FORCE_INLINE void outputPCMContact(PxContactBuffer& contactBuffer, PxU32& contactCount, const aos::Vec3VArg point, const aos::Vec3VArg normal,
+											const aos::FloatVArg penetration, PxU32 internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX)
+	{
+		using namespace aos;
+
+		// PT: TODO: the PCM capsule-capsule code was using this alternative version, is it better?
+		// const Vec4V normalSep = V4SetW(Vec4V_From_Vec3V(normal), separation);
+		// V4StoreA(normalSep, &point.normal.x);
+		// Also aren't we overwriting maxImpulse with the position now? Ok to do so?
+		PX_ASSERT(contactCount < PxContactBuffer::MAX_CONTACTS);
+		PxContactPoint& contact = contactBuffer.contacts[contactCount++];
+		V4StoreA(Vec4V_From_Vec3V(normal), &contact.normal.x);
+		V4StoreA(Vec4V_From_Vec3V(point), &contact.point.x);
+		FStore(penetration, &contact.separation);
+		PX_ASSERT(contact.point.isFinite());
+		PX_ASSERT(contact.normal.isFinite());
+		PX_ASSERT(PxIsFinite(contact.separation));
+		contact.internalFaceIndex1 = internalFaceIndex1;
+	}
+
+	PX_FORCE_INLINE bool outputSimplePCMContact(PxContactBuffer& contactBuffer, const aos::Vec3VArg point, const aos::Vec3VArg normal,
+												const aos::FloatVArg penetration, PxU32 internalFaceIndex1 = PXC_CONTACT_NO_FACE_INDEX)
+	{
+		outputPCMContact(contactBuffer, contactBuffer.count, point, normal, penetration, internalFaceIndex1);
+		return true;
+	}
 
 }//Gu
 }//physx

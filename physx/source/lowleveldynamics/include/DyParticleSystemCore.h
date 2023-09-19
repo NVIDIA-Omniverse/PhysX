@@ -130,7 +130,7 @@ public:
 
 				default:
 				{
-					PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "addParticleBuffer : Error, this buffer does not have a valid type!");
+					PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "addParticleBuffer : Error, this buffer does not have a valid type!");
 					return;
 				}
 					
@@ -138,7 +138,7 @@ public:
 		}
 		else
 		{
-			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "addParticleBuffer : Error, this buffer cannot be added to multiple particle systems!");
+			PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "addParticleBuffer : Error, this buffer cannot be added to multiple particle systems!");
 		}
 	}
 
@@ -208,7 +208,7 @@ public:
 
 			default:
 			{
-				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, __FILE__, __LINE__, "removeParticleBuffer : Error, this buffer does not have a valid type!");
+				PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "removeParticleBuffer : Error, this buffer does not have a valid type!");
 				return;
 			}
 

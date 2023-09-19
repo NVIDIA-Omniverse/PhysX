@@ -243,7 +243,7 @@ bool PxTetMaker::createConformingTetrahedronMesh(const PxSimpleTriangleMesh& tri
 		PxTriangleMeshAnalysisResults result = PxTetMaker::validateTriangleMesh(triangleMesh);		
 		if (result & PxTriangleMeshAnalysisResult::eMESH_IS_INVALID) 
 		{
-			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, __FILE__, __LINE__, "createConformingTetrahedronMesh(): Input triangle mesh is not suited to create a tetmesh due to deficiencies. Please call PxTetMaker::validateTriangleMesh(triangleMesh) for more details.");
+			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "createConformingTetrahedronMesh(): Input triangle mesh is not suited to create a tetmesh due to deficiencies. Please call PxTetMaker::validateTriangleMesh(triangleMesh) for more details.");
 			return false;
 		}
 	}
@@ -263,16 +263,24 @@ bool PxTetMaker::createConformingTetrahedronMesh(const PxSimpleTriangleMesh& tri
 }
 
 bool PxTetMaker::createVoxelTetrahedronMesh(const PxTetrahedronMeshDesc& tetMesh,
-	const PxU32 numVoxelsAlongLongestBoundingBoxAxis, physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
+	const PxU32 numVoxelsAlongLongestBoundingBoxAxis, physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices,
+	PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
 {
-	Ext::generateVoxelTetmesh(tetMesh.points, tetMesh.tetrahedrons,	numVoxelsAlongLongestBoundingBoxAxis, outVertices, outTetIndices, intputPointToOutputTetIndex, anchorNodeIndices);
+	//numTetsPerVoxel has only two valid values.
+	if (numTetsPerVoxel != 5 && numTetsPerVoxel != 6)
+		numTetsPerVoxel = 5;
+	Ext::generateVoxelTetmesh(tetMesh.points, tetMesh.tetrahedrons,	numVoxelsAlongLongestBoundingBoxAxis, outVertices, outTetIndices, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
 	return true;
 }
 
 bool PxTetMaker::createVoxelTetrahedronMeshFromEdgeLength(const PxTetrahedronMeshDesc& tetMesh,
-	const PxReal voxelEdgeLength, physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices)
+	const PxReal voxelEdgeLength, physx::PxArray<physx::PxVec3>& outVertices, physx::PxArray<physx::PxU32>& outTetIndices, 
+	PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
 {
-	Ext::generateVoxelTetmesh(tetMesh.points, tetMesh.tetrahedrons, voxelEdgeLength, outVertices, outTetIndices, intputPointToOutputTetIndex, anchorNodeIndices);
+	//numTetsPerVoxel has only two valid values.
+	if (numTetsPerVoxel != 5 && numTetsPerVoxel != 6)
+		numTetsPerVoxel = 5;
+	Ext::generateVoxelTetmesh(tetMesh.points, tetMesh.tetrahedrons, voxelEdgeLength, outVertices, outTetIndices, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
 	return true;
 }
 

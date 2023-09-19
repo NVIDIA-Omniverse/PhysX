@@ -186,7 +186,7 @@ namespace Cm
 			: PriorityQueueBase<Element, Comparator>(less, NULL), Alloc(alloc), mCapacity(initialCapacity)
 		{
 			if(initialCapacity > 0)
-				this->mDataPtr = reinterpret_cast<Element*>(Alloc::allocate(sizeof(Element)*initialCapacity, __FILE__, __LINE__));
+				this->mDataPtr = reinterpret_cast<Element*>(Alloc::allocate(sizeof(Element)*initialCapacity, PX_FL));
 		}
 
 		~PriorityQueue()
@@ -213,7 +213,7 @@ namespace Cm
 		{
 			if(newCapacity > mCapacity)
 			{
-				Element* newElems = reinterpret_cast<Element*>(Alloc::allocate(sizeof(Element)*newCapacity, __FILE__, __LINE__));
+				Element* newElems = reinterpret_cast<Element*>(Alloc::allocate(sizeof(Element)*newCapacity, PX_FL));
 				if(this->mDataPtr)
 				{
 					physx::PxMemCopy(newElems, this->mDataPtr, sizeof(Element) * this->mHeapSize);

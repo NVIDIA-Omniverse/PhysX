@@ -50,7 +50,6 @@ struct PxMaterialFlag
 {
 	enum Enum
 	{
-
 		/**
 		\brief If this flag is set, friction computations are always skipped between shapes with this material and any other shape.
 		*/
@@ -78,16 +77,13 @@ struct PxMaterialFlag
 		eDISABLE_STRONG_FRICTION = 1 << 1,
 
 		/**
-		\brief Whether to use the patch friction model.
-		This flag only has an effect if PxFrictionType::ePATCH friction model is used.
+		\brief Whether to correct the friction force applied by the patch friction model to better match analytical models.
+		This flag only has an effect if the PxFrictionType::ePATCH friction model is used.
 
-		When using the patch friction model, up to 2 friction anchors are generated per patch. As the number of friction anchors
-		can be smaller than the number of contacts, the normal force is accumulated over all contacts and used to compute friction
-		for all anchors. Where there are more than 2 anchors, this can produce frictional behavior that is too strong (approximately 2x as strong
-		as analytical models suggest). 
-
-		This flag causes the normal force to be distributed between the friction anchors such that the total amount of friction applied does not 
-		exceed the analytical results.
+		When using the patch friction model, up to two friction anchors are generated per patch. The normal force of all contacts
+		in the patch is accumulated and equally distributed among the anchors in order to compute friction forces. If this flag
+		is disabled, the legacy behavior is active which produces double the expected friction force in the case of two anchors,
+		since the full accumulated normal force is used in both anchors for the friction computation.
 		*/
 		eIMPROVED_PATCH_FRICTION = 1 << 2,
 
@@ -220,7 +216,6 @@ public:
 	*/
 	virtual		PxReal	getRestitution() const = 0;
 
-
 	/**
 	\brief Sets the coefficient of damping
 
@@ -347,7 +342,7 @@ protected:
 	PX_INLINE			PxMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags)	{}
 	PX_INLINE			PxMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
 	virtual				~PxMaterial() {}
-	virtual		bool	isKindOf(const char* name) const { return !::strcmp("PxMaterial", name) || PxBaseMaterial::isKindOf(name); }
+	virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxMaterial", PxBaseMaterial); }
 };
 
 #if !PX_DOXYGEN
