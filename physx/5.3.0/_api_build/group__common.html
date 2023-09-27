@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Common &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION" href="define_group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8.html" />
+    <link rel="prev" title="PX_MAX_EXTENDED" href="define_group__character_1gaba18675c9d68b07156230f66518b6a37.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Common</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8.html">PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga0f0e989d1b6381bd4791d00435ddf2c4.html">PX_CATCH_UNDEFINED_ENABLE_SIM_STATS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga922d48697d998518e12a16e589f0c75a.html">PX_DEFINE_TYPEINFO</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga69be4db0e236ef5c43be7974a1a1fe5d.html">PX_ENABLE_DEBUG_VISUALIZATION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga30582e116d8777c36c92277f07031955.html">PX_ENABLE_SIM_STATS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga2af5ad9fd5086087aaea5ebd330be0f6.html">PX_INVALID_U16</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1gaa4c200317118429fa00288d3817a31af.html">PX_INVALID_U32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1gafb36f327a2be7c1b8cf2f0d91d6a16df.html">PX_IS_KIND_OF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1gabbba9e3f699e63445326263daec187e8.html">PX_MAKE_FOURCC</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga87ae1d60bdf83754e2fe5065aab40ec4.html">PX_PHYSX_COMMON_API</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga4636d12a5a01930fa258136f3f93366f.html">PX_PHYSX_CORE_API</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1gabe7c1438b281afb1d13fdc127cc84e68.html">PX_PHYSX_GPU_API</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga2fda99afe264006a8ef8a699aa1328aa.html">PX_SERIAL_ALIGN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga8ca0e9fc5693e347b3ee5735fc637fc2.html">PX_SERIAL_FILE_ALIGN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga70054743832670870a1ce9f619907c77.html">PX_SERIAL_OBJECT_ID_INVALID</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga27914dcd6d0448671eebfeca012cd0b5.html">PX_SERIAL_REF_KIND_MATERIAL_IDX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1gaa59252c69aa987bd926da9bbf5092367.html">PX_SERIAL_REF_KIND_PTR_TYPE_BIT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga8cd51251f2e11c3b6598b96f32e400f8.html">PX_SERIAL_REF_KIND_PXBASE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__common_1ga851719f1ba2587fb5c938b4ea4dac0b0.html">PX_STOMP_ALLOCATED_MEMORY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+<li>Common</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="common">
+<h1>Common<a class="headerlink" href="#common" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound" id="group__common">
+</div>
+<p class="rubric-h4 rubric">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a>: Base class for objects that can be members of a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>: Collection class for serialization.</p></li>
+<li><p><a class="reference internal" href="class_px_deserialization_context.html#class_px_deserialization_context"><span class="std std-ref">PxDeserializationContext</span></a>: Binary deserialization context class.</p></li>
+<li><p><a class="reference internal" href="class_px_fixed_size_lookup_table.html#class_px_fixed_size_lookup_table"><span class="std std-ref">PxFixedSizeLookupTable</span></a></p></li>
+<li><p><a class="reference internal" href="class_px_input_data.html#class_px_input_data"><span class="std std-ref">PxInputData</span></a>: Input data class for I/O which provides random read access.</p></li>
+<li><p><a class="reference internal" href="class_px_input_stream.html#class_px_input_stream"><span class="std std-ref">PxInputStream</span></a>: Input stream class for I/O.</p></li>
+<li><p><a class="reference internal" href="class_px_insertion_callback.html#class_px_insertion_callback"><span class="std std-ref">PxInsertionCallback</span></a>: Callback interface that permits TriangleMesh, Heightfield, ConvexMesh or BVH to be used directly without the need to store the cooking results into a stream.</p></li>
+<li><p><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref">PxOutputStream</span></a>: Output stream class for I/O.</p></li>
+<li><p><a class="reference internal" href="class_px_process_px_base_callback.html#class_px_process_px_base_callback"><span class="std std-ref">PxProcessPxBaseCallback</span></a>: Callback class used to process <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects.</p></li>
+<li><p><a class="reference internal" href="class_px_ref_counted.html#class_px_ref_counted"><span class="std std-ref">PxRefCounted</span></a>: Base class for ref-counted objects.</p></li>
+<li><p><a class="reference internal" href="class_px_render_buffer.html#class_px_render_buffer"><span class="std std-ref">PxRenderBuffer</span></a>: Interface for points, lines, triangles, and text buffer.</p></li>
+<li><p><a class="reference internal" href="class_px_serialization_context.html#class_px_serialization_context"><span class="std std-ref">PxSerializationContext</span></a>: Binary serialization context class.</p></li>
+<li><p><a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a>: Class serving as a registry for XML (RepX) and binary serializable types.</p></li>
+<li><p><a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a>: Class to define the scale at which simulation runs.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Macros</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8.html#group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8"><span class="std std-ref">PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga0f0e989d1b6381bd4791d00435ddf2c4.html#group__common_1ga0f0e989d1b6381bd4791d00435ddf2c4"><span class="std std-ref">PX_CATCH_UNDEFINED_ENABLE_SIM_STATS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga922d48697d998518e12a16e589f0c75a.html#group__common_1ga922d48697d998518e12a16e589f0c75a"><span class="std std-ref">PX_DEFINE_TYPEINFO</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga69be4db0e236ef5c43be7974a1a1fe5d.html#group__common_1ga69be4db0e236ef5c43be7974a1a1fe5d"><span class="std std-ref">PX_ENABLE_DEBUG_VISUALIZATION</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga30582e116d8777c36c92277f07031955.html#group__common_1ga30582e116d8777c36c92277f07031955"><span class="std std-ref">PX_ENABLE_SIM_STATS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga2af5ad9fd5086087aaea5ebd330be0f6.html#group__common_1ga2af5ad9fd5086087aaea5ebd330be0f6"><span class="std std-ref">PX_INVALID_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gaa4c200317118429fa00288d3817a31af.html#group__common_1gaa4c200317118429fa00288d3817a31af"><span class="std std-ref">PX_INVALID_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gafb36f327a2be7c1b8cf2f0d91d6a16df.html#group__common_1gafb36f327a2be7c1b8cf2f0d91d6a16df"><span class="std std-ref">PX_IS_KIND_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gabbba9e3f699e63445326263daec187e8.html#group__common_1gabbba9e3f699e63445326263daec187e8"><span class="std std-ref">PX_MAKE_FOURCC</span></a>: Used to fix multi-byte characters warning from gcc for situations like: PxU32 foo = 'CCTS';.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga87ae1d60bdf83754e2fe5065aab40ec4.html#group__common_1ga87ae1d60bdf83754e2fe5065aab40ec4"><span class="std std-ref">PX_PHYSX_COMMON_API</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga4636d12a5a01930fa258136f3f93366f.html#group__common_1ga4636d12a5a01930fa258136f3f93366f"><span class="std std-ref">PX_PHYSX_CORE_API</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gabe7c1438b281afb1d13fdc127cc84e68.html#group__common_1gabe7c1438b281afb1d13fdc127cc84e68"><span class="std std-ref">PX_PHYSX_GPU_API</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga2fda99afe264006a8ef8a699aa1328aa.html#group__common_1ga2fda99afe264006a8ef8a699aa1328aa"><span class="std std-ref">PX_SERIAL_ALIGN</span></a>: Default serialization alignment.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga8ca0e9fc5693e347b3ee5735fc637fc2.html#group__common_1ga8ca0e9fc5693e347b3ee5735fc637fc2"><span class="std std-ref">PX_SERIAL_FILE_ALIGN</span></a>: Serialized input data must be aligned to this value.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga70054743832670870a1ce9f619907c77.html#group__common_1ga70054743832670870a1ce9f619907c77"><span class="std std-ref">PX_SERIAL_OBJECT_ID_INVALID</span></a>: PxSerialObjectId value for objects that do not have an ID.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga27914dcd6d0448671eebfeca012cd0b5.html#group__common_1ga27914dcd6d0448671eebfeca012cd0b5"><span class="std std-ref">PX_SERIAL_REF_KIND_MATERIAL_IDX</span></a>: Reference kind value for material indices.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1gaa59252c69aa987bd926da9bbf5092367.html#group__common_1gaa59252c69aa987bd926da9bbf5092367"><span class="std std-ref">PX_SERIAL_REF_KIND_PTR_TYPE_BIT</span></a>: Bit to mark pointer type references,.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga8cd51251f2e11c3b6598b96f32e400f8.html#group__common_1ga8cd51251f2e11c3b6598b96f32e400f8"><span class="std std-ref">PX_SERIAL_REF_KIND_PXBASE</span></a>: Reference kind value for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga851719f1ba2587fb5c938b4ea4dac0b0.html#group__common_1ga851719f1ba2587fb5c938b4ea4dac0b0"><span class="std std-ref">PX_STOMP_ALLOCATED_MEMORY</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__common_1gaef6d1ccfdddddcd67ecc9849a8feb6f5"><span class="std std-ref">PxComputeAngle(const PxVec3 &amp;v0, const PxVec3 &amp;v1)</span></a>: Compute the angle between two non-unit vectors.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga672f54c6e0ba9efbb0d6bce8dbdfef54"><span class="std std-ref">PxComputeBasisVectors(const PxVec3 &amp;dir, PxVec3 &amp;right, PxVec3 &amp;up)</span></a>: Compute two normalized vectors (right and up) that are perpendicular to an input normalized vector (dir).</p></li>
+<li><p><a class="reference internal" href="#group__common_1gabb1443d7b8bc5c258850bb6004296cf8"><span class="std std-ref">PxComputeBasisVectors(const PxVec3 &amp;p0, const PxVec3 &amp;p1, PxVec3 &amp;dir, PxVec3 &amp;right, PxVec3 &amp;up)</span></a>: Compute three normalized vectors (dir, right and up) that are parallel to (dir) and perpendicular to (right, up) the normalized direction vector (p1 - p0)/||p1 - p0||.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga8b4eb8ada733cca62207460572c81ed1"><span class="std std-ref">PxCreateCollection()</span></a>: Creates a collection object.</p></li>
+<li><p><a class="reference internal" href="#group__common_1gaaa7cbc36723f65081aeffb1d918df2e6"><span class="std std-ref">PxDiagonalize(const PxMat33 &amp;m, PxQuat &amp;axes)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gaf3109f3d63fbfd58cb4862fef5e5a8b6"><span class="std std-ref">PxEllipseClamp(const PxVec3 &amp;point, const PxVec3 &amp;radii)</span></a>: Compute the closest point on an 2d ellipse to a given 2d point.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga9c0c5eab4c913a0ec42211e7eabc0a44"><span class="std std-ref">PxExp(const PxVec3 &amp;v)</span></a>: Compute the exponent of a PxVec3.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga390c05e2a27d7e13bf16f4eb49f048ff"><span class="std std-ref">PxGetNextIndex3(PxU32 i)</span></a>: Compute (i+1)%3.</p></li>
+<li><p><a class="reference internal" href="#group__common_1gaa7b17595b5a0bc6cad649d4cd12ccd35"><span class="std std-ref">PxIntegrateTransform(const PxTransform &amp;curTrans, const PxVec3 &amp;linvel, const PxVec3 &amp;angvel, PxReal timeStep, PxTransform &amp;result)</span></a>: integrate transform.</p></li>
+<li><p><a class="reference internal" href="#group__common_1gaec55bba62b61ebcee04e6c841f95d391"><span class="std std-ref">PxLargestAxis(const PxVec3 &amp;v)</span></a>: return Returns 0 if v.x is largest element of v, 1 if v.y is largest element, 2 if v.z is largest element.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga18cc8f5bd44f999e922ef58d9323168e"><span class="std std-ref">PxLog(const PxQuat &amp;q)</span></a>: return Returns the log of a PxQuat</p></li>
+<li><p><a class="reference internal" href="#group__common_1gaea3e177de113d6bf9376d489bd5cfdcb"><span class="std std-ref">PxOptimizeBoundingBox(PxMat33 &amp;basis)</span></a>: computes a oriented bounding box around the scaled basis.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga9927851bee11574416444fd181154498"><span class="std std-ref">PxPlaneEquationFromTransform(const PxTransform &amp;pose)</span></a>: creates a plane equation from a transform, such as the actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#class_px_plane_geometry"><span class="std std-ref">PxPlaneGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1ga26aee2af9614a783a6a65608b1e63f59"><span class="std std-ref">PxSdfSample(const PxReal *sdf, const PxVec3 &amp;localPos, const PxVec3 &amp;sdfBoxLower, const PxVec3 &amp;sdfBoxHigher, const PxReal sdfDx, const PxReal invSdfDx, const PxU32 dimX, const PxU32 dimY, const PxU32 dimZ, PxVec3 &amp;gradient, PxReal tolerance=PX_MAX_F32)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1ga3fcba35609cc2308a1ac5719cca9e3a3"><span class="std std-ref">PxSeparateSwingTwist(const PxQuat &amp;q, PxQuat &amp;swing, PxQuat &amp;twist)</span></a>: Compute from an input quaternion q a pair of quaternions (swing, twist) such that q = swing * twist with the caveats that swing.x = twist.y = twist.z = 0.</p></li>
+<li><p><a class="reference internal" href="#group__common_1gafd97f8e63d535db8ee32040fc10a2214"><span class="std std-ref">PxShortestRotation(const PxVec3 &amp;from, const PxVec3 &amp;target)</span></a>: finds the shortest rotation between two vectors.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga76f9cc1ea05f0d890c83741c5dbf34bd"><span class="std std-ref">PxSlerp(const PxReal t, const PxQuat &amp;left, const PxQuat &amp;right)</span></a>: Spherical linear interpolation of two quaternions.</p></li>
+<li><p><a class="reference internal" href="#group__common_1gafc774511e549bdda887efdb84c408bf4"><span class="std std-ref">PxTanHalf(PxReal sin, PxReal cos)</span></a>: Compute tan(theta/2) given sin(theta) and cos(theta) as inputs.</p></li>
+<li><p><a class="reference internal" href="class_px_tolerances_scale.html#group__common_1ga6eda74412ce6c6f4f7ee41968557a875"><span class="std std-ref">PxTolerancesScale::PxTolerancesScale(float defaultLength=1.0f, float defaultSpeed=10.0f)</span></a>: constructor sets to default</p></li>
+<li><p><a class="reference internal" href="class_px_tolerances_scale.html#group__common_1ga46bcbe826dd593912dd4cb93c07be6ae"><span class="std std-ref">PxTolerancesScale::isValid() const</span></a>: Returns true if the descriptor is valid.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga7b4d7bdd33c9aef3c754f668228fa8e4"><span class="std std-ref">PxTransformFromPlaneEquation(const PxPlane &amp;plane)</span></a>: creates a transform from a plane equation, suitable for an actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#class_px_plane_geometry"><span class="std std-ref">PxPlaneGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gac3d19767c1de17d720edaf7bd4bdf612"><span class="std std-ref">PxTransformFromSegment(const PxVec3 &amp;p0, const PxVec3 &amp;p1, PxReal *halfHeight=NULL)</span></a>: creates a transform from the endpoints of a segment, suitable for an actor transform for a <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gaa9b74a2052533610b4b229028eca066e"><span class="std std-ref">computeBarycentric(const PxVec3 &amp;a, const PxVec3 &amp;b, const PxVec3 &amp;c, const PxVec3 &amp;p, PxVec4 &amp;bary)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gad8a0c837ed62c845aa022442a4a81827"><span class="std std-ref">computeBarycentric(const PxVec3 &amp;a, const PxVec3 &amp;b, const PxVec3 &amp;c, const PxVec3 &amp;d, const PxVec3 &amp;p, PxVec4 &amp;bary)</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_interpolation.html#struct_interpolation"><span class="std std-ref">Interpolation</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a>: Flags for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_bounded_data.html#struct_px_bounded_data"><span class="std std-ref">PxBoundedData</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a>: an enumeration of concrete classes inheriting from <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_debug_color.html#struct_px_debug_color"><span class="std std-ref">PxDebugColor</span></a>: Default color values used for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_px_debug_line.html#struct_px_debug_line"><span class="std std-ref">PxDebugLine</span></a>: Used to store a single line and colour for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_px_debug_point.html#struct_px_debug_point"><span class="std std-ref">PxDebugPoint</span></a>: Used to store a single point and colour for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_px_debug_text.html#struct_px_debug_text"><span class="std std-ref">PxDebugText</span></a>: Used to store a text for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_px_debug_triangle.html#struct_px_debug_triangle"><span class="std std-ref">PxDebugTriangle</span></a>: Used to store a single triangle and colour for debug rendering.</p></li>
+<li><p><a class="reference internal" href="struct_px_padding.html#struct_px_padding"><span class="std std-ref">PxPadding</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_strided_data.html#struct_px_strided_data"><span class="std std-ref">PxStridedData</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info.html#struct_px_type_info"><span class="std std-ref">PxTypeInfo</span></a>: a structure containing per-type information for types inheriting from <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_actor_01_4.html#struct_px_type_info_3_01_px_actor_01_4"><span class="std std-ref">PxTypeInfo&lt; PxActor &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_aggregate_01_4.html#struct_px_type_info_3_01_px_aggregate_01_4"><span class="std std-ref">PxTypeInfo&lt; PxAggregate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_joint_reduced_coordinate_01_4.html#struct_px_type_info_3_01_px_articulation_joint_reduced_coordinate_01_4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationJointReducedCoordinate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_link_01_4.html#struct_px_type_info_3_01_px_articulation_link_01_4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationLink &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_reduced_coordinate_01_4.html#struct_px_type_info_3_01_px_articulation_reduced_coordinate_01_4"><span class="std std-ref">PxTypeInfo&lt; PxArticulationReducedCoordinate &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h33_triangle_mesh_01_4.html#struct_px_type_info_3_01_px_b_v_h33_triangle_mesh_01_4"><span class="std std-ref">PxTypeInfo&lt; PxBVH33TriangleMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h34_triangle_mesh_01_4.html#struct_px_type_info_3_01_px_b_v_h34_triangle_mesh_01_4"><span class="std std-ref">PxTypeInfo&lt; PxBVH34TriangleMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_base_01_4.html#struct_px_type_info_3_01_px_base_01_4"><span class="std std-ref">PxTypeInfo&lt; PxBase &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_constraint_01_4.html#struct_px_type_info_3_01_px_constraint_01_4"><span class="std std-ref">PxTypeInfo&lt; PxConstraint &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_convex_mesh_01_4.html#struct_px_type_info_3_01_px_convex_mesh_01_4"><span class="std std-ref">PxTypeInfo&lt; PxConvexMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_01_4.html#struct_px_type_info_3_01_px_f_e_m_cloth_01_4"><span class="std std-ref">PxTypeInfo&lt; PxFEMCloth &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_material_01_4.html#struct_px_type_info_3_01_px_f_e_m_cloth_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxFEMClothMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_soft_body_material_01_4.html#struct_px_type_info_3_01_px_f_e_m_soft_body_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxFEMSoftBodyMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_l_i_p_material_01_4.html#struct_px_type_info_3_01_px_f_l_i_p_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxFLIPMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_f_l_i_p_particle_system_01_4.html#struct_px_type_info_3_01_px_f_l_i_p_particle_system_01_4"><span class="std std-ref">PxTypeInfo&lt; PxFLIPParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_hair_system_01_4.html#struct_px_type_info_3_01_px_hair_system_01_4"><span class="std std-ref">PxTypeInfo&lt; PxHairSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_height_field_01_4.html#struct_px_type_info_3_01_px_height_field_01_4"><span class="std std-ref">PxTypeInfo&lt; PxHeightField &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_m_p_m_material_01_4.html#struct_px_type_info_3_01_px_m_p_m_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxMPMMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_m_p_m_particle_system_01_4.html#struct_px_type_info_3_01_px_m_p_m_particle_system_01_4"><span class="std std-ref">PxTypeInfo&lt; PxMPMParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_material_01_4.html#struct_px_type_info_3_01_px_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_material_01_4.html#struct_px_type_info_3_01_px_p_b_d_material_01_4"><span class="std std-ref">PxTypeInfo&lt; PxPBDMaterial &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_particle_system_01_4.html#struct_px_type_info_3_01_px_p_b_d_particle_system_01_4"><span class="std std-ref">PxTypeInfo&lt; PxPBDParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_and_diffuse_buffer_01_4.html#struct_px_type_info_3_01_px_particle_and_diffuse_buffer_01_4"><span class="std std-ref">PxTypeInfo&lt; PxParticleAndDiffuseBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_buffer_01_4.html#struct_px_type_info_3_01_px_particle_buffer_01_4"><span class="std std-ref">PxTypeInfo&lt; PxParticleBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_cloth_buffer_01_4.html#struct_px_type_info_3_01_px_particle_cloth_buffer_01_4"><span class="std std-ref">PxTypeInfo&lt; PxParticleClothBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_rigid_buffer_01_4.html#struct_px_type_info_3_01_px_particle_rigid_buffer_01_4"><span class="std std-ref">PxTypeInfo&lt; PxParticleRigidBuffer &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_particle_system_01_4.html#struct_px_type_info_3_01_px_particle_system_01_4"><span class="std std-ref">PxTypeInfo&lt; PxParticleSystem &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_pruning_structure_01_4.html#struct_px_type_info_3_01_px_pruning_structure_01_4"><span class="std std-ref">PxTypeInfo&lt; PxPruningStructure &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_actor_01_4.html#struct_px_type_info_3_01_px_rigid_actor_01_4"><span class="std std-ref">PxTypeInfo&lt; PxRigidActor &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_body_01_4.html#struct_px_type_info_3_01_px_rigid_body_01_4"><span class="std std-ref">PxTypeInfo&lt; PxRigidBody &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_dynamic_01_4.html#struct_px_type_info_3_01_px_rigid_dynamic_01_4"><span class="std std-ref">PxTypeInfo&lt; PxRigidDynamic &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_static_01_4.html#struct_px_type_info_3_01_px_rigid_static_01_4"><span class="std std-ref">PxTypeInfo&lt; PxRigidStatic &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_shape_01_4.html#struct_px_type_info_3_01_px_shape_01_4"><span class="std std-ref">PxTypeInfo&lt; PxShape &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_soft_body_01_4.html#struct_px_type_info_3_01_px_soft_body_01_4"><span class="std std-ref">PxTypeInfo&lt; PxSoftBody &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_tetrahedron_mesh_01_4.html#struct_px_type_info_3_01_px_tetrahedron_mesh_01_4"><span class="std std-ref">PxTypeInfo&lt; PxTetrahedronMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_type_info_3_01_px_triangle_mesh_01_4.html#struct_px_type_info_3_01_px_triangle_mesh_01_4"><span class="std std-ref">PxTypeInfo&lt; PxTriangleMesh &gt;</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_typed_strided_data.html#struct_px_typed_strided_data"><span class="std std-ref">PxTypedStridedData</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Typedefs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__common_1ga1e3721588799f5fbb18d76e4aab7d018"><span class="std std-ref">PxBaseFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1ga9e6be7ab72eead617e6e0d7a6dc7c19b"><span class="std std-ref">PxBinaryMetaDataCallback</span></a>: Callback type for exporting binary meta data for a serializable type.</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga5243c1bcb1d89211d250682abb0d70cf"><span class="std std-ref">PxFEMMaterialTableIndex</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gac816bc62a68a52f01bf21f963295e822"><span class="std std-ref">PxMaterialTableIndex</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gab2ccfb663643cd2d66b59908189d88cd"><span class="std std-ref">PxSerialObjectId</span></a>: ID type for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects in a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__common_1ga19403877bf7ce42d7240e4e4c758c016"><span class="std std-ref">PxTriangleID</span></a></p></li>
+<li><p><a class="reference internal" href="#group__common_1gac1fb4b256a5d900d394e89db170a2b79"><span class="std std-ref">PxType</span></a></p></li>
+</ul>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv414PxComputeAngleRK6PxVec3RK6PxVec3">
+<span id="_CPPv314PxComputeAngleRK6PxVec3RK6PxVec3"></span><span id="_CPPv214PxComputeAngleRK6PxVec3RK6PxVec3"></span><span id="PxComputeAngle__PxVec3CR.PxVec3CR"></span><span class="target" id="group__common_1gaef6d1ccfdddddcd67ecc9849a8feb6f5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxComputeAngle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v1</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv414PxComputeAngleRK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the angle between two non-unit vectors. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v0</strong> – <strong>[in]</strong> is one of the non-unit vectors </p></li>
+<li><p><strong>v1</strong> – <strong>[in]</strong> is the other of the two non-unit vectors </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the angle (in radians) between the two vector v0 and v1. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxComputeBasisVectorsRK6PxVec3R6PxVec3R6PxVec3">
+<span id="_CPPv321PxComputeBasisVectorsRK6PxVec3R6PxVec3R6PxVec3"></span><span id="_CPPv221PxComputeBasisVectorsRK6PxVec3R6PxVec3R6PxVec3"></span><span id="PxComputeBasisVectors__PxVec3CR.PxVec3R.PxVec3R"></span><span class="target" id="group__common_1ga672f54c6e0ba9efbb0d6bce8dbdfef54"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxComputeBasisVectors</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxComputeBasisVectorsRK6PxVec3R6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute two normalized vectors (right and up) that are perpendicular to an input normalized vector (dir). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dir</strong> – <strong>[in]</strong> is a normalized vector that is used to compute the perpendicular vectors. </p></li>
+<li><p><strong>right</strong> – <strong>[out]</strong> is the first of the two vectors perpendicular to dir </p></li>
+<li><p><strong>up</strong> – <strong>[out]</strong> is the second of the two vectors perpendicular to dir </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxComputeBasisVectorsRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3R6PxVec3">
+<span id="_CPPv321PxComputeBasisVectorsRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3R6PxVec3"></span><span id="_CPPv221PxComputeBasisVectorsRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3R6PxVec3"></span><span id="PxComputeBasisVectors__PxVec3CR.PxVec3CR.PxVec3R.PxVec3R.PxVec3R"></span><span class="target" id="group__common_1gabb1443d7b8bc5c258850bb6004296cf8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxComputeBasisVectors</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p1</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxComputeBasisVectorsRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute three normalized vectors (dir, right and up) that are parallel to (dir) and perpendicular to (right, up) the normalized direction vector (p1 - p0)/||p1 - p0||. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p0</strong> – <strong>[in]</strong> is used to compute the normalized vector dir = (p1 - p0)/||p1 - p0||. </p></li>
+<li><p><strong>p1</strong> – <strong>[in]</strong> is used to compute the normalized vector dir = (p1 - p0)/||p1 - p0||. </p></li>
+<li><p><strong>dir</strong> – <strong>[out]</strong> is the normalized vector (p1 - p0)/||p1 - p0||. </p></li>
+<li><p><strong>right</strong> – <strong>[out]</strong> is the first of the two normalized vectors perpendicular to dir </p></li>
+<li><p><strong>up</strong> – <strong>[out]</strong> is the second of the two normalized vectors perpendicular to dir </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxCreateCollectionv">
+<span id="_CPPv318PxCreateCollectionv"></span><span id="_CPPv218PxCreateCollectionv"></span><span id="PxCreateCollection"></span><span class="target" id="group__common_1ga8b4eb8ada733cca62207460572c81ed1"></span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxCollection</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateCollection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxCreateCollectionv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a collection object. </p>
+<p>Objects can only be serialized or deserialized through a collection. For serialization, users must add objects to the collection and serialize the collection as a whole. For deserialization, the system gives back a collection of deserialized objects to users.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_collection.html#class_px_collection_1aebf358855b8e054c907f49f85288a68d"><span class="std std-ref">PxCollection::release()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The new collection object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv413PxDiagonalizeRK7PxMat33R6PxQuat">
+<span id="_CPPv313PxDiagonalizeRK7PxMat33R6PxQuat"></span><span id="_CPPv213PxDiagonalizeRK7PxMat33R6PxQuat"></span><span id="PxDiagonalize__PxMat33CR.PxQuatR"></span><span class="target" id="group__common_1gaaa7cbc36723f65081aeffb1d918df2e6"></span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDiagonalize</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">m</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axes</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv413PxDiagonalizeRK7PxMat33R6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv414PxEllipseClampRK6PxVec3RK6PxVec3">
+<span id="_CPPv314PxEllipseClampRK6PxVec3RK6PxVec3"></span><span id="_CPPv214PxEllipseClampRK6PxVec3RK6PxVec3"></span><span id="PxEllipseClamp__PxVec3CR.PxVec3CR"></span><span class="target" id="group__common_1gaf3109f3d63fbfd58cb4862fef5e5a8b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxEllipseClamp</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">point</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">radii</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv414PxEllipseClampRK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the closest point on an 2d ellipse to a given 2d point. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point</strong> – <strong>[in]</strong> is a 2d point in the y-z plane represented by (point.y, point.z) </p></li>
+<li><p><strong>radii</strong> – <strong>[in]</strong> are the radii of the ellipse (radii.y and radii.z) in the y-z plane. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns the 2d position on the surface of the ellipse that is closest to point. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv45PxExpRK6PxVec3">
+<span id="_CPPv35PxExpRK6PxVec3"></span><span id="_CPPv25PxExpRK6PxVec3"></span><span id="PxExp__PxVec3CR"></span><span class="target" id="group__common_1ga9c0c5eab4c913a0ec42211e7eabc0a44"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxExp</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv45PxExpRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the exponent of a PxVec3. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv415PxGetNextIndex35PxU32">
+<span id="_CPPv315PxGetNextIndex35PxU32"></span><span id="_CPPv215PxGetNextIndex35PxU32"></span><span id="PxGetNextIndex3__PxU32"></span><span class="target" id="group__common_1ga390c05e2a27d7e13bf16f4eb49f048ff"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetNextIndex3</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">i</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415PxGetNextIndex35PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute (i+1)%3. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420PxIntegrateTransformRK11PxTransformRK6PxVec3RK6PxVec36PxRealR11PxTransform">
+<span id="_CPPv320PxIntegrateTransformRK11PxTransformRK6PxVec3RK6PxVec36PxRealR11PxTransform"></span><span id="_CPPv220PxIntegrateTransformRK11PxTransformRK6PxVec3RK6PxVec36PxRealR11PxTransform"></span><span id="PxIntegrateTransform__PxTransformCR.PxVec3CR.PxVec3CR.PxReal.PxTransformR"></span><span class="target" id="group__common_1gaa7b17595b5a0bc6cad649d4cd12ccd35"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxIntegrateTransform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">curTrans</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linvel</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angvel</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">timeStep</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">result</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420PxIntegrateTransformRK11PxTransformRK6PxVec3RK6PxVec36PxRealR11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>integrate transform. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>curTrans</strong> – <strong>[in]</strong> The current transform </p></li>
+<li><p><strong>linvel</strong> – <strong>[in]</strong> Linear velocity </p></li>
+<li><p><strong>angvel</strong> – <strong>[in]</strong> Angular velocity </p></li>
+<li><p><strong>timeStep</strong> – <strong>[in]</strong> The time-step for integration </p></li>
+<li><p><strong>result</strong> – <strong>[out]</strong> The integrated transform </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv413PxLargestAxisRK6PxVec3">
+<span id="_CPPv313PxLargestAxisRK6PxVec3"></span><span id="_CPPv213PxLargestAxisRK6PxVec3"></span><span id="PxLargestAxis__PxVec3CR"></span><span class="target" id="group__common_1gaec55bba62b61ebcee04e6c841f95d391"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxLargestAxis</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">v</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv413PxLargestAxisRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>return Returns 0 if v.x is largest element of v, 1 if v.y is largest element, 2 if v.z is largest element. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv45PxLogRK6PxQuat">
+<span id="_CPPv35PxLogRK6PxQuat"></span><span id="_CPPv25PxLogRK6PxQuat"></span><span id="PxLog__PxQuatCR"></span><span class="target" id="group__common_1ga18cc8f5bd44f999e922ef58d9323168e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxLog</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv45PxLogRK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>return Returns the log of a PxQuat </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxOptimizeBoundingBoxR7PxMat33">
+<span id="_CPPv321PxOptimizeBoundingBoxR7PxMat33"></span><span id="_CPPv221PxOptimizeBoundingBoxR7PxMat33"></span><span id="PxOptimizeBoundingBox__PxMat33R"></span><span class="target" id="group__common_1gaea3e177de113d6bf9376d489bd5cfdcb"></span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxOptimizeBoundingBox</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">basis</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxOptimizeBoundingBoxR7PxMat33" title="Permalink to this definition"></a><br /></dt>
+<dd><p>computes a oriented bounding box around the scaled basis. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>basis</strong> – Input = skewed basis, Output = (normalized) orthogonal basis. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Bounding box extent. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428PxPlaneEquationFromTransformRK11PxTransform">
+<span id="_CPPv328PxPlaneEquationFromTransformRK11PxTransform"></span><span id="_CPPv228PxPlaneEquationFromTransformRK11PxTransform"></span><span id="PxPlaneEquationFromTransform__PxTransformCR"></span><span class="target" id="group__common_1ga9927851bee11574416444fd181154498"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="class_px_plane.html#_CPPv47PxPlane" title="PxPlane"><span class="n"><span class="pre">PxPlane</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPlaneEquationFromTransform</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv428PxPlaneEquationFromTransformRK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>creates a plane equation from a transform, such as the actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#class_px_plane_geometry"><span class="std std-ref">PxPlaneGeometry</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pose</strong> – <strong>[in]</strong> the transform </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the plane </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv411PxSdfSamplePK6PxRealRK6PxVec3RK6PxVec3RK6PxVec3K6PxRealK6PxRealK5PxU32K5PxU32K5PxU32R6PxVec36PxReal">
+<span id="_CPPv311PxSdfSamplePK6PxRealRK6PxVec3RK6PxVec3RK6PxVec3K6PxRealK6PxRealK5PxU32K5PxU32K5PxU32R6PxVec36PxReal"></span><span id="_CPPv211PxSdfSamplePK6PxRealRK6PxVec3RK6PxVec3RK6PxVec3K6PxRealK6PxRealK5PxU32K5PxU32K5PxU32R6PxVec36PxReal"></span><span id="PxSdfSample__PxRealCP.PxVec3CR.PxVec3CR.PxVec3CR.PxRealC.PxRealC.PxU32C.PxU32C.PxU32C.PxVec3R.PxReal"></span><span class="target" id="group__common_1ga26aee2af9614a783a6a65608b1e63f59"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSdfSample</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">sdf</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPos</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sdfBoxLower</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sdfBoxHigher</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">sdfDx</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invSdfDx</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dimX</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dimY</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dimZ</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">gradient</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">tolerance</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">PX_MAX_F32</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv411PxSdfSamplePK6PxRealRK6PxVec3RK6PxVec3RK6PxVec3K6PxRealK6PxRealK5PxU32K5PxU32K5PxU32R6PxVec36PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420PxSeparateSwingTwistRK6PxQuatR6PxQuatR6PxQuat">
+<span id="_CPPv320PxSeparateSwingTwistRK6PxQuatR6PxQuatR6PxQuat"></span><span id="_CPPv220PxSeparateSwingTwistRK6PxQuatR6PxQuatR6PxQuat"></span><span id="PxSeparateSwingTwist__PxQuatCR.PxQuatR.PxQuatR"></span><span class="target" id="group__common_1ga3fcba35609cc2308a1ac5719cca9e3a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSeparateSwingTwist</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">q</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">swing</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">twist</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420PxSeparateSwingTwistRK6PxQuatR6PxQuatR6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute from an input quaternion q a pair of quaternions (swing, twist) such that q = swing * twist with the caveats that swing.x = twist.y = twist.z = 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>q</strong> – <strong>[in]</strong> is the quaternion to be decomposed into swing and twist quaternions. </p></li>
+<li><p><strong>swing</strong> – <strong>[out]</strong> is the swing component of the quaternion decomposition. </p></li>
+<li><p><strong>twist</strong> – <strong>[out]</strong> is the twist component of the quaternion decomposition. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxShortestRotationRK6PxVec3RK6PxVec3">
+<span id="_CPPv318PxShortestRotationRK6PxVec3RK6PxVec3"></span><span id="_CPPv218PxShortestRotationRK6PxVec3RK6PxVec3"></span><span id="PxShortestRotation__PxVec3CR.PxVec3CR"></span><span class="target" id="group__common_1gafd97f8e63d535db8ee32040fc10a2214"></span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShortestRotation</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">from</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxShortestRotationRK6PxVec3RK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>finds the shortest rotation between two vectors. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from</strong> – <strong>[in]</strong> the vector to start from </p></li>
+<li><p><strong>target</strong> – <strong>[in]</strong> the vector to rotate to </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a rotation about an axis normal to the two vectors which takes one to the other via the shortest path </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv47PxSlerpK6PxRealRK6PxQuatRK6PxQuat">
+<span id="_CPPv37PxSlerpK6PxRealRK6PxQuatRK6PxQuat"></span><span id="_CPPv27PxSlerpK6PxRealRK6PxQuatRK6PxQuat"></span><span id="PxSlerp__PxRealC.PxQuatCR.PxQuatCR"></span><span class="target" id="group__common_1ga76f9cc1ea05f0d890c83741c5dbf34bd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSlerp</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">left</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">right</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv47PxSlerpK6PxRealRK6PxQuatRK6PxQuat" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Spherical linear interpolation of two quaternions. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> – <strong>[in]</strong> is the interpolation parameter in range (0, 1) </p></li>
+<li><p><strong>left</strong> – <strong>[in]</strong> is the start of the interpolation </p></li>
+<li><p><strong>right</strong> – <strong>[in]</strong> is the end of the interpolation </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns left when t=0, right when t=1 and a linear interpolation of left and right when 0 &lt; t &lt; 1. Returns angle between -PI and PI in radians </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv49PxTanHalf6PxReal6PxReal">
+<span id="_CPPv39PxTanHalf6PxReal6PxReal"></span><span id="_CPPv29PxTanHalf6PxReal6PxReal"></span><span id="PxTanHalf__PxReal.PxReal"></span><span class="target" id="group__common_1gafc774511e549bdda887efdb84c408bf4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTanHalf</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">sin</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">cos</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv49PxTanHalf6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute tan(theta/2) given sin(theta) and cos(theta) as inputs. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sin</strong> – <strong>[in]</strong> has value sin(theta) </p></li>
+<li><p><strong>cos</strong> – <strong>[in]</strong> has value cos(theta) </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns tan(theta/2) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv428PxTransformFromPlaneEquationRK7PxPlane">
+<span id="_CPPv328PxTransformFromPlaneEquationRK7PxPlane"></span><span id="_CPPv228PxTransformFromPlaneEquationRK7PxPlane"></span><span id="PxTransformFromPlaneEquation__PxPlaneCR"></span><span class="target" id="group__common_1ga7b4d7bdd33c9aef3c754f668228fa8e4"></span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformFromPlaneEquation</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_plane.html#_CPPv47PxPlane" title="PxPlane"><span class="n"><span class="pre">PxPlane</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">plane</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv428PxTransformFromPlaneEquationRK7PxPlane" title="Permalink to this definition"></a><br /></dt>
+<dd><p>creates a transform from a plane equation, suitable for an actor transform for a <a class="reference internal" href="class_px_plane_geometry.html#class_px_plane_geometry"><span class="std std-ref">PxPlaneGeometry</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>plane</strong> – <strong>[in]</strong> the desired plane equation </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a PxTransform which will transform the plane <a class="reference internal" href="class_px_plane.html#class_px_plane"><span class="std std-ref">PxPlane(1,0,0,0)</span></a> to the specified plane </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422PxTransformFromSegmentRK6PxVec3RK6PxVec3P6PxReal">
+<span id="_CPPv322PxTransformFromSegmentRK6PxVec3RK6PxVec3P6PxReal"></span><span id="_CPPv222PxTransformFromSegmentRK6PxVec3RK6PxVec3P6PxReal"></span><span id="PxTransformFromSegment__PxVec3CR.PxVec3CR.PxRealP"></span><span class="target" id="group__common_1gac3d19767c1de17d720edaf7bd4bdf612"></span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTransformFromSegment</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p1</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">halfHeight</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422PxTransformFromSegmentRK6PxVec3RK6PxVec3P6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>creates a transform from the endpoints of a segment, suitable for an actor transform for a <a class="reference internal" href="class_px_capsule_geometry.html#class_px_capsule_geometry"><span class="std std-ref">PxCapsuleGeometry</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p0</strong> – <strong>[in]</strong> one end of major axis of the capsule </p></li>
+<li><p><strong>p1</strong> – <strong>[in]</strong> the other end of the axis of the capsule </p></li>
+<li><p><strong>halfHeight</strong> – <strong>[out]</strong> the halfHeight of the capsule. This parameter is optional. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A PxTransform which will transform the vector (1,0,0) to the capsule axis shrunk by the halfHeight </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4">
+<span id="_CPPv318computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4"></span><span id="_CPPv218computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4"></span><span id="computeBarycentric__PxVec3CR.PxVec3CR.PxVec3CR.PxVec3CR.PxVec4R"></span><span class="target" id="group__common_1gaa9b74a2052533610b4b229028eca066e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeBarycentric</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">c</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bary</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4">
+<span id="_CPPv318computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4"></span><span id="_CPPv218computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4"></span><span id="computeBarycentric__PxVec3CR.PxVec3CR.PxVec3CR.PxVec3CR.PxVec3CR.PxVec4R"></span><span class="target" id="group__common_1gad8a0c837ed62c845aa022442a4a81827"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeBarycentric</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">c</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">d</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">p</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bary</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418computeBarycentricRK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3RK6PxVec3R6PxVec4" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv411PxBaseFlags">
+<span id="_CPPv311PxBaseFlags"></span><span id="_CPPv211PxBaseFlags"></span><span id="PxBaseFlags"></span><span class="target" id="group__common_1ga1e3721588799f5fbb18d76e4aab7d018"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBaseFlags</span></span></span><a class="headerlink" href="#_CPPv411PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv424PxBinaryMetaDataCallback">
+<span id="_CPPv324PxBinaryMetaDataCallback"></span><span id="_CPPv224PxBinaryMetaDataCallback"></span><span id="PxBinaryMetaDataCallback"></span><span class="target" id="group__common_1ga9e6be7ab72eead617e6e0d7a6dc7c19b"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxBinaryMetaDataCallback</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">stream</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv424PxBinaryMetaDataCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Callback type for exporting binary meta data for a serializable type. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000001"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Binary conversion and binary meta data are deprecated.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a10e39bebee808707bff3c73f01d60f07"><span class="std std-ref">PxSerializationRegistry::registerBinaryMetaDataCallback</span></a></p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Param stream</dt>
+<dd class="field-odd"><p>Stream to store binary meta data. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv423PxFEMMaterialTableIndex">
+<span id="_CPPv323PxFEMMaterialTableIndex"></span><span id="_CPPv223PxFEMMaterialTableIndex"></span><span id="PxFEMMaterialTableIndex"></span><span class="target" id="group__common_1ga5243c1bcb1d89211d250682abb0d70cf"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFEMMaterialTableIndex</span></span></span><a class="headerlink" href="#_CPPv423PxFEMMaterialTableIndex" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv420PxMaterialTableIndex">
+<span id="_CPPv320PxMaterialTableIndex"></span><span id="_CPPv220PxMaterialTableIndex"></span><span id="PxMaterialTableIndex"></span><span class="target" id="group__common_1gac816bc62a68a52f01bf21f963295e822"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMaterialTableIndex</span></span></span><a class="headerlink" href="#_CPPv420PxMaterialTableIndex" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv416PxSerialObjectId">
+<span id="_CPPv316PxSerialObjectId"></span><span id="_CPPv216PxSerialObjectId"></span><span id="PxSerialObjectId"></span><span class="target" id="group__common_1gab2ccfb663643cd2d66b59908189d88cd"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSerialObjectId</span></span></span><a class="headerlink" href="#_CPPv416PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>ID type for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects in a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv412PxTriangleID">
+<span id="_CPPv312PxTriangleID"></span><span id="_CPPv212PxTriangleID"></span><span id="PxTriangleID"></span><span class="target" id="group__common_1ga19403877bf7ce42d7240e4e4c758c016"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriangleID</span></span></span><a class="headerlink" href="#_CPPv412PxTriangleID" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv46PxType">
+<span id="_CPPv36PxType"></span><span id="_CPPv26PxType"></span><span id="PxType"></span><span class="target" id="group__common_1gac1fb4b256a5d900d394e89db170a2b79"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxType</span></span></span><a class="headerlink" href="#_CPPv46PxType" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

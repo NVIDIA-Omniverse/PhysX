@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pvd &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Scenequery" href="group__scenequery.html" />
+    <link rel="prev" title="PX_STORE_METADATA" href="define_group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__physics.html">Physics</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Pvd</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+<li>Pvd</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pvd">
+<h1>Pvd<a class="headerlink" href="#pvd" title="Permalink to this headline"></a></h1>
+<p class="rubric-h4 rubric" id="group__pvd">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_pvd.html#class_px_pvd"><span class="std std-ref">PxPvd</span></a>: <a class="reference internal" href="class_px_pvd.html#class_px_pvd"><span class="std std-ref">PxPvd</span></a> is the top-level class for the PVD framework, and the main customer interface for PVD configuration.It is a singleton class, instantiated and owned by the application.</p></li>
+<li><p><a class="reference internal" href="class_px_pvd_scene_client.html#class_px_pvd_scene_client"><span class="std std-ref">PxPvdSceneClient</span></a>: Special client for <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_px_pvd_transport.html#class_px_pvd_transport"><span class="std std-ref">PxPvdTransport</span></a>: <a class="reference internal" href="class_px_pvd_transport.html#class_px_pvd_transport"><span class="std std-ref">PxPvdTransport</span></a> is an interface representing the data transport mechanism.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__pvd_1ga01b14723accc85bd384003cb410427f1"><span class="std std-ref">PxCreatePvd(PxFoundation &amp;foundation)</span></a>: Create a pvd instance.</p></li>
+<li><p><a class="reference internal" href="#group__pvd_1gafeb685fe7eda756444e2314743542b0c"><span class="std std-ref">PxDefaultPvdFileTransportCreate(const char *name)</span></a>: Create a default file transport.</p></li>
+<li><p><a class="reference internal" href="#group__pvd_1gacd938ee5ec7487e77c04c5233d32e76a"><span class="std std-ref">PxDefaultPvdSocketTransportCreate(const char *host, int port, unsigned int timeoutInMilliseconds)</span></a>: Create a default socket transport.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Namespaces</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="namespace_pvdsdk.html#namespacepvdsdk"><span class="std std-ref">pvdsdk</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#struct_px_pvd_instrumentation_flag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a>: types of instrumentation that PVD can do.</p></li>
+<li><p><a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a>: PVD scene Flags.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Typedefs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__pvd_1ga4e8b7695b7145523688243b39da116c9"><span class="std std-ref">PxPvdInstrumentationFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#struct_px_pvd_instrumentation_flag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__pvd_1ga23ddab69994886fb588a139635bff64b"><span class="std std-ref">PxPvdSceneFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a> .</p></li>
+</ul>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv411PxCreatePvdR12PxFoundation">
+<span id="_CPPv311PxCreatePvdR12PxFoundation"></span><span id="_CPPv211PxCreatePvdR12PxFoundation"></span><span id="PxCreatePvd__PxFoundationR"></span><span class="target" id="group__pvd_1ga01b14723accc85bd384003cb410427f1"></span><a class="reference internal" href="class_px_pvd.html#_CPPv45PxPvd" title="PxPvd"><span class="n"><span class="pre">PxPvd</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreatePvd</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_foundation.html#_CPPv412PxFoundation" title="PxFoundation"><span class="n"><span class="pre">PxFoundation</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">foundation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv411PxCreatePvdR12PxFoundation" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create a pvd instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>foundation</strong> – is the foundation instance that stores the allocator and error callbacks. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv431PxDefaultPvdFileTransportCreatePKc">
+<span id="_CPPv331PxDefaultPvdFileTransportCreatePKc"></span><span id="_CPPv231PxDefaultPvdFileTransportCreatePKc"></span><span id="PxDefaultPvdFileTransportCreate__cCP"></span><span class="target" id="group__pvd_1gafeb685fe7eda756444e2314743542b0c"></span><a class="reference internal" href="class_px_pvd_transport.html#_CPPv414PxPvdTransport" title="PxPvdTransport"><span class="n"><span class="pre">PxPvdTransport</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxDefaultPvdFileTransportCreate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv431PxDefaultPvdFileTransportCreatePKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create a default file transport. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – full path filename used save captured pvd data, or NULL for a fake/test file transport. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv433PxDefaultPvdSocketTransportCreatePKcij">
+<span id="_CPPv333PxDefaultPvdSocketTransportCreatePKcij"></span><span id="_CPPv233PxDefaultPvdSocketTransportCreatePKcij"></span><span id="PxDefaultPvdSocketTransportCreate__cCP.i.unsigned-i"></span><span class="target" id="group__pvd_1gacd938ee5ec7487e77c04c5233d32e76a"></span><a class="reference internal" href="class_px_pvd_transport.html#_CPPv414PxPvdTransport" title="PxPvdTransport"><span class="n"><span class="pre">PxPvdTransport</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxDefaultPvdSocketTransportCreate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">host</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">port</span></span>, <span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeoutInMilliseconds</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433PxDefaultPvdSocketTransportCreatePKcij" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create a default socket transport. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> – host address of the pvd application. </p></li>
+<li><p><strong>port</strong> – ip port used for pvd, should same as the port setting in pvd application. </p></li>
+<li><p><strong>timeoutInMilliseconds</strong> – timeout when connect to pvd host. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv425PxPvdInstrumentationFlags">
+<span id="_CPPv325PxPvdInstrumentationFlags"></span><span id="_CPPv225PxPvdInstrumentationFlags"></span><span id="PxPvdInstrumentationFlags"></span><span class="target" id="group__pvd_1ga4e8b7695b7145523688243b39da116c9"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#_CPPv424PxPvdInstrumentationFlag" title="PxPvdInstrumentationFlag"><span class="n"><span class="pre">PxPvdInstrumentationFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#_CPPv4N24PxPvdInstrumentationFlag4EnumE" title="PxPvdInstrumentationFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPvdInstrumentationFlags</span></span></span><a class="headerlink" href="#_CPPv425PxPvdInstrumentationFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#struct_px_pvd_instrumentation_flag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#struct_px_pvd_instrumentation_flag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxPvdSceneFlags">
+<span id="_CPPv315PxPvdSceneFlags"></span><span id="_CPPv215PxPvdSceneFlags"></span><span id="PxPvdSceneFlags"></span><span class="target" id="group__pvd_1ga23ddab69994886fb588a139635bff64b"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_pvd_scene_flag.html#_CPPv414PxPvdSceneFlag" title="PxPvdSceneFlag"><span class="n"><span class="pre">PxPvdSceneFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pvd_scene_flag.html#_CPPv4N14PxPvdSceneFlag4EnumE" title="PxPvdSceneFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPvdSceneFlags</span></span></span><a class="headerlink" href="#_CPPv415PxPvdSceneFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

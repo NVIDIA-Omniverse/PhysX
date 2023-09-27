@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>aos::VecI32V_Sel &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="aos::VecI32V_Sub" href="function__px_vec_math_8h_1a40a9b15ffc0c3c0f30a3568bd79c2869.html" />
+    <link rel="prev" title="aos::VecI32V_RightShift" href="function__px_vec_math_ao_s_scalar_inline_8h_1a928666bc6c7b16c4e7544dfc27faed47.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="namespace__ext_gpu.html">ExtGpu</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="namespace_aos.html">aos</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="namespace_aos___0d153.html">aos::&#64;153</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1abd5eee23987a38815e7d701f96397b71.html">BAllEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a610173c5f2e6ff94b3867a97fb89ed5a.html">BAllEqFFFF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a663dbf99039027d4ff78d1916e49eaf8.html">BAllEqTTTT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac1f3ea4a00563d8a294dfbdae1e8c535.html">BAllTrue3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa2be416c440c899852e63208f091f8af.html">BAllTrue4</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7c6c329d872a7397790acb66810f06cd.html">BAnd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a7bbcd43a35bc01b2a3be71e6eb8b5a1d.html">BAndNot</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a402274b04bf4e8cb95c5a6a2d1fc445c.html">BAnyTrue3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a283a8099d6f7ca37710246ee44fec545.html">BAnyTrue4</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a24c91ea2b036704350bf5420b1375d3e.html">BFFFF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a80cda596faf41521eca1eeaa96e0f728.html">BFFFT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a132488e60a30a8f116f437227aec3e4a.html">BFFTF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae8d0fdd72e021e151121bb6a3fe73910.html">BFFTT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1dc9f3e267a9dd13a7d98f28584f792d.html">BFTFF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4dc42c6fac7ca1a6caef54203e6fe702.html">BFTFT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a04e0ae93b3d0ef11091e539b67d92fd3.html">BFTTF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2a65b57796a7d1e4de80fee8ea86a6b4.html">BFTTT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0671dada5ab58736955d6a7840e48b25.html">BGetBitMask</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4986629e6a34c9a5812a2170c73a1eee.html">BGetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3c67d800108fd1dc329847af59ebea83.html">BGetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a07c9aac026cff8a4df1cbfe4a14e1d6e.html">BGetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a40327a1902afe43e7fba4c910ea0b5eb.html">BGetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a34dcbc63634a10c132c917762d21af9b.html">BLoad</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac61f229369d9f708314abb68401a9c2b.html">BLoad</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8a722a6ce87b66bdea476fe60f1cfadf.html">BNot</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af89b309fb1921a7ffdfac4b4f60e8577.html">BOr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9cead434e14ad24d9d165b33d0dc440f.html">BSetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a51cf5a4b0d13dfdb12d666cd8484af5e.html">BSetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a958340e896b23c2dfbda3b33346874b4.html">BSetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a040d4831f1fe691936293330cb2ca20a.html">BSetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a49423178ba4add6bd3fa9bfbea671793.html">BSplatElement</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a7c36b7d8a88ba5b8d197fe2fabf0a7f4.html">BSplatElement</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac528e3635af27948ccfe0c92127874fd.html">BStoreA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac509d2cd772b9b8c35b555fc4863d9d8.html">BTFFF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a30c0c3160def16be7b22813e04e97169.html">BTFFT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1240667bde65fefe904d84e9db801c18.html">BTFTF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac14eec9999b6f73759accd7e298bcb28.html">BTFTT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac6b34d0c23a97d71182c455fe688e07e.html">BTTFF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a39f014ca39b56fb7a9993a7119e052a9.html">BTTFT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a250dc81d7c2d3bba76e7cdc9d4fc6492.html">BTTTF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab7ac0ceaa1bd96ab3b7bdd76c9920b64.html">BTTTT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a61e35df1dad8e5bb503b3d3dd7252c39.html">BWMask</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afe0a935db73871bd93b0ac66589868f8.html">BXMask</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a846c0cccc3f2c5779aa72ae8132f883f.html">BYMask</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa99d8961597ff895b51aabefe933f39a.html">BZMask</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_bool_v.html">BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac055425338f5c622eeceb54be88b780d.html">FAbs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a92a390b64670e34cacd0ecee9f9760ee.html">FAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aab644f1eed46f5a39d29727d4eab96aa.html">FAllEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7ec3b716613d3f80162e2db6db9b47f5.html">FAllGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af1544c12454e181cec3051a7c91a636b.html">FAllGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3b7b3b29db4dddf8645e554a6d7cd96e.html">FClamp</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af8676bf31566a9f443bc324e5305c0ad.html">FCos</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4a2014792e822857e5db8bdcd02fdf27.html">FDiv</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aab0f11be88266d4c04eeb7ef809256b0.html">FDivFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a947e6077108bcd57594a5253a45bc332.html">FEps</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2438961b8fb6106cf74c5f006261119b.html">FEps6</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3b71bd765de4bd66d6b57096c1288216.html">FHalf</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a91f1b017ab6bc98248224a4141435e10.html">FInBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac2929a0123f9aa76605ea60d91512981.html">FInBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a14d1809a94fc8b25815389875822fe53.html">FIsEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1adb955e6ba7d9a8266e1cac34e1eee41a.html">FIsGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afe09ba2396a673352dce6df179569f44.html">FIsGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a214c0c5e232225be2987bd205921ccb7.html">FLoad</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1482411ac246e79bef5bb75ef2b2abb4.html">FMax</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a16a53bb17e5e5bea4130bb35944d5ebb.html">FMin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a498dbd46bdd27b75940d048b3f9f5884.html">FMul</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5e91e2188bef99a1c3765e6016551df9.html">FNeg</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae3135ae78e5a1a70ec914963522d4188.html">FNegMax</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7a7b11bfa26743514127799490d2c90f.html">FNegScaleSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a037f6d06be75926e5a8f87bc3eb3b5af.html">FOne</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2d61da5ba63591b0bd316776bc3ca450.html">FOutOfBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4df2ae96cba6eeca882cbc4975c059d7.html">FOutOfBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac04b55c5c7b0de5ed1ed2ba2b862433d.html">FRecip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab5014ad46c6a35f0f791507e3b2fc1a8.html">FRecipFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a57ac34f3621faa61e7fb0cd4abd82ebc.html">FRound</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6ef7676310668086e2d33b895acfe0b1.html">FRsqrt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a345b7e4945619d0420f41a51635af666.html">FRsqrtFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab3af54c67367a931cd9641519d915e2e.html">FScaleAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ace575215406f92a9f123dfdf131a3bb6.html">FSel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1cb06623a166c8c006dbcc3b9d9a8750.html">FSin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac9d16b1fe30c402aa6b8287cf8df608f.html">FSqrt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ade3d63c17c9b5afa3385b375ecb482ef.html">FStore</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aaacffa1c647de834b508a4c9e8c86b75.html">FSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa403f1773e2a54f6d0527a2bf82d4639.html">FZero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_float_v.html">FloatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7636d1fc78845bcee791325e5dd868ce.html">I4Load</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac917055619d032294bddfb9da1589ba6.html">I4LoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a33c0fe3bcab72d7d6d18e91e4d7f8fe8.html">I4LoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a82ff48b30268873d30e1fb08c0030d23.html">I4LoadXYZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1ac4f1caf9fcb43471dd350cbbe9d61a.html">I4StoreA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa457d8f04284f813af291361e42df88f.html">M33Abs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a89e38871dafe992d9dfb7ad64b44bf0c.html">M33Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac07ed011e17e60ab6f284cddc34caeb9.html">M33Diagonal</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a6c705063ed90193a6c34e466b99ad332.html">M33Diagonal</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac6cdcef2894a98db99cecb65b54912de.html">M33Identity</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac20402fc7237529a0fa6aa63007d571d.html">M33Inverse</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2815f73ed4150a5e658206965f0ebd60.html">M33Load</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a9088bb0d43cc1ce3e4ef20d3dab60f45.html">M33MulM33</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab32df653bb2bf2b763af235663b8daf6.html">M33MulV3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4b4ce6d5137a4a097b3b09a0de76f8e3.html">M33MulV3AddV3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a042e790d1f06a977f88aec10bf2d599f.html">M33Neg</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a7ab964756c4b73997fd976c24fb1b54b.html">M33Scale</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af488f74fb7f69b0c11a668663fbe8b96.html">M33Sub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa60b48d2e79a23362005065111346a00.html">M33Trnsps</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2027a2e26534473668797192444c7ebb.html">M33TrnspsMulV3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1adfd0b1542511c90a1e03877b0fcc8251.html">M34Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1aec3754fadc9dd40e6b1b4b7a7f7817ec.html">M34Mul33MM34</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a0237781beafdaa49afcc35ca08fada2e.html">M34Mul33V3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1af84954d33865314d002a553335020a37.html">M34Mul33V3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a355f31a0d48be1bc230aae54858c3d36.html">M34MulM33</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a5eb1aac21682d96a4e2d0c144e972b15.html">M34MulM34</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a34c5077e05cffaaf26fb9ff3fca22a6c.html">M34MulV3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1aec59e3295d40572423f201b2442d3190.html">M34Trnsps33</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a4b05282cd4c41d38c849d9e269e0c56a.html">M34TrnspsMul33V3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a94708a873499196dc968eca0f0a6c1ef.html">M44Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9e71edeb28e8888bee4163f1b6b2a4c5.html">M44Inverse</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a20b651a6c924829fa12c9490086883b4.html">M44MulM44</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9aeb9d13e56707ca31173246a63839f8.html">M44MulV4</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a11379d8ddac623f74596d145a976f5af.html">M44Trnsps</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ad1f90c05f07aeeb9f798346a3a38c2c8.html">M44TrnspsMulV4</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a734d8ba903ec2e5d2363459a96d5ce5e.html">Mat33GetQuatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_mat33_v.html">Mat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a17f7b16f7c815babdf4ce3434ae0e5fe.html">Mat33V_From_PxMat33</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_mat34_v.html">Mat34V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_mat43_v.html">Mat43V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_mat44_v.html">Mat44V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ad04f3e5ebe1a24c38b565d9f40dda28d.html">PxI32_From_VecI32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a038e5c89ddc5aa55b7960f3cab1a70aa.html">PxMat33_From_Mat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classaos_1_1_px_mat_transform_v.html">PxMatTransformV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classaos_1_1_px_transform_v.html">PxTransformV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab001ce3080c20dde8a54147cc28b63db.html">QuatAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a134a2c10be89402b5568b8caab52bc56.html">QuatConjugate</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aaf897abec89b8c4b6c8ba5e873aee2a9.html">QuatDot</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a9ca0f042fdcc1638e43f6e07b90cc404.html">QuatGetBasisVector0</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0a8605a1e9143601b203eab7b7f03e90.html">QuatGetBasisVector1</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1acdd055fea9c67f598f0bb6f490d702b3.html">QuatGetBasisVector2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab97b11acbeed10d4ebcbfa3bd922b4a8.html">QuatGetImaginaryPart</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa3ffd211251c8d9ecabe970acc2dffe4.html">QuatGetMat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac988018e72b63776d67d2652897f6611.html">QuatGetMat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a60562d9023a928dcb9acf722d51ccd41.html">QuatGetMat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_quat_8h_1aa67865a1cc5af3c1f046df545e8b7f96.html">QuatGetMat33V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4535df39b9b2c274760a94b0f01fc9ad.html">QuatIdentity</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a78f81a3d13efc9114edb52d30485538f.html">QuatLength</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0252ca426343c1ab3e54e43e356f3e1d.html">QuatLengthSq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1d2e38907bdd26a57877cc10b1a2ec8e.html">QuatMerge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a87304b70b847b1f547b7e907b5621ff2.html">QuatMerge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_quat_8h_1aab1f288c7489fd314153f9956154183c.html">QuatMerge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a47989cc0f894774b7451b7cc0d0b03d4.html">QuatMul</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a31340c9973ca2b786b95f3de2f7e6f1d.html">QuatNeg</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aab41098beb5d95087302281e1f93690c.html">QuatNormalize</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a21e66de096aae5afdf4901e23a8cfe10.html">QuatRotate</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac82eb2f727c5b9fbded4499d1eaa93f9.html">QuatRotateInv</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0c83a39980db22592a32ef55327fef64.html">QuatScale</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a45cde7e5db6f3a9842da6dab1754f082.html">QuatSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_quat_8h_1a8c05879c545bc4dc594ab0030b2ec1f0.html">QuatTransform</a></li>
+<li class="toctree-l5"><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9.html">QuatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a035324b51d7b8954a63429ce2ae2aa7f.html">QuatVLoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3b8de20e2ce4311b68ad982ff3690f0a.html">QuatVLoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ace230842fdd1e2486e379960da5d93e8.html">QuatVLoadXYZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a01fc8a7ee7fd5c7fa6ee4330a91a3038.html">QuatV_From_RotationAxisAngle</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a0f2d7ee550670ce50b0f3ce8a7d058a2.html">Store_From_BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8da8aceee5adc93cc280fb6876dccc9c.html">U4Load</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3020c3325e5ca49707609f8609e02f9b.html">U4LoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a756e1cac5b3f72efec364472c6ee92f9.html">U4LoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab1d3a753b125705fc540ceb1f4788171.html">U4LoadXYZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3799c16af3814934c7e9d33f886ab933.html">U4One</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a393d7cda8abb2c4f501574ef28c5c647.html">U4StoreA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3106f179e9fd194fba62a1a7bce6f03a.html">U4Two</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a795efa7487a05e5b4bdd57c3eb925644.html">U4Zero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab9f213eba326fc16a6a2a46060ec2631.html">V3Abs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1acfd27446b277e281ed8f977f61752972.html">V3Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a97da8de7a9d0bc3348c6daf7030e4f91.html">V3AllEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af97317a4378e3ddfdcaa84057ff59930.html">V3AllGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1cf84be4ad256bab4fdbe5fa86b736b6.html">V3AllGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6e900f573e9c4867f3bcd3c0c4eb18e6.html">V3Clamp</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa6d6f9b5fe4cf638fe7582029852960a.html">V3ColX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0d08a03b7201b696a9fecb9f60a9dbdc.html">V3ColY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a496012b1045cb036bba83753300c4086.html">V3ColZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aeada1912e1dcf3e86f775a9234f264dd.html">V3Cos</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aabcf68d3903dfabad8e8d67beaf4f665.html">V3Cross</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2f59287b99fe54ff7750b3dac09b3953.html">V3Div</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0e6a1ae92872709759394ec4555820d1.html">V3DivFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6c06a89baf7bd47d83ac411d7d311990.html">V3Dot</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a892a3e4ca7fb22989a2f62153f0fb391.html">V3Dot4</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a78c5513f056a8a9911ff544f04c3b108.html">V3Eps</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a86c99797285d1759e836033dc2941529.html">V3ExtractMax</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3c5d73aa5839294b6664db5bb421f8a2.html">V3ExtractMin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab0c6d5a8f50894d98867742fa392867f.html">V3GetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a44c88e422377dbec0376ee63f6c945ea.html">V3GetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af8fc6c09abde27d324787f6bef39e213.html">V3GetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa7bee52add8dc59c9750c18858ad42a7.html">V3InBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad30a204a8a0d573bd32437d3a40e727e.html">V3InBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6302ec9b6d09b57db274c1ca3da0a640.html">V3IsEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad250a61c029b7f3f775710a199653fcf.html">V3IsGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae274a54caa50069d15c7ff92a643520c.html">V3IsGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa09a5f83bb477aaa5e41412cc3c3861c.html">V3Length</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a00d0a14765b89a805532086484d1e6d8.html">V3LengthSq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6f1cb4b13a50b04514c3393cf71a87a9.html">V3Load</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1ced4f69a91ea010144f3eaa95587d58.html">V3LoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6e08638b78c2b12e8681ccb635d8f402.html">V3LoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a016dc50fb5530696376c9c6977698ce2.html">V3LoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0a5f86ba28a5fa98ce36ff33e4f46e55.html">V3LoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4fdb8ab4aa3e0e55f681fbe4544d4092.html">V3LoadU_SafeReadW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6f3ceaa177b3e3454d240616a9299748.html">V3LoadUnsafeA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac8793bb8357feefa758db97bfe834a2f.html">V3Max</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0d68767ffec3d43442e171b9db88ee94.html">V3Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a5008eed3c38e77764c659440c9fd6a1f.html">V3Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae58215cd11d05491edc87ba0d238d764.html">V3Min</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af84f88c81adc294c5dfb269b6f16aa15.html">V3Mul</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a668ddae59097cbac4acfe785cb897e5c.html">V3MulAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a37836a6f2d7ee322ef5a7d428bffa422.html">V3Neg</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af63d735e53c0d0f3982f70ae5aeb0297.html">V3NegMulSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a39da3ead59b6c7926e8668fccd5e5927.html">V3NegScaleSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a13055ed148742723caba9cd0f081b4c7.html">V3Normalize</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a2534757c677bebc3476b002cce937a66.html">V3NormalizeFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac025f4be3f604b91d9189f69d48ef926.html">V3NormalizeSafe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa29c912d0d96c881192e11ca2fab6c5b.html">V3One</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6afca2299f62eb4cf4bd45dd3e54cc6b.html">V3OutOfBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac0dcf7e93493dcbe774cecd95d86d6cc.html">V3OutOfBounds</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5ea821fc7d05d0d578714a93187cef8b.html">V3PermXYX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7335ea8507352d861d1a85323bb37aac.html">V3PermYXX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a602f880f0450b6961baeda00a908f867.html">V3PermYZX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab7541c9e9e466284790dabf77462110c.html">V3PermYZZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a556ffce7432b936518566e2fe758950b.html">V3PermZXY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5593f8fd58f49ac061a6ae3b8eb6714a.html">V3PermZZY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7940c32e8d34490b40d013b280fbabd7.html">V3Perm_0Z_Zero_1X</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0cd4a0f6d9087bd5874fb772b749055c.html">V3Perm_1Y_0X_Zero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad615ec66fa93524ca4fb21a9eba0f9bb.html">V3Perm_Zero_1Z_0Y</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ab53faca7288226628b5d5c12e837c49b.html">V3PrepareCross</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a53337d51f8be3bd32ff215fa6b260b02.html">V3ReadX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a60d0cd872c259c50c6bfd14e494c4e73.html">V3ReadXYZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab65d2d062bd45cbbfcdeebf89b557f0b.html">V3ReadY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a50bb7eb0ea7ad1a0451d88b8b50f0052.html">V3ReadZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2242476c1d1a26b24a629098ddc31b13.html">V3Recip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab1db8f9cc62b435feee49ee02cc77d31.html">V3RecipFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af6abb34a31ea693d0b6cc75d05442286.html">V3Round</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1adad9cd482ab33dbd440c8062754ec05d.html">V3Rsqrt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae80cacc58cc82f3692f3a3ca92832c3f.html">V3RsqrtFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af4774637dd6a38b83d323604758bb63c.html">V3Scale</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab508aac450ca7067e844771b26fcac7e.html">V3ScaleAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac042cc7bed383426bf35cd3a642ff656.html">V3ScaleInv</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4396dc3560a09186c5a86c05f2910fd5.html">V3ScaleInvFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7e5cf0529dd2001ba0f87bf85d0c72a6.html">V3Sel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6ab510c5b735b0c43892d902670b36b0.html">V3SetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a68b369eeb653e980c9a901f15d6edba9.html">V3SetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3da53a1085909660994aeb34be3f77e5.html">V3SetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0be252dba012285756e73571a817e9c6.html">V3Sign</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a36b70e509a2b905efd431c1a58f49848.html">V3Sin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8377dbb0ba3d59e87fe406b1ed90e86f.html">V3Splat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a29444a83aede740d19e87aef84a13495.html">V3StoreA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a177beb8da56560217559af82821ef7d4.html">V3StoreU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6bd12c12db6d5a66dd924689cf7eb596.html">V3Sub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a74c01866b760e9f08f98eab1bbb15eb0.html">V3SumElems</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6e74097b8a76d72d95798034146c88e5.html">V3Transpose</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2b7b8bde1b1cda0c1ba2c1c798b39334.html">V3UnitX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a013442a4c82dd3e532eb554d447c9648.html">V3UnitY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a709f2c76f4df8fd0e95685e1de3ee311.html">V3UnitZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4c3254ae034c7c5a60a65078a7682d85.html">V3WriteX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a9716f86391c29d477041332daa41dc6c.html">V3WriteXYZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a509ab3a8e400ccf9298f66ebb18a14d0.html">V3WriteY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8368048e111483fbb0a922749f26887e.html">V3WriteZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad9997d452f2f724dd59bf03a0c4d91ad.html">V3Zero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a277b0faba39de9d96dffce30930cd1a9.html">V4Abs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad0f97400ab110b63078d883dae4e3ffe.html">V4Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aba66ee744c1ddfcfe4a85a60c5a71a82.html">V4AllEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad69b6c788c605eb55d1a1da0e4072d3e.html">V4AllGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab1e9625caf7f08ad43a8a72ce0c00392.html">V4AllGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a08861902453d8a7578ceb937b3fecb93.html">V4AllGrtrOrEq3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab6af0080826c76440fa0834074525efa.html">V4Andc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a98973e2b4d660b4c2206a2ffb9f1a143.html">V4AnyGrtr3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6a99a447677fff2507bf458bef273f98.html">V4Clamp</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a685e039c7303c1c84a85398e70c8fd97.html">V4ClearW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a37c589965b0810b056a20ec900969089.html">V4Cos</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac31c51c7418bee7e9db3f69529f00cdf.html">V4Cross</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a49fd0e9930c8bea925565e2a57524b11.html">V4Div</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a979dfd87c52b125136843cf7cac6ffe9.html">V4DivFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a316a1efe55cf2afd0a30b7a466c05a10.html">V4Dot</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a796c1008a21020d05a593da562c11473.html">V4Dot3</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a95e7e43a6570e5872715bb7b6c3fb082.html">V4Eps</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aeb0c4c501742ad7a784ffc9ecd8c4a59.html">V4ExtractMax</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a790cd6a21835f167b1dba2bcc106f24d.html">V4ExtractMin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a60f070d5177869bb57073fd4e5f4b558.html">V4GetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a04f85a328d1a5e0d547ddb7a36dca96d.html">V4GetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0e5039f721935a56e28b402dd97f861a.html">V4GetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7a2be783d29f74e10726de06078c1129.html">V4GetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1abe6cbcb7afe7188d1f1c7e8cf8465fdd.html">V4I16CompareGt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2385d8bb492356c6c69e356d7ad4ca08.html">V4I32Sel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6dea590365cff0b6c14ad7adf18c1584.html">V4IsEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3c5cad6117c79a3170487475d29fbf3d.html">V4IsEqU32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6d26bf89b99b94a064a92959b4085da7.html">V4IsGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a117aa07e7d69ef4d85b7571e24cf697a.html">V4IsGrtrOrEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8defef35936fc846664e6a60871fdaac.html">V4IsGrtrV32u</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aea8d936e3c69872e41397228f1a758a8.html">V4Length</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae858f6ebf3c6f574296d9c53a6b707f4.html">V4LengthSq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab3217b96068517e0b7269fdcd6d42cf3.html">V4Load</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa55812e85fc9e13d1bfcfc45a8f3ff4e.html">V4LoadA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af4df5c5a12ae52da6bea97548c260473.html">V4LoadU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1b565272c0c07f6b671147cf8f1d63b5.html">V4LoadXYZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6f1c4124a3b26bcb84b718ccc5b5b4d8.html">V4Max</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a6e1c649c193010a73585137894d882a8.html">V4Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae819a2b6ba78ad23464916d5daf9710b.html">V4Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9c8960026753d2d1811e8da813f09819.html">V4Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af7409872326170a7633420935ac50ca8.html">V4MergeW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1aec6126caebfbbc52d9f397fd9fd0f5dc.html">V4MergeW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a19ed76d695f085854cc2b40e226e6da5.html">V4MergeX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a61f672784b922e3f9588d91b754c526d.html">V4MergeX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8897d5483ffe006b020bf72bbaf66619.html">V4MergeY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9cdd0d1f1ef6e3155dd6ae88b7d9c0a3.html">V4MergeY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1acc4e20fd1832fb72214947a278bbe701.html">V4MergeZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a60e9eff82a074686e532bc911b3827c7.html">V4MergeZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2c9a1fa9e9be3bcaf66cafdf7a99c406.html">V4Min</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1549ab0b79c3355f0e502d3c876dd006.html">V4Mul</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5444ecbd60ae890168bad9f27d0f6b38.html">V4MulAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a62ee34bd122f8e649d173f91d61f59fd.html">V4Neg</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a718263a241947fee35808e7e56d2dad1.html">V4NegMulSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2589937707e80011f520c94f1e22e7db.html">V4NegScaleSub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a20b44dc84b0f349b3fd28977672386ae.html">V4Normalize</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8191bd8eb6bbe5cdc20ef086ca9297f4.html">V4NormalizeFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3fc0186d33952d7f45fa6d633aab86d2.html">V4NormalizeSafe</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a05e9a97fb42f0a817a9967b4e8c6b09d.html">V4One</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a71cbca582742c887a08e76ab95512234.html">V4Perm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8b3a89ffc0af7c35238f3a9570d8a922.html">V4PermXZXZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afa81d5e146dd08846225bf5fab0c9b5d.html">V4PermYWYW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4893608a8befa445fae3f267efcb2274.html">V4PermYXWZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad292a38dda3546843bf6e14230e44d17.html">V4PermYZXW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae1d234dd0315bc583c985f314c51e134.html">V4PermZWXY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa708046ae1228c83bb049a36d1c4c916.html">V4ReadW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a63c0e6a77245039a4bf2cd9018c8315d.html">V4ReadX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a753b929e6219269347431c600ddc6de9.html">V4ReadXYZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab8fce2293baf44256f118f273a53a3dd.html">V4ReadY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a77e5d28d2615617d460582b6bc312ee5.html">V4ReadZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0e4e2668f3ee35f213e727de79218b6e.html">V4Recip</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afb6c5c079ec052fdae863e94d7b57053.html">V4RecipFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0bd16b6456d6e325faefce757c8f1385.html">V4Round</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad2831ad7a3edf1354ad96e077a1d083c.html">V4Rsqrt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab849dcefc8f7618666254a578a78267a.html">V4RsqrtFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a94e7cc7ef1cd8800cf30541425b9495e.html">V4Scale</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a4b7cc6d78d3d5aee184559a39c36179d.html">V4ScaleAdd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a120cd9d760bbe2fadf6cc01c17994980.html">V4ScaleInv</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a989e60d3e7f3d58dc0312b783b51c0db.html">V4ScaleInvFast</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a3d9d90bca8ad3f5566521925fbe59a2f.html">V4Sel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae7ce98b18e1fa1afba310b508d3974f6.html">V4SetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1af7d89c7a44d80f2f1d21b0c982e4d29e.html">V4SetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0c8c2eb669ed39c0df108ad544bbd5a2.html">V4SetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5f3fbb5741caa4ea0636691134d0c575.html">V4SetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8ae594d09ca88c761153eb8f8bfd3736.html">V4SetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2cd28c4320ae75fa8aae59c699813fee.html">V4Sin</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a42fe69def87c10448dbbd976dc2352db.html">V4Splat</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0b373a8c0811874353be9fe5ac6eee2f.html">V4SplatElement</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1afacef523f56b282833abcdba6a062488.html">V4Sqrt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a91a480418cf0459b47c5e966c59000e2.html">V4StoreA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5b9bc6c8a00c0e318770e1613813d9ae.html">V4StoreU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a03eeddced7a1c400d9abc8d8d4d29109.html">V4Sub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1af36e53cf0c4fb83713aedee9cb1ff7be.html">V4SumElements</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a991529816324ef9811a830ff662c009e.html">V4Transpose</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9b204ce89e32c2c892167b0b6c0a71f0.html">V4U16CompareGt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ac41d0a9b2d95c965f8563595c9fd1f76.html">V4U16LoadAligned</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a8c82f8ac11e42091514add1c337d386d.html">V4U16LoadUnaligned</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac388b8fe3dcdbb371227f12b1e3eaa77.html">V4U32Andc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a78548acc1ac3027de547b16bce1d7046.html">V4U32Sel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a018e63f66260723774ba6a260403d1c3.html">V4U32SplatElement</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1adb2cb02db4dc27f14368a8f2594b41c7.html">V4U32SplatElement</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1acb0d1bd51f1cb92a7d7ee42ae0040fac.html">V4U32StoreAligned</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa330c731337730debd62ff86930eba40.html">V4U32and</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ab6bb3c8a6ed73e132ce5ccbf378470f4.html">V4U32or</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aad867543924baf66fe032f671211afe8.html">V4U32xor</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a70837f828e837889314208873983f155.html">V4UnitW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a46a68ea895c541f2c643a6533dba56a9.html">V4UnitX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afba89bcd0be3719e1ff8809c7315dffd.html">V4UnitY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af4c7e235bc56b0ebba64cf00d0b3749c.html">V4UnitZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2f6a6d269ac519501a2ac82fddbe127d.html">V4UnpackXY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a09a8b5fb90d77f3abf9e28027da08f54.html">V4UnpackXY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aca98321974dfd57a6ab565be24086863.html">V4UnpackZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a2db1f4bd0e4e1c9f97ff5f8a1b64bd70.html">V4UnpackZW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a1bdf609498484fa8a277f1497bbd9e7f.html">V4WriteW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a9bb192a146febe7b8ed7cb9c61458185.html">V4WriteX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8755f259d48824f357b7d53bf7b9ec98.html">V4WriteXYZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a8829eff015498a50ea052857e1a5d52e.html">V4WriteY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aed70f4c161b51fc32693d59e9ec320ed.html">V4WriteZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ad97c3a3999f64d9a58153c9b22e23ea3.html">V4Zero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec3_v.html">Vec3V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1af538849e28e16b971c60e5441c8fc215.html">Vec3V_From_FloatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a8802ade71b049d9b42bafc86471a53cf.html">Vec3V_From_FloatV_WUndefined</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a67a82e6cbbdc13776d05025992cf20fc.html">Vec3V_From_Vec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a26ec07237fdbf452db7614ae11ffc756.html">Vec3V_From_Vec4V_WUndefined</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec4_v.html">Vec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a543e17a317af32dfda97cbff706cfeb0.html">Vec4V_From_FloatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a97e15a9913100c45623fa0d7fe1b5114.html">Vec4V_From_PxVec3_WUndefined</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a556701131965f65a3ea5c4129d9c9f54.html">Vec4V_From_Vec3V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae9d4a3cd529ba3746640e68d04876347.html">Vec4V_From_VecI32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a76c3af19f42e375c6de6f87aa0a01055.html">Vec4V_From_VecU32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac11c7afd7419d3f48ab022144f01740a.html">Vec4V_ReinterpretFrom_VecI32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a78a9e8027f4f94afa742af976c889333.html">Vec4V_ReinterpretFrom_VecU32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec_i16_v.html">VecI16V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec_i32_v.html">VecI32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5b398ef46434f617105d658cce8e81b3.html">VecI32V_Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a05f354b84913719b6b90aed4355bc54d.html">VecI32V_Add</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a870ba4c43595d38b75e36643d58a8c6c.html">VecI32V_And</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a57bc5df41b872fd8c85fdb445b0e591c.html">VecI32V_From_BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ad211da833658124144f82972a35f11c1.html">VecI32V_From_BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2905eca7df9503cfe74b660e0b81f7e6.html">VecI32V_From_Vec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a151cee59da45885dade1dae7c32385d2.html">VecI32V_GetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1aedbc95aaf1d18de7945ae6b72e02d8ef.html">VecI32V_GetW</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a37add744a331929a7ed9af78b1f28763.html">VecI32V_GetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a8a751f1139949caca6b351d6f3e5bd7d.html">VecI32V_GetX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a0219ac67217f516bddec8eef806dd236.html">VecI32V_GetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a9802881847a9427bb923ea078e258d07.html">VecI32V_GetY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5aa2111f7b8693e640eb9f5eba5cdfba.html">VecI32V_GetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a4e4ef8676e28735cb7669a46ec52c7fc.html">VecI32V_GetZ</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2abfdc462ef36bd669a93dc55479eefd.html">VecI32V_IsEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a5cd15302ee7ac22033ab081196a33811.html">VecI32V_IsEq</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aa98b2b5388a1ff6b5ffa1bcf3e44ded7.html">VecI32V_IsGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a064d3021cece1e6de31e8f76767e7e3d.html">VecI32V_IsGrtr</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a7088117a475895d191f4a1c25b8abedf.html">VecI32V_LeftShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a8355b00ed2a4806f87cbfd9b923c7d7a.html">VecI32V_LeftShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1ac0af20745cac41631b98c6d04c30b318.html">VecI32V_LeftShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a45e313741486439e1c0a43f83e1f6897.html">VecI32V_Merge</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5a7713ba7f8796f8958b9ffe59de3534.html">VecI32V_MinusOne</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a22d4f5dc160769db998b077a2397310c.html">VecI32V_One</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a44ab2fdba7d59c0ab0ddfe34a91f2b27.html">VecI32V_Or</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a2c2bf1d794f03ed6994effe74b57176c.html">VecI32V_Or</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a818bbcc7eae667699a70d741e66e2581.html">VecI32V_PrepareShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1abd936d4b4b7abeedfefcaf4cb5ea7836.html">VecI32V_PrepareShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a9059c327a2d3c65d1b6c06d22d5dbbc0.html">VecI32V_ReinterpretFrom_Vec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a2e9d16141657e89a45670a246422a061.html">VecI32V_RightShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a72eeebbf8236fdd412e9d5ec2ce4b2b1.html">VecI32V_RightShift</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a928666bc6c7b16c4e7544dfc27faed47.html">VecI32V_RightShift</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">VecI32V_Sel</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a40a9b15ffc0c3c0f30a3568bd79c2869.html">VecI32V_Sub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1acba451e9741bf56f9ed6baa8fc4bd588.html">VecI32V_Sub</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1aae08fbb79876ce354183371449e793a9.html">VecI32V_Two</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ac7ad1e91c3beaa2741844907907304f9.html">VecI32V_Zero</a></li>
+<li class="toctree-l5"><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a69e10d25b12dbc7486b7af6f36a481d0.html">VecShiftV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec_u16_v.html">VecU16V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structaos_1_1_vec_u32_v.html">VecU32V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1af3f23ec96fd2f71755a6ef927f1a3b25.html">VecU32V_From_BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_ao_s_scalar_inline_8h_1a1cccc8b58b82accc631618c3ed6b0203.html">VecU32V_From_BoolV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a376eefd5b56436519e3cd2e1763b1d9a.html">VecU32V_ReinterpretFrom_Vec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="namespace_aos__internal_scalar_simd.html">internalScalarSimd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a37c2324ed14153ec0af18608c6b9e6b1.html">isFiniteFloatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1afe30e03b53c44997db4da53a25b2e0a0.html">isFiniteQuatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a5a4ad99ab86abcabf8aaf7664004944b.html">isFiniteVec3V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a36d095e9dbb672e63202c296bbe5aa54.html">isFiniteVec4V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1ae4b80e933f35618e6274adfdd74a577b.html">isSaneQuatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a571d432bcb77177f19eb8cb9a16430b1.html">isValidQuatV</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_math_8h_1a95faa5184ac6937369a2cbbdfc0e8d9e.html">isValidVec3V</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_transform_8h_1a24a333e31389b563cbb25b67b374375c.html">loadTransformA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_vec_transform_8h_1a411a9ab097544fe37b18667b2d3a2531.html">loadTransformU</a></li>
+<li class="toctree-l5"><a class="reference internal" href="namespace_aos__vec_math_tests.html">vecMathTests</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_physx.html">physx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_pvdsdk.html">pvdsdk</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+    <li><a href="namespace_aos.html">aos</a> &raquo;</li>
+<li>aos::VecI32V_Sel</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="aos-veci32v-sel">
+<h1>aos::VecI32V_Sel<a class="headerlink" href="#aos-veci32v-sel" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxVecMathAoSScalarInline.h.html#px-vec-math-ao-s-scalar-inline-8h"><span class="std std-ref">include/foundation/PxVecMathAoSScalarInline.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N3aos11VecI32V_SelEK5BoolVK10VecI32VArgK10VecI32VArg">
+<span id="_CPPv3N3aos11VecI32V_SelEK5BoolVK10VecI32VArgK10VecI32VArg"></span><span id="_CPPv2N3aos11VecI32V_SelEK5BoolVK10VecI32VArgK10VecI32VArg"></span><span id="aos::VecI32V_Sel__BoolVC.VecI32VArgC.VecI32VArgC"></span><span class="target" id="_px_vec_math_ao_s_scalar_inline_8h_1a6dc7e9801fc6ad6986537c6193a4603f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_vec_i32_v.html#_CPPv4N3aos7VecI32VE" title="aos::VecI32V"><span class="n"><span class="pre">VecI32V</span></span></a><span class="w"> </span><span class="sig-prename descclassname"><a class="reference internal" href="namespace_aos.html#_CPPv43aos" title="aos"><span class="n"><span class="pre">aos</span></span></a><span class="p"><span class="pre">::</span></span></span><span class="sig-name descname"><span class="n"><span class="pre">VecI32V_Sel</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structaos_1_1_bool_v.html#_CPPv4N3aos5BoolVE" title="aos::BoolV"><span class="n"><span class="pre">BoolV</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">c</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">VecI32VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">VecI32VArg</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">b</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N3aos11VecI32V_SelEK5BoolVK10VecI32VArgK10VecI32VArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

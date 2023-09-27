@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Physics &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PXC_CONTACT_NO_FACE_INDEX" href="define_group__physics_1gad7d63e592ac0d23d42e12e10572039fe.html" />
+    <link rel="prev" title="Immediatemode" href="group__immediatemode.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Physics</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad7d63e592ac0d23d42e12e10572039fe.html">PXC_CONTACT_NO_FACE_INDEX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga032d753d48dd9e14306d309c2b618410.html">PX_DEF_BIN_METADATA_BASE_CLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga7d5660bc1b17b72651434edf7fa022a8.html">PX_DEF_BIN_METADATA_CLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga8a5eb66875b992351ed7038b8001bbea.html">PX_DEF_BIN_METADATA_EXTRA_ALIGN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gae42707bb37470210b586a341ff585b78.html">PX_DEF_BIN_METADATA_EXTRA_ARRAY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga2cc87661da498e4f0c4ce26b6656e467.html">PX_DEF_BIN_METADATA_EXTRA_ITEM</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga39043f3971c7c14f163a41f41982701f.html">PX_DEF_BIN_METADATA_EXTRA_ITEMS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc.html">PX_DEF_BIN_METADATA_EXTRA_ITEMS_MASKED_CONTROL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga03a3549588909e6ca0a491af76146757.html">PX_DEF_BIN_METADATA_EXTRA_NAME</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga14481630a9253df1784a9cad4e94d904.html">PX_DEF_BIN_METADATA_ITEM</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0.html">PX_DEF_BIN_METADATA_ITEMS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga5c5117095910154a5e39fee736503e72.html">PX_DEF_BIN_METADATA_ITEMS_AUTO</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga190471540583d37595e5532c7534f950.html">PX_DEF_BIN_METADATA_TYPEDEF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gadf1f469d767ae64422c20cce7c71a6b3.html">PX_DEF_BIN_METADATA_UNION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7.html">PX_DEF_BIN_METADATA_UNION_TYPE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga314967fa3f63ec7c0b84832edb318458.html">PX_DEF_BIN_METADATA_VCLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0.html">PX_INVALID_BP_FILTER_GROUP</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad493d6810dee9604135b76393eb7c501.html">PX_MAX_TETID</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga59c318a035d7a555f3e2188d757059bf.html">PX_SIZE_OF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e.html">PX_STORE_METADATA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#enumerations">Enumerations</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+<li>Physics</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="physics">
+<h1>Physics<a class="headerlink" href="#physics" title="Permalink to this headline"></a></h1>
+<p id="group__physics">Configuration include file for PhysX SDK. </p>
+<div class="toctree-wrapper compound">
+</div>
+<p class="rubric-h4 rubric">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_a_a_b_b_manager.html#class_px_a_a_b_b_manager"><span class="std std-ref">PxAABBManager</span></a>: High-level broadphase API.</p></li>
+<li><p><a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a>: <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> is the base class for the main simulation objects in the physics SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_aggregate.html#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a>: Class to aggregate actors into a single broad-phase entry.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_attachment.html#class_px_articulation_attachment"><span class="std std-ref">PxArticulationAttachment</span></a>: Defines a spatial tendon attachment point on a link.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache"><span class="std std-ref">PxArticulationCache</span></a>: Data structure used to read and write internal articulation data.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_fixed_tendon.html#class_px_articulation_fixed_tendon"><span class="std std-ref">PxArticulationFixedTendon</span></a>: A fixed tendon that can be used to link multiple degrees of freedom of multiple articulation joints via length and limit constraints.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html#class_px_articulation_joint_reduced_coordinate"><span class="std std-ref">PxArticulationJointReducedCoordinate</span></a>: A joint between two links in an articulation.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref">PxArticulationLink</span></a>: A component of an articulation that represents a rigid body.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate"><span class="std std-ref">PxArticulationReducedCoordinate</span></a>: A tree structure of bodies connected by joints that is treated as a unit by the dynamics solver.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_sensor.html#class_px_articulation_sensor"><span class="std std-ref">PxArticulationSensor</span></a>: A force sensor that can be attached to articulation links to measure spatial force.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_spatial_tendon.html#class_px_articulation_spatial_tendon"><span class="std std-ref">PxArticulationSpatialTendon</span></a>: A spatial tendon that attaches to an articulation.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_tendon.html#class_px_articulation_tendon"><span class="std std-ref">PxArticulationTendon</span></a>: Common API base class shared by <a class="reference internal" href="class_px_articulation_spatial_tendon.html#class_px_articulation_spatial_tendon"><span class="std std-ref">PxArticulationSpatialTendon</span></a> and <a class="reference internal" href="class_px_articulation_fixed_tendon.html#class_px_articulation_fixed_tendon"><span class="std std-ref">PxArticulationFixedTendon</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_tendon_joint.html#class_px_articulation_tendon_joint"><span class="std std-ref">PxArticulationTendonJoint</span></a>: Defines a fixed-tendon joint on an articulation joint degree of freedom.</p></li>
+<li><p><a class="reference internal" href="class_px_articulation_tendon_limit.html#class_px_articulation_tendon_limit"><span class="std std-ref">PxArticulationTendonLimit</span></a>: Defines the low/high limits of the length of a tendon.</p></li>
+<li><p><a class="reference internal" href="class_px_base_material.html#class_px_base_material"><span class="std std-ref">PxBaseMaterial</span></a>: Base material class.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase.html#class_px_broad_phase"><span class="std std-ref">PxBroadPhase</span></a>: Low-level broadphase API.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_callback.html#class_px_broad_phase_callback"><span class="std std-ref">PxBroadPhaseCallback</span></a>: Broad-phase callback to receive broad-phase related events.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_desc.html#class_px_broad_phase_desc"><span class="std std-ref">PxBroadPhaseDesc</span></a>: Broadphase descriptor.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_regions.html#class_px_broad_phase_regions"><span class="std std-ref">PxBroadPhaseRegions</span></a>: Broadphase regions.</p></li>
+<li><p><a class="reference internal" href="class_px_broad_phase_update_data.html#class_px_broad_phase_update_data"><span class="std std-ref">PxBroadPhaseUpdateData</span></a>: Broadphase data update structure.</p></li>
+<li><p><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html#class_px_c_c_d_contact_modify_callback"><span class="std std-ref">PxCCDContactModifyCallback</span></a>: An interface class that the user can implement in order to modify CCD contact constraints.</p></li>
+<li><p><a class="reference internal" href="class_px_constraint.html#class_px_constraint"><span class="std std-ref">PxConstraint</span></a>: A plugin class for implementing constraints.</p></li>
+<li><p><a class="reference internal" href="class_px_constraint_connector.html#class_px_constraint_connector"><span class="std std-ref">PxConstraintConnector</span></a>: This class connects a custom constraint to the SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_constraint_visualizer.html#class_px_constraint_visualizer"><span class="std std-ref">PxConstraintVisualizer</span></a>: API used to visualize details about a constraint.</p></li>
+<li><p><a class="reference internal" href="class_px_contact_modify_callback.html#class_px_contact_modify_callback"><span class="std std-ref">PxContactModifyCallback</span></a>: An interface class that the user can implement in order to modify contact constraints.</p></li>
+<li><p><a class="reference internal" href="class_px_contact_modify_pair.html#class_px_contact_modify_pair"><span class="std std-ref">PxContactModifyPair</span></a>: An array of instances of this class is passed to <a class="reference internal" href="class_px_contact_modify_callback.html#class_px_contact_modify_callback_1a383f0448886bf352215c886b3066f790"><span class="std std-ref">PxContactModifyCallback::onContactModify()</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_px_contact_set.html#class_px_contact_set"><span class="std std-ref">PxContactSet</span></a>: An array of contact points, as passed to contact modification.</p></li>
+<li><p><a class="reference internal" href="class_px_deletion_listener.html#class_px_deletion_listener"><span class="std std-ref">PxDeletionListener</span></a>: interface to get notification on object deletion</p></li>
+<li><p><a class="reference internal" href="class_px_diffuse_particle_params.html#class_px_diffuse_particle_params"><span class="std std-ref">PxDiffuseParticleParams</span></a>: Parameters to configure the behavior of diffuse particles.</p></li>
+<li><p><a class="reference internal" href="class_px_f_e_m_cloth_material.html#class_px_f_e_m_cloth_material"><span class="std std-ref">PxFEMClothMaterial</span></a>: Material class to represent a set of FEM material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_f_e_m_material.html#class_px_f_e_m_material"><span class="std std-ref">PxFEMMaterial</span></a>: Material class to represent a set of FEM material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_f_e_m_soft_body_material.html#class_px_f_e_m_soft_body_material"><span class="std std-ref">PxFEMSoftBodyMaterial</span></a>: Material class to represent a set of softbody FEM material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_f_l_i_p_material.html#class_px_f_l_i_p_material"><span class="std std-ref">PxFLIPMaterial</span></a>: Material class to represent a set of FLIP particle material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_gpu_particle_system.html#class_px_gpu_particle_system"><span class="std std-ref">PxGpuParticleSystem</span></a>: Container class for a GPU particle system.</p></li>
+<li><p><a class="reference internal" href="class_px_locked_data.html#class_px_locked_data"><span class="std std-ref">PxLockedData</span></a>: Parent class for bulk data that is shared between the SDK and the application.</p></li>
+<li><p><a class="reference internal" href="class_px_m_p_m_material.html#class_px_m_p_m_material"><span class="std std-ref">PxMPMMaterial</span></a>: Material class to represent a set of MPM particle material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_material.html#class_px_material"><span class="std std-ref">PxMaterial</span></a>: Material class to represent a set of surface properties.</p></li>
+<li><p><a class="reference internal" href="class_px_multi_callback.html#class_px_multi_callback"><span class="std std-ref">PxMultiCallback</span></a>: Special callback that forwards calls to arbitrarily many sub-callbacks.</p></li>
+<li><p><a class="reference internal" href="class_px_neighborhood_iterator.html#class_px_neighborhood_iterator"><span class="std std-ref">PxNeighborhoodIterator</span></a>: An iterator class to iterate over the neighbors of a particle during particle system simulation.</p></li>
+<li><p><a class="reference internal" href="class_px_p_b_d_material.html#class_px_p_b_d_material"><span class="std std-ref">PxPBDMaterial</span></a>: Material class to represent a set of PBD particle material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_p_b_d_particle_system.html#class_px_p_b_d_particle_system"><span class="std std-ref">PxPBDParticleSystem</span></a>: A particle system that uses the position based dynamics(PBD) solver.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html#class_px_particle_and_diffuse_buffer"><span class="std std-ref">PxParticleAndDiffuseBuffer</span></a>: A particle buffer used to simulate diffuse particles.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_buffer.html#class_px_particle_buffer"><span class="std std-ref">PxParticleBuffer</span></a>: The shared base class for all particle buffers, can be instantiated directly to simulate granular and fluid particles.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a>: A particle buffer used to simulate particle cloth.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_cloth_pre_processor.html#class_px_particle_cloth_pre_processor"><span class="std std-ref">PxParticleClothPreProcessor</span></a>: Preprocessor to prepare particle cloths for simulation.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_material.html#class_px_particle_material"><span class="std std-ref">PxParticleMaterial</span></a>: Material class to represent a set of particle material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_rigid_buffer.html#class_px_particle_rigid_buffer"><span class="std std-ref">PxParticleRigidBuffer</span></a>: A particle buffer used to simulate rigid bodies using shape matching with particles.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_system.html#class_px_particle_system"><span class="std std-ref">PxParticleSystem</span></a>: The shared base class for all particle systems.</p></li>
+<li><p><a class="reference internal" href="class_px_particle_system_callback.html#class_px_particle_system_callback"><span class="std std-ref">PxParticleSystemCallback</span></a>: Particle system callback base class to schedule work that should be done before, while or after the particle system updates.</p></li>
+<li><p><a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a>: Abstract singleton factory class used for instancing objects in the Physics SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_pruning_structure.html#class_px_pruning_structure"><span class="std std-ref">PxPruningStructure</span></a>: A precomputed pruning structure to accelerate scene queries against newly added actors.</p></li>
+<li><p><a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a>: <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> represents a base class shared between dynamic and static rigid bodies in the physics SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a>: <a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a> is a base class shared between dynamic rigid body objects.</p></li>
+<li><p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a>: <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a> represents a dynamic rigid simulation object in the physics SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a>: <a class="reference internal" href="class_px_rigid_static.html#class_px_rigid_static"><span class="std std-ref">PxRigidStatic</span></a> represents a static rigid body simulation object in the physics SDK.</p></li>
+<li><p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>: A scene is a collection of bodies and constraints which can interact.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc"><span class="std std-ref">PxSceneDesc</span></a>: Descriptor class for scenes.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_limits.html#class_px_scene_limits"><span class="std std-ref">PxSceneLimits</span></a>: Class used to retrieve limits(e.g.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc"><span class="std std-ref">PxSceneQueryDesc</span></a>: Descriptor class for scene query system.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system"><span class="std std-ref">PxSceneQuerySystem</span></a>: Scene-queries external sub-system for PxScene-based objects.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_system_base.html#class_px_scene_query_system_base"><span class="std std-ref">PxSceneQuerySystemBase</span></a>: Base class for the scene-query system.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_read_lock.html#class_px_scene_read_lock"><span class="std std-ref">PxSceneReadLock</span></a>: RAII wrapper for the <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> read lock.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system"><span class="std std-ref">PxSceneSQSystem</span></a>: Traditional SQ system for <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_px_scene_write_lock.html#class_px_scene_write_lock"><span class="std std-ref">PxSceneWriteLock</span></a>: RAII wrapper for the <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> write lock.</p></li>
+<li><p><a class="reference internal" href="class_px_shape.html#class_px_shape"><span class="std std-ref">PxShape</span></a>: Abstract class for collision shapes.</p></li>
+<li><p><a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback"><span class="std std-ref">PxSimulationEventCallback</span></a>: An interface class that the user can implement in order to receive simulation events.</p></li>
+<li><p><a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a>: Filter callback to specify handling of collision pairs.</p></li>
+<li><p><a class="reference internal" href="class_px_simulation_statistics.html#class_px_simulation_statistics"><span class="std std-ref">PxSimulationStatistics</span></a>: Class used to retrieve statistics for a simulation step.</p></li>
+<li><p><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref">PxSoftBody</span></a>: Represents a FEM softbody including everything to calculate its definition like geometry and material properties.</p></li>
+<li><p><a class="reference internal" href="class_px_string_table.html#class_px_string_table"><span class="std std-ref">PxStringTable</span></a>: a table to manage strings.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Macros</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="define_group__physics_1gad7d63e592ac0d23d42e12e10572039fe.html#group__physics_1gad7d63e592ac0d23d42e12e10572039fe"><span class="std std-ref">PXC_CONTACT_NO_FACE_INDEX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga032d753d48dd9e14306d309c2b618410.html#group__physics_1ga032d753d48dd9e14306d309c2b618410"><span class="std std-ref">PX_DEF_BIN_METADATA_BASE_CLASS</span></a>: specifies a binary metadata entry for declaring a base class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga7d5660bc1b17b72651434edf7fa022a8.html#group__physics_1ga7d5660bc1b17b72651434edf7fa022a8"><span class="std std-ref">PX_DEF_BIN_METADATA_CLASS</span></a>: specifies a binary metadata entry for a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga8a5eb66875b992351ed7038b8001bbea.html#group__physics_1ga8a5eb66875b992351ed7038b8001bbea"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ALIGN</span></a>: specifies a binary metadata entry declaring an extra data alignment for a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gae42707bb37470210b586a341ff585b78.html#group__physics_1gae42707bb37470210b586a341ff585b78"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ARRAY</span></a>: specifies a binary metadata entry for an array of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga2cc87661da498e4f0c4ce26b6656e467.html#group__physics_1ga2cc87661da498e4f0c4ce26b6656e467"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEM</span></a>: specifies a binary metadata entry for extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga39043f3971c7c14f163a41f41982701f.html#group__physics_1ga39043f3971c7c14f163a41f41982701f"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEMS</span></a>: specifies a binary metadata entry for an array of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc.html#group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEMS_MASKED_CONTROL</span></a>: specifies a binary metadata entry for an array of extra data additional to PX_DEF_BIN_METADATA_EXTRA_ITEMS a mask can be specified to interpret the control value</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga03a3549588909e6ca0a491af76146757.html#group__physics_1ga03a3549588909e6ca0a491af76146757"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_NAME</span></a>: specifies a binary metadata entry for an string of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga14481630a9253df1784a9cad4e94d904.html#group__physics_1ga14481630a9253df1784a9cad4e94d904"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEM</span></a>: specifies a binary metadata entry for a member variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0.html#group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEMS</span></a>: specifies a binary metadata entry for a member array variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga5c5117095910154a5e39fee736503e72.html#group__physics_1ga5c5117095910154a5e39fee736503e72"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEMS_AUTO</span></a>: specifies a binary metadata entry for a member array variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga190471540583d37595e5532c7534f950.html#group__physics_1ga190471540583d37595e5532c7534f950"><span class="std std-ref">PX_DEF_BIN_METADATA_TYPEDEF</span></a>: specifies a binary metadata entry for a typedef</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gadf1f469d767ae64422c20cce7c71a6b3.html#group__physics_1gadf1f469d767ae64422c20cce7c71a6b3"><span class="std std-ref">PX_DEF_BIN_METADATA_UNION</span></a>: specifies a binary metadata entry for a union</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7.html#group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7"><span class="std std-ref">PX_DEF_BIN_METADATA_UNION_TYPE</span></a>: specifies a binary metadata entry for a particular member type of a union</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga314967fa3f63ec7c0b84832edb318458.html#group__physics_1ga314967fa3f63ec7c0b84832edb318458"><span class="std std-ref">PX_DEF_BIN_METADATA_VCLASS</span></a>: specifies a binary metadata entry for a virtual class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0.html#group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0"><span class="std std-ref">PX_INVALID_BP_FILTER_GROUP</span></a>: Invalid broadphase filter group.</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gad493d6810dee9604135b76393eb7c501.html#group__physics_1gad493d6810dee9604135b76393eb7c501"><span class="std std-ref">PX_MAX_TETID</span></a>: The maximum tetrahedron index supported in the model.</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga59c318a035d7a555f3e2188d757059bf.html#group__physics_1ga59c318a035d7a555f3e2188d757059bf"><span class="std std-ref">PX_SIZE_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e.html#group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e"><span class="std std-ref">PX_STORE_METADATA</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Enumerations</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__physics_1gaa0fe57ae9756c325a0d060bf15eb94b8"><span class="std std-ref">PxScenePrunerIndex</span></a>: Built-in enum for default <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> pruners.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__physics_1ga3fcf8645f0fd72b886bcf7dc6e51beb3"><span class="std std-ref">PxConfigureSoftBodyKinematicTarget(const PxVec4 &amp;target, bool isActive)</span></a>: Adjusts a softbody kinematic target such that it is properly set as active or inactive.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga9e4b4cf12c4389f6aff3b84ebbbde193"><span class="std std-ref">PxConfigureSoftBodyKinematicTarget(const PxVec3 &amp;target, bool isActive)</span></a>: Sets up a softbody kinematic target such that it is properly set as active or inactive.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair.html#group__physics_1ga1549cea50d1c0790f91bfba76eb3af5d"><span class="std std-ref">PxContactPair::bufferContacts(PxContactPair *newPair, PxU8 *bufferMemory) const</span></a>: Helper method to clone the contact pair and copy the contact data stream into a user buffer.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair.html#group__physics_1ga218e4ada46620cfe0fcb4498e102775c"><span class="std std-ref">PxContactPair::extractContacts(PxContactPairPoint *userBuffer, PxU32 bufferSize) const</span></a>: Extracts the contact points from the stream and stores them in a convenient format.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair.html#group__physics_1ga2e058b438c60653e8bb5b6814b009a12"><span class="std std-ref">PxContactPair::getInternalFaceIndices() const</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga7ec37279b01a9c4eb3f893be786ad572"><span class="std std-ref">PxCreateAABBManager(PxBroadPhase &amp;broadphase)</span></a>: AABB manager factory function.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga7aee01ed4e0857c5ff26e53d815ea944"><span class="std std-ref">PxCreateBroadPhase(const PxBroadPhaseDesc &amp;desc)</span></a>: Broadphase factory function.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaeecb5a5e14ea6f78e535f907b694cdb3"><span class="std std-ref">PxCreateParticleClothPreProcessor(physx::PxCudaContextManager *cudaContextManager)</span></a>: Create a particle cloth preprocessor.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaf1ab7cfe4da2124cb9d6c7238d0e0fb9"><span class="std std-ref">PxCreatePhysics(physx::PxU32 version, physx::PxFoundation &amp;foundation, const physx::PxTolerancesScale &amp;scale, bool trackOutstandingAllocations=false, physx::PxPvd *pvd=NULL, physx::PxOmniPvd *omniPvd=NULL)</span></a>: Creates an instance of the physics SDK.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gab0b0f7fe4f001e8bc5aacd10103a87e4"><span class="std std-ref">PxFilterObjectIsKinematic(PxFilterObjectAttributes attr)</span></a>: Specifies whether the collision object belongs to a kinematic rigid body.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga86216b0fb36be0fb1c670cba52bc8266"><span class="std std-ref">PxFilterObjectIsTrigger(PxFilterObjectAttributes attr)</span></a>: Specifies whether the collision object is a trigger shape.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga7f03931d108cf9c3092040da7bb645bd"><span class="std std-ref">PxGetAggregateFilterHint(PxAggregateType::Enum type, bool enableSelfCollision)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae2feaf02053f9cb0d7acc6a1af265d3c"><span class="std std-ref">PxGetAggregateSelfCollisionBit(PxAggregateFilterHint hint)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae5ea842e62d9d5730e58a81a3a9dabc7"><span class="std std-ref">PxGetAggregateType(PxAggregateFilterHint hint)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gac9d7297cfb5c65fcbcf805f9f0a11e79"><span class="std std-ref">PxGetBroadPhaseDynamicFilterGroup(PxU32 id)</span></a>: Retrieves a filter group for dynamic objects.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gabf82dd0942fbc9eb09a056d24bf15f38"><span class="std std-ref">PxGetBroadPhaseKinematicFilterGroup(PxU32 id)</span></a>: Retrieves a filter group for kinematic objects.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga1f2c1eefbafd77c5fff1ea52f5a4925a"><span class="std std-ref">PxGetBroadPhaseStaticFilterGroup()</span></a>: Retrieves the filter group for static objects.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaa265647aed8289fd77aa61fdb102c387"><span class="std std-ref">PxGetFilterObjectType(PxFilterObjectAttributes attr)</span></a>: Extract filter object type from the filter attributes of a collision pair object.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga1d452d94fca09c6430dd43a061fd9044"><span class="std std-ref">PxGetFluid(physx::PxU32 phase)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga6767079504cb6a97709c91a4e2525f05"><span class="std std-ref">PxGetGroup(physx::PxU32 phase)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga51942bd510715f96f753d4ac238ef784"><span class="std std-ref">PxGetPhysics()</span></a>: Retrieves the Physics SDK after it has been created.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga4b6e8009cbccff63eb0c28004e157246"><span class="std std-ref">PxGetSelfCollide(physx::PxU32 phase)</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga0625f33d22812d4ab4e76e86e0c02d8d"><span class="std std-ref">PxGetSelfCollideFilter(physx::PxU32 phase)</span></a></p></li>
+<li><p><a class="reference internal" href="class_px_scene_desc.html#group__physics_1ga4c492a0dcf6d132176a51a98fd4fabfc"><span class="std std-ref">PxSceneDesc::PxSceneDesc(const PxTolerancesScale &amp;scale)</span></a>: constructor sets to default.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_desc.html#group__physics_1ga821af0fa10fb890b61515dcfc1910f03"><span class="std std-ref">PxSceneDesc::isValid() const</span></a>: Returns true if the descriptor is valid.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_desc.html#group__physics_1ga0f1cfbf194a7af09b29f0ecb4e095553"><span class="std std-ref">PxSceneDesc::setToDefault()</span></a>: (re)sets the structure to the default.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_desc.html#group__physics_1gaceefbd126e4ee0301452c1067cfc4634"><span class="std std-ref">PxSceneDesc::setToDefault(const PxTolerancesScale &amp;scale)</span></a>: (re)sets the structure to the default.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_limits.html#group__physics_1gaa75a5a61bc24a016c4a3a290306f6f33"><span class="std std-ref">PxSceneLimits::PxSceneLimits()</span></a>: constructor sets to default</p></li>
+<li><p><a class="reference internal" href="class_px_scene_limits.html#group__physics_1ga0fbe2213b5695cfac8579a16f947b8bb"><span class="std std-ref">PxSceneLimits::isValid() const</span></a>: Returns true if the descriptor is valid.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_limits.html#group__physics_1ga762d3d9068df87e1c3e9537e3de47c4f"><span class="std std-ref">PxSceneLimits::setToDefault()</span></a>: (re)sets the structure to the default</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_desc.html#group__physics_1gaf0dfb63031ccaac4a8bf99f566c22b8a"><span class="std std-ref">PxSceneQueryDesc::PxSceneQueryDesc()</span></a>: constructor sets to default.</p></li>
+<li><p><a class="reference internal" href="class_px_scene_query_desc.html#group__physics_1ga9dc00999b4e841a56ce12e1d635af6ae"><span class="std std-ref">PxSceneQueryDesc::isValid() const</span></a>: Returns true if the descriptor is valid.</p></li>
+<li><p><a class="reference internal" href="struct_pxg_dynamics_memory_config.html#group__physics_1ga662b23742c2689e1dde74c4b53259d10"><span class="std std-ref">PxgDynamicsMemoryConfig::isValid() const</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px1_d_constraint.html#struct_px1_d_constraint"><span class="std std-ref">Px1DConstraint</span></a>: A one-dimensional constraint.</p></li>
+<li><p><a class="reference internal" href="struct_px1_d_constraint_flag.html#struct_px1_d_constraint_flag"><span class="std std-ref">Px1DConstraintFlag</span></a>: Constraint row flags.</p></li>
+<li><p><a class="reference internal" href="struct_px_actor_cache_flag.html#struct_px_actor_cache_flag"><span class="std std-ref">PxActorCacheFlag</span></a>: Identifies each type of information for retrieving from actor.</p></li>
+<li><p><a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a>: Flags which control the behavior of an actor.</p></li>
+<li><p><a class="reference internal" href="struct_px_actor_type.html#struct_px_actor_type"><span class="std std-ref">PxActorType</span></a>: Identifies each type of actor.</p></li>
+<li><p><a class="reference internal" href="struct_px_actor_type_flag.html#struct_px_actor_type_flag"><span class="std std-ref">PxActorTypeFlag</span></a>: Identifies each type of actor for retrieving actors from a scene.</p></li>
+<li><p><a class="reference internal" href="struct_px_aggregate_type.html#struct_px_aggregate_type"><span class="std std-ref">PxAggregateType</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_axis.html#struct_px_articulation_axis"><span class="std std-ref">PxArticulationAxis</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_drive.html#struct_px_articulation_drive"><span class="std std-ref">PxArticulationDrive</span></a>: Data structure for articulation joint drive configuration.</p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_drive_type.html#struct_px_articulation_drive_type"><span class="std std-ref">PxArticulationDriveType</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_flag.html#struct_px_articulation_flag"><span class="std std-ref">PxArticulationFlag</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_joint_type.html#struct_px_articulation_joint_type"><span class="std std-ref">PxArticulationJointType</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_kinematic_flag.html#struct_px_articulation_kinematic_flag"><span class="std std-ref">PxArticulationKinematicFlag</span></a>: Flag that configures articulation-state updates by <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1a0bb151ca74c7b28404386def8b1597be"><span class="std std-ref">PxArticulationReducedCoordinate::updateKinematic</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_limit.html#struct_px_articulation_limit"><span class="std std-ref">PxArticulationLimit</span></a>: Data structure to set articulation joint limits.</p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_motion.html#struct_px_articulation_motion"><span class="std std-ref">PxArticulationMotion</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_root_link_data.html#struct_px_articulation_root_link_data"><span class="std std-ref">PxArticulationRootLinkData</span></a>: Data structure used to access the root link state and acceleration.</p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_sensor_flag.html#struct_px_articulation_sensor_flag"><span class="std std-ref">PxArticulationSensorFlag</span></a>: Flags to configure the forces reported by articulation link sensors.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_caps.html#struct_px_broad_phase_caps"><span class="std std-ref">PxBroadPhaseCaps</span></a>: Caps class for broad phase.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_pair.html#struct_px_broad_phase_pair"><span class="std std-ref">PxBroadPhasePair</span></a>: Broadphase pair.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_region.html#struct_px_broad_phase_region"><span class="std std-ref">PxBroadPhaseRegion</span></a>: &quot;Region of interest&quot; for the broad-phase.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_region_info.html#struct_px_broad_phase_region_info"><span class="std std-ref">PxBroadPhaseRegionInfo</span></a>: Information &amp; stats structure for a region.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_results.html#struct_px_broad_phase_results"><span class="std std-ref">PxBroadPhaseResults</span></a>: Broadphase results.</p></li>
+<li><p><a class="reference internal" href="struct_px_broad_phase_type.html#struct_px_broad_phase_type"><span class="std std-ref">PxBroadPhaseType</span></a>: Broad phase algorithm used in the simulation.</p></li>
+<li><p><a class="reference internal" href="struct_px_combine_mode.html#struct_px_combine_mode"><span class="std std-ref">PxCombineMode</span></a>: Enumeration that determines the way in which two material properties will be combined to yield a friction or restitution coefficient for a collision.</p></li>
+<li><p><a class="reference internal" href="struct_px_cone_limit_params.html#struct_px_cone_limit_params"><span class="std std-ref">PxConeLimitParams</span></a>: Compressed form of cone limit parameters.</p></li>
+<li><p><a class="reference internal" href="struct_px_cone_limited_constraint.html#struct_px_cone_limited_constraint"><span class="std std-ref">PxConeLimitedConstraint</span></a>: A constraint descriptor for limiting movement to a conical region.</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag"><span class="std std-ref">PxConstraintFlag</span></a>: constraint flags</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_info.html#struct_px_constraint_info"><span class="std std-ref">PxConstraintInfo</span></a>: Descriptor for a broken constraint.</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_inv_mass_scale.html#struct_px_constraint_inv_mass_scale"><span class="std std-ref">PxConstraintInvMassScale</span></a>: Struct for specifying mass scaling for a pair of rigids.</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_shader_table.html#struct_px_constraint_shader_table"><span class="std std-ref">PxConstraintShaderTable</span></a>: a table of function pointers for a constraint</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_solve_hint.html#struct_px_constraint_solve_hint"><span class="std std-ref">PxConstraintSolveHint</span></a>: Constraint type hints which the solver uses to optimize constraint handling.</p></li>
+<li><p><a class="reference internal" href="struct_px_constraint_visualization_flag.html#struct_px_constraint_visualization_flag"><span class="std std-ref">PxConstraintVisualizationFlag</span></a>: Flags for determining which components of the constraint should be visualized.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact.html#struct_px_contact"><span class="std std-ref">PxContact</span></a>: Contact point data.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair.html#struct_px_contact_pair"><span class="std std-ref">PxContactPair</span></a>: Contact report pair information.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_extra_data_item.html#struct_px_contact_pair_extra_data_item"><span class="std std-ref">PxContactPairExtraDataItem</span></a>: Base class for items in the extra data stream of contact pairs.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_extra_data_iterator.html#struct_px_contact_pair_extra_data_iterator"><span class="std std-ref">PxContactPairExtraDataIterator</span></a>: A class to iterate over a contact pair extra data stream.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_extra_data_type.html#struct_px_contact_pair_extra_data_type"><span class="std std-ref">PxContactPairExtraDataType</span></a>: Extra data item types for contact pairs.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_flag.html#struct_px_contact_pair_flag"><span class="std std-ref">PxContactPairFlag</span></a>: Collection of flags providing information on contact report pairs.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_header.html#struct_px_contact_pair_header"><span class="std std-ref">PxContactPairHeader</span></a>: An Instance of this class is passed to <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a4dc1da28643ccf9f77c8432b5eb2fd32"><span class="std std-ref">PxSimulationEventCallback.onContact()</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_header_flag.html#struct_px_contact_pair_header_flag"><span class="std std-ref">PxContactPairHeaderFlag</span></a>: Collection of flags providing information on contact report pairs.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_index.html#struct_px_contact_pair_index"><span class="std std-ref">PxContactPairIndex</span></a>: Marker for the beginning of a new item set in the extra data stream.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_point.html#struct_px_contact_pair_point"><span class="std std-ref">PxContactPairPoint</span></a>: A contact point as used by contact notification.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_pose.html#struct_px_contact_pair_pose"><span class="std std-ref">PxContactPairPose</span></a>: World space actor poses of the contact pair rigid bodies.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_pair_velocity.html#struct_px_contact_pair_velocity"><span class="std std-ref">PxContactPairVelocity</span></a>: Velocities of the contact pair rigid bodies.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_patch.html#struct_px_contact_patch"><span class="std std-ref">PxContactPatch</span></a>: Header for a contact patch where all points share same material and normal.</p></li>
+<li><p><a class="reference internal" href="struct_px_contact_stream_iterator.html#struct_px_contact_stream_iterator"><span class="std std-ref">PxContactStreamIterator</span></a>: A class to iterate over a compressed contact stream.</p></li>
+<li><p><a class="reference internal" href="struct_px_data_access_flag.html#struct_px_data_access_flag"><span class="std std-ref">PxDataAccessFlag</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_deletion_event_flag.html#struct_px_deletion_event_flag"><span class="std std-ref">PxDeletionEventFlag</span></a>: Flags specifying deletion event types.</p></li>
+<li><p><a class="reference internal" href="struct_px_dominance_group_pair.html#struct_px_dominance_group_pair"><span class="std std-ref">PxDominanceGroupPair</span></a>: Expresses the dominance relationship of a contact.</p></li>
+<li><p><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html#struct_px_dynamic_tree_secondary_pruner"><span class="std std-ref">PxDynamicTreeSecondaryPruner</span></a>: Secondary pruning structure used for newly added objects in dynamic trees.</p></li>
+<li><p><a class="reference internal" href="struct_px_extended_contact.html#struct_px_extended_contact"><span class="std std-ref">PxExtendedContact</span></a>: Contact point data with additional target and max impulse values.</p></li>
+<li><p><a class="reference internal" href="struct_px_f_e_m_soft_body_material_model.html#struct_px_f_e_m_soft_body_material_model"><span class="std std-ref">PxFEMSoftBodyMaterialModel</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a>: <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> is user-definable data which gets passed into the collision filtering shader and/or callback.</p></li>
+<li><p><a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a>: Collection of flags describing the filter actions to take for a collision pair.</p></li>
+<li><p><a class="reference internal" href="struct_px_filter_object_flag.html#struct_px_filter_object_flag"><span class="std std-ref">PxFilterObjectFlag</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_filter_object_type.html#struct_px_filter_object_type"><span class="std std-ref">PxFilterObjectType</span></a>: Identifies each type of filter object.</p></li>
+<li><p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a>: Parameter to addForce() and addTorque() calls, determines the exact operation that is carried out.</p></li>
+<li><p><a class="reference internal" href="struct_px_friction_type.html#struct_px_friction_type"><span class="std std-ref">PxFrictionType</span></a>: Enum for selecting the friction algorithm used for simulation.</p></li>
+<li><p><a class="reference internal" href="struct_px_gpu_actor_pair.html#struct_px_gpu_actor_pair"><span class="std std-ref">PxGpuActorPair</span></a>: Pair correspondence used for matching array indices with body node indices.</p></li>
+<li><p><a class="reference internal" href="struct_px_gpu_body_data.html#struct_px_gpu_body_data"><span class="std std-ref">PxGpuBodyData</span></a>: State of a body used when interfacing with the GPU rigid body pipeline.</p></li>
+<li><p><a class="reference internal" href="struct_px_gpu_contact_pair.html#struct_px_gpu_contact_pair"><span class="std std-ref">PxGpuContactPair</span></a>: Contains contact information for a contact reported by the direct-GPU contact report API.</p></li>
+<li><p><a class="reference internal" href="struct_px_gpu_mirrored_pointer.html#struct_px_gpu_mirrored_pointer"><span class="std std-ref">PxGpuMirroredPointer</span></a>: Container to hold a pair of corresponding device and host pointers.</p></li>
+<li><p><a class="reference internal" href="struct_px_gpu_particle_data.html#struct_px_gpu_particle_data"><span class="std std-ref">PxGpuParticleData</span></a>: Structure that holds simulation parameters of a <a class="reference internal" href="class_px_gpu_particle_system.html#class_px_gpu_particle_system"><span class="std std-ref">PxGpuParticleSystem</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_index_data_pair.html#struct_px_index_data_pair"><span class="std std-ref">PxIndexDataPair</span></a>: Maps numeric index to a data pointer.</p></li>
+<li><p><a class="reference internal" href="struct_px_m_p_m_cutting_flag.html#struct_px_m_p_m_cutting_flag"><span class="std std-ref">PxMPMCuttingFlag</span></a>: Optional MPM modes that improve the quality of fracture and/or cutting.</p></li>
+<li><p><a class="reference internal" href="struct_px_m_p_m_material_model.html#struct_px_m_p_m_material_model"><span class="std std-ref">PxMPMMaterialModel</span></a>: MPM material models.</p></li>
+<li><p><a class="reference internal" href="struct_px_m_p_m_surface_type.html#struct_px_m_p_m_surface_type"><span class="std std-ref">PxMPMSurfaceType</span></a>: MPM surface types that influence interaction between particles and obstacles.</p></li>
+<li><p><a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a>: Flags which control the behavior of a material.</p></li>
+<li><p><a class="reference internal" href="struct_px_meta_data_entry.html#struct_px_meta_data_entry"><span class="std std-ref">PxMetaDataEntry</span></a>: Struct to store meta data definitions.</p></li>
+<li><p><a class="reference internal" href="struct_px_modifiable_contact.html#struct_px_modifiable_contact"><span class="std std-ref">PxModifiableContact</span></a>: A modifiable contact point.</p></li>
+<li><p><a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode"><span class="std std-ref">PxPairFilteringMode</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a>: Collection of flags describing the actions to take for a collision pair.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_cloth.html#struct_px_particle_cloth"><span class="std std-ref">PxParticleCloth</span></a>: Particle cloth structure.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_cloth_desc.html#struct_px_particle_cloth_desc"><span class="std std-ref">PxParticleClothDesc</span></a>: Structure to describe the set of particle cloths in the same <a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_flag.html#struct_px_particle_flag"><span class="std std-ref">PxParticleFlag</span></a>: Flags which control the behaviour of a particle system.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_rigid_attachment.html#struct_px_particle_rigid_attachment"><span class="std std-ref">PxParticleRigidAttachment</span></a>: Struct to specify attachment between a particle/vertex and a rigid.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_rigid_filter_pair.html#struct_px_particle_rigid_filter_pair"><span class="std std-ref">PxParticleRigidFilterPair</span></a>: Struct for storing a particle/vertex - rigid filter pair with comparison operators.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_solver_type.html#struct_px_particle_solver_type"><span class="std std-ref">PxParticleSolverType</span></a>: Identifies the solver to use for a particle system.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_spring.html#struct_px_particle_spring"><span class="std std-ref">PxParticleSpring</span></a>: Holds all the information for a spring constraint between two particles.</p></li>
+<li><p><a class="reference internal" href="struct_px_particle_volume.html#struct_px_particle_volume"><span class="std std-ref">PxParticleVolume</span></a>: Particle volume structure.</p></li>
+<li><p><a class="reference internal" href="struct_px_partitioned_particle_cloth.html#struct_px_partitioned_particle_cloth"><span class="std std-ref">PxPartitionedParticleCloth</span></a>: Structure to describe the output of the particle cloth preprocessing.</p></li>
+<li><p><a class="reference internal" href="struct_px_pruning_structure_type.html#struct_px_pruning_structure_type"><span class="std std-ref">PxPruningStructureType</span></a>: Pruning structure used to accelerate scene queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_pvd_update_type.html#struct_px_pvd_update_type"><span class="std std-ref">PxPvdUpdateType</span></a>: Flags for determining how PVD should serialize a constraint update.</p></li>
+<li><p><a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag"><span class="std std-ref">PxRigidBodyFlag</span></a>: Collection of flags describing the behavior of a rigid body.</p></li>
+<li><p><a class="reference internal" href="struct_px_rigid_dynamic_lock_flag.html#struct_px_rigid_dynamic_lock_flag"><span class="std std-ref">PxRigidDynamicLockFlag</span></a>: Collection of flags providing a mechanism to lock motion along/around a specific axis.</p></li>
+<li><p><a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a>: flags for configuring properties of the scene</p></li>
+<li><p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode"><span class="std std-ref">PxSceneQueryUpdateMode</span></a>: Scene query update mode.</p></li>
+<li><p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a>: Flags which affect the behavior of PxShapes.</p></li>
+<li><p><a class="reference internal" href="struct_px_soft_body_flag.html#struct_px_soft_body_flag"><span class="std std-ref">PxSoftBodyFlag</span></a>: Flags to enable or disable special modes of a SoftBody.</p></li>
+<li><p><a class="reference internal" href="struct_px_solver_type.html#struct_px_solver_type"><span class="std std-ref">PxSolverType</span></a>: Enum for selecting the type of solver used for the simulation.</p></li>
+<li><p><a class="reference internal" href="struct_px_sparse_grid_params.html#struct_px_sparse_grid_params"><span class="std std-ref">PxSparseGridParams</span></a>: Parameters to define the sparse grid settings like grid spacing, maximal number of subgrids etc.</p></li>
+<li><p><a class="reference internal" href="struct_px_spatial_force.html#struct_px_spatial_force"><span class="std std-ref">PxSpatialForce</span></a>: Data structure to represent spatial forces.</p></li>
+<li><p><a class="reference internal" href="struct_px_spatial_velocity.html#struct_px_spatial_velocity"><span class="std std-ref">PxSpatialVelocity</span></a>: Data structure to represent spatial velocities.</p></li>
+<li><p><a class="reference internal" href="struct_px_trigger_pair.html#struct_px_trigger_pair"><span class="std std-ref">PxTriggerPair</span></a>: Descriptor for a trigger pair.</p></li>
+<li><p><a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a>: Collection of flags providing information on trigger report pairs.</p></li>
+<li><p><a class="reference internal" href="struct_px_visualization_parameter.html#struct_px_visualization_parameter"><span class="std std-ref">PxVisualizationParameter</span></a>: Debug visualization parameters.</p></li>
+<li><p><a class="reference internal" href="struct_pxg_dynamics_memory_config.html#struct_pxg_dynamics_memory_config"><span class="std std-ref">PxgDynamicsMemoryConfig</span></a>: Sizes of pre-allocated buffers use for GPU dynamics.</p></li>
+<li><p><a class="reference internal" href="struct_pxs_particle_material_data.html#struct_pxs_particle_material_data"><span class="std std-ref">PxsParticleMaterialData</span></a>: Common material properties for particles.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Typedefs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__physics_1gaa03d6d79255886721c3e1a946b5a805f"><span class="std std-ref">Px1DConstraintFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae82234413be03824926beb1b638cbea5"><span class="std std-ref">PxActorCacheFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_actor_cache_flag.html#struct_px_actor_cache_flag"><span class="std std-ref">PxActorCacheFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga468ad85db838378f0c58cfd02a96949b"><span class="std std-ref">PxActorFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae76639de8e4ab9d5e155f72b394812d2"><span class="std std-ref">PxActorTypeFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_actor_type_flag.html#struct_px_actor_type_flag"><span class="std std-ref">PxActorTypeFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga6c0599a93edeb15d6b32e26fc3806d91"><span class="std std-ref">PxAggregateFilterHint</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga40a321fce7bcb9669d32fca769d2958a"><span class="std std-ref">PxArticulationFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gad8023a12d4f2e3a7a4a61d31731a69f5"><span class="std std-ref">PxArticulationKinematicFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga4d2907efdef5e5b7b1becd1ab59c2405"><span class="std std-ref">PxArticulationMotions</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga6393a408e30545b5fbef16c6b72557f4"><span class="std std-ref">PxArticulationSensorFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a>: Broadphase filter group.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga1ae85a90f4c8bc8fa0119101077273a8"><span class="std std-ref">PxBpIndex</span></a>: Broadphase index. Indexes bounds, groups and distance arrays.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaf2b7f07d3fa7fafaf3d85114fbb120ee"><span class="std std-ref">PxConstraintFlags</span></a>: constraint flags</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga854b403b6a15bd6dda76b08539e30433"><span class="std std-ref">PxConstraintSolverPrep</span></a>: Solver constraint generation shader.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaa85dd505b96db854d4ffdbe24fcb9089"><span class="std std-ref">PxConstraintVisualize</span></a>: Solver constraint visualization function.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae73039b8bd7e7f4a606acfba4811291c"><span class="std std-ref">PxContactPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_flag.html#struct_px_contact_pair_flag"><span class="std std-ref">PxContactPairFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaa4275c674f70ce3f0be586339eb0b045"><span class="std std-ref">PxContactPairHeaderFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_header_flag.html#struct_px_contact_pair_header_flag"><span class="std std-ref">PxContactPairHeaderFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga90395861aa5abb531d3dd02790bc2b18"><span class="std std-ref">PxDataAccessFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_data_access_flag.html#struct_px_data_access_flag"><span class="std std-ref">PxDataAccessFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gafb4c5337ad84e1f9eeaa8d3d33caa819"><span class="std std-ref">PxDeletionEventFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_deletion_event_flag.html#struct_px_deletion_event_flag"><span class="std std-ref">PxDeletionEventFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaf665154f3f66f7c4f65ca9015db8ee87"><span class="std std-ref">PxDominanceGroup</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga675117fb97324a28d3b982b47430ea02"><span class="std std-ref">PxFilterFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a>: Structure which gets passed into the collision filtering shader and/or callback providing additional information on objects of a collision pair.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga189659947c7960fedd8181b05e6f33a7"><span class="std std-ref">PxMPMCuttingFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gaacd9cb0f0e89fbbc09fec759b254d109"><span class="std std-ref">PxMaterialFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1gacacbeccf757e60dbf45089ef382681d9"><span class="std std-ref">PxPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga477a6cb9995a5ccd7992beae5e8cdf89"><span class="std std-ref">PxParticleFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga0759d7f23b4fa7e24cd69c51d3efe5bf"><span class="std std-ref">PxRigidBodyFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag"><span class="std std-ref">PxRigidBodyFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga5ff75d3f2ba94c58e7f8f928b11ebb8d"><span class="std std-ref">PxRigidDynamicLockFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga460c669588757253a2caecdfdc1fafe3"><span class="std std-ref">PxSQBuildStepHandle</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga1f27391144cd450192f6c2df38f14abd"><span class="std std-ref">PxSQCompoundHandle</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga1065613e3046a090d4d0acae03c8425f"><span class="std std-ref">PxSQPrunerHandle</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga54a626a9a6d80543048bffc654814704"><span class="std std-ref">PxSceneFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d"><span class="std std-ref">PxShapeFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a>: Filter method to specify how a pair of potentially colliding objects should be processed.</p></li>
+<li><p><a class="reference internal" href="#group__physics_1ga4bbe198b0dac953e8f058975b5aba958"><span class="std std-ref">PxSoftBodyFlags</span></a></p></li>
+<li><p><a class="reference internal" href="#group__physics_1gae5d4ef1b3321702c4431da8fe72b8f7f"><span class="std std-ref">PxTriggerPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a> .</p></li>
+</ul>
+<section id="enumerations">
+<h2>Enumerations<a class="headerlink" href="#enumerations" title="Permalink to this headline"></a></h2>
+<dl class="cpp enum">
+<dt class="sig sig-object cpp" id="_CPPv418PxScenePrunerIndex">
+<span id="_CPPv318PxScenePrunerIndex"></span><span id="_CPPv218PxScenePrunerIndex"></span><span class="target" id="group__physics_1gaa0fe57ae9756c325a0d060bf15eb94b8"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxScenePrunerIndex</span></span></span><a class="headerlink" href="#_CPPv418PxScenePrunerIndex" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Built-in enum for default <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> pruners. </p>
+<p>This is passed as a pruner index to various functions in the following APIs.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"><span class="std std-ref">PxSceneQuerySystemBase::forceRebuildDynamicTree</span></a> <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system_1a63df05e9d428e196176962d33ace1d2b"><span class="std std-ref">PxSceneQuerySystem::preallocate</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system_1a6cd0d5086e5902f5085cab9236c615b3"><span class="std std-ref">PxSceneQuerySystem::visualize</span></a> <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system_1a4d1ba91e8265c7d68c0836823ad53403"><span class="std std-ref">PxSceneQuerySystem::sync</span></a> <a class="reference internal" href="class_px_scene_query_system.html#class_px_scene_query_system_1aeeef4236714a1e072a217930490e4d28"><span class="std std-ref">PxSceneQuerySystem::prepareSceneQueryBuildStep</span></a> </p>
+</div>
+</p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxScenePrunerIndex22PX_SCENE_PRUNER_STATICE">
+<span id="_CPPv3N18PxScenePrunerIndex22PX_SCENE_PRUNER_STATICE"></span><span id="_CPPv2N18PxScenePrunerIndex22PX_SCENE_PRUNER_STATICE"></span><span class="target" id="group__physics_1ggaa0fe57ae9756c325a0d060bf15eb94b8adfca133804a892788cd006f14bffc1e9"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PX_SCENE_PRUNER_STATIC</span></span></span><a class="headerlink" href="#_CPPv4N18PxScenePrunerIndex22PX_SCENE_PRUNER_STATICE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxScenePrunerIndex23PX_SCENE_PRUNER_DYNAMICE">
+<span id="_CPPv3N18PxScenePrunerIndex23PX_SCENE_PRUNER_DYNAMICE"></span><span id="_CPPv2N18PxScenePrunerIndex23PX_SCENE_PRUNER_DYNAMICE"></span><span class="target" id="group__physics_1ggaa0fe57ae9756c325a0d060bf15eb94b8a1dfd653292d8cc5691cf854fedbee196"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PX_SCENE_PRUNER_DYNAMIC</span></span></span><a class="headerlink" href="#_CPPv4N18PxScenePrunerIndex23PX_SCENE_PRUNER_DYNAMICE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxScenePrunerIndex24PX_SCENE_COMPOUND_PRUNERE">
+<span id="_CPPv3N18PxScenePrunerIndex24PX_SCENE_COMPOUND_PRUNERE"></span><span id="_CPPv2N18PxScenePrunerIndex24PX_SCENE_COMPOUND_PRUNERE"></span><span class="target" id="group__physics_1ggaa0fe57ae9756c325a0d060bf15eb94b8a2742788f024dfe33a64367f7f208c35e"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PX_SCENE_COMPOUND_PRUNER</span></span></span><a class="headerlink" href="#_CPPv4N18PxScenePrunerIndex24PX_SCENE_COMPOUND_PRUNERE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv434PxConfigureSoftBodyKinematicTargetRK6PxVec4b">
+<span id="_CPPv334PxConfigureSoftBodyKinematicTargetRK6PxVec4b"></span><span id="_CPPv234PxConfigureSoftBodyKinematicTargetRK6PxVec4b"></span><span id="PxConfigureSoftBodyKinematicTarget__PxVec4CR.b"></span><span class="target" id="group__physics_1ga3fcf8645f0fd72b886bcf7dc6e51beb3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConfigureSoftBodyKinematicTarget</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">isActive</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv434PxConfigureSoftBodyKinematicTargetRK6PxVec4b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adjusts a softbody kinematic target such that it is properly set as active or inactive. </p>
+<p>Inactive targets will not affect vertex position, they are ignored by the solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – <strong>[in]</strong> The kinematic target </p></li>
+<li><p><strong>isActive</strong> – <strong>[in]</strong> A boolean indicating if the returned target should be marked as active or not </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The target with adjusted w component </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv434PxConfigureSoftBodyKinematicTargetRK6PxVec3b">
+<span id="_CPPv334PxConfigureSoftBodyKinematicTargetRK6PxVec3b"></span><span id="_CPPv234PxConfigureSoftBodyKinematicTargetRK6PxVec3b"></span><span id="PxConfigureSoftBodyKinematicTarget__PxVec3CR.b"></span><span class="target" id="group__physics_1ga9e4b4cf12c4389f6aff3b84ebbbde193"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConfigureSoftBodyKinematicTarget</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">isActive</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv434PxConfigureSoftBodyKinematicTargetRK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets up a softbody kinematic target such that it is properly set as active or inactive. </p>
+<p>Inactive targets will not affect vertex position, they are ignored by the solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – <strong>[in]</strong> The kinematic target </p></li>
+<li><p><strong>isActive</strong> – <strong>[in]</strong> A boolean indicating if the returned target should be marked as active or not </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The target with configured w component </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv419PxCreateAABBManagerR12PxBroadPhase">
+<span id="_CPPv319PxCreateAABBManagerR12PxBroadPhase"></span><span id="_CPPv219PxCreateAABBManagerR12PxBroadPhase"></span><span id="PxCreateAABBManager__PxBroadPhaseR"></span><span class="target" id="group__physics_1ga7ec37279b01a9c4eb3f893be786ad572"></span><a class="reference internal" href="class_px_a_a_b_b_manager.html#_CPPv413PxAABBManager" title="PxAABBManager"><span class="n"><span class="pre">PxAABBManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateAABBManager</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_broad_phase.html#_CPPv412PxBroadPhase" title="PxBroadPhase"><span class="n"><span class="pre">PxBroadPhase</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">broadphase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv419PxCreateAABBManagerR12PxBroadPhase" title="Permalink to this definition"></a><br /></dt>
+<dd><p>AABB manager factory function. </p>
+<p>Use this function to create a new standalone high-level broadphase.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_a_a_b_b_manager.html#class_px_a_a_b_b_manager"><span class="std std-ref">PxAABBManager</span></a> <a class="reference internal" href="class_px_broad_phase.html#class_px_broad_phase"><span class="std std-ref">PxBroadPhase</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>broadphase</strong> – [in] The broadphase that will be managed by the AABB manager </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Newly created AABB manager, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxCreateBroadPhaseRK16PxBroadPhaseDesc">
+<span id="_CPPv318PxCreateBroadPhaseRK16PxBroadPhaseDesc"></span><span id="_CPPv218PxCreateBroadPhaseRK16PxBroadPhaseDesc"></span><span id="PxCreateBroadPhase__PxBroadPhaseDescCR"></span><span class="target" id="group__physics_1ga7aee01ed4e0857c5ff26e53d815ea944"></span><a class="reference internal" href="class_px_broad_phase.html#_CPPv412PxBroadPhase" title="PxBroadPhase"><span class="n"><span class="pre">PxBroadPhase</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateBroadPhase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_broad_phase_desc.html#_CPPv416PxBroadPhaseDesc" title="PxBroadPhaseDesc"><span class="n"><span class="pre">PxBroadPhaseDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">desc</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxCreateBroadPhaseRK16PxBroadPhaseDesc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Broadphase factory function. </p>
+<p>Use this function to create a new standalone broadphase.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_broad_phase.html#class_px_broad_phase"><span class="std std-ref">PxBroadPhase</span></a> <a class="reference internal" href="class_px_broad_phase_desc.html#class_px_broad_phase_desc"><span class="std std-ref">PxBroadPhaseDesc</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>desc</strong> – [in] Broadphase descriptor </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Newly created broadphase, or NULL </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv433PxCreateParticleClothPreProcessorPN5physx20PxCudaContextManagerE">
+<span id="_CPPv333PxCreateParticleClothPreProcessorPN5physx20PxCudaContextManagerE"></span><span id="_CPPv233PxCreateParticleClothPreProcessorPN5physx20PxCudaContextManagerE"></span><span id="PxCreateParticleClothPreProcessor__physx::PxCudaContextManagerP"></span><span class="target" id="group__physics_1gaeecb5a5e14ea6f78e535f907b694cdb3"></span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxParticleClothPreProcessor</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateParticleClothPreProcessor</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxCudaContextManager</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433PxCreateParticleClothPreProcessorPN5physx20PxCudaContextManagerE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Create a particle cloth preprocessor. </p>
+<p>
+See <a class="reference internal" href="struct_px_particle_cloth_desc.html#struct_px_particle_cloth_desc"><span class="std std-ref">PxParticleClothDesc</span></a>, <a class="reference internal" href="struct_px_partitioned_particle_cloth.html#struct_px_partitioned_particle_cloth"><span class="std std-ref">PxPartitionedParticleCloth</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cudaContextManager</strong> – <strong>[in]</strong> A cuda context manager.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv415PxCreatePhysicsN5physx5PxU32ERN5physx12PxFoundationERKN5physx17PxTolerancesScaleEbPN5physx5PxPvdEPN5physx9PxOmniPvdE">
+<span id="_CPPv315PxCreatePhysicsN5physx5PxU32ERN5physx12PxFoundationERKN5physx17PxTolerancesScaleEbPN5physx5PxPvdEPN5physx9PxOmniPvdE"></span><span id="_CPPv215PxCreatePhysicsN5physx5PxU32ERN5physx12PxFoundationERKN5physx17PxTolerancesScaleEbPN5physx5PxPvdEPN5physx9PxOmniPvdE"></span><span id="PxCreatePhysics__physx::PxU32.physx::PxFoundationR.physx::PxTolerancesScaleCR.b.physx::PxPvdP.physx::PxOmniPvdP"></span><span class="target" id="group__physics_1gaf1ab7cfe4da2124cb9d6c7238d0e0fb9"></span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxPhysics</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreatePhysics</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">version</span></span>, <a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxFoundation</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">foundation</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxTolerancesScale</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">trackOutstandingAllocations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span>, <a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxPvd</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pvd</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxOmniPvd</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">omniPvd</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415PxCreatePhysicsN5physx5PxU32ERN5physx12PxFoundationERKN5physx17PxTolerancesScaleEbPN5physx5PxPvdEPN5physx9PxOmniPvdE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an instance of the physics SDK. </p>
+<p>Creates an instance of this class. May not be a class member to avoid name mangling. Pass the constant <a class="reference internal" href="define_group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d.html#group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d"><span class="std std-ref">PX_PHYSICS_VERSION</span></a> as the argument. There may be only one instance of this class per process. Calling this method after an instance has been created already will result in an error message and NULL will be returned.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>version</strong> – Version number we are expecting (should be <a class="reference internal" href="define_group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d.html#group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d"><span class="std std-ref">PX_PHYSICS_VERSION</span></a>) </p></li>
+<li><p><strong>foundation</strong> – Foundation instance (see <a class="reference internal" href="class_px_foundation.html#class_px_foundation"><span class="std std-ref">PxFoundation</span></a>) </p></li>
+<li><p><strong>scale</strong> – values used to determine default tolerances for objects at creation time </p></li>
+<li><p><strong>trackOutstandingAllocations</strong> – true if you want to track memory allocations so a debugger connection partway through your physics simulation will get an accurate map of everything that has been allocated so far. This could have a memory and performance impact on your simulation hence it defaults to off. </p></li>
+<li><p><strong>pvd</strong> – When pvd points to a valid <a class="reference internal" href="class_px_pvd.html#class_px_pvd"><span class="std std-ref">PxPvd</span></a> instance (PhysX Visual Debugger), a connection to the specified <a class="reference internal" href="class_px_pvd.html#class_px_pvd"><span class="std std-ref">PxPvd</span></a> instance is created. If pvd is NULL no connection will be attempted. </p></li>
+<li><p><strong>omniPvd</strong> – When omniPvd points to a valid <a class="reference internal" href="class_px_omni_pvd.html#class_px_omni_pvd"><span class="std std-ref">PxOmniPvd</span></a> instance PhysX will sample its internal structures to the defined OmniPvd output streams set in the <a class="reference internal" href="class_px_omni_pvd.html#class_px_omni_pvd"><span class="std std-ref">PxOmniPvd</span></a> object. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> instance on success, NULL if operation failed</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425PxFilterObjectIsKinematic24PxFilterObjectAttributes">
+<span id="_CPPv325PxFilterObjectIsKinematic24PxFilterObjectAttributes"></span><span id="_CPPv225PxFilterObjectIsKinematic24PxFilterObjectAttributes"></span><span id="PxFilterObjectIsKinematic__PxFilterObjectAttributes"></span><span class="target" id="group__physics_1gab0b0f7fe4f001e8bc5aacd10103a87e4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFilterObjectIsKinematic</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425PxFilterObjectIsKinematic24PxFilterObjectAttributes" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies whether the collision object belongs to a kinematic rigid body. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag_1a5fd4878ae66a98c030a9d976e8ba8596abd76e6985e9db78efb7a66148ea4c212"><span class="std std-ref">PxRigidBodyFlag::eKINEMATIC</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>attr</strong> – <strong>[in]</strong> The filter attribute of a collision pair object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the object belongs to a kinematic rigid body, else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423PxFilterObjectIsTrigger24PxFilterObjectAttributes">
+<span id="_CPPv323PxFilterObjectIsTrigger24PxFilterObjectAttributes"></span><span id="_CPPv223PxFilterObjectIsTrigger24PxFilterObjectAttributes"></span><span id="PxFilterObjectIsTrigger__PxFilterObjectAttributes"></span><span class="target" id="group__physics_1ga86216b0fb36be0fb1c670cba52bc8266"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFilterObjectIsTrigger</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423PxFilterObjectIsTrigger24PxFilterObjectAttributes" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Specifies whether the collision object is a trigger shape. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>attr</strong> – <strong>[in]</strong> The filter attribute of a collision pair object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the object is a trigger shape, else false</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424PxGetAggregateFilterHintN15PxAggregateType4EnumEb">
+<span id="_CPPv324PxGetAggregateFilterHintN15PxAggregateType4EnumEb"></span><span id="_CPPv224PxGetAggregateFilterHintN15PxAggregateType4EnumEb"></span><span id="PxGetAggregateFilterHint__PxAggregateType::Enum.b"></span><span class="target" id="group__physics_1ga7f03931d108cf9c3092040da7bb645bd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv421PxAggregateFilterHint" title="PxAggregateFilterHint"><span class="n"><span class="pre">PxAggregateFilterHint</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetAggregateFilterHint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_aggregate_type.html#_CPPv415PxAggregateType" title="PxAggregateType"><span class="n"><span class="pre">PxAggregateType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4EnumE" title="PxAggregateType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enableSelfCollision</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424PxGetAggregateFilterHintN15PxAggregateType4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv430PxGetAggregateSelfCollisionBit21PxAggregateFilterHint">
+<span id="_CPPv330PxGetAggregateSelfCollisionBit21PxAggregateFilterHint"></span><span id="_CPPv230PxGetAggregateSelfCollisionBit21PxAggregateFilterHint"></span><span id="PxGetAggregateSelfCollisionBit__PxAggregateFilterHint"></span><span class="target" id="group__physics_1gae2feaf02053f9cb0d7acc6a1af265d3c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetAggregateSelfCollisionBit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv421PxAggregateFilterHint" title="PxAggregateFilterHint"><span class="n"><span class="pre">PxAggregateFilterHint</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hint</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv430PxGetAggregateSelfCollisionBit21PxAggregateFilterHint" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxGetAggregateType21PxAggregateFilterHint">
+<span id="_CPPv318PxGetAggregateType21PxAggregateFilterHint"></span><span id="_CPPv218PxGetAggregateType21PxAggregateFilterHint"></span><span id="PxGetAggregateType__PxAggregateFilterHint"></span><span class="target" id="group__physics_1gae5ea842e62d9d5730e58a81a3a9dabc7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_aggregate_type.html#_CPPv415PxAggregateType" title="PxAggregateType"><span class="n"><span class="pre">PxAggregateType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4EnumE" title="PxAggregateType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetAggregateType</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv421PxAggregateFilterHint" title="PxAggregateFilterHint"><span class="n"><span class="pre">PxAggregateFilterHint</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">hint</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxGetAggregateType21PxAggregateFilterHint" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv433PxGetBroadPhaseDynamicFilterGroup5PxU32">
+<span id="_CPPv333PxGetBroadPhaseDynamicFilterGroup5PxU32"></span><span id="_CPPv233PxGetBroadPhaseDynamicFilterGroup5PxU32"></span><span id="PxGetBroadPhaseDynamicFilterGroup__PxU32"></span><span class="target" id="group__physics_1gac9d7297cfb5c65fcbcf805f9f0a11e79"></span><a class="reference internal" href="#_CPPv415PxBpFilterGroup" title="PxBpFilterGroup"><span class="n"><span class="pre">PxBpFilterGroup</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetBroadPhaseDynamicFilterGroup</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv433PxGetBroadPhaseDynamicFilterGroup5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves a filter group for dynamic objects. </p>
+<p>Mark dynamic objects with this group when adding them to the broadphase. Each dynamic object must have an ID, and overlaps between dynamic objects that have the same ID will not be detected. This is useful to dismiss overlaps between shapes of the same (compound) actor directly within the broadphase.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – [in] ID/Index of dynamic object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Filter group for the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv435PxGetBroadPhaseKinematicFilterGroup5PxU32">
+<span id="_CPPv335PxGetBroadPhaseKinematicFilterGroup5PxU32"></span><span id="_CPPv235PxGetBroadPhaseKinematicFilterGroup5PxU32"></span><span id="PxGetBroadPhaseKinematicFilterGroup__PxU32"></span><span class="target" id="group__physics_1gabf82dd0942fbc9eb09a056d24bf15f38"></span><a class="reference internal" href="#_CPPv415PxBpFilterGroup" title="PxBpFilterGroup"><span class="n"><span class="pre">PxBpFilterGroup</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetBroadPhaseKinematicFilterGroup</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">id</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv435PxGetBroadPhaseKinematicFilterGroup5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves a filter group for kinematic objects. </p>
+<p>Mark kinematic objects with this group when adding them to the broadphase. Each kinematic object must have an ID, and overlaps between kinematic objects that have the same ID will not be detected.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>id</strong> – [in] ID/Index of kinematic object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Filter group for the object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv432PxGetBroadPhaseStaticFilterGroupv">
+<span id="_CPPv332PxGetBroadPhaseStaticFilterGroupv"></span><span id="_CPPv232PxGetBroadPhaseStaticFilterGroupv"></span><span id="PxGetBroadPhaseStaticFilterGroup"></span><span class="target" id="group__physics_1ga1f2c1eefbafd77c5fff1ea52f5a4925a"></span><a class="reference internal" href="#_CPPv415PxBpFilterGroup" title="PxBpFilterGroup"><span class="n"><span class="pre">PxBpFilterGroup</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetBroadPhaseStaticFilterGroup</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv432PxGetBroadPhaseStaticFilterGroupv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the filter group for static objects. </p>
+<p>Mark static objects with this group when adding them to the broadphase. Overlaps between static objects will not be detected. All static objects should have the same group.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Filter group for static objects. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxGetFilterObjectType24PxFilterObjectAttributes">
+<span id="_CPPv321PxGetFilterObjectType24PxFilterObjectAttributes"></span><span id="_CPPv221PxGetFilterObjectType24PxFilterObjectAttributes"></span><span id="PxGetFilterObjectType__PxFilterObjectAttributes"></span><span class="target" id="group__physics_1gaa265647aed8289fd77aa61fdb102c387"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_object_type.html#_CPPv418PxFilterObjectType" title="PxFilterObjectType"><span class="n"><span class="pre">PxFilterObjectType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_filter_object_type.html#_CPPv4N18PxFilterObjectType4EnumE" title="PxFilterObjectType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetFilterObjectType</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">attr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxGetFilterObjectType24PxFilterObjectAttributes" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Extract filter object type from the filter attributes of a collision pair object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_filter_object_type.html#struct_px_filter_object_type"><span class="std std-ref">PxFilterObjectType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>attr</strong> – <strong>[in]</strong> The filter attribute of a collision pair object </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The type of the collision pair object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv410PxGetFluidN5physx5PxU32E">
+<span id="_CPPv310PxGetFluidN5physx5PxU32E"></span><span id="_CPPv210PxGetFluidN5physx5PxU32E"></span><span id="PxGetFluid__physx::PxU32"></span><span class="target" id="group__physics_1ga1d452d94fca09c6430dd43a061fd9044"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetFluid</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">phase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv410PxGetFluidN5physx5PxU32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv410PxGetGroupN5physx5PxU32E">
+<span id="_CPPv310PxGetGroupN5physx5PxU32E"></span><span id="_CPPv210PxGetGroupN5physx5PxU32E"></span><span id="PxGetGroup__physx::PxU32"></span><span class="target" id="group__physics_1ga6767079504cb6a97709c91a4e2525f05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetGroup</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">phase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv410PxGetGroupN5physx5PxU32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv412PxGetPhysicsv">
+<span id="_CPPv312PxGetPhysicsv"></span><span id="_CPPv212PxGetPhysicsv"></span><span id="PxGetPhysics"></span><span class="target" id="group__physics_1ga51942bd510715f96f753d4ac238ef784"></span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxPhysics</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxGetPhysics</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv412PxGetPhysicsv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the Physics SDK after it has been created. </p>
+<p>Before using this function the user must call <a class="reference internal" href="#group__physics_1gaf1ab7cfe4da2124cb9d6c7238d0e0fb9"><span class="std std-ref">PxCreatePhysics()</span></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The behavior of this method is undefined if the Physics SDK instance has not been created already. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv416PxGetSelfCollideN5physx5PxU32E">
+<span id="_CPPv316PxGetSelfCollideN5physx5PxU32E"></span><span id="_CPPv216PxGetSelfCollideN5physx5PxU32E"></span><span id="PxGetSelfCollide__physx::PxU32"></span><span class="target" id="group__physics_1ga4b6e8009cbccff63eb0c28004e157246"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetSelfCollide</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">phase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv416PxGetSelfCollideN5physx5PxU32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv422PxGetSelfCollideFilterN5physx5PxU32E">
+<span id="_CPPv322PxGetSelfCollideFilterN5physx5PxU32E"></span><span id="_CPPv222PxGetSelfCollideFilterN5physx5PxU32E"></span><span id="PxGetSelfCollideFilter__physx::PxU32"></span><span class="target" id="group__physics_1ga0625f33d22812d4ab4e76e86e0c02d8d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetSelfCollideFilter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxU32</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">phase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv422PxGetSelfCollideFilterN5physx5PxU32E" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv419Px1DConstraintFlags">
+<span id="_CPPv319Px1DConstraintFlags"></span><span id="_CPPv219Px1DConstraintFlags"></span><span id="Px1DConstraintFlags"></span><span class="target" id="group__physics_1gaa03d6d79255886721c3e1a946b5a805f"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px1_d_constraint_flag.html#_CPPv418Px1DConstraintFlag" title="Px1DConstraintFlag"><span class="n"><span class="pre">Px1DConstraintFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px1_d_constraint_flag.html#_CPPv4N18Px1DConstraintFlag4TypeE" title="Px1DConstraintFlag::Type"><span class="n"><span class="pre">Type</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Px1DConstraintFlags</span></span></span><a class="headerlink" href="#_CPPv419Px1DConstraintFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxActorCacheFlags">
+<span id="_CPPv317PxActorCacheFlags"></span><span id="_CPPv217PxActorCacheFlags"></span><span id="PxActorCacheFlags"></span><span class="target" id="group__physics_1gae82234413be03824926beb1b638cbea5"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_actor_cache_flag.html#_CPPv416PxActorCacheFlag" title="PxActorCacheFlag"><span class="n"><span class="pre">PxActorCacheFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_actor_cache_flag.html#_CPPv4N16PxActorCacheFlag4EnumE" title="PxActorCacheFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxActorCacheFlags</span></span></span><a class="headerlink" href="#_CPPv417PxActorCacheFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Collection of set bits defined in <a class="reference internal" href="struct_px_actor_cache_flag.html#struct_px_actor_cache_flag"><span class="std std-ref">PxActorCacheFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_cache_flag.html#struct_px_actor_cache_flag"><span class="std std-ref">PxActorCacheFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv412PxActorFlags">
+<span id="_CPPv312PxActorFlags"></span><span id="_CPPv212PxActorFlags"></span><span id="PxActorFlags"></span><span class="target" id="group__physics_1ga468ad85db838378f0c58cfd02a96949b"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_actor_flag.html#_CPPv411PxActorFlag" title="PxActorFlag"><span class="n"><span class="pre">PxActorFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_actor_flag.html#_CPPv4N11PxActorFlag4EnumE" title="PxActorFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxActorFlags</span></span></span><a class="headerlink" href="#_CPPv412PxActorFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv416PxActorTypeFlags">
+<span id="_CPPv316PxActorTypeFlags"></span><span id="_CPPv216PxActorTypeFlags"></span><span id="PxActorTypeFlags"></span><span class="target" id="group__physics_1gae76639de8e4ab9d5e155f72b394812d2"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_actor_type_flag.html#_CPPv415PxActorTypeFlag" title="PxActorTypeFlag"><span class="n"><span class="pre">PxActorTypeFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_actor_type_flag.html#_CPPv4N15PxActorTypeFlag4EnumE" title="PxActorTypeFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxActorTypeFlags</span></span></span><a class="headerlink" href="#_CPPv416PxActorTypeFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Collection of set bits defined in <a class="reference internal" href="struct_px_actor_type_flag.html#struct_px_actor_type_flag"><span class="std std-ref">PxActorTypeFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_type_flag.html#struct_px_actor_type_flag"><span class="std std-ref">PxActorTypeFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv421PxAggregateFilterHint">
+<span id="_CPPv321PxAggregateFilterHint"></span><span id="_CPPv221PxAggregateFilterHint"></span><span id="PxAggregateFilterHint"></span><span class="target" id="group__physics_1ga6c0599a93edeb15d6b32e26fc3806d91"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAggregateFilterHint</span></span></span><a class="headerlink" href="#_CPPv421PxAggregateFilterHint" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv419PxArticulationFlags">
+<span id="_CPPv319PxArticulationFlags"></span><span id="_CPPv219PxArticulationFlags"></span><span id="PxArticulationFlags"></span><span class="target" id="group__physics_1ga40a321fce7bcb9669d32fca769d2958a"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_articulation_flag.html#_CPPv418PxArticulationFlag" title="PxArticulationFlag"><span class="n"><span class="pre">PxArticulationFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_flag.html#_CPPv4N18PxArticulationFlag4EnumE" title="PxArticulationFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationFlags</span></span></span><a class="headerlink" href="#_CPPv419PxArticulationFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv428PxArticulationKinematicFlags">
+<span id="_CPPv328PxArticulationKinematicFlags"></span><span id="_CPPv228PxArticulationKinematicFlags"></span><span id="PxArticulationKinematicFlags"></span><span class="target" id="group__physics_1gad8023a12d4f2e3a7a4a61d31731a69f5"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxFlags</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_articulation_kinematic_flag.html#_CPPv427PxArticulationKinematicFlag" title="PxArticulationKinematicFlag"><span class="n"><span class="pre">PxArticulationKinematicFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_kinematic_flag.html#_CPPv4N27PxArticulationKinematicFlag4EnumE" title="PxArticulationKinematicFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationKinematicFlags</span></span></span><a class="headerlink" href="#_CPPv428PxArticulationKinematicFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv421PxArticulationMotions">
+<span id="_CPPv321PxArticulationMotions"></span><span id="_CPPv221PxArticulationMotions"></span><span id="PxArticulationMotions"></span><span class="target" id="group__physics_1ga4d2907efdef5e5b7b1becd1ab59c2405"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_articulation_motion.html#_CPPv420PxArticulationMotion" title="PxArticulationMotion"><span class="n"><span class="pre">PxArticulationMotion</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_motion.html#_CPPv4N20PxArticulationMotion4EnumE" title="PxArticulationMotion::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationMotions</span></span></span><a class="headerlink" href="#_CPPv421PxArticulationMotions" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv425PxArticulationSensorFlags">
+<span id="_CPPv325PxArticulationSensorFlags"></span><span id="_CPPv225PxArticulationSensorFlags"></span><span id="PxArticulationSensorFlags"></span><span class="target" id="group__physics_1ga6393a408e30545b5fbef16c6b72557f4"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="namespace_physx.html#_CPPv45physx" title="physx"><span class="n"><span class="pre">physx</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">PxFlags</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_articulation_sensor_flag.html#_CPPv424PxArticulationSensorFlag" title="PxArticulationSensorFlag"><span class="n"><span class="pre">PxArticulationSensorFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_articulation_sensor_flag.html#_CPPv4N24PxArticulationSensorFlag4EnumE" title="PxArticulationSensorFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationSensorFlags</span></span></span><a class="headerlink" href="#_CPPv425PxArticulationSensorFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxBpFilterGroup">
+<span id="_CPPv315PxBpFilterGroup"></span><span id="_CPPv215PxBpFilterGroup"></span><span id="PxBpFilterGroup"></span><span class="target" id="group__physics_1ga8fa935f8cdd32ff5a37e0ceb520c7f58"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBpFilterGroup</span></span></span><a class="headerlink" href="#_CPPv415PxBpFilterGroup" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Broadphase filter group. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv49PxBpIndex">
+<span id="_CPPv39PxBpIndex"></span><span id="_CPPv29PxBpIndex"></span><span id="PxBpIndex"></span><span class="target" id="group__physics_1ga1ae85a90f4c8bc8fa0119101077273a8"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBpIndex</span></span></span><a class="headerlink" href="#_CPPv49PxBpIndex" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Broadphase index. Indexes bounds, groups and distance arrays. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxConstraintFlags">
+<span id="_CPPv317PxConstraintFlags"></span><span id="_CPPv217PxConstraintFlags"></span><span id="PxConstraintFlags"></span><span class="target" id="group__physics_1gaf2b7f07d3fa7fafaf3d85114fbb120ee"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_constraint_flag.html#_CPPv416PxConstraintFlag" title="PxConstraintFlag"><span class="n"><span class="pre">PxConstraintFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_constraint_flag.html#_CPPv4N16PxConstraintFlag4EnumE" title="PxConstraintFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraintFlags</span></span></span><a class="headerlink" href="#_CPPv417PxConstraintFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>constraint flags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_constraint_flag.html#struct_px_constraint_flag"><span class="std std-ref">PxConstraintFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv422PxConstraintSolverPrep">
+<span id="_CPPv322PxConstraintSolverPrep"></span><span id="_CPPv222PxConstraintSolverPrep"></span><span id="PxConstraintSolverPrep"></span><span class="target" id="group__physics_1ga854b403b6a15bd6dda76b08539e30433"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraintSolverPrep</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="struct_px1_d_constraint.html#_CPPv414Px1DConstraint" title="Px1DConstraint"><span class="n"><span class="pre">Px1DConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">constraints</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">bodyAWorldOffset</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n"><span class="pre">maxConstraints</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="struct_px_constraint_inv_mass_scale.html#_CPPv424PxConstraintInvMassScale" title="PxConstraintInvMassScale"><span class="n"><span class="pre">PxConstraintInvMassScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">invMassScale</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">constantBlock</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">bodyAToWorld</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">bodyBToWorld</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n"><span class="pre">useExtendedLimits</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">cAtW</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv47PxVec3p" title="PxVec3p"><span class="n"><span class="pre">PxVec3p</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">cBtW</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv422PxConstraintSolverPrep" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Solver constraint generation shader. </p>
+<p>This function is called by the constraint solver framework. The function must be reentrant, since it may be called simultaneously from multiple threads, and should access only the arguments passed into it.</p>
+<p>Developers writing custom constraints are encouraged to read the documentation in the user guide and the implementation code in PhysXExtensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Param constraints</dt>
+<dd class="field-odd"><p><strong>[out]</strong> An array of solver constraint rows to be filled in </p>
+</dd>
+<dt class="field-even">Param bodyAWorldOffset</dt>
+<dd class="field-even"><p><strong>[out]</strong> The origin point (offset from the position vector of bodyA’s center of mass) at which the constraint is resolved. This value does not affect how constraints are solved, only the constraint force reported. </p>
+</dd>
+<dt class="field-odd">Param maxConstraints</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The size of the constraint buffer. At most this many constraints rows may be written </p>
+</dd>
+<dt class="field-even">Param invMassScale</dt>
+<dd class="field-even"><p><strong>[out]</strong> The inverse mass and inertia scales for the constraint </p>
+</dd>
+<dt class="field-odd">Param constantBlock</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The constant data block </p>
+</dd>
+<dt class="field-even">Param bodyAToWorld</dt>
+<dd class="field-even"><p><strong>[in]</strong> The center of mass frame of the first constrained body (the identity transform if the first actor is static, or if a NULL actor pointer was provided for it) </p>
+</dd>
+<dt class="field-odd">Param bodyBToWorld</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The center of mass frame of the second constrained body (the identity transform if the second actor is static, or if a NULL actor pointer was provided for it) </p>
+</dd>
+<dt class="field-even">Param useExtendedLimits</dt>
+<dd class="field-even"><p><strong>[in]</strong> Enables limit ranges outside of (-PI, PI) </p>
+</dd>
+<dt class="field-odd">Param cAtW</dt>
+<dd class="field-odd"><p><strong>[out]</strong> The world space location of body A’s joint frame (position only) </p>
+</dd>
+<dt class="field-even">Param cBtW</dt>
+<dd class="field-even"><p><strong>[out]</strong> The world space location of body B’s joint frame (position only)</p>
+</dd>
+<dt class="field-odd">Return</dt>
+<dd class="field-odd"><p>the number of constraint rows written. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv421PxConstraintVisualize">
+<span id="_CPPv321PxConstraintVisualize"></span><span id="_CPPv221PxConstraintVisualize"></span><span id="PxConstraintVisualize"></span><span class="target" id="group__physics_1gaa85dd505b96db854d4ffdbe24fcb9089"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxConstraintVisualize</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="class_px_constraint_visualizer.html#_CPPv422PxConstraintVisualizer" title="PxConstraintVisualizer"><span class="n"><span class="pre">PxConstraintVisualizer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">visualizer</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">constantBlock</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">body0Transform</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">body1Transform</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv421PxConstraintVisualize" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Solver constraint visualization function. </p>
+<p>This function is called by the constraint post-solver framework to visualize the constraint</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_render_buffer.html#class_px_render_buffer"><span class="std std-ref">PxRenderBuffer</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Param visualizer</dt>
+<dd class="field-odd"><p><strong>[out]</strong> The render buffer to render to </p>
+</dd>
+<dt class="field-even">Param constantBlock</dt>
+<dd class="field-even"><p><strong>[in]</strong> The constant data block </p>
+</dd>
+<dt class="field-odd">Param body0Transform</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The center of mass frame of the first constrained body (the identity if the actor is static, or a NULL pointer was provided for it) </p>
+</dd>
+<dt class="field-even">Param body1Transform</dt>
+<dd class="field-even"><p><strong>[in]</strong> The center of mass frame of the second constrained body (the identity if the actor is static, or a NULL pointer was provided for it) </p>
+</dd>
+<dt class="field-odd">Param flags</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The visualization flags (<a class="reference internal" href="struct_px_constraint_visualization_flag.html#struct_px_constraint_visualization_flag"><span class="std std-ref">PxConstraintVisualizationFlag</span></a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv418PxContactPairFlags">
+<span id="_CPPv318PxContactPairFlags"></span><span id="_CPPv218PxContactPairFlags"></span><span id="PxContactPairFlags"></span><span class="target" id="group__physics_1gae73039b8bd7e7f4a606acfba4811291c"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_contact_pair_flag.html#_CPPv417PxContactPairFlag" title="PxContactPairFlag"><span class="n"><span class="pre">PxContactPairFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_contact_pair_flag.html#_CPPv4N17PxContactPairFlag4EnumE" title="PxContactPairFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairFlags</span></span></span><a class="headerlink" href="#_CPPv418PxContactPairFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_flag.html#struct_px_contact_pair_flag"><span class="std std-ref">PxContactPairFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_flag.html#struct_px_contact_pair_flag"><span class="std std-ref">PxContactPairFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv424PxContactPairHeaderFlags">
+<span id="_CPPv324PxContactPairHeaderFlags"></span><span id="_CPPv224PxContactPairHeaderFlags"></span><span id="PxContactPairHeaderFlags"></span><span class="target" id="group__physics_1gaa4275c674f70ce3f0be586339eb0b045"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_contact_pair_header_flag.html#_CPPv423PxContactPairHeaderFlag" title="PxContactPairHeaderFlag"><span class="n"><span class="pre">PxContactPairHeaderFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_contact_pair_header_flag.html#_CPPv4N23PxContactPairHeaderFlag4EnumE" title="PxContactPairHeaderFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairHeaderFlags</span></span></span><a class="headerlink" href="#_CPPv424PxContactPairHeaderFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_header_flag.html#struct_px_contact_pair_header_flag"><span class="std std-ref">PxContactPairHeaderFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_contact_pair_header_flag.html#struct_px_contact_pair_header_flag"><span class="std std-ref">PxContactPairHeaderFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxDataAccessFlags">
+<span id="_CPPv317PxDataAccessFlags"></span><span id="_CPPv217PxDataAccessFlags"></span><span id="PxDataAccessFlags"></span><span class="target" id="group__physics_1ga90395861aa5abb531d3dd02790bc2b18"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_data_access_flag.html#_CPPv416PxDataAccessFlag" title="PxDataAccessFlag"><span class="n"><span class="pre">PxDataAccessFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_data_access_flag.html#_CPPv4N16PxDataAccessFlag4EnumE" title="PxDataAccessFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDataAccessFlags</span></span></span><a class="headerlink" href="#_CPPv417PxDataAccessFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_data_access_flag.html#struct_px_data_access_flag"><span class="std std-ref">PxDataAccessFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_data_access_flag.html#struct_px_data_access_flag"><span class="std std-ref">PxDataAccessFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv420PxDeletionEventFlags">
+<span id="_CPPv320PxDeletionEventFlags"></span><span id="_CPPv220PxDeletionEventFlags"></span><span id="PxDeletionEventFlags"></span><span class="target" id="group__physics_1gafb4c5337ad84e1f9eeaa8d3d33caa819"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_deletion_event_flag.html#_CPPv419PxDeletionEventFlag" title="PxDeletionEventFlag"><span class="n"><span class="pre">PxDeletionEventFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_deletion_event_flag.html#_CPPv4N19PxDeletionEventFlag4EnumE" title="PxDeletionEventFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDeletionEventFlags</span></span></span><a class="headerlink" href="#_CPPv420PxDeletionEventFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Collection of set bits defined in <a class="reference internal" href="struct_px_deletion_event_flag.html#struct_px_deletion_event_flag"><span class="std std-ref">PxDeletionEventFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_deletion_event_flag.html#struct_px_deletion_event_flag"><span class="std std-ref">PxDeletionEventFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv416PxDominanceGroup">
+<span id="_CPPv316PxDominanceGroup"></span><span id="_CPPv216PxDominanceGroup"></span><span id="PxDominanceGroup"></span><span class="target" id="group__physics_1gaf665154f3f66f7c4f65ca9015db8ee87"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDominanceGroup</span></span></span><a class="headerlink" href="#_CPPv416PxDominanceGroup" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Group index which allows to specify 1- or 2-way interaction. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv413PxFilterFlags">
+<span id="_CPPv313PxFilterFlags"></span><span id="_CPPv213PxFilterFlags"></span><span id="PxFilterFlags"></span><span class="target" id="group__physics_1ga675117fb97324a28d3b982b47430ea02"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_filter_flag.html#_CPPv412PxFilterFlag" title="PxFilterFlag"><span class="n"><span class="pre">PxFilterFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_filter_flag.html#_CPPv4N12PxFilterFlag4EnumE" title="PxFilterFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFilterFlags</span></span></span><a class="headerlink" href="#_CPPv413PxFilterFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv424PxFilterObjectAttributes">
+<span id="_CPPv324PxFilterObjectAttributes"></span><span id="_CPPv224PxFilterObjectAttributes"></span><span id="PxFilterObjectAttributes"></span><span class="target" id="group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></span><a class="headerlink" href="#_CPPv424PxFilterObjectAttributes" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Structure which gets passed into the collision filtering shader and/or callback providing additional information on objects of a collision pair. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a> <a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a> getActorType() <a class="reference internal" href="#group__physics_1gab0b0f7fe4f001e8bc5aacd10103a87e4"><span class="std std-ref">PxFilterObjectIsKinematic()</span></a> <a class="reference internal" href="#group__physics_1ga86216b0fb36be0fb1c670cba52bc8266"><span class="std std-ref">PxFilterObjectIsTrigger()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxMPMCuttingFlags">
+<span id="_CPPv317PxMPMCuttingFlags"></span><span id="_CPPv217PxMPMCuttingFlags"></span><span id="PxMPMCuttingFlags"></span><span class="target" id="group__physics_1ga189659947c7960fedd8181b05e6f33a7"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_m_p_m_cutting_flag.html#_CPPv416PxMPMCuttingFlag" title="PxMPMCuttingFlag"><span class="n"><span class="pre">PxMPMCuttingFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_m_p_m_cutting_flag.html#_CPPv4N16PxMPMCuttingFlag4EnumE" title="PxMPMCuttingFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMPMCuttingFlags</span></span></span><a class="headerlink" href="#_CPPv417PxMPMCuttingFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxMaterialFlags">
+<span id="_CPPv315PxMaterialFlags"></span><span id="_CPPv215PxMaterialFlags"></span><span id="PxMaterialFlags"></span><span class="target" id="group__physics_1gaacd9cb0f0e89fbbc09fec759b254d109"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_material_flag.html#_CPPv414PxMaterialFlag" title="PxMaterialFlag"><span class="n"><span class="pre">PxMaterialFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_material_flag.html#_CPPv4N14PxMaterialFlag4EnumE" title="PxMaterialFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxMaterialFlags</span></span></span><a class="headerlink" href="#_CPPv415PxMaterialFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv411PxPairFlags">
+<span id="_CPPv311PxPairFlags"></span><span id="_CPPv211PxPairFlags"></span><span id="PxPairFlags"></span><span class="target" id="group__physics_1gacacbeccf757e60dbf45089ef382681d9"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_pair_flag.html#_CPPv410PxPairFlag" title="PxPairFlag"><span class="n"><span class="pre">PxPairFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_pair_flag.html#_CPPv4N10PxPairFlag4EnumE" title="PxPairFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPairFlags</span></span></span><a class="headerlink" href="#_CPPv411PxPairFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxParticleFlags">
+<span id="_CPPv315PxParticleFlags"></span><span id="_CPPv215PxParticleFlags"></span><span id="PxParticleFlags"></span><span class="target" id="group__physics_1ga477a6cb9995a5ccd7992beae5e8cdf89"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_particle_flag.html#_CPPv414PxParticleFlag" title="PxParticleFlag"><span class="n"><span class="pre">PxParticleFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_particle_flag.html#_CPPv4N14PxParticleFlag4EnumE" title="PxParticleFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleFlags</span></span></span><a class="headerlink" href="#_CPPv415PxParticleFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv416PxRigidBodyFlags">
+<span id="_CPPv316PxRigidBodyFlags"></span><span id="_CPPv216PxRigidBodyFlags"></span><span id="PxRigidBodyFlags"></span><span class="target" id="group__physics_1ga0759d7f23b4fa7e24cd69c51d3efe5bf"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_rigid_body_flag.html#_CPPv415PxRigidBodyFlag" title="PxRigidBodyFlag"><span class="n"><span class="pre">PxRigidBodyFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_rigid_body_flag.html#_CPPv4N15PxRigidBodyFlag4EnumE" title="PxRigidBodyFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRigidBodyFlags</span></span></span><a class="headerlink" href="#_CPPv416PxRigidBodyFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag"><span class="std std-ref">PxRigidBodyFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag"><span class="std std-ref">PxRigidBodyFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv423PxRigidDynamicLockFlags">
+<span id="_CPPv323PxRigidDynamicLockFlags"></span><span id="_CPPv223PxRigidDynamicLockFlags"></span><span id="PxRigidDynamicLockFlags"></span><span class="target" id="group__physics_1ga5ff75d3f2ba94c58e7f8f928b11ebb8d"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_rigid_dynamic_lock_flag.html#_CPPv422PxRigidDynamicLockFlag" title="PxRigidDynamicLockFlag"><span class="n"><span class="pre">PxRigidDynamicLockFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_rigid_dynamic_lock_flag.html#_CPPv4N22PxRigidDynamicLockFlag4EnumE" title="PxRigidDynamicLockFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRigidDynamicLockFlags</span></span></span><a class="headerlink" href="#_CPPv423PxRigidDynamicLockFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv419PxSQBuildStepHandle">
+<span id="_CPPv319PxSQBuildStepHandle"></span><span id="_CPPv219PxSQBuildStepHandle"></span><span id="PxSQBuildStepHandle"></span><span class="target" id="group__physics_1ga460c669588757253a2caecdfdc1fafe3"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxSQBuildStepHandle</span></span></span><a class="headerlink" href="#_CPPv419PxSQBuildStepHandle" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv418PxSQCompoundHandle">
+<span id="_CPPv318PxSQCompoundHandle"></span><span id="_CPPv218PxSQCompoundHandle"></span><span id="PxSQCompoundHandle"></span><span class="target" id="group__physics_1ga1f27391144cd450192f6c2df38f14abd"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSQCompoundHandle</span></span></span><a class="headerlink" href="#_CPPv418PxSQCompoundHandle" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv416PxSQPrunerHandle">
+<span id="_CPPv316PxSQPrunerHandle"></span><span id="_CPPv216PxSQPrunerHandle"></span><span id="PxSQPrunerHandle"></span><span class="target" id="group__physics_1ga1065613e3046a090d4d0acae03c8425f"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSQPrunerHandle</span></span></span><a class="headerlink" href="#_CPPv416PxSQPrunerHandle" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv412PxSceneFlags">
+<span id="_CPPv312PxSceneFlags"></span><span id="_CPPv212PxSceneFlags"></span><span id="PxSceneFlags"></span><span class="target" id="group__physics_1ga54a626a9a6d80543048bffc654814704"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_scene_flag.html#_CPPv411PxSceneFlag" title="PxSceneFlag"><span class="n"><span class="pre">PxSceneFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4EnumE" title="PxSceneFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneFlags</span></span></span><a class="headerlink" href="#_CPPv412PxSceneFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv412PxShapeFlags">
+<span id="_CPPv312PxShapeFlags"></span><span id="_CPPv212PxShapeFlags"></span><span id="PxShapeFlags"></span><span class="target" id="group__physics_1ga18053d8127ddb5ed5609e4c748b6ad0d"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_shape_flag.html#_CPPv411PxShapeFlag" title="PxShapeFlag"><span class="n"><span class="pre">PxShapeFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4EnumE" title="PxShapeFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxShapeFlags</span></span></span><a class="headerlink" href="#_CPPv412PxShapeFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>collection of set bits defined in <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv424PxSimulationFilterShader">
+<span id="_CPPv324PxSimulationFilterShader"></span><span id="_CPPv224PxSimulationFilterShader"></span><span id="PxSimulationFilterShader"></span><span class="target" id="group__physics_1ga235380b2a5b3cc89a4cd89d089d72b33"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv413PxFilterFlags" title="PxFilterFlags"><span class="n"><span class="pre">PxFilterFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxSimulationFilterShader</span></span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n"><span class="pre">attributes0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n"><span class="pre">filterData0</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv424PxFilterObjectAttributes" title="PxFilterObjectAttributes"><span class="n"><span class="pre">PxFilterObjectAttributes</span></span></a><span class="w"> </span><span class="n"><span class="pre">attributes1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="n"><span class="pre">filterData1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411PxPairFlags" title="PxPairFlags"><span class="n"><span class="pre">PxPairFlags</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n"><span class="pre">pairFlags</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">constantBlock</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n"><span class="pre">constantBlockSize</span></span><span class="p"><span class="pre">)</span></span><a class="headerlink" href="#_CPPv424PxSimulationFilterShader" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Filter method to specify how a pair of potentially colliding objects should be processed. </p>
+<p>Collision filtering is a mechanism to specify how a pair of potentially colliding objects should be processed by the simulation. A pair of objects is potentially colliding if the bounding volumes of the two objects overlap. In short, a collision filter decides whether a collision pair should get processed, temporarily ignored or discarded. If a collision pair should get processed, the filter can additionally specify how it should get processed, for instance, whether contacts should get resolved, which callbacks should get invoked or which reports should be sent etc. The function returns the <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> flags and sets the <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> flags to define what the simulation should do with the given collision pair.</p>
+<p>
+This methods gets called when: <ul class="simple">
+<li><p>The bounding volumes of two objects start to overlap. </p></li>
+<li><p>The bounding volumes of two objects overlap and the filter data or filter attributes of one of the objects changed </p></li>
+<li><p>A re-filtering was forced through resetFiltering() (see <a class="reference internal" href="class_px_scene.html#class_px_scene_1a7c0cd2502c7918dd7d520178fa2a9e87"><span class="std std-ref">PxScene::resetFiltering()</span></a>) </p></li>
+<li><p>Filtering is requested in scene queries</p></li>
+</ul>
+<ul class="simple">
+<li><p>Pair of static rigid actors </p></li>
+<li><p>A static rigid actor and a kinematic actor (unless one is a trigger or if explicitly enabled through <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a15ecf48d452c22f6fb755df16919eca4"><span class="std std-ref">PxPairFilteringMode::eKEEP</span></a>) </p></li>
+<li><p>Two kinematic actors (unless one is a trigger or if explicitly enabled through <a class="reference internal" href="struct_px_pair_filtering_mode.html#struct_px_pair_filtering_mode_1aeaa62ad327b874e4b199022401bf7615a15ecf48d452c22f6fb755df16919eca4"><span class="std std-ref">PxPairFilteringMode::eKEEP</span></a>) </p></li>
+<li><p>Two jointed rigid bodies and the joint was defined to disable collision </p></li>
+<li><p>Two articulation links if connected through an articulation joint</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="#group__physics_1ga7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a> <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> <a class="reference internal" href="#group__physics_1ga675117fb97324a28d3b982b47430ea02"><span class="std std-ref">PxFilterFlags</span></a> <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> <a class="reference internal" href="#group__physics_1gacacbeccf757e60dbf45089ef382681d9"><span class="std std-ref">PxPairFlags</span></a> <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a9410287c6ea926dad9e2b2374541ad38"><span class="std std-ref">PxSceneDesc.filterShader</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A default implementation of a filter shader is provided in the PhysX extensions library, see <a class="reference internal" href="group__extensions.html#group__extensions_1ga587ba12f90f77543c3e4452abeb0f22f"><span class="std std-ref">PxDefaultSimulationFilterShader</span></a>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Certain pairs of objects are always ignored and this method does not get called. This is the case for the following pairs:</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a performance critical method and should be stateless. You should neither access external objects from within this method nor should you call external methods that are not inlined. If you need a more complex logic to filter a collision pair then use the filter callback mechanism for this pair (see <a class="reference internal" href="class_px_simulation_filter_callback.html#class_px_simulation_filter_callback"><span class="std std-ref">PxSimulationFilterCallback</span></a>, <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083a62c42e8178d44dc0ead47699f9df87b8"><span class="std std-ref">PxFilterFlag::eCALLBACK</span></a>, <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag_1a8de424e04d86b5772436423b0dc58083afbb0680c3ea5447f44fc90560bd7dd8f"><span class="std std-ref">PxFilterFlag::eNOTIFY</span></a>).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Param attributes0</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The filter attribute of the first object </p>
+</dd>
+<dt class="field-even">Param filterData0</dt>
+<dd class="field-even"><p><strong>[in]</strong> The custom filter data of the first object </p>
+</dd>
+<dt class="field-odd">Param attributes1</dt>
+<dd class="field-odd"><p><strong>[in]</strong> The filter attribute of the second object </p>
+</dd>
+<dt class="field-even">Param filterData1</dt>
+<dd class="field-even"><p><strong>[in]</strong> The custom filter data of the second object </p>
+</dd>
+<dt class="field-odd">Param pairFlags</dt>
+<dd class="field-odd"><p><strong>[out]</strong> Flags giving additional information on how an accepted pair should get processed </p>
+</dd>
+<dt class="field-even">Param constantBlock</dt>
+<dd class="field-even"><p><strong>[in]</strong> The constant global filter data (see <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1ad9ceb142127cc259aa2f5d322a1494e2"><span class="std std-ref">PxSceneDesc.filterShaderData</span></a>) </p>
+</dd>
+<dt class="field-odd">Param constantBlockSize</dt>
+<dd class="field-odd"><p><strong>[in]</strong> Size of the global filter data (see <a class="reference internal" href="class_px_scene_desc.html#class_px_scene_desc_1a710c03915bbaaa9bdf23925d535c3883"><span class="std std-ref">PxSceneDesc.filterShaderDataSize</span></a>) </p>
+</dd>
+<dt class="field-even">Return</dt>
+<dd class="field-even"><p>Filter flags defining whether the pair should be discarded, temporarily ignored, processed and whether the filter callback should get invoked for this pair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxSoftBodyFlags">
+<span id="_CPPv315PxSoftBodyFlags"></span><span id="_CPPv215PxSoftBodyFlags"></span><span id="PxSoftBodyFlags"></span><span class="target" id="group__physics_1ga4bbe198b0dac953e8f058975b5aba958"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_soft_body_flag.html#_CPPv414PxSoftBodyFlag" title="PxSoftBodyFlag"><span class="n"><span class="pre">PxSoftBodyFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_soft_body_flag.html#_CPPv4N14PxSoftBodyFlag4EnumE" title="PxSoftBodyFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSoftBodyFlags</span></span></span><a class="headerlink" href="#_CPPv415PxSoftBodyFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv418PxTriggerPairFlags">
+<span id="_CPPv318PxTriggerPairFlags"></span><span id="_CPPv218PxTriggerPairFlags"></span><span id="PxTriggerPairFlags"></span><span class="target" id="group__physics_1gae5d4ef1b3321702c4431da8fe72b8f7f"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_trigger_pair_flag.html#_CPPv417PxTriggerPairFlag" title="PxTriggerPairFlag"><span class="n"><span class="pre">PxTriggerPairFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_trigger_pair_flag.html#_CPPv4N17PxTriggerPairFlag4EnumE" title="PxTriggerPairFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxTriggerPairFlags</span></span></span><a class="headerlink" href="#_CPPv418PxTriggerPairFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

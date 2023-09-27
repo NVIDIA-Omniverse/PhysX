@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Immediatemode &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Physics" href="group__physics.html" />
+    <link rel="prev" title="PX_MIN_HEIGHTFIELD_Y_SCALE" href="define_group__geomutils_1ga246e5dd5e4554c27abb417be1ce1d898.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Immediatemode</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+<li>Immediatemode</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="immediatemode">
+<h1>Immediatemode<a class="headerlink" href="#immediatemode" title="Permalink to this headline"></a></h1>
+<p class="rubric-h4 rubric" id="group__immediatemode">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_contact_recorder.html#class_px_contact_recorder"><span class="std std-ref">PxContactRecorder</span></a>: Callback class to record contact points produced by immediate::PxGenerateContacts.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__immediatemode_1gacb72c60202f41eb3e70696c567f8445e"><span class="std std-ref">PxAddArticulationLink(PxArticulationCookie articulation, const PxArticulationLinkCookie *parent, const PxArticulationLinkDataRC &amp;data)</span></a>: Add a link to the articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga889da0cd2f70b5f822f13c9e9933f1eb"><span class="std std-ref">PxApplyArticulationCache(PxArticulationHandle articulation, PxArticulationCache &amp;cache, PxArticulationCacheFlags flag)</span></a>: Apply the user defined data in the cache to the articulation system.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga87c01c4bc0baefb2365edb1283f5f8dd"><span class="std std-ref">PxBatchConstraints(const PxSolverConstraintDesc *solverConstraintDescs, PxU32 nbConstraints, PxSolverBody *solverBodies, PxU32 nbBodies, PxConstraintBatchHeader *outBatchHeaders, PxSolverConstraintDesc *outOrderedConstraintDescs, PxArticulationHandle *articulations=NULL, PxU32 nbArticulations=0)</span></a>: Groups together sets of independent <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> objects to be solved using SIMD SOA approach.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gae508d308d2591a33fe6ec5f373e8c4c5"><span class="std std-ref">PxBatchConstraintsTGS(const PxSolverConstraintDesc *solverConstraintDescs, PxU32 nbConstraints, PxTGSSolverBodyVel *solverBodies, PxU32 nbBodies, PxConstraintBatchHeader *outBatchHeaders, PxSolverConstraintDesc *outOrderedConstraintDescs, PxArticulationHandle *articulations=NULL, PxU32 nbArticulations=0)</span></a>: Groups together sets of independent <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> objects to be solved using SIMD SOA approach.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaaaaa186c60c8c046e43f60557ea59435"><span class="std std-ref">PxBeginCreateArticulationRC(const PxArticulationDataRC &amp;data)</span></a>: Begin creation of an immediate-mode reduced-coordinate articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga57d2b5e6060a9d09da41ac1c5694edf6"><span class="std std-ref">PxComputeUnconstrainedVelocities(PxArticulationHandle articulation, const PxVec3 &amp;gravity, PxReal dt, PxReal invLengthScale)</span></a>: Computes unconstrained velocities for a given articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gad5a366f025ab977b3ef3b988bc9ca78e"><span class="std std-ref">PxComputeUnconstrainedVelocitiesTGS(PxArticulationHandle articulation, const PxVec3 &amp;gravity, PxReal dt, PxReal totalDt, PxReal invDt, PxReal invTotalDt, PxReal invLengthScale)</span></a>: Computes unconstrained velocities for a given articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga2d87ae16e8b4cbd9599ce20e716e5e9e"><span class="std std-ref">PxConstructSolverBodies(const PxRigidBodyData *inRigidData, PxSolverBodyData *outSolverBodyData, PxU32 nbBodies, const PxVec3 &amp;gravity, PxReal dt, bool gyroscopicForces=false)</span></a>: Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure based on rigid body properties.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaa12f8d455748f94bee309019e95e18cd"><span class="std std-ref">PxConstructSolverBodiesTGS(const PxRigidBodyData *inRigidData, PxTGSSolverBodyVel *outSolverBodyVel, PxTGSSolverBodyTxInertia *outSolverBodyTxInertia, PxTGSSolverBodyData *outSolverBodyData, PxU32 nbBodies, const PxVec3 &amp;gravity, PxReal dt, bool gyroscopicForces=false)</span></a>: Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure based on rigid body properties.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gabe8ce8848c4667fc886ce7450ba055f0"><span class="std std-ref">PxConstructStaticSolverBody(const PxTransform &amp;globalPose, PxSolverBodyData &amp;solverBodyData)</span></a>: Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure for a static body at a given pose.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga58b723bc273e6fc5091b2d4c38d4d402"><span class="std std-ref">PxConstructStaticSolverBodyTGS(const PxTransform &amp;globalPose, PxTGSSolverBodyVel &amp;solverBodyVel, PxTGSSolverBodyTxInertia &amp;solverBodyTxInertia, PxTGSSolverBodyData &amp;solverBodyData)</span></a>: Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure for a static body at a given pose.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga2d4fc0cc3e4e43045cdd092585f5f2ba"><span class="std std-ref">PxCopyInternalStateToArticulationCache(PxArticulationHandle articulation, PxArticulationCache &amp;cache, PxArticulationCacheFlags flag)</span></a>: Copy the internal data of the articulation to the cache.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga9a3110b38211ce9bd9c812058151c6af"><span class="std std-ref">PxCreateArticulationCache(PxArticulationHandle articulation)</span></a>: Creates an articulation cache.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gabd6e0f1c7038b6110d828ca1dd7d284e"><span class="std std-ref">PxCreateContactConstraints(PxConstraintBatchHeader *batchHeaders, PxU32 nbHeaders, PxSolverContactDesc *contactDescs, PxConstraintAllocator &amp;allocator, PxReal invDt, PxReal bounceThreshold, PxReal frictionOffsetThreshold, PxReal correlationDistance, PxSpatialVector *Z=NULL)</span></a>: Creates a set of contact constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga289e6ce0a128ba6d2896f57d2c41c7fd"><span class="std std-ref">PxCreateContactConstraintsTGS(PxConstraintBatchHeader *batchHeaders, PxU32 nbHeaders, PxTGSSolverContactDesc *contactDescs, PxConstraintAllocator &amp;allocator, PxReal invDt, PxReal invTotalDt, PxReal bounceThreshold, PxReal frictionOffsetThreshold, PxReal correlationDistance)</span></a>: Creates a set of contact constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"><span class="std std-ref">PxCreateJointConstraints(PxConstraintBatchHeader *batchHeaders, PxU32 nbHeaders, PxSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxSpatialVector *Z, PxReal dt, PxReal invDt)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga513d21da6c652d4d207e149a2f94d59f"><span class="std std-ref">PxCreateJointConstraintsTGS(PxConstraintBatchHeader *batchHeaders, PxU32 nbHeaders, PxTGSSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxReal dt, PxReal totalDt, PxReal invDt, PxReal invTotalDt, PxReal lengthScale)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gab94771fd7ea0f6718eb453a710bdb796"><span class="std std-ref">PxCreateJointConstraintsWithImmediateShaders(PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, PxImmediateConstraint *constraints, PxSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxReal dt, PxReal invDt, PxSpatialVector *Z=NULL)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaba3f94d64bf9e17d827ca9be2cc704ae"><span class="std std-ref">PxCreateJointConstraintsWithImmediateShadersTGS(PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, PxImmediateConstraint *constraints, PxTGSSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxReal dt, PxReal totalDt, PxReal invDt, PxReal invTotalDt, PxReal lengthScale)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga0b1917055213dab3ea8a6c7be51a32df"><span class="std std-ref">PxCreateJointConstraintsWithShaders(PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, PxConstraint **constraints, PxSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxReal dt, PxReal invDt, PxSpatialVector *Z=NULL)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaef4d972f5de669768e272000fc75da86"><span class="std std-ref">PxCreateJointConstraintsWithShadersTGS(PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, PxConstraint **constraints, PxTGSSolverConstraintPrepDesc *jointDescs, PxConstraintAllocator &amp;allocator, PxReal dt, PxReal totalDt, PxReal invDt, PxReal invTotalDt, PxReal lengthScale)</span></a>: Creates a set of joint constraint blocks.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gab077d413a14e35fd8f1d4d62765d1ac0"><span class="std std-ref">PxEndCreateArticulationRC(PxArticulationCookie articulation, PxArticulationLinkHandle *linkHandles, PxU32 bufferSize)</span></a>: End creation of an immediate-mode reduced-coordinate articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga005fa8fe54245ea3fec26d17f14874a9"><span class="std std-ref">PxGenerateContacts(const PxGeometry *const *geom0, const PxGeometry *const *geom1, const PxTransform *pose0, const PxTransform *pose1, PxCache *contactCache, PxU32 nbPairs, PxContactRecorder &amp;contactRecorder, PxReal contactDistance, PxReal meshContactMargin, PxReal toleranceLength, PxCacheAllocator &amp;allocator)</span></a>: Performs contact generation for a given pair of geometries at the specified poses.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaecaec3026d9572d1acedb0f9d63374ea"><span class="std std-ref">PxGetAllLinkData(const PxArticulationHandle articulation, PxArticulationLinkDerivedDataRC *data)</span></a>: Retrieves non-mutable link data from an articulation handle (all links).</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga2914ec0e102d3cc1b323f79feec59a51"><span class="std std-ref">PxGetJointData(const PxArticulationLinkHandle &amp;link, PxArticulationJointDataRC &amp;data)</span></a>: Retrieves joint data from a link handle.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaa02b58f6d6ad01a7dd49038292a40a75"><span class="std std-ref">PxGetLinkData(const PxArticulationLinkHandle &amp;link, PxArticulationLinkDerivedDataRC &amp;data)</span></a>: Retrieves non-mutable link data from a link handle.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga8f922c869ff910965d57ce75990d8703"><span class="std std-ref">PxGetMutableLinkData(const PxArticulationLinkHandle &amp;link, PxArticulationLinkMutableDataRC &amp;data)</span></a>: Retrieves mutable link data from a link handle.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga27844672d99d4cc35853f04c175bf91a"><span class="std std-ref">PxIntegrateSolverBodies(PxSolverBodyData *solverBodyData, PxSolverBody *solverBody, const PxVec3 *linearMotionVelocity, const PxVec3 *angularMotionState, PxU32 nbBodiesToIntegrate, PxReal dt)</span></a>: Integrates a rigid body, returning the new velocities and transforms.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gace6fecf6cee50c5bb6e5cd2aa8e326d6"><span class="std std-ref">PxIntegrateSolverBodiesTGS(PxTGSSolverBodyVel *solverBody, PxTGSSolverBodyTxInertia *txInertia, PxTransform *poses, PxU32 nbBodiesToIntegrate, PxReal dt)</span></a>: Integrates a rigid body, returning the new velocities and transforms.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaf78e5e9ab34a5d09072c51acd113d00e"><span class="std std-ref">PxReleaseArticulation(PxArticulationHandle articulation)</span></a>: Releases an immediate-mode reduced-coordinate articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga8c79435c69aec7dec3e72a2d7bd88d2f"><span class="std std-ref">PxReleaseArticulationCache(PxArticulationCache &amp;cache)</span></a>: Release an articulation cache.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gac5a24e6b00bccc9295d1a302ca2fd516"><span class="std std-ref">PxSetJointData(const PxArticulationLinkHandle &amp;link, const PxArticulationJointDataRC &amp;data)</span></a>: Sets joint data for given link.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga94f982ce47ffe8fb20e7888ca8464433"><span class="std std-ref">PxSetMutableLinkData(const PxArticulationLinkHandle &amp;link, const PxArticulationLinkMutableDataRC &amp;data)</span></a>: Sets mutable link data for given link.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga678fe129329bc654a049bc30d8aa27b9"><span class="std std-ref">PxSolveConstraints(const PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, const PxSolverConstraintDesc *solverConstraintDescs, const PxSolverBody *solverBodies, PxVec3 *linearMotionVelocity, PxVec3 *angularMotionVelocity, PxU32 nbSolverBodies, PxU32 nbPositionIterations, PxU32 nbVelocityIterations, float dt=0.0f, float invDt=0.0f, PxU32 nbSolverArticulations=0, PxArticulationHandle *solverArticulations=NULL, PxSpatialVector *Z=NULL, PxSpatialVector *deltaV=NULL)</span></a>: Iteratively solves the set of constraints defined by the provided <a class="reference internal" href="struct_px_constraint_batch_header.html#struct_px_constraint_batch_header"><span class="std std-ref">PxConstraintBatchHeader</span></a> and <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> structures.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga910f7d8e171e89a26885cd32093f23d8"><span class="std std-ref">PxSolveConstraintsTGS(const PxConstraintBatchHeader *batchHeaders, PxU32 nbBatchHeaders, const PxSolverConstraintDesc *solverConstraintDescs, PxTGSSolverBodyVel *solverBodies, PxTGSSolverBodyTxInertia *txInertias, PxU32 nbSolverBodies, PxU32 nbPositionIterations, PxU32 nbVelocityIterations, float dt, float invDt, PxU32 nbSolverArticulations=0, PxArticulationHandle *solverArticulations=NULL, PxSpatialVector *Z=NULL, PxSpatialVector *deltaV=NULL)</span></a>: Iteratively solves the set of constraints defined by the provided <a class="reference internal" href="struct_px_constraint_batch_header.html#struct_px_constraint_batch_header"><span class="std std-ref">PxConstraintBatchHeader</span></a> and <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> structures.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga432e1768f55ba0d5c2d6383ed64dd5a8"><span class="std std-ref">PxUpdateArticulationBodies(PxArticulationHandle articulation, PxReal dt)</span></a>: Updates bodies for a given articulation.</p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1ga3d2373491b26cfdc185d91b6acf7f654"><span class="std std-ref">PxUpdateArticulationBodiesTGS(PxArticulationHandle articulation, PxReal dt)</span></a>: Updates bodies for a given articulation.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_articulation_data_r_c.html#struct_px_articulation_data_r_c"><span class="std std-ref">PxArticulationDataRC</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_joint_data_r_c.html#struct_px_articulation_joint_data_r_c"><span class="std std-ref">PxArticulationJointDataRC</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_link_cookie.html#struct_px_articulation_link_cookie"><span class="std std-ref">PxArticulationLinkCookie</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_link_data_r_c.html#struct_px_articulation_link_data_r_c"><span class="std std-ref">PxArticulationLinkDataRC</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_link_derived_data_r_c.html#struct_px_articulation_link_derived_data_r_c"><span class="std std-ref">PxArticulationLinkDerivedDataRC</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_link_handle.html#struct_px_articulation_link_handle"><span class="std std-ref">PxArticulationLinkHandle</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_articulation_link_mutable_data_r_c.html#struct_px_articulation_link_mutable_data_r_c"><span class="std std-ref">PxArticulationLinkMutableDataRC</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_create_articulation_link_cookie.html#struct_px_create_articulation_link_cookie"><span class="std std-ref">PxCreateArticulationLinkCookie</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_immediate_constraint.html#struct_px_immediate_constraint"><span class="std std-ref">PxImmediateConstraint</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_rigid_body_data.html#struct_px_rigid_body_data"><span class="std std-ref">PxRigidBodyData</span></a>: Structure to store rigid body properties.</p></li>
+<li><p><a class="reference internal" href="struct_px_spatial_vector.html#struct_px_spatial_vector"><span class="std std-ref">PxSpatialVector</span></a>: Structure to store linear and angular components of spatial vector.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Typedefs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__immediatemode_1gaa4d883a28073281912ebad8bfe70d92e"><span class="std std-ref">PxArticulationCookie</span></a></p></li>
+<li><p><a class="reference internal" href="#group__immediatemode_1gaa6c21f764f6ca3aeed69495b178ceddf"><span class="std std-ref">PxArticulationHandle</span></a></p></li>
+</ul>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxAddArticulationLink20PxArticulationCookiePK24PxArticulationLinkCookieRK24PxArticulationLinkDataRC">
+<span id="_CPPv321PxAddArticulationLink20PxArticulationCookiePK24PxArticulationLinkCookieRK24PxArticulationLinkDataRC"></span><span id="_CPPv221PxAddArticulationLink20PxArticulationCookiePK24PxArticulationLinkCookieRK24PxArticulationLinkDataRC"></span><span id="PxAddArticulationLink__PxArticulationCookie.PxArticulationLinkCookieCP.PxArticulationLinkDataRCCR"></span><span class="target" id="group__immediatemode_1gacb72c60202f41eb3e70696c567f8445e"></span><a class="reference internal" href="struct_px_articulation_link_cookie.html#_CPPv424PxArticulationLinkCookie" title="PxArticulationLinkCookie"><span class="n"><span class="pre">PxArticulationLinkCookie</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAddArticulationLink</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationCookie" title="PxArticulationCookie"><span class="n"><span class="pre">PxArticulationCookie</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_cookie.html#_CPPv424PxArticulationLinkCookie" title="PxArticulationLinkCookie"><span class="n"><span class="pre">PxArticulationLinkCookie</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">parent</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_data_r_c.html#_CPPv424PxArticulationLinkDataRC" title="PxArticulationLinkDataRC"><span class="n"><span class="pre">PxArticulationLinkDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxAddArticulationLink20PxArticulationCookiePK24PxArticulationLinkCookieRK24PxArticulationLinkDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add a link to the articulation. </p>
+<p>All links must be added before the articulation is completed. It is not possible to add a new link at runtime.</p>
+<p>Returned cookie is a temporary ID for the link, only valid until PxEndCreateArticulationRC is called.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gaaaaa186c60c8c046e43f60557ea59435"><span class="std std-ref">PxBeginCreateArticulationRC</span></a> <a class="reference internal" href="#group__immediatemode_1gab077d413a14e35fd8f1d4d62765d1ac0"><span class="std std-ref">PxEndCreateArticulationRC</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Cookie value returned by PxBeginCreateArticulationRC </p></li>
+<li><p><strong>parent</strong> – <strong>[in]</strong> Parent for the new link, or NULL if this is the root link </p></li>
+<li><p><strong>data</strong> – <strong>[in]</strong> Link data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Link cookie</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424PxApplyArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags">
+<span id="_CPPv324PxApplyArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags"></span><span id="_CPPv224PxApplyArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags"></span><span id="PxApplyArticulationCache__PxArticulationHandle.PxArticulationCacheR.PxArticulationCacheFlags"></span><span class="target" id="group__immediatemode_1ga889da0cd2f70b5f822f13c9e9933f1eb"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxApplyArticulationCache</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="class_px_articulation_cache.html#_CPPv419PxArticulationCache" title="PxArticulationCache"><span class="n"><span class="pre">PxArticulationCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cache</span></span>, <a class="reference internal" href="typedef__px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4.html#_CPPv424PxArticulationCacheFlags" title="PxArticulationCacheFlags"><span class="n"><span class="pre">PxArticulationCacheFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424PxApplyArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Apply the user defined data in the cache to the articulation system. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>createCache <a class="reference internal" href="#group__immediatemode_1ga2d4fc0cc3e4e43045cdd092585f5f2ba"><span class="std std-ref">PxCopyInternalStateToArticulationCache</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Articulation data. </p></li>
+<li><p><strong>flag</strong> – <strong>[in]</strong> Defines which values in the cache will be applied to the articulation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxBatchConstraintsPK22PxSolverConstraintDesc5PxU32P12PxSolverBody5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32">
+<span id="_CPPv318PxBatchConstraintsPK22PxSolverConstraintDesc5PxU32P12PxSolverBody5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32"></span><span id="_CPPv218PxBatchConstraintsPK22PxSolverConstraintDesc5PxU32P12PxSolverBody5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32"></span><span id="PxBatchConstraints__PxSolverConstraintDescCP.PxU32.PxSolverBodyP.PxU32.PxConstraintBatchHeaderP.PxSolverConstraintDescP.PxArticulationHandleP.PxU32"></span><span class="target" id="group__immediatemode_1ga87c01c4bc0baefb2365edb1283f5f8dd"></span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBatchConstraints</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverConstraintDescs</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbConstraints</span></span>, <a class="reference internal" href="struct_px_solver_body.html#_CPPv412PxSolverBody" title="PxSolverBody"><span class="n"><span class="pre">PxSolverBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBodies</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodies</span></span>, <a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outBatchHeaders</span></span>, <a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outOrderedConstraintDescs</span></span>, <a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">articulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxBatchConstraintsPK22PxSolverConstraintDesc5PxU32P12PxSolverBody5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Groups together sets of independent <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> objects to be solved using SIMD SOA approach. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method considers all bodies within the range [0, nbBodies-1] to be valid dynamic bodies. A given dynamic body can only be referenced in a batch once. Static or kinematic bodies can be referenced multiple times within a batch safely because constraints do not affect their velocities. The batching will implicitly consider any bodies outside of the range [0, nbBodies-1] to be infinite mass (static or kinematic). This means that either appending static/kinematic to the end of the array of bodies or placing static/kinematic bodies at before the start body pointer will ensure that the minimum number of batches are produced. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solverConstraintDescs</strong> – <strong>[in]</strong> The set of solver constraint descs to batch </p></li>
+<li><p><strong>nbConstraints</strong> – <strong>[in]</strong> The number of constraints to batch </p></li>
+<li><p><strong>solverBodies</strong> – <strong>[inout]</strong> The array of solver bodies that the constraints reference. Some fields in these structures are written to as scratch memory for the batching. </p></li>
+<li><p><strong>nbBodies</strong> – <strong>[in]</strong> The number of bodies </p></li>
+<li><p><strong>outBatchHeaders</strong> – <strong>[out]</strong> The batch headers produced by this batching process. This array must have at least 1 entry per input constraint </p></li>
+<li><p><strong>outOrderedConstraintDescs</strong> – <strong>[out]</strong> A reordered copy of the constraint descs. This array is referenced by the constraint batches. This array must have at least 1 entry per input constraint. </p></li>
+<li><p><strong>articulations</strong> – <strong>[inout]</strong> The array of articulations that the constraints reference. Some fields in these structures are written to as scratch memory for the batching. </p></li>
+<li><p><strong>nbArticulations</strong> – <strong>[in]</strong> The number of articulations </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The total number of batches produced. This should be less than or equal to nbConstraints.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxBatchConstraintsTGSPK22PxSolverConstraintDesc5PxU32P18PxTGSSolverBodyVel5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32">
+<span id="_CPPv321PxBatchConstraintsTGSPK22PxSolverConstraintDesc5PxU32P18PxTGSSolverBodyVel5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32"></span><span id="_CPPv221PxBatchConstraintsTGSPK22PxSolverConstraintDesc5PxU32P18PxTGSSolverBodyVel5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32"></span><span id="PxBatchConstraintsTGS__PxSolverConstraintDescCP.PxU32.PxTGSSolverBodyVelP.PxU32.PxConstraintBatchHeaderP.PxSolverConstraintDescP.PxArticulationHandleP.PxU32"></span><span class="target" id="group__immediatemode_1gae508d308d2591a33fe6ec5f373e8c4c5"></span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBatchConstraintsTGS</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverConstraintDescs</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbConstraints</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBodies</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodies</span></span>, <a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outBatchHeaders</span></span>, <a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outOrderedConstraintDescs</span></span>, <a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">articulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxBatchConstraintsTGSPK22PxSolverConstraintDesc5PxU32P18PxTGSSolverBodyVel5PxU32P23PxConstraintBatchHeaderP22PxSolverConstraintDescP20PxArticulationHandle5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Groups together sets of independent <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> objects to be solved using SIMD SOA approach. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method considers all bodies within the range [0, nbBodies-1] to be valid dynamic bodies. A given dynamic body can only be referenced in a batch once. Static or kinematic bodies can be referenced multiple times within a batch safely because constraints do not affect their velocities. The batching will implicitly consider any bodies outside of the range [0, nbBodies-1] to be infinite mass (static or kinematic). This means that either appending static/kinematic to the end of the array of bodies or placing static/kinematic bodies at before the start body pointer will ensure that the minimum number of batches are produced. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solverConstraintDescs</strong> – <strong>[in]</strong> The set of solver constraint descs to batch </p></li>
+<li><p><strong>nbConstraints</strong> – <strong>[in]</strong> The number of constraints to batch </p></li>
+<li><p><strong>solverBodies</strong> – <strong>[inout]</strong> The array of solver bodies that the constraints reference. Some fields in these structures are written to as scratch memory for the batching. </p></li>
+<li><p><strong>nbBodies</strong> – <strong>[in]</strong> The number of bodies </p></li>
+<li><p><strong>outBatchHeaders</strong> – <strong>[out]</strong> The batch headers produced by this batching process. This array must have at least 1 entry per input constraint </p></li>
+<li><p><strong>outOrderedConstraintDescs</strong> – <strong>[out]</strong> A reordered copy of the constraint descs. This array is referenced by the constraint batches. This array must have at least 1 entry per input constraint. </p></li>
+<li><p><strong>articulations</strong> – <strong>[inout]</strong> The array of articulations that the constraints reference. Some fields in these structures are written to as scratch memory for the batching. </p></li>
+<li><p><strong>nbArticulations</strong> – <strong>[in]</strong> The number of articulations </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The total number of batches produced. This should be less than or equal to nbConstraints.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427PxBeginCreateArticulationRCRK20PxArticulationDataRC">
+<span id="_CPPv327PxBeginCreateArticulationRCRK20PxArticulationDataRC"></span><span id="_CPPv227PxBeginCreateArticulationRCRK20PxArticulationDataRC"></span><span id="PxBeginCreateArticulationRC__PxArticulationDataRCCR"></span><span class="target" id="group__immediatemode_1gaaaaa186c60c8c046e43f60557ea59435"></span><a class="reference internal" href="#_CPPv420PxArticulationCookie" title="PxArticulationCookie"><span class="n"><span class="pre">PxArticulationCookie</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBeginCreateArticulationRC</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_data_r_c.html#_CPPv420PxArticulationDataRC" title="PxArticulationDataRC"><span class="n"><span class="pre">PxArticulationDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427PxBeginCreateArticulationRCRK20PxArticulationDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Begin creation of an immediate-mode reduced-coordinate articulation. </p>
+<p>Returned cookie must be used to add links to the articulation, and to complete creating the articulation.</p>
+<p>The cookie is a temporary ID for the articulation, only valid until PxEndCreateArticulationRC is called.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gacb72c60202f41eb3e70696c567f8445e"><span class="std std-ref">PxAddArticulationLink</span></a> <a class="reference internal" href="#group__immediatemode_1gab077d413a14e35fd8f1d4d62765d1ac0"><span class="std std-ref">PxEndCreateArticulationRC</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> – <strong>[in]</strong> Articulation data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Articulation cookie</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv432PxComputeUnconstrainedVelocities20PxArticulationHandleRK6PxVec36PxReal6PxReal">
+<span id="_CPPv332PxComputeUnconstrainedVelocities20PxArticulationHandleRK6PxVec36PxReal6PxReal"></span><span id="_CPPv232PxComputeUnconstrainedVelocities20PxArticulationHandleRK6PxVec36PxReal6PxReal"></span><span id="PxComputeUnconstrainedVelocities__PxArticulationHandle.PxVec3CR.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1ga57d2b5e6060a9d09da41ac1c5694edf6"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxComputeUnconstrainedVelocities</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">gravity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invLengthScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv432PxComputeUnconstrainedVelocities20PxArticulationHandleRK6PxVec36PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes unconstrained velocities for a given articulation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p></li>
+<li><p><strong>gravity</strong> – <strong>[in]</strong> Gravity vector </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> Timestep </p></li>
+<li><p><strong>invLengthScale</strong> – <strong>[in]</strong> 1/lengthScale from <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a>. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv435PxComputeUnconstrainedVelocitiesTGS20PxArticulationHandleRK6PxVec36PxReal6PxReal6PxReal6PxReal6PxReal">
+<span id="_CPPv335PxComputeUnconstrainedVelocitiesTGS20PxArticulationHandleRK6PxVec36PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="_CPPv235PxComputeUnconstrainedVelocitiesTGS20PxArticulationHandleRK6PxVec36PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="PxComputeUnconstrainedVelocitiesTGS__PxArticulationHandle.PxVec3CR.PxReal.PxReal.PxReal.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1gad5a366f025ab977b3ef3b988bc9ca78e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxComputeUnconstrainedVelocitiesTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">gravity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">totalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invTotalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invLengthScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv435PxComputeUnconstrainedVelocitiesTGS20PxArticulationHandleRK6PxVec36PxReal6PxReal6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes unconstrained velocities for a given articulation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p></li>
+<li><p><strong>gravity</strong> – <strong>[in]</strong> Gravity vector </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> Timestep/numPosIterations </p></li>
+<li><p><strong>totalDt</strong> – <strong>[in]</strong> Timestep </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> 1/(Timestep/numPosIterations) </p></li>
+<li><p><strong>invTotalDt</strong> – <strong>[in]</strong> 1/Timestep </p></li>
+<li><p><strong>invLengthScale</strong> – <strong>[in]</strong> 1/lengthScale from <a class="reference internal" href="class_px_tolerances_scale.html#class_px_tolerances_scale"><span class="std std-ref">PxTolerancesScale</span></a>. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423PxConstructSolverBodiesPK15PxRigidBodyDataP16PxSolverBodyData5PxU32RK6PxVec36PxRealb">
+<span id="_CPPv323PxConstructSolverBodiesPK15PxRigidBodyDataP16PxSolverBodyData5PxU32RK6PxVec36PxRealb"></span><span id="_CPPv223PxConstructSolverBodiesPK15PxRigidBodyDataP16PxSolverBodyData5PxU32RK6PxVec36PxRealb"></span><span id="PxConstructSolverBodies__PxRigidBodyDataCP.PxSolverBodyDataP.PxU32.PxVec3CR.PxReal.b"></span><span class="target" id="group__immediatemode_1ga2d87ae16e8b4cbd9599ce20e716e5e9e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstructSolverBodies</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_rigid_body_data.html#_CPPv415PxRigidBodyData" title="PxRigidBodyData"><span class="n"><span class="pre">PxRigidBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">inRigidData</span></span>, <a class="reference internal" href="struct_px_solver_body_data.html#_CPPv416PxSolverBodyData" title="PxSolverBodyData"><span class="n"><span class="pre">PxSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outSolverBodyData</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodies</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">gravity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">gyroscopicForces</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423PxConstructSolverBodiesPK15PxRigidBodyDataP16PxSolverBodyData5PxU32RK6PxVec36PxRealb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure based on rigid body properties. </p>
+<p>Applies gravity, damping and clamps maximum velocity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inRigidData</strong> – <strong>[in]</strong> The array rigid body properties </p></li>
+<li><p><strong>outSolverBodyData</strong> – <strong>[out]</strong> The array of solverBodyData produced to represent these bodies </p></li>
+<li><p><strong>nbBodies</strong> – <strong>[in]</strong> The total number of solver bodies to create </p></li>
+<li><p><strong>gravity</strong> – <strong>[in]</strong> The gravity vector </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep </p></li>
+<li><p><strong>gyroscopicForces</strong> – <strong>[in]</strong> Indicates whether gyroscopic forces should be integrated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426PxConstructSolverBodiesTGSPK15PxRigidBodyDataP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP19PxTGSSolverBodyData5PxU32RK6PxVec36PxRealb">
+<span id="_CPPv326PxConstructSolverBodiesTGSPK15PxRigidBodyDataP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP19PxTGSSolverBodyData5PxU32RK6PxVec36PxRealb"></span><span id="_CPPv226PxConstructSolverBodiesTGSPK15PxRigidBodyDataP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP19PxTGSSolverBodyData5PxU32RK6PxVec36PxRealb"></span><span id="PxConstructSolverBodiesTGS__PxRigidBodyDataCP.PxTGSSolverBodyVelP.PxTGSSolverBodyTxInertiaP.PxTGSSolverBodyDataP.PxU32.PxVec3CR.PxReal.b"></span><span class="target" id="group__immediatemode_1gaa12f8d455748f94bee309019e95e18cd"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstructSolverBodiesTGS</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_rigid_body_data.html#_CPPv415PxRigidBodyData" title="PxRigidBodyData"><span class="n"><span class="pre">PxRigidBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">inRigidData</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outSolverBodyVel</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outSolverBodyTxInertia</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outSolverBodyData</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodies</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">gravity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">gyroscopicForces</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426PxConstructSolverBodiesTGSPK15PxRigidBodyDataP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP19PxTGSSolverBodyData5PxU32RK6PxVec36PxRealb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure based on rigid body properties. </p>
+<p>Applies gravity, damping and clamps maximum velocity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inRigidData</strong> – <strong>[in]</strong> The array rigid body properties </p></li>
+<li><p><strong>outSolverBodyVel</strong> – <strong>[out]</strong> The array of <a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#struct_px_t_g_s_solver_body_vel"><span class="std std-ref">PxTGSSolverBodyVel</span></a> structures produced to represent these bodies </p></li>
+<li><p><strong>outSolverBodyTxInertia</strong> – <strong>[out]</strong> The array of <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#struct_px_t_g_s_solver_body_tx_inertia"><span class="std std-ref">PxTGSSolverBodyTxInertia</span></a> produced to represent these bodies </p></li>
+<li><p><strong>outSolverBodyData</strong> – <strong>[out]</strong> The array of PxTGSolverBodyData produced to represent these bodies </p></li>
+<li><p><strong>nbBodies</strong> – <strong>[in]</strong> The total number of solver bodies to create </p></li>
+<li><p><strong>gravity</strong> – <strong>[in]</strong> The gravity vector </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep </p></li>
+<li><p><strong>gyroscopicForces</strong> – <strong>[in]</strong> Indicates whether gyroscopic forces should be integrated </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427PxConstructStaticSolverBodyRK11PxTransformR16PxSolverBodyData">
+<span id="_CPPv327PxConstructStaticSolverBodyRK11PxTransformR16PxSolverBodyData"></span><span id="_CPPv227PxConstructStaticSolverBodyRK11PxTransformR16PxSolverBodyData"></span><span id="PxConstructStaticSolverBody__PxTransformCR.PxSolverBodyDataR"></span><span class="target" id="group__immediatemode_1gabe8ce8848c4667fc886ce7450ba055f0"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstructStaticSolverBody</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">globalPose</span></span>, <a class="reference internal" href="struct_px_solver_body_data.html#_CPPv416PxSolverBodyData" title="PxSolverBodyData"><span class="n"><span class="pre">PxSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">solverBodyData</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427PxConstructStaticSolverBodyRK11PxTransformR16PxSolverBodyData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure for a static body at a given pose. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>globalPose</strong> – <strong>[in]</strong> The pose of this static actor </p></li>
+<li><p><strong>solverBodyData</strong> – <strong>[out]</strong> The solver body representation of this static actor </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv430PxConstructStaticSolverBodyTGSRK11PxTransformR18PxTGSSolverBodyVelR24PxTGSSolverBodyTxInertiaR19PxTGSSolverBodyData">
+<span id="_CPPv330PxConstructStaticSolverBodyTGSRK11PxTransformR18PxTGSSolverBodyVelR24PxTGSSolverBodyTxInertiaR19PxTGSSolverBodyData"></span><span id="_CPPv230PxConstructStaticSolverBodyTGSRK11PxTransformR18PxTGSSolverBodyVelR24PxTGSSolverBodyTxInertiaR19PxTGSSolverBodyData"></span><span id="PxConstructStaticSolverBodyTGS__PxTransformCR.PxTGSSolverBodyVelR.PxTGSSolverBodyTxInertiaR.PxTGSSolverBodyDataR"></span><span class="target" id="group__immediatemode_1ga58b723bc273e6fc5091b2d4c38d4d402"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxConstructStaticSolverBodyTGS</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">globalPose</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">solverBodyVel</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">solverBodyTxInertia</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_data.html#_CPPv419PxTGSSolverBodyData" title="PxTGSSolverBodyData"><span class="n"><span class="pre">PxTGSSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">solverBodyData</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv430PxConstructStaticSolverBodyTGSRK11PxTransformR18PxTGSSolverBodyVelR24PxTGSSolverBodyTxInertiaR19PxTGSSolverBodyData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a <a class="reference internal" href="struct_px_solver_body_data.html#struct_px_solver_body_data"><span class="std std-ref">PxSolverBodyData</span></a> structure for a static body at a given pose. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>globalPose</strong> – <strong>[in]</strong> The pose of this static actor </p></li>
+<li><p><strong>solverBodyVel</strong> – <strong>[out]</strong> The velocity component of this body (will be zero) </p></li>
+<li><p><strong>solverBodyTxInertia</strong> – <strong>[out]</strong> The intertia and transform delta component of this body (will be zero) </p></li>
+<li><p><strong>solverBodyData</strong> – <strong>[out]</strong> The solver body representation of this static actor </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv438PxCopyInternalStateToArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags">
+<span id="_CPPv338PxCopyInternalStateToArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags"></span><span id="_CPPv238PxCopyInternalStateToArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags"></span><span id="PxCopyInternalStateToArticulationCache__PxArticulationHandle.PxArticulationCacheR.PxArticulationCacheFlags"></span><span class="target" id="group__immediatemode_1ga2d4fc0cc3e4e43045cdd092585f5f2ba"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCopyInternalStateToArticulationCache</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="class_px_articulation_cache.html#_CPPv419PxArticulationCache" title="PxArticulationCache"><span class="n"><span class="pre">PxArticulationCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cache</span></span>, <a class="reference internal" href="typedef__px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4.html#_CPPv424PxArticulationCacheFlags" title="PxArticulationCacheFlags"><span class="n"><span class="pre">PxArticulationCacheFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv438PxCopyInternalStateToArticulationCache20PxArticulationHandleR19PxArticulationCache24PxArticulationCacheFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy the internal data of the articulation to the cache. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>createCache <a class="reference internal" href="#group__immediatemode_1ga889da0cd2f70b5f822f13c9e9933f1eb"><span class="std std-ref">PxApplyArticulationCache</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Articulation data </p></li>
+<li><p><strong>flag</strong> – <strong>[in]</strong> Indicates which values of the articulation system are copied to the cache</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425PxCreateArticulationCache20PxArticulationHandle">
+<span id="_CPPv325PxCreateArticulationCache20PxArticulationHandle"></span><span id="_CPPv225PxCreateArticulationCache20PxArticulationHandle"></span><span id="PxCreateArticulationCache__PxArticulationHandle"></span><span class="target" id="group__immediatemode_1ga9a3110b38211ce9bd9c812058151c6af"></span><a class="reference internal" href="class_px_articulation_cache.html#_CPPv419PxArticulationCache" title="PxArticulationCache"><span class="n"><span class="pre">PxArticulationCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateArticulationCache</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425PxCreateArticulationCache20PxArticulationHandle" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an articulation cache. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1ga8c79435c69aec7dec3e72a2d7bd88d2f"><span class="std std-ref">PxReleaseArticulationCache</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Articulation cache</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426PxCreateContactConstraintsP23PxConstraintBatchHeader5PxU32P19PxSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxRealP15PxSpatialVector">
+<span id="_CPPv326PxCreateContactConstraintsP23PxConstraintBatchHeader5PxU32P19PxSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxRealP15PxSpatialVector"></span><span id="_CPPv226PxCreateContactConstraintsP23PxConstraintBatchHeader5PxU32P19PxSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxRealP15PxSpatialVector"></span><span id="PxCreateContactConstraints__PxConstraintBatchHeaderP.PxU32.PxSolverContactDescP.PxConstraintAllocatorR.PxReal.PxReal.PxReal.PxReal.PxSpatialVectorP"></span><span class="target" id="group__immediatemode_1gabd6e0f1c7038b6110d828ca1dd7d284e"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateContactConstraints</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbHeaders</span></span>, <a class="reference internal" href="struct_px_solver_contact_desc.html#_CPPv419PxSolverContactDesc" title="PxSolverContactDesc"><span class="n"><span class="pre">PxSolverContactDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bounceThreshold</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">frictionOffsetThreshold</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">correlationDistance</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426PxCreateContactConstraintsP23PxConstraintBatchHeader5PxU32P19PxSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxRealP15PxSpatialVector" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of contact constraint blocks. </p>
+<p>Note that, depending the results of PxBatchConstraints, each batchHeader may refer to up to 4 solverConstraintDescs. This function will allocate both constraint and friction patch data via the <a class="reference internal" href="class_px_constraint_allocator.html#class_px_constraint_allocator"><span class="std std-ref">PxConstraintAllocator</span></a> provided. Constraint data is only valid until PxSolveConstraints has completed. Friction data is to be retained and provided by the application for friction correlation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> Array of batch headers to process </p></li>
+<li><p><strong>nbHeaders</strong> – <strong>[in]</strong> The total number of headers </p></li>
+<li><p><strong>contactDescs</strong> – <strong>[in]</strong> An array of contact descs defining the pair and contact properties of each respective contacting pair </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint and friction memory </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse timestep </p></li>
+<li><p><strong>bounceThreshold</strong> – <strong>[in]</strong> The bounce threshold. Relative velocities below this will be solved by bias only. Relative velocities above this will be solved by restitution. If restitution is zero then these pairs will always be solved by bias. </p></li>
+<li><p><strong>frictionOffsetThreshold</strong> – <strong>[in]</strong> The friction offset threshold. Contacts whose separations are below this threshold can generate friction constraints. </p></li>
+<li><p><strong>correlationDistance</strong> – <strong>[in]</strong> The correlation distance used by friction correlation to identify whether a friction patch is broken on the grounds of relation separation. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean to define if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429PxCreateContactConstraintsTGSP23PxConstraintBatchHeader5PxU32P22PxTGSSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal">
+<span id="_CPPv329PxCreateContactConstraintsTGSP23PxConstraintBatchHeader5PxU32P22PxTGSSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="_CPPv229PxCreateContactConstraintsTGSP23PxConstraintBatchHeader5PxU32P22PxTGSSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="PxCreateContactConstraintsTGS__PxConstraintBatchHeaderP.PxU32.PxTGSSolverContactDescP.PxConstraintAllocatorR.PxReal.PxReal.PxReal.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1ga289e6ce0a128ba6d2896f57d2c41c7fd"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateContactConstraintsTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbHeaders</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_contact_desc.html#_CPPv422PxTGSSolverContactDesc" title="PxTGSSolverContactDesc"><span class="n"><span class="pre">PxTGSSolverContactDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invTotalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bounceThreshold</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">frictionOffsetThreshold</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">correlationDistance</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429PxCreateContactConstraintsTGSP23PxConstraintBatchHeader5PxU32P22PxTGSSolverContactDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of contact constraint blocks. </p>
+<p>Note that, depending the results of PxBatchConstraints, each batchHeader may refer to up to 4 solverConstraintDescs. This function will allocate both constraint and friction patch data via the <a class="reference internal" href="class_px_constraint_allocator.html#class_px_constraint_allocator"><span class="std std-ref">PxConstraintAllocator</span></a> provided. Constraint data is only valid until PxSolveConstraints has completed. Friction data is to be retained and provided by the application for friction correlation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> Array of batch headers to process </p></li>
+<li><p><strong>nbHeaders</strong> – <strong>[in]</strong> The total number of headers </p></li>
+<li><p><strong>contactDescs</strong> – <strong>[in]</strong> An array of contact descs defining the pair and contact properties of each respective contacting pair </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint and friction memory </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse timestep/nbPositionIterations </p></li>
+<li><p><strong>invTotalDt</strong> – <strong>[in]</strong> The inverse time-step </p></li>
+<li><p><strong>bounceThreshold</strong> – <strong>[in]</strong> The bounce threshold. Relative velocities below this will be solved by bias only. Relative velocities above this will be solved by restitution. If restitution is zero then these pairs will always be solved by bias. </p></li>
+<li><p><strong>frictionOffsetThreshold</strong> – <strong>[in]</strong> The friction offset threshold. Contacts whose separations are below this threshold can generate friction constraints. </p></li>
+<li><p><strong>correlationDistance</strong> – <strong>[in]</strong> The correlation distance used by friction correlation to identify whether a friction patch is broken on the grounds of relation separation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean to define if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv424PxCreateJointConstraintsP23PxConstraintBatchHeader5PxU32P26PxSolverConstraintPrepDescR21PxConstraintAllocatorP15PxSpatialVector6PxReal6PxReal">
+<span id="_CPPv324PxCreateJointConstraintsP23PxConstraintBatchHeader5PxU32P26PxSolverConstraintPrepDescR21PxConstraintAllocatorP15PxSpatialVector6PxReal6PxReal"></span><span id="_CPPv224PxCreateJointConstraintsP23PxConstraintBatchHeader5PxU32P26PxSolverConstraintPrepDescR21PxConstraintAllocatorP15PxSpatialVector6PxReal6PxReal"></span><span id="PxCreateJointConstraints__PxConstraintBatchHeaderP.PxU32.PxSolverConstraintPrepDescP.PxConstraintAllocatorR.PxSpatialVectorP.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraints</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbHeaders</span></span>, <a class="reference internal" href="struct_px_solver_constraint_prep_desc.html#_CPPv426PxSolverConstraintPrepDesc" title="PxSolverConstraintPrepDesc"><span class="n"><span class="pre">PxSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv424PxCreateJointConstraintsP23PxConstraintBatchHeader5PxU32P26PxSolverConstraintPrepDescR21PxConstraintAllocatorP15PxSpatialVector6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>Note that, depending the results of PxBatchConstraints, the batchHeader may refer to up to 4 solverConstraintDescs </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The array of batch headers to be processed. </p></li>
+<li><p><strong>nbHeaders</strong> – <strong>[in]</strong> The total number of batch headers to process. </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[in]</strong> An array of constraint prep descs defining the properties of the constraints being created. </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data. </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep. </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse timestep. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv427PxCreateJointConstraintsTGSP23PxConstraintBatchHeader5PxU32P29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal">
+<span id="_CPPv327PxCreateJointConstraintsTGSP23PxConstraintBatchHeader5PxU32P29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="_CPPv227PxCreateJointConstraintsTGSP23PxConstraintBatchHeader5PxU32P29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="PxCreateJointConstraintsTGS__PxConstraintBatchHeaderP.PxU32.PxTGSSolverConstraintPrepDescP.PxConstraintAllocatorR.PxReal.PxReal.PxReal.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1ga513d21da6c652d4d207e149a2f94d59f"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraintsTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbHeaders</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc.html#_CPPv429PxTGSSolverConstraintPrepDesc" title="PxTGSSolverConstraintPrepDesc"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">totalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invTotalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lengthScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv427PxCreateJointConstraintsTGSP23PxConstraintBatchHeader5PxU32P29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>Note that, depending the results of PxBatchConstraints, the batchHeader may refer to up to 4 solverConstraintDescs </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The array of batch headers to be processed </p></li>
+<li><p><strong>nbHeaders</strong> – <strong>[in]</strong> The total number of batch headers to process </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[in]</strong> An array of constraint prep descs defining the properties of the constraints being created </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The total time-step/nbPositionIterations </p></li>
+<li><p><strong>totalDt</strong> – <strong>[in]</strong> The total time-step </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse (timestep/nbPositionIterations) </p></li>
+<li><p><strong>invTotalDt</strong> – <strong>[in]</strong> The inverse total time-step </p></li>
+<li><p><strong>lengthScale</strong> – <strong>[in]</strong> PxToleranceScale::length, i.e. a meter in simulation units </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv444PxCreateJointConstraintsWithImmediateShadersP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector">
+<span id="_CPPv344PxCreateJointConstraintsWithImmediateShadersP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector"></span><span id="_CPPv244PxCreateJointConstraintsWithImmediateShadersP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector"></span><span id="PxCreateJointConstraintsWithImmediateShaders__PxConstraintBatchHeaderP.PxU32.PxImmediateConstraintP.PxSolverConstraintPrepDescP.PxConstraintAllocatorR.PxReal.PxReal.PxSpatialVectorP"></span><span class="target" id="group__immediatemode_1gab94771fd7ea0f6718eb453a710bdb796"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraintsWithImmediateShaders</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <a class="reference internal" href="struct_px_immediate_constraint.html#_CPPv421PxImmediateConstraint" title="PxImmediateConstraint"><span class="n"><span class="pre">PxImmediateConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraints</span></span>, <a class="reference internal" href="struct_px_solver_constraint_prep_desc.html#_CPPv426PxSolverConstraintPrepDesc" title="PxSolverConstraintPrepDesc"><span class="n"><span class="pre">PxSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv444PxCreateJointConstraintsWithImmediateShadersP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>This function runs joint shaders defined inside PxImmediateConstraint* param, fills in joint row information in jointDescs and then calls PxCreateJointConstraints. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"><span class="std std-ref">PxCreateJointConstraints</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batchHeaders to be processed. </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The number of batch headers to process. </p></li>
+<li><p><strong>constraints</strong> – <strong>[in]</strong> The set of constraints to be used to produce constraint rows. </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[inout]</strong> An array of constraint prep descs defining the properties of the constraints being created. </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data. </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep. </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse timestep. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv447PxCreateJointConstraintsWithImmediateShadersTGSP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal">
+<span id="_CPPv347PxCreateJointConstraintsWithImmediateShadersTGSP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="_CPPv247PxCreateJointConstraintsWithImmediateShadersTGSP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="PxCreateJointConstraintsWithImmediateShadersTGS__PxConstraintBatchHeaderP.PxU32.PxImmediateConstraintP.PxTGSSolverConstraintPrepDescP.PxConstraintAllocatorR.PxReal.PxReal.PxReal.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1gaba3f94d64bf9e17d827ca9be2cc704ae"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraintsWithImmediateShadersTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <a class="reference internal" href="struct_px_immediate_constraint.html#_CPPv421PxImmediateConstraint" title="PxImmediateConstraint"><span class="n"><span class="pre">PxImmediateConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraints</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc.html#_CPPv429PxTGSSolverConstraintPrepDesc" title="PxTGSSolverConstraintPrepDesc"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">totalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invTotalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lengthScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv447PxCreateJointConstraintsWithImmediateShadersTGSP23PxConstraintBatchHeader5PxU32P21PxImmediateConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>This function runs joint shaders defined inside PxImmediateConstraint* param, fills in joint row information in jointDescs and then calls PxCreateJointConstraints. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"><span class="std std-ref">PxCreateJointConstraints</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batchHeaders to be processed </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The number of batch headers to process. </p></li>
+<li><p><strong>constraints</strong> – <strong>[in]</strong> The set of constraints to be used to produce constraint rows </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[inout]</strong> An array of constraint prep descs defining the properties of the constraints being created </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The total time-step/nbPositionIterations </p></li>
+<li><p><strong>totalDt</strong> – <strong>[in]</strong> The total time-step </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse (timestep/nbPositionIterations) </p></li>
+<li><p><strong>invTotalDt</strong> – <strong>[in]</strong> The inverse total time-step </p></li>
+<li><p><strong>lengthScale</strong> – <strong>[in]</strong> PxToleranceScale::length, i.e. a meter in simulation units </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv435PxCreateJointConstraintsWithShadersP23PxConstraintBatchHeader5PxU32PP12PxConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector">
+<span id="_CPPv335PxCreateJointConstraintsWithShadersP23PxConstraintBatchHeader5PxU32PP12PxConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector"></span><span id="_CPPv235PxCreateJointConstraintsWithShadersP23PxConstraintBatchHeader5PxU32PP12PxConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector"></span><span id="PxCreateJointConstraintsWithShaders__PxConstraintBatchHeaderP.PxU32.PxConstraintPP.PxSolverConstraintPrepDescP.PxConstraintAllocatorR.PxReal.PxReal.PxSpatialVectorP"></span><span class="target" id="group__immediatemode_1ga0b1917055213dab3ea8a6c7be51a32df"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraintsWithShaders</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <a class="reference internal" href="class_px_constraint.html#_CPPv412PxConstraint" title="PxConstraint"><span class="n"><span class="pre">PxConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraints</span></span>, <a class="reference internal" href="struct_px_solver_constraint_prep_desc.html#_CPPv426PxSolverConstraintPrepDesc" title="PxSolverConstraintPrepDesc"><span class="n"><span class="pre">PxSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv435PxCreateJointConstraintsWithShadersP23PxConstraintBatchHeader5PxU32PP12PxConstraintP26PxSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxRealP15PxSpatialVector" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>This function runs joint shaders defined inside PxConstraint** param, fills in joint row information in jointDescs and then calls PxCreateJointConstraints. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"><span class="std std-ref">PxCreateJointConstraints</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batchHeaders to be processed. </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The number of batch headers to process. </p></li>
+<li><p><strong>constraints</strong> – <strong>[in]</strong> The set of constraints to be used to produce constraint rows. </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[inout]</strong> An array of constraint prep descs defining the properties of the constraints being created. </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data. </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep. </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse timestep. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv438PxCreateJointConstraintsWithShadersTGSP23PxConstraintBatchHeader5PxU32PP12PxConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal">
+<span id="_CPPv338PxCreateJointConstraintsWithShadersTGSP23PxConstraintBatchHeader5PxU32PP12PxConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="_CPPv238PxCreateJointConstraintsWithShadersTGSP23PxConstraintBatchHeader5PxU32PP12PxConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal"></span><span id="PxCreateJointConstraintsWithShadersTGS__PxConstraintBatchHeaderP.PxU32.PxConstraintPP.PxTGSSolverConstraintPrepDescP.PxConstraintAllocatorR.PxReal.PxReal.PxReal.PxReal.PxReal"></span><span class="target" id="group__immediatemode_1gaef4d972f5de669768e272000fc75da86"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCreateJointConstraintsWithShadersTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <a class="reference internal" href="class_px_constraint.html#_CPPv412PxConstraint" title="PxConstraint"><span class="n"><span class="pre">PxConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">constraints</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc.html#_CPPv429PxTGSSolverConstraintPrepDesc" title="PxTGSSolverConstraintPrepDesc"><span class="n"><span class="pre">PxTGSSolverConstraintPrepDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">jointDescs</span></span>, <a class="reference internal" href="class_px_constraint_allocator.html#_CPPv421PxConstraintAllocator" title="PxConstraintAllocator"><span class="n"><span class="pre">PxConstraintAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">totalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invTotalDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">lengthScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv438PxCreateJointConstraintsWithShadersTGSP23PxConstraintBatchHeader5PxU32PP12PxConstraintP29PxTGSSolverConstraintPrepDescR21PxConstraintAllocator6PxReal6PxReal6PxReal6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a set of joint constraint blocks. </p>
+<p>This function runs joint shaders defined inside PxConstraint** param, fills in joint row information in jointDescs and then calls PxCreateJointConstraints. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gae3ad8d6dec20b40be904d95fd8d9741a"><span class="std std-ref">PxCreateJointConstraints</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batchHeaders to be processed </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The number of batch headers to process. </p></li>
+<li><p><strong>constraints</strong> – <strong>[in]</strong> The set of constraints to be used to produce constraint rows </p></li>
+<li><p><strong>jointDescs</strong> – <strong>[inout]</strong> An array of constraint prep descs defining the properties of the constraints being created </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> An allocator callback to allocate constraint data </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The total time-step/nbPositionIterations </p></li>
+<li><p><strong>totalDt</strong> – <strong>[in]</strong> The total time-step </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> The inverse (timestep/nbPositionIterations) </p></li>
+<li><p><strong>invTotalDt</strong> – <strong>[in]</strong> The inverse total time-step </p></li>
+<li><p><strong>lengthScale</strong> – <strong>[in]</strong> PxToleranceScale::length, i.e. a meter in simulation units </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if this method was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv425PxEndCreateArticulationRC20PxArticulationCookieP24PxArticulationLinkHandle5PxU32">
+<span id="_CPPv325PxEndCreateArticulationRC20PxArticulationCookieP24PxArticulationLinkHandle5PxU32"></span><span id="_CPPv225PxEndCreateArticulationRC20PxArticulationCookieP24PxArticulationLinkHandle5PxU32"></span><span id="PxEndCreateArticulationRC__PxArticulationCookie.PxArticulationLinkHandleP.PxU32"></span><span class="target" id="group__immediatemode_1gab077d413a14e35fd8f1d4d62765d1ac0"></span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxEndCreateArticulationRC</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationCookie" title="PxArticulationCookie"><span class="n"><span class="pre">PxArticulationCookie</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">linkHandles</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv425PxEndCreateArticulationRC20PxArticulationCookieP24PxArticulationLinkHandle5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>End creation of an immediate-mode reduced-coordinate articulation. </p>
+<p>This call completes the creation of the articulation. All involved cookies become unsafe to use after that point.</p>
+<p>The links are actually created in this function, and it returns the actual link handles to users. The given buffer should be large enough to contain as many links as created between the PxBeginCreateArticulationRC &amp; PxEndCreateArticulationRC calls, i.e. if N calls were made to PxAddArticulationLink, the buffer should be large enough to contain N handles.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gacb72c60202f41eb3e70696c567f8445e"><span class="std std-ref">PxAddArticulationLink</span></a> <a class="reference internal" href="#group__immediatemode_1gab077d413a14e35fd8f1d4d62765d1ac0"><span class="std std-ref">PxEndCreateArticulationRC</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Cookie value returned by PxBeginCreateArticulationRC </p></li>
+<li><p><strong>linkHandles</strong> – <strong>[out]</strong> Articulation link handles of all created articulation links </p></li>
+<li><p><strong>bufferSize</strong> – <strong>[in]</strong> Size of linkHandles buffer. Must match internal expected number of articulation links.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Articulation handle, or NULL if creation failed</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxGenerateContactsPPCK10PxGeometryPPCK10PxGeometryPK11PxTransformPK11PxTransformP7PxCache5PxU32R17PxContactRecorder6PxReal6PxReal6PxRealR16PxCacheAllocator">
+<span id="_CPPv318PxGenerateContactsPPCK10PxGeometryPPCK10PxGeometryPK11PxTransformPK11PxTransformP7PxCache5PxU32R17PxContactRecorder6PxReal6PxReal6PxRealR16PxCacheAllocator"></span><span id="_CPPv218PxGenerateContactsPPCK10PxGeometryPPCK10PxGeometryPK11PxTransformPK11PxTransformP7PxCache5PxU32R17PxContactRecorder6PxReal6PxReal6PxRealR16PxCacheAllocator"></span><span id="PxGenerateContacts__PxGeometryCPCP.PxGeometryCPCP.PxTransformCP.PxTransformCP.PxCacheP.PxU32.PxContactRecorderR.PxReal.PxReal.PxReal.PxCacheAllocatorR"></span><span class="target" id="group__immediatemode_1ga005fa8fe54245ea3fec26d17f14874a9"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGenerateContacts</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">geom0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">geom1</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pose0</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pose1</span></span>, <a class="reference internal" href="struct_px_cache.html#_CPPv47PxCache" title="PxCache"><span class="n"><span class="pre">PxCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">contactCache</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPairs</span></span>, <a class="reference internal" href="class_px_contact_recorder.html#_CPPv417PxContactRecorder" title="PxContactRecorder"><span class="n"><span class="pre">PxContactRecorder</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">contactRecorder</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactDistance</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">meshContactMargin</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">toleranceLength</span></span>, <a class="reference internal" href="class_px_cache_allocator.html#_CPPv416PxCacheAllocator" title="PxCacheAllocator"><span class="n"><span class="pre">PxCacheAllocator</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">allocator</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxGenerateContactsPPCK10PxGeometryPPCK10PxGeometryPK11PxTransformPK11PxTransformP7PxCache5PxU32R17PxContactRecorder6PxReal6PxReal6PxRealR16PxCacheAllocator" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs contact generation for a given pair of geometries at the specified poses. </p>
+<p>Produced contacts are stored in the provided contact recorder. Information is cached in <a class="reference internal" href="struct_px_cache.html#struct_px_cache"><span class="std std-ref">PxCache</span></a> structure to accelerate future contact generation between pairs. This cache data is valid only as long as the memory provided by <a class="reference internal" href="class_px_cache_allocator.html#class_px_cache_allocator"><span class="std std-ref">PxCacheAllocator</span></a> has not been released/re-used. Recommendation is to retain that data for a single simulation frame, discarding cached data after 2 frames. If the cached memory has been released/re-used prior to the corresponding pair having contact generation performed again, it is the application’s responsibility to reset the <a class="reference internal" href="struct_px_cache.html#struct_px_cache"><span class="std std-ref">PxCache</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geom0</strong> – <strong>[in]</strong> Array of geometries to perform collision detection on. </p></li>
+<li><p><strong>geom1</strong> – <strong>[in]</strong> Array of geometries to perform collision detection on </p></li>
+<li><p><strong>pose0</strong> – <strong>[in]</strong> Array of poses associated with the corresponding entry in the geom0 array </p></li>
+<li><p><strong>pose1</strong> – <strong>[in]</strong> Array of poses associated with the corresponding entry in the geom1 array </p></li>
+<li><p><strong>contactCache</strong> – <strong>[inout]</strong> Array of contact caches associated with each pair geom0[i] + geom1[i] </p></li>
+<li><p><strong>nbPairs</strong> – <strong>[in]</strong> The total number of pairs to process </p></li>
+<li><p><strong>contactRecorder</strong> – <strong>[out]</strong> A callback that is called to record contacts for each pair that detects contacts </p></li>
+<li><p><strong>contactDistance</strong> – <strong>[in]</strong> The distance at which contacts begin to be generated between the pairs </p></li>
+<li><p><strong>meshContactMargin</strong> – <strong>[in]</strong> The mesh contact margin. </p></li>
+<li><p><strong>toleranceLength</strong> – <strong>[in]</strong> The toleranceLength. Used for scaling distance-based thresholds internally to produce appropriate results given simulations in different units </p></li>
+<li><p><strong>allocator</strong> – <strong>[in]</strong> A callback to allocate memory for the contact cache</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a boolean indicating if the function was successful or not. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv416PxGetAllLinkDataK20PxArticulationHandleP31PxArticulationLinkDerivedDataRC">
+<span id="_CPPv316PxGetAllLinkDataK20PxArticulationHandleP31PxArticulationLinkDerivedDataRC"></span><span id="_CPPv216PxGetAllLinkDataK20PxArticulationHandleP31PxArticulationLinkDerivedDataRC"></span><span id="PxGetAllLinkData__PxArticulationHandleC.PxArticulationLinkDerivedDataRCP"></span><span class="target" id="group__immediatemode_1gaecaec3026d9572d1acedb0f9d63374ea"></span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetAllLinkData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="struct_px_articulation_link_derived_data_r_c.html#_CPPv431PxArticulationLinkDerivedDataRC" title="PxArticulationLinkDerivedDataRC"><span class="n"><span class="pre">PxArticulationLinkDerivedDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv416PxGetAllLinkDataK20PxArticulationHandleP31PxArticulationLinkDerivedDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves non-mutable link data from an articulation handle (all links). </p>
+<p>The data here is computed by the articulation code but cannot be directly changed by users. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gaa02b58f6d6ad01a7dd49038292a40a75"><span class="std std-ref">PxGetLinkData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p></li>
+<li><p><strong>data</strong> – <strong>[out]</strong> Link data for N links, or NULL to just retrieve the number of links. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Number of links in the articulation = number of link data structure written to the data array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv414PxGetJointDataRK24PxArticulationLinkHandleR25PxArticulationJointDataRC">
+<span id="_CPPv314PxGetJointDataRK24PxArticulationLinkHandleR25PxArticulationJointDataRC"></span><span id="_CPPv214PxGetJointDataRK24PxArticulationLinkHandleR25PxArticulationJointDataRC"></span><span id="PxGetJointData__PxArticulationLinkHandleCR.PxArticulationJointDataRCR"></span><span class="target" id="group__immediatemode_1ga2914ec0e102d3cc1b323f79feec59a51"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetJointData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">link</span></span>, <a class="reference internal" href="struct_px_articulation_joint_data_r_c.html#_CPPv425PxArticulationJointDataRC" title="PxArticulationJointDataRC"><span class="n"><span class="pre">PxArticulationJointDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv414PxGetJointDataRK24PxArticulationLinkHandleR25PxArticulationJointDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves joint data from a link handle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gac5a24e6b00bccc9295d1a302ca2fd516"><span class="std std-ref">PxSetJointData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> – <strong>[in]</strong> Link handle </p></li>
+<li><p><strong>data</strong> – <strong>[out]</strong> Joint data for this link </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv413PxGetLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkDerivedDataRC">
+<span id="_CPPv313PxGetLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkDerivedDataRC"></span><span id="_CPPv213PxGetLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkDerivedDataRC"></span><span id="PxGetLinkData__PxArticulationLinkHandleCR.PxArticulationLinkDerivedDataRCR"></span><span class="target" id="group__immediatemode_1gaa02b58f6d6ad01a7dd49038292a40a75"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetLinkData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">link</span></span>, <a class="reference internal" href="struct_px_articulation_link_derived_data_r_c.html#_CPPv431PxArticulationLinkDerivedDataRC" title="PxArticulationLinkDerivedDataRC"><span class="n"><span class="pre">PxArticulationLinkDerivedDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv413PxGetLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkDerivedDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves non-mutable link data from a link handle. </p>
+<p>The data here is computed by the articulation code but cannot be directly changed by users. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1gaecaec3026d9572d1acedb0f9d63374ea"><span class="std std-ref">PxGetAllLinkData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> – <strong>[in]</strong> Link handle </p></li>
+<li><p><strong>data</strong> – <strong>[out]</strong> Link data </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420PxGetMutableLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkMutableDataRC">
+<span id="_CPPv320PxGetMutableLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkMutableDataRC"></span><span id="_CPPv220PxGetMutableLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkMutableDataRC"></span><span id="PxGetMutableLinkData__PxArticulationLinkHandleCR.PxArticulationLinkMutableDataRCR"></span><span class="target" id="group__immediatemode_1ga8f922c869ff910965d57ce75990d8703"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGetMutableLinkData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">link</span></span>, <a class="reference internal" href="struct_px_articulation_link_mutable_data_r_c.html#_CPPv431PxArticulationLinkMutableDataRC" title="PxArticulationLinkMutableDataRC"><span class="n"><span class="pre">PxArticulationLinkMutableDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420PxGetMutableLinkDataRK24PxArticulationLinkHandleR31PxArticulationLinkMutableDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves mutable link data from a link handle. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1ga94f982ce47ffe8fb20e7888ca8464433"><span class="std std-ref">PxSetMutableLinkData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> – <strong>[in]</strong> Link handle </p></li>
+<li><p><strong>data</strong> – <strong>[out]</strong> Data for this link </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv423PxIntegrateSolverBodiesP16PxSolverBodyDataP12PxSolverBodyPK6PxVec3PK6PxVec35PxU326PxReal">
+<span id="_CPPv323PxIntegrateSolverBodiesP16PxSolverBodyDataP12PxSolverBodyPK6PxVec3PK6PxVec35PxU326PxReal"></span><span id="_CPPv223PxIntegrateSolverBodiesP16PxSolverBodyDataP12PxSolverBodyPK6PxVec3PK6PxVec35PxU326PxReal"></span><span id="PxIntegrateSolverBodies__PxSolverBodyDataP.PxSolverBodyP.PxVec3CP.PxVec3CP.PxU32.PxReal"></span><span class="target" id="group__immediatemode_1ga27844672d99d4cc35853f04c175bf91a"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxIntegrateSolverBodies</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_solver_body_data.html#_CPPv416PxSolverBodyData" title="PxSolverBodyData"><span class="n"><span class="pre">PxSolverBodyData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBodyData</span></span>, <a class="reference internal" href="struct_px_solver_body.html#_CPPv412PxSolverBody" title="PxSolverBody"><span class="n"><span class="pre">PxSolverBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">linearMotionVelocity</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">angularMotionState</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodiesToIntegrate</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423PxIntegrateSolverBodiesP16PxSolverBodyDataP12PxSolverBodyPK6PxVec3PK6PxVec35PxU326PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Integrates a rigid body, returning the new velocities and transforms. </p>
+<p>After this function has been called, solverBodyData stores all the body’s velocity data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solverBodyData</strong> – <strong>[inout]</strong> The array of solver body data to be integrated </p></li>
+<li><p><strong>solverBody</strong> – <strong>[in]</strong> The bodies’ linear and angular velocities </p></li>
+<li><p><strong>linearMotionVelocity</strong> – <strong>[in]</strong> The bodies’ linear motion velocity array </p></li>
+<li><p><strong>angularMotionState</strong> – <strong>[in]</strong> The bodies’ angular motion velocity array </p></li>
+<li><p><strong>nbBodiesToIntegrate</strong> – <strong>[in]</strong> The total number of bodies to integrate </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426PxIntegrateSolverBodiesTGSP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP11PxTransform5PxU326PxReal">
+<span id="_CPPv326PxIntegrateSolverBodiesTGSP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP11PxTransform5PxU326PxReal"></span><span id="_CPPv226PxIntegrateSolverBodiesTGSP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP11PxTransform5PxU326PxReal"></span><span id="PxIntegrateSolverBodiesTGS__PxTGSSolverBodyVelP.PxTGSSolverBodyTxInertiaP.PxTransformP.PxU32.PxReal"></span><span class="target" id="group__immediatemode_1gace6fecf6cee50c5bb6e5cd2aa8e326d6"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxIntegrateSolverBodiesTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBody</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">txInertia</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">poses</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBodiesToIntegrate</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426PxIntegrateSolverBodiesTGSP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertiaP11PxTransform5PxU326PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Integrates a rigid body, returning the new velocities and transforms. </p>
+<p>After this function has been called, solverBody stores all the body’s velocity data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>solverBody</strong> – <strong>[inout]</strong> The array of solver bodies to be integrated </p></li>
+<li><p><strong>txInertia</strong> – <strong>[in]</strong> The delta pose and inertia terms </p></li>
+<li><p><strong>poses</strong> – <strong>[inout]</strong> The original poses of the bodies. Updated to be the new poses of the bodies </p></li>
+<li><p><strong>nbBodiesToIntegrate</strong> – <strong>[in]</strong> The total number of bodies to integrate </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> The timestep </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxReleaseArticulation20PxArticulationHandle">
+<span id="_CPPv321PxReleaseArticulation20PxArticulationHandle"></span><span id="_CPPv221PxReleaseArticulation20PxArticulationHandle"></span><span id="PxReleaseArticulation__PxArticulationHandle"></span><span class="target" id="group__immediatemode_1gaf78e5e9ab34a5d09072c51acd113d00e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxReleaseArticulation</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxReleaseArticulation20PxArticulationHandle" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases an immediate-mode reduced-coordinate articulation. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxCreateFeatherstoneArticulation </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426PxReleaseArticulationCacheR19PxArticulationCache">
+<span id="_CPPv326PxReleaseArticulationCacheR19PxArticulationCache"></span><span id="_CPPv226PxReleaseArticulationCacheR19PxArticulationCache"></span><span id="PxReleaseArticulationCache__PxArticulationCacheR"></span><span class="target" id="group__immediatemode_1ga8c79435c69aec7dec3e72a2d7bd88d2f"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxReleaseArticulationCache</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_articulation_cache.html#_CPPv419PxArticulationCache" title="PxArticulationCache"><span class="n"><span class="pre">PxArticulationCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426PxReleaseArticulationCacheR19PxArticulationCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Release an articulation cache. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1ga9a3110b38211ce9bd9c812058151c6af"><span class="std std-ref">PxCreateArticulationCache</span></a> <a class="reference internal" href="#group__immediatemode_1ga2d4fc0cc3e4e43045cdd092585f5f2ba"><span class="std std-ref">PxCopyInternalStateToArticulationCache</span></a> <a class="reference internal" href="#group__immediatemode_1ga2d4fc0cc3e4e43045cdd092585f5f2ba"><span class="std std-ref">PxCopyInternalStateToArticulationCache</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>cache</strong> – <strong>[in]</strong> The cache to release</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv414PxSetJointDataRK24PxArticulationLinkHandleRK25PxArticulationJointDataRC">
+<span id="_CPPv314PxSetJointDataRK24PxArticulationLinkHandleRK25PxArticulationJointDataRC"></span><span id="_CPPv214PxSetJointDataRK24PxArticulationLinkHandleRK25PxArticulationJointDataRC"></span><span id="PxSetJointData__PxArticulationLinkHandleCR.PxArticulationJointDataRCCR"></span><span class="target" id="group__immediatemode_1gac5a24e6b00bccc9295d1a302ca2fd516"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSetJointData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">link</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_joint_data_r_c.html#_CPPv425PxArticulationJointDataRC" title="PxArticulationJointDataRC"><span class="n"><span class="pre">PxArticulationJointDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv414PxSetJointDataRK24PxArticulationLinkHandleRK25PxArticulationJointDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets joint data for given link. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1ga2914ec0e102d3cc1b323f79feec59a51"><span class="std std-ref">PxGetJointData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> – <strong>[in]</strong> Link handle </p></li>
+<li><p><strong>data</strong> – <strong>[in]</strong> Joint data for this link </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420PxSetMutableLinkDataRK24PxArticulationLinkHandleRK31PxArticulationLinkMutableDataRC">
+<span id="_CPPv320PxSetMutableLinkDataRK24PxArticulationLinkHandleRK31PxArticulationLinkMutableDataRC"></span><span id="_CPPv220PxSetMutableLinkDataRK24PxArticulationLinkHandleRK31PxArticulationLinkMutableDataRC"></span><span id="PxSetMutableLinkData__PxArticulationLinkHandleCR.PxArticulationLinkMutableDataRCCR"></span><span class="target" id="group__immediatemode_1ga94f982ce47ffe8fb20e7888ca8464433"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSetMutableLinkData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_handle.html#_CPPv424PxArticulationLinkHandle" title="PxArticulationLinkHandle"><span class="n"><span class="pre">PxArticulationLinkHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">link</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_articulation_link_mutable_data_r_c.html#_CPPv431PxArticulationLinkMutableDataRC" title="PxArticulationLinkMutableDataRC"><span class="n"><span class="pre">PxArticulationLinkMutableDataRC</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420PxSetMutableLinkDataRK24PxArticulationLinkHandleRK31PxArticulationLinkMutableDataRC" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets mutable link data for given link. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#group__immediatemode_1ga8f922c869ff910965d57ce75990d8703"><span class="std std-ref">PxGetMutableLinkData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> – <strong>[in]</strong> Link handle </p></li>
+<li><p><strong>data</strong> – <strong>[in]</strong> Data for this link </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if success</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv418PxSolveConstraintsPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescPK12PxSolverBodyP6PxVec3P6PxVec35PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector">
+<span id="_CPPv318PxSolveConstraintsPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescPK12PxSolverBodyP6PxVec3P6PxVec35PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector"></span><span id="_CPPv218PxSolveConstraintsPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescPK12PxSolverBodyP6PxVec3P6PxVec35PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector"></span><span id="PxSolveConstraints__PxConstraintBatchHeaderCP.PxU32.PxSolverConstraintDescCP.PxSolverBodyCP.PxVec3P.PxVec3P.PxU32.PxU32.PxU32.float.float.PxU32.PxArticulationHandleP.PxSpatialVectorP.PxSpatialVectorP"></span><span class="target" id="group__immediatemode_1ga678fe129329bc654a049bc30d8aa27b9"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSolveConstraints</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverConstraintDescs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_solver_body.html#_CPPv412PxSolverBody" title="PxSolverBody"><span class="n"><span class="pre">PxSolverBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBodies</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">linearMotionVelocity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">angularMotionVelocity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSolverBodies</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPositionIterations</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbVelocityIterations</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSolverArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deltaV</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv418PxSolveConstraintsPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescPK12PxSolverBodyP6PxVec3P6PxVec35PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Iteratively solves the set of constraints defined by the provided <a class="reference internal" href="struct_px_constraint_batch_header.html#struct_px_constraint_batch_header"><span class="std std-ref">PxConstraintBatchHeader</span></a> and <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> structures. </p>
+<p>Updates deltaVelocities inside the <a class="reference internal" href="struct_px_solver_body.html#struct_px_solver_body"><span class="std std-ref">PxSolverBody</span></a> structures. Produces resulting linear and angular motion velocities. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batch headers to be solved </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The total number of batch headers to be solved </p></li>
+<li><p><strong>solverConstraintDescs</strong> – <strong>[in]</strong> The reordererd set of solver constraint descs referenced by the batch headers </p></li>
+<li><p><strong>solverBodies</strong> – <strong>[inout]</strong> The set of solver bodies the bodies reference </p></li>
+<li><p><strong>linearMotionVelocity</strong> – <strong>[out]</strong> The resulting linear motion velocity </p></li>
+<li><p><strong>angularMotionVelocity</strong> – <strong>[out]</strong> The resulting angular motion velocity. </p></li>
+<li><p><strong>nbSolverBodies</strong> – <strong>[in]</strong> The total number of solver bodies </p></li>
+<li><p><strong>nbPositionIterations</strong> – <strong>[in]</strong> The number of position iterations to run </p></li>
+<li><p><strong>nbVelocityIterations</strong> – <strong>[in]</strong> The number of velocity iterations to run </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> Timestep. Only needed if articulations are sent to the function. </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> Inverse timestep. Only needed if articulations are sent to the function. </p></li>
+<li><p><strong>nbSolverArticulations</strong> – <strong>[in]</strong> Number of articulations to solve constraints for. </p></li>
+<li><p><strong>solverArticulations</strong> – <strong>[in]</strong> Array of articulations to solve constraints for. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation </p></li>
+<li><p><strong>deltaV</strong> – <strong>[out]</strong> Temporary buffer for velocity change </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv421PxSolveConstraintsTGSPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertia5PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector">
+<span id="_CPPv321PxSolveConstraintsTGSPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertia5PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector"></span><span id="_CPPv221PxSolveConstraintsTGSPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertia5PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector"></span><span id="PxSolveConstraintsTGS__PxConstraintBatchHeaderCP.PxU32.PxSolverConstraintDescCP.PxTGSSolverBodyVelP.PxTGSSolverBodyTxInertiaP.PxU32.PxU32.PxU32.float.float.PxU32.PxArticulationHandleP.PxSpatialVectorP.PxSpatialVectorP"></span><span class="target" id="group__immediatemode_1ga910f7d8e171e89a26885cd32093f23d8"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSolveConstraintsTGS</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_constraint_batch_header.html#_CPPv423PxConstraintBatchHeader" title="PxConstraintBatchHeader"><span class="n"><span class="pre">PxConstraintBatchHeader</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">batchHeaders</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbBatchHeaders</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_solver_constraint_desc.html#_CPPv422PxSolverConstraintDesc" title="PxSolverConstraintDesc"><span class="n"><span class="pre">PxSolverConstraintDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverConstraintDescs</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html#_CPPv418PxTGSSolverBodyVel" title="PxTGSSolverBodyVel"><span class="n"><span class="pre">PxTGSSolverBodyVel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverBodies</span></span>, <a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html#_CPPv424PxTGSSolverBodyTxInertia" title="PxTGSSolverBodyTxInertia"><span class="n"><span class="pre">PxTGSSolverBodyTxInertia</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">txInertias</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSolverBodies</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbPositionIterations</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbVelocityIterations</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span>, <span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">invDt</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbSolverArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span>, <a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">solverArticulations</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">Z</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="struct_px_spatial_vector.html#_CPPv415PxSpatialVector" title="PxSpatialVector"><span class="n"><span class="pre">PxSpatialVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deltaV</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv421PxSolveConstraintsTGSPK23PxConstraintBatchHeader5PxU32PK22PxSolverConstraintDescP18PxTGSSolverBodyVelP24PxTGSSolverBodyTxInertia5PxU325PxU325PxU32ff5PxU32P20PxArticulationHandleP15PxSpatialVectorP15PxSpatialVector" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Iteratively solves the set of constraints defined by the provided <a class="reference internal" href="struct_px_constraint_batch_header.html#struct_px_constraint_batch_header"><span class="std std-ref">PxConstraintBatchHeader</span></a> and <a class="reference internal" href="struct_px_solver_constraint_desc.html#struct_px_solver_constraint_desc"><span class="std std-ref">PxSolverConstraintDesc</span></a> structures. </p>
+<p>Updates deltaVelocities inside the <a class="reference internal" href="struct_px_solver_body.html#struct_px_solver_body"><span class="std std-ref">PxSolverBody</span></a> structures. Produces resulting linear and angular motion velocities. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batchHeaders</strong> – <strong>[in]</strong> The set of batch headers to be solved </p></li>
+<li><p><strong>nbBatchHeaders</strong> – <strong>[in]</strong> The total number of batch headers to be solved </p></li>
+<li><p><strong>solverConstraintDescs</strong> – <strong>[in]</strong> The reordererd set of solver constraint descs referenced by the batch headers </p></li>
+<li><p><strong>solverBodies</strong> – <strong>[inout]</strong> The set of solver bodies the bodies reference </p></li>
+<li><p><strong>txInertias</strong> – <strong>[inout]</strong> The set of solver body TxInertias the bodies reference </p></li>
+<li><p><strong>nbSolverBodies</strong> – <strong>[in]</strong> The total number of solver bodies </p></li>
+<li><p><strong>nbPositionIterations</strong> – <strong>[in]</strong> The number of position iterations to run </p></li>
+<li><p><strong>nbVelocityIterations</strong> – <strong>[in]</strong> The number of velocity iterations to run </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> time-step/nbPositionIterations </p></li>
+<li><p><strong>invDt</strong> – <strong>[in]</strong> 1/(time-step/nbPositionIterations) </p></li>
+<li><p><strong>nbSolverArticulations</strong> – <strong>[in]</strong> Number of articulations to solve constraints for. </p></li>
+<li><p><strong>solverArticulations</strong> – <strong>[in]</strong> Array of articulations to solve constraints for. </p></li>
+<li><p><strong>Z</strong> – <strong>[out]</strong> Temporary buffer for impulse propagation (only if articulations are used, size should be at least as large as the maximum number of links in any articulations being simulated) </p></li>
+<li><p><strong>deltaV</strong> – <strong>[out]</strong> Temporary buffer for velocity change (only if articulations are used, size should be at least as large as the maximum number of links in any articulations being simulated) </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426PxUpdateArticulationBodies20PxArticulationHandle6PxReal">
+<span id="_CPPv326PxUpdateArticulationBodies20PxArticulationHandle6PxReal"></span><span id="_CPPv226PxUpdateArticulationBodies20PxArticulationHandle6PxReal"></span><span id="PxUpdateArticulationBodies__PxArticulationHandle.PxReal"></span><span class="target" id="group__immediatemode_1ga432e1768f55ba0d5c2d6383ed64dd5a8"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxUpdateArticulationBodies</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426PxUpdateArticulationBodies20PxArticulationHandle6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates bodies for a given articulation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> Timestep </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429PxUpdateArticulationBodiesTGS20PxArticulationHandle6PxReal">
+<span id="_CPPv329PxUpdateArticulationBodiesTGS20PxArticulationHandle6PxReal"></span><span id="_CPPv229PxUpdateArticulationBodiesTGS20PxArticulationHandle6PxReal"></span><span id="PxUpdateArticulationBodiesTGS__PxArticulationHandle.PxReal"></span><span class="target" id="group__immediatemode_1ga3d2373491b26cfdc185d91b6acf7f654"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxUpdateArticulationBodiesTGS</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv420PxArticulationHandle" title="PxArticulationHandle"><span class="n"><span class="pre">PxArticulationHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">articulation</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dt</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429PxUpdateArticulationBodiesTGS20PxArticulationHandle6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates bodies for a given articulation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articulation</strong> – <strong>[in]</strong> Articulation handle </p></li>
+<li><p><strong>dt</strong> – <strong>[in]</strong> Timestep </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv420PxArticulationCookie">
+<span id="_CPPv320PxArticulationCookie"></span><span id="_CPPv220PxArticulationCookie"></span><span id="PxArticulationCookie"></span><span class="target" id="group__immediatemode_1gaa4d883a28073281912ebad8bfe70d92e"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationCookie</span></span></span><a class="headerlink" href="#_CPPv420PxArticulationCookie" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv420PxArticulationHandle">
+<span id="_CPPv320PxArticulationHandle"></span><span id="_CPPv220PxArticulationHandle"></span><span id="PxArticulationHandle"></span><span class="target" id="group__immediatemode_1gaa6c21f764f6ca3aeed69495b178ceddf"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationHandle</span></span></span><a class="headerlink" href="#_CPPv420PxArticulationHandle" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

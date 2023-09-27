@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typedefs &mdash; physx 5.3.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Unions" href="unions.html" />
+    <link rel="prev" title="PxsParticleMaterialData" href="struct_pxs_particle_material_data.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+<li>Typedefs</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="typedefs">
+<h1>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1af9f5bd81658f866613785b3a0bb7d7d9.html#_px_cuda_types_8h_1af9f5bd81658f866613785b3a0bb7d7d9"><span class="std std-ref">CUcontext</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1acd81b70eb9968392bb5cdf582af8eab4.html#_px_cuda_types_8h_1acd81b70eb9968392bb5cdf582af8eab4"><span class="std std-ref">CUdevice</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a5e264ce2ad6a38761e7e04921ef771de.html#_px_cuda_types_8h_1a5e264ce2ad6a38761e7e04921ef771de"><span class="std std-ref">CUdeviceptr</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_px_cuda_types_8h_1a6d740185cf0953636d4ae37f68d7559b"><span class="std std-ref">CUevent</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1aba6128b948022f495706d93bc2cea9c8.html#_px_cuda_types_8h_1aba6128b948022f495706d93bc2cea9c8"><span class="std std-ref">CUfunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1ac0c4e1704647178d9c5ba3be46517dcd.html#_px_cuda_types_8h_1ac0c4e1704647178d9c5ba3be46517dcd"><span class="std std-ref">CUgraphicsResource</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef.html#_px_cuda_types_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef"><span class="std std-ref">CUmodule</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a"><span class="std std-ref">CUstream</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff"><span class="std std-ref">OmniPvdAttributeHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85"><span class="std std-ref">OmniPvdClassHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82"><span class="std std-ref">OmniPvdContextHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#_omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4"><span class="std std-ref">OmniPvdEnumValueType</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#_omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b"><span class="std std-ref">OmniPvdLogFunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d"><span class="std std-ref">OmniPvdObjectHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01"><span class="std std-ref">OmniPvdVersionType</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4.html#_px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4"><span class="std std-ref">PxArticulationCacheFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_map_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7.html#_px_bit_map_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7"><span class="std std-ref">PxBitMap</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_map_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f.html#_px_bit_map_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f"><span class="std std-ref">PxBitMapPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ade7b9de07bed712db27ab45b8d4b92a1.html#_px_pinned_array_8h_1ade7b9de07bed712db27ab45b8d4b92a1"><span class="std std-ref">PxBoundsArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_8h_1a7892007c984cd80699301b37c13f6b43.html#_px_cuda_context_8h_1a7892007c984cd80699301b37c13f6b43"><span class="std std-ref">PxCUjit_option</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_8h_1a8c470c7361a92c586cf69763dc3d37ad.html#_px_cuda_context_8h_1a8c470c7361a92c586cf69763dc3d37ad"><span class="std std-ref">PxCUresult</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#_px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12"><span class="std std-ref">PxClientID</span></a>: An ID to identify different clients for multiclient support.</p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_manager_8h_1ae45706a37c92d27de3ec53e8dd914719.html#_px_cuda_context_manager_8h_1ae45706a37c92d27de3ec53e8dd914719"><span class="std std-ref">PxCudaInteropRegisterFlags</span></a>: collection of set bits defined in NxCudaInteropRegisterFlag.</p></li>
+<li><p><a class="reference internal" href="typedef__px_f_e_m_cloth_flags_8h_1a0fbf0a454b1c63d501283f51f5e05fb2.html#_px_f_e_m_cloth_flags_8h_1a0fbf0a454b1c63d501283f51f5e05fb2"><span class="std std-ref">PxFEMClothDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_f_e_m_cloth_flags_8h_1aa0343f03a518c6728c7def5bc9856c3a.html#_px_f_e_m_cloth_flags_8h_1aa0343f03a518c6728c7def5bc9856c3a"><span class="std std-ref">PxFEMClothFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a6377833ffb381e2cd69910971dc22682.html#_px_pinned_array_8h_1a6377833ffb381e2cd69910971dc22682"><span class="std std-ref">PxFloatArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_hair_system_flag_8h_1ae706abc346018ada2de0cca9187dfd99.html#_px_hair_system_flag_8h_1ae706abc346018ada2de0cca9187dfd99"><span class="std std-ref">PxHairSystemDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_hair_system_flag_8h_1a7772626588392bc37a18a90a9b6e6ee6.html#_px_hair_system_flag_8h_1a7772626588392bc37a18a90a9b6e6ee6"><span class="std std-ref">PxHairSystemFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a60b199464643df238c74409f13b7e2fc.html#_px_pinned_array_8h_1a60b199464643df238c74409f13b7e2fc"><span class="std std-ref">PxInt32ArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a61cde5a386d22d7c478f96eb6847b85c.html#_px_pinned_array_8h_1a61cde5a386d22d7c478f96eb6847b85c"><span class="std std-ref">PxInt8ArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mutex_8h_1a368c18aaf1240f41ac9d2569f0d16678.html#_px_mutex_8h_1a368c18aaf1240f41ac9d2569f0d16678"><span class="std std-ref">PxMutex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6.html#_px_geometry_query_context_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6"><span class="std std-ref">PxOverlapThreadContext</span></a>: A per-thread context passed to low-level overlap functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_particle_system_flag_8h_1a40ee49464d092e80c734711ba65feb25.html#_px_particle_system_flag_8h_1a40ee49464d092e80c734711ba65feb25"><span class="std std-ref">PxParticleBufferFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_particle_system_flag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4.html#_px_particle_system_flag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4"><span class="std std-ref">PxParticlePhaseFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ab8cb035f6ad68545052c61d3552fbd3b.html#_px_pinned_array_8h_1ab8cb035f6ad68545052c61d3552fbd3b"><span class="std std-ref">PxPinnedArray</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a32eecbfe79ecd6524f3238b98d3889de.html#_px_geometry_query_context_8h_1a32eecbfe79ecd6524f3238b98d3889de"><span class="std std-ref">PxRaycastThreadContext</span></a>: A per-thread context passed to low-level raycast functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_s_list_8h_1a57cb8fa79252dd5dd29aa6eb33553426.html#_px_s_list_8h_1a57cb8fa79252dd5dd29aa6eb33553426"><span class="std std-ref">PxSList</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f.html#_px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f"><span class="std std-ref">PxSoftBodyDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a793ad7e47a6be07f1927afaa61d023ed.html#_px_geometry_query_context_8h_1a793ad7e47a6be07f1927afaa61d023ed"><span class="std std-ref">PxSweepThreadContext</span></a>: A per-thread context passed to low-level sweep functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_sync_8h_1aef475b410db53bdddeae9ed381f9dc80.html#_px_sync_8h_1aef475b410db53bdddeae9ed381f9dc80"><span class="std std-ref">PxSync</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257"><span class="std std-ref">PxTaskID</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_tetrahedron_mesh_analysis_result_8h_1a9a98503e5fbb06a9602ce2124f63484a.html#_px_tetrahedron_mesh_analysis_result_8h_1a9a98503e5fbb06a9602ce2124f63484a"><span class="std std-ref">PxTetrahedronMeshAnalysisResults</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_thread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f.html#_px_thread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f"><span class="std std-ref">PxThread</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_triangle_mesh_analysis_result_8h_1aff2fd41516e5add87407d4f406d0ce33.html#_px_triangle_mesh_analysis_result_8h_1aff2fd41516e5add87407d4f406d0ce33"><span class="std std-ref">PxTriangleMeshAnalysisResults</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9.html#_px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9"><span class="std std-ref">aos::QuatV</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a69e10d25b12dbc7486b7af6f36a481d0.html#_px_vec_math_ao_s_scalar_8h_1a69e10d25b12dbc7486b7af6f36a481d0"><span class="std std-ref">aos::VecShiftV</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1af6bb76d188e20abc0b5ffd96953e3582.html#_omni_pvd_library_functions_8h_1af6bb76d188e20abc0b5ffd96953e3582"><span class="std std-ref">createOmniPvdFileReadStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1af9e32ef9884ef002e59a6f75862f9adf.html#_omni_pvd_library_functions_8h_1af9e32ef9884ef002e59a6f75862f9adf"><span class="std std-ref">createOmniPvdFileWriteStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ae51831db3fa818d8045b9479319cf72e.html#_omni_pvd_library_functions_8h_1ae51831db3fa818d8045b9479319cf72e"><span class="std std-ref">createOmniPvdMemoryStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a196166c9d5ef3789a553a29440edf67b.html#_omni_pvd_library_functions_8h_1a196166c9d5ef3789a553a29440edf67b"><span class="std std-ref">createOmniPvdReaderFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a9c39a84d61cfdc0b65322f75603935e6.html#_omni_pvd_library_functions_8h_1a9c39a84d61cfdc0b65322f75603935e6"><span class="std std-ref">createOmniPvdWriterFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3.html#_omni_pvd_library_functions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3"><span class="std std-ref">destroyOmniPvdFileReadStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a85b00d8076a293941144259864f5d1e5.html#_omni_pvd_library_functions_8h_1a85b00d8076a293941144259864f5d1e5"><span class="std std-ref">destroyOmniPvdFileWriteStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ad66806ce01e0bd7c16488948403a9c26.html#_omni_pvd_library_functions_8h_1ad66806ce01e0bd7c16488948403a9c26"><span class="std std-ref">destroyOmniPvdMemoryStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a339b4f4016c2bf602e5567b837970817.html#_omni_pvd_library_functions_8h_1a339b4f4016c2bf602e5567b837970817"><span class="std std-ref">destroyOmniPvdReaderFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b.html#_omni_pvd_library_functions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b"><span class="std std-ref">destroyOmniPvdWriterFp</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 19, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
