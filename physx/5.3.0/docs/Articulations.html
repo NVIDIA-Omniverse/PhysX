@@ -21,6 +21,7 @@
         <script src="../_static/doctools.js"></script>
         <script src="../_static/mermaid-init.js"></script>
         <script src="../_static/design-tabs.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script src="../_static/version.js"></script>
         <script src="../_static/social-media.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -95,6 +96,13 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#articulation-link-sensors">Articulation Link Sensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#link-incoming-joint-force">Link Incoming Joint Force</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#querying-the-force">Querying the Force</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#forces-acting-on-an-articulation-link">Forces Acting on an Articulation Link</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#detail-on-included-forces">Detail on Included Forces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#best-practices-and-simulation-detail">Best Practices and Simulation Detail</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#stability">Stability</a></li>
 </ul>
@@ -180,7 +188,6 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="#fixed-tendons"><span class="std std-ref">Fixed Tendons</span></a> that can create constraints on joint angles, for example to enforce mirrored motion of two joints, or</p></li>
 <li><p><a class="reference internal" href="#spatial-tendons"><span class="std std-ref">Spatial Tendons</span></a> that can create distance constraints between attachment points on articulation links, or</p></li>
-<li><p><a class="reference internal" href="#articulation-link-sensors"><span class="std std-ref">Articulation Link Sensors</span></a> that provide force data on articulation links.</p></li>
 </ul>
 <section id="articulation-tree-structure">
 <h3>Articulation Tree structure<a class="headerlink" href="#articulation-tree-structure" title="Permalink to this headline"></a></h3>
@@ -254,10 +261,8 @@
 <span class="n">joint</span><span class="o">-&gt;</span><span class="n">setDriveTarget</span><span class="p">(</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eSWING2</span><span class="p">,</span><span class="w"> </span><span class="n">targetPosition</span><span class="p">);</span><span class="w"></span>
 </pre></div>
 </div>
-<p>You may also set joint friction, armature, etc; see the API doc of <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv436PxArticulationJointReducedCoordinate" title="PxArticulationJointReducedCoordinate"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate</span></code></a> for details. At creation, you can also add <cite>Articulation Tendons</cite> or <cite>Articulation Link Sensors</cite>:</p>
-<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxArticulationSensor</span><span class="o">*</span><span class="w"> </span><span class="n">sensor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createSensor</span><span class="p">(</span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">sensorPose</span><span class="p">);</span><span class="w"></span>
-<span class="c1">// setup sensor</span>
-<span class="n">PxArticulationFixedTendon</span><span class="o">*</span><span class="w"> </span><span class="n">fixedTendon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createFixedTendon</span><span class="p">();</span><span class="w"></span>
+<p>You may also set joint friction, armature, etc; see the API doc of <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv436PxArticulationJointReducedCoordinate" title="PxArticulationJointReducedCoordinate"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate</span></code></a> for details. At creation, you can also add <cite>Articulation Tendons</cite>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxArticulationFixedTendon</span><span class="o">*</span><span class="w"> </span><span class="n">fixedTendon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">articulation</span><span class="o">-&gt;</span><span class="n">createFixedTendon</span><span class="p">();</span><span class="w"></span>
 <span class="c1">// setup tendon</span>
 </pre></div>
 </div>
@@ -318,7 +323,13 @@
 <p>If the <code class="docutils literal notranslate"><span class="pre">driveType</span></code> is instead set to <a class="reference internal" href="../_api_build/struct_px_articulation_drive_type.html#_CPPv4N23PxArticulationDriveType4Enum13eACCELERATIONE" title="PxArticulationDriveType::eACCELERATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationDriveType::eACCELERATION</span></code></a>, the drive output is a joint acceleration, which can be useful to obtain behavior that is independent of the mass and inertia of the links. For an acceleration drive, the <code class="docutils literal notranslate"><span class="pre">driveStiffness</span></code> gain has units [rad/s^2 / rad], and <code class="docutils literal notranslate"><span class="pre">driveDamping</span></code> is in [rad/s^2 / (rad/s)].</p>
 <p>An key articulation flag related to drives is <a class="reference internal" href="../_api_build/struct_px_articulation_flag.html#_CPPv4N18PxArticulationFlag4Enum24eDRIVE_LIMITS_ARE_FORCESE" title="PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationFlag::eDRIVE_LIMITS_ARE_FORCES</span></code></a>: If it is set, the forceLimit above refers to a force/torque (e.g. N and Nm), and, otherwise, to an impulse (force * dt, or torque * dt). The limit applies to both force- and acceleration-type drives.</p>
 <p>The joint drive can be made into a velocity drive tracking <code class="docutils literal notranslate"><span class="pre">targetVelocity</span></code> by setting <code class="docutils literal notranslate"><span class="pre">driveStiffness</span></code> to zero and an appropriately tuned <code class="docutils literal notranslate"><span class="pre">driveDamping</span></code>. By default, the target velocity of the drive is set to 0 [rad/s], so a nonzero damping parameter results in the drive being an PD controller where the P gain, i.e. the stiffness, acts on the position error and the D gain, i.e. the damping, acts on the derivative of the position error, i.e. opposing the joint velocity.</p>
-<p>It is possible to retrieve the constraint forces (i.e. drive, joint limits, and joint friction) applied by the solver, see <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum20eJOINT_SOLVER_FORCESE" title="PxArticulationCacheFlag::eJOINT_SOLVER_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eJOINT_SOLVER_FORCES</span></code></a> and <a class="reference internal" href="../_api_build/struct_px_articulation_flag.html#_CPPv4N18PxArticulationFlag4Enum21eCOMPUTE_JOINT_FORCESE" title="PxArticulationFlag::eCOMPUTE_JOINT_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationFlag::eCOMPUTE_JOINT_FORCES</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive are with respect to the end of the time step, and not, as usual (in engineering) implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. An advantage of the implicit formulation is that it can handle very large gains without necessarily causing joint state instability or oscillations. Divergence between explicit and implicit integration schemes are typically minimized with small time-step size and low gains.</p></li>
+<li><p>The articulation cache dof constraint force flag <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum20eJOINT_SOLVER_FORCESE" title="PxArticulationCacheFlag::eJOINT_SOLVER_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eJOINT_SOLVER_FORCES</span></code></a> has been deprecated. The reported forces are incorrect. Please use the <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum26eLINK_INCOMING_JOINT_FORCEE" title="PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE</span></code></a> cache member instead, see <a class="reference internal" href="#link-incoming-joint-force"><span class="std std-ref">Link Incoming Joint Force</span></a>.</p></li>
+</ul>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive that the solver iterates on are with respect to the end of the time step, and not, as usual (in engineering) implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. The nice property of the implicit formulation is that it can handle very large gains without necessarily causing joint state instability or oscillations. Of course, for low gains and small enough time steps, the implicit and explicit drive dynamics will be practically identical.  This is discussed in more detail in the accompanying document <a class="reference download internal" download="" href="../_downloads/6acf3afb8f69452757e0e766b5a22978/implicitDrives.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Implicit</span> <span class="pre">Spring</span> <span class="pre">Joint</span> <span class="pre">Drives</span></code></a>.</p>
@@ -429,11 +440,84 @@
 </section>
 <section id="articulation-link-sensors">
 <span id="id13"></span><h2>Articulation Link Sensors<a class="headerlink" href="#articulation-link-sensors" title="Permalink to this headline"></a></h2>
-<p>Sensors can be attached to articulation links in order to read out forces and torques acting on a link. For more details, refer to the API doc of <a class="reference internal" href="../_api_build/class_px_articulation_sensor.html#_CPPv420PxArticulationSensor" title="PxArticulationSensor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationSensor</span></code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The SDK team is reworking the specifications for the sensors together with robotics users, so the data that they report will change in a future release based on the updated specifications.</p>
+<p>The articulation link sensors <a class="reference internal" href="../_api_build/class_px_articulation_sensor.html#_CPPv420PxArticulationSensor" title="PxArticulationSensor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationSensor</span></code></a> have been deprecated and will be removed in a future release. The sensor’s readouts are incorrect. Use the <a class="reference internal" href="#link-incoming-joint-force"><span class="std std-ref">Link Incoming Joint Force</span></a> instead.</p>
 </div>
+</section>
+<section id="link-incoming-joint-force">
+<span id="id14"></span><h2>Link Incoming Joint Force<a class="headerlink" href="#link-incoming-joint-force" title="Permalink to this headline"></a></h2>
+<p>The SDK computes the spatial force transmitted by an articulation joint from parent to child link. Two example applications are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Implementing a load-cell: A six-dof load cell can be placed between a robot arm and its end-effector to measure forces and torques applied by contacts to the end-effector. The load cell is straightforward to model as a fixed joint between robot arm and end-effector, and then querying the transmitted joint force.</p></li>
+<li><p>Reinforcement-learning (RL) critic: An RL policy could evaluate forces transmitted through the joints of a walking robot in order to penalize policies that result in hardware-damaging impact forces.</p></li>
+</ul>
+</div></blockquote>
+<section id="querying-the-force">
+<h3>Querying the Force<a class="headerlink" href="#querying-the-force" title="Permalink to this headline"></a></h3>
+<p>The transmitted force can be queried with the <a class="reference internal" href="#pxarticulationcache"><span class="std std-ref">articulation cache</span></a> flag <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum26eLINK_INCOMING_JOINT_FORCEE" title="PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The forces are reported in the <cite>joint frame</cite> of the link’s incoming joint. A benefit of this is that extracting, for example, the joint drive force/torque is a straightforward projection.</p>
+</div>
+</section>
+<section id="forces-acting-on-an-articulation-link">
+<h3>Forces Acting on an Articulation Link<a class="headerlink" href="#forces-acting-on-an-articulation-link" title="Permalink to this headline"></a></h3>
+<img alt="../_images/articulation_incoming_joint_force_free_body.png" src="../_images/articulation_incoming_joint_force_free_body.png" />
+<p>The spatial forces acting on an articulation link include:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(f_{joint,in}\)</span>: The single incoming spatial joint force from the parent of the link.</p></li>
+<li><p><span class="math notranslate nohighlight">\(f_{joint,out}\)</span>: The sum of the outgoing joint forces to child links (a link may have multiple children, but only one parent).</p></li>
+<li><p><span class="math notranslate nohighlight">\(f_{gc}\)</span>: Gravitational and Coriolis force.</p></li>
+<li><p><span class="math notranslate nohighlight">\(f_{ext}\)</span>: External forces including user-applied forces and torques, and link rigid-body velocity damping and clamping.</p></li>
+<li><p><span class="math notranslate nohighlight">\(f_{constraint}\)</span>: External constraint forces such as contacts, or maximal-coordinate joint forces (e.g. D6 joint).</p></li>
+</ul>
+</div></blockquote>
+<p>The reported force is equal to <span class="math notranslate nohighlight">\(f_{joint,in}\)</span>. Note that the force is the average applied during the simulation step; therefore, the user has to be careful about inferring peak contact forces transmitted via joints since the reported force will be time-step-size dependent.</p>
+</section>
+<section id="detail-on-included-forces">
+<h3>Detail on Included Forces<a class="headerlink" href="#detail-on-included-forces" title="Permalink to this headline"></a></h3>
+<p>We include the following joint-internal force mechanisms in the reported force:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Joint Friction proportional to an approximation of the joint transmitted force applies a joint force/torque counteracting joint velocity, see <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv4N36PxArticulationJointReducedCoordinate22setFrictionCoefficientEK6PxReal" title="PxArticulationJointReducedCoordinate::setFrictionCoefficient"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate::setFrictionCoefficient()</span></code></a>.</p></li>
+<li><p>Joint Velocity Clamping applies a joint force/torque to clamp joint velocity, see <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv4N36PxArticulationJointReducedCoordinate19setMaxJointVelocityEK6PxReal" title="PxArticulationJointReducedCoordinate::setMaxJointVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate::setMaxJointVelocity()</span></code></a>.</p></li>
+<li><p>Joint Force/Torque can be applied directly by the user via the articulation cache <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum6eFORCEE" title="PxArticulationCacheFlag::eFORCE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eFORCE</span></code></a>.</p></li>
+<li><p>Joint Drives apply joint forces/torques to drive the joint to a set position and velocity, see <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv4N36PxArticulationJointReducedCoordinate14setDriveParamsEN18PxArticulationAxis4EnumERK19PxArticulationDrive" title="PxArticulationJointReducedCoordinate::setDriveParams"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate::setDriveParams()</span></code></a>.</p></li>
+<li><p>Joint Limits apply joint forces/torques to keep the joint position within set limits, see <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv4N36PxArticulationJointReducedCoordinate14setLimitParamsEN18PxArticulationAxis4EnumERK19PxArticulationLimit" title="PxArticulationJointReducedCoordinate::setLimitParams"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate::setLimitParams()</span></code></a>.</p></li>
+</ul>
+</div></blockquote>
+<p>We exclude the effects of</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Fixed Tendons that apply joint forces/torques to drive a linear combination of joint dof positions to a desired target, see <a class="reference internal" href="../_api_build/class_px_articulation_fixed_tendon.html#_CPPv425PxArticulationFixedTendon" title="PxArticulationFixedTendon"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationFixedTendon</span></code></a>. We may include the fixed tendon constraint forces in the joint force in a future version as they act on the joint dofs directly.</p></li>
+<li><p>Spatial Tendons that apply forces to articulation links at their root and leaf attachment in order to drive a linear combination of distances between tendon attachment points to a desired target, see <a class="reference internal" href="../_api_build/class_px_articulation_spatial_tendon.html#_CPPv427PxArticulationSpatialTendon" title="PxArticulationSpatialTendon"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationSpatialTendon</span></code></a>.</p></li>
+<li><p>Armature that is additional inertia added to the link, and, depending on modeling, can show up as an apparent acceleration-resisting force/torque on the link, see the joint API <a class="reference internal" href="../_api_build/class_px_articulation_joint_reduced_coordinate.html#_CPPv4N36PxArticulationJointReducedCoordinate11setArmatureEN18PxArticulationAxis4EnumEK6PxReal" title="PxArticulationJointReducedCoordinate::setArmature"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxArticulationJointReducedCoordinate::setArmature()</span></code></a>.</p></li>
+</ul>
+</div></blockquote>
+<p>Exclusion here means that we treat the effects analogous to external (constraint) forces or gravity, see sketch above, and not that the excluded forces are not considered in the computation of the transmitted joint force. See also example below of how a joint drive force appears in the reported incoming joint force.</p>
+</section>
+<section id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline"></a></h3>
+<p>Consider a fixed-base articulation with a single revolute joint connecting a link to the base. The link rests on a static collider and a joint drive applies a torque. For simplicity, we assume that the joint frame aligns with the world frame.</p>
+<img alt="../_images/articulation_incoming_joint_force_example.png" src="../_images/articulation_incoming_joint_force_example.png" />
+<p>The torque transmitted by the joint is equal to the drive torque (in <span class="math notranslate nohighlight">\(z\)</span>, all other elements are zero). We define the drive torque to be counteracting half of the gravitational torque at the pivot:</p>
+<div class="math notranslate nohighlight">
+\[T_m = \frac{1}{2} m g h.\]</div>
+<p>From a torque equilibrium in <span class="math notranslate nohighlight">\(z\)</span> at the pivot (for which we don’t need to know the joint force yet), we can determine the contact force <span class="math notranslate nohighlight">\(f_c\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}0 &amp;= T_m + 2 h f_c - m g h\\
+f_c &amp;= \frac{1}{2} m g - \frac{1}{2h} T_m \\
+&amp;= \frac{1}{2} m g - \frac{1}{4} m g \\
+&amp;= \frac{1}{4} m g.\end{split}\]</div>
+<p>The force transmitted by the joint has the single nonzero element <span class="math notranslate nohighlight">\(f_y\)</span> in <span class="math notranslate nohighlight">\(y\)</span>. We can compute it with a force equilibrium:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}0 &amp;= f_y + f_c - m g \\
+f_y &amp;= m g - f_c \\
+&amp;= \frac{3}{4}mg.\end{split}\]</div>
+</section>
 </section>
 <section id="best-practices-and-simulation-detail">
 <h2>Best Practices and Simulation Detail<a class="headerlink" href="#best-practices-and-simulation-detail" title="Permalink to this headline"></a></h2>
@@ -833,7 +917,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Sep 19, 2023.
+      <span class="lastupdated">Last updated on Oct 10, 2023.
       </span></p>
   </div>
 

@@ -155,6 +155,7 @@
 <li><p>PxSceneFlag::eSUPPRESS_READBACK is now immutable. Any code changing the flag after scene creation will not work anymore.</p></li>
 <li><p>PxMassModificationProps was deprecated and has been removed. The replacement is PxConstraintInvMassScale.</p></li>
 <li><p>PxRegisterImmediateArticulations, PxRegisterArticulationsReducedCoordinate, PxRegisterHeightFields, PxCreateBasePhysics have been removed. Articulations and heightfields are now always enabled.</p></li>
+<li><p>Deprecated passthrough functions in PxShape such as <cite>getGeometryType()</cite> and the specialized <cite>get&lt;geomType&gt;Geometry()</cite> were removed. Calls to these functions should be replaced by accessing the underlying geometry directly with <cite>getGeometry()</cite>.</p></li>
 </ul>
 </section>
 <section id="cooking">
@@ -304,7 +305,7 @@ The dedicated deterministic serialization functionality is being replaced by the
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Sep 19, 2023.
+      <span class="lastupdated">Last updated on Oct 10, 2023.
       </span></p>
   </div>
 
