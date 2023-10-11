@@ -146,7 +146,7 @@ PxVec3 PxGjkQueryExt::ConvexMeshSupport::supportLocal(const PxVec3& dir) const
 	if (convexMesh == NULL)
 		return PxVec3(0.0f);
 
-	PxVec3 d = scaleRotation.rotateInv(scaleRotation.rotate(dir).multiply(PxVec3(1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z)));
+	PxVec3 d = scaleRotation.rotateInv(scaleRotation.rotate(dir).multiply(PxVec3(1.0f, 1.0f, 1.0f)));
 	const PxVec3* verts = convexMesh->getVertices();
 	int count = int(convexMesh->getNbVertices());
 	float maxDot = -FLT_MAX;
