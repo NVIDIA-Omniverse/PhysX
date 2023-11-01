@@ -326,13 +326,9 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul class="simple">
-<li><p>An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive are with respect to the end of the time step, and not, as usual (in engineering) implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. An advantage of the implicit formulation is that it can handle very large gains without necessarily causing joint state instability or oscillations. Divergence between explicit and implicit integration schemes are typically minimized with small time-step size and low gains.</p></li>
+<li><p>An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive that the solver iterates on are with respect to the end of the time step, and not, as usual in engineering, implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. The nice property of the implicit formulation is that it can handle very large gains without necessarily causing joint state instability or oscillations. Of course, for low gains and small enough time steps, the implicit and explicit drive dynamics will be practically identical.  This is discussed in more detail in the accompanying document <a class="reference download internal" download="" href="../_downloads/6acf3afb8f69452757e0e766b5a22978/implicitDrives.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Implicit</span> <span class="pre">Spring</span> <span class="pre">Joint</span> <span class="pre">Drives</span></code></a>.</p></li>
 <li><p>The articulation cache dof constraint force flag <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum20eJOINT_SOLVER_FORCESE" title="PxArticulationCacheFlag::eJOINT_SOLVER_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eJOINT_SOLVER_FORCES</span></code></a> has been deprecated. The reported forces are incorrect. Please use the <a class="reference internal" href="../_api_build/class_px_articulation_cache_flag.html#_CPPv4N23PxArticulationCacheFlag4Enum26eLINK_INCOMING_JOINT_FORCEE" title="PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE</span></code></a> cache member instead, see <a class="reference internal" href="#link-incoming-joint-force"><span class="std std-ref">Link Incoming Joint Force</span></a>.</p></li>
 </ul>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>An important implementation detail is that the drives are <cite>implicit</cite>, i.e. the position and velocity constraints imposed by the drive that the solver iterates on are with respect to the end of the time step, and not, as usual (in engineering) implemented as an explicit, constant-during-time-step drive force calculated from the gains and the joint position and velocity at the beginning of the time step. The nice property of the implicit formulation is that it can handle very large gains without necessarily causing joint state instability or oscillations. Of course, for low gains and small enough time steps, the implicit and explicit drive dynamics will be practically identical.  This is discussed in more detail in the accompanying document <a class="reference download internal" download="" href="../_downloads/6acf3afb8f69452757e0e766b5a22978/implicitDrives.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Implicit</span> <span class="pre">Spring</span> <span class="pre">Joint</span> <span class="pre">Drives</span></code></a>.</p>
 </div>
 </section>
 <section id="joint-positions-and-velocities">
@@ -917,7 +913,7 @@ f_y &amp;= m g - f_c \\
 
   <div role="contentinfo">
     <p>&#169; Copyright 2022-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Oct 10, 2023.
+      <span class="lastupdated">Last updated on Nov 01, 2023.
       </span></p>
   </div>
 
