@@ -2071,6 +2071,10 @@ int32_t FractureToolImpl::islandDetectionAndRemoving(int32_t chunkId, bool creat
         std::vector<std::vector<Facet> > compFacets(cComp);
         std::vector<std::vector<Edge> > compEdges(cComp);
 
+        const Nv::Blast::TransformST& currentChunkToWorld = mChunkData[chunkInfoIndex].getTmToWorld();
+        Nv::Blast::TransformST parentChunkToWorld;
+        if (mChunkData[chunkInfoIndex].parentChunkId >= 0)
+            parentChunkToWorld = mChunkData[getChunkInfoIndex(mChunkData[chunkInfoIndex].parentChunkId)].getTmToWorld();
 
         std::vector<uint32_t> compVertexMapping(chunk->getVerticesCount(), 0);
         const Vertex* vrts = chunk->getVertices();
@@ -2079,6 +2083,10 @@ int32_t FractureToolImpl::islandDetectionAndRemoving(int32_t chunkId, bool creat
             int32_t vComp        = comps[mapping[v]];
             compVertexMapping[v] = static_cast<uint32_t>(compVertices[vComp].size());
             compVertices[vComp].push_back(vrts[v]);
+
+            // Note that we have to transform verts to be in the paren't frame of reference
+            // this is because we are using setChunkInfoMesh(..., fromTransformed = true)
+            compVertices[vComp].back().p = parentChunkToWorld.invTransformPos(currentChunkToWorld.transformPos(compVertices[vComp].back().p));
         }
 
         const Facet* fcb = chunk->getFacetsBuffer();
@@ -2107,6 +2115,9 @@ int32_t FractureToolImpl::islandDetectionAndRemoving(int32_t chunkId, bool creat
 
         if (createAtNewDepth == false || chunkId != 0)
         {
+            // we need to flag the chunk as changed, in case someone is calling this function directly
+            // Otherwise when called as part of automatic island removal, chunks are already flagged as changed
+            mChunkData[chunkInfoIndex].isChanged = true;
             delete mChunkData[chunkInfoIndex].getMesh();
             Mesh* newMesh0 =
                 new MeshImpl(compVertices[0].data(), compEdges[0].data(), compFacets[0].data(),
