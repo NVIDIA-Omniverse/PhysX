@@ -2072,7 +2072,7 @@ int32_t FractureToolImpl::islandDetectionAndRemoving(int32_t chunkId, bool creat
         std::vector<std::vector<Edge> > compEdges(cComp);
 
         const Nv::Blast::TransformST& currentChunkToWorld = mChunkData[chunkInfoIndex].getTmToWorld();
-        Nv::Blast::TransformST parentChunkToWorld;
+        Nv::Blast::TransformST parentChunkToWorld = Nv::Blast::TransformST::identity();
         if (mChunkData[chunkInfoIndex].parentChunkId >= 0)
             parentChunkToWorld = mChunkData[getChunkInfoIndex(mChunkData[chunkInfoIndex].parentChunkId)].getTmToWorld();
 
