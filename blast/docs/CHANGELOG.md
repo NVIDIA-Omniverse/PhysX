@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.0.3] - 1-November-2023
+
+### Bugfixes
+- Fixed memory leak in NvBlastExtAuthoringFindAssetConnectingBonds reported in issue #185.
+
+
 ## [5.0.2] - 25-July-2023
 
 ### Bugfixes
