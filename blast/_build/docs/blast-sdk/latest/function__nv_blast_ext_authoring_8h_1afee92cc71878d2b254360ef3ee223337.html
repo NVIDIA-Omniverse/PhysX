@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NvBlastExtAuthoringFindAssetConnectingBonds &mdash; blast-sdk 5.0.2 documentation</title>
+  <title>NvBlastExtAuthoringFindAssetConnectingBonds &mdash; blast-sdk 5.0.3 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
@@ -104,14 +104,14 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>components</strong> – <strong>[in]</strong> An array of assets to merge, of size componentCount. </p></li>
-<li><p><strong>scales</strong> – <strong>[in]</strong> If not NULL, an array of size componentCount of scales to apply to the geometric data in the chunks and bonds. If NULL, no scaling is applied.</p></li>
+<li><p><strong>scales</strong> – <strong>[in]</strong> If not NULL, an array of size componentCount of scales to apply to the geometric data in the chunks and bonds. If NULL, no scaling is applied. </p></li>
 <li><p><strong>rotations</strong> – <strong>[in]</strong> If not NULL, an array of size componentCount of rotations to apply to the geometric data in the chunks and bonds. The quaternions MUST be normalized. If NULL, no rotations are applied. </p></li>
-<li><p><strong>translations</strong> – <strong>[in]</strong> If not NULL, an array of of size componentCount of translations to apply to the geometric data in the chunks and bonds. If NULL, no translations are applied.</p></li>
-<li><p><strong>convexHullOffsets</strong> – <strong>[in]</strong> For each component, an array of chunkSize+1 specifying the start of the convex hulls for that chunk inside the chunkHulls array for that component.</p></li>
-<li><p><strong>chunkHulls</strong> – <strong>[in]</strong> For each component, an array of CollisionHull* specifying the collision geometry for the chunks in that component.</p></li>
+<li><p><strong>translations</strong> – <strong>[in]</strong> If not NULL, an array of of size componentCount of translations to apply to the geometric data in the chunks and bonds. If NULL, no translations are applied. </p></li>
+<li><p><strong>convexHullOffsets</strong> – <strong>[in]</strong> For each component, an array of chunkSize+1 specifying the start of the convex hulls for that chunk inside the chunkHulls array for that component. </p></li>
+<li><p><strong>chunkHulls</strong> – <strong>[in]</strong> For each component, an array of CollisionHull* specifying the collision geometry for the chunks in that component. </p></li>
 <li><p><strong>componentCount</strong> – <strong>[in]</strong> The size of the components and relativeTransforms arrays. </p></li>
 <li><p><strong>newBondDescs</strong> – <strong>[out]</strong> Descriptors of type <a class="reference internal" href="struct_nv_blast_ext_asset_utils_bond_desc.html#struct_nv_blast_ext_asset_utils_bond_desc"><span class="std std-ref">NvBlastExtAssetUtilsBondDesc</span></a> for new bonds between components. </p></li>
-<li><p><strong>maxSeparation</strong> – <strong>[in]</strong> Maximal distance between chunks which can be connected by bond. </p></li>
+<li><p><strong>maxSeparation</strong> – <strong>[in]</strong> Maximal distance between chunks which can be connected by bond.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -131,7 +131,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Jul 25, 2023.
+      <span class="lastupdated">Last updated on Nov 12, 2023.
       </span></p>
   </div>
 
