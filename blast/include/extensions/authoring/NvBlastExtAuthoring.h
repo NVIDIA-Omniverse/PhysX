@@ -274,17 +274,19 @@ descriptor arrays returned. The user must free this memory after use with NVBLAS
 
 \param[in]  components          An array of assets to merge, of size componentCount.
 \param[in]  scales              If not NULL, an array of size componentCount of scales to apply to the geometric data in
-the chunks and bonds. If NULL, no scaling is applied. \param[in]    rotations           If not NULL, an array of size
-componentCount of rotations to apply to the geometric data in the chunks and bonds.  The quaternions MUST be normalized.
-                                If NULL, no rotations are applied.
+                                the chunks and bonds. If NULL, no scaling is applied.
+\param[in]  rotations           If not NULL, an array of size componentCount of rotations to apply to the geometric data
+                                in the chunks and bonds.  The quaternions MUST be normalized. If NULL, no rotations are applied.
 \param[in]  translations        If not NULL, an array of of size componentCount of translations to apply to the
-geometric data in the chunks and bonds.  If NULL, no translations are applied. \param[in]   convexHullOffsets   For each
-component, an array of chunkSize+1 specifying the start of the convex hulls for that chunk inside the chunkHulls array
-for that component. \param[in]  chunkHulls          For each component, an array of CollisionHull* specifying the
-collision geometry for the chunks in that component. \param[in] componentCount      The size of the components and
-relativeTransforms arrays.
+                                geometric data in the chunks and bonds.  If NULL, no translations are applied.
+\param[in]  convexHullOffsets   For each component, an array of chunkSize+1 specifying the start of the convex hulls for that
+                                chunk inside the chunkHulls array for that component.
+\param[in]  chunkHulls          For each component, an array of CollisionHull* specifying the collision geometry for the
+                                chunks in that component.
+\param[in]  componentCount      The size of the components and relativeTransforms arrays.
 \param[out] newBondDescs        Descriptors of type NvBlastExtAssetUtilsBondDesc for new bonds between components.
 \param[in]  maxSeparation       Maximal distance between chunks which can be connected by bond.
+
 \return the number of bonds in newBondDescs
 */
 NV_C_API uint32_t NvBlastExtAuthoringFindAssetConnectingBonds(
