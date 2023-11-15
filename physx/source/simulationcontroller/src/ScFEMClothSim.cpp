@@ -61,6 +61,8 @@ Sc::FEMClothSim::~FEMClothSim()
 
 	mScene.getSimpleIslandManager()->removeNode(mNodeIndex);
 
+	mScene.getVelocityModifyMap().boundedReset(mNodeIndex.index());
+
 	mCore.setSim(NULL);
 }
 

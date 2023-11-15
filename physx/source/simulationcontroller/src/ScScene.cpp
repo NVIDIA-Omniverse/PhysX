@@ -1685,6 +1685,9 @@ void Sc::Scene::removeBody(BodySim& body)	//this also notifies any connected joi
 	else
 		PX_ASSERT(!isInPosePreviewList(body));
 
+	// Using bounded because on the other side we are using grow&set that can grow the map, so there is no evidence that the index is valid to reset if it was never inserted
+	mVelocityModifyMap.boundedReset(body.getNodeIndex().index());
+
 	markReleasedBodyIDForLostTouch(body.getActorID());
 }
 

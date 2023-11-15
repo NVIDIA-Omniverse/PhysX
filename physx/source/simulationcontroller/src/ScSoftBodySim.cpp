@@ -58,6 +58,8 @@ Sc::SoftBodySim::~SoftBodySim()
 
 	mScene.getSimpleIslandManager()->removeNode(mNodeIndex);
 
+	mScene.getVelocityModifyMap().boundedReset(mNodeIndex.index());
+
 	mCore.setSim(NULL);
 }
 

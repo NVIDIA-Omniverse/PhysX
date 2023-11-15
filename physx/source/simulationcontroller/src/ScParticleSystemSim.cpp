@@ -69,6 +69,7 @@ Sc::ParticleSystemSim::~ParticleSystemSim()
 	mScene.destroyLLParticleSystem(*mLLParticleSystem);
 
 	mScene.getSimpleIslandManager()->removeNode(mNodeIndex);
+	mScene.getVelocityModifyMap().boundedReset(mNodeIndex.index());
 
 	mCore.setSim(NULL);
 }

@@ -94,6 +94,8 @@ Sc::ArticulationSim::~ArticulationSim()
 
 	mScene.getSimpleIslandManager()->removeNode(mIslandNodeIndex);
 
+	mScene.getVelocityModifyMap().boundedReset( mIslandNodeIndex.index() );
+
 	mCore.setSim(NULL);
 }
 

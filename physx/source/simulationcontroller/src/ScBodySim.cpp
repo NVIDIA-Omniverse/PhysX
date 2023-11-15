@@ -147,6 +147,8 @@ BodySim::~BodySim()
 	if(mArticulation == NULL && mNodeIndex.articulationLinkId() == 0) //If it wasn't an articulation link, then we can remove it
 		scene.getSimpleIslandManager()->removeNode(mNodeIndex);
 
+	mScene.getVelocityModifyMap().boundedReset( mNodeIndex.index() );
+
 	PX_ASSERT(mActiveListIndex != SC_NOT_IN_SCENE_INDEX);
 
 	if (active)
@@ -242,6 +244,12 @@ void BodySim::switchToKinematic()
 		//   triggers onDeactivate() on the constraint pairs that are active. If such pairs get deactivated, they will get removed from the list of active breakable
 		//   constraints automatically.
 		setActorsInteractionsDirty(InteractionDirtyFlag::eBODY_KINEMATIC, NULL, InteractionFlag::eFILTERABLE);
+
+		if( isKinematic() == false )
+		{
+			// Reset the index inside the velocity map (bounded because there is no evidence that it is present) because set to kinemetic will call removeNodeFromIsland
+			getScene().getVelocityModifyMap().boundedReset( mNodeIndex.index() );
+		}
 
 		mScene.getSimpleIslandManager()->setKinematic(mNodeIndex);
 

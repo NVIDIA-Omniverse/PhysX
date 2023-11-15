@@ -63,6 +63,8 @@ Sc::HairSystemSim::~HairSystemSim()
 
 	mScene.destroyLLHairSystem(*mLLHairSystem);
 	mScene.getSimpleIslandManager()->removeNode(mNodeIndex);
+	mScene.getVelocityModifyMap().boundedReset(mNodeIndex.index());
+
 	mCore.setSim(NULL);
 }
 
