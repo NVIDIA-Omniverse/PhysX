@@ -67,8 +67,8 @@ namespace physx
 		/**
 		\brief Set the hinge & prismatic joints connected by the rack & pinion joint.
 
-		The passed hinge joint can be either PxRevoluteJoint, PxD6Joint or PxArticulationJointReducedCoordinate. It cannot be null.
-		The passed prismatic joint can be either PxPrismaticJoint or PxD6Joint. It cannot be null.
+		The passed hinge joint can be either PxRevoluteJoint, PxD6Joint or PxArticulationJointReducedCoordinate.
+		The passed prismatic joint can be either PxPrismaticJoint or PxD6Joint.
 
 		Note that these joints are only used to compute the positional error correction term,
 		used to adjust potential drift between jointed actors. The rack & pinion joint can run without

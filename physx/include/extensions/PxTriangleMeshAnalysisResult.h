@@ -54,9 +54,10 @@ namespace physx
 			eCONTAINS_DUPLICATE_POINTS = (1 << 6),				//!< ok:			Duplicate points can be handled by the mesher without problems. The resulting tetmesh will only make use of first unique point that is found, duplicate points will get mapped to that unique point in the tetmesh. Therefore the tetmesh can contain points that are not accessed by a tet.
 			eCONTAINS_INVALID_POINTS = (1 << 7),				//!< invalid:		Points contain NAN, infinity or similar values that will lead to an invalid mesh
 			eREQUIRES_32BIT_INDEX_BUFFER = (1 << 8),			//!< invalid:		Mesh contains more indices than a 16bit index buffer can address
+			eTRIANGLE_INDEX_OUT_OF_RANGE = (1 << 9),			//!< invalid:		A mesh triangle index is negative or lager than the size of the vertex buffer
 
-			eMESH_IS_PROBLEMATIC = (1 << 9),					//!< flag is set if the mesh is categorized as problematic
-			eMESH_IS_INVALID = (1 << 10)						//!< flag is set if the mesh is categorized as invalid
+			eMESH_IS_PROBLEMATIC = (1 << 10),					//!< flag is set if the mesh is categorized as problematic
+			eMESH_IS_INVALID = (1 << 11)						//!< flag is set if the mesh is categorized as invalid
 		};
 	};
 	typedef PxFlags<PxTriangleMeshAnalysisResult::Enum, PxU32> PxTriangleMeshAnalysisResults;

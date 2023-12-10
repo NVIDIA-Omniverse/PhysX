@@ -79,7 +79,7 @@ class TriangleMesh : public PxTriangleMesh, public PxUserAllocated
 public:
 
 // PX_SERIALIZATION
-														TriangleMesh(PxBaseFlags baseFlags)	: PxTriangleMesh(baseFlags)	{}
+														TriangleMesh(PxBaseFlags baseFlags)	: PxTriangleMesh(baseFlags), mSdfData(PxEmpty)	{}
 
 								void					preExportDataReset() { Cm::RefCountable_preExportDataReset(*this); }
 	virtual						void					exportExtraData(PxSerializationContext& context);

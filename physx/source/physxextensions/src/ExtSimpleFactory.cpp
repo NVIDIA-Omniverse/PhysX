@@ -67,8 +67,16 @@ PxRigidDynamic* PxCreateDynamic(PxPhysics& sdk,
 	PxRigidDynamic* actor = sdk.createRigidDynamic(transform);
 	if(actor)
 	{
-		actor->attachShape(shape);
-		PxRigidBodyExt::updateMassAndInertia(*actor, density);
+		if(!actor->attachShape(shape))
+		{
+			actor->release();
+			return NULL;
+		}
+		if(!PxRigidBodyExt::updateMassAndInertia(*actor, density))
+		{
+			actor->release();
+			return NULL;
+		}
 	}
 	return actor;
 }

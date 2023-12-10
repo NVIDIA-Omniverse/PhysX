@@ -54,6 +54,8 @@ namespace physx
 	class PxPBDMaterial;
 
 	struct OmniPvdPxCoreRegistrationData;
+
+	class NpOmniPvd;
 }
 
 void streamActorName(const physx::PxActor & a, const char* name);
@@ -78,16 +80,15 @@ enum OmniPvdSharedMeshEnum {
 class OmniPvdWriter;
 class OmniPvdPxScene;
 
+
 class OmniPvdPxSampler : public physx::PxUserAllocated
 {
 public:
 	OmniPvdPxSampler();
 	~OmniPvdPxSampler();
-	//enables sampling: 
 	void startSampling();
 	bool isSampling();
-	//sets destination: 
-	void setOmniPvdWriter(OmniPvdWriter* omniPvdWriter);	
+	void setOmniPvdInstance(physx::NpOmniPvd* omniPvdIntance);
 
 	// writes all contacts to the stream
 	void streamSceneContacts(physx::NpScene& scene);
@@ -110,7 +111,7 @@ namespace physx
 {
 
 const OmniPvdPxCoreRegistrationData* NpOmniPvdGetPxCoreRegistrationData();
-OmniPvdWriter* NpOmniPvdGetWriter();
+NpOmniPvd* NpOmniPvdGetInstance();
 
 }
 

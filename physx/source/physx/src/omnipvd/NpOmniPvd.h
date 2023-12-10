@@ -30,6 +30,7 @@
 #define NP_OMNI_PVD_H
 
 #include "omnipvd/PxOmniPvd.h"
+#include "foundation/PxMutex.h"
 
 class OmniPvdReader;
 class OmniPvdWriter;
@@ -51,7 +52,14 @@ public:
 	void release();
 
 	bool initOmniPvd();
+	
 	OmniPvdWriter* getWriter();
+	
+	OmniPvdWriter* blockingWriterLoad();
+
+	OmniPvdWriter* acquireExclusiveWriterAccess();
+	void releaseExclusiveWriterAccess();
+
 	OmniPvdFileWriteStream* getFileWriteStream();
 	bool startSampling();
 	
@@ -61,6 +69,8 @@ public:
 	OmniPvdPxSampler* mPhysXSampler;	
 	static PxU32 mRefCount;
 	static NpOmniPvd* mInstance;
+	PxMutex mMutex;
+	PxMutex mWriterLoadMutex;
 };
 
 }

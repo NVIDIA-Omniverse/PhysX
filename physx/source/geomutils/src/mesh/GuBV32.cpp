@@ -108,13 +108,13 @@ BV32Tree::BV32Tree(const PxEMPTY)
 void BV32Tree::exportExtraData(PxSerializationContext& stream)
 {
 	stream.alignData(16);
-	stream.writeData(mPackedNodes, mNbNodes*sizeof(BV32DataPacked));
+	stream.writeData(mPackedNodes, mNbPackedNodes*sizeof(BV32DataPacked));
 }
 
 void BV32Tree::importExtraData(PxDeserializationContext& context)
 {
 	context.alignExtraData(16);
-	mPackedNodes = context.readExtraData<BV32DataPacked>(mNbNodes);
+	mPackedNodes = context.readExtraData<BV32DataPacked>(mNbPackedNodes);
 }
 //~PX_SERIALIZATION
 

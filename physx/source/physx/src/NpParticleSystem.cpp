@@ -670,6 +670,11 @@ namespace physx
 			const PxU32 groupID = mNextPhaseGroupID++;
 
 			core.mPhaseGroupToMaterialHandle.pushBack(materialHandle);
+			PxU16* foundHandle = core.mUniqueMaterialHandles.find(materialHandle);
+			if(foundHandle == core.mUniqueMaterialHandles.end())
+			{
+				core.mUniqueMaterialHandles.pushBack(materialHandle);
+			}
 
 			if (mCore.getSim())
 				mCore.getSim()->getLowLevelParticleSystem()->mFlag |= Dy::ParticleSystemFlag::eUPDATE_PHASE;
@@ -700,6 +705,12 @@ namespace physx
 		PX_ASSERT(!isAPIWriteForbidden());
 		NpDestroyParticleSystem(this);
 	}
+
+    PxU32 NpPBDParticleSystem::getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize,
+                                                    PxU32 startIndex) const
+    {
+	    return getParticleMaterialsInternal<NpPBDMaterial>(userBuffer, bufferSize, startIndex);
+    }
 
 	void NpPBDParticleSystem::addParticleBuffer(PxParticleBuffer* clothBuffer)
 	{
@@ -781,6 +792,11 @@ namespace physx
 			const PxU32 groupID = mNextPhaseGroupID++;
 
 			core.mPhaseGroupToMaterialHandle.pushBack(materialHandle);
+			PxU16* foundHandle = core.mUniqueMaterialHandles.find(materialHandle);
+			if(foundHandle == core.mUniqueMaterialHandles.end())
+			{
+				core.mUniqueMaterialHandles.pushBack(materialHandle);
+			}
 
 			if (mCore.getSim())
 				mCore.getSim()->getLowLevelParticleSystem()->mFlag |= Dy::ParticleSystemFlag::eUPDATE_PHASE;
@@ -849,6 +865,12 @@ namespace physx
 	PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
 #endif
 
+    PxU32 NpFLIPParticleSystem::getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize,
+                                                    PxU32 startIndex) const
+    {
+	    return getParticleMaterialsInternal<NpFLIPMaterial>(userBuffer, bufferSize, startIndex);
+    }
+
 	void NpFLIPParticleSystem::addParticleBuffer(PxParticleBuffer* particleBuffer)
 	{
 		NP_WRITE_CHECK(getNpScene());
@@ -901,6 +923,11 @@ namespace physx
 			const PxU32 groupID = mNextPhaseGroupID++;
 
 			core.mPhaseGroupToMaterialHandle.pushBack(materialHandle);
+			PxU16* foundHandle = core.mUniqueMaterialHandles.find(materialHandle);
+			if(foundHandle == core.mUniqueMaterialHandles.end())
+			{
+				core.mUniqueMaterialHandles.pushBack(materialHandle);
+			}
 
 			if (mCore.getSim())
 				mCore.getSim()->getLowLevelParticleSystem()->mFlag |= Dy::ParticleSystemFlag::eUPDATE_PHASE;
@@ -984,6 +1011,12 @@ namespace physx
 #else
 	PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
 #endif
+
+	PxU32 NpMPMParticleSystem::getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize,
+                                                     PxU32 startIndex) const
+    {
+	    return getParticleMaterialsInternal<NpMPMMaterial>(userBuffer, bufferSize, startIndex);
+    }
 
 	void NpMPMParticleSystem::addParticleBuffer(PxParticleBuffer* particleBuffer)
 	{

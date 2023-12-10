@@ -416,7 +416,7 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 
 			Gu::PCMConvexVsMeshContactGeneration contactGeneration(contactDist, replaceBreakingThreshold, boxTransform, meshTransform, multiManifold, contactBuffer0, polyData, &boxMap, &deferredContacts, idtScaling, true, true, NULL);
 			contactGeneration.processTriangle(triangleVertices, triangleIndex, Gu::ETD_CONVEX_EDGE_ALL, triangleIndices);
-			contactGeneration.processContacts(GU_CAPSULE_MANIFOLD_CACHE_SIZE, false);
+			contactGeneration.processContacts(GU_SINGLE_MANIFOLD_CACHE_SIZE, false);
 
 			break;
 		}
@@ -446,7 +446,7 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 
 			Gu::PCMConvexVsMeshContactGeneration contactGeneration(contactDist, replaceBreakingThreshold, convexTransform, meshTransform, multiManifold, contactBuffer0, polyData, &convexMap, &deferredContacts, convexScaling, idtConvexScale, true, NULL);
 			contactGeneration.processTriangle(triangleVertices, triangleIndex, Gu::ETD_CONVEX_EDGE_ALL, triangleIndices);
-			contactGeneration.processContacts(GU_CAPSULE_MANIFOLD_CACHE_SIZE, false);
+			contactGeneration.processContacts(GU_SINGLE_MANIFOLD_CACHE_SIZE, false);
 
 			break;
 		}

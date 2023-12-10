@@ -84,7 +84,11 @@ ConvexMesh::ConvexMesh(MeshFactory* factory, ConvexHullInitData& data) :
 	mInertia		(data.mInertia),
 	mMeshFactory	(factory)
 {
-	mHullData = data.mHullData;	
+	mHullData = data.mHullData;
+
+	// this constructor takes ownership of memory from the data object
+	data.mSdfData = NULL;
+	data.mBigConvexData = NULL;
 }
 
 ConvexMesh::~ConvexMesh()
@@ -112,6 +116,14 @@ void ConvexMesh::exportExtraData(PxSerializationContext& context)
 	const PxU32 bufferSize = computeBufferSize(mHullData, getNb());
 	context.writeData(mHullData.mPolygons, bufferSize);
 
+	if (mSdfData)
+	{
+		context.alignData(PX_SERIAL_ALIGN);
+		context.writeData(mSdfData, sizeof(SDF));
+
+		mSdfData->exportExtraData(context);
+	}
+
 	if(mBigConvexData)
 	{
 		context.alignData(PX_SERIAL_ALIGN);
@@ -125,6 +137,13 @@ void ConvexMesh::importExtraData(PxDeserializationContext& context)
 {
 	const PxU32 bufferSize = computeBufferSize(mHullData, getNb());
 	mHullData.mPolygons = reinterpret_cast<HullPolygonData*>(context.readExtraData<PxU8, PX_SERIAL_ALIGN>(bufferSize));
+
+	if (mSdfData)
+	{
+		mSdfData = context.readExtraData<SDF, PX_SERIAL_ALIGN>();
+		PX_PLACEMENT_NEW(mSdfData, SDF(PxEmpty));
+		mSdfData->importExtraData(context);
+	}
 
 	if(mBigConvexData)
 	{

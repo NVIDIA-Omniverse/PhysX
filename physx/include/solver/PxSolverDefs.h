@@ -130,14 +130,14 @@ struct PxSolverConstraintDesc
 	PxU32	bodyADataIndex;			//!< Body A's index into the SolverBodyData array
 	PxU32	bodyBDataIndex;			//!< Body B's index into the SolverBodyData array
 
-	PxU32	linkIndexA;				//!< Link index defining which link in Articulation A this constraint affects. If not an articulation, must be NO_LINK
-	PxU32	linkIndexB;				//!< Link index defining which link in Articulation B this constraint affects. If not an articulation, must be NO_LINK
+	PxU32	linkIndexA;				//!< Link index defining which link in Articulation A this constraint affects. If not an articulation, must be PxSolverConstraintDesc::RIGID_BODY
+	PxU32	linkIndexB;				//!< Link index defining which link in Articulation B this constraint affects. If not an articulation, must be PxSolverConstraintDesc::RIGID_BODY
 	PxU8*	constraint;				//!< Pointer to the constraint rows to be solved
 	void*	writeBack;				//!< Pointer to the writeback structure results for this given constraint are to be written to
 	
 	PxU16	progressA;				//!< Internal progress counter
 	PxU16	progressB;				//!< Internal progress counter
-	PxU16	constraintLengthOver16;	//!< constraintLength/16, max constraint length is 1MB, allows PxSolverConstraintDesc to fit in 32 bytes
+	PxU16	constraintLengthOver16;	//!< constraintLength/16, max constraint length is 1MB
 	PxU8	padding[10];
 };
 

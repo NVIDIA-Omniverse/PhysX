@@ -298,14 +298,18 @@ void PxSoftBodyExt::copyToDevice(PxSoftBody& sb, PxSoftBodyDataFlags flags, PxVe
 	if (flags & PxSoftBodyDataFlag::eSIM_VELOCITY && simVelocitiesPinned)
 		ctx->memcpyHtoDAsync(reinterpret_cast<CUdeviceptr>(sb.getSimVelocityBufferD()), simVelocitiesPinned, sb.getSimulationMesh()->getNbVertices() * sizeof(PxVec4), stream);
 
-	sb.markDirty(flags);
-
 	// we need to synchronize if the stream is the default argument.
 	if (stream == 0)
 	{
 		ctx->streamSynchronize(stream);
 	}
+#else
+	PX_UNUSED(restPositionsPinned);
+	PX_UNUSED(simVelocitiesPinned);
+	PX_UNUSED(stream);
 #endif
+
+	sb.markDirty(flags);
 }
 
 PxSoftBodyMesh* PxSoftBodyExt::createSoftBodyMesh(const PxCookingParams& params, const PxSimpleTriangleMesh& surfaceMesh, PxU32 numVoxelsAlongLongestAABBAxis, PxInsertionCallback& insertionCallback, const bool validate)
@@ -382,8 +386,8 @@ PxSoftBody* PxSoftBodyExt::createSoftBodyFromMesh(PxSoftBodyMesh* softBodyMesh, 
 		PxSoftBodyExt::updateMass(*softBody, density, maxInvMassRatio, simPositionInvMassPinned);
 		PxSoftBodyExt::copyToDevice(*softBody, PxSoftBodyDataFlag::eALL, simPositionInvMassPinned, simVelocityPinned, collPositionInvMassPinned, restPositionPinned);
 
-		PxCudaContextManager* mgr = &cudaContextManager;
 #if PX_SUPPORT_GPU_PHYSX
+		PxCudaContextManager* mgr = &cudaContextManager;
 		PX_PINNED_HOST_FREE(mgr, simPositionInvMassPinned);
 		PX_PINNED_HOST_FREE(mgr, simVelocityPinned);
 		PX_PINNED_HOST_FREE(mgr, collPositionInvMassPinned);
@@ -459,6 +463,8 @@ void PxSoftBodyExt::allocateAndInitializeHostMirror(PxSoftBody& softBody, PxCuda
 	simVelocityPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbSimVerts);
 	collPositionInvMassPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbCollVerts);
 	restPositionPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbCollVerts);
+#else
+	PX_UNUSED(cudaContextManager);
 #endif
 
 	// write positionInvMass into CPU part.

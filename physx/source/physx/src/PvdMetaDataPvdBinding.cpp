@@ -606,18 +606,13 @@ void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxPhys
 	inStream.setPropertyValue(&inPhysics, "Version.Minor", PxU32(PX_PHYSICS_VERSION_MINOR));
 	inStream.setPropertyValue(&inPhysics, "Version.Bugfix", PxU32(PX_PHYSICS_VERSION_BUGFIX));
 
-#if PX_CHECKED
-#if defined(NDEBUG)
-	// This is a checked build
-	String buildType = "Checked";
-#elif defined(_DEBUG)
-	// This is a debug build
+#if PX_DEBUG
 	String buildType = "Debug";
-#endif
+#elif PX_CHECKED
+	String buildType = "Checked";
 #elif PX_PROFILE
 	String buildType = "Profile";
-#elif defined(NDEBUG)
-	// This is a release build
+#else
 	String buildType = "Release";
 #endif
 	inStream.setPropertyValue(&inPhysics, "Version.Build", buildType);

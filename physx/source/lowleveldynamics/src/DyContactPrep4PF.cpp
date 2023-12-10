@@ -68,6 +68,7 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 	const Vec4V solverOffsetSlop = aos::V4LoadXYZW(descs[0].offsetSlop, descs[1].offsetSlop, descs[2].offsetSlop, descs[3].offsetSlop);
 
 	const Vec4V zero = V4Zero();
+	const BoolV bTrue = BTTTT();
 
 	PxU8 flags[4] = {	PxU8(descs[0].hasForceThresholds ? SolverContactHeader::eHAS_FORCE_THRESHOLDS : 0),
 						PxU8(descs[1].hasForceThresholds ? SolverContactHeader::eHAS_FORCE_THRESHOLDS : 0),
@@ -241,20 +242,21 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 
 	for(PxU32 i=0;i<maxPatches;i++)
 	{
-		const bool hasFinished0 = i >= descs[0].numFrictionPatches;
-		const bool hasFinished1 = i >= descs[1].numFrictionPatches;
-		const bool hasFinished2 = i >= descs[2].numFrictionPatches;
-		const bool hasFinished3 = i >= descs[3].numFrictionPatches;
+		bool hasFinished[4];
+		hasFinished[0] = i >= descs[0].numFrictionPatches;
+		hasFinished[1] = i >= descs[1].numFrictionPatches;
+		hasFinished[2] = i >= descs[2].numFrictionPatches;
+		hasFinished[3] = i >= descs[3].numFrictionPatches;
 
-		frictionIndex0 = hasFinished0 ? frictionIndex0 : descs[0].startFrictionPatchIndex + i;
-		frictionIndex1 = hasFinished1 ? frictionIndex1 : descs[1].startFrictionPatchIndex + i;
-		frictionIndex2 = hasFinished2 ? frictionIndex2 : descs[2].startFrictionPatchIndex + i;
-		frictionIndex3 = hasFinished3 ? frictionIndex3 : descs[3].startFrictionPatchIndex + i;
+		frictionIndex0 = hasFinished[0] ? frictionIndex0 : descs[0].startFrictionPatchIndex + i;
+		frictionIndex1 = hasFinished[1] ? frictionIndex1 : descs[1].startFrictionPatchIndex + i;
+		frictionIndex2 = hasFinished[2] ? frictionIndex2 : descs[2].startFrictionPatchIndex + i;
+		frictionIndex3 = hasFinished[3] ? frictionIndex3 : descs[3].startFrictionPatchIndex + i;
 
-		const PxU32 clampedContacts0 = hasFinished0 ? 0 : c.frictionPatchContactCounts[frictionIndex0];
-		const PxU32 clampedContacts1 = hasFinished1 ? 0 : c.frictionPatchContactCounts[frictionIndex1];
-		const PxU32 clampedContacts2 = hasFinished2 ? 0 : c.frictionPatchContactCounts[frictionIndex2];
-		const PxU32 clampedContacts3 = hasFinished3 ? 0 : c.frictionPatchContactCounts[frictionIndex3];
+		const PxU32 clampedContacts0 = hasFinished[0] ? 0 : c.frictionPatchContactCounts[frictionIndex0];
+		const PxU32 clampedContacts1 = hasFinished[1] ? 0 : c.frictionPatchContactCounts[frictionIndex1];
+		const PxU32 clampedContacts2 = hasFinished[2] ? 0 : c.frictionPatchContactCounts[frictionIndex2];
+		const PxU32 clampedContacts3 = hasFinished[3] ? 0 : c.frictionPatchContactCounts[frictionIndex3];
 
 		const PxU32 clampedFric0 = clampedContacts0 * numFrictionPerPoint;
 		const PxU32 clampedFric1 = clampedContacts1 * numFrictionPerPoint;
@@ -382,10 +384,10 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 		//For all correlation heads - need to pull this out I think
 
 		//OK, we have a counter for all our patches...
-		PxU32 finished = (PxU32(hasFinished0)) | 
-						 ((PxU32(hasFinished1)) << 1) | 
-						 ((PxU32(hasFinished2)) << 2) | 
-						 ((PxU32(hasFinished3)) << 3);
+		PxU32 finished = (PxU32(hasFinished[0])) | 
+						 ((PxU32(hasFinished[1])) << 1) | 
+						 ((PxU32(hasFinished[2])) << 2) | 
+						 ((PxU32(hasFinished[3])) << 3);
 
 		CorrelationListIterator iter0(c, firstPatch0);
 		CorrelationListIterator iter1(c, firstPatch1);
@@ -404,10 +406,14 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 
 		PxU32 contactCount = 0;
 		PxU32 newFinished = 
-			(PxU32(hasFinished0 || !iter0.hasNextContact()))		| 
-			((PxU32(hasFinished1 || !iter1.hasNextContact())) << 1) | 
-			((PxU32(hasFinished2 || !iter2.hasNextContact())) << 2) | 
-			((PxU32(hasFinished3 || !iter3.hasNextContact())) << 3);
+			(PxU32(hasFinished[0] || !iter0.hasNextContact()))		| 
+			((PxU32(hasFinished[1] || !iter1.hasNextContact())) << 1) | 
+			((PxU32(hasFinished[2] || !iter2.hasNextContact())) << 2) | 
+			((PxU32(hasFinished[3] || !iter3.hasNextContact())) << 3);
+
+		// finished flags are used to be able to handle pairs with varying number
+		// of contact points in the same loop
+		BoolV bFinished = BLoad(hasFinished);
 
 		PxU32 fricIndex = 0;
 
@@ -557,9 +563,9 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 					solverContact->raXnX = delAngVel0X;
 					solverContact->raXnY = delAngVel0Y;
 					solverContact->raXnZ = delAngVel0Z;
-					solverContact->velMultiplier = velMultiplier;
+					solverContact->velMultiplier = V4Sel(bFinished, zero, velMultiplier);
 					solverContact->appliedForce = zero;
-					solverContact->scaledBias = scaledBias;
+					solverContact->scaledBias = V4Sel(bFinished, zero, scaledBias);
 					solverContact->targetVelocity = targetVelocity;
 					solverContact->maxImpulse = maxImpulse;	
 				}
@@ -658,29 +664,40 @@ static bool setupFinalizeSolverConstraintsCoulomb4(PxSolverContactDesc* PX_RESTR
 					friction->normalZ = tZ;
 				}
 			}
+
+			// update the finished flags
 			if(!(finished & 0x1))
 			{
 				iter0.nextContact(patch0, contact0);
 				newFinished |= PxU32(!iter0.hasNextContact());
 			}
+			else
+				bFinished = BSetX(bFinished, bTrue);
 
 			if(!(finished & 0x2))
 			{
 				iter1.nextContact(patch1, contact1);
 				newFinished |= (PxU32(!iter1.hasNextContact()) << 1);
 			}
+			else
+				bFinished = BSetY(bFinished, bTrue);
 
 			if(!(finished & 0x4))
 			{
 				iter2.nextContact(patch2, contact2);
 				newFinished |= (PxU32(!iter2.hasNextContact()) << 2);
 			}
+			else
+				bFinished = BSetZ(bFinished, bTrue);
 
 			if(!(finished & 0x8))
 			{
 				iter3.nextContact(patch3, contact3);
 				newFinished |= (PxU32(!iter3.hasNextContact()) << 3);
 			}
+			else
+				bFinished = BSetW(bFinished, bTrue);
+
 		}
 		ptr = p;
 	}

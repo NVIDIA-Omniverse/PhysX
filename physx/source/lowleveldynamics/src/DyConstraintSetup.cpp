@@ -29,6 +29,7 @@
 #include "foundation/PxMemory.h"
 #include "foundation/PxMathUtils.h"
 #include "DyConstraintPrep.h"
+#include "DyArticulationCpuGpu.h"
 #include "PxsRigidBody.h"
 #include "DySolverConstraint1D.h"
 #include "foundation/PxSort.h"

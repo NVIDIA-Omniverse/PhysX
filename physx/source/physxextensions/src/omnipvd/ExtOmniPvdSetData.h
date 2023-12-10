@@ -42,13 +42,15 @@
 #if PX_SUPPORT_OMNI_PVD
 
 #include "OmniPvdPxExtensionsSampler.h"
+#include "omnipvd/PxOmniPvd.h"
 
 //
 // Define the macros needed in CmOmniPvdAutoGenSetData.h
 //
 #undef OMNI_PVD_GET_WRITER
 #define OMNI_PVD_GET_WRITER(writer) \
-OmniPvdWriter* writer = physx::Ext::OmniPvdGetWriter();
+physx::PxOmniPvd::ScopedExclusiveWriter writeLock(physx::Ext::OmniPvdGetInstance()); \
+OmniPvdWriter* writer = writeLock.getWriter();
 
 
 #undef OMNI_PVD_GET_REGISTRATION_DATA

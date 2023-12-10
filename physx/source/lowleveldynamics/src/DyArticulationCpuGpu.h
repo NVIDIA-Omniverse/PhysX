@@ -33,6 +33,10 @@
 #include "PxArticulationJointReducedCoordinate.h"
 #include "DyFeatherstoneArticulation.h"
 
+#define DY_ARTICULATION_MIN_RESPONSE 1e-5f
+#define DY_ARTICULATION_CFM	2e-4f
+#define DY_ARTICULATION_PGS_BIAS_COEFFICIENT 0.8f
+
 namespace physx
 {
 namespace Dy

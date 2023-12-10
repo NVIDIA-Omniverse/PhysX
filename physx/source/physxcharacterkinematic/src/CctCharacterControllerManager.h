@@ -67,7 +67,9 @@ namespace Cct
 	{		
 	public:
 														CharacterControllerManager(PxScene& scene, bool lockingEnabled = false);
+	private:
 		virtual											~CharacterControllerManager();
+	public:
 
 		// PxControllerManager
 		virtual			void							release()	PX_OVERRIDE;

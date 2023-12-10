@@ -260,7 +260,7 @@ public:
 	template<typename T>
 	void allocDeviceBuffer(T*& deviceBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
-		void* ptr = allocDeviceBufferInternal(numElements * sizeof(T), filename, line);
+		void* ptr = allocDeviceBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		deviceBuffer = reinterpret_cast<T*>(ptr);
 	}
 
@@ -272,7 +272,7 @@ public:
 	template<typename T>
 	T* allocDeviceBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
-		void* ptr = allocDeviceBufferInternal(numElements * sizeof(T), filename, line);
+		void* ptr = allocDeviceBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		return reinterpret_cast<T*>(ptr);
 	}
 
@@ -298,7 +298,7 @@ public:
 	template<typename T>
 	void allocPinnedHostBuffer(T*& pinnedHostBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
-		void* ptr = allocPinnedHostBufferInternal(numElements * sizeof(T), filename, line);
+		void* ptr = allocPinnedHostBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		pinnedHostBuffer = reinterpret_cast<T*>(ptr);
 	}
 
@@ -312,7 +312,7 @@ public:
 	template<typename T>
 	T* allocPinnedHostBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
-		void* ptr = allocPinnedHostBufferInternal(numElements * sizeof(T), filename, line);
+		void* ptr = allocPinnedHostBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		return reinterpret_cast<T*>(ptr);
 	}
 
@@ -439,8 +439,8 @@ protected:
      */
     virtual ~PxCudaContextManager() {}
 	
-	virtual void* allocDeviceBufferInternal(PxU32 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;	
-	virtual void* allocPinnedHostBufferInternal(PxU32 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;
+	virtual void* allocDeviceBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;	
+	virtual void* allocPinnedHostBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;
 	
 	virtual void freeDeviceBufferInternal(void* deviceBuffer) = 0;	
 	virtual void freePinnedHostBufferInternal(void* pinnedHostBuffer) = 0;	 

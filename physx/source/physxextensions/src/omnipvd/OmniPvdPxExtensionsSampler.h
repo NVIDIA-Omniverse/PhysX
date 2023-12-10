@@ -36,14 +36,19 @@
 
 #include "ExtOmniPvdRegistrationData.h"
 
+namespace physx
+{
+	class PxOmniPvd;
+}
+
 
 class OmniPvdPxExtensionsSampler : public physx::PxUserAllocated
 {
 public:
 	OmniPvdPxExtensionsSampler();
 	~OmniPvdPxExtensionsSampler();
-	void setOmniPvdWriter(OmniPvdWriter* omniPvdWriter);
-	OmniPvdWriter* getOmniPvdWriter() const { return mWriter; }
+	void setOmniPvdInstance(physx::PxOmniPvd* omniPvdInstance);
+	physx::PxOmniPvd* getOmniPvdInstance();
 	void registerClasses();
 
 	const physx::Ext::OmniPvdPxExtensionsRegistrationData& getRegistrationData() const { return mRegistrationData; }
@@ -54,7 +59,7 @@ public:
 	static void destroyInstance();
 
 private:
-	OmniPvdWriter* mWriter;
+	physx::PxOmniPvd* mOmniPvdInstance;
 	physx::Ext::OmniPvdPxExtensionsRegistrationData mRegistrationData;
 };
 
@@ -65,8 +70,7 @@ namespace Ext
 {
 
 const OmniPvdPxExtensionsRegistrationData* OmniPvdGetPxExtensionsRegistrationData();
-OmniPvdWriter* OmniPvdGetWriter();
-
+PxOmniPvd* OmniPvdGetInstance();
 }
 }
 

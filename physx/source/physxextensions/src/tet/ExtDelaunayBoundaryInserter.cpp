@@ -2316,6 +2316,15 @@ namespace Ext
 			else
 				t = triangles.at<Triangle>(i);
 		
+			for (PxU32 j = 0; j < 3; ++j)
+			{
+				PxI32 id = t[j];
+				if (id < 0 || id >= PxI32(points.count))
+				{
+					return PxTriangleMeshAnalysisResult::eTRIANGLE_INDEX_OUT_OF_RANGE | PxTriangleMeshAnalysisResult::eMESH_IS_INVALID;
+				}
+			}
+
 			mappedTriangles.pushBack(t);
 		}
 

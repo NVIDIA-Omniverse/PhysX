@@ -8,7 +8,7 @@
 	</dependency>
 
 	<dependency name="PhysXDevice">
-		<package name="PhysXDevice" version="18.12.7.4"  platforms="vc15win64  vc16win64 vc17win64"/>
+		<package name="PhysXDevice" version="18.12.7.6"  platforms="vc15win64  vc16win64 vc17win64"/>
 	</dependency>
 
 	<dependency name="freeglut">
@@ -16,9 +16,9 @@
 	</dependency>
 
 	<dependency name="PhysXGpu">
-		<package name="PhysXGpu" version="105.1-5.3.4207.33265367-windows-public"  platforms="vc15win64 vc16win64 vc17win64"/>
-		<package name="PhysXGpu" version="105.1-5.3.4207.33265367-linux-x86_64-public"  platforms="linux"/>
-		<package name="PhysXGpu" version="105.1-5.3.4207.33265367-linux-aarch64-public"  platforms="linux-aarch64"/>
+		<package name="PhysXGpu" version="105.1-5.3.1.6193-f2687f97-windows-public"  platforms="vc15win64 vc16win64 vc17win64"/>
+		<package name="PhysXGpu" version="105.1-5.3.1.6193-f2687f97-linux-x86_64-public"  platforms="linux"/>
+		<package name="PhysXGpu" version="105.1-5.3.1.6193-f2687f97-linux-aarch64-public"  platforms="linux-aarch64"/>
 	</dependency>
 
 	<dependency name="opengllinux" tags="requiredForDistro">

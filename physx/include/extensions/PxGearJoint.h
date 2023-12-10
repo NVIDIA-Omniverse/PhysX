@@ -67,7 +67,7 @@ namespace physx
 		\brief Set the hinge/revolute joints connected by the gear joint.
 
 		The passed joints can be either PxRevoluteJoint, PxD6Joint or PxArticulationJointReducedCoordinate. 
-		The joints must define degrees of freedom around the twist axis. They cannot be null.
+		The joints must define degrees of freedom around the twist axis.
 
 		Note that these joints are only used to compute the positional error correction term,
 		used to adjust potential drift between jointed actors. The gear joint can run without

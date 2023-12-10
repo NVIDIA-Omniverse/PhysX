@@ -547,48 +547,55 @@ PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, con
 		const PxsCCDContactHeader* ccdContactStream = reinterpret_cast<const PxsCCDContactHeader*>(workUnit.ccdContacts);
 
 		PxU32 idx = 0;
-		if(output->nbContacts)
+		if(output) // preventive measure for omnicrash OM-109664
 		{
-			if(startOffset == 0)
+			if(output->nbContacts)
 			{
-				contactPatches = output->contactPatches;
-				contactPoints = output->contactPoints;
-				contactDataSize = sizeof(PxContactPatch) * output->nbPatches + sizeof(PxContact) * output->nbContacts;
-				contactPointCount = output->nbContacts;
-				numPatches = output->nbPatches;
-				impulses = output->contactForces;
+				if(startOffset == 0)
+				{
+					contactPatches = output->contactPatches;
+					contactPoints = output->contactPoints;
+					contactDataSize = sizeof(PxContactPatch) * output->nbPatches + sizeof(PxContact) * output->nbContacts;
+					contactPointCount = output->nbContacts;
+					numPatches = output->nbPatches;
+					impulses = output->contactForces;
 
-				if(!ccdContactStream)
-					return startOffset;
-				else
-					return (startOffset + 1);
+					if(!ccdContactStream)
+						return startOffset;
+					else
+						return (startOffset + 1);
+				}
+
+				idx++;
 			}
 
-			idx++;
-		}
-
-		while(ccdContactStream)
-		{
-			if(startOffset == idx)
+			while(ccdContactStream)
 			{
-				const PxU8* stream = reinterpret_cast<const PxU8*>(ccdContactStream);
-				PxU16 streamSize = ccdContactStream->contactStreamSize;
-				contactPatches = stream + sizeof(PxsCCDContactHeader);
-				contactPoints = stream + sizeof(PxsCCDContactHeader) + sizeof(PxContactPatch);
-				contactDataSize = streamSize - sizeof(PxsCCDContactHeader);
-				contactPointCount = 1;
-				numPatches = 1;
-				impulses = reinterpret_cast<const PxReal*>(stream + ((streamSize + 0xf) & 0xfffffff0));
+				if(startOffset == idx)
+				{
+					const PxU8* stream = reinterpret_cast<const PxU8*>(ccdContactStream);
+					PxU16 streamSize = ccdContactStream->contactStreamSize;
+					contactPatches = stream + sizeof(PxsCCDContactHeader);
+					contactPoints = stream + sizeof(PxsCCDContactHeader) + sizeof(PxContactPatch);
+					contactDataSize = streamSize - sizeof(PxsCCDContactHeader);
+					contactPointCount = 1;
+					numPatches = 1;
+					impulses = reinterpret_cast<const PxReal*>(stream + ((streamSize + 0xf) & 0xfffffff0));
 
-				if(!ccdContactStream->nextStream)
-					return startOffset;
-				else
-					return (startOffset + 1);
+					if(!ccdContactStream->nextStream)
+						return startOffset;
+					else
+						return (startOffset + 1);
+				}
+				
+				idx++;
+				ccdContactStream = ccdContactStream->nextStream;
 			}
-			
-			idx++;
-			ccdContactStream = ccdContactStream->nextStream;
 		}
+	}
+	else
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "PxsContactManagerOutput output is null!\n");
 	}
 
 	contactPatches = NULL;

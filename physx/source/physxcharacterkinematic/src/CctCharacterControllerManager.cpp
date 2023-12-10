@@ -67,8 +67,22 @@ CharacterControllerManager::~CharacterControllerManager()
 	PX_DELETE(mRenderBuffer);
 }
 
+static PxArray<CharacterControllerManager*>* gControllerManagers = NULL;
+
 void CharacterControllerManager::release() 
 {
+	if(gControllerManagers)
+	{
+		const bool found = gControllerManagers->findAndReplaceWithLast(this);
+		PX_ASSERT(found);
+		PX_UNUSED(found);
+
+		if(!gControllerManagers->size())
+		{
+			PX_DELETE(gControllerManagers);
+		}
+	}
+
 	// PT: TODO: use non virtual calls & move to dtor
 	while(getNbControllers()!= 0)
 		releaseController(*getController(0));
@@ -82,6 +96,29 @@ void CharacterControllerManager::release()
 	PX_DELETE_THIS;
 
 	PxDecFoundationRefCount();
+}
+
+PX_C_EXPORT PxControllerManager* PX_CALL_CONV PxCreateControllerManager(PxScene& scene, bool lockingEnabled)
+{
+	if(gControllerManagers)
+	{
+		// PT: make sure we cannot create two controller managers for the same scene
+		const PxU32 nbManagers = gControllerManagers->size();
+		for(PxU32 i=0;i<nbManagers;i++)
+		{
+			if(&scene==&(*gControllerManagers)[i]->getScene())
+				return NULL;
+		}
+	}
+
+	PxIncFoundationRefCount();
+	CharacterControllerManager* controllerManager = PX_NEW(CharacterControllerManager)(scene, lockingEnabled);
+
+	if(!gControllerManagers)
+		gControllerManagers = new PxArray<CharacterControllerManager*>;
+	gControllerManagers->pushBack(controllerManager);
+
+	return controllerManager;
 }
 
 PxScene& CharacterControllerManager::getScene() const
@@ -676,11 +713,3 @@ void CharacterControllerManager::computeInteractions(PxF32 elapsedTime, PxContro
 	PX_FREE(boxes);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Public factory methods
-
-PX_C_EXPORT PxControllerManager* PX_CALL_CONV PxCreateControllerManager(PxScene& scene, bool lockingEnabled)
-{
-	PxIncFoundationRefCount();
-	return PX_NEW(CharacterControllerManager)(scene, lockingEnabled);
-}

@@ -310,8 +310,8 @@ void Sc::Scene::broadPhase(PxBaseTask* continuation)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.broadPhase", mContextId);
 
-	mProcessLostPatchesTask.setContinuation(&mPostNarrowPhase);
-	mProcessLostPatchesTask.removeReference();
+	/*mProcessLostPatchesTask.setContinuation(&mPostNarrowPhase);
+	mProcessLostPatchesTask.removeReference();*/
 
 #if PX_SUPPORT_GPU_PHYSX
 	gpu_updateBounds();
@@ -1323,13 +1323,14 @@ void Sc::Scene::islandGen(PxBaseTask* continuation)
 
 	//mLLContext->runModifiableContactManagers(); //KS - moved here so that we can get up-to-date touch found/lost events in IG
 
-	/*mProcessLostPatchesTask.setContinuation(&mUpdateDynamics);
-	mProcessLostPatchesTask.removeReference();*/
 	
 	processNarrowPhaseTouchEvents();
 
 	// PT: could we merge processNarrowPhaseTouchEventsStage2 with processNarrowPhaseTouchEvents ?
 	mProcessFoundPatchesTask.setContinuation(continuation);
+	mProcessLostPatchesTask.setContinuation(&mProcessFoundPatchesTask);
+
+	mProcessLostPatchesTask.removeReference();
 	mProcessFoundPatchesTask.removeReference();
 
 	// extracting information for the contact callbacks must happen before the solver writes the post-solve

@@ -481,6 +481,22 @@ static PX_FORCE_INLINE bool testElementSimPointers(const ElementSim* e0, const E
 	return true;
 }
 
+static PX_FORCE_INLINE bool testShapeSimCorePointers(const ShapeSimBase* s0, const ShapeSimBase* s1)
+{
+	bool isValid0 = s0->isPxsCoreValid();
+	bool isValid1 = s1->isPxsCoreValid();
+	PX_ASSERT(isValid0);
+	PX_ASSERT(isValid1);
+
+	// GW: further defensive coding added for OM-111249
+	// This is only a temporary / immediate solution to mitigate crashes
+	// Still need to root-cause what is causing null pointers here
+	if(!isValid0 || !isValid1)
+		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__,
+		                                                 "NPhaseCore::runOverlapFilters: found null PxsShapeCore pointers!");
+	return true;
+}
+
 // PT: called from OverlapFilterTask
 void NPhaseCore::runOverlapFilters(	PxU32 nbToProcess, const Bp::AABBOverlap* PX_RESTRICT pairs, FilterInfo* PX_RESTRICT filterInfo,
 									PxU32& nbToKeep_, PxU32& nbToSuppress_, PxU32* PX_RESTRICT keepMap
@@ -505,6 +521,10 @@ void NPhaseCore::runOverlapFilters(	PxU32 nbToProcess, const Bp::AABBOverlap* PX
 
 		const ShapeSimBase* s0 = static_cast<const ShapeSimBase*>(e0);
 		const ShapeSimBase* s1 = static_cast<const ShapeSimBase*>(e1);
+
+		if(!testShapeSimCorePointers(s0, s1))
+			continue;
+		
 		PX_ASSERT(&s0->getActor() != &s1->getActor());	// No actor internal interactions
 
 		filterInfo[i].filterFlags = PxFilterFlags(0);

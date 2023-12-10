@@ -219,6 +219,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 
 	const Vec4V zero = V4Zero();
 	const BoolV bFalse = BFFFF();
+	const BoolV bTrue = BTTTT();
 	const FloatV fZero = FZero();
 
 	PxU8 flags[4] = { PxU8(descs[0].hasForceThresholds ? SolverContactHeader::eHAS_FORCE_THRESHOLDS : 0),
@@ -758,7 +759,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 				newFinished |= PxU32(!iter0.hasNextContact());
 			}
 			else
-				bFinished = BSetX(bFinished, bFalse);
+				bFinished = BSetX(bFinished, bTrue);
 
 			if (!(finished & 0x2))
 			{
@@ -766,7 +767,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 				newFinished |= (PxU32(!iter1.hasNextContact()) << 1);
 			}
 			else
-				bFinished = BSetY(bFinished, bFalse);
+				bFinished = BSetY(bFinished, bTrue);
 
 			if (!(finished & 0x4))
 			{
@@ -774,7 +775,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 				newFinished |= (PxU32(!iter2.hasNextContact()) << 2);
 			}
 			else
-				bFinished = BSetZ(bFinished, bFalse);
+				bFinished = BSetZ(bFinished, bTrue);
 
 			if (!(finished & 0x8))
 			{
@@ -782,7 +783,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 				newFinished |= (PxU32(!iter3.hasNextContact()) << 3);
 			}
 			else
-				bFinished = BSetW(bFinished, bFalse);
+				bFinished = BSetW(bFinished, bTrue);
 		}
 		ptr = p;
 		if (hasMaxImpulse)

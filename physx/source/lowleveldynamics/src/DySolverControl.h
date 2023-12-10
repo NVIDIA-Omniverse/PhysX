@@ -34,34 +34,12 @@
 
 namespace physx
 {
-
 namespace Dy
 {
 
-struct FsData;
-
-inline void BusyWaitState(volatile PxU32* state, const PxU32 requiredState)
-{
-	while(requiredState != *state );
-}
-
-inline void WaitBodyRequiredState(PxU32* state, const PxU32 requiredState)
-{
-	if(*state != requiredState)
-	{
-		BusyWaitState(state, requiredState);
-	}
-}
-
-inline void BusyWaitStates(volatile PxU32* stateA, volatile PxU32* stateB, const PxU32 requiredStateA, const PxU32 requiredStateB)
-{
-	while(*stateA != requiredStateA);
-	while(*stateB != requiredStateB);
-}
-
-
 class BatchIterator
 {
+	PX_NOCOPY(BatchIterator)
 public:
 	PxConstraintBatchHeader* constraintBatchHeaders;
 	PxU32 mSize;
@@ -81,16 +59,12 @@ public:
 		mCurrentIndex = currentIndex;
 		return constraintBatchHeaders[currentIndex];
 	}
-private:
-	BatchIterator& operator=(const BatchIterator&);
 };
 
-
-inline void SolveBlockParallel	(PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxI32 batchCount, const PxI32 index,  
-						 const PxI32 headerCount, SolverContext& cache, BatchIterator& iterator,
-						 SolveBlockMethod solveTable[],
-						 const PxI32 iteration
-						)
+inline void SolveBlockParallel(	PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxI32 batchCount, const PxI32 index,  
+								 const PxI32 headerCount, SolverContext& cache, BatchIterator& iterator,
+								 SolveBlockMethod solveTable[],
+								 const PxI32 iteration)
 {
 	const PxI32 indA = index - (iteration * headerCount);
 
@@ -105,6 +79,7 @@ inline void SolveBlockParallel	(PxSolverConstraintDesc* PX_RESTRICT constraintLi
 		const PxI32 numToGrab = header.stride;
 		PxSolverConstraintDesc* PX_RESTRICT block = &constraintList[header.startIndex];
 
+		// PT: TODO: revisit this one
 		PxPrefetch(block[0].constraint, 384);
 
 		for(PxI32 b = 0; b < numToGrab; ++b)
@@ -118,34 +93,28 @@ inline void SolveBlockParallel	(PxSolverConstraintDesc* PX_RESTRICT constraintLi
 	}
 }
 
+// PT: TODO: these "solver core" classes are mostly stateless, at this point they could just be function pointers like the solve methods.
 class SolverCoreGeneral : public SolverCore
 {
 public:
-	bool frictionEveryIteration;
-	static SolverCoreGeneral* create(bool fricEveryIteration);
+	bool mFrictionEveryIteration;
+	SolverCoreGeneral(bool fricEveryIteration) : mFrictionEveryIteration(fricEveryIteration)	{}
 
 	// SolverCore
-	virtual void destroyV();
-
 	virtual void solveVParallelAndWriteBack
-		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const;
+		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const	PX_OVERRIDE	PX_FINAL;
 
 	virtual void solveV_Blocks
-		(SolverIslandParams& params) const;
-
-	virtual void writeBackV
-		(const PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxU32 constraintListSize, PxConstraintBatchHeader* contactConstraintBatches, const PxU32 numBatches,
-		 ThresholdStreamElement* PX_RESTRICT thresholdStream, const PxU32 thresholdStreamLength, PxU32& outThresholdPairs,
-		 PxSolverBodyData* atomListData, WriteBackBlockMethod writeBackTable[]) const;
+		(SolverIslandParams& params) const	PX_OVERRIDE	PX_FINAL;
 	//~SolverCore
 };
 
+// PT: TODO: we use "extern" instead of functions for TGS. Unify.
 SolveBlockMethod* getSolveBlockTable();
 SolveBlockMethod* getSolverConcludeBlockTable();
 SolveWriteBackBlockMethod* getSolveWritebackBlockTable();
 
 }
-
 }
 
 #endif

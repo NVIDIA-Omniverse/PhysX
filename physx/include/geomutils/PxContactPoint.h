@@ -76,7 +76,6 @@ namespace physx
 		\brief The surface index of shape 1 at the contact point. This is used to identify the surface material.
 
 		\note This field is only supported by triangle meshes and heightfields, else it will be set to PXC_CONTACT_NO_FACE_INDEX.
-		\note This value must be directly after internalFaceIndex0 in memory
 		*/
 		PxU32   internalFaceIndex1;
 
@@ -90,6 +89,9 @@ namespace physx
 		*/
 		PxReal restitution;
 
+		/**
+		\brief Damping coefficient (for compliant contacts)
+		*/
 		PxReal damping;
 	};
 

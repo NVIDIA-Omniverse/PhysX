@@ -278,8 +278,10 @@ protected:
 	/**
 	\brief Creates the controller manager.
 
-	\param[in] scene PhysX scene.
-	\param[in] lockingEnabled Enables/disables internal locking.
+	\param[in] scene			PhysX scene. You can only create one PxControllerManager per scene.
+	\param[in] lockingEnabled	Enables/disables internal locking.
+
+	\return New controller manager, or NULL in case of failure (e.g. when a manager has already been created for that scene)
 
 	The character controller is informed by #PxDeletionListener::onRelease() when actors or shapes are released, and updates its internal
 	caches accordingly. If character controller movement or a call to #PxControllerManager::shiftOrigin() may overlap with actor/shape releases,

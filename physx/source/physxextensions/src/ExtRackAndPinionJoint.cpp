@@ -91,35 +91,38 @@ bool RackAndPinionJoint::setJoints(const PxBase* hinge, const PxBase* prismatic)
 {
 	RackAndPinionJointData* data = static_cast<RackAndPinionJointData*>(mData);
 
-	if(!hinge || !prismatic)
-		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: cannot pass null pointers to this function.");
+	if(hinge)
+	{
+		const PxType type0 = hinge->getConcreteType();
+		if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		{
+			const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge);
+			const PxArticulationJointType::Enum artiJointType0 = joint0->getJointType();
+			if(artiJointType0 != PxArticulationJointType::eREVOLUTE && artiJointType0 != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed joint must be a revolute joint.");
+		}
+		else
+		{
+			if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed hinge joint must be either a revolute joint or a D6 joint.");
+		}
+	}
 
-	const PxType type0 = hinge->getConcreteType();
-	if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+	if(prismatic)
 	{
-		const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge);
-		const PxArticulationJointType::Enum artiJointType0 = joint0->getJointType();
-		if(artiJointType0 != PxArticulationJointType::eREVOLUTE && artiJointType0 != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setJoints: passed joint must be a revolute joint.");
-	}
-	else
-	{
-		if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed hinge joint must be either a revolute joint or a D6 joint.");
-	}
-
-	const PxType type1 = prismatic->getConcreteType();
-	if(type1 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
-	{
-		const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(prismatic);
-		const PxArticulationJointType::Enum artiJointType1 = joint1->getJointType();
-		if(artiJointType1 != PxArticulationJointType::ePRISMATIC)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setJoints: passed joint must be a prismatic joint.");
-	}
-	else
-	{
-		if(type1 != PxJointConcreteType::ePRISMATIC && type1 != PxJointConcreteType::eD6)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed prismatic joint must be either a prismatic joint or a D6 joint.");
+		const PxType type1 = prismatic->getConcreteType();
+		if(type1 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		{
+			const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(prismatic);
+			const PxArticulationJointType::Enum artiJointType1 = joint1->getJointType();
+			if(artiJointType1 != PxArticulationJointType::ePRISMATIC)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed joint must be a prismatic joint.");
+		}
+		else
+		{
+			if(type1 != PxJointConcreteType::ePRISMATIC && type1 != PxJointConcreteType::eD6)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxRackAndPinionJoint::setJoints: passed prismatic joint must be either a prismatic joint or a D6 joint.");
+		}
 	}
 
 	data->hingeJoint = hinge;

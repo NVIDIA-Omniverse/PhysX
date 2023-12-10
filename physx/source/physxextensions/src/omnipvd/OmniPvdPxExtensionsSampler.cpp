@@ -30,6 +30,7 @@
 #if PX_SUPPORT_OMNI_PVD
 
 #include "OmniPvdPxExtensionsSampler.h"
+#include "omnipvd/PxOmniPvd.h"
 
 
 using namespace physx;
@@ -37,24 +38,32 @@ using namespace physx;
 
 void OmniPvdPxExtensionsSampler::registerClasses()
 {
-	if (mWriter)
+	PxOmniPvd::ScopedExclusiveWriter scope(mOmniPvdInstance);
+	OmniPvdWriter* writer = scope.getWriter();
+	if (writer)
 	{
-		mRegistrationData.registerData(*mWriter);
+		mRegistrationData.registerData(*mOmniPvdInstance->getWriter());
 	}
 }
 
-OmniPvdPxExtensionsSampler::OmniPvdPxExtensionsSampler() : mWriter(NULL)
+OmniPvdPxExtensionsSampler::OmniPvdPxExtensionsSampler()
 {
+	mOmniPvdInstance = NULL;
 }
 
 OmniPvdPxExtensionsSampler::~OmniPvdPxExtensionsSampler()
 {
 }
 
-void OmniPvdPxExtensionsSampler::setOmniPvdWriter(OmniPvdWriter* omniPvdWriter)
+void OmniPvdPxExtensionsSampler::setOmniPvdInstance(physx::PxOmniPvd* omniPvdInstance)
 {
-	mWriter = omniPvdWriter;
+	mOmniPvdInstance = omniPvdInstance;
 }
+
+physx::PxOmniPvd* OmniPvdPxExtensionsSampler::getOmniPvdInstance() {
+	return mOmniPvdInstance;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -95,12 +104,12 @@ const OmniPvdPxExtensionsRegistrationData* OmniPvdGetPxExtensionsRegistrationDat
 	}
 }
 
-OmniPvdWriter* OmniPvdGetWriter()
+PxOmniPvd* OmniPvdGetInstance()
 {
 	OmniPvdPxExtensionsSampler* sampler = OmniPvdPxExtensionsSampler::getInstance();
 	if (sampler)
 	{
-		return sampler->getOmniPvdWriter();
+		return sampler->getOmniPvdInstance();
 	}
 	else
 	{

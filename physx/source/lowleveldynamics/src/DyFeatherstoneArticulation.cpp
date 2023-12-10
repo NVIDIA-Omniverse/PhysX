@@ -1534,7 +1534,7 @@ namespace Dy
 	PxTransform FeatherstoneArticulation::propagateTransform(const PxU32 linkID, ArticulationLink* links,
 		ArticulationJointCoreData& jointDatum, Cm::SpatialVectorF* motionVelocities, const PxReal dt, const PxTransform& pBody2World, 
 		const PxTransform& currentTransform, PxReal* jointVelocities, PxReal* jointPositions,
-		const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector* worldMotionMatrix)
+		const Cm::UnAlignedSpatialVector* motionMatrix, const Cm::UnAlignedSpatialVector* /*worldMotionMatrix*/)
 	{
 		ArticulationLink& link = links[linkID];
 
@@ -1611,86 +1611,55 @@ namespace Dy
 		}
 		case PxArticulationJointType::eSPHERICAL:
 		{
-			if (1)//jointDatum.dof < 3)
-			{
-				Cm::SpatialVectorF worldVel = motionVelocities[linkID];
+			Cm::SpatialVectorF worldVel = motionVelocities[linkID];
 
-				const PxTransform oldTransform = currentTransform;
+			const PxTransform oldTransform = currentTransform;
 
+			PxVec3 worldAngVel = worldVel.top;
+			//PxVec3 worldAngVel = motionVelocities[linkID].top;
 
-				PxVec3 worldAngVel = worldVel.top;
-				//PxVec3 worldAngVel = motionVelocities[linkID].top;
+			PxReal dist = worldAngVel.normalize() * dt;
 
-				PxReal dist = worldAngVel.normalize() * dt;
-
-				if (dist > 1e-6f)
-					newWorldQ = PxQuat(dist, worldAngVel) * oldTransform.q;
-				else
-					newWorldQ = oldTransform.q;
-
-				//newWorldQ = Ps::exp(worldAngVel*dt) * oldTransform.q;
-
-				//PxVec3 axis;
-
-				newParentToChild = computeSphericalJointPositions(mArticulationData.mRelativeQuat[linkID], newWorldQ,
-					pBody2World.q);
-
-				PxQuat jointRotation = newParentToChild * relativeQuat.getConjugate();
-
-				/*PxVec3 axis = jointRotation.getImaginaryPart();
-				for (PxU32 i = 0; i < jointDatum.dof; ++i)
-				{
-					PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
-					PxReal angle = -compAng(sa.dot(axis), jointRotation.w);
-					jPosition[i] = angle;
-				}*/
-
-				PxVec3 axis; PxReal angle;
-				jointRotation.toRadiansAndUnitAxis(angle, axis);
-				axis *= angle;
-				for (PxU32 i = 0; i < jointDatum.dof; ++i)
-				{
-					PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
-					PxReal ang = -sa.dot(axis);
-					jPosition[i] = ang;
-				}
-				const PxVec3 e = newParentToChild.rotate(parentOffset);
-				const PxVec3 d = childOffset;
-				r = e + d;
-
-				PX_ASSERT(r.isFinite());
-			}
+			if (dist > 1e-6f)
+				newWorldQ = PxQuat(dist, worldAngVel) * oldTransform.q;
 			else
+				newWorldQ = oldTransform.q;
+
+			//newWorldQ = Ps::exp(worldAngVel*dt) * oldTransform.q;
+
+			//PxVec3 axis;
+
+			newParentToChild = computeSphericalJointPositions(mArticulationData.mRelativeQuat[linkID], newWorldQ,
+				pBody2World.q);
+
+			PxQuat jointRotation = newParentToChild * relativeQuat.getConjugate();
+
+			if(jointRotation.w < 0.0f)
+				jointRotation = -jointRotation;
+
+			/*PxVec3 axis = jointRotation.getImaginaryPart();
+			for (PxU32 i = 0; i < jointDatum.dof; ++i)
 			{
-				PxVec3 worldAngVel = motionVelocities[linkID].top;
+				PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
+				PxReal angle = -compAng(sa.dot(axis), jointRotation.w);
+				jPosition[i] = angle;
+			}*/
 
-				newWorldQ = PxExp(worldAngVel*dt) * currentTransform.q;
-
-				newParentToChild = computeSphericalJointPositions(mArticulationData.mRelativeQuat[linkID], newWorldQ,
-					pBody2World.q, jPosition, motionMatrix, jointDatum.dof);
-
-				/*PxQuat newQ = (pBody2World.q * newParentToChild.getConjugate()).getNormalized();
-
-				const PxQuat cB2w = newQ * joint->childPose.q;
-
-				const PxMat33 cB2w_m(cB2w);
-
-				const PxVec3* axis = &cB2w_m.column0;
-
-				PxU32 dofIdx = 0;*/
-				PxVec3 relAngVel = worldAngVel - motionVelocities[link.parent].top;
-
-				for (PxU32 i = 0; i < jointDatum.dof; ++i)
-				{
-					jVelocity[i] = worldMotionMatrix[i].top.dot(relAngVel);
-				}
+			PxVec3 axis; PxReal angle;
+			jointRotation.toRadiansAndUnitAxis(angle, axis);
+			axis *= angle;
+			for (PxU32 i = 0; i < jointDatum.dof; ++i)
+			{
+				PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
+				PxReal ang = -sa.dot(axis);
+				jPosition[i] = ang;
 			}
-		
 			const PxVec3 e = newParentToChild.rotate(parentOffset);
 			const PxVec3 d = childOffset;
 			r = e + d;
-		
+
 			PX_ASSERT(r.isFinite());
+		
 			break;
 		}
 		case PxArticulationJointType::eFIX:
@@ -2685,7 +2654,6 @@ namespace Dy
 		const PxReal stepDt,
 		const PxReal dt,
 		const PxReal invDt,
-		const PxReal erp,
 		const bool isTGSSolver, 
 		const PxU32 linkID,
 		const PxReal maxForceScale)
@@ -3024,7 +2992,7 @@ namespace Dy
 		for (PxU32 i = 0; i < numChildren; ++i)
 		{
 			const PxU32 child = offset + i;
-			setupInternalConstraintsRecursive(links, linkCount, fixBase, data, Z, stepDt, dt, invDt, erp, isTGSSolver, child, maxForceScale);
+			setupInternalConstraintsRecursive(links, linkCount, fixBase, data, Z, stepDt, dt, invDt, isTGSSolver, child, maxForceScale);
 		}
 	}
 
@@ -3312,7 +3280,6 @@ namespace Dy
 		PxReal stepDt,
 		PxReal dt,
 		PxReal invDt,
-		PxReal erp,
 		bool isTGSSolver)
 	{
 		PX_UNUSED(linkCount);
@@ -3331,7 +3298,7 @@ namespace Dy
 		{
 			const PxU32 child = offset + i;
 
-			setupInternalConstraintsRecursive(links, linkCount, fixBase, data, Z, stepDt, dt, invDt, erp, isTGSSolver, child, maxForceScale);
+			setupInternalConstraintsRecursive(links, linkCount, fixBase, data, Z, stepDt, dt, invDt, isTGSSolver, child, maxForceScale);
 		}
 
 		PxU32 totalNumAttachments = 0;
@@ -3460,7 +3427,7 @@ namespace Dy
 	{
 		acCount = 0;
 
-		setupInternalConstraints(links, linkCount, fixBase, data, Z, data.getDt(), data.getDt(), 1.f / data.getDt(), 1.f, false);
+		setupInternalConstraints(links, linkCount, fixBase, data, Z, data.getDt(), data.getDt(), 1.f / data.getDt(), false);
 
 		return 0;
 	}
@@ -3469,7 +3436,6 @@ namespace Dy
 		PxReal dt,
 		PxReal invDt,
 		PxReal totalDt,
-		const PxReal biasCoefficient,
 		PxU32& acCount,
 		Cm::SpatialVectorF* Z)
 	{
@@ -3482,9 +3448,8 @@ namespace Dy
 		ArticulationLink* links = thisArtic->mArticulationData.getLinks();
 		const PxU32 linkCount = thisArtic->mArticulationData.getLinkCount();
 		const bool fixBase = thisArtic->mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE;
-		const PxReal erp = PxMin(0.7f, biasCoefficient);
 
-		thisArtic->setupInternalConstraints(links, linkCount, fixBase, thisArtic->mArticulationData, Z, dt, totalDt, invDt, erp, true);
+		thisArtic->setupInternalConstraints(links, linkCount, fixBase, thisArtic->mArticulationData, Z, dt, totalDt, invDt, true);
 
 		return 0;
 	}
@@ -4776,7 +4741,7 @@ namespace Dy
 	}
 
 
-	//Takes jointV, returns deltaF
+	//Takes and updates jointV, returns deltaF
 	static PxReal solveLimit(ArticulationInternalLimit& limit, PxReal& jointV, const PxReal jointPDelta,
 		const PxReal response, const PxReal recipResponse, const InternalConstraintSolverData& data)
 	{
@@ -4928,7 +4893,7 @@ namespace Dy
 					if (PxAbs(jointV) > maxJointVel)
 					{
 						PxReal newJointV = PxClamp(jointV, -maxJointVel, maxJointVel);
-						deltaF += (newJointV - jointV) * constraint.recipResponse*data.erp;
+						deltaF += (newJointV - jointV) * constraint.recipResponse;
 						jointV = newJointV;
 					}
 

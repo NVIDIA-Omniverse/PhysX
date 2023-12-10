@@ -79,7 +79,35 @@ static PxTriangleMesh* createMesh(PxCookingParams& params, const PxArray<PxVec3>
 		meshDesc.sdfDesc = &sdfDesc;
 	}
 
-	return PxCreateTriangleMesh(params, meshDesc, gPhysics->getPhysicsInsertionCallback());
+	bool enableCaching = false;
+
+	if (enableCaching)
+	{
+		const char* path = "C:\\tmp\\PhysXSDFSnippetData.dat";
+		bool ok = false;
+		FILE* fp = fopen(path, "rb");
+		if (fp)
+		{
+			fclose(fp);
+			ok = true;
+		}
+
+		if (!ok)
+		{
+			PxDefaultFileOutputStream stream(path);
+			ok = PxCookTriangleMesh(params, meshDesc, stream);
+		}
+
+		if (ok)
+		{
+			PxDefaultFileInputData stream(path);
+			PxTriangleMesh* triangleMesh = gPhysics->createTriangleMesh(stream);
+			return triangleMesh;
+		}
+		return NULL;
+	}
+	else
+		return PxCreateTriangleMesh(params, meshDesc, gPhysics->getPhysicsInsertionCallback());
 }
 
 static void addInstance(const PxTransform& transform, PxTriangleMesh* mesh)

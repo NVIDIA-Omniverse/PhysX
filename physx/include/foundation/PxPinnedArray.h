@@ -43,6 +43,7 @@ namespace physx
 	typedef PxArray<PxBounds3, PxVirtualAllocator>	PxBoundsArrayPinned;
 	typedef	PxArray<PxReal, PxVirtualAllocator>		PxFloatArrayPinned;
 	typedef	PxArray<PxU32, PxVirtualAllocator>		PxInt32ArrayPinned;
+    typedef PxArray<PxU16, PxVirtualAllocator>		PxInt16ArrayPinned;
 	typedef	PxArray<PxU8, PxVirtualAllocator>		PxInt8ArrayPinned;
 
 #if !PX_DOXYGEN

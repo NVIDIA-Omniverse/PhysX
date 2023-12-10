@@ -136,11 +136,9 @@ TriangleMesh::~TriangleMesh()
 		PX_FREE(mVertices);
 
 		PX_FREE(mGRB_triIndices); 
-
 		PX_FREE(mGRB_triAdjacencies);
 		PX_FREE(mGRB_faceRemap);
 		PX_FREE(mGRB_faceRemapInverse);
-
 		PX_DELETE(mGRB_BV32Tree);
 
 		PX_FREE(mAccumulatedTrianglesRef);
@@ -196,23 +194,39 @@ void TriangleMesh::exportExtraData(PxSerializationContext& stream)
 		stream.writeData(mAdjacencies, mNbTriangles * sizeof(PxU32) * 3);
 	}
 
-	if(mSdfData.mSdf)
+	if(mGRB_triIndices)
 	{
+		const PxU32 triangleSize = mFlags & PxTriangleMeshFlag::e16_BIT_INDICES ? sizeof(PxU16) : sizeof(PxU32);
 		stream.alignData(PX_SERIAL_ALIGN);
-		stream.writeData(mSdfData.mSdf, mSdfData.mNumSdfs * sizeof(PxReal));
+		stream.writeData(mGRB_triIndices, mNbTriangles * 3 * triangleSize);
 	}
 
-	if (mSdfData.mNumStartSlots)
+	if(mGRB_triAdjacencies)
 	{
 		stream.alignData(PX_SERIAL_ALIGN);
-		stream.writeData(mSdfData.mSubgridStartSlots, mSdfData.mNumStartSlots * sizeof(PxU32));
+		stream.writeData(mGRB_triAdjacencies, mNbTriangles * sizeof(PxU32) * 4);
 	}
 
-	if (mSdfData.mSubgridSdf)
+	if(mGRB_faceRemap)
 	{
 		stream.alignData(PX_SERIAL_ALIGN);
-		stream.writeData(mSdfData.mSubgridSdf, mSdfData.mNumSubgridSdfs * sizeof(PxU8));
+		stream.writeData(mGRB_faceRemap, mNbTriangles * sizeof(PxU32));
 	}
+
+	if(mGRB_faceRemapInverse)
+	{
+		stream.alignData(PX_SERIAL_ALIGN);
+		stream.writeData(mGRB_faceRemapInverse, mNbTriangles * sizeof(PxU32));
+	}
+
+	if(mGRB_BV32Tree)
+	{
+		stream.alignData(PX_SERIAL_ALIGN);
+		stream.writeData(mGRB_BV32Tree, sizeof(BV32Tree));
+		mGRB_BV32Tree->exportExtraData(stream);
+	}
+
+	mSdfData.exportExtraData(stream);
 }
 
 void TriangleMesh::importExtraData(PxDeserializationContext& context)
@@ -241,21 +255,37 @@ void TriangleMesh::importExtraData(PxDeserializationContext& context)
 	if(mAdjacencies)
 		mAdjacencies = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(3*mNbTriangles);
 
-	if(mSdfData.mSdf)
-		mSdfData.mSdf = context.readExtraData<PxReal, PX_SERIAL_ALIGN>(mSdfData.mNumSdfs);
+	if(mGRB_triIndices)
+	{
+		if(mFlags & PxTriangleMeshFlag::e16_BIT_INDICES)
+			mGRB_triIndices = context.readExtraData<PxU16, PX_SERIAL_ALIGN>(3 * mNbTriangles);
+		else
+			mGRB_triIndices = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(3 * mNbTriangles);
+	}
 
-	if (mSdfData.mSubgridStartSlots)
-		mSdfData.mSubgridStartSlots = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(mSdfData.mNumStartSlots);
+	if(mGRB_triAdjacencies)
+	{
+		mGRB_triAdjacencies = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(4 * mNbTriangles);
+	}
 
-	if (mSdfData.mSubgridSdf)
-		mSdfData.mSubgridSdf = context.readExtraData<PxU8, PX_SERIAL_ALIGN>(mSdfData.mNumSubgridSdfs);
+	if(mGRB_faceRemap)
+	{
+		mGRB_faceRemap = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(mNbTriangles);
+	}
 
+	if(mGRB_faceRemapInverse)
+	{
+		mGRB_faceRemapInverse = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(mNbTriangles);
+	}
 
-	mGRB_triIndices = NULL;
-	mGRB_triAdjacencies = NULL;
-	mGRB_faceRemap = NULL;
-	mGRB_faceRemapInverse = NULL;
-	mGRB_BV32Tree = NULL;
+	if(mGRB_BV32Tree)
+	{
+		mGRB_BV32Tree = context.readExtraData<BV32Tree, PX_SERIAL_ALIGN>();
+		PX_PLACEMENT_NEW(mGRB_BV32Tree, BV32Tree(PxEmpty));
+		mGRB_BV32Tree->importExtraData(context);
+	}
+
+	mSdfData.importExtraData(context);
 }
 
 void TriangleMesh::onRefCountZero()

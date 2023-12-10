@@ -32,6 +32,7 @@
 #include "DyThreadContext.h"
 #include "PxcNpContactPrepShared.h"
 #include "DyFeatherstoneArticulation.h"
+#include "DyArticulationCpuGpu.h"
 
 using namespace physx;
 using namespace Gu;

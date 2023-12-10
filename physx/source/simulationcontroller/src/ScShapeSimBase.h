@@ -63,6 +63,7 @@ namespace physx
 
 			PX_FORCE_INLINE void					setCore(const ShapeCore* core);
 			PX_FORCE_INLINE const ShapeCore&		getCore()						const;
+	        PX_FORCE_INLINE bool                    isPxsCoreValid()                const   { return mLLShape.mShapeCore != NULL; }
 
 			PX_INLINE		PxGeometryType::Enum	getGeometryType()				const	{ return getCore().getGeometryType();	}
 

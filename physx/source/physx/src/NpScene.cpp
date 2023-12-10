@@ -1362,7 +1362,7 @@ bool NpScene::addArticulationInternal(PxArticulationReducedCoordinate& npa)
 						//if all axis are locked, which means the user doesn't set the motion. In this case, we should change the joint type to be
 						//fix to avoid crash in the solver
 #if PX_CHECKED
-						outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxScene::addArticulation(): The application need to set joint motion. defaulting joint type to eFix");
+						outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "PxScene::addArticulation(): Encountered a joint with all motions fixed. Switching joint type to eFix");
 #endif
 						joint->scSetJointType(PxArticulationJointType::eFIX);
 						child->setInboundJointDof(0);

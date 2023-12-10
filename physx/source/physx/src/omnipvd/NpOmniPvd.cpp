@@ -80,14 +80,6 @@ namespace physx
 			PX_FREE(mInstance);
 			mInstance = NULL;			
 		}
-		else
-		{
-			/*
-			mInstance->error(PxErrorCode::eINVALID_OPERATION, PX_FL,
-				"Foundation destruction failed due to pending module references. Close/release all depending "
-				"modules first.");
-				*/
-		}
 	}
 
 	// Called once by physx::PxOmniPvd* PxCreateOmniPvd(...)
@@ -142,7 +134,13 @@ namespace physx
 
 	OmniPvdWriter* NpOmniPvd::getWriter()
 	{
+		return blockingWriterLoad();
+	}
+
+	OmniPvdWriter* NpOmniPvd::blockingWriterLoad()
+	{
 #if PX_SUPPORT_OMNI_PVD
+		PxMutex::ScopedLock lock(mWriterLoadMutex);
 		if (mWriter)
 		{
 			return mWriter;
@@ -155,8 +153,26 @@ namespace physx
 		return mWriter;
 #else
 		return NULL;
+#endif		
+	}
+
+	OmniPvdWriter* NpOmniPvd::acquireExclusiveWriterAccess()
+	{
+#if PX_SUPPORT_OMNI_PVD
+		mMutex.lock();
+		return blockingWriterLoad();
+#else
+		return NULL;
 #endif
 	}
+	
+	void NpOmniPvd::releaseExclusiveWriterAccess()
+	{
+#if PX_SUPPORT_OMNI_PVD
+		mMutex.unlock();
+#endif
+	}
+
 
 	OmniPvdFileWriteStream* NpOmniPvd::getFileWriteStream()
 	{

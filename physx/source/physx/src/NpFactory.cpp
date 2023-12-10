@@ -244,7 +244,6 @@ NpArticulationLink* NpFactory::createNpArticulationLink(NpArticulationReducedCoo
 		PxMutex::ScopedLock lock(mArticulationLinkPoolLock);		
 		npArticulationLink = mArticulationLinkPool.construct(pose, root, parent);
 	}
-	OMNI_PVD_NOTIFY_ADD(npArticulationLink);
 	return npArticulationLink;
 }
 
@@ -267,7 +266,7 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,  "Articulation link initialization failed: returned NULL.");
 		return NULL;
 	}
-
+	OMNI_PVD_NOTIFY_ADD(npArticulationLink);
 	PxArticulationJointReducedCoordinate* npArticulationJoint = 0;
 	if (parent)
 	{
@@ -284,8 +283,7 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 		}
 
 		npArticulationLink->setInboundJoint(*npArticulationJoint);
-	}
-
+	}	
 	return npArticulationLink;
 }
 

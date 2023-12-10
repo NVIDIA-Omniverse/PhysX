@@ -71,6 +71,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 
 	const Vec4V zero = V4Zero();
 	const BoolV bFalse = BFFFF();
+	const BoolV bTrue = BTTTT();
 	const FloatV fZero = FZero();
 
 	const PxU8 flags[4] = {	PxU8(descs[0].hasForceThresholds ? SolverContactHeader::eHAS_FORCE_THRESHOLDS : 0),
@@ -396,6 +397,8 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 			((PxU32(hasFinished[2] || !iter2.hasNextContact())) << 2) | 
 			((PxU32(hasFinished[3] || !iter3.hasNextContact())) << 3);
 
+		// finished flags are used to be able to handle pairs with varying number
+		// of contact points in the same loop
 		BoolV bFinished = BLoad(hasFinished);
 
 		while(finished != 0xf)
@@ -594,13 +597,15 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 						FLoad(con3.maxImpulse));					
 				}
 			}
+
+			// update the finished flags
 			if (!(finished & 0x1))
 			{
 				iter0.nextContact(patch0, contact0);
 				newFinished |= PxU32(!iter0.hasNextContact());
 			}
 			else
-				bFinished = BSetX(bFinished, bFalse);
+				bFinished = BSetX(bFinished, bTrue);
 
 			if(!(finished & 0x2))
 			{
@@ -608,7 +613,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				newFinished |= (PxU32(!iter1.hasNextContact()) << 1);
 			}
 			else
-				bFinished = BSetY(bFinished, bFalse);
+				bFinished = BSetY(bFinished, bTrue);
 
 			if(!(finished & 0x4))
 			{
@@ -616,7 +621,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				newFinished |= (PxU32(!iter2.hasNextContact()) << 2);
 			}
 			else
-				bFinished = BSetZ(bFinished, bFalse);
+				bFinished = BSetZ(bFinished, bTrue);
 
 			if(!(finished & 0x8))
 			{
@@ -624,7 +629,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				newFinished |= (PxU32(!iter3.hasNextContact()) << 3);
 			}
 			else
-				bFinished = BSetW(bFinished, bFalse);
+				bFinished = BSetW(bFinished, bTrue);
 		}
 		ptr = p;
 		if(hasMaxImpulse)

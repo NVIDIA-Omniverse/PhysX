@@ -38,6 +38,7 @@
 #include "../../lowleveldynamics/src/DyTGSContactPrep.h"
 #include "../../lowleveldynamics/src/DyTGS.h"
 #include "../../lowleveldynamics/src/DyConstraintPartition.h"
+#include "../../lowleveldynamics/src/DyArticulationCpuGpu.h"
 #include "GuPersistentContactManifold.h"
 #include "NpConstraint.h"
 #include "common/PxProfileZone.h"
@@ -106,7 +107,8 @@ namespace
 
 		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, Cm::SpatialVectorF* impulses, Cm::SpatialVectorF* DeltaV, PxReal elapsedTime, bool velocityIteration, bool isTGS)
 														{
-															FeatherstoneArticulation::solveInternalConstraints(dt, invDt, impulses, DeltaV, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : 1.0f);
+															// PT: TODO: revisit the TGS coeff (PX-4516)
+															FeatherstoneArticulation::solveInternalConstraints(dt, invDt, impulses, DeltaV, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT);
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocitiesTGS(PxReal dt, PxReal totalDt, PxReal invDt, PxReal /*invTotalDt*/, const PxVec3& gravity, PxReal invLengthScale)
@@ -119,7 +121,7 @@ namespace
 															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, Z, deltaV, invLengthScale);
 
 															setupInternalConstraints(mArticulationData.getLinks(), mArticulationData.getLinkCount(), 
-																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, totalDt, invDt, 0.7f, true);
+																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, totalDt, invDt, true);
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocities(PxReal dt, const PxVec3& gravity, PxReal invLengthScale)
@@ -131,7 +133,7 @@ namespace
 															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, Z, deltaV, invLengthScale);
 															const PxReal invDt = 1.0f/dt;
 															setupInternalConstraints(mArticulationData.getLinks(), mArticulationData.getLinkCount(),
-																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, dt, invDt, 1.0f, false);
+																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, dt, invDt, false);
 														}
 
 						void							allocate(const PxU32 nbLinks);
@@ -510,11 +512,6 @@ namespace
 				eaOrderedConstraintDesc[accumulatedConstraintsPerPartition[index]++] = *_desc;
 			}
 		}
-	}
-
-	PX_FORCE_INLINE bool isArticulationConstraint(const PxSolverConstraintDesc& desc)
-	{
-		return desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY || desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY;
 	}
 
 	template <typename Classification>

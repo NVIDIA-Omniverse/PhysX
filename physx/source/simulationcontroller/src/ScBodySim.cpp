@@ -33,6 +33,7 @@
 #include "PxsContext.h"
 #include "PxsSimpleIslandManager.h"
 #include "PxsSimulationController.h"
+#include "ScSimStateData.h"
 
 using namespace physx;
 using namespace physx::Dy;
@@ -137,6 +138,10 @@ BodySim::~BodySim()
 
 	tearDownSimStateData(isKinematic());
 	PX_ASSERT(!mSimStateData);
+
+	// PX-4603. AD: assuming that the articulation code cleans up the dirty state in case this is an articulation link.
+	if (!isArticulationLink())
+		scene.getVelocityModifyMap().boundedReset(mNodeIndex.index()); 
 
 	PX_ASSERT(!readInternalFlag(BF_ON_DEATHROW)); // Before 3.0 it could happen that destroy could get called twice. Assert to make sure this is fixed.
 	raiseInternalFlag(BF_ON_DEATHROW);

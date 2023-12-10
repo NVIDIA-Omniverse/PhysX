@@ -122,11 +122,13 @@ namespace Dy
 
 	struct ArticulationInternalLimit
 	{
-		//Initial error
-		PxReal errorLow;						//4		4
-		PxReal errorHigh;						//4		8
-		PxReal lowImpulse;						//4		12		changed
-		PxReal highImpulse;						//4		16		changed
+		// Initial error for high and low limits. Negative means limit is violated.
+		PxReal errorLow;
+		PxReal errorHigh;
+
+		// Impulses are updated during solver iterations.
+		PxReal lowImpulse;
+		PxReal highImpulse;
 	};
 
 	struct ArticulationImplicitDriveDesc
@@ -775,7 +777,6 @@ namespace Dy
 			PxReal dt,
 			PxReal invDt,
 			PxReal totalDt,
-			const PxReal biasCoefficient,
 			PxU32& acCount,
 			Cm::SpatialVectorF* Z);
 
@@ -1474,7 +1475,6 @@ namespace Dy
 			PxReal stepDt,
 			PxReal dt,
 			PxReal invDt,
-			PxReal erp,
 			bool isTGSSolver);
 
 		void setupInternalConstraintsRecursive(
@@ -1486,7 +1486,6 @@ namespace Dy
 			const PxReal stepDt,
 			const PxReal dt,
 			const PxReal invDt,
-			const PxReal erp,
 			const bool isTGSSolver,
 			const PxU32 linkID,
 			const PxReal maxForceScale);

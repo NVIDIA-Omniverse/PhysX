@@ -361,6 +361,12 @@ void NpArticulationLink::setGlobalPoseInternal(const PxTransform& pose, bool aut
 		static_cast<NpArticulationReducedCoordinate*>(mRoot)->setGlobalPose();
 }
 
+void NpArticulationLink::setInboundJointDof(const PxU32 index)
+{
+	mInboundJointDof = index;
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationLink, inboundJointDOF, static_cast<PxArticulationLink&>(*this), mInboundJointDof);
+}
+
 void NpArticulationLink::setFixedBaseLink(bool value)
 {
 	NP_WRITE_CHECK(getNpScene());

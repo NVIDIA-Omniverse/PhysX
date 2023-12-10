@@ -43,6 +43,7 @@
 
 #include "NpOmniPvdRegistrationData.h"
 #include "OmniPvdPxSampler.h"
+#include "NpOmniPvd.h"
 
 
 #define OMNI_PVD_ACTIVE (::OmniPvdPxSampler::getInstance() != NULL)
@@ -53,7 +54,8 @@
 //
 #undef OMNI_PVD_GET_WRITER
 #define OMNI_PVD_GET_WRITER(writer) \
-OmniPvdWriter* writer = NpOmniPvdGetWriter();
+physx::PxOmniPvd::ScopedExclusiveWriter writeLock(NpOmniPvdGetInstance()); \
+OmniPvdWriter* writer = writeLock.getWriter();
 
 
 #undef OMNI_PVD_GET_REGISTRATION_DATA

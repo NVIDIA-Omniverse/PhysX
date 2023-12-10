@@ -1951,6 +1951,8 @@ namespace Dy
 		//PxQuat newParentToChild = (newRot * pBody2WorldRot.getConjugate()).getNormalized();
 
 		PxQuat jointRotation = newParentToChild * relativeQuat.getConjugate();
+		if(jointRotation.w < 0.0f)
+			jointRotation = -jointRotation;
 
 		PxReal radians;
 		PxVec3 axis;
@@ -2196,7 +2198,7 @@ namespace Dy
 					//}
 #endif
 
-					//Gc and Gc are centre of mass poses of parent(p) and child(c) in the world frame.
+					//Gp and Gc are centre of mass poses of parent(p) and child(c) in the world frame.
 					//Introduce Q(v, dt) = PxExp(worldAngVel*dt);
 					//Lp and Lc are joint frames of parent(p) and child(c) in the parent and child body frames.
 

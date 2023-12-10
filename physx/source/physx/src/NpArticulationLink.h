@@ -121,7 +121,7 @@ public:
 			
 	void 									setGlobalPoseInternal(const PxTransform& pose, bool autowake);
 	void									setLLIndex(const PxU32 index) { mLLIndex = index; }
-	void									setInboundJointDof(const PxU32 index) { mInboundJointDof = index; }
+	void									setInboundJointDof(const PxU32 index);
 	static PX_FORCE_INLINE size_t			getCoreOffset() { return PX_OFFSET_OF_RT(NpArticulationLink, mCore); }
 private:
 	PX_INLINE	void						addToChildList(NpArticulationLink& link) { mChildLinks.pushBack(&link); }

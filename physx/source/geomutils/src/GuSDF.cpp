@@ -47,6 +47,7 @@
 
 #include "PxSDFBuilder.h"
 #include "GuDistancePointSegment.h"
+#include "common/PxSerialFramework.h"
 
 #define EXTENDED_DEBUG 0
 
@@ -56,9 +57,12 @@ namespace Gu
 {
 	SDF::~SDF()
 	{
-		PX_FREE(mSdf);
-		PX_FREE(mSubgridStartSlots);
-		PX_FREE(mSubgridSdf);
+		if(mOwnsMemory)
+		{
+			PX_FREE(mSdf);
+			PX_FREE(mSubgridStartSlots);
+			PX_FREE(mSubgridSdf);
+		}
 	}
 
 	PxReal* SDF::allocateSdfs(const PxVec3& meshLower, const PxReal& spacing, const PxU32 dimX, const PxU32 dimY, const PxU32 dimZ, 
@@ -119,7 +123,38 @@ namespace Gu
 		return mSdf;
 	}
 
+	void SDF::exportExtraData(PxSerializationContext& context)
+	{
+		if (mSdf)
+		{
+			context.alignData(PX_SERIAL_ALIGN);
+			context.writeData(mSdf, mNumSdfs * sizeof(PxReal));
+		}
 
+		if (mNumStartSlots)
+		{
+			context.alignData(PX_SERIAL_ALIGN);
+			context.writeData(mSubgridStartSlots, mNumStartSlots * sizeof(PxU32));
+		}
+
+		if (mSubgridSdf)
+		{
+			context.alignData(PX_SERIAL_ALIGN);
+			context.writeData(mSubgridSdf, mNumSubgridSdfs * sizeof(PxU8));
+		}
+	}
+
+	void SDF::importExtraData(PxDeserializationContext& context)
+	{
+		if (mSdf)
+			mSdf = context.readExtraData<PxReal, PX_SERIAL_ALIGN>(mNumSdfs);
+
+		if (mSubgridStartSlots)
+			mSubgridStartSlots = context.readExtraData<PxU32, PX_SERIAL_ALIGN>(mNumStartSlots);
+
+		if (mSubgridSdf)
+			mSubgridSdf = context.readExtraData<PxU8, PX_SERIAL_ALIGN>(mNumSubgridSdfs);
+	}
 
 	void buildTree(const PxU32* triangles, const PxU32 numTriangles, const PxVec3* points, PxArray<Gu::BVHNode>& tree, PxF32 enlargement = 1e-4f)
 	{
@@ -1432,45 +1467,45 @@ namespace Gu
 				}
 			}
 		}
-	}	
+	}
 
-	PxReal SDF::decodeSparse(PxI32 xx, PxI32 yy, PxI32 zz) const
+	PX_INLINE PxReal decodeSparse2(const SDF& sdf, PxI32 xx, PxI32 yy, PxI32 zz)
 	{
-		if (xx < 0 || yy < 0 || zz < 0 || xx > PxI32(mDims.x) || yy > PxI32(mDims.y) || zz > PxI32(mDims.z))
+		if (xx < 0 || yy < 0 || zz < 0 || xx > PxI32(sdf.mDims.x) || yy > PxI32(sdf.mDims.y) || zz > PxI32(sdf.mDims.z))
 			return 1.0f; //Return a value >0 that counts as outside
 
-		const PxU32 nbX = mDims.x / mSubgridSize;
-		const PxU32 nbY = mDims.y / mSubgridSize;
-		const PxU32 nbZ = mDims.z / mSubgridSize;
+		const PxU32 nbX = sdf.mDims.x / sdf.mSubgridSize;
+		const PxU32 nbY = sdf.mDims.y / sdf.mSubgridSize;
+		const PxU32 nbZ = sdf.mDims.z / sdf.mSubgridSize;
+		
+		PxU32 xBase = xx / sdf.mSubgridSize;
+		PxU32 yBase = yy / sdf.mSubgridSize;
+		PxU32 zBase = zz / sdf.mSubgridSize;
 
-		PxU32 xBase = xx / mSubgridSize;
-		PxU32 yBase = yy / mSubgridSize;
-		PxU32 zBase = zz / mSubgridSize;
-
-		PxU32 x = xx % mSubgridSize;
-		PxU32 y = yy % mSubgridSize;
-		PxU32 z = zz % mSubgridSize;
+		PxU32 x = xx % sdf.mSubgridSize;
+		PxU32 y = yy % sdf.mSubgridSize;
+		PxU32 z = zz % sdf.mSubgridSize;
 
 		if (xBase == nbX)
 		{
 			--xBase;
-			x = mSubgridSize;
+			x = sdf.mSubgridSize;
 		}
 		if (yBase == nbY)
 		{
 			--yBase;
-			y = mSubgridSize;
+			y = sdf.mSubgridSize;
 		}
 		if (zBase == nbZ)
 		{
 			--zBase;
-			z = mSubgridSize;
+			z = sdf.mSubgridSize;
 		}
 
-		PxU32 startId = mSubgridStartSlots[zBase * (nbX) * (nbY)+yBase * (nbX)+xBase];
+		PxU32 startId = sdf.mSubgridStartSlots[zBase * (nbX) * (nbY)+yBase * (nbX)+xBase];
 		if (startId != 0xFFFFFFFFu)
 		{
-			decodeTriple(startId, xBase, yBase, zBase);
+			SDF::decodeTriple(startId, xBase, yBase, zBase);
 
 			/*if (xBase >= mSdfSubgrids3DTexBlockDim.x || yBase >= mSdfSubgrids3DTexBlockDim.y || zBase >= mSdfSubgrids3DTexBlockDim.z)
 			{
@@ -1478,27 +1513,35 @@ namespace Gu
 				//printf("%i %i %i %i\n", PxI32(startId), PxI32(xBase), PxI32(yBase), PxI32(zBase));
 			}*/
 
-			xBase *= (mSubgridSize + 1);
-			yBase *= (mSubgridSize + 1);
-			zBase *= (mSubgridSize + 1);
+			xBase *= (sdf.mSubgridSize + 1);
+			yBase *= (sdf.mSubgridSize + 1);
+			zBase *= (sdf.mSubgridSize + 1);
 
-			const PxU32 w = mSdfSubgrids3DTexBlockDim.x * (mSubgridSize + 1);
-			const PxU32 h = mSdfSubgrids3DTexBlockDim.y * (mSubgridSize + 1);
+			const PxU32 w = sdf.mSdfSubgrids3DTexBlockDim.x * (sdf.mSubgridSize + 1);
+			const PxU32 h = sdf.mSdfSubgrids3DTexBlockDim.y * (sdf.mSubgridSize + 1);
 			const PxU32 index = idx3D(xBase + x, yBase + y, zBase + z, w, h);
 
 			//if (mBytesPerSparsePixel * index >= mNumSubgridSdfs)
 			//	PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "Out of bounds sdf subgrid access\n");
-						
-			return decodeSample(&mSubgridSdf[mBytesPerSparsePixel * index],
-				mBytesPerSparsePixel, mSubgridsMinSdfValue, mSubgridsMaxSdfValue);
+
+			return SDF::decodeSample(sdf.mSubgridSdf, index,
+				sdf.mBytesPerSparsePixel, sdf.mSubgridsMinSdfValue, sdf.mSubgridsMaxSdfValue);
 		}
 		else
 		{
-			DenseSDF coarseEval(nbX + 1, nbY + 1, nbZ + 1, mSdf);
 
-			PxReal s = 1.0f / mSubgridSize;
-			return coarseEval.sampleSDFDirect(PxVec3(xBase + x * s, yBase + y * s, zBase + z * s));
+			DenseSDF coarseEval(nbX + 1, nbY + 1, nbZ + 1, sdf.mSdf);
+
+			PxReal s = 1.0f / sdf.mSubgridSize;
+			PxReal result = coarseEval.sampleSDFDirect(PxVec3(xBase + x * s, yBase + y * s, zBase + z * s));
+			
+			return result;
 		}
+	}
+
+	PxReal SDF::decodeSparse(PxI32 xx, PxI32 yy, PxI32 zz) const
+	{
+		return decodeSparse2(*this, xx, yy, zz);
 	}
 
 	PX_FORCE_INLINE PxU64 key(PxI32 xId, PxI32 yId, PxI32 zId)
@@ -1640,10 +1683,11 @@ namespace Gu
 
 	PX_FORCE_INLINE bool generatePointInCellUsingCache(const Gu::SDF& sdf, PxI32 xBase, PxI32 yBase, PxI32 zBase, PxI32 x, PxI32 y, PxI32 z, PxVec3& point, const PxArray<PxReal>& cache)
 	{
+		const PxU32 s = sdf.mSubgridSize + 1;
 		PxReal corners[2][2][2];
 		for (PxI32 xx = 0; xx <= 1; ++xx) for (PxI32 yy = 0; yy <= 1; ++yy) for (PxI32 zz = 0; zz <= 1; ++zz)
 		{
-			PxReal v = cache[idx3D(x + xx, y + yy, z + zz, sdf.mSubgridSize + 1, sdf.mSubgridSize + 1)];
+			PxReal v = cache[idx3D(x + xx, y + yy, z + zz, s, s)];
 			corners[xx][yy][zz] = v;
 		}
 		return generatePointInCell(sdf, xBase * sdf.mSubgridSize + x, yBase * sdf.mSubgridSize + y, zBase * sdf.mSubgridSize + z, point, corners);
@@ -1684,7 +1728,7 @@ namespace Gu
 			PxU32 negativeCounter = 0;
 			for (PxI32 xx = 0; xx <= 1; ++xx) for (PxI32 yy = 0; yy <= 1; ++yy) for (PxI32 zz = 0; zz <= 1; ++zz)
 			{
-				PxReal v = sdf.decodeSparse((i + xx)* sdf.mSubgridSize, (j + yy) * sdf.mSubgridSize, (k + zz) * sdf.mSubgridSize);
+				PxReal v = decodeSparse2(sdf, (i + xx)* sdf.mSubgridSize, (j + yy) * sdf.mSubgridSize, (k + zz) * sdf.mSubgridSize);
 				if (v > t)
 					++positiveCounter;
 				if (v < t)
@@ -1696,7 +1740,54 @@ namespace Gu
 		return false;
 	}
 
-	void createTriangles(PxI32 xId, PxI32 yId, PxI32 zId, PxReal d0, PxReal ds[3], const PxHashMap<PxU64, PxU32>& cellToPoint, const PxArray<PxVec3>& points, PxArray<PxU32>& triangleIndices)
+	struct Map : public PxHashMap<PxU64, PxU32>, public PxUserAllocated
+	{
+		Map()
+		{
+
+		}
+	};
+
+	struct CellToPoint
+	{
+		PxArray<Map*> cellToPoint;		
+
+		CellToPoint(PxU32 numThreads)
+		{
+			cellToPoint.resize(numThreads);
+			for (PxU32 i = 0; i < cellToPoint.size(); ++i)
+				cellToPoint[i] = PX_NEW(Map);			
+		}
+
+		~CellToPoint()
+		{
+			for (PxU32 i = 0; i < cellToPoint.size(); ++i)
+			{
+				PX_DELETE(cellToPoint[i]);
+			}
+		}
+
+		const PxPair<const PxU64, PxU32>* find(PxI32 xId, PxI32 yId, PxI32 zId) const
+		{
+			PxU64 k = key(xId, yId, zId);
+
+			for (PxU32 i = 0; i < cellToPoint.size(); ++i)
+			{
+				const PxPair<const PxU64, PxU32>* f = cellToPoint[i]->find(k);
+				if (f)
+					return f;
+			}
+			return NULL;
+		}
+
+		void insert(PxI32 threadId, PxI32 xId, PxI32 yId, PxI32 zId, PxU32 value)
+		{
+			cellToPoint[threadId]->insert(key(xId, yId, zId), value);
+		}
+	};
+
+	PX_INLINE void createTriangles(PxI32 xId, PxI32 yId, PxI32 zId, PxReal d0, PxReal ds[3], 
+		const CellToPoint& cellToPoint, const PxArray<PxVec3>& points, PxArray<PxU32>& triangleIndices)
 	{
 		bool flipTriangleOrientation = false;
 		const PxReal threshold = 0.0f;
@@ -1713,7 +1804,7 @@ namespace Gu
 
 
 		PxI32 buffer[4];
-		const PxPair<const PxU64, PxU32>* f = cellToPoint.find(key(xId, yId, zId));
+		const PxPair<const PxU64, PxU32>* f = cellToPoint.find(xId, yId, zId);
 		if (!f)
 			return;
 
@@ -1729,10 +1820,10 @@ namespace Gu
 			{
 				bool flip = flipTriangleOrientation == b1;
 				bool skip = false;
-
+				
 				for (PxI32 ii = 0; ii < 3; ++ii)
 				{
-					f = cellToPoint.find(key(xId + offsets[dim][ii][0], yId + offsets[dim][ii][1], zId + offsets[dim][ii][2]));
+					f = cellToPoint.find(xId + offsets[dim][ii][0], yId + offsets[dim][ii][1], zId + offsets[dim][ii][2]);
 					if (f)
 						buffer[ii + 1] = f->second;
 					else
@@ -1762,8 +1853,128 @@ namespace Gu
 		}
 	}
 
+	PX_INLINE void populateSubgridCache(const Gu::SDF& sdf, PxArray<PxReal>& sdfCache, PxI32 i, PxI32 j, PxI32 k)
+	{
+		const PxU32 s = sdf.mSubgridSize + 1;
 
-	void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices)
+		for (PxU32 z = 0; z <= sdf.mSubgridSize; ++z)
+			for (PxU32 y = 0; y <= sdf.mSubgridSize; ++y)
+				for (PxU32 x = 0; x <= sdf.mSubgridSize; ++x)
+				{
+					sdfCache[idx3D(x, y, z, s, s)] =
+						decodeSparse2(sdf, i * PxI32(sdf.mSubgridSize) + PxI32(x),
+							j * PxI32(sdf.mSubgridSize) + PxI32(y),
+							k * PxI32(sdf.mSubgridSize) + PxI32(z));					
+				}
+	}
+		
+	struct IsosurfaceThreadData
+	{
+		const Gu::SDF& sdf;
+		PxArray<PxVec3> isosurfaceVertices;
+		const PxArray<PxVec3>& allIsosurfaceVertices;
+		PxArray<PxU32> isosurfaceTriangleIndices;
+		PxArray<PxReal> sdfCache;
+		CellToPoint& cellToPoint;
+		PxU32 startIndex;
+		PxU32 endIndex;
+		PxU32 threadIndex;
+		PxI32 nbX;
+		PxI32 nbY;
+		PxI32 nbZ;
+
+		IsosurfaceThreadData(const Gu::SDF& sdf_, CellToPoint& cellToPoint_, const PxArray<PxVec3>& allIsosurfaceVertices_) : 
+			sdf(sdf_), allIsosurfaceVertices(allIsosurfaceVertices_), cellToPoint(cellToPoint_)
+		{ }
+	};
+
+	void* computeIsosurfaceVerticesThreadJob(void* data)
+	{
+		IsosurfaceThreadData & d = *reinterpret_cast<IsosurfaceThreadData*>(data);
+
+		for (PxU32 indexer = d.startIndex; indexer < d.endIndex; ++indexer)
+		{
+			PxU32 ii, jj, kk;
+			idToXYZ(indexer, d.nbX, d.nbY, ii, jj, kk);
+
+			PxI32 i = PxI32(ii) - 1;
+			PxI32 j = PxI32(jj) - 1;
+			PxI32 k = PxI32(kk) - 1;
+
+			if (canSkipSubgrid(d.sdf, i, j, k))
+				continue;
+
+			populateSubgridCache(d.sdf, d.sdfCache, i, j, k);
+
+			//Process the subgrid
+			for (PxU32 z = 0; z < d.sdf.mSubgridSize; ++z)
+			{
+				for (PxU32 y = 0; y < d.sdf.mSubgridSize; ++y)
+				{
+					for (PxU32 x = 0; x < d.sdf.mSubgridSize; ++x)
+					{
+						PxVec3 p;
+						if (generatePointInCellUsingCache(d.sdf, i, j, k, x, y, z, p, d.sdfCache))
+						{
+							PxU32 xId = i * d.sdf.mSubgridSize + x;
+							PxU32 yId = j * d.sdf.mSubgridSize + y;
+							PxU32 zId = k * d.sdf.mSubgridSize + z;
+							d.cellToPoint.insert(d.threadIndex, xId, yId, zId, d.isosurfaceVertices.size());
+							d.isosurfaceVertices.pushBack(p);
+						}
+					}
+				}
+			}
+		}
+
+		return NULL;
+	}
+
+	void* computeIsosurfaceTrianglesThreadJob(void* data)
+	{
+		IsosurfaceThreadData & d = *reinterpret_cast<IsosurfaceThreadData*>(data);
+
+		const PxU32 s = d.sdf.mSubgridSize + 1;
+
+		for (PxU32 indexer = d.startIndex; indexer < d.endIndex; ++indexer)
+		{
+			PxU32 ii, jj, kk;
+			idToXYZ(indexer, d.nbX, d.nbY, ii, jj, kk);
+
+			PxI32 i = PxI32(ii) - 1;
+			PxI32 j = PxI32(jj) - 1;
+			PxI32 k = PxI32(kk) - 1;
+
+			if (canSkipSubgrid(d.sdf, i, j, k))
+				continue;
+
+			populateSubgridCache(d.sdf, d.sdfCache, i, j, k);
+
+			PxReal ds[3];
+			//Process the subgrid
+			for (PxU32 z = 0; z < d.sdf.mSubgridSize; ++z)
+			{
+				for (PxU32 y = 0; y < d.sdf.mSubgridSize; ++y)
+				{
+					for (PxU32 x = 0; x < d.sdf.mSubgridSize; ++x)
+					{
+						PxReal d0 = d.sdfCache[idx3D(x, y, z, s, s)];
+						ds[0] = d.sdfCache[idx3D(x + 1, y, z, s, s)];
+						ds[1] = d.sdfCache[idx3D(x, y + 1, z, s, s)];
+						ds[2] = d.sdfCache[idx3D(x, y, z + 1, s, s)];
+
+						createTriangles(x + i * d.sdf.mSubgridSize, y + j * d.sdf.mSubgridSize, z + k * d.sdf.mSubgridSize, d0, ds,
+							d.cellToPoint, d.allIsosurfaceVertices, d.isosurfaceTriangleIndices);
+
+					}
+				}
+			}
+		}
+
+		return NULL;
+	}
+
+	void extractIsosurfaceFromSDFSerial(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices)
 	{
 		isosurfaceVertices.clear();
 		isosurfaceTriangleIndices.clear();
@@ -1772,7 +1983,16 @@ namespace Gu
 		const PxI32 nbY = sdf.mDims.y / PxMax(1u, sdf.mSubgridSize);
 		const PxI32 nbZ = sdf.mDims.z / PxMax(1u, sdf.mSubgridSize);
 
-		PxHashMap<PxU64, PxU32> cellToPoint;
+		PxU32 sizeEstimate = PxU32(PxSqrt(PxReal(nbX*nbY * nbZ)));
+		CellToPoint cellToPoint(1);
+		
+
+		isosurfaceVertices.reserve(sizeEstimate);
+		isosurfaceTriangleIndices.reserve(sizeEstimate);
+		
+		PxArray<PxReal> sdfCache;
+		sdfCache.resize((sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1));
+
 
 		if (sdf.mSubgridSize == 0)
 		{
@@ -1784,16 +2004,13 @@ namespace Gu
 						PxVec3 p;
 						if (generatePointInCellDense(sdf, i, j, k, p))
 						{
-							cellToPoint.insert(key(i, j, k), isosurfaceVertices.size());
+							cellToPoint.insert(0, i, j, k, isosurfaceVertices.size());
 							isosurfaceVertices.pushBack(p);
 						}
 					}
 		}
 		else
 		{
-			PxArray<PxReal> sdfCache;
-			sdfCache.resize((sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1));
-
 			for (PxI32 k = -1; k <= nbZ; ++k)
 			{
 				for (PxI32 j = -1; j <= nbY; ++j)
@@ -1803,13 +2020,7 @@ namespace Gu
 						if (canSkipSubgrid(sdf, i, j, k))
 							continue;
 
-						for (PxU32 z = 0; z <= sdf.mSubgridSize; ++z)
-							for (PxU32 y = 0; y <= sdf.mSubgridSize; ++y)
-								for (PxU32 x = 0; x <= sdf.mSubgridSize; ++x) 
-								{
-									sdfCache[idx3D(x, y, z, sdf.mSubgridSize + 1, sdf.mSubgridSize + 1)] =
-										sdf.decodeSparse(i * PxI32(sdf.mSubgridSize) + PxI32(x), j * PxI32(sdf.mSubgridSize) + PxI32(y), k * PxI32(sdf.mSubgridSize) + PxI32(z));
-								}
+						populateSubgridCache(sdf, sdfCache, i, j, k);
 
 						//Process the subgrid
 						for (PxU32 z = 0; z < sdf.mSubgridSize; ++z)
@@ -1819,12 +2030,12 @@ namespace Gu
 								for (PxU32 x = 0; x < sdf.mSubgridSize; ++x)
 								{
 									PxVec3 p;
-									PxU32 xId = i * sdf.mSubgridSize + x;
-									PxU32 yId = j * sdf.mSubgridSize + y;
-									PxU32 zId = k * sdf.mSubgridSize + z;
 									if (generatePointInCellUsingCache(sdf, i, j, k, x, y, z, p, sdfCache))
 									{
-										cellToPoint.insert(key(xId, yId, zId), isosurfaceVertices.size());
+										PxU32 xId = i * sdf.mSubgridSize + x;
+										PxU32 yId = j * sdf.mSubgridSize + y;
+										PxU32 zId = k * sdf.mSubgridSize + z;
+										cellToPoint.insert(0, xId, yId, zId, isosurfaceVertices.size());
 										isosurfaceVertices.pushBack(p);
 									}
 								}
@@ -1852,6 +2063,7 @@ namespace Gu
 		}
 		else
 		{
+			const PxU32 s = sdf.mSubgridSize + 1;
 			for (PxI32 k = -1; k <= nbZ; ++k)
 			{
 				for (PxI32 j = -1; j <= nbY; ++j)
@@ -1861,6 +2073,9 @@ namespace Gu
 						if (canSkipSubgrid(sdf, i, j, k))
 							continue;
 
+						populateSubgridCache(sdf, sdfCache, i, j, k);
+						
+						PxReal ds[3];
 						//Process the subgrid
 						for (PxU32 z = 0; z < sdf.mSubgridSize; ++z)
 						{
@@ -1868,19 +2083,141 @@ namespace Gu
 							{
 								for (PxU32 x = 0; x < sdf.mSubgridSize; ++x)
 								{
-									PxReal d0 = sdf.decodeSparse(i * sdf.mSubgridSize + x, j * sdf.mSubgridSize + y, k * sdf.mSubgridSize + z);
-									PxReal ds[3];
-									ds[0] = sdf.decodeSparse(i * sdf.mSubgridSize + x + 1, j * sdf.mSubgridSize + y, k * sdf.mSubgridSize + z);
-									ds[1] = sdf.decodeSparse(i * sdf.mSubgridSize + x, j * sdf.mSubgridSize + y + 1, k * sdf.mSubgridSize + z);
-									ds[2] = sdf.decodeSparse(i * sdf.mSubgridSize + x, j * sdf.mSubgridSize + y, k * sdf.mSubgridSize + z + 1);
+									PxReal d0 = sdfCache[idx3D(x, y, z, s, s)];
+									ds[0] = sdfCache[idx3D(x + 1, y, z, s, s)];
+									ds[1] = sdfCache[idx3D(x, y + 1, z, s, s)];
+									ds[2] = sdfCache[idx3D(x, y, z + 1, s, s)];
 
-									createTriangles(x + i * sdf.mSubgridSize, y + j * sdf.mSubgridSize, z + k * sdf.mSubgridSize, d0, ds, cellToPoint, isosurfaceVertices, isosurfaceTriangleIndices);
+									createTriangles(x + i * sdf.mSubgridSize, y + j * sdf.mSubgridSize, z + k * sdf.mSubgridSize, d0, ds, 
+										cellToPoint, isosurfaceVertices, isosurfaceTriangleIndices);									
 								}
 							}
 						}
 					}
 				}
 			}
+		}
+	}
+	
+	void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices, PxU32 numThreads)
+	{
+		if (sdf.mSubgridSize == 0)
+		{
+			//Handle dense SDFs using the serial fallback
+			extractIsosurfaceFromSDFSerial(sdf, isosurfaceVertices, isosurfaceTriangleIndices);
+			return;
+		}
+
+		numThreads = PxMax(1u, numThreads);
+
+		PxArray<PxThread*> threads;
+		PxArray<IsosurfaceThreadData> perThreadData;
+		CellToPoint cellToPoint(numThreads);
+
+
+		const PxI32 nbX = sdf.mDims.x / PxMax(1u, sdf.mSubgridSize);
+		const PxI32 nbY = sdf.mDims.y / PxMax(1u, sdf.mSubgridSize);
+		const PxI32 nbZ = sdf.mDims.z / PxMax(1u, sdf.mSubgridSize);
+
+		PxU32 l = (nbX + 2) * (nbY + 2) * (nbZ + 2);
+		PxU32 range = l / numThreads;
+
+		for (PxU32 i = 0; i < numThreads; ++i)
+		{
+			perThreadData.pushBack(IsosurfaceThreadData(sdf, cellToPoint, isosurfaceVertices));
+
+			IsosurfaceThreadData& d = perThreadData[i];
+			d.startIndex = i * range;
+			d.endIndex = (i + 1) * range;
+			if (i == numThreads - 1)
+				d.endIndex = l;
+
+			d.nbX = nbX + 2;
+			d.nbY = nbY + 2;
+			d.nbZ = nbZ + 2;
+
+			d.sdfCache.resize((sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1) * (sdf.mSubgridSize + 1));
+			d.threadIndex = i;
+		}
+
+		for (PxU32 i = 0; i < numThreads; ++i)
+		{
+			if (perThreadData.size() == 1)
+				computeIsosurfaceVerticesThreadJob(&perThreadData[i]);
+			else
+			{
+				threads.pushBack(PX_NEW(PxThread)(computeIsosurfaceVerticesThreadJob, &perThreadData[i], "thread"));
+				threads[i]->start();
+			}
+		}
+
+		for (PxU32 i = 0; i < threads.size(); ++i)
+		{
+			threads[i]->waitForQuit();
+		}
+
+		for (PxU32 i = 0; i < threads.size(); ++i)
+		{
+			threads[i]->~PxThreadT();
+			PX_FREE(threads[i]);
+		}
+
+		//Collect vertices
+		PxU32 sum = 0;
+		for (PxU32 i = 0; i < perThreadData.size(); ++i)
+		{
+			IsosurfaceThreadData& d = perThreadData[i];
+			if (sum > 0)
+			{
+				for (PxHashMap<PxU64, PxU32>::Iterator iter = cellToPoint.cellToPoint[i]->getIterator(); !iter.done(); ++iter)
+					iter->second += sum;
+			}
+			sum += d.isosurfaceVertices.size();
+		}
+
+		isosurfaceVertices.reserve(sum);
+		for (PxU32 i = 0; i < perThreadData.size(); ++i)
+		{
+			IsosurfaceThreadData& d = perThreadData[i];
+			for (PxU32 j = 0; j < d.isosurfaceVertices.size(); ++j)
+				isosurfaceVertices.pushBack(d.isosurfaceVertices[j]);
+			d.isosurfaceTriangleIndices.reset(); //Release memory that is not needed anymore
+		}
+
+		threads.clear();
+		for (PxU32 i = 0; i < numThreads; ++i)
+		{
+			if (perThreadData.size() == 1)
+				computeIsosurfaceTrianglesThreadJob(&perThreadData[i]);
+			else
+			{
+				threads.pushBack(PX_NEW(PxThread)(computeIsosurfaceTrianglesThreadJob, &perThreadData[i], "thread"));
+				threads[i]->start();
+			}
+		}
+
+		for (PxU32 i = 0; i < threads.size(); ++i)
+		{
+			threads[i]->waitForQuit();
+		}
+
+		for (PxU32 i = 0; i < threads.size(); ++i)
+		{
+			threads[i]->~PxThreadT();
+			PX_FREE(threads[i]);
+		}
+
+		//Collect triangles
+		sum = 0;
+		for (PxU32 i = 0; i < perThreadData.size(); ++i)
+			sum += perThreadData[i].isosurfaceTriangleIndices.size();
+
+		isosurfaceTriangleIndices.resize(sum);
+		for (PxU32 i = 0; i < perThreadData.size(); ++i)
+		{
+			IsosurfaceThreadData& d = perThreadData[i];
+			for (PxU32 j = 0; j < d.isosurfaceTriangleIndices.size(); ++j)
+				isosurfaceTriangleIndices.pushBack(d.isosurfaceTriangleIndices[j]);
 		}
 	}
 }

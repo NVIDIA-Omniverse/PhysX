@@ -170,16 +170,16 @@ DynamicsContext::DynamicsContext(	PxcNpMemBlockPool* memBlockPool,
 	mWorldSolverBody.maxSolverFrictionProgress=MAX_PERMITTED_SOLVER_PROGRESS;
 	mWorldSolverBodyData.linearVelocity = mWorldSolverBodyData.angularVelocity = PxVec3(0.f);
 	mWorldSolverBodyData.body2World = PxTransform(PxIdentity);
-	mSolverCore[PxFrictionType::ePATCH] = SolverCoreGeneral::create(frictionEveryIteration);
-	mSolverCore[PxFrictionType::eONE_DIRECTIONAL] = SolverCoreGeneralPF::create();
-	mSolverCore[PxFrictionType::eTWO_DIRECTIONAL] = SolverCoreGeneralPF::create();
+	mSolverCore[PxFrictionType::ePATCH] = PX_NEW(SolverCoreGeneral)(frictionEveryIteration);
+	mSolverCore[PxFrictionType::eONE_DIRECTIONAL] = PX_NEW(SolverCoreGeneralPF);
+	mSolverCore[PxFrictionType::eTWO_DIRECTIONAL] = PX_NEW(SolverCoreGeneralPF);
 }
 
 DynamicsContext::~DynamicsContext()
 {
 	for(PxU32 i = 0; i < PxFrictionType::eFRICTION_COUNT; ++i)
 	{
-		mSolverCore[i]->destroyV();
+		PX_DELETE(mSolverCore[i]);
 	}
 
 	PX_DELETE(mExceededForceThresholdStream[1]);
@@ -1703,7 +1703,10 @@ public:
 				const PxU32 unrollSize = 8;
 				const PxU32 denom = PxMax(1u, (mThreadContext.mMaxPartitions*unrollSize));
 				const PxU32 MaxTasks = getTaskManager()->getCpuDispatcher()->getWorkerCount();
-				const PxU32 idealThreads = (mThreadContext.numContactConstraintBatches+denom-1)/denom;
+				// PT: small improvement: if there's no contacts, use the number of bodies instead.
+				// That way the integration work still benefits from multiple tasks.
+				const PxU32 numWorkItems = mThreadContext.numContactConstraintBatches ? mThreadContext.numContactConstraintBatches : mIslandContext.mCounts.bodies;
+				const PxU32 idealThreads = (numWorkItems+denom-1)/denom;
 				const PxU32 numTasks = PxMax(1u, PxMin(idealThreads, MaxTasks));
 				
 				if(numTasks > 1)
@@ -2271,8 +2274,8 @@ void DynamicsContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandM
 			nbArticulations < articulationBatchMax)
 		{
 			const IG::Island& island = islandSim.getIsland(islandIds[currentIsland]);
-			nbBodies += island.mSize[IG::Node::eRIGID_BODY_TYPE];
-			nbArticulations += island.mSize[IG::Node::eARTICULATION_TYPE];
+			nbBodies += island.mNodeCount[IG::Node::eRIGID_BODY_TYPE];
+			nbArticulations += island.mNodeCount[IG::Node::eARTICULATION_TYPE];
 			nbConstraints += island.mEdgeCount[IG::Edge::eCONSTRAINT];
 			nbContactManagers += island.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
 			constraintCount = nbConstraints + nbContactManagers;
@@ -2429,11 +2432,6 @@ void DynamicsContext::preIntegrationParallel(
 	}
 
 	PxMemZero(solverBodyPool, bodyCount * sizeof(PxSolverBody));
-}
-
-inline void WaitBodyRequiredState(volatile PxU32* state, PxU32 requiredState)
-{
-	while(requiredState != *state );
 }
 
 void solveParallel(SOLVER_PARALLEL_METHOD_ARGS)

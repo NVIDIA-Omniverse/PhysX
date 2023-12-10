@@ -84,10 +84,10 @@ enum Enum
 };
 };
 
-PX_FORCE_INLINE bool isArticulationConstraint(const PxSolverConstraintDesc& desc)
+PX_FORCE_INLINE bool	isArticulationConstraint(const PxSolverConstraintDesc& desc)
 {
-	return (desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY ) ||
-		(desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY);
+	return desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY
+		|| desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY;
 }
 
 

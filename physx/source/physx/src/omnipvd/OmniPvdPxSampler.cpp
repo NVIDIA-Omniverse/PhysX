@@ -34,6 +34,7 @@
 
 #include "ScIterators.h"
 
+#include "omnipvd/NpOmniPvd.h"
 #include "OmniPvdPxSampler.h"
 #include "OmniPvdWriteStream.h"
 #include "NpOmniPvdSetData.h"
@@ -55,9 +56,9 @@ public:
 	~OmniPvdStreamContainer();
 	bool initOmniPvd();
 	void registerClasses();
-	void setOmniPvdWriter(OmniPvdWriter* omniPvdWriter);
+	void setOmniPvdInstance(NpOmniPvd* omniPvdInstance);
 
-	OmniPvdWriter* mWriter;
+	NpOmniPvd* mOmniPvdInstance;
 	physx::PxMutex mMutex;
 	OmniPvdPxCoreRegistrationData mRegistrationData;
 	bool mClassesRegistered;
@@ -88,7 +89,7 @@ public:
 	void sampleScene()
 	{
 		mFrameId++;
-		samplerInternals->mPvdStream.mWriter->startFrame(OMNI_PVD_CONTEXT_HANDLE, mFrameId);		
+		samplerInternals->mPvdStream.mOmniPvdInstance->getWriter()->startFrame(OMNI_PVD_CONTEXT_HANDLE, mFrameId);
 	}
 
 	physx::PxU64 mFrameId;
@@ -97,17 +98,17 @@ public:
 OmniPvdStreamContainer::OmniPvdStreamContainer()
 {
 	physx::PxMutex::ScopedLock myLock(mMutex);
-	mWriter = NULL;
 	mClassesRegistered = false;
+	mOmniPvdInstance = NULL;
 }
 
 OmniPvdStreamContainer::~OmniPvdStreamContainer()
 {
 }
 
-void OmniPvdStreamContainer::setOmniPvdWriter(OmniPvdWriter* omniPvdWriter)
+void OmniPvdStreamContainer::setOmniPvdInstance(NpOmniPvd* omniPvdInstance)
 {
-	mWriter = omniPvdWriter;
+	mOmniPvdInstance = omniPvdInstance;
 }
 
 bool OmniPvdStreamContainer::initOmniPvd()
@@ -130,11 +131,13 @@ bool OmniPvdStreamContainer::initOmniPvd()
 void OmniPvdStreamContainer::registerClasses()
 {
 	if (mClassesRegistered) return;
-	if (mWriter)
+	OmniPvdWriter* writer = mOmniPvdInstance->acquireExclusiveWriterAccess();
+	if (writer)
 	{
-		mRegistrationData.registerData(*mWriter);
+		mRegistrationData.registerData(*writer);
 		mClassesRegistered = true;
 	}
+	mOmniPvdInstance->releaseExclusiveWriterAccess();
 }
 
 
@@ -387,11 +390,38 @@ void streamActorAttributes(const physx::PxActor& actor)
 void streamRigidActorAttributes(const PxRigidActor &ra)
 {
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-
-	PxTransform t = ra.getGlobalPose();
 	
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, ra, t.p);
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, ra, t.q);
+	if (ra.is<PxArticulationLink>())
+	{
+		const PxArticulationLink& link = static_cast<const PxArticulationLink&>(ra);
+		PxTransform TArtLinkLocal;
+		PxArticulationJointReducedCoordinate* joint = link.getInboundJoint();
+		if (joint)
+		{
+			PxArticulationLink& parentLink = joint->getParentArticulationLink();
+			// TGlobal = TFatherGlobal * TLocal
+			// Inv(TFatherGlobal)* TGlobal = Inv(TFatherGlobal)*TFatherGlobal * TLocal
+			// Inv(TFatherGlobal)* TGlobal = TLocal
+			// TLocal = Inv(TFatherGlobal) * TGlobal
+			//physx::PxTransform TParentGlobal = pxArticulationParentLink->getGlobalPose();
+			PxTransform TParentGlobalInv = parentLink.getGlobalPose().getInverse();
+			PxTransform TArtLinkGlobal = link.getGlobalPose();
+			// PT:: tag: scalar transform*transform
+			TArtLinkLocal = TParentGlobalInv * TArtLinkGlobal;
+		}
+		else
+		{
+			TArtLinkLocal = link.getGlobalPose();
+		}
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, ra, TArtLinkLocal.p)
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, ra, TArtLinkLocal.q)
+	}
+	else
+	{
+		PxTransform t = ra.getGlobalPose();	
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, translation, ra, t.p);
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, rotation, ra, t.q);
+	}
 
 	// Stream shapes too
 	const int nbrShapes = ra.getNbShapes();
@@ -486,8 +516,6 @@ void streamRigidStatic(const physx::PxRigidStatic& rs)
 
 void streamArticulationJoint(const physx::PxArticulationJointReducedCoordinate& jointRef)
 {
-	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-
 	const PxU32 degreesOfFreedom = PxArticulationAxis::eCOUNT;
 
 	// make sure size matches the size used in the PVD description
@@ -538,6 +566,8 @@ void streamArticulationJoint(const physx::PxArticulationJointReducedCoordinate& 
 	for (PxU32 ax = 0; ax < degreesOfFreedom; ++ax)
 		drivevelocitys[ax] = jointRef.getDriveVelocity(static_cast<PxArticulationAxis::Enum>(ax));
 
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
+
 	OMNI_PVD_CREATE_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, jointRef);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, type, jointRef, jointType);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationJointReducedCoordinate, parentLink, jointRef, parentPxLinkPtr);
@@ -575,6 +605,10 @@ void streamArticulationLink(const physx::PxArticulationLink& al)
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxArticulationLink, inboundJointDOF, al, al.getInboundJointDof());
 
 	OMNI_PVD_WRITE_SCOPE_END
+
+	streamActorAttributes(al);
+	streamRigidActorAttributes(al);
+	streamRigidBodyAttributes(al);
 }
 
 void streamArticulation(const physx::PxArticulationReducedCoordinate& art)
@@ -979,9 +1013,9 @@ bool OmniPvdPxSampler::isSampling()
 	return samplerInternals->mIsSampling;
 }
 
-void OmniPvdPxSampler::setOmniPvdWriter(OmniPvdWriter* omniPvdWriter)
+void OmniPvdPxSampler::setOmniPvdInstance(physx::NpOmniPvd* omniPvdInstance)
 {
-	samplerInternals->mPvdStream.setOmniPvdWriter(omniPvdWriter);
+	samplerInternals->mPvdStream.setOmniPvdInstance(omniPvdInstance);
 }
 
 void createGeometry(const physx::PxGeometry & pxGeom)
@@ -1439,11 +1473,11 @@ const OmniPvdPxCoreRegistrationData* NpOmniPvdGetPxCoreRegistrationData()
 	}
 }
 
-OmniPvdWriter* NpOmniPvdGetWriter()
+physx::NpOmniPvd* NpOmniPvdGetInstance()
 {
 	if (samplerInternals)
 	{
-		return samplerInternals->mPvdStream.mWriter;
+		return samplerInternals->mPvdStream.mOmniPvdInstance;
 	}
 	else
 	{

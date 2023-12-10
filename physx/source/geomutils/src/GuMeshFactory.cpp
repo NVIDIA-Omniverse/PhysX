@@ -830,7 +830,6 @@ PxSoftBodyMesh* MeshFactory::createSoftBodyMesh(PxInputStream& desc)
 	if (!::loadSoftBodyMeshData(desc, data))
 		return NULL;
 	PxSoftBodyMesh* m = createSoftBodyMesh(data);
-	//PX_DELETE(data);
 	return m;
 }
 
@@ -848,8 +847,6 @@ PxTetrahedronMesh* MeshFactory::createTetrahedronMesh(TetrahedronMeshData& data)
 {
 	TetrahedronMesh* np = NULL;
 	PX_NEW_SERIALIZED(np, TetrahedronMesh)(this, data);
-	//PX_ASSERT(false);
-	//PX_UNUSED(data);
 
 	if (np)
 		addTetrahedronMesh(np);
@@ -955,7 +952,7 @@ PxConvexMesh* MeshFactory::createConvexMesh(PxInputStream& desc)
 
 	if(!np->load(desc))
 	{
-		RefCountable_decRefCount(*np);
+		Cm::deletePxBase(np);
 		return NULL;
 	}
 
@@ -1011,7 +1008,7 @@ PxHeightField* MeshFactory::createHeightField(PxInputStream& stream)
 
 	if(!np->load(stream))
 	{
-		RefCountable_decRefCount(*np);
+		Cm::deletePxBase(np);
 		return NULL;
 	}
 
@@ -1114,7 +1111,7 @@ PxBVH* MeshFactory::createBVH(PxInputStream& desc)
 
 	if(!np->load(desc))
 	{
-		np->decRefCount();
+		Cm::deletePxBase(np);
 		return NULL;
 	}
 

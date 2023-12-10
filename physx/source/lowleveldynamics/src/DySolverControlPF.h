@@ -34,36 +34,25 @@
 
 namespace physx
 {
-
 namespace Dy
 {
 
+// PT: TODO: these "solver core" classes are mostly stateless, at this point they could just be function pointers like the solve methods.
 class SolverCoreGeneralPF : public SolverCore
 {
 public:
-	static SolverCoreGeneralPF* create();
+	SolverCoreGeneralPF(){}
 
-	// Implements SolverCore
-	virtual void destroyV();
-
+	// SolverCore
 	virtual void solveVParallelAndWriteBack
-		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const;
+		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const	PX_OVERRIDE	PX_FINAL;
 
 	virtual void solveV_Blocks
-		(SolverIslandParams& params) const;
-
-	virtual void writeBackV
-		(const PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxU32 constraintListSize, PxConstraintBatchHeader* contactConstraintBatches, const PxU32 numBatches,
-		 ThresholdStreamElement* PX_RESTRICT thresholdStream, const PxU32 thresholdStreamLength, PxU32& outThresholdPairs,
-		 PxSolverBodyData* atomListData, WriteBackBlockMethod writeBackTable[]) const;
-
-private:
-
-	//~Implements SolverCore
+		(SolverIslandParams& params) const	PX_OVERRIDE	PX_FINAL;
+	//~SolverCore
 };
 
 }
-
 }
 
 #endif

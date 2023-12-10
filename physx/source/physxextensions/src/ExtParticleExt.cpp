@@ -42,6 +42,7 @@ namespace ExtGpu
 
 void PxDmaDataToDevice(PxCudaContextManager* cudaContextManager, PxParticleBuffer* particleBuffer, const PxParticleBufferDesc& desc)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	cudaContextManager->acquireContext();
 
 	PxVec4* posInvMass = particleBuffer->getPositionInvMasses();
@@ -63,6 +64,11 @@ void PxDmaDataToDevice(PxCudaContextManager* cudaContextManager, PxParticleBuffe
 	cudaContext->streamSynchronize(0);
 
 	cudaContextManager->releaseContext();
+#else
+	PX_UNUSED(cudaContextManager);
+	PX_UNUSED(particleBuffer);
+	PX_UNUSED(desc);
+#endif
 }
 
 PxParticleBuffer* PxCreateAndPopulateParticleBuffer(const PxParticleBufferDesc& desc, PxCudaContextManager* cudaContextManager)
@@ -83,6 +89,7 @@ PxParticleAndDiffuseBuffer* PxCreateAndPopulateParticleAndDiffuseBuffer(const Px
 
 PxParticleClothBuffer* PxCreateAndPopulateParticleClothBuffer(const PxParticleBufferDesc& desc, const PxParticleClothDesc& clothDesc, PxPartitionedParticleCloth& output, PxCudaContextManager* cudaContextManager)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	cudaContextManager->acquireContext();
 
 	PxParticleClothBuffer* clothBuffer = PxGetPhysics().createParticleClothBuffer(desc.maxParticles, desc.maxVolumes, clothDesc.nbCloths, clothDesc.nbTriangles, clothDesc.nbSprings, cudaContextManager);
@@ -113,12 +120,19 @@ PxParticleClothBuffer* PxCreateAndPopulateParticleClothBuffer(const PxParticleBu
 
 	cudaContextManager->releaseContext();
 
-
 	return clothBuffer;
+#else
+	PX_UNUSED(desc);
+	PX_UNUSED(clothDesc);
+	PX_UNUSED(output);
+	PX_UNUSED(cudaContextManager);
+	return NULL;
+#endif
 }
 
 PxParticleRigidBuffer* PxCreateAndPopulateParticleRigidBuffer(const PxParticleBufferDesc& desc, const PxParticleRigidDesc& rigidDesc, PxCudaContextManager* cudaContextManager)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	cudaContextManager->acquireContext();
 
 	PxParticleRigidBuffer* rigidBuffer = PxGetPhysics().createParticleRigidBuffer(desc.maxParticles, desc.maxVolumes, rigidDesc.maxRigids, cudaContextManager);
@@ -158,7 +172,13 @@ PxParticleRigidBuffer* PxCreateAndPopulateParticleRigidBuffer(const PxParticleBu
 
 	cudaContextManager->releaseContext();
 
-return rigidBuffer;
+	return rigidBuffer;
+#else
+	PX_UNUSED(desc);
+	PX_UNUSED(rigidDesc);
+	PX_UNUSED(cudaContextManager);
+	return NULL;
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,6 +191,7 @@ PxParticleAttachmentBuffer::PxParticleAttachmentBuffer(PxParticleBuffer& particl
 
 PxParticleAttachmentBuffer::~PxParticleAttachmentBuffer()
 {
+#if PX_SUPPORT_GPU_PHYSX
 	mCudaContextManager->acquireContext();
 
 	PxCudaContext* cudaContext = mCudaContextManager->getCudaContext();
@@ -184,10 +205,12 @@ PxParticleAttachmentBuffer::~PxParticleAttachmentBuffer()
 	mDeviceFilters = NULL;
 
 	mCudaContextManager->releaseContext();
+#endif
 }
 
 void PxParticleAttachmentBuffer::copyToDevice(CUstream stream)
 {
+#if PX_SUPPORT_GPU_PHYSX
 	mCudaContextManager->acquireContext();
 
 	PxCudaContext* cudaContext = mCudaContextManager->getCudaContext();
@@ -236,6 +259,9 @@ void PxParticleAttachmentBuffer::copyToDevice(CUstream stream)
 	mDestroyedRefrencedBodies.resize(0);
 
 	mCudaContextManager->releaseContext();
+#else
+	PX_UNUSED(stream);
+#endif
 }
 
 void PxParticleAttachmentBuffer::addRigidAttachment(PxRigidActor* rigidActor, const PxU32 particleID, const PxVec3& localPose, PxConeLimitedConstraint* coneLimit)
@@ -438,27 +464,31 @@ struct ParticleClothBuffersImpl : public PxParticleClothBufferHelper, public PxU
 	{
 		mMaxParticles = maxParticles;
 		mClothDesc.nbParticles = 0;
-		mClothDesc.restPositions = mCudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
 
 		mMaxTriangles = maxTriangles;
 		mClothDesc.nbTriangles = 0;
-		mClothDesc.triangles = mCudaContextManager->allocPinnedHostBuffer<PxU32>(maxTriangles * 3);
 
 		mMaxSprings = maxSprings;
 		mClothDesc.nbSprings = 0;
-		mClothDesc.springs = mCudaContextManager->allocPinnedHostBuffer<PxParticleSpring>(maxSprings);
 
 		mMaxCloths = maxCloths;
 		mClothDesc.nbCloths = 0;
+#if PX_SUPPORT_GPU_PHYSX
+		mClothDesc.restPositions = mCudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
+		mClothDesc.triangles = mCudaContextManager->allocPinnedHostBuffer<PxU32>(maxTriangles * 3);
+		mClothDesc.springs = mCudaContextManager->allocPinnedHostBuffer<PxParticleSpring>(maxSprings);
 		mClothDesc.cloths = mCudaContextManager->allocPinnedHostBuffer<PxParticleCloth>(maxCloths);
+#endif
 	}
 
 	void release()
 	{
+#if PX_SUPPORT_GPU_PHYSX
 		mCudaContextManager->freePinnedHostBuffer(mClothDesc.cloths);
 		mCudaContextManager->freePinnedHostBuffer(mClothDesc.restPositions);
 		mCudaContextManager->freePinnedHostBuffer(mClothDesc.triangles);
 		mCudaContextManager->freePinnedHostBuffer(mClothDesc.springs);
+#endif
 		PX_DELETE_THIS;
 	}
 
@@ -567,13 +597,19 @@ struct ParticleVolumeBuffersImpl : public PxParticleVolumeBufferHelper, public P
 		mParticleVolumeMeshes = reinterpret_cast<PxParticleVolumeMesh*>(PX_ALLOC(sizeof(PxParticleVolumeMesh) * maxVolumes, "ParticleVolumeBuffersImpl::mParticleVolumeMeshes"));
 		mTriangles = reinterpret_cast<PxU32*>(PX_ALLOC(sizeof(PxU32) * maxTriangles * 3, "ParticleVolumeBuffersImpl::mTriangles"));
 
+#if PX_SUPPORT_GPU_PHYSX
 		mParticleVolumes = cudaContextManager->allocPinnedHostBuffer<PxParticleVolume>(maxVolumes);
 		mCudaContextManager = cudaContextManager;
+#else
+		PX_UNUSED(cudaContextManager);
+#endif
 	}
 
 	void release()
 	{
+#if PX_SUPPORT_GPU_PHYSX
 		mCudaContextManager->freePinnedHostBuffer(mParticleVolumes);
+#endif
 		PX_FREE(mParticleVolumeMeshes);
 		PX_FREE(mTriangles);
 		PX_DELETE_THIS;
@@ -678,22 +714,26 @@ struct ParticleRigidBuffersImpl : public PxParticleRigidBufferHelper, public PxU
 		mMaxParticles = maxParticles;
 		mNumParticles = 0;
 
+#if PX_SUPPORT_GPU_PHYSX
 		mCudaContextManager->allocPinnedHostBuffer<PxU32>(mRigidDesc.rigidOffsets, maxRigids + 1);
 		mCudaContextManager->allocPinnedHostBuffer<PxReal>(mRigidDesc.rigidCoefficients, maxRigids);
 		mCudaContextManager->allocPinnedHostBuffer<PxVec4>(mRigidDesc.rigidTranslations, maxRigids);
 		mCudaContextManager->allocPinnedHostBuffer<PxQuat>(mRigidDesc.rigidRotations, maxRigids);
 		mCudaContextManager->allocPinnedHostBuffer<PxVec4>(mRigidDesc.rigidLocalPositions, maxParticles);
 		mCudaContextManager->allocPinnedHostBuffer<PxVec4>(mRigidDesc.rigidLocalNormals, maxParticles);
+#endif
 	}
 
 	void release()
 	{
+#if PX_SUPPORT_GPU_PHYSX
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidOffsets);
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidCoefficients);
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidTranslations);
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidRotations);
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidLocalPositions);
 		mCudaContextManager->freePinnedHostBuffer(mRigidDesc.rigidLocalNormals);
+#endif
 		PX_DELETE_THIS;
 	}
 

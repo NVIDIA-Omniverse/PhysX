@@ -41,6 +41,8 @@
 namespace physx
 {
 	class PxSDFBuilder;
+	class PxSerializationContext;
+	class PxDeserializationContext;
 
 	namespace Gu
 	{
@@ -92,13 +94,15 @@ namespace physx
 		public:
 
 // PX_SERIALIZATION
-			SDF(const PxEMPTY) {}
-			static		void					getBinaryMetaData(PxOutputStream& stream);
+			SDF(const PxEMPTY) : mOwnsMemory(false) {}
+			void exportExtraData(PxSerializationContext& context);
+			void importExtraData(PxDeserializationContext& context);
+			static void getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 			/**
 			\brief Constructor
 			*/
-			SDF() : mSdf(NULL), mSubgridStartSlots(NULL), mSubgridSdf(NULL)
+	        SDF() : mSdf(NULL), mSubgridStartSlots(NULL), mSubgridSdf(NULL), mOwnsMemory(true)
 			{
 			}
 
@@ -108,7 +112,7 @@ namespace physx
 			SDF(PxZERO s)
 				: mMeshLower(PxZero), mSpacing(0.0f), mDims(PxZero), mNumSdfs(0), mSdf(NULL),
 				mSubgridSize(PxZero), mNumStartSlots(0), mSubgridStartSlots(NULL), mNumSubgridSdfs(0), mSubgridSdf(NULL), mSdfSubgrids3DTexBlockDim(PxZero),
-				mSubgridsMinSdfValue(0.0f), mSubgridsMaxSdfValue(0.0f), mBytesPerSparsePixel(0)
+				mSubgridsMinSdfValue(0.0f), mSubgridsMaxSdfValue(0.0f), mBytesPerSparsePixel(0), mOwnsMemory(true)
 			{
 				PX_UNUSED(s);
 			}
@@ -119,7 +123,8 @@ namespace physx
 			SDF(const SDF& sdf) 
 				: mMeshLower(sdf.mMeshLower), mSpacing(sdf.mSpacing), mDims(sdf.mDims), mNumSdfs(sdf.mNumSdfs), mSdf(sdf.mSdf),
 				mSubgridSize(sdf.mSubgridSize), mNumStartSlots(sdf.mNumStartSlots), mSubgridStartSlots(sdf.mSubgridStartSlots), mNumSubgridSdfs(sdf.mNumSubgridSdfs), mSubgridSdf(sdf.mSubgridSdf), mSdfSubgrids3DTexBlockDim(sdf.mSdfSubgrids3DTexBlockDim),
-				mSubgridsMinSdfValue(sdf.mSubgridsMinSdfValue), mSubgridsMaxSdfValue(sdf.mSubgridsMaxSdfValue), mBytesPerSparsePixel(sdf.mBytesPerSparsePixel)
+				mSubgridsMinSdfValue(sdf.mSubgridsMinSdfValue), mSubgridsMaxSdfValue(sdf.mSubgridsMaxSdfValue), mBytesPerSparsePixel(sdf.mBytesPerSparsePixel),
+				mOwnsMemory(true)
 			{
 			}
 
@@ -132,23 +137,23 @@ namespace physx
 				z = id & 0x000003FF;
 			}
 
-			static PX_FORCE_INLINE PxReal decodeSample(PxU8* data, PxU32 bytesPerSparsePixel, PxReal subgridsMinSdfValue, PxReal subgridsMaxSdfValue)
+			static PX_FORCE_INLINE PxReal decodeSample(PxU8* data, PxU32 index, PxU32 bytesPerSparsePixel, PxReal subgridsMinSdfValue, PxReal subgridsMaxSdfValue)
 			{
 				switch (bytesPerSparsePixel)
 				{
 				case 1:
-					return PxReal(data[0]) * (1.0f / 255.0f) * (subgridsMaxSdfValue - subgridsMinSdfValue) + subgridsMinSdfValue;
+					return PxReal(data[index]) * (1.0f / 255.0f) * (subgridsMaxSdfValue - subgridsMinSdfValue) + subgridsMinSdfValue;
 				case 2:
 				{
 					PxU16* ptr = reinterpret_cast<PxU16*>(data);
-					return PxReal(ptr[0]) * (1.0f / 65535.0f) * (subgridsMaxSdfValue - subgridsMinSdfValue) + subgridsMinSdfValue;
+					return PxReal(ptr[index]) * (1.0f / 65535.0f) * (subgridsMaxSdfValue - subgridsMinSdfValue) + subgridsMinSdfValue;
 				}
 				case 4:
 				{
 					//If 4 bytes per subgrid pixel are available, then normal floats are used. No need to 
 					//de-normalize integer values since the floats already contain real distance values
 					PxReal* ptr = reinterpret_cast<PxReal*>(data);
-					return ptr[0];
+					return ptr[index];
 				}
 				default:
 					PX_ASSERT(0);
@@ -192,7 +197,6 @@ namespace physx
 			\brief Destructor
 			*/
 			~SDF();
-			
 
 			PxReal* allocateSdfs(const PxVec3& meshLower, const PxReal& spacing, const PxU32 dimX, const PxU32 dimY, const PxU32 dimZ,
 				const PxU32 subgridSize, const PxU32 sdfSubgrids3DTexBlockDimX, const PxU32 sdfSubgrids3DTexBlockDimY, const PxU32 sdfSubgrids3DTexBlockDimZ,
@@ -214,6 +218,7 @@ namespace physx
 			PxReal					mSubgridsMinSdfValue;		//!< The minimum value over all subgrid blocks. Used if normalized textures are used which is the case for 8 and 16bit formats
 			PxReal					mSubgridsMaxSdfValue;		//!< The maximum value over all subgrid blocks. Used if normalized textures are used which is the case for 8 and 16bit formats
 			PxU32					mBytesPerSparsePixel;		//!< The number of bytes per subgrid pixel
+			bool					mOwnsMemory;				//!< Only false for binary deserialized data
 		};
 
 		/**
@@ -332,8 +337,9 @@ namespace physx
 		\param[in] sdf The signed distance function
 		\param[out] isosurfaceVertices The vertices of the extracted isosurface
 		\param[out] isosurfaceTriangleIndices The triangles of the extracted isosurface
+		\param[in] numThreads The number of threads to use
 		*/
-		PX_PHYSX_COMMON_API void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices);
+		PX_PHYSX_COMMON_API void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices, PxU32 numThreads = 1);
 
 
 		/**
@@ -391,7 +397,7 @@ namespace physx
 		*/
 		PX_FORCE_INLINE PX_CUDA_CALLABLE PxU32 idx3D(PxU32 x, PxU32 y, PxU32 z, PxU32 width, PxU32 height)
 		{
-			return z * width * height + y * width + x;
+			return (z * height + y) * width + x;
 		}
 
 		/**

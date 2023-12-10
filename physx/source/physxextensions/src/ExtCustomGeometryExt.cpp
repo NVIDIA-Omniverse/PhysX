@@ -222,12 +222,9 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 		if (PxGjkQueryExt::generateContacts(*this, geomSupport, pose0, pose1, contactDistance, toleranceLength, contactBuffer))
 		{
 			PxGeometryHolder substituteGeom; PxTransform preTransform;
-
-			PxBounds3 bounds;
-			PxGeometryQuery::computeGeomBounds(bounds, geom1, pose1, 0.0f, 1.01f);
-
-			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, bounds.getCenter()))
+			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 			{
+				contactBuffer.count--;
 				const PxGeometry* pGeom0 = &substituteGeom.any();
 				const PxGeometry* pGeom1 = &geom1;
 				// PT:: tag: scalar transform*transform
@@ -254,8 +251,9 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			contact.separation = dist;
 			contactBuffer.contact(contact);
 			PxGeometryHolder substituteGeom; PxTransform preTransform;
-			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, pose0.p))
+			if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 			{
+				contactBuffer.count--;
 				const PxGeometry* pGeom0 = &substituteGeom.any();
 				const PxGeometry* pGeom1 = &geom1;
 				// PT:: tag: scalar transform*transform
@@ -269,9 +267,12 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	case PxGeometryType::eTRIANGLEMESH:
 	case PxGeometryType::eHEIGHTFIELD:
 	{
+		// As a triangle has no thickness, we need to choose some collision margin - the distance
+		// considered a touching contact. I set it as 1% of the custom shape minimum dimension.
+		PxReal meshMargin = getLocalBounds(geom0).getDimensions().minElement() * 0.01f;
 		TrimeshContactFilter contactFilter;
 		bool hasAdjacency = (geom1.getType() != PxGeometryType::eTRIANGLEMESH || (static_cast<const PxTriangleMeshGeometry&>(geom1).triangleMesh->getTriangleMeshFlags() & PxTriangleMeshFlag::eADJACENCY_INFO));
-		PxBoxGeometry boxGeom(getLocalBounds(geom0).getDimensions() * 0.5f + PxVec3(meshContactMargin));
+		PxBoxGeometry boxGeom(getLocalBounds(geom0).getExtents() + PxVec3(contactDistance + meshMargin));
 		PxU32 triangles[MAX_TRIANGLES];
 		bool overflow = false;
 		PxU32 triangleCount = (geom1.getType() == PxGeometryType::eTRIANGLEMESH) ?
@@ -286,17 +287,18 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 				PxMeshQuery::getTriangle(static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles[i], tri, NULL, hasAdjacency ? adjacent : NULL);
 			else
 				PxMeshQuery::getTriangle(static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles[i], tri, NULL, adjacent);
-			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], meshContactMargin);
+			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], meshMargin);
 			if (PxGjkQueryExt::generateContacts(*this, triSupport, pose0, identityPose, contactDistance, toleranceLength, contactBuffer))
 			{
 				contactBuffer.contacts[contactBuffer.count - 1].internalFaceIndex1 = triangles[i];
-				PxGeometryHolder substituteGeom; PxTransform preTransform; PxVec3 pos1 = (tri.verts[0] + tri.verts[1] + tri.verts[2]) / 3.0f;
-				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, pos1))
+				PxGeometryHolder substituteGeom; PxTransform preTransform;
+				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 				{
+					contactBuffer.count--;
 					const PxGeometry& geom = substituteGeom.any();
 					// PT:: tag: scalar transform*transform
 					PxTransform pose = pose0.transform(preTransform);
-					PxGeometryQuery::generateTriangleContacts(geom, pose, tri.verts, triangles[i], contactDistance, meshContactMargin, toleranceLength, contactBuffer);
+					PxGeometryQuery::generateTriangleContacts(geom, pose, tri.verts, triangles[i], contactDistance, meshMargin, toleranceLength, contactBuffer);
 				}
 			}
 			if (hasAdjacency)
@@ -319,12 +321,10 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 			if (PxGjkQueryExt::generateContacts(*this, *custom1, pose0, pose1, contactDistance, toleranceLength, contactBuffer))
 			{
 				PxGeometryHolder substituteGeom; PxTransform preTransform;
-
-				PxBounds3 bounds;
-				PxGeometryQuery::computeGeomBounds(bounds, geom1, pose1, 0.0f, 1.01f);
-
-				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0, bounds.getCenter()))
+				if (useSubstituteGeometry(substituteGeom, preTransform, contactBuffer.contacts[contactBuffer.count - 1], pose0))
 				{
+					contactBuffer.count--;
+
 					PxU32 oldCount = contactBuffer.count;
 
 					const PxGeometry* pGeom0 = &substituteGeom.any();
@@ -358,12 +358,18 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::generateContacts(const PxGeometry
 	return contactBuffer.count > 0;
 }
 
-PxU32 PxCustomGeometryExt::BaseConvexCallbacks::raycast(const PxVec3& origin, const PxVec3& unitDir, const PxGeometry& /*geom*/, const PxTransform& pose,
+PxU32 PxCustomGeometryExt::BaseConvexCallbacks::raycast(const PxVec3& origin, const PxVec3& unitDir, const PxGeometry& geom, const PxTransform& pose,
 	PxReal maxDist, PxHitFlags /*hitFlags*/, PxU32 /*maxHits*/, PxGeomRaycastHit* rayHits, PxU32 /*stride*/, PxRaycastThreadContext*) const
 {
+	// When FLT_MAX is used as maxDist, it works bad with GJK algorithm.
+	// Here I compute the maximum needed distance (wiseDist) as the diagonal
+	// of the bounding box of both the geometry and the ray origin.
+	PxBounds3 bounds = PxBounds3::transformFast(pose, getLocalBounds(geom));
+	bounds.include(origin);
+	PxReal wiseDist = PxMin(maxDist, bounds.getDimensions().magnitude());
 	PxReal t;
 	PxVec3 n, p;
-	if (PxGjkQuery::raycast(*this, pose, origin, unitDir, maxDist, t, n, p))
+	if (PxGjkQuery::raycast(*this, pose, origin, unitDir, wiseDist, t, n, p))
 	{
 		PxGeomRaycastHit& hit = *rayHits;
 		hit.distance = t;
@@ -400,6 +406,8 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 	const PxGeometry& geom0, const PxTransform& pose0, const PxGeometry& geom1, const PxTransform& pose1,
 	PxGeomSweepHit& sweepHit, PxHitFlags /*hitFlags*/, const PxReal inflation, PxSweepThreadContext*) const
 {
+	PxBounds3 bounds0 = PxBounds3::transformFast(pose0, getLocalBounds(geom0));
+
 	switch (geom1.getType())
 	{
 	case PxGeometryType::eSPHERE:
@@ -407,10 +415,14 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 	case PxGeometryType::eBOX:
 	case PxGeometryType::eCONVEXMESH:
 	{
+		// See comment in BaseConvexCallbacks::raycast
+		PxBounds3 bounds; PxGeometryQuery::computeGeomBounds(bounds, geom1, pose1, 0, inflation);
+		bounds.include(bounds0);
+		PxReal wiseDist = PxMin(maxDist, bounds.getDimensions().magnitude());
 		PxGjkQueryExt::ConvexGeomSupport geomSupport(geom1, inflation);
 		PxReal t;
 		PxVec3 n, p;
-		if (PxGjkQuery::sweep(*this, geomSupport, pose0, pose1, unitDir, maxDist, t, n, p))
+		if (PxGjkQuery::sweep(*this, geomSupport, pose0, pose1, unitDir, wiseDist, t, n, p))
 		{
 			sweepHit.distance = t;
 			sweepHit.position = p;
@@ -424,15 +436,19 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 	case PxGeometryType::eTRIANGLEMESH:
 	case PxGeometryType::eHEIGHTFIELD:
 	{
-		PxReal radius = getLocalBounds(geom0).getDimensions().magnitude() * 0.5f;
-		PxCapsuleGeometry sweepGeom(radius + inflation, maxDist * 0.5f);
-		const PxVec3 defaultCapsuleAxis(1, 0, 0);
-		PxTransform sweepGeomPose(pose0.p - unitDir * maxDist * 0.5f, PxShortestRotation(defaultCapsuleAxis, unitDir));
+		PxReal radius = getLocalBounds(geom0).getExtents().magnitude();
+		PxGeometryHolder sweepGeom = PxSphereGeometry(radius + inflation);
+		PxTransform sweepGeomPose = pose0;
+		if (maxDist > FLT_EPSILON)
+		{
+			sweepGeom = PxCapsuleGeometry(radius + inflation, maxDist * 0.5f);
+			sweepGeomPose = PxTransform(pose0.p - unitDir * maxDist * 0.5f, PxShortestRotation(PxVec3(1, 0, 0), unitDir));
+		}
 		PxU32 triangles[MAX_TRIANGLES];
 		bool overflow = false;
 		PxU32 triangleCount = (geom1.getType() == PxGeometryType::eTRIANGLEMESH) ?
-			PxMeshQuery::findOverlapTriangleMesh(sweepGeom, sweepGeomPose, static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow) :
-			PxMeshQuery::findOverlapHeightField(sweepGeom, sweepGeomPose, static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow);
+			PxMeshQuery::findOverlapTriangleMesh(sweepGeom.any(), sweepGeomPose, static_cast<const PxTriangleMeshGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow) :
+			PxMeshQuery::findOverlapHeightField(sweepGeom.any(), sweepGeomPose, static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles, MAX_TRIANGLES, 0, overflow);
 		if(overflow)
 			PxGetFoundation().error(PxErrorCode::eDEBUG_INFO, PX_FL, "PxCustomGeometryExt::BaseConvexCallbacks::sweep() Too many triangles.\n");
 		sweepHit.distance = PX_MAX_F32;
@@ -445,9 +461,15 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 			else
 				PxMeshQuery::getTriangle(static_cast<const PxHeightFieldGeometry&>(geom1), pose1, triangles[i], tri);
 			TriangleSupport triSupport(tri.verts[0], tri.verts[1], tri.verts[2], inflation);
+			PxBounds3 bounds = bounds0;
+			for (PxU32 j = 0; j < 3; ++j)
+				bounds.include(tri.verts[j]);
+			bounds.fattenFast(inflation);
+			// See comment in BaseConvexCallbacks::raycast
+			PxReal wiseDist = PxMin(maxDist, bounds.getDimensions().magnitude());
 			PxReal t;
 			PxVec3 n, p;
-			if (PxGjkQuery::sweep(*this, triSupport, pose0, identityPose, unitDir, maxDist, t, n, p))
+			if (PxGjkQuery::sweep(*this, triSupport, pose0, identityPose, unitDir, wiseDist, t, n, p))
 			{
 				if (sweepHit.distance > t)
 				{
@@ -470,8 +492,12 @@ bool PxCustomGeometryExt::BaseConvexCallbacks::sweep(const PxVec3& unitDir, cons
 	return false;
 }
 
-bool PxCustomGeometryExt::BaseConvexCallbacks::usePersistentContactManifold(const PxGeometry& /*geometry*/, PxReal& /*breakingThreshold*/) const
+bool PxCustomGeometryExt::BaseConvexCallbacks::usePersistentContactManifold(const PxGeometry& /*geometry*/, PxReal& breakingThreshold) const
 {
+	// Even if we don't use persistent manifold, we still need to set proper breakingThreshold
+	// because the other geometry still can force the PCM usage. FLT_EPSILON ensures that
+	// the contacts will be discarded and recomputed every frame if actor moves.
+	breakingThreshold = FLT_EPSILON;
 	return false;
 }
 
@@ -643,19 +669,24 @@ void PxCustomGeometryExt::CylinderCallbacks::computeMassProperties(const PxGeome
 	}
 }
 
-bool PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0, const PxVec3& pos1) const
+bool PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0) const
 {
+	// here I check if we contact with the cylender bases or the lateral surface
+	// where more than 1 contact point can be generated.
 	PxVec3 locN = pose0.rotateInv(p.normal);
 	float nAng = acosf(PxClamp(-locN[axis], -1.0f, 1.0f));
 	float epsAng = PxPi / 36.0f; // 5 degrees
 	if (nAng < epsAng || nAng > PxPi - epsAng)
 	{
+		// if we contact with the bases
+		// make the substitute geometry a box and rotate it so one of
+		// the corners matches the contact point
 		PxVec3 halfSize;
 		halfSize[axis] = height * 0.5f + margin;
 		halfSize[(axis + 1) % 3] = halfSize[(axis + 2) % 3] = radius / sqrtf(2.0f);
 		geom = PxBoxGeometry(halfSize);
 		PxVec3 axisDir(PxZero); axisDir[axis] = 1.0f;
-		PxVec3 locP = pose0.transformInv(pos1);
+		PxVec3 locP = pose0.transformInv(p.point);
 		float s1 = locP[(axis + 1) % 3], s2 = locP[(axis + 2) % 3];
 		float ang = ((s1 * s1) + (s2 * s2) > 1e-3f) ? atan2f(s2, s1) : 0;
 		preTransform = PxTransform(PxQuat(ang + PxPi * 0.25f, axisDir));
@@ -663,6 +694,9 @@ bool PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry(PxGeometryHol
 	}
 	else if (nAng > PxPiDivTwo - epsAng && nAng < PxPiDivTwo + epsAng)
 	{
+		// if it's the lateral surface
+		// make the substitute geometry a capsule and rotate it so it aligns
+		// with the cylinder surface
 		geom = PxCapsuleGeometry(radius + margin, height * 0.5f);
 		switch (axis)
 		{
@@ -868,20 +902,25 @@ void PxCustomGeometryExt::ConeCallbacks::computeMassProperties(const PxGeometry&
 	}
 }
 
-bool PxCustomGeometryExt::ConeCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0, const PxVec3& pos1) const
+bool PxCustomGeometryExt::ConeCallbacks::useSubstituteGeometry(PxGeometryHolder& geom, PxTransform& preTransform, const PxContactPoint& p, const PxTransform& pose0) const
 {
+	// here I check if we contact with the cone base or the lateral surface
+	// where more than 1 contact point can be generated.
 	PxVec3 locN = pose0.rotateInv(p.normal);
 	float nAng = acosf(PxClamp(-locN[axis], -1.0f, 1.0f));
 	float epsAng = PxPi / 36.0f; // 5 degrees
 	float coneAng = atan2f(radius, height);
 	if (nAng > PxPi - epsAng)
 	{
+		// if we contact with the base
+		// make the substitute geometry a box and rotate it so one of
+		// the corners matches the contact point
 		PxVec3 halfSize;
 		halfSize[axis] = height * 0.5f + margin;
 		halfSize[(axis + 1) % 3] = halfSize[(axis + 2) % 3] = radius / sqrtf(2.0f);
 		geom = PxBoxGeometry(halfSize);
 		PxVec3 axisDir(PxZero); axisDir[axis] = 1.0f;
-		PxVec3 locP = pose0.transformInv(pos1);
+		PxVec3 locP = pose0.transformInv(p.point);
 		float s1 = locP[(axis + 1) % 3], s2 = locP[(axis + 2) % 3];
 		float ang = ((s1 * s1) + (s2 * s2) > 1e-3f) ? atan2f(s2, s1) : 0;
 		preTransform = PxTransform(PxQuat(ang + PxPi * 0.25f, axisDir));
@@ -889,6 +928,9 @@ bool PxCustomGeometryExt::ConeCallbacks::useSubstituteGeometry(PxGeometryHolder&
 	}
 	else if (nAng > PxPiDivTwo - coneAng - epsAng && nAng < PxPiDivTwo - coneAng + epsAng)
 	{
+		// if it's the lateral surface
+		// make the substitute geometry a capsule and rotate it so it aligns
+		// with the cone surface
 		geom = PxCapsuleGeometry(radius * 0.25f + margin, sqrtf(height * height + radius * radius) * 0.5f);
 		switch (axis)
 		{

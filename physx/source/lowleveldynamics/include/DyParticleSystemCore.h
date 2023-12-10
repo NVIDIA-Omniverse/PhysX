@@ -85,6 +85,7 @@ public:
 	PxU32					mMaxNeighborhood; 
 		
 	PxArray<PxU16>			mPhaseGroupToMaterialHandle;
+	PxArray<PxU16>			mUniqueMaterialHandles; //just for reporting
 
 	void addParticleBuffer(PxParticleBuffer* particleBuffer)
 	{

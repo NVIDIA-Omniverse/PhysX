@@ -120,7 +120,7 @@ bool PxInitExtensions(PxPhysics& physics, PxPvd* pvd)
 	{
 		if (OmniPvdPxExtensionsSampler::createInstance())
 		{
-			OmniPvdPxExtensionsSampler::getInstance()->setOmniPvdWriter(physics.getOmniPvd()->getWriter());
+			OmniPvdPxExtensionsSampler::getInstance()->setOmniPvdInstance(physics.getOmniPvd());
 			OmniPvdPxExtensionsSampler::getInstance()->registerClasses();
 		}
 	}

@@ -495,6 +495,9 @@ static void solveContact4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT 
 
 		Vec4V accumDeltaF = vZero;
 
+		// numNormalConstr is the maxium number of normal constraints any of these 4 contacts have.
+		// Contacts with fewer normal constraints than that maximum apply zero force because their
+		// c.velMultiplier and c.biasedErr were set to zero in contact prepping (see the bFinished variables there)
 		for(PxU32 i=0;i<numNormalConstr;i++)
 		{
 			const SolverContactBatchPointBase4& c = contacts[i];

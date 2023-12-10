@@ -1,4 +1,87 @@
-# v5.3.0
+# v5.3.1-105.1
+
+## General
+
+### Changed
+
+* PxgDynamicsMemoryConfig::tempBufferCapacity will now be interpreted as a user-provided initial size, and will resize automatically if more memory is needed.
+
+### Fixed
+
+* A bug that led to phantom collisions for convex-heightfield interactions on GPU has been fixed.
+* A bug that caused velocity and impulse updates of the GPU articulation solver (PGS and TGS) not to be propagated to subsequent iterations, causing slower convergence and potentially unstable collision responses between rigids and articulations.
+* Fixed binary serialization for GPU enabled triangle meshes and meshes with SDF support.
+* Several bugs with GPU aggregates have been fixed that could have led to missed and phantom collisions. The issues were mostly related to additions/removals of aggregate contents.
+* Gpu accelerated SDF cooking is now deterministic.
+* SDF snippet shows how to optionally store cooked data into files.
+* Small improvements to SDF collisions, especially when objects with wildly different size collide.
+* Creating objects from a PxInputData containing invalid data could lead to a confusing (and incorrect) error message about a "double deletion". This has been fixed.
+* Bugs in island management related to actors other than rigid bodies.
+* A bug that could lead to a crash when calling the PxTetMaker::validateTriangleMesh function with a mesh referencing more vertices than passed into the function. That defect is now reported as eTRIANGLE_INDEX_OUT_OF_RANGE. 
+* A crash bug that appeared when releasing actors with externally-provided forces and torques has been fixed. [Issue #211](https://github.com/NVIDIA-Omniverse/PhysX/issues/211)
+* A bug that caused a memory corruption in the GPU solver when using D6 joints with rigid bodies and articulations has been fixed.
+
+## Rigid Body
+
+### Added
+
+* The extraction of an isosurface from a SDF can now use multiple CPU cores.
+
+### Fixed
+
+* A crash happening when using contact report thresholds with point-friction (PxFrictionType::eONE_DIRECTIONAL / PxFrictionType::eTWO_DIRECTIONAL) has been fixed.
+* A "fear of the wireframe" issue in Sphere vs TriangleMesh collision when simulating on GPU is fixed.
+
+## Articulations
+
+### Fixed
+
+* Articulation joint velocity limits are respected when articulation joint drives are configured to push past the limit.
+* Spherical articulation joints could sometimes flip their position by 2 pi causing problems with joint limits. This has been fixed.
+
+## Joints
+
+### Fixed
+
+* The PxConstraintFlag::eENABLE_EXTENDED_LIMITS flag now works properly for D6 based revolute joints when the GPU pipeline with the TGS solver is active.
+
+## Character controller
+
+### Fixed
+
+* You can now only create one PxCreateControllerManager per PxScene. This avoids filtering-related issues when multiple controller managers are created for the same PxScene.
+
+## Particles
+
+### Added
+
+* PxParticleSystem::getParticleMaterials() to query materials that have been registered with phases.
+
+### Fixed
+
+* PxParticleSystem::getNbParticleMaterials() always returned 1, instead of the materials referenced by phases.
+* Particle - Convex Shape collisions failing with spread out particles.
+* Particle phase references to PxPBDMaterial were broken when releasing (an unreferenced) PxPBDMaterial.
+
+## Pvd
+
+### Added
+
+* A way to get a thread safe OmniPvd writer from the PxOmniPvd interface through using acquireExclusiveWriterAccess() and releaseExclusiveWriterAccess().
+
+### Fixed
+
+* OmniPVD no longer breaks when running and recording multiple scenes in parallel.
+* Corrected mirroring of the inbountJoinDOF attribute of PxArticulationLink
+
+## Extensions
+
+### Fixed
+
+* A bug in custom cone/cylinder collision with triangle meshes. There was a gap between a cone/cylinder and a mesh, noticeable for centimeter-scale shapes. Note that the last position argument of e.g.: PxCustomGeometryExt::CylinderCallbacks::useSubstituteGeometry was removed from the API.
+
+
+# v5.3.0-105.1
 
 ## Supported Platforms
 

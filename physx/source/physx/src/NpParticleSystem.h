@@ -54,6 +54,8 @@
 #include "NpActor.h"
 #include "NpActorTemplate.h"
 #include "NpBase.h"
+#include "NpMaterialManager.h"
+#include "NpPhysics.h"
 
 #include "ScParticleSystemSim.h"
 
@@ -213,12 +215,14 @@ namespace physx
 		void						setSolverType(const PxParticleSolverType::Enum solverType) { scSetSolverType(solverType); }
 		virtual PxParticleSolverType::Enum	getSolverType() const { return mCore.getSolverType(); }
 
-
-		virtual PxU32				getNbParticleMaterials() const
+		virtual PxU32 getNbParticleMaterials() const 
 		{
 			const Sc::ParticleSystemShapeCore& shapeCore = mCore.getShapeCore();
-			return shapeCore.getNbMaterialIndices();
+			const Dy::ParticleSystemCore& core = shapeCore.getLLCore();
+			return core.mUniqueMaterialHandles.size();
 		}
+
+		virtual PxU32 getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 		virtual void addParticleBuffer(PxParticleBuffer* userBuffer) = 0;
 		virtual void removeParticleBuffer(PxParticleBuffer* userBuffer) = 0;
@@ -390,6 +394,27 @@ namespace physx
 		virtual	void				setGridSizeY(PxU32 gridSizeY) { scSetGridSizeY(gridSizeY); }
 		virtual	void				setGridSizeZ(PxU32 gridSizeZ) { scSetGridSizeZ(gridSizeZ); }
 
+		template<typename ParticleMaterialType>
+		PxU32 getParticleMaterialsInternal(PxParticleMaterial** userBuffer, PxU32 bufferSize,
+	                                       PxU32 startIndex = 0) const
+	    {
+		    const Sc::ParticleSystemShapeCore& shapeCore = mCore.getShapeCore();
+		    const Dy::ParticleSystemCore& core = shapeCore.getLLCore();
+
+		    NpMaterialManager<ParticleMaterialType>& matManager =
+		        NpMaterialAccessor<ParticleMaterialType>::getMaterialManager(NpPhysics::getInstance());
+
+		    PxU32 size = core.mUniqueMaterialHandles.size();
+		    const PxU32 remainder = PxU32(PxMax<PxI32>(PxI32(size - startIndex), 0));
+		    const PxU32 writeCount = PxMin(remainder, bufferSize);
+		    for(PxU32 i = 0; i < writeCount; i++)
+		    {
+			    userBuffer[i] = matManager.getMaterial(core.mUniqueMaterialHandles[startIndex + i]);
+		    }
+		    return writeCount;
+	    }
+
+
 	protected:
 		Sc::ParticleSystemCore		mCore;
 		PxCudaContextManager*		mCudaContextManager;
@@ -462,6 +487,8 @@ namespace physx
 		//external API
 		virtual PxActorType::Enum	getType() const { return PxActorType::ePBD_PARTICLESYSTEM; }
 
+		virtual PxU32				getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const PX_OVERRIDE;
+
 		virtual void				addParticleBuffer(PxParticleBuffer* particleBuffer);
 		virtual void				removeParticleBuffer(PxParticleBuffer* particleBuffer);
 
@@ -505,8 +532,10 @@ namespace physx
 		virtual void				visualize(PxRenderOutput& out, NpScene& npScene)	const;
 #else
 		PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
-#endif	
-		
+#endif
+
+		virtual PxU32				getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const PX_OVERRIDE;
+
 		virtual void				addParticleBuffer(PxParticleBuffer* particleBuffer);
 		virtual void				removeParticleBuffer(PxParticleBuffer* particleBuffer);
 
@@ -557,6 +586,8 @@ namespace physx
 #else
 		PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION
 #endif	
+
+		virtual PxU32				getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const PX_OVERRIDE;
 
 		virtual void				addParticleBuffer(PxParticleBuffer* particleBuffer);
 		virtual void				removeParticleBuffer(PxParticleBuffer* particleBuffer);

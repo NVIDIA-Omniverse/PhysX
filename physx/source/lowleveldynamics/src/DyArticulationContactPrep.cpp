@@ -30,7 +30,7 @@
 #include "foundation/PxVecMath.h"
 #include "DyCorrelationBuffer.h"
 #include "DySolverConstraintExtShared.h"
-#include "DyConstraintPrep.h"
+#include "DyArticulationCpuGpu.h"
 #include "DyFeatherstoneArticulation.h"
 
 using namespace physx::Gu;

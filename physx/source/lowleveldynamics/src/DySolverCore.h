@@ -32,6 +32,9 @@
 #include "PxvConfig.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxThread.h"
+#include "foundation/PxUserAllocated.h"
+// PT: it is not wrong to include DyPGS.h here because the SolverCore class is actually only used by PGS.
+// (for patch / point friction). TGS doesn't use the same architecture / class hierarchy.
 #include "DyPGS.h"
 
 namespace physx
@@ -195,11 +198,11 @@ struct SolverIslandParams
 /*!
 Interface to constraint solver cores
 */    
-class SolverCore
+class SolverCore : public PxUserAllocated
 {
 public:
-	virtual void destroyV() = 0;
     virtual ~SolverCore() {}
+
 	/*
 	solves dual problem exactly by GS-iterating until convergence stops
 	only uses regular velocity vector for storing results, and backs up initial state, which is restored.
@@ -212,11 +215,6 @@ public:
 
 	virtual void solveV_Blocks
 		(SolverIslandParams& params) const = 0;
-
-	virtual void writeBackV
-		(const PxSolverConstraintDesc* PX_RESTRICT constraintList, const PxU32 constraintListSize, PxConstraintBatchHeader* contactConstraintBatches, const PxU32 numConstraintBatches,
-	 	 ThresholdStreamElement* PX_RESTRICT thresholdStream, const PxU32 thresholdStreamLength, PxU32& outThresholdPairs,
-		 PxSolverBodyData* atomListData, WriteBackBlockMethod writeBackTable[]) const = 0;
 };
 
 }

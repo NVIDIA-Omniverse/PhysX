@@ -158,7 +158,7 @@ NpPhysics::NpPhysics(const PxTolerancesScale& scale, const PxvOffsetTable& pxvOf
 			NpOmniPvd* npOmniPvd = static_cast<NpOmniPvd*>(mOmniPvd);
 			NpOmniPvd::incRefCount();
 			npOmniPvd->mPhysXSampler = mOmniPvdSampler; // Dirty hack to do startSampling from PxOmniPvd
-			mOmniPvdSampler->setOmniPvdWriter(omniPvd->getWriter());
+			mOmniPvdSampler->setOmniPvdInstance(npOmniPvd);
 		}
 	}
 #else

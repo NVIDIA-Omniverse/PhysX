@@ -97,11 +97,10 @@ public:
 		PxReal dt,
 		PxReal invDt,
 		PxReal totalDt,
-		const PxReal biasCoefficient,
 		PxU32& acCount,
 		Cm::SpatialVectorF* Z)
 	{
-		return FeatherstoneArticulation::setupSolverConstraintsTGS(desc,  dt, invDt, totalDt, biasCoefficient, acCount,  Z);
+		return FeatherstoneArticulation::setupSolverConstraintsTGS(desc,  dt, invDt, totalDt, acCount,  Z);
 	}
 };
 

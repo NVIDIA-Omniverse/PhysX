@@ -64,22 +64,30 @@ static void getBinaryMetaData_BigConvexRawData(PxOutputStream& stream)
 
 void SDF::getBinaryMetaData(PxOutputStream& stream)
 {
+	PX_DEF_BIN_METADATA_CLASS(stream, Dim3)
+	PX_DEF_BIN_METADATA_ITEM(stream, Dim3, PxU32, x, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, Dim3, PxU32, y, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, Dim3, PxU32, z, 0)
+
 	PX_DEF_BIN_METADATA_CLASS(stream, SDF)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxVec3, mMeshLower, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxReal, mSpacing, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, Dim3, mDims, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxReal, mNumSdfs, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mNumSdfs, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxReal, mSdf, PxMetaDataFlag::ePTR)
 
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mSubgridSize, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mNumStartSlots, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mSubgridStartSlots, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mNumSubgridSdfs, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU8,	mSubgridSdf, PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU8, mSubgridSdf, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, Dim3, mSdfSubgrids3DTexBlockDim, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxReal, mSubgridsMinSdfValue, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxReal, mSubgridsMaxSdfValue, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, SDF, PxU32, mBytesPerSparsePixel, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, SDF, bool, mOwnsMemory, 0)
+
+
 }
 
 void BigConvexData::getBinaryMetaData(PxOutputStream& stream)
@@ -145,6 +153,7 @@ void Gu::ConvexMesh::getBinaryMetaData(PxOutputStream& stream)
 	getBinaryMetaData_InternalObjectsData(stream);
 	getBinaryMetaData_HullPolygonData(stream);
 	getBinaryMetaData_ConvexHullData(stream);
+	SDF::getBinaryMetaData(stream);
 	BigConvexData::getBinaryMetaData(stream);
 
 	PX_DEF_BIN_METADATA_VCLASS(stream,ConvexMesh)
@@ -174,6 +183,12 @@ void Gu::ConvexMesh::getBinaryMetaData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_EXTRA_ARRAY(stream,	Gu::ConvexMesh, PxU8,			    mNb,						0, PxMetaDataFlag::eCOUNT_MASK_MSB)
 	PX_DEF_BIN_METADATA_EXTRA_ALIGN(stream,	ConvexMesh, 4)
+	
+	//mSdfData this is currently broken
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, Gu::SDF, PxReal, mSdf, mNumSdfs, 0, PX_SERIAL_ALIGN)
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, Gu::SDF, PxU32, mSubgridStartSlots, mNumStartSlots, 0, PX_SERIAL_ALIGN)
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, Gu::SDF, PxU8, mSubgridSdf, mNumSubgridSdfs, 0, PX_SERIAL_ALIGN)
+
 	// mBigConvexData
 	PX_DEF_BIN_METADATA_EXTRA_ITEM(stream, Gu::ConvexMesh, BigConvexData, mBigConvexData, PX_SERIAL_ALIGN)
 }
@@ -357,6 +372,8 @@ void BV4Tree::getBinaryMetaData(PxOutputStream& stream)
 
 void Gu::TriangleMesh::getBinaryMetaData(PxOutputStream& stream)
 {
+	SDF::getBinaryMetaData(stream);
+
 	PX_DEF_BIN_METADATA_VCLASS(stream,		TriangleMesh)
 	PX_DEF_BIN_METADATA_BASE_CLASS(stream,	TriangleMesh, PxBase)
 
@@ -384,27 +401,9 @@ void Gu::TriangleMesh::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, void,				mGRB_triAdjacencies,	PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mGRB_faceRemap,			PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mGRB_faceRemapInverse,	PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, void,				mGRB_BV32Tree,			PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, Gu::BV32Tree,		mGRB_BV32Tree,			PxMetaDataFlag::ePTR)
 
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxVec3,			mSdfData.mMeshLower,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxReal,			mSdfData.mSpacing,		0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mDims.x,		0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mDims.y,		0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mDims.z,		0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mNumSdfs,		0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxReal,			mSdfData.mSdf,			PxMetaDataFlag::ePTR)
-
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mSubgridSize,					0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mNumStartSlots,				0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mSubgridStartSlots,			PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mNumSubgridSdfs,				0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU8,				mSdfData.mSubgridSdf,					PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mSdfSubgrids3DTexBlockDim.x,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mSdfSubgrids3DTexBlockDim.y,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mSdfSubgrids3DTexBlockDim.z,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxReal,			mSdfData.mSubgridsMinSdfValue,			0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxReal,			mSdfData.mSubgridsMaxSdfValue,			0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mSdfData.mBytesPerSparsePixel,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, SDF,				mSdfData,				0)
 
 	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mAccumulatedTrianglesRef,	PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream,	TriangleMesh, PxU32,			mTrianglesReferences,		PxMetaDataFlag::ePTR)
@@ -442,10 +441,12 @@ void Gu::TriangleMesh::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU32, mAdjacencies, mNbTriangles, 0, 0)
 	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU32, mAdjacencies, mNbTriangles, 0, 0)
 
-	// mSdf
-	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxReal, mSdfData.mSdf, mSdfData.mNumSdfs, 0, PX_SERIAL_ALIGN)
-	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU32, mSdfData.mSubgridStartSlots, mSdfData.mNumStartSlots, 0, PX_SERIAL_ALIGN)
-	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU8, mSdfData.mSubgridSdf, mSdfData.mNumSubgridSdfs, 0, PX_SERIAL_ALIGN)
+	// GPU data missing!
+
+	// mSdf, this is currently broken
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxReal, mSdfData.mSdf, mSdfData.mNumSdfs, 0, PX_SERIAL_ALIGN)
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU32, mSdfData.mSubgridStartSlots, mSdfData.mNumStartSlots, 0, PX_SERIAL_ALIGN)
+	//PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU8, mSdfData.mSubgridSdf, mSdfData.mNumSubgridSdfs, 0, PX_SERIAL_ALIGN)
 
 	// mAccumulatedTrianglesRef
 //	PX_DEF_BIN_METADATA_EXTRA_ITEMS(stream, TriangleMesh, PxU32, mAccumulatedTrianglesRef, mNbTrianglesReferences, 0, PX_SERIAL_ALIGN)

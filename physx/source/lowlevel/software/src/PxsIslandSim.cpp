@@ -140,7 +140,7 @@ void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, Px
 		mIslandAwake.growAndReset(PxMax(islandHandle+1, mIslands.size()));
 		Island& island = mIslands[islandHandle];
 		island.mLastNode = island.mRootNode = nodeIndex;
-		island.mSize[type] = 1;
+		island.mNodeCount[type] = 1;
 		mIslandIds[handle] = islandHandle;
 		mIslandStaticTouchCount[islandHandle] = 0;
 	}
@@ -1022,7 +1022,7 @@ void IslandSim::processNewEdges()
 							lastNode.mNextNode = nodeIndex1;
 							node.mPrevNode = island.mLastNode;
 							island.mLastNode = nodeIndex1;
-							island.mSize[node.mType]++;
+							island.mNodeCount[node.mType]++;
 							mIslandIds[nodeIndex1.index()] = islandId2;
 							mHopCounts[nodeIndex1.index()] = mHopCounts[nodeIndex2.index()] + 1;
 							mFastRoute[nodeIndex1.index()] = nodeIndex2;
@@ -1077,7 +1077,7 @@ void IslandSim::processNewEdges()
 							lastNode.mNextNode = nodeIndex2;
 							node.mPrevNode = island.mLastNode;
 							island.mLastNode = nodeIndex2;
-							island.mSize[node.mType]++;
+							island.mNodeCount[node.mType]++;
 							mIslandIds[nodeIndex2.index()] = islandId1;
 							mHopCounts[nodeIndex2.index()] = mHopCounts[nodeIndex1.index()] + 1;
 							mFastRoute[nodeIndex2.index()] = nodeIndex1;
@@ -1470,7 +1470,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 						//Verify state (that we can see the root from this node)...
 
 #if IG_SANITY_CHECKS
-						PX_ASSERT(canFindRoot(dirtyNode, searchNode, NULL)); //Verify that we found the connection
+						PX_ASSERT(canFindRoot(dirtyNodeIndex, searchNode, NULL)); //Verify that we found the connection
 #endif
 
 						for (PxU32 b = 0; b < mVisitedNodes.size(); ++b)
@@ -1502,20 +1502,24 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 						//the island to establish the last node again
 
 #if IG_SANITY_CHECKS
-						PX_ASSERT(!canFindRoot(dirtyNode, searchNode, NULL));
+						PX_ASSERT(!canFindRoot(dirtyNodeIndex, searchNode, NULL));
 #endif
 
 						PxU32 totalStaticTouchCount = 0;
-						PxU32 size[Edge::eEDGE_TYPE_COUNT];
-						for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
+						PxU32 nodeCount[Node::eTYPE_COUNT];
+						for (PxU32 t = 0; t < Node::eTYPE_COUNT; ++t)
 						{
-							mIslandSplitEdges[i].forceSize_Unsafe(0);
-							size[i] = 0;
+							nodeCount[t] = 0;
+						}
+
+						for (PxU32 t = 0; t < Edge::eEDGE_TYPE_COUNT; ++t)
+						{
+							mIslandSplitEdges[t].forceSize_Unsafe(0);
 						}
 
 						//NodeIndex lastIndex = oldIsland.mLastNode;
 
-						//size[node.mType] = 1;
+						//nodeCount[node.mType] = 1;
 
 						for (PxU32 a = 0; a < mVisitedNodes.size(); ++a)
 						{
@@ -1529,7 +1533,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 							if (node.mPrevNode.index() != PX_INVALID_NODE)
 								mNodes[node.mPrevNode.index()].mNextNode = node.mNextNode;
 
-							size[node.mType]++;
+							nodeCount[node.mType]++;
 
 							node.mNextNode.setIndices(PX_INVALID_NODE);
 							node.mPrevNode.setIndices(PX_INVALID_NODE);
@@ -1561,8 +1565,11 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 						//oldIsland.mStaticTouchCount -= totalStaticTouchCount;
 						mIslandStaticTouchCount[islandId] -= totalStaticTouchCount;
 
-						for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
-							oldIsland.mSize[i] -= size[i];
+						for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
+						{
+							PX_ASSERT(nodeCount[i] <= oldIsland.mNodeCount[i]);
+							oldIsland.mNodeCount[i] -= nodeCount[i];
+						}
 
 						//Now add all these nodes to the new island
 
@@ -1595,10 +1602,10 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 						mNodes[dirtyNodeIndex.index()].mPrevNode.setIndices(PX_INVALID_NODE); //First node so doesn't have a preceding node
 						mFastRoute[dirtyNodeIndex.index()].setIndices(PX_INVALID_NODE);
 
-						for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
-							size[i] = 0;
+						for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
+							nodeCount[i] = 0;
 
-						size[dirtyNode.mType] = 1;
+						nodeCount[dirtyNode.mType] = 1;
 
 						for (PxU32 a = 1; a < mVisitedNodes.size(); ++a)
 						{
@@ -1607,14 +1614,14 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 							const PxNodeIndex prevNodeIndex = mVisitedNodes[a - 1].mNodeIndex;
 							thisNode.mPrevNode = prevNodeIndex;
 							mNodes[prevNodeIndex.index()].mNextNode = index;
-							size[thisNode.mType]++;
+							nodeCount[thisNode.mType]++;
 							mIslandIds[index.index()] = newIslandHandle;
 							mHopCounts[index.index()] = mVisitedNodes[a].mDepth; //How many hops to root
 							mFastRoute[index.index()] = mVisitedNodes[mVisitedNodes[a].mPrevIndex].mNodeIndex;
 						}
 
-						for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
-							newIsland.mSize[i] = size[i];
+						for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
+							newIsland.mNodeCount[i] = nodeCount[i];
 
 						//Last node in the island
 						const PxNodeIndex lastIndex = mVisitedNodes[mVisitedNodes.size() - 1].mNodeIndex;
@@ -1714,7 +1721,13 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 
 				mIslandIds[nodeIndex.index()] = IG_INVALID_ISLAND;
 
-				if ((island.mSize[0] + island.mSize[1] + island.mSize[2] + island.mSize[3]) == 0)
+				PxU32 nodeCountTotal = 0;
+				for (PxU32 t = 0; t < Node::eTYPE_COUNT; ++t)
+				{
+					nodeCountTotal += island.mNodeCount[t];
+				}
+
+				if (nodeCountTotal == 0)
 				{
 					mIslandHandles.freeHandle(islandId);
 					if (island.mActiveIndex != IG_INVALID_ISLAND)
@@ -1872,10 +1885,10 @@ IslandId IslandSim::mergeIslands(IslandId island0, IslandId island1, PxNodeIndex
 	PxU32 totalSize0 = 0;
 	PxU32 totalSize1 = 0;
 
-	for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
+	for (PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
 	{
-		totalSize0 += is0.mSize[i];
-		totalSize1 += is1.mSize[i];
+		totalSize0 += is0.mNodeCount[i];
+		totalSize1 += is1.mNodeCount[i];
 	}
 	if(totalSize0 > totalSize1)
 	{
@@ -1904,8 +1917,12 @@ bool IslandSim::checkInternalConsistency() const
 	{
 		const Island& island = mIslands[a];
 
-		PxU32 expectedSize = island.mSize[0] + island.mSize[1];
-		bool metLastNode = expectedSize == 0;
+		PxU32 expectedNodeCount = 0;
+		for (PxU32 t = 0; t < Node::eTYPE_COUNT; ++t)
+		{
+			expectedNodeCount += island.mNodeCount[t];
+		}
+		bool metLastNode = expectedNodeCount == 0;
 
 		PxNodeIndex nodeId = island.mRootNode;
 
@@ -1919,12 +1936,12 @@ bool IslandSim::checkInternalConsistency() const
 				PX_ASSERT(mNodes[nodeId.index()].mNextNode.index() == PX_INVALID_NODE);
 			}
 
-			--expectedSize;
+			--expectedNodeCount;
 
 			nodeId = mNodes[nodeId.index()].mNextNode;
 		}
 
-		PX_ASSERT(expectedSize == 0);
+		PX_ASSERT(expectedNodeCount == 0);
 		PX_ASSERT(metLastNode);
 	}
 #endif
@@ -1939,8 +1956,8 @@ void IslandSim::mergeIslandsInternal(Island& island0, Island& island1, IslandId 
 	PxU32 island1Size = 0;
 	for(PxU32 nodeType = 0; nodeType < Node::eTYPE_COUNT; ++nodeType)
 	{
-		island0Size += island0.mSize[nodeType];
-		island1Size += island1.mSize[nodeType];
+		island0Size += island0.mNodeCount[nodeType];
+		island1Size += island1.mNodeCount[nodeType];
 	}
 #endif
 	PX_ASSERT(island0Size >= island1Size); //We only ever merge the smaller island to the larger island
@@ -1993,7 +2010,6 @@ void IslandSim::mergeIslandsInternal(Island& island0, Island& island1, IslandId 
 	//Merge the edge list for the islands...
 	for(PxU32 a = 0; a < IG::Edge::eEDGE_TYPE_COUNT; ++a)
 	{
-		island0.mSize[a] += island1.mSize[a];
 		if(island0.mLastEdge[a] != IG_INVALID_EDGE)
 		{
 			PX_ASSERT(mEdges[island0.mLastEdge[a]].mNextIslandEdge == IG_INVALID_EDGE);
@@ -2015,7 +2031,12 @@ void IslandSim::mergeIslandsInternal(Island& island0, Island& island1, IslandId 
 		island1.mFirstEdge[a] = IG_INVALID_EDGE;
 		island1.mLastEdge[a] = IG_INVALID_EDGE;
 		island1.mEdgeCount[a] = 0;
-		island1.mSize[a] = 0;
+	}
+
+	for (PxU32 a = 0; a < IG::Node::eTYPE_COUNT; ++a)
+	{
+		island0.mNodeCount[a] += island1.mNodeCount[a];
+		island1.mNodeCount[a] = 0;
 	}
 
 	island1.mLastNode.setIndices(PX_INVALID_NODE);
@@ -2169,11 +2190,11 @@ void IslandSim::setKinematic(PxNodeIndex nodeIndex)
 			}
 		}
 
-		PxU32 newSize = 0;
-		for(PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
-			newSize += island.mSize[i];
-		
-		if(newSize == 0)
+		PxU32 newNodeCount = 0;
+		for(PxU32 i = 0; i < Node::eTYPE_COUNT; ++i)
+			newNodeCount += island.mNodeCount[i];
+
+		if(newNodeCount == 0)
 		{
 			// If this island is empty after having removed the edges of the node we've just set to kinematic
 			// we invalidate all edges and set the island to inactive
@@ -2285,7 +2306,7 @@ void IslandSim::setDynamic(PxNodeIndex nodeIndex)
 			Island& island = mIslands[islandHandle];
 			island.mLastNode = island.mRootNode = nodeIndex;
 			PX_ASSERT(mNodes[nodeIndex.index()].mNextNode.index() == PX_INVALID_NODE);
-			island.mSize[node.mType] = 1;
+			island.mNodeCount[node.mType] = 1;
 			mIslandIds[nodeIndex.index()] = islandHandle;
 			mIslandStaticTouchCount[islandHandle] = 0;
 

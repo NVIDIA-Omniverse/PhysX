@@ -805,8 +805,8 @@ void DynamicsTGSContext::updatePostKinematic(IG::SimpleIslandManager& simpleIsla
 		{
 			const IG::Island& island = islandSim.getIsland(islandIds[currentIsland]);
 
-			nbBodies += island.mSize[IG::Node::eRIGID_BODY_TYPE];
-			nbArticulations += island.mSize[IG::Node::eARTICULATION_TYPE];
+			nbBodies += island.mNodeCount[IG::Node::eRIGID_BODY_TYPE];
+			nbArticulations += island.mNodeCount[IG::Node::eARTICULATION_TYPE];
 			nbConstraints += island.mEdgeCount[IG::Edge::eCONSTRAINT];
 			nbContactManagers += island.mEdgeCount[IG::Edge::eCONTACT_MANAGER];
 			constraintCount = nbConstraints + nbContactManagers;
@@ -1754,7 +1754,7 @@ PxU32 DynamicsTGSContext::setupArticulationInternalConstraints(IslandContextStep
 
 		PxU32 acCount;
 		PxU32 descCount = ArticulationPImpl::setupSolverInternalConstraintsTGS(desc, 
-			islandContext.mStepDt, invStepDt, dt, islandContext.mBiasCoefficient, acCount, threadContext->mZVector.begin());
+			islandContext.mStepDt, invStepDt, dt, acCount, threadContext->mZVector.begin());
 
 		desc.numInternalConstraints = PxTo8(descCount);
 
@@ -2164,12 +2164,6 @@ public:
 		}
 	}
 };
-
-static bool isArticulationConstraint(PxSolverConstraintDesc& desc)
-{
-	return desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY ||
-		desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY;
-}
 
 class PartitionTask : public Cm::Task
 {

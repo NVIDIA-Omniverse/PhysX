@@ -428,11 +428,16 @@ public:
 	
 	
 	/**
-	\brief Returns number of particle materials
+	\brief Returns number of particle materials referenced by particle phases
 	\return The number of particle materials
 	*/
 	virtual     PxU32               getNbParticleMaterials() const = 0;
 
+	/**
+	\brief Returns particle materials referenced by particle phases
+	\return The particle materials
+	*/
+	virtual     PxU32               getParticleMaterials(PxParticleMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
 	\brief Sets a user notify object which receives special simulation events when they occur.

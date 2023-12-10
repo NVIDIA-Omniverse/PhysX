@@ -55,35 +55,38 @@ bool GearJoint::setHinges(const PxBase* hinge0, const PxBase* hinge1)
 {
 	GearJointData* data = static_cast<GearJointData*>(mData);
 
-	if(!hinge0 || !hinge1)
-		return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: cannot pass null pointers to this function.");
+	if(hinge0)
+	{
+		const PxType type0 = hinge0->getConcreteType();
+		if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		{
+			const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge0);
+			const PxArticulationJointType::Enum artiJointType = joint0->getJointType();
+			if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
+		}
+		else
+		{
+			if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
+		}
+	}
 
-	const PxType type0 = hinge0->getConcreteType();
-	if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+	if(hinge1)
 	{
-		const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge0);
-		const PxArticulationJointType::Enum artiJointType = joint0->getJointType();
-		if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
-	}
-	else
-	{
-		if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
-	}
-		
-	const PxType type1 = hinge1->getConcreteType();
-	if(type1 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
-	{
-		const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge1);
-		const PxArticulationJointType::Enum artiJointType = joint1->getJointType();
-		if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
-	}
-	else
-	{
-		if(type1 != PxJointConcreteType::eREVOLUTE && type1 != PxJointConcreteType::eD6)
-			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
+		const PxType type1 = hinge1->getConcreteType();
+		if(type1 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		{
+			const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge1);
+			const PxArticulationJointType::Enum artiJointType = joint1->getJointType();
+			if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
+		}
+		else
+		{
+			if(type1 != PxJointConcreteType::eREVOLUTE && type1 != PxJointConcreteType::eD6)
+				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
+		}
 	}
 
 	data->hingeJoint0 = hinge0;

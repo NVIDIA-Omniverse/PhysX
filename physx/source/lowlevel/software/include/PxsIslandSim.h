@@ -316,7 +316,7 @@ struct Island
 {
 	PxNodeIndex mRootNode;
 	PxNodeIndex mLastNode;
-	PxU32 mSize[Node::eTYPE_COUNT];
+	PxU32 mNodeCount[Node::eTYPE_COUNT];
 	PxU32 mActiveIndex;
 
 	EdgeIndex mFirstEdge[Edge::eEDGE_TYPE_COUNT], mLastEdge[Edge::eEDGE_TYPE_COUNT];
@@ -333,7 +333,7 @@ struct Island
 
 		for(PxU32 a = 0; a < Node::eTYPE_COUNT; ++a)
 		{
-			mSize[a] = 0;
+			mNodeCount[a] = 0;
 		}
 	}
 };
@@ -922,7 +922,7 @@ private:
 			island.mRootNode = node.mNextNode;
 		}
 
-		island.mSize[node.mType]--;
+		island.mNodeCount[node.mType]--;
 
 		node.mNextNode = PxNodeIndex(); node.mPrevNode = PxNodeIndex();
 	}

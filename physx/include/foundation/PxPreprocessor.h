@@ -30,9 +30,7 @@
 #define PX_PREPROCESSOR_H
 
 #include <stddef.h>
-#if !defined(PX_GENERATE_META_DATA)
-#include <ciso646>  
-#endif
+
 /** \addtogroup foundation
   @{
 */
@@ -369,6 +367,15 @@ Override macro
 Final macro
  */
 #define PX_FINAL final
+
+/**
+Unused attribute macro. Only on GCC for now.
+ */
+#if PX_GCC_FAMILY
+	#define PX_UNUSED_ATTRIBUTE __attribute__((unused))
+#else
+	#define PX_UNUSED_ATTRIBUTE 
+#endif
 
 /**
 Alignment macros
