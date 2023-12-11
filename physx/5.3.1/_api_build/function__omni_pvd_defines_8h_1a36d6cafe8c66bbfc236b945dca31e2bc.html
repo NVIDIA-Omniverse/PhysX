@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLAGS_WORD &gt; &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLOAT32 &gt;" href="function__omni_pvd_defines_8h_1a8ca0ec01ac7701d1142f35060d001e23.html" />
+    <link rel="prev" title="getOmniPvdDataTypeSize&lt; OmniPvdDataType::eENUM_VALUE &gt;" href="function__omni_pvd_defines_8h_1a7ed6764cc34049813faf22ead2f1810b.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="dir_include.html">include</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a><ul class="current">
+<li class="toctree-l5 current"><a class="reference internal" href="dir_pvdruntime_include.html">include</a><ul class="current">
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdCommands.h.html">OmniPvdCommands.h</a></li>
+<li class="toctree-l6 current"><a class="reference internal" href="file_pvdruntime_include_OmniPvdDefines.h.html">OmniPvdDefines.h</a><ul class="current">
+<li class="toctree-l7"><a class="reference internal" href="program_listing_file_pvdruntime_include_OmniPvdDefines.h.html">Source file</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__omni_pvd_defines_8h_1a5578b44296c6cb9edd289261c716bc95.html">OMNI_PVD_CALL</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__omni_pvd_defines_8h_1ae6779ada5504a71b8329b0f98b5cb7f0.html">OMNI_PVD_EXPORT</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__omni_pvd_defines_8h_1a6df0d7a79f8c99e255e125f0298be75b.html">OMNI_PVD_VERSION_MAJOR</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__omni_pvd_defines_8h_1a520c62f412a0b9eb190c0b9f5775497d.html">OMNI_PVD_VERSION_MINOR</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__omni_pvd_defines_8h_1af98117e1053f351a6dba35ac511de4d9.html">OMNI_PVD_VERSION_PATCH</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html">OmniPvdAttributeHandle</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html">OmniPvdClassHandle</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html">OmniPvdContextHandle</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html">OmniPvdEnumValueType</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html">OmniPvdLogFunction</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html">OmniPvdObjectHandle</a></li>
+<li class="toctree-l7"><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html">OmniPvdVersionType</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a19dad272ec7d04b45530dc538ead6077.html">getOmniPvdDataTypeSize</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a7ed6764cc34049813faf22ead2f1810b.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eENUM_VALUE &gt;</a></li>
+<li class="toctree-l7 current"><a class="current reference internal" href="#">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLAGS_WORD &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a8ca0ec01ac7701d1142f35060d001e23.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLOAT32 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a354a7617223cf4c97275ba924df5188e.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLOAT64 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a3755e8225bd73f42435e0ee235b40ad2.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eINT16 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a3ddc104e58f3f2cbc7c7ea3c3ec40e3b.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eINT32 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1ac65fdad3dfebb97809d056569fb32483.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eINT64 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a0ce2f8ef6948bfd217f11117538737c6.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eINT8 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a1b7e3e44ee22af80a46943a77ad8fd22.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eOBJECT_HANDLE &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a4252896f86f0d70c69e8334bfb4c55fe.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eSTRING &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1aa616b433bfae6e963892a6b35bce2101.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eUINT16 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1aaa7b7ec4370282c4f05a1ffe5cd3d8a0.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eUINT32 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1a34c6e74976082508c7d0e3ddff5ff3f1.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eUINT64 &gt;</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__omni_pvd_defines_8h_1aa21f4c2d46c0f0a1bad41983bb237001.html">getOmniPvdDataTypeSize&lt; OmniPvdDataType::eUINT8 &gt;</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdFileReadStream.h.html">OmniPvdFileReadStream.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdFileWriteStream.h.html">OmniPvdFileWriteStream.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdLibraryFunctions.h.html">OmniPvdLibraryFunctions.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdMemoryStream.h.html">OmniPvdMemoryStream.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdReadStream.h.html">OmniPvdReadStream.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdReader.h.html">OmniPvdReader.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdWriteStream.h.html">OmniPvdWriteStream.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_pvdruntime_include_OmniPvdWriter.h.html">OmniPvdWriter.h</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_pvdruntime.html">pvdruntime</a> &raquo;</li>
+    <li><a href="dir_pvdruntime_include.html">pvdruntime/include</a> &raquo;</li>
+    <li><a href="file_pvdruntime_include_OmniPvdDefines.h.html">pvdruntime/include/OmniPvdDefines.h</a> &raquo;</li>
+<li>getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLAGS_WORD &gt;</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getomnipvddatatypesize-omnipvddatatype-eflags-word">
+<h1>getOmniPvdDataTypeSize&lt; OmniPvdDataType::eFLAGS_WORD &gt;<a class="headerlink" href="#getomnipvddatatypesize-omnipvddatatype-eflags-word" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdDefines.h.html#omni-pvd-defines-8h"><span class="std std-ref">pvdruntime/include/OmniPvdDefines.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IE22getOmniPvdDataTypeSizeIN15OmniPvdDataType11eFLAGS_WORDEE8uint32_tv">
+<span id="_CPPv3IE22getOmniPvdDataTypeSizeIN15OmniPvdDataType11eFLAGS_WORDEEv"></span><span id="_CPPv2IE22getOmniPvdDataTypeSizeIN15OmniPvdDataType11eFLAGS_WORDEEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="_omni_pvd_defines_8h_1a36d6cafe8c66bbfc236b945dca31e2bc"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getOmniPvdDataTypeSize</span></span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_omni_pvd_data_type.html#_CPPv415OmniPvdDataType" title="OmniPvdDataType"><span class="n"><span class="pre">OmniPvdDataType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_omni_pvd_data_type.html#_CPPv4N15OmniPvdDataType4Enum11eFLAGS_WORDE" title="OmniPvdDataType::eFLAGS_WORD"><span class="n"><span class="pre">eFLAGS_WORD</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IE22getOmniPvdDataTypeSizeIN15OmniPvdDataType11eFLAGS_WORDEE8uint32_tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

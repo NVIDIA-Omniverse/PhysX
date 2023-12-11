@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSceneQuerySystem &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSceneQuerySystemBase" href="class_px_scene_query_system_base.html" />
+    <link rel="prev" title="PxSceneQueryExt" href="class_px_scene_query_ext.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_reader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_sensor.html">PxArticulationSensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_l_i_p_material.html">PxFLIPMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_m_p_m_material.html">PxMPMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_particle_system.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_material.html">PxParticleMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system.html">PxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body_ext.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxSceneQuerySystem</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxscenequerysystem">
+<h1>PxSceneQuerySystem<a class="headerlink" href="#pxscenequerysystem" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSceneQuerySystem.h.html#px-scene-query-system-8h"><span class="std std-ref">include/PxSceneQuerySystem.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv418PxSceneQuerySystem">
+<span id="_CPPv318PxSceneQuerySystem"></span><span id="_CPPv218PxSceneQuerySystem"></span><span id="PxSceneQuerySystem"></span><span class="target" id="class_px_scene_query_system"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQuerySystem</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene_query_system_base.html#_CPPv422PxSceneQuerySystemBase" title="PxSceneQuerySystemBase"><span class="n"><span class="pre">PxSceneQuerySystemBase</span></span></a><a class="headerlink" href="#_CPPv418PxSceneQuerySystem" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Scene-queries external sub-system for PxScene-based objects. </p>
+<p>The default <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> has hardcoded support for 2 regular pruners + 1 compound pruner, but these interfaces should work with multiple pruners.</p>
+<p>Regular shapes are traditional PhysX shapes that belong to an actor. That actor can be a compound, i.e. it has more than one shape. <em>All of these go to the regular pruners</em>. This is important because it might be misleading: by default all shapes go to one of the two regular pruners, even shapes that belong to compound actors.</p>
+<p>For compound actors, adding all the actor’s shapes individually to the SQ system can be costly, since all the corresponding bounds will always move together and remain close together - that can put a lot of stress on the code that updates the SQ spatial structures. In these cases it can be more efficient to add the compound’s bounds (i.e. the actor’s bounds) to the system, as the first level of a bounds hierarchy. The scene queries would then be performed against the actor’s bounds first, and only visit the shapes’ bounds second. This is only useful for actors that have more than one shape, i.e. compound actors. Such actors added to the SQ system are thus called “SQ compounds”. These objects are managed by the “compound pruner”, which is only used when an explicit SQ compound is added to the SQ system via the addSQCompound call. So in the end one has to distinguish between:</p>
+<p><ul class="simple">
+<li><p>a “compound shape”, which is added to regular pruners as its own individual entity.</p></li>
+<li><p>an “SQ compound shape”, which is added to the compound pruner as a subpart of an SQ compound actor.</p></li>
+</ul>
+</p>
+<p>A compound shape has an invalid compound ID, since it does not belong to an SQ compound. An SQ compound shape has a valid compound ID, that identifies its SQ compound owner.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> <a class="reference internal" href="class_px_scene_query_system_base.html#class_px_scene_query_system_base"><span class="std std-ref">PxSceneQuerySystemBase</span></a> </p>
+</div>
+</p>
+<p>Subclassed by <a class="reference internal" href="class_px_custom_scene_query_system.html#class_px_custom_scene_query_system"><span class="std std-ref">PxCustomSceneQuerySystem</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-scene-query">Scene Query</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem29setDynamicTreeRebuildRateHintE5PxU32">
+<span id="_CPPv3N18PxSceneQuerySystem29setDynamicTreeRebuildRateHintE5PxU32"></span><span id="_CPPv2N18PxSceneQuerySystem29setDynamicTreeRebuildRateHintE5PxU32"></span><span id="PxSceneQuerySystem::setDynamicTreeRebuildRateHint__PxU32"></span><span class="target" id="class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDynamicTreeRebuildRateHint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dynamicTreeRebuildRateHint</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem29setDynamicTreeRebuildRateHintE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the rebuild rate of the dynamic tree pruning structures. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">getDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"><span class="std std-ref">forceRebuildDynamicTree()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dynamicTreeRebuildRateHint</strong> – <strong>[in]</strong> Rebuild rate of the dynamic tree pruning structures.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem29getDynamicTreeRebuildRateHintEv">
+<span id="_CPPv3NK18PxSceneQuerySystem29getDynamicTreeRebuildRateHintEv"></span><span id="_CPPv2NK18PxSceneQuerySystem29getDynamicTreeRebuildRateHintEv"></span><span id="PxSceneQuerySystem::getDynamicTreeRebuildRateHintC"></span><span class="target" id="class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDynamicTreeRebuildRateHint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem29getDynamicTreeRebuildRateHintEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the rebuild rate of the dynamic tree pruning structures. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"><span class="std std-ref">forceRebuildDynamicTree()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The rebuild rate of the dynamic tree pruning structures.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem23forceRebuildDynamicTreeE5PxU32">
+<span id="_CPPv3N18PxSceneQuerySystem23forceRebuildDynamicTreeE5PxU32"></span><span id="_CPPv2N18PxSceneQuerySystem23forceRebuildDynamicTreeE5PxU32"></span><span id="PxSceneQuerySystem::forceRebuildDynamicTree__PxU32"></span><span class="target" id="class_px_scene_query_system_base_1ac1368eef302793a0e1b25195acbcdb61"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">forceRebuildDynamicTree</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem23forceRebuildDynamicTreeE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Forces dynamic trees to be immediately rebuilt. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_query_desc.html#class_px_scene_query_desc_1ad3c02042de286d160dec2cc4374fa109"><span class="std std-ref">PxSceneQueryDesc.dynamicTreeRebuildRateHint</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a683db4a657721af57cbebd64c524abf1"><span class="std std-ref">setDynamicTreeRebuildRateHint()</span></a> <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1af55ca2a97b16d466b9cdd0587a65d2e9"><span class="std std-ref">getDynamicTreeRebuildRateHint()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> will call this function with the PX_SCENE_PRUNER_STATIC or PX_SCENE_PRUNER_DYNAMIC value.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner containing the dynamic tree to rebuild</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE">
+<span id="_CPPv3N18PxSceneQuerySystem13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE"></span><span id="_CPPv2N18PxSceneQuerySystem13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE"></span><span id="PxSceneQuerySystem::setUpdateMode__PxSceneQueryUpdateMode::Enum"></span><span class="target" id="class_px_scene_query_system_base_1af0c895a275b63c869e019adb1d898757"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUpdateMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">updateMode</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem13setUpdateModeEN22PxSceneQueryUpdateMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets scene query update mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4"><span class="std std-ref">PxSceneQueryUpdateMode::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>updateMode</strong> – <strong>[in]</strong> Scene query update mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem13getUpdateModeEv">
+<span id="_CPPv3NK18PxSceneQuerySystem13getUpdateModeEv"></span><span id="_CPPv2NK18PxSceneQuerySystem13getUpdateModeEv"></span><span id="PxSceneQuerySystem::getUpdateModeC"></span><span class="target" id="class_px_scene_query_system_base_1ae385445780b7feb60422b7beddd13750"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><span class="n"><span class="pre">PxSceneQueryUpdateMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_scene_query_update_mode.html#_CPPv4N22PxSceneQueryUpdateMode4EnumE" title="PxSceneQueryUpdateMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUpdateMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem13getUpdateModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets scene query update mode. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode_1a04e575a313bce592e2b404eedf89a9d4"><span class="std std-ref">PxSceneQueryUpdateMode::Enum</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Current scene query update mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem18getStaticTimestampEv">
+<span id="_CPPv3NK18PxSceneQuerySystem18getStaticTimestampEv"></span><span id="_CPPv2NK18PxSceneQuerySystem18getStaticTimestampEv"></span><span id="PxSceneQuerySystem::getStaticTimestampC"></span><span class="target" id="class_px_scene_query_system_base_1ac506bc892654f3c4442506379bb3422c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStaticTimestamp</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem18getStaticTimestampEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the system’s internal scene query timestamp, increased each time a change to the static scene query structure is performed. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>scene query static timestamp </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem12flushUpdatesEv">
+<span id="_CPPv3N18PxSceneQuerySystem12flushUpdatesEv"></span><span id="_CPPv2N18PxSceneQuerySystem12flushUpdatesEv"></span><span id="PxSceneQuerySystem::flushUpdates"></span><span class="target" id="class_px_scene_query_system_base_1afcfa182edf689c970b805876aa0b0358"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flushUpdates</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem12flushUpdatesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes any changes to the scene query representation. </p>
+<p>This method updates the state of the scene query representation to match changes in the scene state.</p>
+<p>By default, these changes are buffered until the next query is submitted. Calling this function will not change the results from scene queries, but can be used to ensure that a query will not perform update work in the course of its execution.</p>
+<p>A thread performing updates will hold a write lock on the query structure, and thus stall other querying threads. In multithread scenarios it can be useful to explicitly schedule the period where this lock may be held for a significant period, so that subsequent queries issued from multiple threads will not block. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags">
+<span id="_CPPv3NK18PxSceneQuerySystem7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="_CPPv2NK18PxSceneQuerySystem7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystem::raycast__PxVec3CR.PxVec3CR.PxRealC.PxRaycastCallbackR.PxHitFlags.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a2368b237019491867c70b9002df6fb70"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raycast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">origin</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="group__scenequery.html#_CPPv417PxRaycastCallback" title="PxRaycastCallback"><span class="n"><span class="pre">PxRaycastCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a raycast against objects in the scene, returns results in a PxRaycastBuffer object or via a custom user callback implementation inheriting from PxRaycastCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="group__scenequery.html#group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a> <a class="reference internal" href="group__scenequery.html#group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a> <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_query_cache.html#struct_px_query_cache"><span class="std std-ref">PxQueryCache</span></a> <a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a> <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Shooting a ray from within an object leads to different results depending on the shape type. Please check the details in user guide article SceneQuery. User can ignore such objects by employing one of the provided filter mechanisms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – <strong>[in]</strong> Origin of the ray. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the ray. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Length of the ray. Has to be in the [0, inf) range. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Raycast hit buffer or callback object used to report raycast hits. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned via the hit callback. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data passed to the filter shader. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first. If no hit is found the ray gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags">
+<span id="_CPPv3NK18PxSceneQuerySystem5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags"></span><span id="_CPPv2NK18PxSceneQuerySystem5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystem::sweep__PxGeometryCR.PxTransformCR.PxVec3CR.PxRealC.PxSweepCallbackR.PxHitFlags.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxRealC.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a9384aae12d3ef33f4db300cfe0c91c6a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sweep</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <a class="reference internal" href="group__scenequery.html#_CPPv415PxSweepCallback" title="PxSweepCallback"><span class="n"><span class="pre">PxSweepCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hitFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv49PxHitFlag" title="PxHitFlag"><span class="n"><span class="pre">PxHitFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a sweep test against objects in the scene, returns results in a PxSweepBuffer object or via a custom user callback implementation inheriting from PxSweepCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="group__scenequery.html#group__scenequery_1ga6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a> <a class="reference internal" href="group__scenequery.html#group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a> <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> <a class="reference internal" href="struct_px_query_cache.html#struct_px_query_cache"><span class="std std-ref">PxQueryCache</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Touching hits are not ordered. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a shape from the scene is already overlapping with the query shape in its starting position, the hit is returned unless eASSUME_NO_INITIAL_OVERLAP was specified.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to sweep (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the sweep object. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be in [0, inf) range and &gt;0 if eASSUME_NO_INITIAL_OVERLAP was specified. Will be clamped to PX_MAX_SWEEP_DISTANCE. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Sweep hit buffer or callback object used to report sweep hits. </p></li>
+<li><p><strong>hitFlags</strong> – <strong>[in]</strong> Specifies which properties per hit should be computed and returned via the hit callback. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Sweep is performed against cached shape first. If no hit is found the sweep gets queried against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal. Note: ePRECISE_SWEEP doesn’t support inflation. Therefore the sweep will be performed with zero inflation. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags">
+<span id="_CPPv3NK18PxSceneQuerySystem7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="_CPPv2NK18PxSceneQuerySystem7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags"></span><span id="PxSceneQuerySystem::overlap__PxGeometryCR.PxTransformCR.PxOverlapCallbackR.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxGeometryQueryFlagsC"></span><span class="target" id="class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">overlap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geometry</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <a class="reference internal" href="group__scenequery.html#_CPPv417PxOverlapCallback" title="PxOverlapCallback"><span class="n"><span class="pre">PxOverlapCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">hitCall</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="n"><span class="pre">PxGeometryQueryFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">queryFlags</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv419PxGeometryQueryFlag" title="PxGeometryQueryFlag"><span class="n"><span class="pre">PxGeometryQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><span class="n"><span class="pre">eDEFAULT</span></span></a><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs an overlap test of a given geometry against objects in the scene, returns results in a PxOverlapBuffer object or via a custom user callback implementation inheriting from PxOverlapCallback. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="group__scenequery.html#group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a> <a class="reference internal" href="group__scenequery.html#group__scenequery_1ga54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a> PxHitFlags <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> <a class="reference internal" href="struct_px_geometry_query_flag.html#struct_px_geometry_query_flag"><span class="std std-ref">PxGeometryQueryFlag</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Filtering: returning eBLOCK from user filter for overlap queries will cause a warning (see <a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eBLOCK should not be returned from user filters for <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_query_system_base_1a4023ffad781915b36cc83e1bb01d4e4f"><span class="std std-ref">overlap()</span></a>. Doing so will result in undefined behavior, and a warning will be issued. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa98467f45e717fa0f52652f52b0ff9798"><span class="std std-ref">PxQueryFlag::eNO_BLOCK</span></a> flag is set, the eBLOCK will instead be automatically converted to an eTOUCH and the warning suppressed.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>geometry</strong> – <strong>[in]</strong> Geometry of object to check for overlap (supported types are: box, sphere, capsule, convex). </p></li>
+<li><p><strong>pose</strong> – <strong>[in]</strong> Pose of the object. </p></li>
+<li><p><strong>hitCall</strong> – <strong>[out]</strong> Overlap hit buffer or callback object used to report overlap hits. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> Filtering data and simple logic. See <a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a> <a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a> </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to overlap. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Overlap is performed against cached shape first. If no hit is found the overlap gets queried against the scene. </p></li>
+<li><p><strong>queryFlags</strong> – <strong>[in]</strong> Optional flags controlling the query. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if any touching or blocking hits were found or any hit was found in case <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag_1a2124ff0cff0a021e01e6880a1bba431fa2837a6ac649b29ee72af661b65f4d8ab"><span class="std std-ref">PxQueryFlag::eANY_HIT</span></a> was specified.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem7releaseEv">
+<span id="_CPPv3N18PxSceneQuerySystem7releaseEv"></span><span id="_CPPv2N18PxSceneQuerySystem7releaseEv"></span><span id="PxSceneQuerySystem::release"></span><span class="target" id="class_px_scene_query_system_1a650ff2cc4bc6cbdf3c8d1a512ae4cd22"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of the object and releases it if the new reference count is zero. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem16acquireReferenceEv">
+<span id="_CPPv3N18PxSceneQuerySystem16acquireReferenceEv"></span><span id="_CPPv2N18PxSceneQuerySystem16acquireReferenceEv"></span><span id="PxSceneQuerySystem::acquireReference"></span><span class="target" id="class_px_scene_query_system_1a20c86cefd84242a8be59d6ff0dd73e0f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling <a class="reference internal" href="#class_px_scene_query_system_1a650ff2cc4bc6cbdf3c8d1a512ae4cd22"><span class="std std-ref">release()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem11preallocateE5PxU325PxU32">
+<span id="_CPPv3N18PxSceneQuerySystem11preallocateE5PxU325PxU32"></span><span id="_CPPv2N18PxSceneQuerySystem11preallocateE5PxU325PxU32"></span><span id="PxSceneQuerySystem::preallocate__PxU32.PxU32"></span><span class="target" id="class_px_scene_query_system_1a63df05e9d428e196176962d33ace1d2b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">preallocate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbShapes</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem11preallocateE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Preallocates internal arrays to minimize the amount of reallocations. </p>
+<p>The system does not prevent more allocations than given numbers. It is legal to not call this function at all, or to add more shapes to the system than the preallocated amounts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner to preallocate (PX_SCENE_PRUNER_STATIC, PX_SCENE_PRUNER_DYNAMIC or PX_SCENE_COMPOUND_PRUNER when called from <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>). </p></li>
+<li><p><strong>nbShapes</strong> – <strong>[in]</strong> Expected number of (regular) shapes </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem11flushMemoryEv">
+<span id="_CPPv3N18PxSceneQuerySystem11flushMemoryEv"></span><span id="_CPPv2N18PxSceneQuerySystem11flushMemoryEv"></span><span id="PxSceneQuerySystem::flushMemory"></span><span class="target" id="class_px_scene_query_system_1acde31710cb8ca0ceacbe431403b06647"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flushMemory</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem11flushMemoryEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frees internal memory that may not be in-use anymore. </p>
+<p>This is an entry point for reclaiming transient memory allocated at some point by the SQ system, but which wasn’t been immediately freed for performance reason. Calling this function might free some memory, but it might also produce a new set of allocations in the next frame. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem10addSQShapeERK12PxRigidActorRK7PxShapeRK9PxBounds3RK11PxTransformPK18PxSQCompoundHandleb">
+<span id="_CPPv3N18PxSceneQuerySystem10addSQShapeERK12PxRigidActorRK7PxShapeRK9PxBounds3RK11PxTransformPK18PxSQCompoundHandleb"></span><span id="_CPPv2N18PxSceneQuerySystem10addSQShapeERK12PxRigidActorRK7PxShapeRK9PxBounds3RK11PxTransformPK18PxSQCompoundHandleb"></span><span id="PxSceneQuerySystem::addSQShape__PxRigidActorCR.PxShapeCR.PxBounds3CR.PxTransformCR.PxSQCompoundHandleCP.b"></span><span class="target" id="class_px_scene_query_system_1a224e3fee10bb839132d6b3fdf972913e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addSQShape</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bounds</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__physics.html#_CPPv418PxSQCompoundHandle" title="PxSQCompoundHandle"><span class="n"><span class="pre">PxSQCompoundHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">compoundHandle</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">hasPruningStructure</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem10addSQShapeERK12PxRigidActorRK7PxShapeRK9PxBounds3RK11PxTransformPK18PxSQCompoundHandleb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a shape to the SQ system. </p>
+<p>The same function is used to add either a regular shape, or a SQ compound shape.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_scene_query_system_1abc8f38c0da7ccebbe063293d87cead5a"><span class="std std-ref">merge()</span></a> <a class="reference internal" href="class_px_pruning_structure.html#class_px_pruning_structure"><span class="std std-ref">PxPruningStructure</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The shape’s actor owner </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape itself </p></li>
+<li><p><strong>bounds</strong> – <strong>[in]</strong> Shape bounds, in world-space for regular shapes, in local-space for SQ compound shapes. </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> Shape transform, in world-space for regular shapes, in local-space for SQ compound shapes. </p></li>
+<li><p><strong>compoundHandle</strong> – <strong>[in]</strong> Handle of SQ compound owner, or NULL for regular shapes. </p></li>
+<li><p><strong>hasPruningStructure</strong> – <strong>[in]</strong> True if the shape is part of a pruning structure. The structure will be merged later, adding the objects will not invalidate the pruner.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem13removeSQShapeERK12PxRigidActorRK7PxShape">
+<span id="_CPPv3N18PxSceneQuerySystem13removeSQShapeERK12PxRigidActorRK7PxShape"></span><span id="_CPPv2N18PxSceneQuerySystem13removeSQShapeERK12PxRigidActorRK7PxShape"></span><span id="PxSceneQuerySystem::removeSQShape__PxRigidActorCR.PxShapeCR"></span><span class="target" id="class_px_scene_query_system_1a3f6985f07081fb7fa182e740fdf336e6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeSQShape</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem13removeSQShapeERK12PxRigidActorRK7PxShape" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes a shape from the SQ system. </p>
+<p>The same function is used to remove either a regular shape, or a SQ compound shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The shape’s actor owner </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape itself </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem13updateSQShapeERK12PxRigidActorRK7PxShapeRK11PxTransform">
+<span id="_CPPv3N18PxSceneQuerySystem13updateSQShapeERK12PxRigidActorRK7PxShapeRK11PxTransform"></span><span id="_CPPv2N18PxSceneQuerySystem13updateSQShapeERK12PxRigidActorRK7PxShapeRK11PxTransform"></span><span id="PxSceneQuerySystem::updateSQShape__PxRigidActorCR.PxShapeCR.PxTransformCR"></span><span class="target" id="class_px_scene_query_system_1a6c8eea227f73bc7fd0b78ebfcd634172"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateSQShape</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">transform</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem13updateSQShapeERK12PxRigidActorRK7PxShapeRK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates a shape in the SQ system. </p>
+<p>The same function is used to update either a regular shape, or a SQ compound shape.</p>
+<p>The transforms are eager-evaluated, but the bounds are lazy-evaluated. This means that the updated transform has to be passed to the update function, while the bounds are automatically recomputed by the system whenever needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The shape’s actor owner </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape itself </p></li>
+<li><p><strong>transform</strong> – <strong>[in]</strong> New shape transform, in world-space for regular shapes, in local-space for SQ compound shapes. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem13addSQCompoundERK12PxRigidActorPPK7PxShapeRK5PxBVHPK11PxTransform">
+<span id="_CPPv3N18PxSceneQuerySystem13addSQCompoundERK12PxRigidActorPPK7PxShapeRK5PxBVHPK11PxTransform"></span><span id="_CPPv2N18PxSceneQuerySystem13addSQCompoundERK12PxRigidActorPPK7PxShapeRK5PxBVHPK11PxTransform"></span><span id="PxSceneQuerySystem::addSQCompound__PxRigidActorCR.PxShapeCPP.PxBVHCR.PxTransformCP"></span><span class="target" id="class_px_scene_query_system_1ac0d0fbda345799ad9adc7db8805daf25"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="group__physics.html#_CPPv418PxSQCompoundHandle" title="PxSQCompoundHandle"><span class="n"><span class="pre">PxSQCompoundHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addSQCompound</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_b_v_h.html#_CPPv45PxBVH" title="PxBVH"><span class="n"><span class="pre">PxBVH</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">bvh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">transforms</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem13addSQCompoundERK12PxRigidActorPPK7PxShapeRK5PxBVHPK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a compound to the SQ system. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_b_v_h.html#class_px_b_v_h"><span class="std std-ref">PxBVH</span></a> PxCooking::createBVH </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The compound actor </p></li>
+<li><p><strong>shapes</strong> – <strong>[in]</strong> The compound actor’s shapes </p></li>
+<li><p><strong>bvh</strong> – <strong>[in]</strong> BVH structure containing the compound’s shapes in local space </p></li>
+<li><p><strong>transforms</strong> – <strong>[in]</strong> Shape transforms, in local-space</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SQ compound handle</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem16removeSQCompoundE18PxSQCompoundHandle">
+<span id="_CPPv3N18PxSceneQuerySystem16removeSQCompoundE18PxSQCompoundHandle"></span><span id="_CPPv2N18PxSceneQuerySystem16removeSQCompoundE18PxSQCompoundHandle"></span><span id="PxSceneQuerySystem::removeSQCompound__PxSQCompoundHandle"></span><span class="target" id="class_px_scene_query_system_1af9c881d428020ec1c6d54e68c4cd14b6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeSQCompound</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__physics.html#_CPPv418PxSQCompoundHandle" title="PxSQCompoundHandle"><span class="n"><span class="pre">PxSQCompoundHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">compoundHandle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem16removeSQCompoundE18PxSQCompoundHandle" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes a compound from the SQ system. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>compoundHandle</strong> – <strong>[in]</strong> SQ compound handle (returned by addSQCompound) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem16updateSQCompoundE18PxSQCompoundHandleRK11PxTransform">
+<span id="_CPPv3N18PxSceneQuerySystem16updateSQCompoundE18PxSQCompoundHandleRK11PxTransform"></span><span id="_CPPv2N18PxSceneQuerySystem16updateSQCompoundE18PxSQCompoundHandleRK11PxTransform"></span><span id="PxSceneQuerySystem::updateSQCompound__PxSQCompoundHandle.PxTransformCR"></span><span class="target" id="class_px_scene_query_system_1a7d992d129f22cff157668a6a2afd44a4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateSQCompound</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__physics.html#_CPPv418PxSQCompoundHandle" title="PxSQCompoundHandle"><span class="n"><span class="pre">PxSQCompoundHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">compoundHandle</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">compoundTransform</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem16updateSQCompoundE18PxSQCompoundHandleRK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Updates a compound in the SQ system. </p>
+<p>The compound structures are immediately updated when the call occurs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>compoundHandle</strong> – <strong>[in]</strong> SQ compound handle (returned by addSQCompound) </p></li>
+<li><p><strong>compoundTransform</strong> – <strong>[in]</strong> New actor/compound transform, in world-space </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem11shiftOriginERK6PxVec3">
+<span id="_CPPv3N18PxSceneQuerySystem11shiftOriginERK6PxVec3"></span><span id="_CPPv2N18PxSceneQuerySystem11shiftOriginERK6PxVec3"></span><span id="PxSceneQuerySystem::shiftOrigin__PxVec3CR"></span><span class="target" id="class_px_scene_query_system_1a20c2e8fac35d9493c7c97bbd45ffd95c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shiftOrigin</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shift</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem11shiftOriginERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shift the data structures’ origin by the specified vector. </p>
+<p>Please refer to the notes of the similar function in <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shift</strong> – <strong>[in]</strong> Translation vector to shift the origin by. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem9visualizeE5PxU32R14PxRenderOutput">
+<span id="_CPPv3NK18PxSceneQuerySystem9visualizeE5PxU32R14PxRenderOutput"></span><span id="_CPPv2NK18PxSceneQuerySystem9visualizeE5PxU32R14PxRenderOutput"></span><span id="PxSceneQuerySystem::visualize__PxU32.PxRenderOutputRC"></span><span class="target" id="class_px_scene_query_system_1a6cd0d5086e5902f5085cab9236c615b3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">visualize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span>, <a class="reference internal" href="class_px_render_output.html#_CPPv414PxRenderOutput" title="PxRenderOutput"><span class="n"><span class="pre">PxRenderOutput</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">out</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem9visualizeE5PxU32R14PxRenderOutput" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Visualizes the system’s internal data-structures, for debugging purposes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_render_output.html#class_px_render_output"><span class="std std-ref">PxRenderOutput</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner to visualize (PX_SCENE_PRUNER_STATIC, PX_SCENE_PRUNER_DYNAMIC or PX_SCENE_COMPOUND_PRUNER when called from <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>).</p></li>
+<li><p><strong>out</strong> – <strong>[out]</strong> Filled with render output data</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem5mergeERK18PxPruningStructure">
+<span id="_CPPv3N18PxSceneQuerySystem5mergeERK18PxPruningStructure"></span><span id="_CPPv2N18PxSceneQuerySystem5mergeERK18PxPruningStructure"></span><span id="PxSceneQuerySystem::merge__PxPruningStructureCR"></span><span class="target" id="class_px_scene_query_system_1abc8f38c0da7ccebbe063293d87cead5a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">merge</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_pruning_structure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><span class="n"><span class="pre">PxPruningStructure</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pruningStructure</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem5mergeERK18PxPruningStructure" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Merges a pruning structure with the SQ system’s internal pruners. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_pruning_structure.html#class_px_pruning_structure"><span class="std std-ref">PxPruningStructure</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pruningStructure</strong> – <strong>[in]</strong> The pruning structure to merge</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK18PxSceneQuerySystem9getHandleERK12PxRigidActorRK7PxShapeR5PxU32">
+<span id="_CPPv3NK18PxSceneQuerySystem9getHandleERK12PxRigidActorRK7PxShapeR5PxU32"></span><span id="_CPPv2NK18PxSceneQuerySystem9getHandleERK12PxRigidActorRK7PxShapeR5PxU32"></span><span id="PxSceneQuerySystem::getHandle__PxRigidActorCR.PxShapeCR.PxU32RC"></span><span class="target" id="class_px_scene_query_system_1aa2c9047974a0e61f86e4f6fdeb5be181"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="group__physics.html#_CPPv416PxSQPrunerHandle" title="PxSQPrunerHandle"><span class="n"><span class="pre">PxSQPrunerHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHandle</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shape</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">prunerIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK18PxSceneQuerySystem9getHandleERK12PxRigidActorRK7PxShapeR5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shape to SQ-pruner-handle mapping function. </p>
+<p>This function finds and returns the SQ pruner handle associated with a given (actor/shape) couple that was previously added to the system. This is needed for the sync function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> The shape’s actor owner </p></li>
+<li><p><strong>shape</strong> – <strong>[in]</strong> The shape itself </p></li>
+<li><p><strong>prunerIndex</strong> – <strong>[out]</strong> Index of pruner the shape belongs to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Associated SQ pruner handle. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem4syncE5PxU32PK16PxSQPrunerHandlePK5PxU32PK9PxBounds3PK13PxTransform325PxU32RK8PxBitMap">
+<span id="_CPPv3N18PxSceneQuerySystem4syncE5PxU32PK16PxSQPrunerHandlePK5PxU32PK9PxBounds3PK13PxTransform325PxU32RK8PxBitMap"></span><span id="_CPPv2N18PxSceneQuerySystem4syncE5PxU32PK16PxSQPrunerHandlePK5PxU32PK9PxBounds3PK13PxTransform325PxU32RK8PxBitMap"></span><span id="PxSceneQuerySystem::sync__PxU32.PxSQPrunerHandleCP.PxU32CP.PxBounds3CP.PxTransform32CP.PxU32.PxBitMapCR"></span><span class="target" id="class_px_scene_query_system_1a4d1ba91e8265c7d68c0836823ad53403"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__physics.html#_CPPv416PxSQPrunerHandle" title="PxSQPrunerHandle"><span class="n"><span class="pre">PxSQPrunerHandle</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">handles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">indices</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">bounds</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv413PxTransform32" title="PxTransform32"><span class="n"><span class="pre">PxTransform32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">transforms</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">count</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_bit_map_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7.html#_CPPv48PxBitMap" title="PxBitMap"><span class="n"><span class="pre">PxBitMap</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">ignoredIndices</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem4syncE5PxU32PK16PxSQPrunerHandlePK5PxU32PK9PxBounds3PK13PxTransform325PxU32RK8PxBitMap" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Synchronizes the scene-query system with another system that references the same objects. </p>
+<p>This function is used when the scene-query objects also exist in another system that can also update them. For example the scene-query objects (used for raycast, overlap or sweep queries) might be driven by equivalent objects in an external rigid-body simulation engine. In this case the rigid-body simulation engine computes the new poses and transforms, and passes them to the scene-query system using this function. It is more efficient than calling updateSQShape on each object individually, since updateSQShape would end up recomputing the bounds already available in the rigid-body engine.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> PxTransform32 PxBitMap </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner being synched (PX_SCENE_PRUNER_DYNAMIC for regular PhysX usage) </p></li>
+<li><p><strong>handles</strong> – <strong>[in]</strong> Handles of updated objects </p></li>
+<li><p><strong>indices</strong> – <strong>[in]</strong> Bounds &amp; transforms indices of updated objects, i.e. object handles[i] has bounds[indices[i]] and transforms[indices[i]] </p></li>
+<li><p><strong>bounds</strong> – <strong>[in]</strong> Array of bounds for all objects (not only updated bounds) </p></li>
+<li><p><strong>transforms</strong> – <strong>[in]</strong> Array of transforms for all objects (not only updated transforms) </p></li>
+<li><p><strong>count</strong> – <strong>[in]</strong> Number of updated objects </p></li>
+<li><p><strong>ignoredIndices</strong> – <strong>[in]</strong> Optional bitmap of ignored indices, i.e. update is skipped if ignoredIndices[indices[i]] is set.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem15finalizeUpdatesEv">
+<span id="_CPPv3N18PxSceneQuerySystem15finalizeUpdatesEv"></span><span id="_CPPv2N18PxSceneQuerySystem15finalizeUpdatesEv"></span><span id="PxSceneQuerySystem::finalizeUpdates"></span><span class="target" id="class_px_scene_query_system_1a886eec506fe14c712189a0a40db09f94"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">finalizeUpdates</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem15finalizeUpdatesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Finalizes updates made to the SQ system. </p>
+<p>This function should be called after updates have been made to the SQ system, to fully reflect the changes inside the internal pruners. In particular it should be called:<ul class="simple">
+<li><p>after calls to updateSQShape</p></li>
+<li><p>after calls to sync</p></li>
+</ul>
+</p>
+<p>This function:<ul class="simple">
+<li><p>recomputes bounds of manually updated shapes (i.e. either regular or SQ compound shapes modified by updateSQShape)</p></li>
+<li><p>updates dynamic pruners (refit operations)</p></li>
+<li><p>incrementally rebuilds AABB-trees</p></li>
+</ul>
+</p>
+<p>The amount of work performed in this function depends on <a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode"><span class="std std-ref">PxSceneQueryUpdateMode</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_scene_query_update_mode.html#struct_px_scene_query_update_mode"><span class="std std-ref">PxSceneQueryUpdateMode</span></a> <a class="reference internal" href="#class_px_scene_query_system_1a6c8eea227f73bc7fd0b78ebfcd634172"><span class="std std-ref">updateSQShape()</span></a> <a class="reference internal" href="#class_px_scene_query_system_1a4d1ba91e8265c7d68c0836823ad53403"><span class="std std-ref">sync()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem26prepareSceneQueryBuildStepE5PxU32">
+<span id="_CPPv3N18PxSceneQuerySystem26prepareSceneQueryBuildStepE5PxU32"></span><span id="_CPPv2N18PxSceneQuerySystem26prepareSceneQueryBuildStepE5PxU32"></span><span id="PxSceneQuerySystem::prepareSceneQueryBuildStep__PxU32"></span><span class="target" id="class_px_scene_query_system_1aeeef4236714a1e072a217930490e4d28"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="group__physics.html#_CPPv419PxSQBuildStepHandle" title="PxSQBuildStepHandle"><span class="n"><span class="pre">PxSQBuildStepHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">prepareSceneQueryBuildStep</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">prunerIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem26prepareSceneQueryBuildStepE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Prepares asynchronous build step. </p>
+<p>This is directly called (synchronously) by <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1a6cefa1c84a8bf69ce7fca2e1064356ad"><span class="std std-ref">PxSceneSQSystem::sceneQueriesUpdate()</span></a>. See the comments there.</p>
+<p>This function is called to let the system execute any necessary synchronous operation before the asynchronous <a class="reference internal" href="#class_px_scene_query_system_1a3e5adc4d2e0719205df746a5f6cec82c"><span class="std std-ref">sceneQueryBuildStep()</span></a> function is called.</p>
+<p>If there is any work to do for the specific pruner, the function returns a pruner-specific handle that will be passed to the corresponding, asynchronous sceneQueryBuildStep function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1a6cefa1c84a8bf69ce7fca2e1064356ad"><span class="std std-ref">PxSceneSQSystem::sceneQueriesUpdate</span></a> <a class="reference internal" href="#class_px_scene_query_system_1a3e5adc4d2e0719205df746a5f6cec82c"><span class="std std-ref">sceneQueryBuildStep</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prunerIndex</strong> – <strong>[in]</strong> Index of pruner being built. (PX_SCENE_PRUNER_STATIC or PX_SCENE_PRUNER_DYNAMIC when called by <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A pruner-specific handle that will be sent to sceneQueryBuildStep if there is any work to do, i.e. to execute the corresponding <a class="reference internal" href="#class_px_scene_query_system_1a3e5adc4d2e0719205df746a5f6cec82c"><span class="std std-ref">sceneQueryBuildStep()</span></a> call.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Null if there is no work to do, otherwise a pruner-specific handle.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem19sceneQueryBuildStepE19PxSQBuildStepHandle">
+<span id="_CPPv3N18PxSceneQuerySystem19sceneQueryBuildStepE19PxSQBuildStepHandle"></span><span id="_CPPv2N18PxSceneQuerySystem19sceneQueryBuildStepE19PxSQBuildStepHandle"></span><span id="PxSceneQuerySystem::sceneQueryBuildStep__PxSQBuildStepHandle"></span><span class="target" id="class_px_scene_query_system_1a3e5adc4d2e0719205df746a5f6cec82c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sceneQueryBuildStep</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="group__physics.html#_CPPv419PxSQBuildStepHandle" title="PxSQBuildStepHandle"><span class="n"><span class="pre">PxSQBuildStepHandle</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">handle</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem19sceneQueryBuildStepE19PxSQBuildStepHandle" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Executes asynchronous build step. </p>
+<p>This is directly called (asynchronously) by <a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1a6cefa1c84a8bf69ce7fca2e1064356ad"><span class="std std-ref">PxSceneSQSystem::sceneQueriesUpdate()</span></a>. See the comments there.</p>
+<p>This function incrementally builds the internal trees/pruners. It is called asynchronously, i.e. this can be called from different threads for building multiple trees at the same time.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene_s_q_system.html#class_px_scene_s_q_system_1a6cefa1c84a8bf69ce7fca2e1064356ad"><span class="std std-ref">PxSceneSQSystem::sceneQueriesUpdate</span></a> <a class="reference internal" href="#class_px_scene_query_system_1aeeef4236714a1e072a217930490e4d28"><span class="std std-ref">prepareSceneQueryBuildStep</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>handle</strong> – <strong>[in]</strong> Pruner-specific handle previously returned by the prepareSceneQueryBuildStep function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystem18PxSceneQuerySystemEv">
+<span id="_CPPv3N18PxSceneQuerySystem18PxSceneQuerySystemEv"></span><span id="_CPPv2N18PxSceneQuerySystem18PxSceneQuerySystemEv"></span><span id="PxSceneQuerySystem::PxSceneQuerySystem"></span><span class="target" id="class_px_scene_query_system_1a9bfb1233a12216c10577ab8ab0615b00"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSceneQuerySystem</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystem18PxSceneQuerySystemEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N18PxSceneQuerySystemD0Ev">
+<span id="_CPPv3N18PxSceneQuerySystemD0Ev"></span><span id="_CPPv2N18PxSceneQuerySystemD0Ev"></span><span id="PxSceneQuerySystem::~PxSceneQuerySystem"></span><span class="target" id="class_px_scene_query_system_1a0a737b66bfbfb3dfd74d428f1d80979f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxSceneQuerySystem</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N18PxSceneQuerySystemD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scenequery &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Serializers" href="group___serializers.html" />
+    <link rel="prev" title="Pvd" href="group__pvd.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Scenequery</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+<li>Scenequery</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scenequery">
+<h1>Scenequery<a class="headerlink" href="#scenequery" title="Permalink to this headline"></a></h1>
+<p class="rubric-h4 rubric" id="group__scenequery">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_px_query_filter_callback.html#class_px_query_filter_callback"><span class="std std-ref">PxQueryFilterCallback</span></a>: Scene query filtering callbacks.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_px_actor_shape.html#struct_px_actor_shape"><span class="std std-ref">PxActorShape</span></a>: Combines a shape pointer and the actor the shape belongs to into one memory location.</p></li>
+<li><p><a class="reference internal" href="struct_px_geom_index_pair.html#struct_px_geom_index_pair"><span class="std std-ref">PxGeomIndexPair</span></a>: Pair of indices, typically either object or triangle indices.</p></li>
+<li><p><a class="reference internal" href="struct_px_geom_overlap_hit.html#struct_px_geom_overlap_hit"><span class="std std-ref">PxGeomOverlapHit</span></a>: Stores results of overlap queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_geom_raycast_hit.html#struct_px_geom_raycast_hit"><span class="std std-ref">PxGeomRaycastHit</span></a>: Stores results of raycast queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_geom_sweep_hit.html#struct_px_geom_sweep_hit"><span class="std std-ref">PxGeomSweepHit</span></a>: Stores results of sweep queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_hit_buffer.html#struct_px_hit_buffer"><span class="std std-ref">PxHitBuffer</span></a>: Returns scene query hits (intersections) to the user in a preallocated buffer.</p></li>
+<li><p><a class="reference internal" href="struct_px_hit_callback.html#struct_px_hit_callback"><span class="std std-ref">PxHitCallback</span></a>: This callback class facilitates reporting scene query hits (intersections) to the user.</p></li>
+<li><p><a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a>: Scene query and geometry query behavior flags.</p></li>
+<li><p><a class="reference internal" href="struct_px_location_hit.html#struct_px_location_hit"><span class="std std-ref">PxLocationHit</span></a>: Scene query hit information for raycasts and sweeps returning hit position and normal information.</p></li>
+<li><p><a class="reference internal" href="struct_px_overlap_buffer_n.html#struct_px_overlap_buffer_n"><span class="std std-ref">PxOverlapBufferN</span></a>: Returns touching overlap hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_overlap_hit.html#struct_px_overlap_hit"><span class="std std-ref">PxOverlapHit</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_query_cache.html#struct_px_query_cache"><span class="std std-ref">PxQueryCache</span></a>: single hit cache for scene queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_query_filter_data.html#struct_px_query_filter_data"><span class="std std-ref">PxQueryFilterData</span></a>: Scene query filtering data.</p></li>
+<li><p><a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a>: Filtering flags for scene queries.</p></li>
+<li><p><a class="reference internal" href="struct_px_query_hit.html#struct_px_query_hit"><span class="std std-ref">PxQueryHit</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag"><span class="std std-ref">PxHitFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_px_query_hit_type.html#struct_px_query_hit_type"><span class="std std-ref">PxQueryHitType</span></a>: Classification of scene query hits (intersections).</p></li>
+<li><p><a class="reference internal" href="struct_px_raycast_buffer_n.html#struct_px_raycast_buffer_n"><span class="std std-ref">PxRaycastBufferN</span></a>: Returns touching raycast hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_raycast_hit.html#struct_px_raycast_hit"><span class="std std-ref">PxRaycastHit</span></a></p></li>
+<li><p><a class="reference internal" href="struct_px_sweep_buffer_n.html#struct_px_sweep_buffer_n"><span class="std std-ref">PxSweepBufferN</span></a>: Returns touching sweep hits to the user in a fixed size array embedded in the buffer class.</p></li>
+<li><p><a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a></p></li>
+</ul>
+<p class="rubric-h4 rubric">Typedefs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#group__scenequery_1ga4d0184965c0a910f5c96cb69c0690f5c"><span class="std std-ref">PxAgain</span></a>: Describes query behavior after returning a partial query result via a callback.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1ga54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a>: Overlap query buffer.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a>: Overlap query callback.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1gaacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a>: Flags typedef for the set of bits defined in <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a>: Raycast query buffer.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a>: Raycast query callback.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a>: Sweep query buffer.</p></li>
+<li><p><a class="reference internal" href="#group__scenequery_1ga6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a>: Sweep query callback.</p></li>
+</ul>
+<section id="typedefs">
+<h2>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h2>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv47PxAgain">
+<span id="_CPPv37PxAgain"></span><span id="_CPPv27PxAgain"></span><span id="PxAgain"></span><span class="target" id="group__scenequery_1ga4d0184965c0a910f5c96cb69c0690f5c"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxAgain</span></span></span><a class="headerlink" href="#_CPPv47PxAgain" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Describes query behavior after returning a partial query result via a callback. </p>
+<p>If callback returns true, traversal will continue and callback can be issued again. If callback returns false, traversal will stop, callback will not be issued again.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_hit_callback.html#struct_px_hit_callback"><span class="std std-ref">PxHitCallback</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxOverlapBuffer">
+<span id="_CPPv315PxOverlapBuffer"></span><span id="_CPPv215PxOverlapBuffer"></span><span id="PxOverlapBuffer"></span><span class="target" id="group__scenequery_1ga54a708942a891f3321c2427d5c160750"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_buffer.html#_CPPv4I0E11PxHitBuffer" title="PxHitBuffer"><span class="n"><span class="pre">PxHitBuffer</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_overlap_hit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><span class="n"><span class="pre">PxOverlapHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxOverlapBuffer</span></span></span><a class="headerlink" href="#_CPPv415PxOverlapBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Overlap query buffer. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxOverlapCallback">
+<span id="_CPPv317PxOverlapCallback"></span><span id="_CPPv217PxOverlapCallback"></span><span id="PxOverlapCallback"></span><span class="target" id="group__scenequery_1ga9baa3a8cad31bbb8ef666fe01b3afeb7"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_callback.html#_CPPv4I0E13PxHitCallback" title="PxHitCallback"><span class="n"><span class="pre">PxHitCallback</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_overlap_hit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><span class="n"><span class="pre">PxOverlapHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxOverlapCallback</span></span></span><a class="headerlink" href="#_CPPv417PxOverlapCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Overlap query callback. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv412PxQueryFlags">
+<span id="_CPPv312PxQueryFlags"></span><span id="_CPPv212PxQueryFlags"></span><span id="PxQueryFlags"></span><span class="target" id="group__scenequery_1gaacf083b040f6c841644782282171bd61"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="class_px_flags.html#_CPPv4I00E7PxFlags" title="PxFlags"><span class="n"><span class="pre">PxFlags</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_query_flag.html#_CPPv411PxQueryFlag" title="PxQueryFlag"><span class="n"><span class="pre">PxQueryFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_query_flag.html#_CPPv4N11PxQueryFlag4EnumE" title="PxQueryFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU16" title="PxU16"><span class="n"><span class="pre">PxU16</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxQueryFlags</span></span></span><a class="headerlink" href="#_CPPv412PxQueryFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flags typedef for the set of bits defined in <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a>. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxRaycastBuffer">
+<span id="_CPPv315PxRaycastBuffer"></span><span id="_CPPv215PxRaycastBuffer"></span><span id="PxRaycastBuffer"></span><span class="target" id="group__scenequery_1gab21a68ce9e5a18aa742111920b75a84c"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_buffer.html#_CPPv4I0E11PxHitBuffer" title="PxHitBuffer"><span class="n"><span class="pre">PxHitBuffer</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><span class="n"><span class="pre">PxRaycastHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRaycastBuffer</span></span></span><a class="headerlink" href="#_CPPv415PxRaycastBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast query buffer. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv417PxRaycastCallback">
+<span id="_CPPv317PxRaycastCallback"></span><span id="_CPPv217PxRaycastCallback"></span><span id="PxRaycastCallback"></span><span class="target" id="group__scenequery_1ga4dbe8142d799492bd8e7c5ec70bfac41"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_callback.html#_CPPv4I0E13PxHitCallback" title="PxHitCallback"><span class="n"><span class="pre">PxHitCallback</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><span class="n"><span class="pre">PxRaycastHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRaycastCallback</span></span></span><a class="headerlink" href="#_CPPv417PxRaycastCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raycast query callback. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv413PxSweepBuffer">
+<span id="_CPPv313PxSweepBuffer"></span><span id="_CPPv213PxSweepBuffer"></span><span id="PxSweepBuffer"></span><span class="target" id="group__scenequery_1gaecfed2b83a930b922b3d95e22ff30665"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_buffer.html#_CPPv4I0E11PxHitBuffer" title="PxHitBuffer"><span class="n"><span class="pre">PxHitBuffer</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSweepBuffer</span></span></span><a class="headerlink" href="#_CPPv413PxSweepBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep query buffer. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv415PxSweepCallback">
+<span id="_CPPv315PxSweepCallback"></span><span id="_CPPv215PxSweepCallback"></span><span id="PxSweepCallback"></span><span class="target" id="group__scenequery_1ga6f93f556cef747d50f643499928dd865"></span><span class="k"><span class="pre">typedef</span></span><span class="w"> </span><a class="reference internal" href="struct_px_hit_callback.html#_CPPv4I0E13PxHitCallback" title="PxHitCallback"><span class="n"><span class="pre">PxHitCallback</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSweepCallback</span></span></span><a class="headerlink" href="#_CPPv415PxSweepCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sweep query callback. </p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

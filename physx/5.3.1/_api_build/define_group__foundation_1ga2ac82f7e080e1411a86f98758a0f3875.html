@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PX_OFFSET_OF_RT &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PX_OSX" href="define_group__foundation_1ga2b3efd786b831b6cfd30e51dcd3c5ca2.html" />
+    <link rel="prev" title="PX_OFFSET_OF" href="define_group__foundation_1gaace09d9150d8d87671f893afe548ebac.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="group__foundation.html">Foundation</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga8853e1b0f46c6dd7043b948747a19a19.html">PX_A64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5332a7e82c543612744a0c821cf48b78.html">PX_ALWAYS_ASSERT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5ff30cdf70b6b77fc0a17427ad5ef7de.html">PX_ALWAYS_ASSERT_MESSAGE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga4330ceada999f3f6d10f7bd4b3dd3c2f.html">PX_APPLE_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gad566a9166622790d99924279df71eaf4.html">PX_ARM</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga99db209a98702e2d6673d967bac37d07.html">PX_ARM_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga4a83a657390b324a460f14684e5accee.html">PX_ASSERT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga09414aeb1a283b875edb1fa83e551aca.html">PX_ASSERT_WITH_MESSAGE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gadff4cde4e8b8443cfbe024b9fb52a891.html">PX_CHECKED</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga0224d1d19bb5c7febf07f7813a5ed995.html">PX_CHECK_AND_RETURN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga188186336069c9cb5ba0af0048c083c1.html">PX_CHECK_AND_RETURN_NULL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga40359fcafa0c7032c1bf377dd7072154.html">PX_CHECK_AND_RETURN_VAL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga19ce6647dc8026af829397064b3970de.html">PX_CHECK_MSG</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga382d2b60e6161c1dcb3801bbf8e1b4a3.html">PX_CLANG</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gab12cc8cbd08c9c19ab0d40b7f789012e.html">PX_COMPILE_TIME_ASSERT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5f35262177498e8a11a4f3e5ba83e5e8.html">PX_CONCAT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga571ac4b7ead96ee2a8ad83d1ebe1aec9.html">PX_CONCAT_HELPER</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga6e444d58dbf1459261fadc9b79594f63.html">PX_CUDA_CALLABLE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga7b6fbb539e9185279ced84864179180b.html">PX_DEBUG</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga6952091abd80c0c93a99d331b6c97482.html">PX_DEBUG_CRT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gafd8f8779793627061774cfcfa1b9fbd7.html">PX_DEPRECATED</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5be743320fae5abf91e51efebced816e.html">PX_DLL_EXPORT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gadfbe26e2b38cec0e72ed7d70872d234f.html">PX_DLL_IMPORT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gae83a283ec08df8515d40c81810628e87.html">PX_DUMMY_SYMBOL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gab14d7af80f3dc4ff432087381fcefdb9.html">PX_EMSCRIPTEN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga43c56deefc64fae5fe077a232a10056c.html">PX_ENABLE_ASSERTS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gae8aa7aabc2f4d376cdac2931bea8014b.html">PX_EPS_F32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga0f79a2074a05144416be06f4c45a324c.html">PX_EPS_F64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga2440789bba543f4ab246a7dea35d7d95.html">PX_EPS_REAL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5b87e9ee392fc1afccb4f9b7a89c95d0.html">PX_FINAL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga069272504fcb1a82c2feb09830eda88c.html">PX_FL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga6a774eed3cad34b0f636332a3d28c6bb.html">PX_FORCE_INLINE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gae7058022ea016a0af40eb7728a30c928.html">PX_FOUNDATION_API</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga732674527c19934c396385ac405993b6.html">PX_GCC</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gae6e47183b054e4c5d6a478a00fe91e27.html">PX_GCC_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga89beab11abe1ea8c4f4d30b5a38edb01.html">PX_IMPLEMENT_OUTPUT_ERROR</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga63edbe2223b03be1514dbcb56d22f1eb.html">PX_INFO</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gacb03347b642a2a5bdea1f9b305a6fbec.html">PX_INLINE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga481340bf67229603a2c5b9257874934a.html">PX_INTEL_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gad76274b09d89544fc4133c8d915293ed.html">PX_LIBCPP</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga73b08402e151455258acc7ec628a277b.html">PX_LINUX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaa6237ff50213fc9872d4569a649dcd53.html">PX_LINUX_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gac1b800617c25ba00871816b8a0756d89.html">PX_MAX_BOUNDS_EXTENTS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga7539e08056ea09ff1c341b866b7103f4.html">PX_MAX_F32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga0e6a6baa9078ed0b45a03fb4404c9bf5.html">PX_MAX_F64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga226013a71f304c8c670ef781aa62b145.html">PX_MAX_I16</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaca8cf9822157157ba95923e39999da82.html">PX_MAX_I32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gafd3aefa9b2e2bc6856ddff8bc1ff3770.html">PX_MAX_I8</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga1afd8c76d275a787af09ebfceaf7fc30.html">PX_MAX_REAL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5875f14ce7524d2a21d3bb23a039d1ec.html">PX_MAX_U16</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga86fdc6216f1e58e9fa63a2c0108261a7.html">PX_MAX_U32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga317798739f43b557779c6d40806038b6.html">PX_MAX_U8</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga3fc2611ba27e5701f2a1cf14afd1dd7b.html">PX_MIN_I16</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga005bc6fc1fd839ee0896828600dd17bb.html">PX_MIN_I32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga0180682969fce22cc7d01b100e1da755.html">PX_MIN_I8</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5bd19e27244d543c2e0a4d9c04338406.html">PX_MIN_U16</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga4c63f0632cd5766a4233686020a33159.html">PX_MIN_U32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga7bd33cbf0ea64aee9a79758f70050cdf.html">PX_MIN_U8</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga41ea3463989964c5a4e21d68a9d3884a.html">PX_NEON</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga838010cc1baa6df8d6ff0fc5655274dd.html">PX_NOALIAS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga2af6846d9d49e433af97059f0291eef1.html">PX_NOCOPY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga56b7f4f37ac451a47f3d7d661069aa49.html">PX_NOINLINE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga8901e378c5ba8f305e8714d5758cd9dd.html">PX_NORMALIZATION_EPSILON</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga65237bda8f886bb466e89d01a1ba0a77.html">PX_NVTX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga305a9ab26a10d521e58782103206edf5.html">PX_OFFSETOF_BASE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaace09d9150d8d87671f893afe548ebac.html">PX_OFFSET_OF</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">PX_OFFSET_OF_RT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga2b3efd786b831b6cfd30e51dcd3c5ca2.html">PX_OSX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga7f84f0458b75adc8c2f2a164fdb6fb0d.html">PX_OVERRIDE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gac9e21d1f7a04c78926a89d936c97546f.html">PX_P64_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d.html">PX_PHYSICS_VERSION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga4edfc95b25e96e7d308d83347c93a69f.html">PX_PHYSICS_VERSION_BUGFIX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga75378be4130e1bdda740c22c07314640.html">PX_PHYSICS_VERSION_MAJOR</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga25c9c85e3980cdbf0bedfbcad822aed7.html">PX_PHYSICS_VERSION_MINOR</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga9aad3b08e5e15565ff39638b753f4a92.html">PX_POP_PACK</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5bd657340cb0dc207107cb1742d1135b.html">PX_PPC</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gac2271cd3b97db6a3e1ba0222d1b4d07e.html">PX_PRIu64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gabefdbdd6927f15e90168c46824f7bd38.html">PX_PROFILE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga1145ffab2cc9a77ca65b59ba4126342f.html">PX_PUSH_PACK_DEFAULT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga3b15bb2f7697b2bed10eb5477909fbe4.html">PX_RESTRICT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gad51dd6dc9ad9045a55c42193192b2821.html">PX_SIGN_BITMASK</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga44111415cac01852ed19b1e97433c489.html">PX_SORT_PARANOIA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga2dd18616fa4eec4df42b5f3505dd2a64.html">PX_SSE2</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga40e7fc272047a5ab6870668b81aca1a3.html">PX_STRINGIZE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaaa541ee81b5c7958c1367b710cfa99ed.html">PX_STRINGIZE_HELPER</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga58dd174408338f37c62dfe6ac1baec60.html">PX_SUPPORT_EXTERN_TEMPLATE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga0a511de410e7de7a8625fb572f88bd89.html">PX_SUPPORT_GPU_PHYSX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga69c3fa9b2882d545ebdb965086853c62.html">PX_SWITCH</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gac40d28c5e85426df7a98ff9bd597810c.html">PX_UNIX_EXPORT</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gad7d515be586be72c5c485c5624783a97.html">PX_UNIX_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga666b5efc2a0665170dbdd42b3e931305.html">PX_UNUSED_ATTRIBUTE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaec15ff1639b763560ddaffc82936ff03.html">PX_VC</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga43eec71a9b57bd336f2208cb33dba42e.html">PX_VMX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gacc6faeacecb82d70cf907161487f0c97.html">PX_WARN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga3e2792f2a72da671fbd9f9487c93d155.html">PX_WARN_ONCE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gae9e095c9a31a691fdfae1986a3425dd8.html">PX_WARN_ONCE_IF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga41f92d88ba8f7b8ef321aa090b0e270d.html">PX_WEAK_SYMBOL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gac4b372e9d2d91a0a86d40f7486936993.html">PX_WIN32</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gafb26faf6ab4449f92b90eaedb74d6f3b.html">PX_WIN64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga8d26d765b23de0bca18dd327cde2d8f8.html">PX_WINDOWS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga5121e2d88c11a94738ee44b0b6b339a2.html">PX_WINDOWS_FAMILY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga559a6fbf1f502edf3e25e3b90647f111.html">PX_X64</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga4f7abce9f24240386fb46d29e4332d3d.html">PX_X86</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1ga471d6bb3bd98ced0974dbc866268c15a.html">USE_VOLATILE_UNION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__foundation_1gaacbb9e1f38be71e22df1584a37c56693.html">__STDC_FORMAT_MACROS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__foundation.html#enumerations">Enumerations</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__foundation.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__foundation.html#typedefs">Typedefs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__foundation.html#variables">Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__physics.html">Physics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+    <li><a href="group__foundation.html">Foundation</a> &raquo;</li>
+<li>PX_OFFSET_OF_RT</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="px-offset-of-rt">
+<h1>PX_OFFSET_OF_RT<a class="headerlink" href="#px-offset-of-rt" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxPreprocessor.h.html#px-preprocessor-8h"><span class="std std-ref">include/foundation/PxPreprocessor.h</span></a></p>
+<dl class="cpp macro">
+<dt class="sig sig-object cpp" id="c.PX_OFFSET_OF_RT">
+<span class="target" id="group__foundation_1ga2ac82f7e080e1411a86f98758a0f3875"></span><span class="sig-name descname"><span class="n"><span class="pre">PX_OFFSET_OF_RT</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">Class</span></span>, <span class="n"><span class="pre">Member</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.PX_OFFSET_OF_RT" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

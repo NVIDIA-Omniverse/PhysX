@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PX_STORE_METADATA &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pvd" href="group__pvd.html" />
+    <link rel="prev" title="PX_SIZE_OF" href="define_group__physics_1ga59c318a035d7a555f3e2188d757059bf.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="groups.html">Groups</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="group__character.html">Character</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__common.html">Common</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__cooking.html">Cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__extensions.html">Extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__foundation.html">Foundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__geomutils.html">Geomutils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__immediatemode.html">Immediatemode</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="group__physics.html">Physics</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad7d63e592ac0d23d42e12e10572039fe.html">PXC_CONTACT_NO_FACE_INDEX</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga032d753d48dd9e14306d309c2b618410.html">PX_DEF_BIN_METADATA_BASE_CLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga7d5660bc1b17b72651434edf7fa022a8.html">PX_DEF_BIN_METADATA_CLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga8a5eb66875b992351ed7038b8001bbea.html">PX_DEF_BIN_METADATA_EXTRA_ALIGN</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gae42707bb37470210b586a341ff585b78.html">PX_DEF_BIN_METADATA_EXTRA_ARRAY</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga2cc87661da498e4f0c4ce26b6656e467.html">PX_DEF_BIN_METADATA_EXTRA_ITEM</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga39043f3971c7c14f163a41f41982701f.html">PX_DEF_BIN_METADATA_EXTRA_ITEMS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc.html">PX_DEF_BIN_METADATA_EXTRA_ITEMS_MASKED_CONTROL</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga03a3549588909e6ca0a491af76146757.html">PX_DEF_BIN_METADATA_EXTRA_NAME</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga14481630a9253df1784a9cad4e94d904.html">PX_DEF_BIN_METADATA_ITEM</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0.html">PX_DEF_BIN_METADATA_ITEMS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga5c5117095910154a5e39fee736503e72.html">PX_DEF_BIN_METADATA_ITEMS_AUTO</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga190471540583d37595e5532c7534f950.html">PX_DEF_BIN_METADATA_TYPEDEF</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gadf1f469d767ae64422c20cce7c71a6b3.html">PX_DEF_BIN_METADATA_UNION</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7.html">PX_DEF_BIN_METADATA_UNION_TYPE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga314967fa3f63ec7c0b84832edb318458.html">PX_DEF_BIN_METADATA_VCLASS</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0.html">PX_INVALID_BP_FILTER_GROUP</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1gad493d6810dee9604135b76393eb7c501.html">PX_MAX_TETID</a></li>
+<li class="toctree-l5"><a class="reference internal" href="define_group__physics_1ga59c318a035d7a555f3e2188d757059bf.html">PX_SIZE_OF</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">PX_STORE_METADATA</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__physics.html#enumerations">Enumerations</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__physics.html#functions">Functions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="group__physics.html#typedefs">Typedefs</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="group__pvd.html">Pvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__scenequery.html">Scenequery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group___serializers.html">Serializers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="group__vehicle2.html">Vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="groups.html">Groups</a> &raquo;</li>
+    <li><a href="group__physics.html">Physics</a> &raquo;</li>
+<li>PX_STORE_METADATA</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="px-store-metadata">
+<h1>PX_STORE_METADATA<a class="headerlink" href="#px-store-metadata" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_common_PxMetaData.h.html#px-meta-data-8h"><span class="std std-ref">include/common/PxMetaData.h</span></a></p>
+<dl class="cpp macro">
+<dt class="sig sig-object cpp" id="c.PX_STORE_METADATA">
+<span class="target" id="group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e"></span><span class="sig-name descname"><span class="n"><span class="pre">PX_STORE_METADATA</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">stream</span></span>, <span class="n"><span class="pre">metaData</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.PX_STORE_METADATA" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

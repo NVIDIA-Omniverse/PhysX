@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxRigidBodyExt &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxRigidDynamic" href="class_px_rigid_dynamic.html" />
+    <link rel="prev" title="PxRigidBody" href="class_px_rigid_body.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_reader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_sensor.html">PxArticulationSensor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_l_i_p_material.html">PxFLIPMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_m_p_m_material.html">PxMPMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_particle_system.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_material.html">PxParticleMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system.html">PxParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxRigidBodyExt</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxrigidbodyext">
+<h1>PxRigidBodyExt<a class="headerlink" href="#pxrigidbodyext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxRigidBodyExt.h.html#px-rigid-body-ext-8h"><span class="std std-ref">include/extensions/PxRigidBodyExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxRigidBodyExt">
+<span id="_CPPv314PxRigidBodyExt"></span><span id="_CPPv214PxRigidBodyExt"></span><span id="PxRigidBodyExt"></span><span class="target" id="class_px_rigid_body_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxRigidBodyExt</span></span></span><a class="headerlink" href="#_CPPv414PxRigidBodyExt" title="Permalink to this definition"></a><br /></dt>
+<dd><p>utility functions for use with <a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a> and subclasses </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_dynamic"><span class="std std-ref">PxRigidDynamic</span></a> <a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref">PxArticulationLink</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b">
+<span id="_CPPv3N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b"></span><span id="_CPPv2N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b"></span><span id="PxRigidBodyExt::updateMassAndInertia__PxRigidBodyR.PxRealCP.PxU32.PxVec3CP.b"></span><span class="target" id="class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateMassAndInertia</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapeDensities</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">shapeDensityCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">massLocalPose</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">includeNonSimShapes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computation of mass properties for a rigid body actor. </p>
+<p>To simulate a dynamic rigid actor, the SDK needs a mass and an inertia tensor.</p>
+<p>This method offers functionality to compute the necessary mass and inertia properties based on the shapes declared in the <a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a> descriptor and some additionally specified parameters. For each shape, the shape geometry, the shape positioning within the actor and the specified shape density are used to compute the body’s mass and inertia properties.</p>
+<p><ul class="simple">
+<li><p>Shapes without <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> set are ignored unless includeNonSimShapes is true. </p></li>
+<li><p>Shapes with plane, triangle mesh or heightfield geometry and <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> set are not allowed for <a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body"><span class="std std-ref">PxRigidBody</span></a> collision. </p></li>
+</ul>
+</p>
+<p>This method will set the mass, center of mass, and inertia tensor</p>
+<p>if no collision shapes are found, the inertia tensor is set to (1,1,1) and the mass to 1</p>
+<p>if massLocalPose is non-NULL, the rigid body’s center of mass parameter will be set to the user provided value (massLocalPose) and the inertia tensor will be resolved at that point.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidBody::setMassLocalPose <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a755d0c8a8d1dd8b29e59d50a6dfda5fd"><span class="std std-ref">PxRigidBody::setMassSpaceInertiaTensor</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a8a697a7a4b9bdd2c83a68e84b9bc3a35"><span class="std std-ref">PxRigidBody::setMass</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If all shapes of the actor have the same density then the overloaded method <a class="reference internal" href="#class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"><span class="std std-ref">updateMassAndInertia()</span></a> with a single density parameter can be used instead.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[inout]</strong> The rigid body. </p></li>
+<li><p><strong>shapeDensities</strong> – <strong>[in]</strong> The per shape densities. There must be one entry for each shape which has the <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> set (or for all shapes if includeNonSimShapes is set to true). Other shapes are ignored. The density values must be greater than 0. </p></li>
+<li><p><strong>shapeDensityCount</strong> – <strong>[in]</strong> The number of provided density values. </p></li>
+<li><p><strong>massLocalPose</strong> – <strong>[in]</strong> The center of mass relative to the actor frame. If set to null then (0,0,0) is assumed. </p></li>
+<li><p><strong>includeNonSimShapes</strong> – <strong>[in]</strong> True if all kind of shapes (<a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a>, <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a>) should be taken into account. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Boolean. True on success else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBody6PxRealPK6PxVec3b">
+<span id="_CPPv3N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBody6PxRealPK6PxVec3b"></span><span id="_CPPv2N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBody6PxRealPK6PxVec3b"></span><span id="PxRigidBodyExt::updateMassAndInertia__PxRigidBodyR.PxReal.PxVec3CP.b"></span><span class="target" id="class_px_rigid_body_ext_1a3799da4d9faefd65517222250bacf33a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">updateMassAndInertia</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">density</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">massLocalPose</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">includeNonSimShapes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt20updateMassAndInertiaER11PxRigidBody6PxRealPK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computation of mass properties for a rigid body actor. </p>
+<p>See previous method for details.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidBody::setMassLocalPose <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a755d0c8a8d1dd8b29e59d50a6dfda5fd"><span class="std std-ref">PxRigidBody::setMassSpaceInertiaTensor</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a8a697a7a4b9bdd2c83a68e84b9bc3a35"><span class="std std-ref">PxRigidBody::setMass</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[inout]</strong> The rigid body. </p></li>
+<li><p><strong>density</strong> – <strong>[in]</strong> The density of the body. Used to compute the mass of the body. The density must be greater than 0. </p></li>
+<li><p><strong>massLocalPose</strong> – <strong>[in]</strong> The center of mass relative to the actor frame. If set to null then (0,0,0) is assumed. </p></li>
+<li><p><strong>includeNonSimShapes</strong> – <strong>[in]</strong> True if all kind of shapes (<a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a>, <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a>) should be taken into account. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Boolean. True on success else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b">
+<span id="_CPPv3N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b"></span><span id="_CPPv2N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b"></span><span id="PxRigidBodyExt::setMassAndUpdateInertia__PxRigidBodyR.PxRealCP.PxU32.PxVec3CP.b"></span><span class="target" id="class_px_rigid_body_ext_1ab8f6af57a0fde875c41e5d747dec49fb"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMassAndUpdateInertia</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapeMasses</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">shapeMassCount</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">massLocalPose</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">includeNonSimShapes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computation of mass properties for a rigid body actor. </p>
+<p>This method sets the mass, inertia and center of mass of a rigid body. The mass is set to the sum of all user-supplied shape mass values, and the inertia and center of mass are computed according to the rigid body’s shapes and the per shape mass input values.</p>
+<p>If no collision shapes are found, the inertia tensor is set to (1,1,1)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"><span class="std std-ref">updateMassAndInertia</span></a> for more details.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1ab152773926fe7b222d61e982c3cb6adf"><span class="std std-ref">PxRigidBody::setCMassLocalPose</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a755d0c8a8d1dd8b29e59d50a6dfda5fd"><span class="std std-ref">PxRigidBody::setMassSpaceInertiaTensor</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a8a697a7a4b9bdd2c83a68e84b9bc3a35"><span class="std std-ref">PxRigidBody::setMass</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a single mass value should be used for the actor as a whole then the overloaded method <a class="reference internal" href="#class_px_rigid_body_ext_1ab8f6af57a0fde875c41e5d747dec49fb"><span class="std std-ref">setMassAndUpdateInertia()</span></a> with a single mass parameter can be used instead.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[inout]</strong> The rigid body for which to set the mass and centre of mass local pose properties. </p></li>
+<li><p><strong>shapeMasses</strong> – <strong>[in]</strong> The per shape mass values. There must be one entry for each shape which has the <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aa7fa4fea0eecda9cc80a7aaa11a22df52"><span class="std std-ref">PxShapeFlag::eSIMULATION_SHAPE</span></a> set. Other shapes are ignored. The mass values must be greater than 0. </p></li>
+<li><p><strong>shapeMassCount</strong> – <strong>[in]</strong> The number of provided mass values. </p></li>
+<li><p><strong>massLocalPose</strong> – <strong>[in]</strong> The center of mass relative to the actor frame. If set to null then (0,0,0) is assumed. </p></li>
+<li><p><strong>includeNonSimShapes</strong> – <strong>[in]</strong> True if all kind of shapes (<a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a>, <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a>) should be taken into account. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Boolean. True on success else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBody6PxRealPK6PxVec3b">
+<span id="_CPPv3N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBody6PxRealPK6PxVec3b"></span><span id="_CPPv2N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBody6PxRealPK6PxVec3b"></span><span id="PxRigidBodyExt::setMassAndUpdateInertia__PxRigidBodyR.PxReal.PxVec3CP.b"></span><span class="target" id="class_px_rigid_body_ext_1a33cb51d74c87d8b6f8a33c7e3580372d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMassAndUpdateInertia</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mass</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">massLocalPose</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">includeNonSimShapes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBody6PxRealPK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computation of mass properties for a rigid body actor. </p>
+<p>This method sets the mass, inertia and center of mass of a rigid body. The mass is set to the user-supplied value, and the inertia and center of mass are computed according to the rigid body’s shapes and the input mass.</p>
+<p>If no collision shapes are found, the inertia tensor is set to (1,1,1)</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a769be90cdb138897ce426aa04ac0a1e7"><span class="std std-ref">updateMassAndInertia</span></a> for more details.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1ab152773926fe7b222d61e982c3cb6adf"><span class="std std-ref">PxRigidBody::setCMassLocalPose</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a755d0c8a8d1dd8b29e59d50a6dfda5fd"><span class="std std-ref">PxRigidBody::setMassSpaceInertiaTensor</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a8a697a7a4b9bdd2c83a68e84b9bc3a35"><span class="std std-ref">PxRigidBody::setMass</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[inout]</strong> The rigid body for which to set the mass and centre of mass local pose properties. </p></li>
+<li><p><strong>mass</strong> – <strong>[in]</strong> The mass of the body. Must be greater than 0. </p></li>
+<li><p><strong>massLocalPose</strong> – <strong>[in]</strong> The center of mass relative to the actor frame. If set to null then (0,0,0) is assumed. </p></li>
+<li><p><strong>includeNonSimShapes</strong> – <strong>[in]</strong> True if all kind of shapes (<a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aabc7ec24b00ed57f3914482f0706c6273"><span class="std std-ref">PxShapeFlag::eSCENE_QUERY_SHAPE</span></a>, <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag_1a6edb481aaa3a998c5d6dd3fc4ad87f1aaef2b90024dc86be72b68bbaf94a5821d"><span class="std std-ref">PxShapeFlag::eTRIGGER_SHAPE</span></a>) should be taken into account. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Boolean. True on success else false.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt31computeMassPropertiesFromShapesEPPCK7PxShape5PxU32">
+<span id="_CPPv3N14PxRigidBodyExt31computeMassPropertiesFromShapesEPPCK7PxShape5PxU32"></span><span id="_CPPv2N14PxRigidBodyExt31computeMassPropertiesFromShapesEPPCK7PxShape5PxU32"></span><span id="PxRigidBodyExt::computeMassPropertiesFromShapes__PxShapeCPCP.PxU32"></span><span class="target" id="class_px_rigid_body_ext_1a44f1a4248b259bc96ff5dfb233860b4d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_mass_properties.html#_CPPv416PxMassProperties" title="PxMassProperties"><span class="n"><span class="pre">PxMassProperties</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeMassPropertiesFromShapes</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_shape.html#_CPPv47PxShape" title="PxShape"><span class="n"><span class="pre">PxShape</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapes</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">shapeCount</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt31computeMassPropertiesFromShapesEPPCK7PxShape5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the mass, inertia tensor and center of mass from a list of shapes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1ab152773926fe7b222d61e982c3cb6adf"><span class="std std-ref">PxRigidBody::setCMassLocalPose</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a755d0c8a8d1dd8b29e59d50a6dfda5fd"><span class="std std-ref">PxRigidBody::setMassSpaceInertiaTensor</span></a> <a class="reference internal" href="class_px_rigid_dynamic.html#class_px_rigid_body_1a8a697a7a4b9bdd2c83a68e84b9bc3a35"><span class="std std-ref">PxRigidBody::setMass</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shapes</strong> – <strong>[in]</strong> The shapes to compute the mass properties from. </p></li>
+<li><p><strong>shapeCount</strong> – <strong>[in]</strong> The number of provided shapes. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The mass properties from the combined shapes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt13addForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb">
+<span id="_CPPv3N14PxRigidBodyExt13addForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="_CPPv2N14PxRigidBodyExt13addForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="PxRigidBodyExt::addForceAtPos__PxRigidBodyR.PxVec3CR.PxVec3CR.PxForceMode::Enum.b"></span><span class="target" id="class_px_rigid_body_ext_1a0e3a81ec184fe8981dbbcebff6da1f61"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addForceAtPos</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span>, <a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4EnumE" title="PxForceMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4Enum6eFORCEE" title="PxForceMode::eFORCE"><span class="n"><span class="pre">eFORCE</span></span></a>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wakeup</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt13addForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Applies a force (or impulse) defined in the global coordinate frame, acting at a particular point in global coordinates, to the actor. </p>
+<p>Note that if the force does not act along the center of mass of the actor, this will also add the corresponding torque. Because forces are reset at the end of every timestep, you can maintain a total external force on an object by calling this once every frame.</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> determines if the force is to be conventional or impulsive. Only eFORCE and eIMPULSE are supported, as the force required to produce a given velocity change or acceleration is underdetermined given only the desired change at a given point.</p>
+<p><strong>Sleeping:</strong> This call wakes the actor if it is sleeping and the wakeup parameter is true (default).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a732d9246bc10aef4aa76f4a6c941c7c5"><span class="std std-ref">addForceAtLocalPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1a0df8ee24ebf8b840909bdb09c8d90717"><span class="std std-ref">addLocalForceAtPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1ace7be55938f260ee769b993c6c90d288"><span class="std std-ref">addLocalForceAtLocalPos()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to apply a force or impulse to an articulation link, only the link is updated, not the entire articulation</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to apply the force to. </p></li>
+<li><p><strong>force</strong> – <strong>[in]</strong> Force/impulse to add, defined in the global frame. <strong>Range:</strong> force vector </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position in the global frame to add the force at. <strong>Range:</strong> position vector </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see <a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a>). </p></li>
+<li><p><strong>wakeup</strong> – <strong>[in]</strong> Specify if the call should wake up the actor.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt18addForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb">
+<span id="_CPPv3N14PxRigidBodyExt18addForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="_CPPv2N14PxRigidBodyExt18addForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="PxRigidBodyExt::addForceAtLocalPos__PxRigidBodyR.PxVec3CR.PxVec3CR.PxForceMode::Enum.b"></span><span class="target" id="class_px_rigid_body_ext_1a732d9246bc10aef4aa76f4a6c941c7c5"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addForceAtLocalPos</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span>, <a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4EnumE" title="PxForceMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4Enum6eFORCEE" title="PxForceMode::eFORCE"><span class="n"><span class="pre">eFORCE</span></span></a>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wakeup</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt18addForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Applies a force (or impulse) defined in the global coordinate frame, acting at a particular point in local coordinates, to the actor. </p>
+<p>Note that if the force does not act along the center of mass of the actor, this will also add the corresponding torque. Because forces are reset at the end of every timestep, you can maintain a total external force on an object by calling this once every frame.</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> determines if the force is to be conventional or impulsive. Only eFORCE and eIMPULSE are supported, as the force required to produce a given velocity change or acceleration is underdetermined given only the desired change at a given point.</p>
+<p><strong>Sleeping:</strong> This call wakes the actor if it is sleeping and the wakeup parameter is true (default).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a0e3a81ec184fe8981dbbcebff6da1f61"><span class="std std-ref">addForceAtPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1a0df8ee24ebf8b840909bdb09c8d90717"><span class="std std-ref">addLocalForceAtPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1ace7be55938f260ee769b993c6c90d288"><span class="std std-ref">addLocalForceAtLocalPos()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to apply a force or impulse to an articulation link, only the link is updated, not the entire articulation</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to apply the force to. </p></li>
+<li><p><strong>force</strong> – <strong>[in]</strong> Force/impulse to add, defined in the global frame. <strong>Range:</strong> force vector </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position in the local frame to add the force at. <strong>Range:</strong> position vector </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see <a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a>). </p></li>
+<li><p><strong>wakeup</strong> – <strong>[in]</strong> Specify if the call should wake up the actor.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt18addLocalForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb">
+<span id="_CPPv3N14PxRigidBodyExt18addLocalForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="_CPPv2N14PxRigidBodyExt18addLocalForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="PxRigidBodyExt::addLocalForceAtPos__PxRigidBodyR.PxVec3CR.PxVec3CR.PxForceMode::Enum.b"></span><span class="target" id="class_px_rigid_body_ext_1a0df8ee24ebf8b840909bdb09c8d90717"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addLocalForceAtPos</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span>, <a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4EnumE" title="PxForceMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4Enum6eFORCEE" title="PxForceMode::eFORCE"><span class="n"><span class="pre">eFORCE</span></span></a>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wakeup</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt18addLocalForceAtPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Applies a force (or impulse) defined in the actor local coordinate frame, acting at a particular point in global coordinates, to the actor. </p>
+<p>Note that if the force does not act along the center of mass of the actor, this will also add the corresponding torque. Because forces are reset at the end of every timestep, you can maintain a total external force on an object by calling this once every frame.</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> determines if the force is to be conventional or impulsive. Only eFORCE and eIMPULSE are supported, as the force required to produce a given velocity change or acceleration is underdetermined given only the desired change at a given point.</p>
+<p><strong>Sleeping:</strong> This call wakes the actor if it is sleeping and the wakeup parameter is true (default).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a0e3a81ec184fe8981dbbcebff6da1f61"><span class="std std-ref">addForceAtPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1a732d9246bc10aef4aa76f4a6c941c7c5"><span class="std std-ref">addForceAtLocalPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1ace7be55938f260ee769b993c6c90d288"><span class="std std-ref">addLocalForceAtLocalPos()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to apply a force or impulse to an articulation link, only the link is updated, not the entire articulation</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to apply the force to. </p></li>
+<li><p><strong>force</strong> – <strong>[in]</strong> Force/impulse to add, defined in the local frame. <strong>Range:</strong> force vector </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position in the global frame to add the force at. <strong>Range:</strong> position vector </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see <a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a>). </p></li>
+<li><p><strong>wakeup</strong> – <strong>[in]</strong> Specify if the call should wake up the actor.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt23addLocalForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb">
+<span id="_CPPv3N14PxRigidBodyExt23addLocalForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="_CPPv2N14PxRigidBodyExt23addLocalForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb"></span><span id="PxRigidBodyExt::addLocalForceAtLocalPos__PxRigidBodyR.PxVec3CR.PxVec3CR.PxForceMode::Enum.b"></span><span class="target" id="class_px_rigid_body_ext_1ace7be55938f260ee769b993c6c90d288"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addLocalForceAtLocalPos</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span>, <a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4EnumE" title="PxForceMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_force_mode.html#_CPPv411PxForceMode" title="PxForceMode"><span class="n"><span class="pre">PxForceMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_force_mode.html#_CPPv4N11PxForceMode4Enum6eFORCEE" title="PxForceMode::eFORCE"><span class="n"><span class="pre">eFORCE</span></span></a>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">wakeup</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt23addLocalForceAtLocalPosER11PxRigidBodyRK6PxVec3RK6PxVec3N11PxForceMode4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Applies a force (or impulse) defined in the actor local coordinate frame, acting at a particular point in local coordinates, to the actor. </p>
+<p>Note that if the force does not act along the center of mass of the actor, this will also add the corresponding torque. Because forces are reset at the end of every timestep, you can maintain a total external force on an object by calling this once every frame.</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> determines if the force is to be conventional or impulsive. Only eFORCE and eIMPULSE are supported, as the force required to produce a given velocity change or acceleration is underdetermined given only the desired change at a given point.</p>
+<p><strong>Sleeping:</strong> This call wakes the actor if it is sleeping and the wakeup parameter is true (default).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a> </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_rigid_body_ext_1a0e3a81ec184fe8981dbbcebff6da1f61"><span class="std std-ref">addForceAtPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1a732d9246bc10aef4aa76f4a6c941c7c5"><span class="std std-ref">addForceAtLocalPos()</span></a> <a class="reference internal" href="#class_px_rigid_body_ext_1a0df8ee24ebf8b840909bdb09c8d90717"><span class="std std-ref">addLocalForceAtPos()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to apply a force or impulse to an articulation link, only the link is updated, not the entire articulation</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to apply the force to. </p></li>
+<li><p><strong>force</strong> – <strong>[in]</strong> Force/impulse to add, defined in the local frame. <strong>Range:</strong> force vector </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position in the local frame to add the force at. <strong>Range:</strong> position vector </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> The mode to use when applying the force/impulse(see <a class="reference internal" href="struct_px_force_mode.html#struct_px_force_mode"><span class="std std-ref">PxForceMode</span></a>). </p></li>
+<li><p><strong>wakeup</strong> – <strong>[in]</strong> Specify if the call should wake up the actor.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt16getVelocityAtPosERK11PxRigidBodyRK6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt16getVelocityAtPosERK11PxRigidBodyRK6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt16getVelocityAtPosERK11PxRigidBodyRK6PxVec3"></span><span id="PxRigidBodyExt::getVelocityAtPos__PxRigidBodyCR.PxVec3CR"></span><span class="target" id="class_px_rigid_body_ext_1acce31159814673df7781eb62ee032ef2"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getVelocityAtPos</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt16getVelocityAtPosERK11PxRigidBodyRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the velocity of a point given in world coordinates if it were attached to the specified body and moving with it. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLocalPointVelocity() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body the point is attached to. </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position we wish to determine the velocity for, defined in the global frame. <strong>Range:</strong> position vector </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The velocity of point in the global frame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt26getLocalVelocityAtLocalPosERK11PxRigidBodyRK6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt26getLocalVelocityAtLocalPosERK11PxRigidBodyRK6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt26getLocalVelocityAtLocalPosERK11PxRigidBodyRK6PxVec3"></span><span id="PxRigidBodyExt::getLocalVelocityAtLocalPos__PxRigidBodyCR.PxVec3CR"></span><span class="target" id="class_px_rigid_body_ext_1ab79486496528ea623774e7a9b021633d"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalVelocityAtLocalPos</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt26getLocalVelocityAtLocalPosERK11PxRigidBodyRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the velocity of a point given in local coordinates if it were attached to the specified body and moving with it. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLocalPointVelocity() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body the point is attached to. </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position we wish to determine the velocity for, defined in the local frame. <strong>Range:</strong> position vector </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The velocity of point in the local frame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt19getVelocityAtOffsetERK11PxRigidBodyRK6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt19getVelocityAtOffsetERK11PxRigidBodyRK6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt19getVelocityAtOffsetERK11PxRigidBodyRK6PxVec3"></span><span id="PxRigidBodyExt::getVelocityAtOffset__PxRigidBodyCR.PxVec3CR"></span><span class="target" id="class_px_rigid_body_ext_1afed73713b7c1032a7ce921c7de25a278"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getVelocityAtOffset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt19getVelocityAtOffsetERK11PxRigidBodyRK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the velocity of a point (offset from the origin of the body) given in world coordinates if it were attached to the specified body and moving with it. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLocalPointVelocity() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body the point is attached to. </p></li>
+<li><p><strong>pos</strong> – <strong>[in]</strong> Position (offset from the origin of the body) we wish to determine the velocity for, defined in the global frame. <strong>Range:</strong> position vector </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The velocity of point (offset from the origin of the body) in the global frame.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3"></span><span id="PxRigidBodyExt::computeVelocityDeltaFromImpulse__PxRigidBodyCR.PxVec3CR.PxVec3CR.PxVec3R.PxVec3R"></span><span class="target" id="class_px_rigid_body_ext_1aa0684e41c619824229cdedb47e06563a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeVelocityDeltaFromImpulse</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">impulsiveForce</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">impulsiveTorque</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deltaLinearVelocity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deltaAngularVelocity</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK6PxVec3RK6PxVec3R6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Compute the change to linear and angular velocity that would occur if an impulsive force and torque were to be applied to a specified rigid body. </p>
+<p>The rigid body is left unaffected unless a subsequent independent call is executed that actually applies the computed changes to velocity and angular velocity.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body_1a04bab22deecb716e2cdd7a64b5cfaee7"><span class="std std-ref">PxRigidBody::getLinearVelocity</span></a>, PxRigidBody::setLinearVelocity, <a class="reference internal" href="class_px_rigid_body.html#class_px_rigid_body_1af91b92d6fcf47103b148337749aa93e0"><span class="std std-ref">PxRigidBody::getAngularVelocity</span></a>, PxRigidBody::setAngularVelocity</p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to determine the velocity delta for an articulation link, only the mass properties of the link are taken into account.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The body under consideration. </p></li>
+<li><p><strong>impulsiveForce</strong> – <strong>[in]</strong> The impulsive force that would be applied to the specified rigid body. </p></li>
+<li><p><strong>impulsiveTorque</strong> – <strong>[in]</strong> The impulsive torque that would be applied to the specified rigid body. </p></li>
+<li><p><strong>deltaLinearVelocity</strong> – <strong>[out]</strong> The change in linear velocity that would arise if impulsiveForce was to be applied to the specified rigid body. </p></li>
+<li><p><strong>deltaAngularVelocity</strong> – <strong>[out]</strong> The change in angular velocity that would arise if impulsiveTorque was to be applied to the specified rigid body. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3"></span><span id="PxRigidBodyExt::computeVelocityDeltaFromImpulse__PxRigidBodyCR.PxTransformCR.PxVec3CR.PxVec3CR.PxRealC.PxRealC.PxVec3R.PxVec3R"></span><span class="target" id="class_px_rigid_body_ext_1abc672d4db8e02d4ddc1d8ee18068221a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeVelocityDeltaFromImpulse</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">globalPose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">point</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">impulse</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deltaLinearVelocity</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deltaAngularVelocity</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt31computeVelocityDeltaFromImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the linear and angular velocity change vectors for a given impulse at a world space position taking a mass and inertia scale into account. </p>
+<p>This function is useful for extracting the respective linear and angular velocity changes from a contact or joint when the mass/inertia ratios have been adjusted.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if this call is used to determine the velocity delta for an articulation link, only the mass properties of the link are taken into account.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body </p></li>
+<li><p><strong>globalPose</strong> – <strong>[in]</strong> The body’s world space transform </p></li>
+<li><p><strong>point</strong> – <strong>[in]</strong> The point in world space where the impulse is applied </p></li>
+<li><p><strong>impulse</strong> – <strong>[in]</strong> The impulse vector in world space </p></li>
+<li><p><strong>invMassScale</strong> – <strong>[in]</strong> The inverse mass scale </p></li>
+<li><p><strong>invInertiaScale</strong> – <strong>[in]</strong> The inverse inertia scale </p></li>
+<li><p><strong>deltaLinearVelocity</strong> – <strong>[out]</strong> The linear velocity change </p></li>
+<li><p><strong>deltaAngularVelocity</strong> – <strong>[out]</strong> The angular velocity change </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt27computeLinearAngularImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3">
+<span id="_CPPv3N14PxRigidBodyExt27computeLinearAngularImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3"></span><span id="_CPPv2N14PxRigidBodyExt27computeLinearAngularImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3"></span><span id="PxRigidBodyExt::computeLinearAngularImpulse__PxRigidBodyCR.PxTransformCR.PxVec3CR.PxVec3CR.PxRealC.PxRealC.PxVec3R.PxVec3R"></span><span class="target" id="class_px_rigid_body_ext_1aa1215782ff3e5c18ca42d8805578c21a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeLinearAngularImpulse</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">globalPose</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">point</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">impulse</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linearImpulse</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angularImpulse</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt27computeLinearAngularImpulseERK11PxRigidBodyRK11PxTransformRK6PxVec3RK6PxVec3K6PxRealK6PxRealR6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Computes the linear and angular impulse vectors for a given impulse at a world space position taking a mass and inertia scale into account. </p>
+<p>This function is useful for extracting the respective linear and angular impulses from a contact or joint when the mass/inertia ratios have been adjusted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body </p></li>
+<li><p><strong>globalPose</strong> – <strong>[in]</strong> The body’s world space transform </p></li>
+<li><p><strong>point</strong> – <strong>[in]</strong> The point in world space where the impulse is applied </p></li>
+<li><p><strong>impulse</strong> – <strong>[in]</strong> The impulse vector in world space </p></li>
+<li><p><strong>invMassScale</strong> – <strong>[in]</strong> The inverse mass scale </p></li>
+<li><p><strong>invInertiaScale</strong> – <strong>[in]</strong> The inverse inertia scale </p></li>
+<li><p><strong>linearImpulse</strong> – <strong>[out]</strong> The linear impulse </p></li>
+<li><p><strong>angularImpulse</strong> – <strong>[out]</strong> The angular impulse </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt17linearSweepSingleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsR10PxSweepHitR5PxU32RK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal">
+<span id="_CPPv3N14PxRigidBodyExt17linearSweepSingleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsR10PxSweepHitR5PxU32RK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal"></span><span id="_CPPv2N14PxRigidBodyExt17linearSweepSingleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsR10PxSweepHitR5PxU32RK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal"></span><span id="PxRigidBodyExt::linearSweepSingle__PxRigidBodyR.PxSceneR.PxVec3CR.PxRealC.PxHitFlags.PxSweepHitR.PxU32R.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxRealC"></span><span class="target" id="class_px_rigid_body_ext_1abff916a23a3b9f0e362d1ba2345f45dd"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linearSweepSingle</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">closestHit</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shapeIndex</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt17linearSweepSingleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsR10PxSweepHitR5PxU32RK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a linear sweep through space with the body’s geometry objects. </p>
+<p>
+The function sweeps all shapes attached to a given rigid body through space and reports the nearest object in the scene which intersects any of of the shapes swept paths. Information about the closest intersection is written to a <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> structure.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> <a class="reference internal" href="group__scenequery.html#group__scenequery_1gaacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Supported geometries are: box, sphere, capsule, convex. Other geometry types will be ignored. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If eTOUCH is returned from the filter callback, it will trigger an error and the hit will be discarded.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to sweep. </p></li>
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene object to process the query. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information. </p></li>
+<li><p><strong>closestHit</strong> – <strong>[out]</strong> Closest hit result. </p></li>
+<li><p><strong>shapeIndex</strong> – <strong>[out]</strong> Index of the body shape that caused the closest hit. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> If any word in filterData.data is non-zero then filterData.data will be used for filtering, otherwise shape-&gt;getQueryFilterData() will be used instead. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a blocking hit was found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxRigidBodyExt19linearSweepMultipleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsP10PxSweepHitP5PxU325PxU32R10PxSweepHitR5PxI32RbRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal">
+<span id="_CPPv3N14PxRigidBodyExt19linearSweepMultipleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsP10PxSweepHitP5PxU325PxU32R10PxSweepHitR5PxI32RbRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal"></span><span id="_CPPv2N14PxRigidBodyExt19linearSweepMultipleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsP10PxSweepHitP5PxU325PxU32R10PxSweepHitR5PxI32RbRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal"></span><span id="PxRigidBodyExt::linearSweepMultiple__PxRigidBodyR.PxSceneR.PxVec3CR.PxRealC.PxHitFlags.PxSweepHitP.PxU32P.PxU32.PxSweepHitR.PxI32R.bR.PxQueryFilterDataCR.PxQueryFilterCallbackP.PxQueryCacheCP.PxRealC"></span><span class="target" id="class_px_rigid_body_ext_1adfc2b24aa3d9207ce6af21094151aede"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linearSweepMultiple</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_body.html#_CPPv411PxRigidBody" title="PxRigidBody"><span class="n"><span class="pre">PxRigidBody</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">body</span></span>, <a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scene</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">unitDir</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">distance</span></span>, <span class="n"><span class="pre">PxHitFlags</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">outputFlags</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">touchHitBuffer</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">touchHitShapeIndices</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">touchHitBufferSize</span></span>, <a class="reference internal" href="struct_px_sweep_hit.html#_CPPv410PxSweepHit" title="PxSweepHit"><span class="n"><span class="pre">PxSweepHit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">block</span></span>, <a class="reference internal" href="group__foundation.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">blockingShapeIndex</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">overflow</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filterData</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_filter_data.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><span class="n"><span class="pre">PxQueryFilterData</span></span></a><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><span class="n"><span class="pre">PxQueryFilterCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filterCall</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_query_cache.html#_CPPv412PxQueryCache" title="PxQueryCache"><span class="n"><span class="pre">PxQueryCache</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">cache</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="group__foundation.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0.0f</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxRigidBodyExt19linearSweepMultipleER11PxRigidBodyR7PxSceneRK6PxVec3K6PxReal10PxHitFlagsP10PxSweepHitP5PxU325PxU32R10PxSweepHitR5PxI32RbRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Performs a linear sweep through space with the body’s geometry objects, returning all overlaps. </p>
+<p>
+This function sweeps all shapes attached to a given rigid body through space and reports all objects in the scene that intersect any of the shapes’ swept paths until there are no more objects to report or a blocking hit is encountered.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> <a class="reference internal" href="group__scenequery.html#group__scenequery_1gaacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a> <a class="reference internal" href="struct_px_filter_data.html#struct_px_filter_data"><span class="std std-ref">PxFilterData</span></a> <a class="reference internal" href="struct_px_sweep_hit.html#struct_px_sweep_hit"><span class="std std-ref">PxSweepHit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Supported geometries are: box, sphere, capsule, convex. Other geometry types will be ignored.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>body</strong> – <strong>[in]</strong> The rigid body to sweep. </p></li>
+<li><p><strong>scene</strong> – <strong>[in]</strong> The scene object to process the query. </p></li>
+<li><p><strong>unitDir</strong> – <strong>[in]</strong> Normalized direction of the sweep. </p></li>
+<li><p><strong>distance</strong> – <strong>[in]</strong> Sweep distance. Needs to be larger than 0. </p></li>
+<li><p><strong>outputFlags</strong> – <strong>[in]</strong> Specifies which properties should be written to the hit information. </p></li>
+<li><p><strong>touchHitBuffer</strong> – <strong>[out]</strong> Raycast hit information buffer. If the buffer overflows, an arbitrary subset of touch hits is returned (typically the query should be restarted with a larger buffer). </p></li>
+<li><p><strong>touchHitShapeIndices</strong> – <strong>[out]</strong> After the query is completed, touchHitShapeIndices[i] will contain the body index that caused the hit stored in hitBuffer[i] </p></li>
+<li><p><strong>touchHitBufferSize</strong> – <strong>[in]</strong> Size of both touch hit buffers in elements. </p></li>
+<li><p><strong>block</strong> – <strong>[out]</strong> Closest blocking hit is returned via this reference. </p></li>
+<li><p><strong>blockingShapeIndex</strong> – <strong>[out]</strong> Set to -1 if if a blocking hit was not found, otherwise set to closest blocking hit shape index. The touching hits are reported separately in hitBuffer. </p></li>
+<li><p><strong>overflow</strong> – <strong>[out]</strong> Set to true if touchHitBuffer didn’t have enough space for all results. Touch hits will be incomplete if overflow occurred. Possible solution is to restart the query with a larger buffer. </p></li>
+<li><p><strong>filterData</strong> – <strong>[in]</strong> If any word in filterData.data is non-zero then filterData.data will be used for filtering, otherwise shape-&gt;getQueryFilterData() will be used instead. </p></li>
+<li><p><strong>filterCall</strong> – <strong>[in]</strong> Custom filtering logic (optional). Only used if the corresponding <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> flags are set. If NULL, all hits are assumed to be blocking. </p></li>
+<li><p><strong>cache</strong> – <strong>[in]</strong> Cached hit shape (optional). Ray is tested against cached shape first then against the scene. Note: Filtering is not executed for a cached shape if supplied; instead, if a hit is found, it is assumed to be a blocking hit. </p></li>
+<li><p><strong>inflation</strong> – <strong>[in]</strong> This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the number of touching hits. If overflow is set to true, the results are incomplete. In case of overflow there are also no guarantees that all touching hits returned are closer than the blocking hit.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

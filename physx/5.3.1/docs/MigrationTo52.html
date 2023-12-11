@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating From PhysX SDK 5.1 to 5.2 &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Migrating From PhysX SDK 5.2 to 5.3" href="MigrationTo53.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 4.0 to 5.1" href="MigrationTo51.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating From PhysX SDK 5.1 to 5.2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#articulations">Articulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#joints">Joints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vehicles">Vehicles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#immediate-mode">Immediate mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scene-queries">Scene queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#soft-bodies">Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#serialization-binary-platform-conversion">Serialization, Binary Platform Conversion</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#xml-repx-serialization">Xml/RepX Serialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#binary-platform-conversion">Binary Platform Conversion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Migrating From PhysX SDK 5.1 to 5.2</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-from-physx-sdk-5-1-to-5-2">
+<span id="migrationto52"></span><h1>Migrating From PhysX SDK 5.1 to 5.2<a class="headerlink" href="#migrating-from-physx-sdk-5-1-to-5-2" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last release. An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+</ul>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The API for the filter callback changed slightly. The pairID parameter in PxSimulationFilterCallback::pairFound(), PxSimulationFilterCallback::pairLost() and PxSimulationFilterCallback::statusChange() is now a PxU64 instead of a PxU32. Please adjust your code accordingly. Make sure your filter callback implementation can be safely called from multiple threads.</p></li>
+<li><p>PxBVHStructure has been removed. Use PxBVH.</p></li>
+<li><p>PxBVHStructureDesc has been removed. Use PxBVHDesc.</p></li>
+<li><p>PxPhysics::createBVHStructure() has been removed, replace with PxPhysics::createBVH().</p></li>
+<li><p>PxPhysics::getNbBVHStructures() has been removed, replace with PxPhysics::getNbBVHs().</p></li>
+<li><p>The signature for PxPhysics::createAggregate() has changed. Use maxShape = PX_MAX_U32 for the new parameter to get the same behavior as before.</p></li>
+<li><p>PxSceneFlag::eSUPPRESS_READBACK is now immutable. Any code changing the flag after scene creation will not work anymore.</p></li>
+<li><p>PxMassModificationProps was deprecated and has been removed. The replacement is PxConstraintInvMassScale.</p></li>
+<li><p>PxRegisterImmediateArticulations, PxRegisterArticulationsReducedCoordinate, PxRegisterHeightFields, PxCreateBasePhysics have been removed. Articulations and heightfields are now always enabled.</p></li>
+<li><p>Deprecated passthrough functions in PxShape such as <cite>getGeometryType()</cite> and the specialized <cite>get&lt;geomType&gt;Geometry()</cite> were removed. Calls to these functions should be replaced by accessing the underlying geometry directly with <cite>getGeometry()</cite>.</p></li>
+</ul>
+</section>
+<section id="cooking">
+<h2>Cooking<a class="headerlink" href="#cooking" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The deprecated PxCooking class has been removed. Use the standalone “immediate cooking” functions instead (e.g. PxCookBVH, PxCreateBVH…). Generally speaking just replace “PxCooking::Function()” with “PxFunction()”.</p></li>
+</ul>
+</section>
+<section id="articulations">
+<h2>Articulations<a class="headerlink" href="#articulations" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>The PxArticulationJointReducedCoordinate limit and drive setters and getters with individual parameters were deprecated and have now been removed. Using the parameter struct versions instead is straightforward:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// replace</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setLimit</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// with</span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setLimitParams</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLimit</span><span class="p">(</span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">));</span><span class="w"></span>
+
+<span class="c1">// and instead of</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">;</span><span class="w"></span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">getLimit</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span><span class="w"> </span><span class="n">low</span><span class="p">,</span><span class="w"> </span><span class="n">high</span><span class="p">);</span><span class="w"></span>
+<span class="c1">// use</span>
+<span class="n">PxArticulationLimit</span><span class="w"> </span><span class="n">limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">joint</span><span class="o">-&gt;</span><span class="n">getLimitParams</span><span class="p">(</span><span class="n">axis</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">low</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">limit</span><span class="p">.</span><span class="n">low</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">high</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">limit</span><span class="p">.</span><span class="n">high</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The drive getters and setters are replaced analogously.</p>
+</li>
+</ul>
+</section>
+<section id="joints">
+<h2>Joints<a class="headerlink" href="#joints" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>The joint projection feature was deprecated and has now been removed. There is no direct replacement, so the corresponding code in your project should be removed. A potential alternative to this feature is to increase the number of (position) solver iterations for jointed objects that previously used projection.</p></li>
+<li><p>The joint contact distance feature was deprecated and has now been removed. The corresponding code in your project should be removed. Joint limits are now always active, which can potentially come with a minor performance hit, but increased joint robustness.</p></li>
+<li><p>The D6 joint’s twist drive was using the wrong actor’s axis (B instead of A). This has been fixed, and it could affect joint setups in existing scenes. To fix this in existing content it might be enough to flip the joint frames of involved actors, but this may not be possible depending on which other features (joint limits, etc) have been setup for the same joint. In the worst case it might be necessary to re-tune these joints.</p></li>
+<li><p>Some internal joint functions now use PxTransform32 instead of PxTransform. The code for custom joints might need to be updated. For example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//PxTransform cA2w, cB2w;       // before</span>
+<span class="n">PxTransform32</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">;</span><span class="w">       </span><span class="c1">// after</span>
+<span class="n">joint</span><span class="o">::</span><span class="n">computeJointFrames</span><span class="p">(</span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">body0Transform</span><span class="p">,</span><span class="w"> </span><span class="n">body1Transform</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//PxTransform cA2w, cB2w;       // before</span>
+<span class="n">PxTransform32</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">;</span><span class="w">       </span><span class="c1">// after</span>
+<span class="n">joint</span><span class="o">::</span><span class="n">ConstraintHelper</span><span class="w"> </span><span class="nf">ch</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">,</span><span class="w"> </span><span class="n">cA2w</span><span class="p">,</span><span class="w"> </span><span class="n">cB2w</span><span class="p">,</span><span class="w"> </span><span class="n">body0WorldOffset</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">bA2w</span><span class="p">,</span><span class="w"> </span><span class="n">bB2w</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="vehicles">
+<h2>Vehicles<a class="headerlink" href="#vehicles" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxVehiclePhysXRoadGeometryQueryParams::filterData has been renamed to defaultFilterData since there is now the new member filterDataEntries in that struct to give the option to define wheel specific filter data. It is important to set filterDataEntries=NULL to match the behavior of the previous SDK version (in which case defaultFilterData will be used for all wheels). As a consequence, the method PxVehiclePhysXRoadGeometryQueryUpdate() has been adjusted too (see PxVehiclePhysXRoadGeometrySceneQueryComponent::update() for an example of how the parameters are now passed into that method).</p></li>
+</ul>
+</section>
+<section id="immediate-mode">
+<h2>Immediate mode<a class="headerlink" href="#immediate-mode" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>The following deprecated types have been removed and should be replaced with these other types:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>PxFeatherstoneArticulationJointData (deprecated, replace it with PxArticulationJointDataRC)</p></li>
+<li><p>PxFeatherstoneArticulationLinkData (deprecated, replace it with PxArticulationLinkDataRC)</p></li>
+<li><p>PxFeatherstoneArticulationData (deprecated, replace it with PxArticulationDataRC)</p></li>
+<li><p>PxMutableLinkData (deprecated, replace it with PxArticulationLinkMutableDataRC)</p></li>
+<li><p>PxLinkData (deprecated, replace it with PxArticulationLinkDerivedDataRC)</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="scene-queries">
+<h2>Scene queries<a class="headerlink" href="#scene-queries" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>Deprecated PxBVH::raycast(), PxBVH::sweep() and PxBVH::overlap() functions have been removed. Use the new versions with callbacks.</p></li>
+<li><p>The signature for PxQueryFilterCallback::postFilter() has changed. It is possible that existing PxQueryFilterCallback objects that did not implement this postFilter function will stop compiling. In that case, simply add the following function to your callback:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="n">PxQueryHitType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="nf">postFilter</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxFilterData</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxQueryHit</span><span class="o">&amp;</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxShape</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidActor</span><span class="o">*</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PxQueryHitType</span><span class="o">::</span><span class="n">eBLOCK</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+<li><p>The deprecated PxGeometryQuery::getWorldBounds() function has been removed. Please use PxGeometryQuery::computeGeomBounds() instead.</p></li>
+<li><p>A deprecated PxGeometryQuery::raycast() function has been removed. Please use the other function with the same name but a different signature.</p></li>
+</ul>
+</section>
+<section id="soft-bodies">
+<h2>Soft Bodies<a class="headerlink" href="#soft-bodies" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxBuffer has been removed. The Softbody interface now exposes direct access to all the GPU data buffers, and it is the user`s responsibility to copy the data from host to device and vice-versa. Examples for the usage of the new interface are provided in the soft body snippets and the soft body extensions (PxSoftBodyExt.h).</p></li>
+</ul>
+</section>
+<section id="serialization-binary-platform-conversion">
+<h2>Serialization, Binary Platform Conversion<a class="headerlink" href="#serialization-binary-platform-conversion" title="Permalink to this headline"></a></h2>
+<p>The PhysX serialization feature is being reduced to the current needs of Omniverse Physics.</p>
+<section id="xml-repx-serialization">
+<h3>Xml/RepX Serialization<a class="headerlink" href="#xml-repx-serialization" title="Permalink to this headline"></a></h3>
+<p>Xml and RepX Serialization is useful as a version agnostic way of serializing PhysX objects. This format was mainly used to create repro cases and tests. The PhysX Visual Debugger (PVD) - version 2 and 3 - employed RepX/Xml serialization for its internal communication format as well as for providing dumps of the physics state that could be loaded back into the PhysX SDK.</p>
+<p>Going forward, the RepX/Xml format is replaced by the <em>USD Physics</em> format.
+PVD 2/3 are being deprecated and replaced by <a class="reference external" href="https://nvidia-omniverse.github.io/PhysX/physx/5.1.3/docs/OmniVisualDebugger.html">Omni PVD</a>, which is going to rely on the USD Physics format for PhysX state dumps that can be loaded into PhysX using Omniverse Physics.</p>
+<dl class="simple">
+<dt>Deprecated classes and functions:</dt><dd><ul class="simple">
+<li><p>PxSerializationRegistry::registerRepXSerializer()</p></li>
+<li><p>PxSerializationRegistry::unregisterRepXSerializer()</p></li>
+<li><p>PxSerializationRegistry::getRepXSerializer()</p></li>
+<li><p>PxRepXSerializer</p></li>
+<li><p>PxCreateRepXObject()</p></li>
+<li><p>PX_NEW_REPX_SERIALIZER, PX_DELETE_REPX_SERIALIZER</p></li>
+<li><p>PxRepXObject</p></li>
+<li><p>PxRepXInstantiationArgs</p></li>
+<li><p>PxSerialization::PxXmlMiscParameter</p></li>
+<li><p>PxSerialization::createCollectionFromXml()</p></li>
+<li><p>PxSerialization::serializeCollectionToXml()</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="binary-platform-conversion">
+<h3>Binary Platform Conversion<a class="headerlink" href="#binary-platform-conversion" title="Permalink to this headline"></a></h3>
+<p>Binary conversion is used to re-target the binary data from one platform to another and to support deterministic binary serialization. Going forward binary data needs to be generated on the platform it is consumed on. Along with binary conversion, the binary meta data is being deprecated as well.
+The dedicated deterministic serialization functionality is being replaced by the regular binary serialization which is targeted to become deterministic itself.</p>
+<dl class="simple">
+<dt>Deprecated classes and functions:</dt><dd><ul class="simple">
+<li><p>PxBinaryConverter</p></li>
+<li><p>PxConverterReportMode</p></li>
+<li><p>PxGetPhysicsBinaryMetaData()</p></li>
+<li><p>PxSerialization::serializeCollectionToBinaryDeterministic()</p></li>
+<li><p>PxSerialization::dumpBinaryMetaData()</p></li>
+<li><p>PxSerialization::createBinaryConverter()</p></li>
+<li><p>PxBinaryMetaDataCallback</p></li>
+<li><p>PxSerializationRegistry::registerBinaryMetaDataCallback()</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

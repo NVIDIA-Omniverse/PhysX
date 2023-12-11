@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Macros &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Directories" href="directories.html" />
+    <link rel="prev" title="RaycastCCDManager" href="class_raycast_c_c_d_manager.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+<li>Macros</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="macros">
+<h1>Macros<a class="headerlink" href="#macros" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1a4608ee58c419d2ac8a77c6cb104315ed.html#_px_vec_math_ao_s_scalar_inline_8h_1a4608ee58c419d2ac8a77c6cb104315ed"><span class="std std-ref">BOOL_TO_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1a29617cce300481311366717f2744cdcf.html#_px_vec_math_ao_s_scalar_inline_8h_1a29617cce300481311366717f2744cdcf"><span class="std std-ref">BOOL_TO_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a1c4c3a4a5ce16426bbeafb0ea4e55a86.html#_px_vec_math_ao_s_scalar_8h_1a1c4c3a4a5ce16426bbeafb0ea4e55a86"><span class="std std-ref">BoolVArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_8h_1ad1e6f286ccc710e64bf7d928d6ce0146.html#_px_vec_math_8h_1ad1e6f286ccc710e64bf7d928d6ce0146"><span class="std std-ref">COMPILE_VECTOR_INTRINSICS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1ga4e8a375d7f967d0195e94640587c4a50.html#group__geomutils_1ga4e8a375d7f967d0195e94640587c4a50"><span class="std std-ref">DECLARE_CUSTOM_GEOMETRY_TYPE</span></a>: Used in pair with IMPLEMENT_CUSTOM_GEOMETRY_TYPE to overwrite Callbacks::getCustomType() callback.</p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1aca34465c074c9237b036a1463bada639.html#_px_vec_math_ao_s_scalar_inline_8h_1aca34465c074c9237b036a1463bada639"><span class="std std-ref">FALSE_TO_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a026d730cc2a52eb7356160494b9386d6.html#_px_vec_math_ao_s_scalar_8h_1a026d730cc2a52eb7356160494b9386d6"><span class="std std-ref">FloatVArg</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1ga7c3ff72090ad96e1e912338e482b220f.html#group__geomutils_1ga7c3ff72090ad96e1e912338e482b220f"><span class="std std-ref">IMPLEMENT_CUSTOM_GEOMETRY_TYPE</span></a>: Used in pair with DECLARE_CUSTOM_GEOMETRY_TYPE to overwrite Callbacks::getCustomType() callback.</p></li>
+<li><p><a class="reference internal" href="define__omni_pvd_defines_8h_1a5578b44296c6cb9edd289261c716bc95.html#_omni_pvd_defines_8h_1a5578b44296c6cb9edd289261c716bc95"><span class="std std-ref">OMNI_PVD_CALL</span></a></p></li>
+<li><p><a class="reference internal" href="define__omni_pvd_defines_8h_1ae6779ada5504a71b8329b0f98b5cb7f0.html#_omni_pvd_defines_8h_1ae6779ada5504a71b8329b0f98b5cb7f0"><span class="std std-ref">OMNI_PVD_EXPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define__omni_pvd_defines_8h_1a6df0d7a79f8c99e255e125f0298be75b.html#_omni_pvd_defines_8h_1a6df0d7a79f8c99e255e125f0298be75b"><span class="std std-ref">OMNI_PVD_VERSION_MAJOR</span></a></p></li>
+<li><p><a class="reference internal" href="define__omni_pvd_defines_8h_1a520c62f412a0b9eb190c0b9f5775497d.html#_omni_pvd_defines_8h_1a520c62f412a0b9eb190c0b9f5775497d"><span class="std std-ref">OMNI_PVD_VERSION_MINOR</span></a></p></li>
+<li><p><a class="reference internal" href="define__omni_pvd_defines_8h_1af98117e1053f351a6dba35ac511de4d9.html#_omni_pvd_defines_8h_1af98117e1053f351a6dba35ac511de4d9"><span class="std std-ref">OMNI_PVD_VERSION_PATCH</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gad7d63e592ac0d23d42e12e10572039fe.html#group__physics_1gad7d63e592ac0d23d42e12e10572039fe"><span class="std std-ref">PXC_CONTACT_NO_FACE_INDEX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8853e1b0f46c6dd7043b948747a19a19.html#group__foundation_1ga8853e1b0f46c6dd7043b948747a19a19"><span class="std std-ref">PX_A64</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a9bb718bdc4b97e3a183c8c2a0a75c3d6.html#_px_allocator_8h_1a9bb718bdc4b97e3a183c8c2a0a75c3d6"><span class="std std-ref">PX_ALLOC</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_alloca_8h_1a7ac90ad31bc8e43a848d5d4f554a3055.html#_px_alloca_8h_1a7ac90ad31bc8e43a848d5d4f554a3055"><span class="std std-ref">PX_ALLOCA</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a9ad15a36008bbfa1d02ae144b670b3ac.html#_px_allocator_8h_1a9ad15a36008bbfa1d02ae144b670b3ac"><span class="std std-ref">PX_ALLOCATE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5332a7e82c543612744a0c821cf48b78.html#group__foundation_1ga5332a7e82c543612744a0c821cf48b78"><span class="std std-ref">PX_ALWAYS_ASSERT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5ff30cdf70b6b77fc0a17427ad5ef7de.html#group__foundation_1ga5ff30cdf70b6b77fc0a17427ad5ef7de"><span class="std std-ref">PX_ALWAYS_ASSERT_MESSAGE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4330ceada999f3f6d10f7bd4b3dd3c2f.html#group__foundation_1ga4330ceada999f3f6d10f7bd4b3dd3c2f"><span class="std std-ref">PX_APPLE_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad566a9166622790d99924279df71eaf4.html#group__foundation_1gad566a9166622790d99924279df71eaf4"><span class="std std-ref">PX_ARM</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga99db209a98702e2d6673d967bac37d07.html#group__foundation_1ga99db209a98702e2d6673d967bac37d07"><span class="std std-ref">PX_ARM_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4a83a657390b324a460f14684e5accee.html#group__foundation_1ga4a83a657390b324a460f14684e5accee"><span class="std std-ref">PX_ASSERT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga09414aeb1a283b875edb1fa83e551aca.html#group__foundation_1ga09414aeb1a283b875edb1fa83e551aca"><span class="std std-ref">PX_ASSERT_WITH_MESSAGE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__character_1ga9ce06700290a75cfdb13559384e894f4.html#group__character_1ga9ce06700290a75cfdb13559384e894f4"><span class="std std-ref">PX_BIG_WORLDS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__extensions_1gaced14ebcd90bf2d866b38867cde959ae.html#group__extensions_1gaced14ebcd90bf2d866b38867cde959ae"><span class="std std-ref">PX_BINARY_SERIAL_VERSION</span></a>: PX_BINARY_SERIAL_VERSION is used to version the PhysX binary data and meta data.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8.html#group__common_1ga7e3b2e8ef0bc765d0d3ced6a81d420c8"><span class="std std-ref">PX_CATCH_UNDEFINED_ENABLE_DEBUG_VISUALIZATION</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga0f0e989d1b6381bd4791d00435ddf2c4.html#group__common_1ga0f0e989d1b6381bd4791d00435ddf2c4"><span class="std std-ref">PX_CATCH_UNDEFINED_ENABLE_SIM_STATS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadff4cde4e8b8443cfbe024b9fb52a891.html#group__foundation_1gadff4cde4e8b8443cfbe024b9fb52a891"><span class="std std-ref">PX_CHECKED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0224d1d19bb5c7febf07f7813a5ed995.html#group__foundation_1ga0224d1d19bb5c7febf07f7813a5ed995"><span class="std std-ref">PX_CHECK_AND_RETURN</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga188186336069c9cb5ba0af0048c083c1.html#group__foundation_1ga188186336069c9cb5ba0af0048c083c1"><span class="std std-ref">PX_CHECK_AND_RETURN_NULL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga40359fcafa0c7032c1bf377dd7072154.html#group__foundation_1ga40359fcafa0c7032c1bf377dd7072154"><span class="std std-ref">PX_CHECK_AND_RETURN_VAL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga19ce6647dc8026af829397064b3970de.html#group__foundation_1ga19ce6647dc8026af829397064b3970de"><span class="std std-ref">PX_CHECK_MSG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga382d2b60e6161c1dcb3801bbf8e1b4a3.html#group__foundation_1ga382d2b60e6161c1dcb3801bbf8e1b4a3"><span class="std std-ref">PX_CLANG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gab12cc8cbd08c9c19ab0d40b7f789012e.html#group__foundation_1gab12cc8cbd08c9c19ab0d40b7f789012e"><span class="std std-ref">PX_COMPILE_TIME_ASSERT</span></a>: General defines.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5f35262177498e8a11a4f3e5ba83e5e8.html#group__foundation_1ga5f35262177498e8a11a4f3e5ba83e5e8"><span class="std std-ref">PX_CONCAT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga571ac4b7ead96ee2a8ad83d1ebe1aec9.html#group__foundation_1ga571ac4b7ead96ee2a8ad83d1ebe1aec9"><span class="std std-ref">PX_CONCAT_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6e444d58dbf1459261fadc9b79594f63.html#group__foundation_1ga6e444d58dbf1459261fadc9b79594f63"><span class="std std-ref">PX_CUDA_CALLABLE</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_8h_1a289a1a0eb731a0c43f8ca755d0bdfe4f.html#_px_cuda_context_8h_1a289a1a0eb731a0c43f8ca755d0bdfe4f"><span class="std std-ref">PX_CUDA_KERNEL_PARAM</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_8h_1ae8b05d80ab26577eaa066076c03fa73e.html#_px_cuda_context_8h_1ae8b05d80ab26577eaa066076c03fa73e"><span class="std std-ref">PX_CUDA_KERNEL_PARAM2</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7b6fbb539e9185279ced84864179180b.html#group__foundation_1ga7b6fbb539e9185279ced84864179180b"><span class="std std-ref">PX_DEBUG</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6952091abd80c0c93a99d331b6c97482.html#group__foundation_1ga6952091abd80c0c93a99d331b6c97482"><span class="std std-ref">PX_DEBUG_CRT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga922d48697d998518e12a16e589f0c75a.html#group__common_1ga922d48697d998518e12a16e589f0c75a"><span class="std std-ref">PX_DEFINE_TYPEINFO</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga032d753d48dd9e14306d309c2b618410.html#group__physics_1ga032d753d48dd9e14306d309c2b618410"><span class="std std-ref">PX_DEF_BIN_METADATA_BASE_CLASS</span></a>: specifies a binary metadata entry for declaring a base class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga7d5660bc1b17b72651434edf7fa022a8.html#group__physics_1ga7d5660bc1b17b72651434edf7fa022a8"><span class="std std-ref">PX_DEF_BIN_METADATA_CLASS</span></a>: specifies a binary metadata entry for a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga8a5eb66875b992351ed7038b8001bbea.html#group__physics_1ga8a5eb66875b992351ed7038b8001bbea"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ALIGN</span></a>: specifies a binary metadata entry declaring an extra data alignment for a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gae42707bb37470210b586a341ff585b78.html#group__physics_1gae42707bb37470210b586a341ff585b78"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ARRAY</span></a>: specifies a binary metadata entry for an array of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga2cc87661da498e4f0c4ce26b6656e467.html#group__physics_1ga2cc87661da498e4f0c4ce26b6656e467"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEM</span></a>: specifies a binary metadata entry for extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga39043f3971c7c14f163a41f41982701f.html#group__physics_1ga39043f3971c7c14f163a41f41982701f"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEMS</span></a>: specifies a binary metadata entry for an array of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc.html#group__physics_1ga5605c240ca14c7fbfabf545edb73bcdc"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_ITEMS_MASKED_CONTROL</span></a>: specifies a binary metadata entry for an array of extra data additional to PX_DEF_BIN_METADATA_EXTRA_ITEMS a mask can be specified to interpret the control value</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga03a3549588909e6ca0a491af76146757.html#group__physics_1ga03a3549588909e6ca0a491af76146757"><span class="std std-ref">PX_DEF_BIN_METADATA_EXTRA_NAME</span></a>: specifies a binary metadata entry for an string of extra data</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga14481630a9253df1784a9cad4e94d904.html#group__physics_1ga14481630a9253df1784a9cad4e94d904"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEM</span></a>: specifies a binary metadata entry for a member variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0.html#group__physics_1gad42d1fc82f3ab8db230e5050f2fe0cd0"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEMS</span></a>: specifies a binary metadata entry for a member array variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga5c5117095910154a5e39fee736503e72.html#group__physics_1ga5c5117095910154a5e39fee736503e72"><span class="std std-ref">PX_DEF_BIN_METADATA_ITEMS_AUTO</span></a>: specifies a binary metadata entry for a member array variable of a class</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga190471540583d37595e5532c7534f950.html#group__physics_1ga190471540583d37595e5532c7534f950"><span class="std std-ref">PX_DEF_BIN_METADATA_TYPEDEF</span></a>: specifies a binary metadata entry for a typedef</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gadf1f469d767ae64422c20cce7c71a6b3.html#group__physics_1gadf1f469d767ae64422c20cce7c71a6b3"><span class="std std-ref">PX_DEF_BIN_METADATA_UNION</span></a>: specifies a binary metadata entry for a union</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7.html#group__physics_1ga0f17b2c81d2d85ff9ff7f853464c38e7"><span class="std std-ref">PX_DEF_BIN_METADATA_UNION_TYPE</span></a>: specifies a binary metadata entry for a particular member type of a union</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga314967fa3f63ec7c0b84832edb318458.html#group__physics_1ga314967fa3f63ec7c0b84832edb318458"><span class="std std-ref">PX_DEF_BIN_METADATA_VCLASS</span></a>: specifies a binary metadata entry for a virtual class</p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1aebd53f763d270b5178b4c92667dff84b.html#_px_allocator_8h_1aebd53f763d270b5178b4c92667dff84b"><span class="std std-ref">PX_DELETE</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a9f007df5e9414d251b23c4014b64b175.html#_px_allocator_8h_1a9f007df5e9414d251b23c4014b64b175"><span class="std std-ref">PX_DELETE_ARRAY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group___serializers_1ga58cfb644e0a72e0f2be6624397735411.html#group___serializers_1ga58cfb644e0a72e0f2be6624397735411"><span class="std std-ref">PX_DELETE_REPX_SERIALIZER</span></a>: Preprocessor Macro to simplify RepX serializer delete.</p></li>
+<li><p><a class="reference internal" href="define_group__extensions_1gaf9d523f77e7143a4c7e49424d9f0081e.html#group__extensions_1gaf9d523f77e7143a4c7e49424d9f0081e"><span class="std std-ref">PX_DELETE_SERIALIZER_ADAPTER</span></a>: Preprocessor Macro to simplify adapter deletion.</p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a1c5e9c26805c19578642a035ded80cef.html#_px_allocator_8h_1a1c5e9c26805c19578642a035ded80cef"><span class="std std-ref">PX_DELETE_THIS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafd8f8779793627061774cfcfa1b9fbd7.html#group__foundation_1gafd8f8779793627061774cfcfa1b9fbd7"><span class="std std-ref">PX_DEPRECATED</span></a>: Alignment macros.</p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1a917f44fed1c4752dfae7347db8173c5a.html#_px_cuda_context_manager_8h_1a917f44fed1c4752dfae7347db8173c5a"><span class="std std-ref">PX_DEVICE_ALLOC</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1abb5ac2b97b5133134b677a3349d0f3d6.html#_px_cuda_context_manager_8h_1abb5ac2b97b5133134b677a3349d0f3d6"><span class="std std-ref">PX_DEVICE_ALLOC_T</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1a975c8fa30f21e91ea9cb34240d6ad162.html#_px_cuda_context_manager_8h_1a975c8fa30f21e91ea9cb34240d6ad162"><span class="std std-ref">PX_DEVICE_FREE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5be743320fae5abf91e51efebced816e.html#group__foundation_1ga5be743320fae5abf91e51efebced816e"><span class="std std-ref">PX_DLL_EXPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gadfbe26e2b38cec0e72ed7d70872d234f.html#group__foundation_1gadfbe26e2b38cec0e72ed7d70872d234f"><span class="std std-ref">PX_DLL_IMPORT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae83a283ec08df8515d40c81810628e87.html#group__foundation_1gae83a283ec08df8515d40c81810628e87"><span class="std std-ref">PX_DUMMY_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gab14d7af80f3dc4ff432087381fcefdb9.html#group__foundation_1gab14d7af80f3dc4ff432087381fcefdb9"><span class="std std-ref">PX_EMSCRIPTEN</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga43c56deefc64fae5fe077a232a10056c.html#group__foundation_1ga43c56deefc64fae5fe077a232a10056c"><span class="std std-ref">PX_ENABLE_ASSERTS</span></a>: Assert macro.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga69be4db0e236ef5c43be7974a1a1fe5d.html#group__common_1ga69be4db0e236ef5c43be7974a1a1fe5d"><span class="std std-ref">PX_ENABLE_DEBUG_VISUALIZATION</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga30582e116d8777c36c92277f07031955.html#group__common_1ga30582e116d8777c36c92277f07031955"><span class="std std-ref">PX_ENABLE_SIM_STATS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae8aa7aabc2f4d376cdac2931bea8014b.html#group__foundation_1gae8aa7aabc2f4d376cdac2931bea8014b"><span class="std std-ref">PX_EPS_F32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0f79a2074a05144416be06f4c45a324c.html#group__foundation_1ga0f79a2074a05144416be06f4c45a324c"><span class="std std-ref">PX_EPS_F64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2440789bba543f4ab246a7dea35d7d95.html#group__foundation_1ga2440789bba543f4ab246a7dea35d7d95"><span class="std std-ref">PX_EPS_REAL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5b87e9ee392fc1afccb4f9b7a89c95d0.html#group__foundation_1ga5b87e9ee392fc1afccb4f9b7a89c95d0"><span class="std std-ref">PX_FINAL</span></a>: Final macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga069272504fcb1a82c2feb09830eda88c.html#group__foundation_1ga069272504fcb1a82c2feb09830eda88c"><span class="std std-ref">PX_FL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga6a774eed3cad34b0f636332a3d28c6bb.html#group__foundation_1ga6a774eed3cad34b0f636332a3d28c6bb"><span class="std std-ref">PX_FORCE_INLINE</span></a>: Force inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae7058022ea016a0af40eb7728a30c928.html#group__foundation_1gae7058022ea016a0af40eb7728a30c928"><span class="std std-ref">PX_FOUNDATION_API</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1a3e8e606c6a10f374027171aaa8eb0393.html#_px_f_p_u_8h_1a3e8e606c6a10f374027171aaa8eb0393"><span class="std std-ref">PX_FPU_GUARD</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1aa9be4bf41e8ca7947ed583604af62f1b.html#_px_f_p_u_8h_1aa9be4bf41e8ca7947ed583604af62f1b"><span class="std std-ref">PX_FR</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a567447ca949ea761a8c6f6288a6b6152.html#_px_allocator_8h_1a567447ca949ea761a8c6f6288a6b6152"><span class="std std-ref">PX_FREE</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a5245d9557e1548dd711e624fc2737ae7.html#_px_allocator_8h_1a5245d9557e1548dd711e624fc2737ae7"><span class="std std-ref">PX_FREE_THIS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga732674527c19934c396385ac405993b6.html#group__foundation_1ga732674527c19934c396385ac405993b6"><span class="std std-ref">PX_GCC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae6e47183b054e4c5d6a478a00fe91e27.html#group__foundation_1gae6e47183b054e4c5d6a478a00fe91e27"><span class="std std-ref">PX_GCC_FAMILY</span></a>: family shortcuts</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga89beab11abe1ea8c4f4d30b5a38edb01.html#group__foundation_1ga89beab11abe1ea8c4f4d30b5a38edb01"><span class="std std-ref">PX_IMPLEMENT_OUTPUT_ERROR</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga63edbe2223b03be1514dbcb56d22f1eb.html#group__foundation_1ga63edbe2223b03be1514dbcb56d22f1eb"><span class="std std-ref">PX_INFO</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gacb03347b642a2a5bdea1f9b305a6fbec.html#group__foundation_1gacb03347b642a2a5bdea1f9b305a6fbec"><span class="std std-ref">PX_INLINE</span></a>: Inline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga481340bf67229603a2c5b9257874934a.html#group__foundation_1ga481340bf67229603a2c5b9257874934a"><span class="std std-ref">PX_INTEL_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0.html#group__physics_1ga958cab7a1c8dd03d27a259aff100e0e0"><span class="std std-ref">PX_INVALID_BP_FILTER_GROUP</span></a>: Invalid broadphase filter group.</p></li>
+<li><p><a class="reference internal" href="define__px_node_index_8h_1a1fd26d58f477973b23fa556e4b109034.html#_px_node_index_8h_1a1fd26d58f477973b23fa556e4b109034"><span class="std std-ref">PX_INVALID_NODE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__character_1ga3998e8d4c62d343bf0948469ad083de4.html#group__character_1ga3998e8d4c62d343bf0948469ad083de4"><span class="std std-ref">PX_INVALID_OBSTACLE_HANDLE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga2af5ad9fd5086087aaea5ebd330be0f6.html#group__common_1ga2af5ad9fd5086087aaea5ebd330be0f6"><span class="std std-ref">PX_INVALID_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gaa4c200317118429fa00288d3817a31af.html#group__common_1gaa4c200317118429fa00288d3817a31af"><span class="std std-ref">PX_INVALID_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1a8a2e757336310be5a11d43e631813d3c.html#_px_f_p_u_8h_1a8a2e757336310be5a11d43e631813d3c"><span class="std std-ref">PX_IR</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gafb36f327a2be7c1b8cf2f0d91d6a16df.html#group__common_1gafb36f327a2be7c1b8cf2f0d91d6a16df"><span class="std std-ref">PX_IS_KIND_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad76274b09d89544fc4133c8d915293ed.html#group__foundation_1gad76274b09d89544fc4133c8d915293ed"><span class="std std-ref">PX_LIBCPP</span></a>: C++ standard library defines.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga73b08402e151455258acc7ec628a277b.html#group__foundation_1ga73b08402e151455258acc7ec628a277b"><span class="std std-ref">PX_LINUX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaa6237ff50213fc9872d4569a649dcd53.html#group__foundation_1gaa6237ff50213fc9872d4569a649dcd53"><span class="std std-ref">PX_LINUX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gabbba9e3f699e63445326263daec187e8.html#group__common_1gabbba9e3f699e63445326263daec187e8"><span class="std std-ref">PX_MAKE_FOURCC</span></a>: Used to fix multi-byte characters warning from gcc for situations like: PxU32 foo = 'CCTS';.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac1b800617c25ba00871816b8a0756d89.html#group__foundation_1gac1b800617c25ba00871816b8a0756d89"><span class="std std-ref">PX_MAX_BOUNDS_EXTENTS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__character_1gaba18675c9d68b07156230f66518b6a37.html#group__character_1gaba18675c9d68b07156230f66518b6a37"><span class="std std-ref">PX_MAX_EXTENDED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7539e08056ea09ff1c341b866b7103f4.html#group__foundation_1ga7539e08056ea09ff1c341b866b7103f4"><span class="std std-ref">PX_MAX_F32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0e6a6baa9078ed0b45a03fb4404c9bf5.html#group__foundation_1ga0e6a6baa9078ed0b45a03fb4404c9bf5"><span class="std std-ref">PX_MAX_F64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga226013a71f304c8c670ef781aa62b145.html#group__foundation_1ga226013a71f304c8c670ef781aa62b145"><span class="std std-ref">PX_MAX_I16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaca8cf9822157157ba95923e39999da82.html#group__foundation_1gaca8cf9822157157ba95923e39999da82"><span class="std std-ref">PX_MAX_I32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafd3aefa9b2e2bc6856ddff8bc1ff3770.html#group__foundation_1gafd3aefa9b2e2bc6856ddff8bc1ff3770"><span class="std std-ref">PX_MAX_I8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga1afd8c76d275a787af09ebfceaf7fc30.html#group__foundation_1ga1afd8c76d275a787af09ebfceaf7fc30"><span class="std std-ref">PX_MAX_REAL</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_geometry_query_8h_1addb956623c5bb30dd0ad8ab09b84e73d.html#_px_geometry_query_8h_1addb956623c5bb30dd0ad8ab09b84e73d"><span class="std std-ref">PX_MAX_SWEEP_DISTANCE</span></a>: Maximum sweep distance for scene sweeps.</p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gad493d6810dee9604135b76393eb7c501.html#group__physics_1gad493d6810dee9604135b76393eb7c501"><span class="std std-ref">PX_MAX_TETID</span></a>: The maximum tetrahedron index supported in the model.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5875f14ce7524d2a21d3bb23a039d1ec.html#group__foundation_1ga5875f14ce7524d2a21d3bb23a039d1ec"><span class="std std-ref">PX_MAX_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga86fdc6216f1e58e9fa63a2c0108261a7.html#group__foundation_1ga86fdc6216f1e58e9fa63a2c0108261a7"><span class="std std-ref">PX_MAX_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga317798739f43b557779c6d40806038b6.html#group__foundation_1ga317798739f43b557779c6d40806038b6"><span class="std std-ref">PX_MAX_U8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1gaaaa6a4b8b94e1bcce0bedb92d873b57e.html#group__geomutils_1gaaaa6a4b8b94e1bcce0bedb92d873b57e"><span class="std std-ref">PX_MESH_SCALE_MAX</span></a>: Maximum allowed absolute magnitude for each of mesh scale's components (x,y,z).</p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1ga5be09a494ce1f8aa8e8b986e82fc06d8.html#group__geomutils_1ga5be09a494ce1f8aa8e8b986e82fc06d8"><span class="std std-ref">PX_MESH_SCALE_MIN</span></a>: Minimum allowed absolute magnitude for each of mesh scale's components (x,y,z).</p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1ga0d8d1be25b975b8e61988f9d1954a68b.html#group__geomutils_1ga0d8d1be25b975b8e61988f9d1954a68b"><span class="std std-ref">PX_MIN_HEIGHTFIELD_XZ_SCALE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__geomutils_1ga246e5dd5e4554c27abb417be1ce1d898.html#group__geomutils_1ga246e5dd5e4554c27abb417be1ce1d898"><span class="std std-ref">PX_MIN_HEIGHTFIELD_Y_SCALE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3fc2611ba27e5701f2a1cf14afd1dd7b.html#group__foundation_1ga3fc2611ba27e5701f2a1cf14afd1dd7b"><span class="std std-ref">PX_MIN_I16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga005bc6fc1fd839ee0896828600dd17bb.html#group__foundation_1ga005bc6fc1fd839ee0896828600dd17bb"><span class="std std-ref">PX_MIN_I32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0180682969fce22cc7d01b100e1da755.html#group__foundation_1ga0180682969fce22cc7d01b100e1da755"><span class="std std-ref">PX_MIN_I8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5bd19e27244d543c2e0a4d9c04338406.html#group__foundation_1ga5bd19e27244d543c2e0a4d9c04338406"><span class="std std-ref">PX_MIN_U16</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4c63f0632cd5766a4233686020a33159.html#group__foundation_1ga4c63f0632cd5766a4233686020a33159"><span class="std std-ref">PX_MIN_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7bd33cbf0ea64aee9a79758f70050cdf.html#group__foundation_1ga7bd33cbf0ea64aee9a79758f70050cdf"><span class="std std-ref">PX_MIN_U8</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga41ea3463989964c5a4e21d68a9d3884a.html#group__foundation_1ga41ea3463989964c5a4e21d68a9d3884a"><span class="std std-ref">PX_NEON</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a3f55e8891acdc8d9be9ebbd494ccbe82.html#_px_allocator_8h_1a3f55e8891acdc8d9be9ebbd494ccbe82"><span class="std std-ref">PX_NEW</span></a></p></li>
+<li><p><a class="reference internal" href="define_group___serializers_1ga6018c37f238db16a878cfcba49091c4a.html#group___serializers_1ga6018c37f238db16a878cfcba49091c4a"><span class="std std-ref">PX_NEW_REPX_SERIALIZER</span></a>: Preprocessor macro for RepX serializer creation.</p></li>
+<li><p><a class="reference internal" href="define_group__extensions_1ga8695b63c3fd0f8e29ecce92c64e8f79b.html#group__extensions_1ga8695b63c3fd0f8e29ecce92c64e8f79b"><span class="std std-ref">PX_NEW_SERIALIZER_ADAPTER</span></a>: Preprocessor Macro to simplify adapter creation.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga838010cc1baa6df8d6ff0fc5655274dd.html#group__foundation_1ga838010cc1baa6df8d6ff0fc5655274dd"><span class="std std-ref">PX_NOALIAS</span></a>: Noalias macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2af6846d9d49e433af97059f0291eef1.html#group__foundation_1ga2af6846d9d49e433af97059f0291eef1"><span class="std std-ref">PX_NOCOPY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga56b7f4f37ac451a47f3d7d661069aa49.html#group__foundation_1ga56b7f4f37ac451a47f3d7d661069aa49"><span class="std std-ref">PX_NOINLINE</span></a>: Noinline macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8901e378c5ba8f305e8714d5758cd9dd.html#group__foundation_1ga8901e378c5ba8f305e8714d5758cd9dd"><span class="std std-ref">PX_NORMALIZATION_EPSILON</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga65237bda8f886bb466e89d01a1ba0a77.html#group__foundation_1ga65237bda8f886bb466e89d01a1ba0a77"><span class="std std-ref">PX_NVTX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga305a9ab26a10d521e58782103206edf5.html#group__foundation_1ga305a9ab26a10d521e58782103206edf5"><span class="std std-ref">PX_OFFSETOF_BASE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaace09d9150d8d87671f893afe548ebac.html#group__foundation_1gaace09d9150d8d87671f893afe548ebac"><span class="std std-ref">PX_OFFSET_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2ac82f7e080e1411a86f98758a0f3875.html#group__foundation_1ga2ac82f7e080e1411a86f98758a0f3875"><span class="std std-ref">PX_OFFSET_OF_RT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2b3efd786b831b6cfd30e51dcd3c5ca2.html#group__foundation_1ga2b3efd786b831b6cfd30e51dcd3c5ca2"><span class="std std-ref">PX_OSX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga7f84f0458b75adc8c2f2a164fdb6fb0d.html#group__foundation_1ga7f84f0458b75adc8c2f2a164fdb6fb0d"><span class="std std-ref">PX_OVERRIDE</span></a>: Override macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac9e21d1f7a04c78926a89d936c97546f.html#group__foundation_1gac9e21d1f7a04c78926a89d936c97546f"><span class="std std-ref">PX_P64_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d.html#group__foundation_1gaeedfba7b2ad3d3be35867607faabb11d"><span class="std std-ref">PX_PHYSICS_VERSION</span></a>: The constant PX_PHYSICS_VERSION is used when creating certain PhysX module objects.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4edfc95b25e96e7d308d83347c93a69f.html#group__foundation_1ga4edfc95b25e96e7d308d83347c93a69f"><span class="std std-ref">PX_PHYSICS_VERSION_BUGFIX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga75378be4130e1bdda740c22c07314640.html#group__foundation_1ga75378be4130e1bdda740c22c07314640"><span class="std std-ref">PX_PHYSICS_VERSION_MAJOR</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga25c9c85e3980cdbf0bedfbcad822aed7.html#group__foundation_1ga25c9c85e3980cdbf0bedfbcad822aed7"><span class="std std-ref">PX_PHYSICS_VERSION_MINOR</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga87ae1d60bdf83754e2fe5065aab40ec4.html#group__common_1ga87ae1d60bdf83754e2fe5065aab40ec4"><span class="std std-ref">PX_PHYSX_COMMON_API</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga4636d12a5a01930fa258136f3f93366f.html#group__common_1ga4636d12a5a01930fa258136f3f93366f"><span class="std std-ref">PX_PHYSX_CORE_API</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1gabe7c1438b281afb1d13fdc127cc84e68.html#group__common_1gabe7c1438b281afb1d13fdc127cc84e68"><span class="std std-ref">PX_PHYSX_GPU_API</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_quat_8h_1ad4109353d74ef8690cc955790f2e63e2.html#_px_vec_quat_8h_1ad4109353d74ef8690cc955790f2e63e2"><span class="std std-ref">PX_PIDIV2</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1a851ac53d29b6c02abc4c4ee1b09ac29b.html#_px_cuda_context_manager_8h_1a851ac53d29b6c02abc4c4ee1b09ac29b"><span class="std std-ref">PX_PINNED_HOST_ALLOC</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1a3e7706a60d885deb510174292cbae5f4.html#_px_cuda_context_manager_8h_1a3e7706a60d885deb510174292cbae5f4"><span class="std std-ref">PX_PINNED_HOST_ALLOC_T</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_cuda_context_manager_8h_1a3fa235245782246b235307edf75b9f21.html#_px_cuda_context_manager_8h_1a3fa235245782246b235307edf75b9f21"><span class="std std-ref">PX_PINNED_HOST_FREE</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a94eb240877e7ef0bcea4235438cd35aa.html#_px_allocator_8h_1a94eb240877e7ef0bcea4235438cd35aa"><span class="std std-ref">PX_PLACEMENT_NEW</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga9aad3b08e5e15565ff39638b753f4a92.html#group__foundation_1ga9aad3b08e5e15565ff39638b753f4a92"><span class="std std-ref">PX_POP_PACK</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5bd657340cb0dc207107cb1742d1135b.html#group__foundation_1ga5bd657340cb0dc207107cb1742d1135b"><span class="std std-ref">PX_PPC</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac2271cd3b97db6a3e1ba0222d1b4d07e.html#group__foundation_1gac2271cd3b97db6a3e1ba0222d1b4d07e"><span class="std std-ref">PX_PRIu64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gabefdbdd6927f15e90168c46824f7bd38.html#group__foundation_1gabefdbdd6927f15e90168c46824f7bd38"><span class="std std-ref">PX_PROFILE</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_profile_zone_8h_1a8dc063f399d7b06f612494e98d14a746.html#_px_profile_zone_8h_1a8dc063f399d7b06f612494e98d14a746"><span class="std std-ref">PX_PROFILE_POINTER_TO_U64</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_profile_zone_8h_1a1dfc16e2fb70dbf1c861593b494bf678.html#_px_profile_zone_8h_1a1dfc16e2fb70dbf1c861593b494bf678"><span class="std std-ref">PX_PROFILE_START_CROSSTHREAD</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_profile_zone_8h_1a4d0aaafdc752f6111c8259ecf0afb27e.html#_px_profile_zone_8h_1a4d0aaafdc752f6111c8259ecf0afb27e"><span class="std std-ref">PX_PROFILE_STOP_CROSSTHREAD</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_profile_zone_8h_1a5cac644a3ff98a88f49dc2257c5ed36a.html#_px_profile_zone_8h_1a5cac644a3ff98a88f49dc2257c5ed36a"><span class="std std-ref">PX_PROFILE_ZONE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga1145ffab2cc9a77ca65b59ba4126342f.html#group__foundation_1ga1145ffab2cc9a77ca65b59ba4126342f"><span class="std std-ref">PX_PUSH_PACK_DEFAULT</span></a>: Calling convention.</p></li>
+<li><p><a class="reference internal" href="define__px_allocator_8h_1a2b09f2debf776096e42642de7d50b742.html#_px_allocator_8h_1a2b09f2debf776096e42642de7d50b742"><span class="std std-ref">PX_RELEASE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3b15bb2f7697b2bed10eb5477909fbe4.html#group__foundation_1ga3b15bb2f7697b2bed10eb5477909fbe4"><span class="std std-ref">PX_RESTRICT</span></a>: Restrict macro.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga2fda99afe264006a8ef8a699aa1328aa.html#group__common_1ga2fda99afe264006a8ef8a699aa1328aa"><span class="std std-ref">PX_SERIAL_ALIGN</span></a>: Default serialization alignment.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga8ca0e9fc5693e347b3ee5735fc637fc2.html#group__common_1ga8ca0e9fc5693e347b3ee5735fc637fc2"><span class="std std-ref">PX_SERIAL_FILE_ALIGN</span></a>: Serialized input data must be aligned to this value.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga70054743832670870a1ce9f619907c77.html#group__common_1ga70054743832670870a1ce9f619907c77"><span class="std std-ref">PX_SERIAL_OBJECT_ID_INVALID</span></a>: PxSerialObjectId value for objects that do not have an ID.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga27914dcd6d0448671eebfeca012cd0b5.html#group__common_1ga27914dcd6d0448671eebfeca012cd0b5"><span class="std std-ref">PX_SERIAL_REF_KIND_MATERIAL_IDX</span></a>: Reference kind value for material indices.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1gaa59252c69aa987bd926da9bbf5092367.html#group__common_1gaa59252c69aa987bd926da9bbf5092367"><span class="std std-ref">PX_SERIAL_REF_KIND_PTR_TYPE_BIT</span></a>: Bit to mark pointer type references,.</p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga8cd51251f2e11c3b6598b96f32e400f8.html#group__common_1ga8cd51251f2e11c3b6598b96f32e400f8"><span class="std std-ref">PX_SERIAL_REF_KIND_PXBASE</span></a>: Reference kind value for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad51dd6dc9ad9045a55c42193192b2821.html#group__foundation_1gad51dd6dc9ad9045a55c42193192b2821"><span class="std std-ref">PX_SIGN_BITMASK</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1aae4e86b241bf20988a00b96c09888b30.html#_px_f_p_u_8h_1aae4e86b241bf20988a00b96c09888b30"><span class="std std-ref">PX_SIMD_GUARD</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1a9d517288b2884fe1f760f90f363c557e.html#_px_f_p_u_8h_1a9d517288b2884fe1f760f90f363c557e"><span class="std std-ref">PX_SIMD_GUARD_CNDT</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_f_p_u_8h_1ab435c320d430b4bc34416cd581e82aaf.html#_px_f_p_u_8h_1ab435c320d430b4bc34416cd581e82aaf"><span class="std std-ref">PX_SIR</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1ga59c318a035d7a555f3e2188d757059bf.html#group__physics_1ga59c318a035d7a555f3e2188d757059bf"><span class="std std-ref">PX_SIZE_OF</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_s_list_8h_1ab1b7a6b3e155feb7e3bf7c1bbf06464e.html#_px_s_list_8h_1ab1b7a6b3e155feb7e3bf7c1bbf06464e"><span class="std std-ref">PX_SLIST_ALIGNMENT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga44111415cac01852ed19b1e97433c489.html#group__foundation_1ga44111415cac01852ed19b1e97433c489"><span class="std std-ref">PX_SORT_PARANOIA</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga2dd18616fa4eec4df42b5f3505dd2a64.html#group__foundation_1ga2dd18616fa4eec4df42b5f3505dd2a64"><span class="std std-ref">PX_SSE2</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__common_1ga851719f1ba2587fb5c938b4ea4dac0b0.html#group__common_1ga851719f1ba2587fb5c938b4ea4dac0b0"><span class="std std-ref">PX_STOMP_ALLOCATED_MEMORY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e.html#group__physics_1gaffbcca4cdc677e1e2fe5cf379146727e"><span class="std std-ref">PX_STORE_METADATA</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga40e7fc272047a5ab6870668b81aca1a3.html#group__foundation_1ga40e7fc272047a5ab6870668b81aca1a3"><span class="std std-ref">PX_STRINGIZE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaaa541ee81b5c7958c1367b710cfa99ed.html#group__foundation_1gaaa541ee81b5c7958c1367b710cfa99ed"><span class="std std-ref">PX_STRINGIZE_HELPER</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga58dd174408338f37c62dfe6ac1baec60.html#group__foundation_1ga58dd174408338f37c62dfe6ac1baec60"><span class="std std-ref">PX_SUPPORT_EXTERN_TEMPLATE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga0a511de410e7de7a8625fb572f88bd89.html#group__foundation_1ga0a511de410e7de7a8625fb572f88bd89"><span class="std std-ref">PX_SUPPORT_GPU_PHYSX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga69c3fa9b2882d545ebdb965086853c62.html#group__foundation_1ga69c3fa9b2882d545ebdb965086853c62"><span class="std std-ref">PX_SWITCH</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_8h_1a1a9ed789b9335e191bc0018c2fb7a18a.html#_px_vec_math_8h_1a1a9ed789b9335e191bc0018c2fb7a18a"><span class="std std-ref">PX_TRANSPOSE_34_44</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_8h_1af22878c6e33811c82d8c56e3e486aedc.html#_px_vec_math_8h_1af22878c6e33811c82d8c56e3e486aedc"><span class="std std-ref">PX_TRANSPOSE_44</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_8h_1a975b785a725af48c10e9907056ef07cb.html#_px_vec_math_8h_1a975b785a725af48c10e9907056ef07cb"><span class="std std-ref">PX_TRANSPOSE_44_34</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac40d28c5e85426df7a98ff9bd597810c.html#group__foundation_1gac40d28c5e85426df7a98ff9bd597810c"><span class="std std-ref">PX_UNIX_EXPORT</span></a>: DLL export macros.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gad7d515be586be72c5c485c5624783a97.html#group__foundation_1gad7d515be586be72c5c485c5624783a97"><span class="std std-ref">PX_UNIX_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga666b5efc2a0665170dbdd42b3e931305.html#group__foundation_1ga666b5efc2a0665170dbdd42b3e931305"><span class="std std-ref">PX_UNUSED_ATTRIBUTE</span></a>: Unused attribute macro.</p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaec15ff1639b763560ddaffc82936ff03.html#group__foundation_1gaec15ff1639b763560ddaffc82936ff03"><span class="std std-ref">PX_VC</span></a>: Compiler defines, see <a class="reference external" href="http://sourceforge.net/p/predef/wiki/Compilers/">http://sourceforge.net/p/predef/wiki/Compilers/</a> .</p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1a9ccad9cbf7f20db6b9986c2dc2f6e8b1.html#_px_vec_math_ao_s_scalar_inline_8h_1a9ccad9cbf7f20db6b9986c2dc2f6e8b1"><span class="std std-ref">PX_VECMATH_ASSERT_ENABLED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1ga6f74e7ea67646ecaf078b95d6bf75c43.html#group__vehicle2_1ga6f74e7ea67646ecaf078b95d6bf75c43"><span class="std std-ref">PX_VEHICLE_FOUR_WHEEL_DIFFERENTIAL_MAXIMUM_STRENGTH</span></a>: A special value that indicates instantaneous resolution of a slip that exceeds a differential bias.</p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1gad6b7a11a90967b33570b9aa28a0b5a60.html#group__vehicle2_1gad6b7a11a90967b33570b9aa28a0b5a60"><span class="std std-ref">PX_VEHICLE_GEAR_SWITCH_INITIATED</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1ga0466e1c5533ecd17efb578b96a7c362f.html#group__vehicle2_1ga0466e1c5533ecd17efb578b96a7c362f"><span class="std std-ref">PX_VEHICLE_NO_GEAR_SWITCH_PENDING</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1ga2477d6d331eb3f18fd675a094993849d.html#group__vehicle2_1ga2477d6d331eb3f18fd675a094993849d"><span class="std std-ref">PX_VEHICLE_UNSPECIFIED_JOUNCE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1gae6e2d46ea65fa7647c4c5beef6dd7ca5.html#group__vehicle2_1gae6e2d46ea65fa7647c4c5beef6dd7ca5"><span class="std std-ref">PX_VEHICLE_UNSPECIFIED_SEPARATION</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1gaaf3a9899e22cb02f7f9e337b3ab355e1.html#group__vehicle2_1gaaf3a9899e22cb02f7f9e337b3ab355e1"><span class="std std-ref">PX_VEHICLE_UNSPECIFIED_STEER_STATE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1ga738b6568c94a120a1d0054c9add2af54.html#group__vehicle2_1ga738b6568c94a120a1d0054c9add2af54"><span class="std std-ref">PX_VEHICLE_UNSPECIFIED_TIME_SINCE_LAST_SHIFT</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga43eec71a9b57bd336f2208cb33dba42e.html#group__foundation_1ga43eec71a9b57bd336f2208cb33dba42e"><span class="std std-ref">PX_VMX</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gacc6faeacecb82d70cf907161487f0c97.html#group__foundation_1gacc6faeacecb82d70cf907161487f0c97"><span class="std std-ref">PX_WARN</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga3e2792f2a72da671fbd9f9487c93d155.html#group__foundation_1ga3e2792f2a72da671fbd9f9487c93d155"><span class="std std-ref">PX_WARN_ONCE</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gae9e095c9a31a691fdfae1986a3425dd8.html#group__foundation_1gae9e095c9a31a691fdfae1986a3425dd8"><span class="std std-ref">PX_WARN_ONCE_IF</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga41f92d88ba8f7b8ef321aa090b0e270d.html#group__foundation_1ga41f92d88ba8f7b8ef321aa090b0e270d"><span class="std std-ref">PX_WEAK_SYMBOL</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gac4b372e9d2d91a0a86d40f7486936993.html#group__foundation_1gac4b372e9d2d91a0a86d40f7486936993"><span class="std std-ref">PX_WIN32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gafb26faf6ab4449f92b90eaedb74d6f3b.html#group__foundation_1gafb26faf6ab4449f92b90eaedb74d6f3b"><span class="std std-ref">PX_WIN64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga8d26d765b23de0bca18dd327cde2d8f8.html#group__foundation_1ga8d26d765b23de0bca18dd327cde2d8f8"><span class="std std-ref">PX_WINDOWS</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga5121e2d88c11a94738ee44b0b6b339a2.html#group__foundation_1ga5121e2d88c11a94738ee44b0b6b339a2"><span class="std std-ref">PX_WINDOWS_FAMILY</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga559a6fbf1f502edf3e25e3b90647f111.html#group__foundation_1ga559a6fbf1f502edf3e25e3b90647f111"><span class="std std-ref">PX_X64</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga4f7abce9f24240386fb46d29e4332d3d.html#group__foundation_1ga4f7abce9f24240386fb46d29e4332d3d"><span class="std std-ref">PX_X86</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_alloca_8h_1a7257349ef8c5a5e8677a5c588012104b.html#_px_alloca_8h_1a7257349ef8c5a5e8677a5c588012104b"><span class="std std-ref">PxAllocaAligned</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1af1499e965cc9f463f79061fd6c9891c6.html#_px_vec_math_ao_s_scalar_8h_1af1499e965cc9f463f79061fd6c9891c6"><span class="std std-ref">QuatVArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1a6454a9ba2984a495a1d708d6e7b88945.html#_px_vec_math_ao_s_scalar_inline_8h_1a6454a9ba2984a495a1d708d6e7b88945"><span class="std std-ref">TRUE_TO_U32</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1ga471d6bb3bd98ced0974dbc866268c15a.html#group__foundation_1ga471d6bb3bd98ced0974dbc866268c15a"><span class="std std-ref">USE_VOLATILE_UNION</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1abfad16885061581bffe473ae331b5603.html#_px_vec_math_ao_s_scalar_inline_8h_1abfad16885061581bffe473ae331b5603"><span class="std std-ref">VECMATHAOS_ASSERT</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_inline_8h_1a261137ece846c2e363f9c928ccfbb6d2.html#_px_vec_math_ao_s_scalar_inline_8h_1a261137ece846c2e363f9c928ccfbb6d2"><span class="std std-ref">VECMATH_AOS_EPSILON</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1ga2400525f69b55559ba5aefebe04cef59.html#group__vehicle2_1ga2400525f69b55559ba5aefebe04cef59"><span class="std std-ref">VEHICLE_ARRAY_DATA</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1gaa1a2d14449fee851211b5c326ba94617.html#group__vehicle2_1gaa1a2d14449fee851211b5c326ba94617"><span class="std std-ref">VEHICLE_FLOAT_ARRAY_DATA</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__vehicle2_1gaba565c9fabb5019ffeedf8f87b14382f.html#group__vehicle2_1gaba565c9fabb5019ffeedf8f87b14382f"><span class="std std-ref">VEHICLE_SIZED_ARRAY_DATA</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a61e7db710ac96cc3fe1aa7d14f3ab907.html#_px_vec_math_ao_s_scalar_8h_1a61e7db710ac96cc3fe1aa7d14f3ab907"><span class="std std-ref">Vec3VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a8ce5391dd3e20786273e187aee9b6550.html#_px_vec_math_ao_s_scalar_8h_1a8ce5391dd3e20786273e187aee9b6550"><span class="std std-ref">Vec4VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a078a122d6cfa27715bd6dbdd12bb6847.html#_px_vec_math_ao_s_scalar_8h_1a078a122d6cfa27715bd6dbdd12bb6847"><span class="std std-ref">VecCrossV</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a102a187a183faa14a71328ac7934ce58.html#_px_vec_math_ao_s_scalar_8h_1a102a187a183faa14a71328ac7934ce58"><span class="std std-ref">VecI16VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a1839206eaf633b94b75d2d28da4f64c5.html#_px_vec_math_ao_s_scalar_8h_1a1839206eaf633b94b75d2d28da4f64c5"><span class="std std-ref">VecI32VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1ac6b073696f874b2c5ed79cb68397a300.html#_px_vec_math_ao_s_scalar_8h_1ac6b073696f874b2c5ed79cb68397a300"><span class="std std-ref">VecShiftVArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a235215cf93d1766862f322a76aaf1048.html#_px_vec_math_ao_s_scalar_8h_1a235215cf93d1766862f322a76aaf1048"><span class="std std-ref">VecU16VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1acb4aa21cbec9ff0466745f12626d0b4f.html#_px_vec_math_ao_s_scalar_8h_1acb4aa21cbec9ff0466745f12626d0b4f"><span class="std std-ref">VecU32VArg</span></a></p></li>
+<li><p><a class="reference internal" href="define_group__foundation_1gaacbb9e1f38be71e22df1584a37c56693.html#group__foundation_1gaacbb9e1f38be71e22df1584a37c56693"><span class="std std-ref">__STDC_FORMAT_MACROS</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

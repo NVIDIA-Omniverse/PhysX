@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VecShiftVArg &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VecU16VArg" href="define__px_vec_math_ao_s_scalar_8h_1a235215cf93d1766862f322a76aaf1048.html" />
+    <link rel="prev" title="VecI32VArg" href="define__px_vec_math_ao_s_scalar_8h_1a1839206eaf633b94b75d2d28da4f64c5.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_include.html">include</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActor.h.html">PxActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActorData.h.html">PxActorData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAggregate.h.html">PxAggregate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAnisotropy.h.html">PxAnisotropy.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArrayConverter.h.html">PxArrayConverter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationFlag.h.html">PxArticulationFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationJointReducedCoordinate.h.html">PxArticulationJointReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationLink.h.html">PxArticulationLink.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html">PxArticulationReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendon.h.html">PxArticulationTendon.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendonData.h.html">PxArticulationTendonData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAttachment.h.html">PxAttachment.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBaseMaterial.h.html">PxBaseMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBroadPhase.h.html">PxBroadPhase.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxClient.h.html">PxClient.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConeLimitedConstraint.h.html">PxConeLimitedConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraint.h.html">PxConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraintDesc.h.html">PxConstraintDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContact.h.html">PxContact.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContactModifyCallback.h.html">PxContactModifyCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDeletionListener.h.html">PxDeletionListener.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothFlags.h.html">PxFEMClothFlags.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothMaterial.h.html">PxFEMClothMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMMaterial.h.html">PxFEMMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMParameter.h.html">PxFEMParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMSoftBodyMaterial.h.html">PxFEMSoftBodyMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFLIPMaterial.h.html">PxFLIPMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFiltering.h.html">PxFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxForceMode.h.html">PxForceMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxHairSystemFlag.h.html">PxHairSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxImmediateMode.h.html">PxImmediateMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxIsosurfaceExtraction.h.html">PxIsosurfaceExtraction.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLineStripSkinning.h.html">PxLineStripSkinning.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLockedData.h.html">PxLockedData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxMPMMaterial.h.html">PxMPMMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxMaterial.h.html">PxMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxNodeIndex.h.html">PxNodeIndex.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDMaterial.h.html">PxPBDMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDParticleSystem.h.html">PxPBDParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleBuffer.h.html">PxParticleBuffer.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleGpu.h.html">PxParticleGpu.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleMaterial.h.html">PxParticleMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleNeighborhoodProvider.h.html">PxParticleNeighborhoodProvider.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSolverType.h.html">PxParticleSolverType.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystem.h.html">PxParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystemFlag.h.html">PxParticleSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysXConfig.h.html">PxPhysXConfig.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysics.h.html">PxPhysics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsAPI.h.html">PxPhysicsAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsSerialization.h.html">PxPhysicsSerialization.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPruningStructure.h.html">PxPruningStructure.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryFiltering.h.html">PxQueryFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryReport.h.html">PxQueryReport.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidActor.h.html">PxRigidActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidBody.h.html">PxRigidBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidDynamic.h.html">PxRigidDynamic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidStatic.h.html">PxRigidStatic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSDFBuilder.h.html">PxSDFBuilder.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxScene.h.html">PxScene.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneDesc.h.html">PxSceneDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneLock.h.html">PxSceneLock.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQueryDesc.h.html">PxSceneQueryDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html">PxSceneQuerySystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxShape.h.html">PxShape.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationEventCallback.h.html">PxSimulationEventCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationStatistics.h.html">PxSimulationStatistics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSmoothing.h.html">PxSmoothing.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBody.h.html">PxSoftBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBodyFlag.h.html">PxSoftBodyFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSparseGridParams.h.html">PxSparseGridParams.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxVisualizationParameter.h.html">PxVisualizationParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_characterkinematic.html">characterkinematic</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_collision.html">collision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_common.html">common</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cooking.html">cooking</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cudamanager.html">cudamanager</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_extensions.html">extensions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_filebuf.html">filebuf</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="dir_include_foundation.html">foundation</a><ul class="current">
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_Px.h.html">Px.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAlignedMalloc.h.html">PxAlignedMalloc.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAlloca.h.html">PxAlloca.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAllocator.h.html">PxAllocator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAllocatorCallback.h.html">PxAllocatorCallback.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAoS.h.html">PxAoS.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAssert.h.html">PxAssert.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxAtomic.h.html">PxAtomic.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBasicTemplates.h.html">PxBasicTemplates.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBitAndData.h.html">PxBitAndData.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBitMap.h.html">PxBitMap.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBitUtils.h.html">PxBitUtils.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBounds3.h.html">PxBounds3.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxBroadcast.h.html">PxBroadcast.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxErrorCallback.h.html">PxErrorCallback.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxErrors.h.html">PxErrors.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxFPU.h.html">PxFPU.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxFlags.h.html">PxFlags.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxFoundation.h.html">PxFoundation.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxFoundationConfig.h.html">PxFoundationConfig.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxHash.h.html">PxHash.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxHashInternals.h.html">PxHashInternals.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxHashMap.h.html">PxHashMap.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxHashSet.h.html">PxHashSet.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxIO.h.html">PxIO.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxInlineAllocator.h.html">PxInlineAllocator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxInlineAoS.h.html">PxInlineAoS.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxInlineArray.h.html">PxInlineArray.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxIntrinsics.h.html">PxIntrinsics.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMat33.h.html">PxMat33.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMat34.h.html">PxMat34.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMat44.h.html">PxMat44.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMath.h.html">PxMath.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMathIntrinsics.h.html">PxMathIntrinsics.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMathUtils.h.html">PxMathUtils.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMemory.h.html">PxMemory.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxMutex.h.html">PxMutex.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxPhysicsVersion.h.html">PxPhysicsVersion.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxPinnedArray.h.html">PxPinnedArray.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxPlane.h.html">PxPlane.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxPreprocessor.h.html">PxPreprocessor.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxProfiler.h.html">PxProfiler.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxQuat.h.html">PxQuat.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSIMDHelpers.h.html">PxSIMDHelpers.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSList.h.html">PxSList.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSimpleTypes.h.html">PxSimpleTypes.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSocket.h.html">PxSocket.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSort.h.html">PxSort.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSortInternals.h.html">PxSortInternals.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxStrideIterator.h.html">PxStrideIterator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxString.h.html">PxString.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxSync.h.html">PxSync.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxTempAllocator.h.html">PxTempAllocator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxThread.h.html">PxThread.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxTime.h.html">PxTime.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxTransform.h.html">PxTransform.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxUnionCast.h.html">PxUnionCast.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxUserAllocated.h.html">PxUserAllocated.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxUtilities.h.html">PxUtilities.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVec2.h.html">PxVec2.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVec3.h.html">PxVec3.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVec4.h.html">PxVec4.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVecMath.h.html">PxVecMath.h</a></li>
+<li class="toctree-l6 current"><a class="reference internal" href="file_include_foundation_PxVecMathAoSScalar.h.html">PxVecMathAoSScalar.h</a><ul class="current">
+<li class="toctree-l7"><a class="reference internal" href="program_listing_file_include_foundation_PxVecMathAoSScalar.h.html">Source file</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a1c4c3a4a5ce16426bbeafb0ea4e55a86.html">BoolVArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a026d730cc2a52eb7356160494b9386d6.html">FloatVArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1af1499e965cc9f463f79061fd6c9891c6.html">QuatVArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a61e7db710ac96cc3fe1aa7d14f3ab907.html">Vec3VArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a8ce5391dd3e20786273e187aee9b6550.html">Vec4VArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a078a122d6cfa27715bd6dbdd12bb6847.html">VecCrossV</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a102a187a183faa14a71328ac7934ce58.html">VecI16VArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a1839206eaf633b94b75d2d28da4f64c5.html">VecI32VArg</a></li>
+<li class="toctree-l7 current"><a class="current reference internal" href="#">VecShiftVArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1a235215cf93d1766862f322a76aaf1048.html">VecU16VArg</a></li>
+<li class="toctree-l7"><a class="reference internal" href="define__px_vec_math_ao_s_scalar_8h_1acb4aa21cbec9ff0466745f12626d0b4f.html">VecU32VArg</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVecMathAoSScalarInline.h.html">PxVecMathAoSScalarInline.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVecMathSSE.h.html">PxVecMathSSE.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVecQuat.h.html">PxVecQuat.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_foundation_PxVecTransform.h.html">PxVecTransform.h</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geometry.html">geometry</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geomutils.html">geomutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_gpu.html">gpu</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_omnipvd.html">omnipvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_pvd.html">pvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_solver.html">solver</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_task.html">task</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_vehicle2.html">vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_include.html">include</a> &raquo;</li>
+    <li><a href="dir_include_foundation.html">include/foundation</a> &raquo;</li>
+    <li><a href="file_include_foundation_PxVecMathAoSScalar.h.html">include/foundation/PxVecMathAoSScalar.h</a> &raquo;</li>
+<li>VecShiftVArg</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="vecshiftvarg">
+<h1>VecShiftVArg<a class="headerlink" href="#vecshiftvarg" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_foundation_PxVecMathAoSScalar.h.html#px-vec-math-ao-s-scalar-8h"><span class="std std-ref">include/foundation/PxVecMathAoSScalar.h</span></a></p>
+<dl class="cpp macro">
+<dt class="sig sig-object cpp" id="c.VecShiftVArg">
+<span class="target" id="_px_vec_math_ao_s_scalar_8h_1ac6b073696f874b2c5ed79cb68397a300"></span><span class="sig-name descname"><span class="n"><span class="pre">VecShiftVArg</span></span></span><a class="headerlink" href="#c.VecShiftVArg" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

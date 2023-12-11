@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Collision Detection &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Joints" href="Joints.html" />
+    <link rel="prev" title="Simulation" href="Simulation.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Collision Detection</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tuning-shape-collision-behavior">Tuning Shape Collision Behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contact-modification">Contact Modification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contact-reporting">Contact reporting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#contact-reports-and-ccd">Contact Reports and CCD</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#extracting-contact-information">Extracting Contact information</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#extra-contact-data">Extra Contact Data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#continuous-collision-detection">Continuous Collision Detection</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#contact-notification-and-modification">Contact Notification and Modification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#triggers">Triggers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tuning-ccd">Tuning CCD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-implications">Performance Implications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#speculative-ccd">Speculative CCD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#raycast-ccd">Raycast CCD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ccd-snippet">CCD snippet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#persistent-contact-manifold-pcm">Persistent Contact Manifold (PCM)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Advanced Collision Detection</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="advanced-collision-detection">
+<span id="advancedcollisiondetection"></span><h1>Advanced Collision Detection<a class="headerlink" href="#advanced-collision-detection" title="Permalink to this headline"></a></h1>
+<section id="tuning-shape-collision-behavior">
+<span id="shapecollisiontuning"></span><h2>Tuning Shape Collision Behavior<a class="headerlink" href="#tuning-shape-collision-behavior" title="Permalink to this headline"></a></h2>
+<p>Dynamic rigid bodies have collision shapes attached to them that are used for contact generation. Contacts influence the bodies’ motion as they are used by the constraint solver to generate impulsive forces at the contact points. Shapes have two parameters that control contact generation: the <em>contactOffset</em> and the <em>restOffset</em>. Collision detection starts to generate contact points as soon as two shapes get closer than the sum of their contact offsets (this sum will be referred to as <em>contactDistance</em>). The <em>contactOffset</em> has to be non-negative, which means that contact generation potentially starts before the shape geometries of two objects penetrate. A shape’s <em>contactOffset</em> also has to be larger than its <em>restOffset</em>. The <em>restOffset</em> quantifies how close a shape gets to others at rest. At rest, the distance between two vertically stacked objects is the sum of their rest offsets (this sum will be referred to as <em>restDistance</em>). If a pair of shapes has a positive <em>restDistance</em>, the shapes will be separated at rest by an air gap. If a pair of shapes has a negative <em>restDistance</em>, the shape geometries will at rest penetrate by that distance.</p>
+<p>Use <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape16setContactOffsetE6PxReal" title="PxShape::setContactOffset"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setContactOffset()</span></code></a> and <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape13setRestOffsetE6PxReal" title="PxShape::setRestOffset"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setRestOffset()</span></code></a> to set the contact and rest offsets of a shape.</p>
+<p>Collision detection is able to generate contact points between two shapes when they are still a distance apart, when they are exactly touching, or when they are inter-penetrating. To make the discussion simpler, we treat interpenetration as a negative distance. So the distance between two shapes can be positive, zero, or negative. <em>contactDistance</em> is the distance at which collision detection will start to generate contacts. It has to be greater than zero, meaning that PhysX will always generate contacts when two shapes are penetrating (unless collision detection between the two shapes is in some way completely disabled, such as with filtering). By default, when using metric units and default scaling in <a class="reference internal" href="../_api_build/class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTolerancesScale</span></code></a>, <em>contactOffset</em> is 0.02, which means <em>contactDistance</em> will work out to 4 centimeters. So when two shapes approach each other within 4 centimeters, contacts will be generated until they are again moved further apart than 4 centimeters.</p>
+<p>The generation of contact points does not however mean that a large impulse will immediately be applied at these locations to separate the shapes, or to even prevent further motion in the direction of penetration. This would make the simulation jitter unless the simulation time step is selected to be tiny, which is not desirable for real time performance. Instead, we want the force at the contact to smoothly increase as penetration increases until it reaches a value sufficiently high to stop any further penetrating motion. The distance at which this maximum force is reached is the <em>restDistance</em>, because at this distance two shapes stacked on each other will reach static equilibrium and come to rest. When the shapes are for some reason pushed together so much that they have a distance below <em>restDistance</em>, an even greater force is applied to push them apart until they are at <em>restDistance</em> again. The variation of force applied as the distance changes is not necessarily linear, but it is smooth and continuous which results in a pleasing simulation even at large time steps.</p>
+<p>There are a few different things to consider when choosing <em>contactOffset</em> and <em>restOffset</em> for shapes. Typically the same values can be used for all shapes in a simulation. It makes sense to determine <em>restOffset</em> first. The goal is typically to have the graphics shapes appear to stack such that they are exactly touching, like bodies do in real life. If the collision shapes are sized to be the exact same size as the graphics shapes, a <em>restOffset</em> of zero is needed. If the collision shapes are an epsilon bigger than the graphics shapes, a <em>restOffset</em> of negative epsilon is correct. This will let the larger collision shapes sink into each other until the smaller graphics shapes touch too. Rest offsets that are larger than zero are practical for example if there are problems with sliding on triangle geometry where the penetration based contact generation has more trouble producing smooth contact points than a separation one, resulting in a smoother slide.</p>
+<p>Once the <em>restOffset</em> is determined, the <em>contactOffset</em> should be chosen to be a value a slightly larger. The rule of thumb is to make the difference between the two as small as possible that still effectively avoids jitter at the time step size the simulation uses. A larger time step will need the difference to be larger. The drawback of setting it too large is that contacts will be generated sooner as two shapes approach, which drives up the total number of contacts that the simulation has to worry about. This will decrease performance. Also, the simulation code often makes the assumption that contact points are close to the convex shapes’ surface. If the contact offset is very large this assumption breaks down which could lead to behavior artefacts.</p>
+<hr class="docutils" />
+</section>
+<section id="contact-modification">
+<span id="id1"></span><h2>Contact Modification<a class="headerlink" href="#contact-modification" title="Permalink to this headline"></a></h2>
+<p>Under certain circumstances, it may be necessary to specialize contact behavior. For example to implement sticky contacts, give objects the appearance of floating or swimming inside each other, or making objects go through apparent holes in walls. A simple approach to achieve such effects is to let the user change the properties of contacts after they have been generated by collision detection, but before the contact solver. Because both of these steps occur within the scene <em>simulate()</em> function, a callback must be used.</p>
+<p>The callback occurs for all pairs of colliding shapes for which the user has specified the pair flag <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum16eMODIFY_CONTACTSE" title="PxPairFlag::eMODIFY_CONTACTS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eMODIFY_CONTACTS</span></code></a> in the filter shader.</p>
+<p>To listen to these modify callbacks, derive from the class <a class="reference internal" href="../_api_build/class_px_contact_modify_callback.html#_CPPv423PxContactModifyCallback" title="PxContactModifyCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactModifyCallback</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyContactModification</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxContactModifyCallback</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">onContactModify</span><span class="p">(</span><span class="n">PxContactModifyPair</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">);</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And then implement the <a class="reference internal" href="../_api_build/class_px_contact_modify_callback.html#_CPPv4N23PxContactModifyCallback15onContactModifyEPC19PxContactModifyPair5PxU32" title="PxContactModifyCallback::onContactModify"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactModifyCallback::onContactModify()</span></code></a> function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MyContactModification::onContactModify</span><span class="p">(</span><span class="n">PxContactModifyPair</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">count</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Every pair of shapes comes with an array of contact points, that have a number of properties that can be modified, such as position, contact normal, and separation. See <a class="reference internal" href="../_api_build/struct_px_modifiable_contact.html#_CPPv419PxModifiableContact" title="PxModifiableContact"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxModifiableContact</span></code></a> and <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv412PxContactSet" title="PxContactSet"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactSet</span></code></a> for properties that can be modified.</p>
+<p>In addition to modifying contact properties, it is possible to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Set target velocities for each contact (see <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3" title="PxContactSet::setTargetVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setTargetVelocity()</span></code></a>)</p></li>
+<li><p>Limit the maximum impulse applied at each contact (see <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet13setMaxImpulseE5PxU326PxReal" title="PxContactSet::setMaxImpulse"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setMaxImpulse()</span></code></a>)</p></li>
+<li><p>Adjust inverse mass and inverse inertia scales separately for each body (see <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet16setInvMassScale0EK6PxReal" title="PxContactSet::setInvMassScale0"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setInvMassScale0()</span></code></a>, <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet16setInvMassScale1EK6PxReal" title="PxContactSet::setInvMassScale1"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setInvMassScale1()</span></code></a>, <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet19setInvInertiaScale0EK6PxReal" title="PxContactSet::setInvInertiaScale0"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setInvInertiaScale0()</span></code></a>, <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet19setInvInertiaScale1EK6PxReal" title="PxContactSet::setInvInertiaScale1"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setInvInertiaScale1()</span></code></a>)</p></li>
+</ul>
+</div></blockquote>
+<p>Conveyor belt-like effects can be achieved by setting target velocities.
+Best results are achieved by having target velocities running in tangential directions to the contact normal but the solver does also support target velocities in the direction of the contact normal.</p>
+<p>Note that there are no guarantees about the ordering of contact pairs or the actor/shape order within a pair.
+Therefore, when applying contact modification to a specific shape or actor, the callback code must check both:
+1) whether a given pair actually contains the shape/actor;
+and 2) what the shape/actor ordering is within the pair, since this order specifies the target-velocity frame convention.
+See the API docs of <a class="reference internal" href="../_api_build/class_px_contact_set.html#_CPPv4N12PxContactSet17setTargetVelocityE5PxU32RK6PxVec3" title="PxContactSet::setTargetVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactSet::setTargetVelocity()</span></code></a> for full details.</p>
+<p>The user can limit the impulse applied at each contact by limiting the maximum impulse applied at each contact. This can be useful to produce “soft” contact effects, e.g. to give the impression of energy dissipation due to compression or to limit the impulse applied on a dynamic body due to a kinematic collision. Note that limiting the maximum impulse can potentially lead to additional penetration and bodies passing through each-other.</p>
+<p>Adjusting mass and inertia scales can be used to tune how contacts between a pair of bodies affect the bodies’ linear and angular velocities respectively. Each body in the contact pair has a separate inverse mass and inverse inertia scale. These scales are initialized to 1 and can be adjusted as part of the callback. Note that these values perform local mass modification within the contact pair and affect all contacts within the pair.</p>
+<p>Uniformly scaling a body’s inverse mass and inverse inertia by the same value results in the body behaving like a body that is either heavier or lighter depending on the values used. Providing inverse mass/inverse inertia scales &lt; 1 results in the body appearing heavier; providing scales &gt; 1 result in the body appearing lighter. For example, inverse mass/inertia scales of 0.5 result in the body appearing to have double the mass. Providing inverse mass/inertia scales of 4 would result in the body appearing to have a quarter of its original mass. Providing inverse mass/inertia scale of 0 results in the body behaving as if it has infinite mass.</p>
+<p>However, it is also possible to non-uniform scale a body’s inverse mass and inverse inertia by providing different values to a body’s inverse mass and inverse inertia scale. For example, it is possible to reduce or increase the amount of angular velocity change as a result of contacts by adjusting just the inverse inertia scale. The use-cases for this kind of modification are extremely application-dependent but may involve, for example, tuning interactions between a player’s vehicle and traffic vehicles in an arcade-style driving game, where the player’s car is expected to be bumped by traffic vehicles but where it would be extremely frustrating to the player if the car was to spin-out as a result of the collision. This could also be achieved by making the traffic vehicles much lighter than the player’s vehicle but this may make the traffic vehicles appear “too light” and therefore damage the player’s immersion.</p>
+<p>When performing local mass modification, the impulse reported in <a class="reference internal" href="../_api_build/class_px_simulation_event_callback.html#_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32" title="PxSimulationEventCallback::onContact"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onContact()</span></code></a> will be relative to the locally scaled masses of the bodies involved in that contact. Therefore, this reported impulse may no longer accurately reflect the change in momentum caused by a given contact. In order to resolve this issue, we have provided the following methods in the rigid body extensions to extract the linear and angular impulse and velocity change caused by a contact using local mass modification:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">computeLinearAngularImpulse</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">globalPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">point</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">impulse</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invInertiaScale</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">linearImpulse</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">angularImpulse</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">computeVelocityDeltaFromImpulse</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">globalPose</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">point</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">impulse</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invInertiaScale</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deltaLinearVelocity</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deltaAngularVelocity</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>These methods return separate linear and angular impulse and velocity change values to reflect the fact that the mass and inertia may have been non-uniformly scaled. When local mass modification has been used, it may be necessary to extract separate linear and angular impulses for each contact point, for each body in the pair. Please note that these helper functions are intended to provide users with accurate impulse values and are by no means mandatory. For simple use-cases, e.g. triggering effects or damage based on impulse thresholds, the single impulse value reported by the contact report should be perfectly acceptable even when local mass modification has been used. However, if local mass modification has been used and the impulse values are being used for more complex behaviors, e.g. balance control for a ragdoll, then these helper functions will most-likely be required to achieve correct behavior. Please note that, in the case of articulations, <em>computeLinearAngularImpulse</em> will return the correct impulse applied on respective articulation link. However, <em>computeVelocityDeltaFromImpulse</em> will not return the correct velocity changes for an articulation link because it does not take the effect of any other links of the articulation into account.</p>
+<dl class="simple">
+<dt>In addition, the following considerations must be made when using local mass modification:</dt><dd><ul class="simple">
+<li><p>Force thresholding for callbacks will be based on the scalar impulse value in contact reports. This was calculated using the scaled mass/inertias of the bodies so using mass scaling may require these thresholds to be re-tuned.</p></li>
+<li><p>Maximum impulse clamping occurs in the solver on an impulse value operating on the scaled masses/inertias. As a result, the magnitude of applied impulses calculated from computeLinearAngularImpulse(…) may exceed the maxImpulse in situations where mass scaling was used. In situations where uniform mass scaling was used, the magnitude of the magnitude of linear impulse will not exceed massScale * maxImpulse and angular impulse will not exceed inertiaScale * maxImpulse.</p></li>
+</ul>
+</dd>
+</dl>
+<p>There are a couple of special requirements for the callback due to the fact that it is coming from deep inside the SDK. In particular, the callback should be thread safe and reentrant. In other words, the SDK may call <em>onContactModify()</em> from any thread and it may be called concurrently (i.e., asked to process sets of contact modification pairs simultaneously).</p>
+<p>The contact modification callback can be set using <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc21contactModifyCallbackE" title="PxSceneDesc::contactModifyCallback"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::contactModifyCallback</span></code></a> or <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene24setContactModifyCallbackEP23PxContactModifyCallback" title="PxScene::setContactModifyCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setContactModifyCallback()</span></code></a>.</p>
+</section>
+<hr class="docutils" />
+<section id="contact-reporting">
+<h2>Contact reporting<a class="headerlink" href="#contact-reporting" title="Permalink to this headline"></a></h2>
+<p>Here is an example for a contact event function, from <em>SnippetContactReport</em>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ContactReportCallback</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxSimulationEventCallback</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="n">onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">PX_UNUSED</span><span class="p">((</span><span class="n">pairHeader</span><span class="p">));</span><span class="w"></span>
+<span class="w">                </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">PxContactPairPoint</span><span class="o">&gt;</span><span class="w"> </span><span class="n">contactPoints</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">nbPairs</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">contactCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">contactCount</span><span class="p">;</span><span class="w"></span>
+<span class="w">                        </span><span class="k">if</span><span class="p">(</span><span class="n">contactCount</span><span class="p">)</span><span class="w"></span>
+<span class="w">                        </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                </span><span class="n">contactPoints</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+<span class="w">                                </span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">extractContacts</span><span class="p">(</span><span class="o">&amp;</span><span class="n">contactPoints</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">                                </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">j</span><span class="o">&lt;</span><span class="n">contactCount</span><span class="p">;</span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">                                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">gContactPositions</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">contactPoints</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">position</span><span class="p">);</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">gContactImpulses</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">contactPoints</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">impulse</span><span class="p">);</span><span class="w"></span>
+<span class="w">                                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                        </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p><em>ContactReportCallback</em> is a subclass of <a class="reference internal" href="../_api_build/class_px_simulation_event_callback.html#_CPPv425PxSimulationEventCallback" title="PxSimulationEventCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSimulationEventCallback</span></code></a>. <a class="reference internal" href="../_api_build/class_px_simulation_event_callback.html#_CPPv4N25PxSimulationEventCallback9onContactERK19PxContactPairHeaderPK13PxContactPair5PxU32" title="PxSimulationEventCallback::onContact"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSimulationEventCallback::onContact()</span></code></a> receives the pair for which the requested contact events (like e.g. <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eNOTIFY_TOUCH_FOUNDE" title="PxPairFlag::eNOTIFY_TOUCH_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></code></a>) have been triggered.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default collisions between kinematic rigid bodies and kinematic and static rigid bodies will not get reported. To enable these reports use the <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc21kineKineFilteringModeE" title="PxSceneDesc::kineKineFilteringMode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::kineKineFilteringMode</span></code></a> and <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc23staticKineFilteringModeE" title="PxSceneDesc::staticKineFilteringMode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticKineFilteringMode</span></code></a> parameters when creating a scene.</p>
+</div>
+<p>Frequently, users are only interested in contact reports if the force of impact is larger than a certain threshold. This allows to reduce the amount of reported pairs which need to get processed. To take advantage of this option the following additional configurations are necessary:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Use <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum29eNOTIFY_THRESHOLD_FORCE_FOUNDE" title="PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_FOUND</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum32eNOTIFY_THRESHOLD_FORCE_PERSISTSE" title="PxPairFlag::eNOTIFY_THRESHOLD_FORCE_PERSISTS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_PERSISTS</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum28eNOTIFY_THRESHOLD_FORCE_LOSTE" title="PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST</span></code></a> instead of <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eNOTIFY_TOUCH_FOUNDE" title="PxPairFlag::eNOTIFY_TOUCH_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></code></a> etc.</p></li>
+<li><p>Specify the threshold force for a dynamic rigid body through <a class="reference internal" href="../_api_build/class_px_rigid_dynamic.html#_CPPv4N14PxRigidDynamic25setContactReportThresholdE6PxReal" title="PxRigidDynamic::setContactReportThreshold"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setContactReportThreshold()</span></code></a>. If the body collides with an other object and the contact force is above the threshold, a report will get sent (if enabled according to the <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv410PxPairFlag" title="PxPairFlag"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxPairFlag</span></code></a> setting of the pair). If two colliding dynamic bodies both have a force threshold specified then the lower threshold will be used.</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a dynamic rigid body collides with multiple static objects, then the impact force of all those contacts will get summed up and used to compare against the force threshold. In other words, even if the impact force against each individual static object is below the threshold, the contact reports will still get sent for each pair if the sum of those forces exceeds the threshold.</p>
+</div>
+<section id="contact-reports-and-ccd">
+<h3>Contact Reports and CCD<a class="headerlink" href="#contact-reports-and-ccd" title="Permalink to this headline"></a></h3>
+<p>If continuous collision detection (CCD) with multiple passes is enabled, then a fast moving object might bounce on and off the same object multiple times during a single simulation step. By default, only the first impact will get reported as a <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eNOTIFY_TOUCH_FOUNDE" title="PxPairFlag::eNOTIFY_TOUCH_FOUND"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_FOUND</span></code></a> event in this case. To get events for the other impacts too, the <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum17eNOTIFY_TOUCH_CCDE" title="PxPairFlag::eNOTIFY_TOUCH_CCD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_CCD</span></code></a> has to be raised for the collision pair. This will trigger <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum17eNOTIFY_TOUCH_CCDE" title="PxPairFlag::eNOTIFY_TOUCH_CCD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_CCD</span></code></a> events for the non primary impacts. For performance reasons, the system can not always tell whether the contact pair lost touch in one of the previous CCD passes and thus can also not always tell whether the contact is new or has persisted. <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum17eNOTIFY_TOUCH_CCDE" title="PxPairFlag::eNOTIFY_TOUCH_CCD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eNOTIFY_TOUCH_CCD</span></code></a> just reports when the two collision objects were detected as being in contact during a CCD pass.</p>
+</section>
+</section>
+<section id="extracting-contact-information">
+<h2>Extracting Contact information<a class="headerlink" href="#extracting-contact-information" title="Permalink to this headline"></a></h2>
+<p>The <em>onContact</em> simulation event permits read-only access to all contact points for a given <a class="reference internal" href="../_api_build/struct_px_contact_pair.html#_CPPv413PxContactPair" title="PxContactPair"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactPair</span></code></a>. In previous releases, these were available as a flattened array of <em>PxContactPoint</em> objects. However, PhysX 3.3 introduced a new format for this data: the compressed contact stream. The contact information is now compressed into an appropriate format for a given <a class="reference internal" href="../_api_build/struct_px_contact_pair.html#_CPPv413PxContactPair" title="PxContactPair"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactPair</span></code></a> depending on certain properties, e.g. depending on the shapes involved, the properties of the contacts, materials and whether the contacts are modifiable.</p>
+<p>As there are a large number of combinations of different formats, the user is provided with two built-in mechanisms to access the contact data. The first approach provides a mechanism to extract contacts from a user buffer and can be used as below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MySimulationCallback::onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxContactPairPoint</span><span class="w"> </span><span class="n">contacts</span><span class="p">[</span><span class="n">bufferSize</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbContacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">extractContacts</span><span class="p">(</span><span class="n">contacts</span><span class="p">,</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbContacts</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contacts</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">position</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">impulse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contacts</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">impulse</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxU32</span><span class="w"> </span><span class="n">internalFaceIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contacts</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">internalFaceIndex0</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxU32</span><span class="w"> </span><span class="n">internalFaceIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">contacts</span><span class="p">[</span><span class="n">j</span><span class="p">].</span><span class="n">internalFaceIndex1</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="c1">//...</span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This approach requires copying data to a temporary buffer in order to access it. The second approach allows the user to iterate over the contact information without extracting their own copy:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MySimulationCallback::onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pairs</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">                    </span><span class="n">PxContactStreamIterator</span><span class="w"> </span><span class="n">iter</span><span class="p">(</span><span class="n">cp</span><span class="p">.</span><span class="n">contactPatches</span><span class="p">,</span><span class="w"> </span><span class="n">cp</span><span class="p">.</span><span class="n">contactPoints</span><span class="p">,</span><span class="w"> </span><span class="n">cp</span><span class="p">.</span><span class="n">getInternalFaceIndices</span><span class="p">(),</span><span class="w"> </span><span class="n">cp</span><span class="p">.</span><span class="n">patchCount</span><span class="p">,</span><span class="w"> </span><span class="n">cp</span><span class="p">.</span><span class="n">contactCount</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="o">*</span><span class="w"> </span><span class="n">impulses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cp</span><span class="p">.</span><span class="n">contactImpulses</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">flippedContacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">cp</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">eINTERNAL_CONTACTS_ARE_FLIPPED</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">hasImpulses</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">cp</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">PxContactPairFlag</span><span class="o">::</span><span class="n">eINTERNAL_HAS_IMPULSES</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbContacts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">hasNextPatch</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">iter</span><span class="p">.</span><span class="n">nextPatch</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">hasNextContact</span><span class="p">())</span><span class="w"></span>
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">iter</span><span class="p">.</span><span class="n">nextContact</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getContactPoint</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">impulse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasImpulses</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">dst</span><span class="p">.</span><span class="n">normal</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">impulses</span><span class="p">[</span><span class="n">nbContacts</span><span class="p">]</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">                </span><span class="n">PxU32</span><span class="w"> </span><span class="n">internalFaceIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flippedContacts</span><span class="w"> </span><span class="o">?</span><span class="w"></span>
+<span class="w">                    </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex1</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex0</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="n">PxU32</span><span class="w"> </span><span class="n">internalFaceIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flippedContacts</span><span class="w"> </span><span class="o">?</span><span class="w"></span>
+<span class="w">                    </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex0</span><span class="p">()</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">getFaceIndex1</span><span class="p">();</span><span class="w"></span>
+<span class="w">                </span><span class="c1">//...</span>
+<span class="w">                </span><span class="n">nbContacts</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This approach is slightly more involved because it requires the user to not only iterate over all of the data but also consider conditions like whether the pair has been flipped or whether impulses have been reported with the pair. However, this approach of iterating over the data in-place may be more efficient because it does not require copying data.</p>
+<section id="extra-contact-data">
+<h3>Extra Contact Data<a class="headerlink" href="#extra-contact-data" title="Permalink to this headline"></a></h3>
+<p>Since pointers to the actors of a contact pair are provided in contact reports, actor properties can be read directly within the callback. However, the pose and the velocity of an actor usually refer to the time of impact. If for some reasons the velocity after collision response is of interest, then the actor can not provide that information. Similarly, it is not possible to get the actor velocity or the pose at impact if those properties were changed by the user while the simulation was running (in such a case the newly set property values will be returned). Last but not least, if CCD with multiple passes is enabled, then a fast moving object might bounce on and off the same object multiple times. The object poses and velocities for each such impact can not get extracted from the actor pointers in the callback. For these scenarios, the PhysX SDK provides an additional contact stream that can hold all sorts of extra information related to the contact pair. This extra information is requested per pair through the pair flags <em>PxPairFlags</em> (see the API documentation of <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum20ePRE_SOLVER_VELOCITYE" title="PxPairFlag::ePRE_SOLVER_VELOCITY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::ePRE_SOLVER_VELOCITY</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum21ePOST_SOLVER_VELOCITYE" title="PxPairFlag::ePOST_SOLVER_VELOCITY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::ePOST_SOLVER_VELOCITY</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum19eCONTACT_EVENT_POSEE" title="PxPairFlag::eCONTACT_EVENT_POSE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eCONTACT_EVENT_POSE</span></code></a> for details). If requested, the extra data stream will be available as a member of the <a class="reference internal" href="../_api_build/struct_px_contact_pair_header.html#_CPPv419PxContactPairHeader" title="PxContactPairHeader"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactPairHeader</span></code></a> structure. The stream can then be parsed by using the predefined iterator <a class="reference internal" href="../_api_build/struct_px_contact_pair_extra_data_iterator.html#_CPPv430PxContactPairExtraDataIterator" title="PxContactPairExtraDataIterator"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactPairExtraDataIterator</span></code></a> or by some custom parsing code (see the implementation of <a class="reference internal" href="../_api_build/struct_px_contact_pair_extra_data_iterator.html#_CPPv430PxContactPairExtraDataIterator" title="PxContactPairExtraDataIterator"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxContactPairExtraDataIterator</span></code></a> for details about the format of the stream).</p>
+<p>Example code:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MySimulationCallback::onContact</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPairHeader</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairHeader</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPair</span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxContactPairExtraDataIterator</span><span class="w"> </span><span class="n">iter</span><span class="p">(</span><span class="n">pairHeader</span><span class="p">.</span><span class="n">extraDataStream</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">pairHeader</span><span class="p">.</span><span class="n">extraDataStreamSize</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">while</span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">nextItemSet</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">iter</span><span class="p">.</span><span class="n">postSolverVelocity</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">linearVelocityActor0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">postSolverVelocity</span><span class="o">-&gt;</span><span class="n">linearVelocity</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">linearVelocityActor1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iter</span><span class="p">.</span><span class="n">postSolverVelocity</span><span class="o">-&gt;</span><span class="n">linearVelocity</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span><span class="w"></span>
+<span class="w">            </span><span class="p">...</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Another example can be found in <em>SnippetContactReportCCD</em>.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="continuous-collision-detection">
+<span id="id2"></span><h2>Continuous Collision Detection<a class="headerlink" href="#continuous-collision-detection" title="Permalink to this headline"></a></h2>
+<p>When continuous collision detection (CCD) is turned on, the affected rigid bodies will not go through other objects at high velocities (a problem also known as tunnelling). To enable CCD, three things need to happen:</p>
+<ol class="arabic">
+<li><p>CCD needs to be turned on at scene level:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physx</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">PxSceneDesc</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxSceneFlag</span><span class="o">::</span><span class="n">eENABLE_CCD</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+<li><p>Pairwise CCD needs to be enabled in the pair filter:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="n">PxFilterFlags</span><span class="w"> </span><span class="nf">filterShader</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterObjectAttributes</span><span class="w"> </span><span class="n">attributes0</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData0</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterObjectAttributes</span><span class="w"> </span><span class="n">attributes1</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData1</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxPairFlags</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pairFlags</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">constantBlock</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">constantBlockSize</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eSOLVE_CONTACT</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eDETECT_DISCRETE_CONTACT</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">pairFlags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eDETECT_CCD_CONTACT</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlags</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="n">desc</span><span class="p">.</span><span class="n">filterShader</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">testCCDFilterShader</span><span class="p">;</span><span class="w"></span>
+<span class="n">physx</span><span class="o">-&gt;</span><span class="n">createScene</span><span class="p">(</span><span class="n">desc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+<li><p>CCD need to be enabled for each PxRigidBody that requires CCD:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidBody</span><span class="o">*</span><span class="w"> </span><span class="n">body</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">body</span><span class="o">-&gt;</span><span class="n">setRigidBodyFlag</span><span class="p">(</span><span class="n">PxRigidBodyFlag</span><span class="o">::</span><span class="n">eENABLE_CCD</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>Once enabled, CCD only activates between shapes whose relative speeds are above the sum of their respective CCD velocity thresholds. These velocity thresholds are automatically calculated based on the shape’s properties and support non-uniform scales.</p>
+<section id="contact-notification-and-modification">
+<h3>Contact Notification and Modification<a class="headerlink" href="#contact-notification-and-modification" title="Permalink to this headline"></a></h3>
+<p>CCD supports the full set of contact notification events that are supported with the discrete collision detection. For details on contact notification, see the documentation for Callbacks.</p>
+<p>CCD supports contact modification. To listen to these modify callbacks, derive from the class <a class="reference internal" href="../_api_build/class_px_c_c_d_contact_modify_callback.html#_CPPv426PxCCDContactModifyCallback" title="PxCCDContactModifyCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCCDContactModifyCallback</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyCCDContactModification</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">PxCCDContactModifyCallback</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">onCCDContactModify</span><span class="p">(</span><span class="n">PxContactModifyPair</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">);</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And then implement the <a class="reference internal" href="../_api_build/class_px_contact_modify_callback.html#_CPPv4N23PxContactModifyCallback15onContactModifyEPC19PxContactModifyPair5PxU32" title="PxContactModifyCallback::onContactModify"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxContactModifyCallback::onContactModify()</span></code></a> function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">MyContactModification::onContactModify</span><span class="p">(</span><span class="n">PxContactModifyPair</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">pairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">&lt;</span><span class="n">count</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">...</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This <em>onContactModify</em> callback operates using the same semantics as the discrete collision detection contact modification callbacks. For further details, please refer to the documentation on Callbacks.</p>
+<p>As with discrete collision detection, CCD will only emit contact modification events for a given pair if the user has specified the pair flag <a class="reference internal" href="../_api_build/struct_px_pair_flag.html#_CPPv4N10PxPairFlag4Enum16eMODIFY_CONTACTSE" title="PxPairFlag::eMODIFY_CONTACTS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFlag::eMODIFY_CONTACTS</span></code></a> in the filter shader.</p>
+</section>
+<section id="triggers">
+<h3>Triggers<a class="headerlink" href="#triggers" title="Permalink to this headline"></a></h3>
+<p>Currently, shapes flagged with <a class="reference internal" href="../_api_build/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum14eTRIGGER_SHAPEE" title="PxShapeFlag::eTRIGGER_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eTRIGGER_SHAPE</span></code></a> will not be included in CCD. However, it is possible to get trigger events from CCD by not flagging trigger shapes as <a class="reference internal" href="../_api_build/struct_px_shape_flag.html#_CPPv4N11PxShapeFlag4Enum14eTRIGGER_SHAPEE" title="PxShapeFlag::eTRIGGER_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eTRIGGER_SHAPE</span></code></a> and instead configuring the filter shaders to return the following state for pairs involving trigger shapes:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">pairFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eTRIGGER_DEFAULT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxPairFlag</span><span class="o">::</span><span class="n">eDETECT_CCD_CONTACT</span><span class="p">;</span><span class="w"></span>
+<span class="k">return</span><span class="w"> </span><span class="n">PxFilterFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><em>SnippetTriggers</em> illustrates the use of built-in triggers, and how to emulate them with regular shapes if you need CCD or trigger-trigger notifications.</p>
+</section>
+<section id="tuning-ccd">
+<h3>Tuning CCD<a class="headerlink" href="#tuning-ccd" title="Permalink to this headline"></a></h3>
+<p>The CCD should generally work without any tuning. However, there are 4 properties that can be adjusted:</p>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc12ccdMaxPassesE" title="PxSceneDesc::ccdMaxPasses"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::ccdMaxPasses</span></code></a>: this variable controls the number of CCD passes performed by PhysX. This is defaulted to 1, meaning that all objects are attempted to be updated to the time of impact (TOI) of their first contact. Any remaining time after the TOI of their first contact will be dropped. Increasing this value permits the CCD to run multiple passes. This reduces the likelihood of time being dropped but can increase the cost of the CCD.</p></li>
+<li><p><a class="reference internal" href="../_api_build/class_px_rigid_body.html#_CPPv4N11PxRigidBody27setMinCCDAdvanceCoefficientE6PxReal" title="PxRigidBody::setMinCCDAdvanceCoefficient"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::setMinCCDAdvanceCoefficient()</span></code></a>: this method allows you to adjust the amount by which the CCD advances objects in a given pass. By default, this value is 0.15, meaning that CCD will advance an object by the 0.15 * ccdThreshold, where ccdThreshold is a value computed per-shape that acts as a lower-bound of the maximum amount of time that could be consumed before there is a chance that the object could have tunnelled. The default value of 0.15 improves the fluidity of motion without risking missed collisions. Reducing this value can negatively impact fluidity but will reduce the likelihood of objects clipping at the end of a frame. Increasing this value may increase the likelihood of objects tunnelling. This value should only be set in the range [0,1].</p></li>
+<li><p><a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum20eDISABLE_CCD_RESWEEPE" title="PxSceneFlag::eDISABLE_CCD_RESWEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eDISABLE_CCD_RESWEEP</span></code></a>: enabling this flag disables CCD resweeps. This can result in missed collisions as the result of ricochets but has the potential to reduce the overhead of the CCD. In general, enabling this advancement mode still guarantees that objects will not pass through the static environment but no longer guarantees that dynamic objects with CCD enabled will not pass through each-other.</p></li>
+<li><p><a class="reference internal" href="../_api_build/struct_px_rigid_body_flag.html#_CPPv4N15PxRigidBodyFlag4Enum20eENABLE_CCD_FRICTIONE" title="PxRigidBodyFlag::eENABLE_CCD_FRICTION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eENABLE_CCD_FRICTION</span></code></a>: enabling this flag enables the application of friction forces in the CCD. This is disabled by default. As the CCD operates using only linear motion, enabling friction inside CCD can cause visual artefacts.</p></li>
+</ol>
+</section>
+<section id="performance-implications">
+<h3>Performance Implications<a class="headerlink" href="#performance-implications" title="Permalink to this headline"></a></h3>
+<p>Enabling CCD on a scene/all bodies in a scene should be relatively efficient but it will have some performance impact even when all the objects in the scene are moving relatively slowly. A great deal of effort has been put into optimizing the CCD and as a result, this additional overhead should only constitute a very small portion of the overall simulation time when the objects are moving slowly. As the objects’ velocities increase, the CCD overhead will increase, especially if there are a lot of high-speed objects in close proximity. Increasing the number of CCD passes can make the CCD more expensive although the CCD will terminate early if the additional passes are not required.</p>
+</section>
+<section id="limitations">
+<h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline"></a></h3>
+<p>The CCD system is a best-effort conservative advancement scheme. It runs a finite number of CCD substeps (defaulted to 1) and drops any remaining time. Usually, time is only dropped on high-speed objects at the moment of impact so it is not noticeable. However, this artefact can become noticeable if you simulate an object that is sufficiently small/thin relative to the simulation time-step that the object could tunnel if it was accelerated by gravity from rest for 1 frame, i.e. a paper-thin rigid body. Such an object would always be moving at above its CCD velocity threshold and could result in a large proportion of simulation time being dropped for that object and any objects in the same island as it (any objects whose bounds overlap the bounds of that object). This could cause a noticeable slow-down/stuttering effect caused by the objects in that island becoming noticeably out-of-sync with the rest of the simulation. It is therefore recommended that paper-thin/tiny objects should be avoided if possible.</p>
+<p>It is also recommended that you filter away CCD interactions between bodies that are constrained together, e.g. limbs in the same ragdoll. Allowing CCD interactions between limbs of the same ragdoll could increase the cost of CCD and also potentially cause time to be dropped unnecessarily. CCD interactions are automatically disabled between links in an articulation.</p>
+</section>
+</section>
+<section id="speculative-ccd">
+<h2>Speculative CCD<a class="headerlink" href="#speculative-ccd" title="Permalink to this headline"></a></h2>
+<p>In addition to the above sweep-based CCD, PhysX also provides a cheaper but less robust approach called speculative CCD. This approach functions differently to the sweep-based CCD in that it operates entirely as part of the discrete simulation by inflating contact offsets based on object motion and depending on the constraint solver to ensure that objects do not tunnel through each-other. Contrary to the sweep-based CCD, speculative CCD can catch missed contacts generated by fast angular motions. This is why the sweep-based CCD is sometimes called <em>linear CCD</em>, and speculative CCD is sometimes called <em>angular CCD</em>.</p>
+<p>This approach generally works well and, unlike the sweep-based CCD, it is legal to enable speculative CCD on kinematic actors. However, there are cases where it can fail to ensure objects do not pass through each-other. As an example, if the constraint solver accelerates an actor (as a result of a collision or joint) such that the actor passes entirely through objects during that time-step, speculative CCD can result in tunneling.</p>
+<p>To enable this feature, raise <a class="reference internal" href="../_api_build/struct_px_rigid_body_flag.html#_CPPv4N15PxRigidBodyFlag4Enum23eENABLE_SPECULATIVE_CCDE" title="PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eENABLE_SPECULATIVE_CCD</span></code></a> on the rigid body that requires CCD:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidBody</span><span class="o">*</span><span class="w"> </span><span class="n">body</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">body</span><span class="o">-&gt;</span><span class="n">setRigidBodyFlag</span><span class="p">(</span><span class="n">PxRigidBodyFlag</span><span class="o">::</span><span class="n">eENABLE_SPECULATIVE_CCD</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Unlike the sweep-based CCD, this form of CCD does not require settings to be raised on either the scene or on the pair in the filter shader.</p>
+<p>Note that this approach works best with PCM collision detection. It may not function as well if the legacy SAT-based collision detection approach is used.</p>
+<p>Since PhysX 5 it is legal to enable both sweep-based CCD and speculative CCD at the same time on a given rigid body. This often results in a best-of-both-worlds behavior, enabling both linear and angular CCD on objects.</p>
+</section>
+<section id="raycast-ccd">
+<h2>Raycast CCD<a class="headerlink" href="#raycast-ccd" title="Permalink to this headline"></a></h2>
+<p>The PhysX SDK supports an alternative CCD implementation based on simple raycasts. This “raycast CCD” algorithm is available in PhysX Extensions. Contrary to the built-in CCD algorithm implemented within the PhysX SDK, this cheaper and simpler alternative version is fully implemented outside of the SDK itself.</p>
+<p>After the traditional simulate/fetchResults calls, the system performs raycasts from the shapes’ center positions to double-check that they did not tunnel. If tunnelling is detected for an object, it is moved back to a previous position along the ray, in an overlap position. Then next frame, the SDK’s contact generation takes over and generates a convincing motion. There are some subtle details not described here, but this is how it works in a nutshell.</p>
+<p>Since it is raycast-based, the solution is not perfect. In particular, small dynamic objects can still go through the static world if the ray goes through a crack between edges, or a small hole in the world (like the keyhole from a door). Also, dynamic-vs-dynamic CCD is very approximate. It only works well for fast-moving dynamic objects colliding against slow-moving dynamic objects. Other known limitations are that it is currently only implemented for <a class="reference internal" href="../_api_build/class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code></a> objects (not for <a class="reference internal" href="../_api_build/class_px_articulation_link.html#_CPPv418PxArticulationLink" title="PxArticulationLink"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationLink</span></code></a>), and for simple actors with one shape (not for “compounds”).</p>
+<p>However the implementation should be able to prevent important objects from leaving the world, provided the world is watertight. The code is very small, easy to follow or modify, and its performance is often better overall than for the built-in CCD. So it can be a valuable alternative if the default CCD becomes too expensive. As it stands now though, the code is only an example of how to write such an alternative, not a production-ready system.</p>
+</section>
+<section id="ccd-snippet">
+<h2>CCD snippet<a class="headerlink" href="#ccd-snippet" title="Permalink to this headline"></a></h2>
+<p>The different CCD methods are all demonstrated in <em>SnippetCCD</em>.</p>
+<img alt="../_images/SnippetCCD.png" src="../_images/SnippetCCD.png" />
+</section>
+<hr class="docutils" />
+<section id="persistent-contact-manifold-pcm">
+<h2>Persistent Contact Manifold (PCM)<a class="headerlink" href="#persistent-contact-manifold-pcm" title="Permalink to this headline"></a></h2>
+<p>The PhysX SDK provides two types of collision detection:</p>
+<ol class="arabic simple">
+<li><p>Legacy collision detection</p></li>
+</ol>
+<p>The legacy collision detection system uses a mixture of SAT (Separating Axis Theorem) and distance-based collision detection to generate full contact manifolds. It generates all the potential contacts in one frame, so it lends itself better to stable stacking. This approach is stable for small contact offsets and rest offsets but may not generate the correct contact points when large offsets are used because it approximates the contact points in these situations by plane shifting.</p>
+<ol class="arabic simple" start="2">
+<li><p>Persistent Contact Manifold (PCM)</p></li>
+</ol>
+<p>PCM is a fully distance-based collision detection system. PCM generates a full manifold of contacts when two shapes first come into contact. It recycles and updates the existing contacts from the previous frame in the manifold and then it generates a new contact in the subsequent frame if the shapes move relative to each-other more than a threshold amount or if a contact was dropped from the manifold. If too many contacts are dropped from the manifold due to a large amount of relative motion in a frame, then full manifold generation is re-run. This approach is quite efficient in terms of performance and memory. However, because PCM potentially generates fewer contacts than the default collision detection, it might reduce stacking stability when simulating tall stacks with insufficient solver iterations. As this approach is distance-based, it will generate the correct contact points for arbitrary contact offsets/rest offsets.</p>
+<p>PCM is now the default collision detection method in PhysX. It can be enabled or disabled using <a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum11eENABLE_PCME" title="PxSceneFlag::eENABLE_PCM"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_PCM</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSceneDesc</span><span class="w"> </span><span class="n">sceneDesc</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxSceneFlag</span><span class="o">::</span><span class="n">eENABLE_PCM</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

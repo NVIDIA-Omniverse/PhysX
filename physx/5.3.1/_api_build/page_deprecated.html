@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deprecated List &mdash; physx 5.3.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Structs" href="structs.html" />
+    <link rel="prev" title="Pages" href="pages.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="groups.html">Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="pages.html">Pages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Deprecated List</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="unions.html">Unions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="pages.html">Pages</a> &raquo;</li>
+<li>Deprecated List</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="deprecated-list">
+<h1>Deprecated List<a class="headerlink" href="#deprecated-list" title="Permalink to this headline"></a></h1>
+<p id="deprecated_1_deprecated000018"><dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="define_group___serializers_1ga58cfb644e0a72e0f2be6624397735411.html#group___serializers_1ga58cfb644e0a72e0f2be6624397735411"><span class="std std-ref"><span class="pre">PX_DELETE_REPX_SERIALIZER</span></span></a>&#160; <span class="pre">(x)</span></dt>
+<dd><p>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="define_group___serializers_1ga6018c37f238db16a878cfcba49091c4a.html#group___serializers_1ga6018c37f238db16a878cfcba49091c4a"><span class="std std-ref"><span class="pre">PX_NEW_REPX_SERIALIZER</span></span></a>&#160; <span class="pre">(T)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000017"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache_1aee4b49cb7f07370d3f7dfea378fa61a5"><span class="std std-ref"><span class="pre">PxArticulationCache::jointSolverForces</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000036"></span>Use linkIncomingJointForce instead. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache_1abf278bdec2b8afdc2ae1dba3e07020d4"><span class="std std-ref"><span class="pre">PxArticulationCache::sensorForces</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000037"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_cache_flag.html#class_px_articulation_cache_flag_1a05d4d9e362e158961f000323c727333aa4754917017f3941219683bc482a1f2a2"><span class="std std-ref"><span class="pre">PxArticulationCacheFlag::eJOINT_SOLVER_FORCES</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000033"></span>Solver constraint joint forces, see <a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache_1aee4b49cb7f07370d3f7dfea378fa61a5"><span class="std std-ref">PxArticulationCache::jointSolverForces</span></a>.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_cache_flag.html#class_px_articulation_cache_flag_1a05d4d9e362e158961f000323c727333aa29dcc0d1f29a5fec1890ca2735a8f26b"><span class="std std-ref"><span class="pre">PxArticulationCacheFlag::eSENSOR_FORCES</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000032"></span>The spatial sensor forces, see <a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache_1abf278bdec2b8afdc2ae1dba3e07020d4"><span class="std std-ref">PxArticulationCache::sensorForces</span></a>.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="struct_px_articulation_flag.html#struct_px_articulation_flag_1a89b0e25f041302ae04e5cc0b509a7609a80bb537e98bab48399905f57976aee08"><span class="std std-ref"><span class="pre">PxArticulationFlag::eCOMPUTE_JOINT_FORCES</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000043"></span>Enable in order to be able to query joint solver (i.e. constraint) forces using <a class="reference internal" href="class_px_articulation_cache.html#class_px_articulation_cache_1aee4b49cb7f07370d3f7dfea378fa61a5"><span class="std std-ref">PxArticulationCache::jointSolverForces</span></a>.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_gpu_data_type.html#class_px_articulation_gpu_data_type_1a89a0fdc427b5ebf4224909379bdc7e7ea7eed9dd68bd45e9afd36c186155527d2"><span class="std std-ref"><span class="pre">PxArticulationGpuDataType::eJOINT_SOLVER_FORCE</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000030"></span>The computed joint constraint solver forces, read only, see <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3cd322715e047fd877146052075dff2b"><span class="std std-ref">PxScene::copyArticulationData()</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_gpu_data_type.html#class_px_articulation_gpu_data_type_1a89a0fdc427b5ebf4224909379bdc7e7eaef39ac28c48e97779c107c2147e485e8"><span class="std std-ref"><span class="pre">PxArticulationGpuDataType::eSENSOR_FORCE</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000031"></span>The spatial sensor forces, read only, see <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3cd322715e047fd877146052075dff2b"><span class="std std-ref">PxScene::copyArticulationData()</span></a></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1ac1bdab3f7e8db2fb8eb105982948735e"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::createSensor</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_articulation_link.html#class_px_articulation_link"><span class="std std-ref"><span class="pre">PxArticulationLink</span></span></a> <span class="pre">*link,</span> <span class="pre">const</span> <span class="pre">PxTransform</span> <span class="pre">&amp;relativePose)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000038"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1a06c63c7cdea1998f8975aa1618302216"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::getNbSensors</span></span></a>&#160; <span class="pre">()=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000040"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_articulation_reduced_coordinate.html#class_px_articulation_reduced_coordinate_1ace433e4096e35c558decbb3c5fb353de"><span class="std std-ref"><span class="pre">PxArticulationReducedCoordinate::getSensors</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_articulation_sensor.html#class_px_articulation_sensor"><span class="std std-ref"><span class="pre">PxArticulationSensor</span></span></a> <span class="pre">**userBuffer,</span> <span class="pre">PxU32</span> <span class="pre">bufferSize,</span> <span class="pre">PxU32</span> <span class="pre">startIndex=0)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000039"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_articulation_sensor.html#class_px_articulation_sensor"><span class="std std-ref"><span class="pre">PxArticulationSensor</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000035"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_articulation_sensor_flag.html#struct_px_articulation_sensor_flag"><span class="std std-ref"><span class="pre">PxArticulationSensorFlag</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000034"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_binary_converter.html#class_px_binary_converter"><span class="std std-ref"><span class="pre">PxBinaryConverter</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000009"></span>Binary conversion and binary meta data are deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__common.html#group__common_1ga9e6be7ab72eead617e6e0d7a6dc7c19b"><span class="std std-ref"><span class="pre">PxBinaryMetaDataCallback</span></span></a>&#160; <span class="pre">)(</span><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref"><span class="pre">PxOutputStream</span></span></a> <span class="pre">&amp;stream)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000001"></span>Binary conversion and binary meta data are deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_b_v_h33_midphase_desc.html#struct_px_b_v_h33_midphase_desc"><span class="std std-ref"><span class="pre">PxBVH33MidphaseDesc</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000007"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html#class_px_b_v_h33_triangle_mesh"><span class="std std-ref"><span class="pre">PxBVH33TriangleMesh</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000029"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="struct_px_convex_flag.html#struct_px_convex_flag_1a4b7bd21fa96c72b320a39e880208b4b6a8126f89c7d2dac99246261ca6a7ae067"><span class="std std-ref"><span class="pre">PxConvexFlag::eGPU_COMPATIBLE</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000008"></span>since PhysX 5.2. Setting <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params_1ad9c00d38bdcca1c324bba906706d1c63"><span class="std std-ref">PxCookingParams::buildGPUData</span></a> to true always cooks GPU-compatible meshes.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group___serializers.html#group___serializers_1gaab6b6349b63fa1dad564054d70c9e0dd"><span class="std std-ref"><span class="pre">PxCreateRepXObject</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">TDataType</span> <span class="pre">*inType,</span> <span class="pre">const</span> <span class="pre">physx::PxSerialObjectId</span> <span class="pre">inId)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000014"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group___serializers.html#group___serializers_1gad1d84f290c002cdcccacdfc4fabe5b43"><span class="std std-ref"><span class="pre">PxCreateRepXObject</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">physx::PxBase</span> <span class="pre">*inType,</span> <span class="pre">const</span> <span class="pre">physx::PxSerialObjectId</span> <span class="pre">inId)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000015"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group___serializers.html#group___serializers_1gaa812e5de613804107c0fbaea5ae1c352"><span class="std std-ref"><span class="pre">PxCreateRepXObject</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">TDataType</span> <span class="pre">*inType)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000016"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint_1a51b4b407ec90d74c9155d303433efdca"><span class="std std-ref"><span class="pre">PxD6Joint::getLinearLimit</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000012"></span>Use getDistanceLimit instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint_1a4656e67e1cbf34d7de568970ed80fa0e"><span class="std std-ref"><span class="pre">PxD6Joint::getTwist</span></span></a>&#160; <span class="pre">()</span> <span class="pre">const</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000010"></span>Use getTwistAngle instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_d6_joint.html#class_px_d6_joint_1a15d7e18a2bd253f7facc0016c4874d2d"><span class="std std-ref"><span class="pre">PxD6Joint::setLinearLimit</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="class_px_joint_linear_limit.html#class_px_joint_linear_limit"><span class="std std-ref"><span class="pre">PxJointLinearLimit</span></span></a> <span class="pre">&amp;limit)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000011"></span>Use setDistanceLimit instead. Deprecated since PhysX version 4.0  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="struct_px_friction_type.html#struct_px_friction_type_1a603c53fd85805e2528a338252496a96ba3db131f3d5cb7b55f36e0b0d2e3cac6d"><span class="std std-ref"><span class="pre">PxFrictionType::eONE_DIRECTIONAL</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000041"></span>Please do not use any longer.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="struct_px_hit_flag.html#struct_px_hit_flag_1a44c173f6ddf0522ffbd8fa3c585e6b64a639d134a27861f74e3721dbd7be65bbc"><span class="std std-ref"><span class="pre">PxHitFlag::eMESH_ANY</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000028"></span>Deprecated, please use eANY_HIT instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_mesh_cooking_hint.html#struct_px_mesh_cooking_hint"><span class="std std-ref"><span class="pre">PxMeshCookingHint</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000006"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_rep_x_instantiation_args.html#struct_px_rep_x_instantiation_args"><span class="std std-ref"><span class="pre">PxRepXInstantiationArgs</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000020"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_rep_x_object.html#struct_px_rep_x_object"><span class="std std-ref"><span class="pre">PxRepXObject</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000019"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_rep_x_serializer.html#class_px_rep_x_serializer"><span class="std std-ref"><span class="pre">PxRepXSerializer</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000013"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a634f2a5a59c46e975e61d096af986fc4"><span class="std std-ref"><span class="pre">PxSerialization::createBinaryConverter</span></span></a>&#160; <span class="pre">()</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000026"></span>Binary conversion and binary meta data are deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1af2b460d435af5210fac525802655395c"><span class="std std-ref"><span class="pre">PxSerialization::createCollectionFromXml</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_input_data.html#class_px_input_data"><span class="std std-ref"><span class="pre">PxInputData</span></span></a> <span class="pre">&amp;inputData,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params"><span class="std std-ref"><span class="pre">PxCookingParams</span></span></a> <span class="pre">&amp;params,</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr,</span> <span class="pre">const</span> <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">*externalRefs=NULL,</span> <a class="reference internal" href="class_px_string_table.html#class_px_string_table"><span class="std std-ref"><span class="pre">PxStringTable</span></span></a> <span class="pre">*stringTable=NULL,</span> <a class="reference internal" href="class_px_serialization.html#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref"><span class="pre">PxXmlMiscParameter</span></span></a> <span class="pre">*outArgs=NULL)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000022"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a86026f68eb651de87e4a7720bc708893"><span class="std std-ref"><span class="pre">PxSerialization::dumpBinaryMetaData</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref"><span class="pre">PxOutputStream</span></span></a> <span class="pre">&amp;outputStream,</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000025"></span>Binary conversion and binary meta data are deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_serialization.html#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref"><span class="pre">PxSerialization::PxXmlMiscParameter</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000021"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a159728a265b7ed81cd5cf329f8cad30e"><span class="std std-ref"><span class="pre">PxSerialization::serializeCollectionToBinaryDeterministic</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref"><span class="pre">PxOutputStream</span></span></a> <span class="pre">&amp;outputStream,</span> <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">&amp;collection,</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr,</span> <span class="pre">const</span> <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">*externalRefs=NULL,</span> <span class="pre">bool</span> <span class="pre">exportNames=false)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000024"></span>Deterministic binary serialization is deprecated. <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a> might become deterministic in the future. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization.html#class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref"><span class="pre">PxSerialization::serializeCollectionToXml</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref"><span class="pre">PxOutputStream</span></span></a> <span class="pre">&amp;outputStream,</span> <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">&amp;collection,</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref"><span class="pre">PxSerializationRegistry</span></span></a> <span class="pre">&amp;sr,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_cooking_params.html#struct_px_cooking_params"><span class="std std-ref"><span class="pre">PxCookingParams</span></span></a> <span class="pre">*params=NULL,</span> <span class="pre">const</span> <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref"><span class="pre">PxCollection</span></span></a> <span class="pre">*externalRefs=NULL,</span> <a class="reference internal" href="class_px_serialization.html#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref"><span class="pre">PxXmlMiscParameter</span></span></a> <span class="pre">*inArgs=NULL)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000023"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a3551805f317e2ff29b4c5e521f67886a"><span class="std std-ref"><span class="pre">PxSerializationRegistry::getRepXSerializer</span></span></a>&#160; <span class="pre">(const</span> <span class="pre">char</span> <span class="pre">*typeName)</span> <span class="pre">const</span> <span class="pre">=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000005"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a10e39bebee808707bff3c73f01d60f07"><span class="std std-ref"><span class="pre">PxSerializationRegistry::registerBinaryMetaDataCallback</span></span></a>&#160; <span class="pre">(PxBinaryMetaDataCallback</span> <span class="pre">callback)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000002"></span>Binary conversion and binary meta data are deprecated. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a8c22f511770403078c3a0616251014e4"><span class="std std-ref"><span class="pre">PxSerializationRegistry::registerRepXSerializer</span></span></a>&#160; <span class="pre">(PxType</span> <span class="pre">type,</span> <a class="reference internal" href="class_px_rep_x_serializer.html#class_px_rep_x_serializer"><span class="std std-ref"><span class="pre">PxRepXSerializer</span></span></a> <span class="pre">&amp;serializer)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000003"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a8edf5488d4e8c78ba16531937858d80c"><span class="std std-ref"><span class="pre">PxSerializationRegistry::unregisterRepXSerializer</span></span></a>&#160; <span class="pre">(PxType</span> <span class="pre">type)=0</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000004"></span>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics. </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="class_px_soft_body_ext.html#class_px_soft_body_ext_1ab0f4bd084cb64050d59a0e69e1ea800e"><span class="std std-ref"><span class="pre">PxSoftBodyExt::commit</span></span></a>&#160; <span class="pre">(</span><a class="reference internal" href="class_px_soft_body.html#class_px_soft_body"><span class="std std-ref"><span class="pre">PxSoftBody</span></span></a> <span class="pre">&amp;softBody,</span> <span class="pre">PxSoftBodyDataFlags</span> <span class="pre">flags,</span> <span class="pre">PxVec4</span> <span class="pre">*simPositionsPinned,</span> <span class="pre">PxVec4</span> <span class="pre">*simVelocitiesPinned,</span> <span class="pre">PxVec4</span> <span class="pre">*collPositionsPinned,</span> <span class="pre">PxVec4</span> <span class="pre">*restPositionsPinned,</span> <span class="pre">CUstream</span> <span class="pre">stream=CUstream(0))</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000027"></span>Use <a class="reference internal" href="class_px_soft_body_ext.html#class_px_soft_body_ext_1aba6f7c9b5234efbefe8ede0dda666103"><span class="std std-ref">copyToDevice()</span></a> instead.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="struct_px_trigger_pair.html#struct_px_trigger_pair_1a483aaaaecb45e77230879bb0b303b8df"><span class="std std-ref"><span class="pre">PxTriggerPair::otherShape</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000042"></span>(see <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback_1a768b2ee9fe28736da3fcdc6a0eae9733"><span class="std std-ref">PxSimulationEventCallback::onTrigger()</span></a>) If collision between trigger shapes is enabled, then this member might point to a trigger shape as well.  </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1ga94acdfaf348b6545f87f6ec0e975deec"><span class="std std-ref"><span class="pre">PxVehicleDifferentialStateUpdate</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_legacy_params.html#struct_px_vehicle_four_wheel_drive_differential_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleFourWheelDriveDifferentialLegacyParams</span></span></a> <span class="pre">&amp;diffParams,</span> <span class="pre">const</span> <span class="pre">PxVehicleArrayData&lt;</span> <span class="pre">const</span> <span class="pre">PxVehicleWheelRigidBody1dState</span> <span class="pre">&gt;</span> <span class="pre">&amp;wheelStates,</span> <a class="reference internal" href="struct_px_vehicle_differential_state.html#struct_px_vehicle_differential_state"><span class="std std-ref"><span class="pre">PxVehicleDifferentialState</span></span></a> <span class="pre">&amp;diffState)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000045"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_legacy_params.html#struct_px_vehicle_four_wheel_drive_differential_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleFourWheelDriveDifferentialLegacyParams</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000048"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1ga22441497590a052ecf5ffc9fc9b9e6c8"><span class="std std-ref"><span class="pre">PxVehicleLegacyDifferentialTorqueRatiosCompute</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_legacy_params.html#struct_px_vehicle_four_wheel_drive_differential_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleFourWheelDriveDifferentialLegacyParams</span></span></a> <span class="pre">&amp;diffParams,</span> <span class="pre">const</span> <span class="pre">PxVehicleArrayData&lt;</span> <span class="pre">const</span> <span class="pre">PxVehicleWheelRigidBody1dState</span> <span class="pre">&gt;</span> <span class="pre">&amp;wheelOmegas,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">nbWheels,</span> <span class="pre">PxReal</span> <span class="pre">*diffTorqueRatios)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000047"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1ga2c4081462e87512847a595cf7c80a938"><span class="std std-ref"><span class="pre">PxVehicleLegacyDifferentialWheelSpeedContributionsCompute</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_legacy_params.html#struct_px_vehicle_four_wheel_drive_differential_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleFourWheelDriveDifferentialLegacyParams</span></span></a> <span class="pre">&amp;diffParams,</span> <span class="pre">const</span> <span class="pre">PxU32</span> <span class="pre">nbWheels,</span> <span class="pre">PxReal</span> <span class="pre">*diffAveWheelSpeedContributions)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000046"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html#class_px_vehicle_legacy_four_wheel_drive_differential_state_component"><span class="std std-ref"><span class="pre">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000044"></span> </p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html#class_px_vehicle_legacy_suspension_component"><span class="std std-ref"><span class="pre">PxVehicleLegacySuspensionComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000049"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="class_px_vehicle_legacy_tire_component.html#class_px_vehicle_legacy_tire_component"><span class="std std-ref"><span class="pre">PxVehicleLegacyTireComponent</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000052"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Class</span> <a class="reference internal" href="struct_px_vehicle_suspension_force_legacy_params.html#struct_px_vehicle_suspension_force_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleSuspensionForceLegacyParams</span></span></a></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000051"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1gad376f4622fbe267503d29ad4a7d52dd7"><span class="std std-ref"><span class="pre">PxVehicleSuspensionLegacyForceUpdate</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_suspension_params.html#struct_px_vehicle_suspension_params"><span class="std std-ref"><span class="pre">PxVehicleSuspensionParams</span></span></a> <span class="pre">&amp;suspensionParams,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_suspension_force_legacy_params.html#struct_px_vehicle_suspension_force_legacy_params"><span class="std std-ref"><span class="pre">PxVehicleSuspensionForceLegacyParams</span></span></a> <span class="pre">&amp;suspensionForceParams,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#struct_px_vehicle_road_geometry_state"><span class="std std-ref"><span class="pre">PxVehicleRoadGeometryState</span></span></a> <span class="pre">&amp;roadGeometryState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_suspension_state.html#struct_px_vehicle_suspension_state"><span class="std std-ref"><span class="pre">PxVehicleSuspensionState</span></span></a> <span class="pre">&amp;suspensionState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_suspension_compliance_state.html#struct_px_vehicle_suspension_compliance_state"><span class="std std-ref"><span class="pre">PxVehicleSuspensionComplianceState</span></span></a> <span class="pre">&amp;complianceState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#struct_px_vehicle_rigid_body_state"><span class="std std-ref"><span class="pre">PxVehicleRigidBodyState</span></span></a> <span class="pre">&amp;rigidBodyState,</span> <span class="pre">const</span> <span class="pre">PxVec3</span> <span class="pre">&amp;gravity,</span> <a class="reference internal" href="struct_px_vehicle_suspension_force.html#struct_px_vehicle_suspension_force"><span class="std std-ref"><span class="pre">PxVehicleSuspensionForce</span></span></a> <span class="pre">&amp;suspensionForce)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000050"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1ga62162ae7a8653731303103d6e2f29fa7"><span class="std std-ref"><span class="pre">PxVehicleTireDirsLegacyUpdate</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_suspension_params.html#struct_px_vehicle_suspension_params"><span class="std std-ref"><span class="pre">PxVehicleSuspensionParams</span></span></a> <span class="pre">&amp;suspensionParams,</span> <span class="pre">const</span> <span class="pre">PxReal</span> <span class="pre">steerAngle,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#struct_px_vehicle_road_geometry_state"><span class="std std-ref"><span class="pre">PxVehicleRoadGeometryState</span></span></a> <span class="pre">&amp;roadGeometryState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#struct_px_vehicle_rigid_body_state"><span class="std std-ref"><span class="pre">PxVehicleRigidBodyState</span></span></a> <span class="pre">&amp;rigidBodyState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_frame.html#struct_px_vehicle_frame"><span class="std std-ref"><span class="pre">PxVehicleFrame</span></span></a> <span class="pre">&amp;frame,</span> <a class="reference internal" href="struct_px_vehicle_tire_direction_state.html#struct_px_vehicle_tire_direction_state"><span class="std std-ref"><span class="pre">PxVehicleTireDirectionState</span></span></a> <span class="pre">&amp;tireDirectionState)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000053"></span></p>
+</dd></dl>
+
+<dl>
+<dt class="sig sig-object cpp">
+<span class="pre">Member</span> <a class="reference internal" href="group__vehicle2.html#group__vehicle2_1ga9d08cb80b44aef04969566e1fae6fe33"><span class="std std-ref"><span class="pre">PxVehicleTireSlipsLegacyUpdate</span></span></a>&#160; <span class="pre">(const</span> <a class="reference internal" href="struct_px_vehicle_wheel_params.html#struct_px_vehicle_wheel_params"><span class="std std-ref"><span class="pre">PxVehicleWheelParams</span></span></a> <span class="pre">&amp;wheelParams,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_tire_slip_params.html#struct_px_vehicle_tire_slip_params"><span class="std std-ref"><span class="pre">PxVehicleTireSlipParams</span></span></a> <span class="pre">&amp;tireSlipParams,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_wheel_actuation_state.html#struct_px_vehicle_wheel_actuation_state"><span class="std std-ref"><span class="pre">PxVehicleWheelActuationState</span></span></a> <span class="pre">&amp;actuationState,</span> <a class="reference internal" href="struct_px_vehicle_tire_speed_state.html#struct_px_vehicle_tire_speed_state"><span class="std std-ref"><span class="pre">PxVehicleTireSpeedState</span></span></a> <span class="pre">&amp;tireSpeedState,</span> <span class="pre">const</span> <a class="reference internal" href="struct_px_vehicle_wheel_rigid_body1d_state.html#struct_px_vehicle_wheel_rigid_body1d_state"><span class="std std-ref"><span class="pre">PxVehicleWheelRigidBody1dState</span></span></a> <span class="pre">&amp;wheelRigidBody1dState,</span> <a class="reference internal" href="struct_px_vehicle_tire_slip_state.html#struct_px_vehicle_tire_slip_state"><span class="std std-ref"><span class="pre">PxVehicleTireSlipState</span></span></a> <span class="pre">&amp;tireSlipState)</span></dt>
+<dd><p><span class="target" id="deprecated_1_deprecated000054"></span></p>
+</dd></dl>
+
+</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2023, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 11, 2023.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
