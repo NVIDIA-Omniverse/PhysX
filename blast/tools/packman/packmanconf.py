@@ -34,9 +34,9 @@ def init():
     """
     major = sys.version_info[0]
     minor = sys.version_info[1]
-    if major != 3 or minor != 7:
+    if major != 3 or minor != 10:
         raise RuntimeError(
-            f"This version of packman requires Python 3.7.x, but {major}.{minor} was provided"
+            f"This version of packman requires Python 3.10.x, but {major}.{minor} was provided"
         )
     conf_dir = os.path.dirname(os.path.abspath(__file__))
     os.environ["PM_INSTALL_PATH"] = conf_dir
@@ -56,7 +56,7 @@ def get_packages_root(conf_dir: str) -> str:
         elif platform_name == "Darwin":
             # macOS
             root = os.path.join(
-                os.path.expanduser("~"), "/Library/Application Support/packman-cache"
+                os.path.expanduser("~"), "Library/Application Support/packman-cache"
             )
         elif platform_name == "Linux":
             try:

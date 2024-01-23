@@ -1,5 +1,11 @@
 # Changelog
 
+## [5.0.4] - 22-January-2024
+
+### Bugfixes
+- Fixed issue https://github.com/NVIDIA-Omniverse/PhysX/issues/207, Island removal doesn't work as expected
+
+
 ## [5.0.3] - 1-November-2023
 
 ### Bugfixes

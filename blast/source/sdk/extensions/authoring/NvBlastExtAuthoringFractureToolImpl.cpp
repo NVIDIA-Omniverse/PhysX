@@ -573,7 +573,7 @@ Mesh* FractureToolImpl::createChunkMesh(int32_t chunkInfoIndex, bool splitUVs /*
     if (splitUVs)
         compactifyAndTransformVertexBuffer<VrtComp>(_vertexBuffer, edges, sourceVertices, numSourceVerts, numEdges, tm);
     else
-        compactifyAndTransformVertexBuffer<VrtCompNoUV>(_vertexBuffer, edges, sourceVertices, numSourceVerts, numEdges, tm);        
+        compactifyAndTransformVertexBuffer<VrtCompNoUV>(_vertexBuffer, edges, sourceVertices, numSourceVerts, numEdges, tm);
 
     // now fix the order of the edges
     // compacting the vertex buffer can put them out of order
@@ -629,7 +629,7 @@ Mesh* FractureToolImpl::createChunkMesh(int32_t chunkInfoIndex, bool splitUVs /*
         vert.uv[0].x = (vert.uv[0].x - bnd.minimum.x) * scale;
         vert.uv[0].y = (vert.uv[0].y - bnd.minimum.y) * scale;
     }
-    
+
     // build a new mesh from the converted data
     Mesh* chunkMesh = new MeshImpl(vertices, edges, facets, numVerts, numEdges, facetsCount);
     NVBLAST_FREE(edges);
@@ -2105,8 +2105,11 @@ int32_t FractureToolImpl::islandDetectionAndRemoving(int32_t chunkId, bool creat
             }
         }
 
-        if (createAtNewDepth == false || chunkId != 0)
+        if (createAtNewDepth == false)
         {
+            // We need to flag the chunk as changed, in case someone is calling this function directly
+            // Otherwise when called as part of automatic island removal, chunks are already flagged as changed
+            mChunkData[chunkInfoIndex].isChanged = true;
             delete mChunkData[chunkInfoIndex].getMesh();
             Mesh* newMesh0 =
                 new MeshImpl(compVertices[0].data(), compEdges[0].data(), compFacets[0].data(),
