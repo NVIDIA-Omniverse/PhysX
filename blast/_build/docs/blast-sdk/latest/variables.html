@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nv &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>Variables &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,10 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="prev" title="Typedefs" href="typedefs.html" />
  
 
 
@@ -39,9 +37,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +52,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +61,23 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +93,15 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-<li>Nv</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+<li>Variables</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -90,22 +113,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="nv">
-<span id="namespace-nv"></span><h1>Nv<a class="headerlink" href="#nv" title="Permalink to this headline"></a></h1>
-<p>FractureTool has requirements to input meshes to fracture them successfully: 1) Mesh should be closed (watertight) 2) There should not be self-intersections and open-edges.</p>
-<section id="detailed-description">
-<h2>Detailed Description<a class="headerlink" href="#detailed-description" title="Permalink to this headline"></a></h2>
-<p>This file contains nvidia::NvAllocatorCallback wrappers compatible with NvShared containers.</p>
-<p>Blast High-level serialization support.</p>
-<p>Mesh cleaner input is closed mesh with self-intersections and open-edges (only in the interior). It tries to track outer hull to make input mesh solid and meet requierements of FractureTool. If mesh contained some internal cavities they will be removed.</p>
-<p>Contains serializers which can be used by the ExtSerialization manager.</p>
-</section>
-<section id="namespaces">
-<h2>Namespaces<a class="headerlink" href="#namespaces" title="Permalink to this headline"></a></h2>
+  <section id="variables">
+<h1>Variables<a class="headerlink" href="#variables" title="Permalink to this headline"></a></h1>
 <ul class="simple">
-<li><p><a class="reference internal" href="namespace_Nv__Blast.html#namespace-nv-blast"><span class="std std-ref">Nv::Blast</span></a></p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138.html#_nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138"><span class="std std-ref">Nv::Blast::kMaterialInteriorId</span></a>: Default material id assigned to interior faces (faces which created between 2 fractured chunks)</p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea.html#_nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea"><span class="std std-ref">Nv::Blast::kNotValidVertexIndex</span></a>: <a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html#struct_nv_1_1_blast_1_1_vertex"><span class="std std-ref">Vertex</span></a> index which considired by NvBlast as not valid.</p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4.html#_nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4"><span class="std std-ref">Nv::Blast::kSmoothingGroupInteriorId</span></a>: Default smoothing group id assigned to interior faces.</p></li>
+<li><p><a class="reference internal" href="variable__nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7.html#_nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7"><span class="std std-ref">Nv::Blast::kUnbreakableLimit</span></a></p></li>
 </ul>
-</section>
 </section>
 
 
@@ -116,8 +131,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

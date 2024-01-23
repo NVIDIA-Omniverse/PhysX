@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Program Listing for toolkit/NvBlastTkAsset.h &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>toolkit/NvBlastTkAsset.h &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="toolkit/NvBlastTkEvent.h" href="file_toolkit_NvBlastTkEvent.h.html" />
+    <link rel="prev" title="toolkit/NvBlastTkAsset.h" href="file_toolkit_NvBlastTkAsset.h.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,46 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="dir_extensions.html">extensions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_globals.html">globals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_lowlevel.html">lowlevel</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="dir_toolkit.html">toolkit</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTk.h.html">NvBlastTk.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkActor.h.html">NvBlastTkActor.h</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="file_toolkit_NvBlastTkAsset.h.html">NvBlastTkAsset.h</a><ul class="current">
+<li class="toctree-l6 current"><a class="current reference internal" href="#">Source file</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkEvent.h.html">NvBlastTkEvent.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkFamily.h.html">NvBlastTkFamily.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkFramework.h.html">NvBlastTkFramework.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkGroup.h.html">NvBlastTkGroup.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkGroupTaskManager.h.html">NvBlastTkGroupTaskManager.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkIdentifiable.h.html">NvBlastTkIdentifiable.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkJoint.h.html">NvBlastTkJoint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkObject.h.html">NvBlastTkObject.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_toolkit_NvBlastTkType.h.html">NvBlastTkType.h</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +117,18 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-<li>Program Listing for toolkit/NvBlastTkAsset.h</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_toolkit.html">toolkit</a> &raquo;</li>
+    <li><a href="file_toolkit_NvBlastTkAsset.h.html">toolkit/NvBlastTkAsset.h</a> &raquo;</li>
+<li>toolkit/NvBlastTkAsset.h</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -90,10 +140,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="program-listing-for-toolkit-nvblasttkasset-h">
-<span id="program-listing-file-toolkit-nvblasttkasset-h"></span><h1>Program Listing for toolkit/NvBlastTkAsset.h<a class="headerlink" href="#program-listing-for-toolkit-nvblasttkasset-h" title="Permalink to this headline"></a></h1>
-<p>↰ Return to documentation for <a class="reference internal" href="file_toolkit_NvBlastTkAsset.h.html#file-toolkit-nvblasttkasset-h"><span class="std std-ref">toolkit/NvBlastTkAsset.h</span></a></p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+  <section id="toolkit-nvblasttkasset-h">
+<h1>toolkit/NvBlastTkAsset.h<a class="headerlink" href="#toolkit-nvblasttkasset-h" title="Permalink to this headline"></a></h1>
+<p>File members: <a class="reference internal" href="file_toolkit_NvBlastTkAsset.h.html#nv-blast-tk-asset-8h"><span class="std std-ref">toolkit/NvBlastTkAsset.h</span></a></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
 <span class="c1">// modification, are permitted provided that the following conditions</span>
 <span class="c1">// are met:</span>
 <span class="c1">//  * Redistributions of source code must retain the above copyright</span>
@@ -119,7 +169,6 @@
 <span class="c1">//</span>
 <span class="c1">// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.</span>
 
-
 <span class="cp">#ifndef NVBLASTTKASSET_H</span>
 <span class="cp">#define NVBLASTTKASSET_H</span>
 
@@ -129,7 +178,6 @@
 
 <span class="c1">// Forward declarations</span>
 <span class="k">struct</span><span class="w"> </span><span class="nc">NvBlastAsset</span><span class="p">;</span><span class="w"></span>
-
 
 <span class="k">namespace</span><span class="w"> </span><span class="nn">Nv</span><span class="w"></span>
 <span class="p">{</span><span class="w"></span>
@@ -141,7 +189,6 @@
 <span class="w">    </span><span class="kt">uint32_t</span><span class="w">        </span><span class="n">nodeIndices</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
 <span class="w">    </span><span class="n">nvidia</span><span class="o">::</span><span class="n">NvVec3</span><span class="w">  </span><span class="n">attachPositions</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
 <span class="p">};</span><span class="w"></span>
-
 
 <span class="k">class</span><span class="w"> </span><span class="nc">TkAsset</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">public</span><span class="w"> </span><span class="n">TkIdentifiable</span><span class="w"></span>
 <span class="p">{</span><span class="w"></span>
@@ -170,7 +217,6 @@
 <span class="p">}</span><span class="w"> </span><span class="c1">// namespace Blast</span>
 <span class="p">}</span><span class="w"> </span><span class="c1">// namespace Nv</span>
 
-
 <span class="cp">#endif </span><span class="c1">// ifndef NVBLASTTKASSET_H</span>
 </pre></div>
 </div>
@@ -184,8 +230,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

@@ -42,7 +42,7 @@ function _populateVersionWarning(project, latest, versions, root)
     console.log(message)
 
     // try to find the main content div
-    const elems = document.querySelectorAll("body.wy-body-for-nav")
+    const elems = document.querySelectorAll("div.wy-nav-content")
     console.log(elems)
     if (elems.length < 1)
     {
@@ -69,11 +69,6 @@ function _populateVersionWarning(project, latest, versions, root)
     outer.appendChild(inner)
 
     content.insertBefore(outer, content.firstChild)
-
-    // add a margin to the main content so the dialog doesn't cover the breadcrumbs/social media
-    console.log('finding top')
-    const top = document.querySelector("div.rst-content")
-    top.style.marginTop = "48px";
 }
 
 // this method:

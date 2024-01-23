@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NvBlastExtCutterSubgraphShader &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>NvBlastExtCutterSubgraphShader &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="NvBlastExtDamageAcceleratorCreate" href="function__nv_blast_ext_damage_shaders_8h_1acc7892eb1f5b0ee4d6dfe693855a6fef.html" />
+    <link rel="prev" title="NvBlastExtCutterGraphShader" href="function__nv_blast_ext_damage_shaders_8h_1a01ce708222741d4d1a3bdee94cdff422.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,56 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_extensions.html">extensions</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_assetutils.html">assetutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_authoring.html">authoring</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_authoringCommon.html">authoringCommon</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_serialization.html">serialization</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="dir_extensions_shaders.html">shaders</a><ul class="current">
+<li class="toctree-l6 current"><a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html">NvBlastExtDamageShaders.h</a><ul class="current">
+<li class="toctree-l7"><a class="reference internal" href="program_listing_file_extensions_shaders_NvBlastExtDamageShaders.h.html">Source file</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a2858337c4940ef330af46c87841ec8a1.html">NvBlastExtCapsuleFalloffGraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a836ef5b0fd3eb3485af917599ab19e11.html">NvBlastExtCapsuleFalloffSubgraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a01ce708222741d4d1a3bdee94cdff422.html">NvBlastExtCutterGraphShader</a></li>
+<li class="toctree-l7 current"><a class="current reference internal" href="#">NvBlastExtCutterSubgraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1acc7892eb1f5b0ee4d6dfe693855a6fef.html">NvBlastExtDamageAcceleratorCreate</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a6349a0cf92522e18559d900ab65b14d1.html">NvBlastExtFalloffGraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a879c11ce1b73b7b497288c8a2710c438.html">NvBlastExtFalloffSubgraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8f3d1da3bd2e0c19bd18b8840a4f531e.html">NvBlastExtImpactSpreadGraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1ae6214e68108b781cdb160d787650dd2e.html">NvBlastExtImpactSpreadSubgraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa49711a370498c4da36bd9dac4d1bbd9.html">NvBlastExtShearGraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a3103465d5c665418138ea5e93a62ac73.html">NvBlastExtShearSubgraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1aa1a7f982c44ff2e230ba37caf03aaa0b.html">NvBlastExtTriangleIntersectionGraphShader</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__nv_blast_ext_damage_shaders_8h_1a8cd81f47a4c823b3fa5ed0dee6a114bb.html">NvBlastExtTriangleIntersectionSubgraphShader</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_stress.html">stress</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_globals.html">globals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_lowlevel.html">lowlevel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_toolkit.html">toolkit</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +127,19 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_extensions.html">extensions</a> &raquo;</li>
+    <li><a href="dir_extensions_shaders.html">extensions/shaders</a> &raquo;</li>
+    <li><a href="file_extensions_shaders_NvBlastExtDamageShaders.h.html">extensions/shaders/NvBlastExtDamageShaders.h</a> &raquo;</li>
 <li>NvBlastExtCutterSubgraphShader</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -91,8 +152,8 @@
            <div itemprop="articleBody">
              
   <section id="nvblastextcuttersubgraphshader">
-<span id="exhale-function-nv-blast-ext-damage-shaders-8h-1a49ec2bf9cb78069aea33b323a3c46276"></span><h1>NvBlastExtCutterSubgraphShader<a class="headerlink" href="#nvblastextcuttersubgraphshader" title="Permalink to this headline"></a></h1>
-<p>Defined in <a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#file-extensions-shaders-nvblastextdamageshaders-h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
+<h1>NvBlastExtCutterSubgraphShader<a class="headerlink" href="#nvblastextcuttersubgraphshader" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#nv-blast-ext-damage-shaders-8h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a></p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv430NvBlastExtCutterSubgraphShaderP22NvBlastFractureBuffersPK26NvBlastSubgraphShaderActorPKv">
 <span id="_CPPv330NvBlastExtCutterSubgraphShaderP22NvBlastFractureBuffersPK26NvBlastSubgraphShaderActorPKv"></span><span id="_CPPv230NvBlastExtCutterSubgraphShaderP22NvBlastFractureBuffersPK26NvBlastSubgraphShaderActorPKv"></span><span id="NvBlastExtCutterSubgraphShader__NvBlastFractureBuffersP.NvBlastSubgraphShaderActorCP.voidCP"></span><span class="target" id="_nv_blast_ext_damage_shaders_8h_1a49ec2bf9cb78069aea33b323a3c46276"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastExtCutterSubgraphShader</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_nv_blast_fracture_buffers.html#_CPPv422NvBlastFractureBuffers" title="NvBlastFractureBuffers"><span class="n"><span class="pre">NvBlastFractureBuffers</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">commandBuffers</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_nv_blast_subgraph_shader_actor.html#_CPPv426NvBlastSubgraphShaderActor" title="NvBlastSubgraphShaderActor"><span class="n"><span class="pre">NvBlastSubgraphShaderActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv430NvBlastExtCutterSubgraphShaderP22NvBlastFractureBuffersPK26NvBlastSubgraphShaderActorPKv" title="Permalink to this definition"></a><br /></dt>
@@ -108,8 +169,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

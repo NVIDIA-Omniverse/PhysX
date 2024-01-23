@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nv::Blast::ExtStressSolver &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>Nv::Blast::ExtStressSolver &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Nv::Blast::ExtStressSolverSettings" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html" />
+    <link rel="prev" title="Nv::Blast::ExtSerialization" href="class_nv_1_1_blast_1_1_ext_serialization.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,107 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="namespace__nv.html">Nv</a><ul class="current">
+<li class="toctree-l5 current"><a class="reference internal" href="namespace__nv___blast.html">Blast</a><ul class="current">
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_allocator.html">Allocator</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_authoring_result.html">AuthoringResult</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_beam_pattern_desc.html">BeamPatternDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_blast_bond_generator.html">BlastBondGenerator</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_bond_generation_config.html">BondGenerationConfig</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_boolean_tool.html">BooleanTool</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_chunk_info.html">ChunkInfo</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_collision_hull.html">CollisionHull</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_convex_decomposition_params.html">ConvexDecompositionParams</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_convex_mesh_builder.html">ConvexMeshBuilder</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_cutout_configuration.html">CutoutConfiguration</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_cutout_set.html">CutoutSet</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_damage_pattern.html">DamagePattern</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_debug_buffer.html">DebugBuffer</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_debug_line.html">DebugLine</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_edge.html">Edge</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_force_mode.html">ExtForceMode</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_ext_serialization.html">ExtSerialization</a></li>
+<li class="toctree-l6 current"><a class="current reference internal" href="#">ExtStressSolver</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_ext_stress_solver_settings.html">ExtStressSolverSettings</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_facet.html">Facet</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_fracture_tool.html">FractureTool</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_hull_polygon.html">HullPolygon</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_ll_object_type_i_d.html">LlObjectTypeID</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh.html">Mesh</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_mesh_cleaner.html">MeshCleaner</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_noise_configuration.html">NoiseConfiguration</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_pattern_descriptor.html">PatternDescriptor</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_pattern_generator.html">PatternGenerator</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_plane_chunk_indexer.html">PlaneChunkIndexer</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__nv_blast_ext_authoring_pattern_generator_8h_1a4e5bb14b7dd9af36721e2510c8cf4a88.html">RNG_CALLBACK</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_random_generator_base.html">RandomGeneratorBase</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_regular_radial_pattern_desc.html">RegularRadialPatternDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_slicing_configuration.html">SlicingConfiguration</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_spatial_accelerator.html">SpatialAccelerator</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_spatial_grid.html">SpatialGrid</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_actor.html">TkActor</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_data.html">TkActorData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_actor_desc.html">TkActorDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_asset.html">TkAsset</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_desc.html">TkAssetDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_asset_joint_desc.html">TkAssetJointDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_event.html">TkEvent</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_event_listener.html">TkEventListener</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_family.html">TkFamily</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_fracture_commands.html">TkFractureCommands</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_fracture_events.html">TkFractureEvents</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_framework.html">TkFramework</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group.html">TkGroup</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_desc.html">TkGroupDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_group_stats.html">TkGroupStats</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_task_manager.html">TkGroupTaskManager</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_group_worker.html">TkGroupWorker</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_identifiable.html">TkIdentifiable</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_joint.html">TkJoint</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_data.html">TkJointData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_desc.html">TkJointDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_joint_update_event.html">TkJointUpdateEvent</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_object.html">TkObject</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_object_type_i_d.html">TkObjectTypeID</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_split_event.html">TkSplitEvent</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_tk_type.html">TkType</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_tk_type_index.html">TkTypeIndex</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_transform_s_t.html">TransformST</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle.html">Triangle</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_triangle_indexed.html">TriangleIndexed</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_uniform_pattern_desc.html">UniformPatternDesc</a></li>
+<li class="toctree-l6"><a class="reference internal" href="struct_nv_1_1_blast_1_1_vertex.html">Vertex</a></li>
+<li class="toctree-l6"><a class="reference internal" href="class_nv_1_1_blast_1_1_voronoi_sites_generator.html">VoronoiSitesGenerator</a></li>
+<li class="toctree-l6"><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1ad2d1cde5813011ad60c5a70903063138.html">kMaterialInteriorId</a></li>
+<li class="toctree-l6"><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1aef4edf41a556a4a3a47621a9335b10ea.html">kNotValidVertexIndex</a></li>
+<li class="toctree-l6"><a class="reference internal" href="variable__nv_blast_ext_authoring_types_8h_1adbf9e9203bf8bee845964d16b181bec4.html">kSmoothingGroupInteriorId</a></li>
+<li class="toctree-l6"><a class="reference internal" href="variable__nv_blast_types_8h_1a1d6a0f220e269f62129e3ac6f13f75e7.html">kUnbreakableLimit</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_blast_globals_8h_1a046f351eedab67de8286b249c348160a.html">logLL</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_blast_ext_authoring_pattern_generator_8h_1a2af6111d7b1e477fa7b5aee4fec5bdfc.html">savePatternToObj</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_nvidia.html">nvidia</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +178,18 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+    <li><a href="namespace__nv.html">Nv</a> &raquo;</li>
+    <li><a href="namespace__nv___blast.html">Nv::Blast</a> &raquo;</li>
 <li>Nv::Blast::ExtStressSolver</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -91,8 +202,44 @@
            <div itemprop="articleBody">
              
   <section id="nv-blast-extstresssolver">
-<span id="exhale-class-class-nv-1-1-blast-1-1-ext-stress-solver"></span><h1>Nv::Blast::ExtStressSolver<a class="headerlink" href="#nv-blast-extstresssolver" title="Permalink to this headline"></a></h1>
-<p>Defined in <a class="reference internal" href="file_extensions_stress_NvBlastExtStressSolver.h.html#file-extensions-stress-nvblastextstresssolver-h"><span class="std std-ref">extensions/stress/NvBlastExtStressSolver.h</span></a></p>
+<h1>Nv::Blast::ExtStressSolver<a class="headerlink" href="#nv-blast-extstresssolver" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_extensions_stress_NvBlastExtStressSolver.h.html#nv-blast-ext-stress-solver-8h"><span class="std std-ref">extensions/stress/NvBlastExtStressSolver.h</span></a></p>
+<p class="rubric-h4 rubric">Enumerations</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad0250c97326fe162fe78a2801f35ef4d"><span class="std std-ref">DebugRenderMode</span></a>: Debug Render Mode.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a7358f9683f84b436afea908adeb97614"><span class="std std-ref">addCentrifugalAcceleration(const NvBlastActor &amp;actor, NvcVec3 localCenterMass, NvcVec3 localAngularVelocity)=0</span></a>: Apply centrifugal acceleration produced by actor's angular movement.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a40334df8150b1e7e5325680990275132"><span class="std std-ref">addForce(uint32_t graphNodeIndex, NvcVec3 localForce, ExtForceMode::Enum mode=ExtForceMode::FORCE)=0</span></a>: Apply external impulse on particular node.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a81004cc1b098b2c2953b59622296e0b4"><span class="std std-ref">addForce(const NvBlastActor &amp;actor, NvcVec3 localPosition, NvcVec3 localForce, ExtForceMode::Enum mode=ExtForceMode::FORCE)=0</span></a>: Apply external impulse on particular actor of family.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad8ccd22bbebffc76aeab10f7e667576b"><span class="std std-ref">addGravity(const NvBlastActor &amp;actor, NvcVec3 localGravity)=0</span></a>: Apply external gravity on particular actor of family.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1adf3a8de14ece654b9b82357b4bc562d8"><span class="std std-ref">converged() const =0</span></a>: Whether or not the solver converged to a solution within the desired error.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a64333f5bff5b89c3025c11becadf193b"><span class="std std-ref">create(const NvBlastFamily &amp;family, const ExtStressSolverSettings &amp;settings=ExtStressSolverSettings())</span></a>: Create a new <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver"><span class="std std-ref">ExtStressSolver</span></a> .</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a4b35d74e1dcce20d903bff6d6cf8a63f"><span class="std std-ref">fillDebugRender(const uint32_t *nodes, uint32_t nodeCount, DebugRenderMode mode, float scale=1.0f)=0</span></a>: Fill debug render for passed array of support graph nodes.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ad75b9476c3b6189d4d84d3b55016bdf7"><span class="std std-ref">generateFractureCommands(const NvBlastActor &amp;actor, NvBlastFractureBuffers &amp;commands)=0</span></a>: Generate fracture commands for particular actor.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a8c995a408197e43f53a71769a31f39d3"><span class="std std-ref">generateFractureCommandsPerActor(const NvBlastActor **actorBuffer, NvBlastFractureBuffers *commandsBuffer, uint32_t bufferSize)=0</span></a>: Generate fracture commands for every actor in family.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1aaba9643df955f917bcdf2324499c63fb"><span class="std std-ref">getBondCount() const =0</span></a>: Get stress solver bonds count, after graph reduction was applied.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1aec24d75c993d494358651f594ea619e9"><span class="std std-ref">getExcessForces(uint32_t actorIndex, const NvcVec3 &amp;com, NvcVec3 &amp;force, NvcVec3 &amp;torque)=0</span></a>: Get stress solver excess force related to broken bonds for the given actor.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ab6cfefa6068c4002dc7d7663ae2332cb"><span class="std std-ref">getFrameCount() const =0</span></a>: Get stress solver total frames count ( <a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()</span></a> calls) since it was created (or reset).</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f74a5d7affbf89a5c05a1e2320cd60d"><span class="std std-ref">getOverstressedBondCount() const =0</span></a>: Get overstressed/broken bonds count.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1ac0c65cdf70bbe6297ecd242889d5e541"><span class="std std-ref">getSettings() const =0</span></a>: Get stress solver settings.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1afa347a8efaa570a0d3def3cf64c3572a"><span class="std std-ref">getStressErrorAngular() const =0</span></a>: Get stress solver angular error.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a7b461e1f03f5a85e3b86b0b4aa09be5c"><span class="std std-ref">getStressErrorLinear() const =0</span></a>: Get stress solver linear error.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1aad55fa12a3694fb005a377192cb20ea1"><span class="std std-ref">notifyActorCreated(const NvBlastActor &amp;actor)=0</span></a>: Notify stress solver on newly created actor.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a44bf60cdcbcb06364b1c23215b8b7bb4"><span class="std std-ref">notifyActorDestroyed(const NvBlastActor &amp;actor)=0</span></a>: Notify stress solver on destroyed actor.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a9f740702a06e3bd915218ec8aa8415d8"><span class="std std-ref">release()=0</span></a>: Release this stress solver.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a1d0593b22f6cd335a479c18eaf102e40"><span class="std std-ref">reset()=0</span></a>: Reset stress solver.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a419c77935487b2e689e377c986bf6eb5"><span class="std std-ref">setAllNodesInfoFromLL(float density=1.0f)=0</span></a>: Set all nodes info using low level <a class="reference internal" href="struct_nv_blast_asset.html#struct_nv_blast_asset"><span class="std std-ref">NvBlastAsset</span></a> data.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1aed55ac3733796a9261bc9bf302dcfec6"><span class="std std-ref">setNodeInfo(uint32_t graphNodeIndex, float mass, float volume, NvcVec3 localPosition)=0</span></a>: Set node info.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1acfef7926067c389179248e7dbd1e3686"><span class="std std-ref">setSettings(const ExtStressSolverSettings &amp;settings)=0</span></a>: Set stress solver settings.</p></li>
+<li><p><a class="reference internal" href="#class_nv_1_1_blast_1_1_ext_stress_solver_1a0a994dd1c576f36e5acd73895817ee72"><span class="std std-ref">update()=0</span></a>: Update stress solver.</p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_buffer"><span class="std std-ref">DebugBuffer</span></a>: Debug Buffer.</p></li>
+<li><p><a class="reference internal" href="#struct_nv_1_1_blast_1_1_ext_stress_solver_1_1_debug_line"><span class="std std-ref">DebugLine</span></a>: Used to store a single line and colour for debug rendering.</p></li>
+</ul>
 <dl class="cpp class">
 <dt class="sig sig-object cpp" id="_CPPv4N2Nv5Blast15ExtStressSolverE">
 <span id="_CPPv3N2Nv5Blast15ExtStressSolverE"></span><span id="_CPPv2N2Nv5Blast15ExtStressSolverE"></span><span id="Nv::Blast::ExtStressSolver"></span><span class="target" id="class_nv_1_1_blast_1_1_ext_stress_solver"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExtStressSolver</span></span></span><a class="headerlink" href="#_CPPv4N2Nv5Blast15ExtStressSolverE" title="Permalink to this definition"></a><br /></dt>
@@ -537,8 +684,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

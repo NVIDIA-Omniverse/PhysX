@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NvBlastSupportGraph &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>NvBlastSupportGraph &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="NvBlastTimers" href="struct_nv_blast_timers.html" />
+    <link rel="prev" title="NvBlastSubgraphShaderActor" href="struct_nv_blast_subgraph_shader_actor.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,55 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="structs.html">Structs</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_actor.html">NvBlastActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_actor_desc.html">NvBlastActorDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_actor_split_event.html">NvBlastActorSplitEvent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_asset.html">NvBlastAsset</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_asset_desc.html">NvBlastAssetDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_asset_mem_size_data.html">NvBlastAssetMemSizeData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_bond.html">NvBlastBond</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_bond_desc.html">NvBlastBondDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_bond_fracture_data.html">NvBlastBondFractureData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_chunk.html">NvBlastChunk</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_chunk_desc.html">NvBlastChunkDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_chunk_fracture_data.html">NvBlastChunkFractureData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_damage_program.html">NvBlastDamageProgram</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_data_block.html">NvBlastDataBlock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_asset_utils_bond_desc.html">NvBlastExtAssetUtilsBondDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_capsule_radial_damage_desc.html">NvBlastExtCapsuleRadialDamageDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_impact_spread_damage_desc.html">NvBlastExtImpactSpreadDamageDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_material.html">NvBlastExtMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_program_params.html">NvBlastExtProgramParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_radial_damage_desc.html">NvBlastExtRadialDamageDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_shear_damage_desc.html">NvBlastExtShearDamageDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_ext_triangle_intersection_damage_desc.html">NvBlastExtTriangleIntersectionDamageDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_family.html">NvBlastFamily</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_fracture_buffers.html">NvBlastFractureBuffers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_graph_shader_actor.html">NvBlastGraphShaderActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_i_d.html">NvBlastID</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_message.html">NvBlastMessage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_subgraph_shader_actor.html">NvBlastSubgraphShaderActor</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">NvBlastSupportGraph</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_nv_blast_timers.html">NvBlastTimers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +126,16 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="structs.html">Structs</a> &raquo;</li>
 <li>NvBlastSupportGraph</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -91,8 +148,16 @@
            <div itemprop="articleBody">
              
   <section id="nvblastsupportgraph">
-<span id="exhale-struct-struct-nv-blast-support-graph"></span><h1>NvBlastSupportGraph<a class="headerlink" href="#nvblastsupportgraph" title="Permalink to this headline"></a></h1>
-<p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#file-lowlevel-nvblasttypes-h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
+<h1>NvBlastSupportGraph<a class="headerlink" href="#nvblastsupportgraph" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#nv-blast-types-8h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a></p>
+<p class="rubric-h4 rubric">Variables</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#struct_nv_blast_support_graph_1aa1f5c4dc460ae44650e955b3ef1f7d57"><span class="std std-ref">adjacencyPartition</span></a>: Partitions both the adjacentNodeIndices and the adjacentBondIndices arrays into subsets corresponding to each node.</p></li>
+<li><p><a class="reference internal" href="#struct_nv_blast_support_graph_1ae659d7f25dd6ae780f8cf14d7bf3925a"><span class="std std-ref">adjacentBondIndices</span></a>: Array composed of subarrays holding the indices of bonds ( <a class="reference internal" href="struct_nv_blast_bond.html#struct_nv_blast_bond"><span class="std std-ref">NvBlastBond</span></a> ) for a given node.</p></li>
+<li><p><a class="reference internal" href="#struct_nv_blast_support_graph_1aa7c1f66e9cd717b941272e739aed2931"><span class="std std-ref">adjacentNodeIndices</span></a>: Array composed of subarrays holding the indices of nodes adjacent to a given node.</p></li>
+<li><p><a class="reference internal" href="#struct_nv_blast_support_graph_1a6d9d5cbbbc94137fdec50d7b7a20e307"><span class="std std-ref">chunkIndices</span></a>: Indices of chunks represented by the nodes, an array of size nodeCount.</p></li>
+<li><p><a class="reference internal" href="#struct_nv_blast_support_graph_1aac2f6bdd02cc6ed2b30af8f3099d072f"><span class="std std-ref">nodeCount</span></a>: Total number of nodes in the support graph.</p></li>
+</ul>
 <dl class="cpp struct">
 <dt class="sig sig-object cpp" id="_CPPv419NvBlastSupportGraph">
 <span id="_CPPv319NvBlastSupportGraph"></span><span id="_CPPv219NvBlastSupportGraph"></span><span id="NvBlastSupportGraph"></span><span class="target" id="struct_nv_blast_support_graph"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NvBlastSupportGraph</span></span></span><a class="headerlink" href="#_CPPv419NvBlastSupportGraph" title="Permalink to this definition"></a><br /></dt>
@@ -154,8 +219,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

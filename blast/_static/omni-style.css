@@ -580,6 +580,15 @@ a:hover
     color: var(--link-hover-color);
 }
 
+/* decorate external links with an icon */
+a.external::after
+{
+    font-family: "FontAwesome";
+    content: "\f08e";
+    margin-left: 0.3em;
+    font-size: 0.75em;
+}
+
 /* follow branding guide for small footer text */
 footer p
 {
@@ -803,7 +812,6 @@ dd p:first-child
 .wy-nav-top
 {
     background-color: var(--sidebar-color);
-    padding: 0;
 }
 
 /* Remove padding around logo */
@@ -811,6 +819,19 @@ dd p:first-child
 {
     padding: 0px;
     margin: 0px;
+}
+
+/* prevent changing project name color */
+.wy-side-nav-search>a:visited
+{
+    color: #fcfcfc;
+}
+
+/* add padding to the project name */
+.wy-side-nav-project
+{
+    margin-top: 0.6em;
+    margin-bottom: 0.6em;
 }
 
 /* remove rounded corner from search box */
@@ -826,11 +847,19 @@ dd p:first-child
     background: var(--sidebar-color);
 }
 
-/* logo padding */
-.wy-side-nav-search img {
-    padding: 0px;
-    padding: 0px 0px;
-    margin-bottom: 0;
+@media screen and (min-width: 1500px)
+{
+    .wy-nav-side
+    {
+        margin-left: calc(0.5*100% - 0.5*1500px);  /* 0.5 * (view width - max width of content) */
+    }
+}
+
+/* remove padding around sidebar logo */
+.wy-side-nav-search,
+.wy-side-nav-search img
+{
+    padding: 0;
 }
 
 /* sidebar headings */
@@ -843,11 +872,6 @@ dd p:first-child
 .wy-menu-vertical a
 {
     color: var(--sidebar-text-color);
-    padding-left: 35px;
-    padding-right: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    display: list-item;
 }
 
 .wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a,
@@ -1094,7 +1118,7 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
 }
 
 /* class/struct fields/members */
-html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt
 {
     margin-bottom: 6px;
     border: none;
@@ -1114,9 +1138,14 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     display: inline-block !important;
 }
 
+/* properties */
+html.writer-html4 .rst-content dl:not(.docutils) .property,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .property {
+    display: unset;
+}
 
 /* module/class names */
-html.writer-html4 .rst-content dl:not(.docutils) .descclassname, html.writer-html4 .rst-content dl:not(.docutils) .descname, html.writer-html4 .rst-content dl:not(.docutils) .sig-name, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .descclassname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .descname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name
+html.writer-html4 .rst-content dl:not(.docutils) .descclassname, html.writer-html4 .rst-content dl:not(.docutils) .descname, html.writer-html4 .rst-content dl:not(.docutils) .sig-name, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .descclassname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .descname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .sig-name
 {
     color: var(--api-member-header-text-color);
 }
@@ -1205,33 +1234,9 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     background-color: var(--background-default);
 }
 
-.wy-nav-side
-{
-    /* we want the sidebar to take the entire height and "stick" to the left side. the trick here is to make the outer
-    container 'relative' and 'float'ing and inner container 'fixed' */
-    position: relative;
-    float: left;
-    height: auto;
-}
-
 .wy-side-scroll /* the inner container */
 {
-    width: 300px;
-    position: fixed;
-    overflow-y: auto;
-    height: 100%;
-    min-height: 100%;
     background-color: var(--sidebar-color);
-
-    /* hide scroll bar but still allow scrolling */
-    scrollbar-width: none; /* firefox */
-    -ms-overflow-style: none; /* ie 10 */
-}
-
-/* hide scroll bar but still allow scrolling (chrome) */
-.wy-side-scroll::-webkit-scrollbar
-{
-    display: none;
 }
 
 .wy-nav-content-wrap
@@ -1294,28 +1299,8 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
 }
 
 /* warning dialog when version is not the latest */
-
-.omni-version-warning /* div with 100% width so we can center content */
-{
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    margin: 0;
-    margin-left: 150px;
-    transform: translateX(-50%);
-    background: none;
-    z-index: 1000;
-    width: 100%;
-    padding-left: 10px;
-    padding-right: 10px;
-    text-align: center;
-}
-
 .omni-version-warning-content /* center content in the warning box */
 {
-    margin: 0 auto; /* center content */
-    max-width: 1100px; /* smaller than main body width of 1200px, see: wy-nav-content */
-    width: 50%;
     padding: 8px;
     text-align: center;
     border-radius: 4px;
@@ -1324,15 +1309,11 @@ div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
     border-style: solid;
     border-width: 1px;
     background: #fff3cd repeating-linear-gradient(135deg, transparent, transparent 56px, rgba(255, 255, 255, 0.2) 56px, rgba(255, 255, 255, 0.2) 112px );
+    margin: 0 0 24px;
 }
 
 @media screen and (max-width: 768px)
 {
-    .omni-version-warning
-    {
-        margin-left: 0;
-    }
-
     .omni-version-warning-content
     {
         width: 100%;
@@ -1423,4 +1404,11 @@ details.sd-dropdown .sd-summary-down svg {
     left: 0.35em;
     top: 0.35em;
     font-size: 0.7em;
+}
+
+/* add : to captions */
+.caption-number:after
+{
+    content: ': ';
+    margin-left: -0.25rem;
 }

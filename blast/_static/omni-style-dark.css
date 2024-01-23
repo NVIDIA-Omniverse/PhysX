@@ -65,6 +65,12 @@ html[data-theme="dark"]
 /*                                         Admonitions                                                                */
 /**********************************************************************************************************************/
 
+/* general non-specific admonition */
+[data-theme='dark'] .rst-content .admonition
+{
+    background: #222238;
+}
+
 /* todo, attention, caution, warning body */
 [data-theme='dark'] .rst-content .admonition-todo,
 [data-theme='dark'] .rst-content .attention,

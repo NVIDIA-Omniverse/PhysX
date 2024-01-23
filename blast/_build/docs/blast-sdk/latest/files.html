@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Files &mdash; blast-sdk 5.0.4 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/mermaid-init.js"></script>
+        <script src="../../../../_static/design-tabs.js"></script>
+        <script src="../../../../_static/version.js"></script>
+        <script src="../../../../_static/social-media.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Functions" href="functions.html" />
+    <link rel="prev" title="toolkit/NvBlastTkType.h" href="program_listing_file_toolkit_NvBlastTkType.h.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_hl_users_guide.html">High Level (Toolkit) API (NvBlastTk)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/extensions/index.html">Extensions (NvBlastExt)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">blast-sdk</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+<li>Files</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="files">
+<h1>Files<a class="headerlink" href="#files" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="file_lowlevel_NvBlast.h.html#nv-blast-8h"><span class="std std-ref">lowlevel/NvBlast.h</span></a>: Defines the API for the low-level blast library.</p></li>
+<li><p><a class="reference internal" href="file_globals_NvBlastAllocator.h.html#nv-blast-allocator-8h"><span class="std std-ref">globals/NvBlastAllocator.h</span></a>: Allocator utility API in the NvBlastGlobals library.</p></li>
+<li><p><a class="reference internal" href="file_globals_NvBlastDebugRender.h.html#nv-blast-debug-render-8h"><span class="std std-ref">globals/NvBlastDebugRender.h</span></a>: Debug render utility API in the NvBlastGlobals library.</p></li>
+<li><p><a class="reference internal" href="file_extensions_assetutils_NvBlastExtAssetUtils.h.html#nv-blast-ext-asset-utils-8h"><span class="std std-ref">extensions/assetutils/NvBlastExtAssetUtils.h</span></a>: Defines the API for the NvBlastExtAssetUtils blast sdk extension.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoring.h.html#nv-blast-ext-authoring-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoring.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringAccelerator.h.html#nv-blast-ext-authoring-accelerator-8h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringAccelerator.h</span></a>: Defines the SpatialAccelerator API used by the BooleanTool.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringBondGenerator.h.html#nv-blast-ext-authoring-bond-generator-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringBondGenerator.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension's BlastBondGenerator.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringBooleanTool.h.html#nv-blast-ext-authoring-boolean-tool-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringBooleanTool.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension's BooleanTool.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringConvexMeshBuilder.h.html#nv-blast-ext-authoring-convex-mesh-builder-8h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringConvexMeshBuilder.h</span></a>: Defines the ConvexMeshBuilder API used by the authoring tools, allowing the user to specify a convex hull description for a chunk.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringCutout.h.html#nv-blast-ext-authoring-cutout-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringCutout.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension's CutoutSet, used for cutout fracturing.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringFractureTool.h.html#nv-blast-ext-authoring-fracture-tool-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringFractureTool.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension's FractureTool.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringMesh.h.html#nv-blast-ext-authoring-mesh-8h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringMesh.h</span></a>: Defines the Mesh API used by the authoring tools.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoring_NvBlastExtAuthoringMeshCleaner.h.html#nv-blast-ext-authoring-mesh-cleaner-8h"><span class="std std-ref">extensions/authoring/NvBlastExtAuthoringMeshCleaner.h</span></a>: Defines the API for the NvBlastExtAuthoring blast sdk extension's MeshCleaner utility.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#nv-blast-ext-authoring-pattern-generator-8h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h</span></a>: Defines the PatternGenerator API used by the authoring tools, allowing the user to create fracture patterns.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringTypes.h.html#nv-blast-ext-authoring-types-8h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringTypes.h</span></a>: Defines basic types used by NvBlastExtAuthoring.</p></li>
+<li><p><a class="reference internal" href="file_extensions_shaders_NvBlastExtDamageShaders.h.html#nv-blast-ext-damage-shaders-8h"><span class="std std-ref">extensions/shaders/NvBlastExtDamageShaders.h</span></a>: NvBlastExtDamageShaders blast extension, provides damage shaders for applying damage to destructibles.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtLlSerialization.h.html#nv-blast-ext-ll-serialization-8h"><span class="std std-ref">extensions/serialization/NvBlastExtLlSerialization.h</span></a>: Defines low-level serialization support for the NvBlastExtSerialization blast extension.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtSerialization.h.html#nv-blast-ext-serialization-8h"><span class="std std-ref">extensions/serialization/NvBlastExtSerialization.h</span></a>: Defines basic types for the NvBlastExtSerialization blast extension, which handles versioned serialization of blast objects in different formats.</p></li>
+<li><p><a class="reference internal" href="file_extensions_stress_NvBlastExtStressSolver.h.html#nv-blast-ext-stress-solver-8h"><span class="std std-ref">extensions/stress/NvBlastExtStressSolver.h</span></a>: NvBlastExtStressSolver blast extension, provides functionality to calculate stress on a destructible.</p></li>
+<li><p><a class="reference internal" href="file_extensions_serialization_NvBlastExtTkSerialization.h.html#nv-blast-ext-tk-serialization-8h"><span class="std std-ref">extensions/serialization/NvBlastExtTkSerialization.h</span></a>: Defines blast toolkit (Tk) serialization support for the NvBlastExtSerialization blast extension.</p></li>
+<li><p><a class="reference internal" href="file_globals_NvBlastGlobals.h.html#nv-blast-globals-8h"><span class="std std-ref">globals/NvBlastGlobals.h</span></a>: API for the NvBlastGlobals library.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTk.h.html#nv-blast-tk-8h"><span class="std std-ref">toolkit/NvBlastTk.h</span></a>: Single include file to bring in headers for the blast sdk toolkit (tk) library.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkActor.h.html#nv-blast-tk-actor-8h"><span class="std std-ref">toolkit/NvBlastTkActor.h</span></a>: Defines the API for the NvBlastExtTkActor class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkAsset.h.html#nv-blast-tk-asset-8h"><span class="std std-ref">toolkit/NvBlastTkAsset.h</span></a>: Defines the API for the NvBlastExtTkAsset class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkEvent.h.html#nv-blast-tk-event-8h"><span class="std std-ref">toolkit/NvBlastTkEvent.h</span></a>: Defines the API for the NvBlastExtTkEvent class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkFamily.h.html#nv-blast-tk-family-8h"><span class="std std-ref">toolkit/NvBlastTkFamily.h</span></a>: Defines the API for the NvBlastExtTkFamily class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkFramework.h.html#nv-blast-tk-framework-8h"><span class="std std-ref">toolkit/NvBlastTkFramework.h</span></a>: Defines the API for the NvBlastExtTkFramework class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkGroup.h.html#nv-blast-tk-group-8h"><span class="std std-ref">toolkit/NvBlastTkGroup.h</span></a>: Defines the API for the NvBlastExtTkGroup class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkGroupTaskManager.h.html#nv-blast-tk-group-task-manager-8h"><span class="std std-ref">toolkit/NvBlastTkGroupTaskManager.h</span></a>: Defines a task manager API for multithreading Tk operations.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkIdentifiable.h.html#nv-blast-tk-identifiable-8h"><span class="std std-ref">toolkit/NvBlastTkIdentifiable.h</span></a>: Defines the API for the NvBlastExtTkIdentifiable abstract base class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkJoint.h.html#nv-blast-tk-joint-8h"><span class="std std-ref">toolkit/NvBlastTkJoint.h</span></a>: Defines the API for the NvBlastExtTkJoint class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkObject.h.html#nv-blast-tk-object-8h"><span class="std std-ref">toolkit/NvBlastTkObject.h</span></a>: Defines the API for the NvBlastExtTkObject abstract base class.</p></li>
+<li><p><a class="reference internal" href="file_toolkit_NvBlastTkType.h.html#nv-blast-tk-type-8h"><span class="std std-ref">toolkit/NvBlastTkType.h</span></a>: Defines the API for the NvBlastExtTkType class.</p></li>
+<li><p><a class="reference internal" href="file_lowlevel_NvBlastTypes.h.html#nv-blast-types-8h"><span class="std std-ref">lowlevel/NvBlastTypes.h</span></a>: Basic data types for the blast sdk APIs.</p></li>
+<li><p><a class="reference internal" href="file_globals_NvCMath.h.html#nv-c-math-8h"><span class="std std-ref">globals/NvCMath.h</span></a>: Vector math utility functions.</p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

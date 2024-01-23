@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>globals/NvCMath.h &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>globals/NvCMath.h &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="globals/NvCMath.h" href="program_listing_file_globals_NvCMath.h.html" />
+    <link rel="prev" title="NvBlastGlobalSetProfilerCallback" href="function__nv_blast_globals_8h_1a0f2015a1dbb9328d7516fd45bcf10a45.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,71 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="dir_extensions.html">extensions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="dir_globals.html">globals</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_globals_NvBlastAllocator.h.html">NvBlastAllocator.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_globals_NvBlastDebugRender.h.html">NvBlastDebugRender.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_globals_NvBlastGlobals.h.html">NvBlastGlobals.h</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">NvCMath.h</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="program_listing_file_globals_NvCMath.h.html">Source file</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a6753f5de02113c898460719debac36f1.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502.html">operator*</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a3c5d51bca7fdb48c180187675e6a21a5.html">operator*=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a460f35a5b35341bd954c3391b4afacb7.html">operator*=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a718c04cab1e8ef6251f3aef712cf935a.html">operator*=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a9372b227d7ebd7103a9f210127f9b7f8.html">operator*=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11.html">operator+</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130.html">operator+</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1aa9ad39d57a2deb016c71e880e9d3d051.html">operator+=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1ad12c0bd228e8219a8d27368df3089c3d.html">operator+=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d.html">operator-</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f.html">operator-</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300.html">operator-</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1afda8027df3884875fbe538913053d73d.html">operator-</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a2824966271ddb90457f96e298cf8b461.html">operator-=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a2c02df2375152637ad447d375a00bb99.html">operator-=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4.html">operator/</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a4376e8ba6271f4b8516234f661ef0af6.html">operator/=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a72f041e5ea8d3ca6447c89b956050ef4.html">operator/=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a76d66493fdfdd7e742497454c75b56e4.html">operator/=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1acaffd0a4ab89df47cf5b5ac302af1c02.html">operator/=</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60.html">operator^</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7.html">operator|</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031.html">operator|</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_lowlevel.html">lowlevel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_toolkit.html">toolkit</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +142,17 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_globals.html">globals</a> &raquo;</li>
 <li>globals/NvCMath.h</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -91,48 +165,50 @@
            <div itemprop="articleBody">
              
   <section id="globals-nvcmath-h">
-<span id="file-globals-nvcmath-h"></span><h1>globals/NvCMath.h<a class="headerlink" href="#globals-nvcmath-h" title="Permalink to this headline"></a></h1>
-<p>↰ Parent directory: <a class="reference internal" href="dir_globals.html#dir-globals"><span class="std std-ref">globals/</span></a></p>
-<p>Vector math utility functions.</p>
-<p>Source: <a class="reference internal" href="program_listing_file_globals_NvCMath.h.html#program-listing-file-globals-nvcmath-h"><span class="std std-ref">globals/NvCMath.h</span></a></p>
-<section id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline"></a></h2>
+<span id="nv-c-math-8h"></span><h1>globals/NvCMath.h<a class="headerlink" href="#globals-nvcmath-h" title="Permalink to this headline"></a></h1>
+<p>In directory: <a class="reference internal" href="dir_globals.html#dir-6cae25715198b8e785d094ed2704a374"><span class="std std-ref">globals</span></a></p>
+<p>Source file: <a class="reference internal" href="program_listing_file_globals_NvCMath.h.html"><span class="doc">globals/NvCMath.h</span></a></p>
+<p>Vector math utility functions. </p>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<p class="rubric-h4 rubric">Functions</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d.html#exhale-function-nv-c-math-8h-1abc8762e6469df555d6477e68aa8e3f9d"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef.html#exhale-function-nv-c-math-8h-1a1688e60463aa975a84b9b39cd4a34bef"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502.html#exhale-function-nv-c-math-8h-1abd56d8b3f515161d33d990bc578b1502"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381.html#exhale-function-nv-c-math-8h-1a507b474809ef6f3d5c0bbb3f33af5381"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6753f5de02113c898460719debac36f1.html#exhale-function-nv-c-math-8h-1a6753f5de02113c898460719debac36f1"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98.html#exhale-function-nv-c-math-8h-1a63e23251d052c92a756bad8e591b3a98"><span class="std std-ref">operator*</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a718c04cab1e8ef6251f3aef712cf935a.html#exhale-function-nv-c-math-8h-1a718c04cab1e8ef6251f3aef712cf935a"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a460f35a5b35341bd954c3391b4afacb7.html#exhale-function-nv-c-math-8h-1a460f35a5b35341bd954c3391b4afacb7"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a9372b227d7ebd7103a9f210127f9b7f8.html#exhale-function-nv-c-math-8h-1a9372b227d7ebd7103a9f210127f9b7f8"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3c5d51bca7fdb48c180187675e6a21a5.html#exhale-function-nv-c-math-8h-1a3c5d51bca7fdb48c180187675e6a21a5"><span class="std std-ref">operator*=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130.html#exhale-function-nv-c-math-8h-1ac952738fe58b6ccf375037c9ef914130"><span class="std std-ref">operator+</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11.html#exhale-function-nv-c-math-8h-1a38631d57cea0f9c9ff55e06982c6bf11"><span class="std std-ref">operator+</span></a>: Some basic operators for NvcVec2 and NvcVec3.</p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa9ad39d57a2deb016c71e880e9d3d051.html#exhale-function-nv-c-math-8h-1aa9ad39d57a2deb016c71e880e9d3d051"><span class="std std-ref">operator+=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad12c0bd228e8219a8d27368df3089c3d.html#exhale-function-nv-c-math-8h-1ad12c0bd228e8219a8d27368df3089c3d"><span class="std std-ref">operator+=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d.html#exhale-function-nv-c-math-8h-1a13a8c7f04e60b858d494e21582044b5d"><span class="std std-ref">operator-</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1afda8027df3884875fbe538913053d73d.html#exhale-function-nv-c-math-8h-1afda8027df3884875fbe538913053d73d"><span class="std std-ref">operator-</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f.html#exhale-function-nv-c-math-8h-1a928a677f0333c676c8050d1a1c7b689f"><span class="std std-ref">operator-</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300.html#exhale-function-nv-c-math-8h-1ad5d890cf7acb13499f0c1eeabc39c300"><span class="std std-ref">operator-</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2824966271ddb90457f96e298cf8b461.html#exhale-function-nv-c-math-8h-1a2824966271ddb90457f96e298cf8b461"><span class="std std-ref">operator-=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2c02df2375152637ad447d375a00bb99.html#exhale-function-nv-c-math-8h-1a2c02df2375152637ad447d375a00bb99"><span class="std std-ref">operator-=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc.html#exhale-function-nv-c-math-8h-1a8ac7d4f0c1cacd24219f53b16b2f18dc"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b.html#exhale-function-nv-c-math-8h-1a6fe2490b55b057497b07c364ae927c2b"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4.html#exhale-function-nv-c-math-8h-1aa8e8475ea48862fbf67c826a408cd0d4"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521.html#exhale-function-nv-c-math-8h-1a6df191085c33b1ace13a2113196d6521"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d.html#exhale-function-nv-c-math-8h-1a52325d979f123f131fa8de8ba7a1919d"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e.html#exhale-function-nv-c-math-8h-1a3611b94ab71c272ff7bec5230474602e"><span class="std std-ref">operator/</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a72f041e5ea8d3ca6447c89b956050ef4.html#exhale-function-nv-c-math-8h-1a72f041e5ea8d3ca6447c89b956050ef4"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a4376e8ba6271f4b8516234f661ef0af6.html#exhale-function-nv-c-math-8h-1a4376e8ba6271f4b8516234f661ef0af6"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1acaffd0a4ab89df47cf5b5ac302af1c02.html#exhale-function-nv-c-math-8h-1acaffd0a4ab89df47cf5b5ac302af1c02"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a76d66493fdfdd7e742497454c75b56e4.html#exhale-function-nv-c-math-8h-1a76d66493fdfdd7e742497454c75b56e4"><span class="std std-ref">operator/=</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60.html#exhale-function-nv-c-math-8h-1a68dfaa9aee29c4c44472edb04528eb60"><span class="std std-ref">operator^</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031.html#exhale-function-nv-c-math-8h-1aa24e75f0f0f976ebe5333b3e70dc2031"><span class="std std-ref">operator|</span></a></p></li>
-<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7.html#exhale-function-nv-c-math-8h-1aa12da244dd84d18bb1516cd65654f0c7"><span class="std std-ref">operator|</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef.html#_nv_c_math_8h_1a1688e60463aa975a84b9b39cd4a34bef"><span class="std std-ref">operator*(const NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381.html#_nv_c_math_8h_1a507b474809ef6f3d5c0bbb3f33af5381"><span class="std std-ref">operator*(float f, const NvcVec3 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98.html#_nv_c_math_8h_1a63e23251d052c92a756bad8e591b3a98"><span class="std std-ref">operator*(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6753f5de02113c898460719debac36f1.html#_nv_c_math_8h_1a6753f5de02113c898460719debac36f1"><span class="std std-ref">operator*(const NvcVec2 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d.html#_nv_c_math_8h_1abc8762e6469df555d6477e68aa8e3f9d"><span class="std std-ref">operator*(float f, const NvcVec2 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502.html#_nv_c_math_8h_1abd56d8b3f515161d33d990bc578b1502"><span class="std std-ref">operator*(const NvcVec3 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3c5d51bca7fdb48c180187675e6a21a5.html#_nv_c_math_8h_1a3c5d51bca7fdb48c180187675e6a21a5"><span class="std std-ref">operator*=(NvcVec3 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a460f35a5b35341bd954c3391b4afacb7.html#_nv_c_math_8h_1a460f35a5b35341bd954c3391b4afacb7"><span class="std std-ref">operator*=(NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a718c04cab1e8ef6251f3aef712cf935a.html#_nv_c_math_8h_1a718c04cab1e8ef6251f3aef712cf935a"><span class="std std-ref">operator*=(NvcVec2 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a9372b227d7ebd7103a9f210127f9b7f8.html#_nv_c_math_8h_1a9372b227d7ebd7103a9f210127f9b7f8"><span class="std std-ref">operator*=(NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11.html#_nv_c_math_8h_1a38631d57cea0f9c9ff55e06982c6bf11"><span class="std std-ref">operator+(const NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a>: Some basic operators for NvcVec2 and NvcVec3.</p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130.html#_nv_c_math_8h_1ac952738fe58b6ccf375037c9ef914130"><span class="std std-ref">operator+(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa9ad39d57a2deb016c71e880e9d3d051.html#_nv_c_math_8h_1aa9ad39d57a2deb016c71e880e9d3d051"><span class="std std-ref">operator+=(NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad12c0bd228e8219a8d27368df3089c3d.html#_nv_c_math_8h_1ad12c0bd228e8219a8d27368df3089c3d"><span class="std std-ref">operator+=(NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d.html#_nv_c_math_8h_1a13a8c7f04e60b858d494e21582044b5d"><span class="std std-ref">operator-(const NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f.html#_nv_c_math_8h_1a928a677f0333c676c8050d1a1c7b689f"><span class="std std-ref">operator-(const NvcVec3 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300.html#_nv_c_math_8h_1ad5d890cf7acb13499f0c1eeabc39c300"><span class="std std-ref">operator-(const NvcVec2 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1afda8027df3884875fbe538913053d73d.html#_nv_c_math_8h_1afda8027df3884875fbe538913053d73d"><span class="std std-ref">operator-(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2824966271ddb90457f96e298cf8b461.html#_nv_c_math_8h_1a2824966271ddb90457f96e298cf8b461"><span class="std std-ref">operator-=(NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a2c02df2375152637ad447d375a00bb99.html#_nv_c_math_8h_1a2c02df2375152637ad447d375a00bb99"><span class="std std-ref">operator-=(NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e.html#_nv_c_math_8h_1a3611b94ab71c272ff7bec5230474602e"><span class="std std-ref">operator/(const NvcVec3 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d.html#_nv_c_math_8h_1a52325d979f123f131fa8de8ba7a1919d"><span class="std std-ref">operator/(const NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521.html#_nv_c_math_8h_1a6df191085c33b1ace13a2113196d6521"><span class="std std-ref">operator/(float f, const NvcVec2 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b.html#_nv_c_math_8h_1a6fe2490b55b057497b07c364ae927c2b"><span class="std std-ref">operator/(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc.html#_nv_c_math_8h_1a8ac7d4f0c1cacd24219f53b16b2f18dc"><span class="std std-ref">operator/(float f, const NvcVec3 &amp;v)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4.html#_nv_c_math_8h_1aa8e8475ea48862fbf67c826a408cd0d4"><span class="std std-ref">operator/(const NvcVec2 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a4376e8ba6271f4b8516234f661ef0af6.html#_nv_c_math_8h_1a4376e8ba6271f4b8516234f661ef0af6"><span class="std std-ref">operator/=(NvcVec2 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a72f041e5ea8d3ca6447c89b956050ef4.html#_nv_c_math_8h_1a72f041e5ea8d3ca6447c89b956050ef4"><span class="std std-ref">operator/=(NvcVec3 &amp;v, float f)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a76d66493fdfdd7e742497454c75b56e4.html#_nv_c_math_8h_1a76d66493fdfdd7e742497454c75b56e4"><span class="std std-ref">operator/=(NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1acaffd0a4ab89df47cf5b5ac302af1c02.html#_nv_c_math_8h_1acaffd0a4ab89df47cf5b5ac302af1c02"><span class="std std-ref">operator/=(NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60.html#_nv_c_math_8h_1a68dfaa9aee29c4c44472edb04528eb60"><span class="std std-ref">operator^(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7.html#_nv_c_math_8h_1aa12da244dd84d18bb1516cd65654f0c7"><span class="std std-ref">operator|(const NvcVec2 &amp;v, const NvcVec2 &amp;w)</span></a></p></li>
+<li><p><a class="reference internal" href="function__nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031.html#_nv_c_math_8h_1aa24e75f0f0f976ebe5333b3e70dc2031"><span class="std std-ref">operator|(const NvcVec3 &amp;v, const NvcVec3 &amp;w)</span></a></p></li>
 </ul>
-</section>
 </section>
 
 
@@ -143,8 +219,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 

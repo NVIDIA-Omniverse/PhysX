@@ -4,13 +4,12 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>extensions/authoringCommon/ &mdash; blast-sdk 5.0.3 documentation</title>
+  <title>extensions/authoringCommon &mdash; blast-sdk 5.0.4 documentation</title>
       <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/omni-style.css" type="text/css" />
       <link rel="stylesheet" href="../../../../_static/api-styles.css" type="text/css" />
-      <link rel="stylesheet" href="../../../../_static/collapsible-lists\css\tree_view.css" type="text/css" />
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
   <!--[if lt IE 9]>
     <script src="../../../../_static/js/html5shiv.min.js"></script>
@@ -24,11 +23,11 @@
         <script src="../../../../_static/design-tabs.js"></script>
         <script src="../../../../_static/version.js"></script>
         <script src="../../../../_static/social-media.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\CollapsibleLists.compressed.js"></script>
-        <script src="../../../../_static/collapsible-lists\js\apply-collapsible-lists.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="extensions/authoringCommon/NvBlastExtAuthoringAccelerator.h" href="file_extensions_authoringCommon_NvBlastExtAuthoringAccelerator.h.html" />
+    <link rel="prev" title="extensions/authoring/NvBlastExtAuthoringMeshCleaner.h" href="program_listing_file_extensions_authoring_NvBlastExtAuthoringMeshCleaner.h.html" />
  
 
 
@@ -39,9 +38,11 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../../../index.html">
-            <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
-          </a>
+
+
+<a href="../../../../index.html">
+  <img src="../../../../_static/main_ov_logo_rect.png" class="logo" alt="Logo"/>
+</a>
 
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
@@ -52,7 +53,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_ll_users_guide.html">Low Level API (NvBlast)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/api_globals_users_guide.html">Globals API (NvBlastGlobals)</a></li>
@@ -61,7 +62,44 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/definitions.html">Definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/api/copyrights.html">Copyrights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../docs/CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="blast-sdk_api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="blast-sdk_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="blast-sdk_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_extensions.html">extensions</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_assetutils.html">assetutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_authoring.html">authoring</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">authoringCommon</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringAccelerator.h.html">NvBlastExtAuthoringAccelerator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringConvexMeshBuilder.h.html">NvBlastExtAuthoringConvexMeshBuilder.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringMesh.h.html">NvBlastExtAuthoringMesh.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html">NvBlastExtAuthoringPatternGenerator.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringTypes.h.html">NvBlastExtAuthoringTypes.h</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_serialization.html">serialization</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_shaders.html">shaders</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_extensions_stress.html">stress</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_globals.html">globals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_lowlevel.html">lowlevel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_toolkit.html">toolkit</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -77,8 +115,17 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
+
+
 <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
-<li>extensions/authoringCommon/</li>
+  
+    <li><a href="blast-sdk_api.html">blast-sdk-5.0.4</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_extensions.html">extensions</a> &raquo;</li>
+<li>extensions/authoringCommon</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
 <li class="wy-breadcrumbs-aside">
 
   <span>&nbsp;</span>
@@ -91,18 +138,17 @@
            <div itemprop="articleBody">
              
   <section id="extensions-authoringcommon">
-<span id="dir-extensions-authoringcommon"></span><h1>extensions/authoringCommon/<a class="headerlink" href="#extensions-authoringcommon" title="Permalink to this headline"></a></h1>
-<p>↰ Parent directory: <a class="reference internal" href="dir_extensions.html#dir-extensions"><span class="std std-ref">extensions/</span></a></p>
-<section id="files">
-<h2>Files<a class="headerlink" href="#files" title="Permalink to this headline"></a></h2>
+<span id="dir-1cd868fd06a162ea9af305d3b228d235"></span><h1>extensions/authoringCommon<a class="headerlink" href="#extensions-authoringcommon" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<p class="rubric-h4 rubric">Files</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringAccelerator.h.html#file-extensions-authoringcommon-nvblastextauthoringaccelerator-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringAccelerator.h</span></a>: Defines the SpatialAccelerator API used by the BooleanTool.</p></li>
-<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringConvexMeshBuilder.h.html#file-extensions-authoringcommon-nvblastextauthoringconvexmeshbuilder-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringConvexMeshBuilder.h</span></a>: Defines the ConvexMeshBuilder API used by the authoring tools, allowing the user to specify a convex hull description for a chunk.</p></li>
-<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringMesh.h.html#file-extensions-authoringcommon-nvblastextauthoringmesh-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringMesh.h</span></a>: Defines the Mesh API used by the authoring tools.</p></li>
-<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#file-extensions-authoringcommon-nvblastextauthoringpatterngenerator-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringPatternGenerator.h</span></a>: Defines the PatternGenerator API used by the authoring tools, allowing the user to create fracture patterns.</p></li>
-<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringTypes.h.html#file-extensions-authoringcommon-nvblastextauthoringtypes-h"><span class="std std-ref">extensions/authoringCommon/NvBlastExtAuthoringTypes.h</span></a>: Defines basic types used by NvBlastExtAuthoring.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringAccelerator.h.html#nv-blast-ext-authoring-accelerator-8h"><span class="std std-ref">NvBlastExtAuthoringAccelerator.h</span></a>: Defines the SpatialAccelerator API used by the BooleanTool.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringConvexMeshBuilder.h.html#nv-blast-ext-authoring-convex-mesh-builder-8h"><span class="std std-ref">NvBlastExtAuthoringConvexMeshBuilder.h</span></a>: Defines the ConvexMeshBuilder API used by the authoring tools, allowing the user to specify a convex hull description for a chunk.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringMesh.h.html#nv-blast-ext-authoring-mesh-8h"><span class="std std-ref">NvBlastExtAuthoringMesh.h</span></a>: Defines the Mesh API used by the authoring tools.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringPatternGenerator.h.html#nv-blast-ext-authoring-pattern-generator-8h"><span class="std std-ref">NvBlastExtAuthoringPatternGenerator.h</span></a>: Defines the PatternGenerator API used by the authoring tools, allowing the user to create fracture patterns.</p></li>
+<li><p><a class="reference internal" href="file_extensions_authoringCommon_NvBlastExtAuthoringTypes.h.html#nv-blast-ext-authoring-types-8h"><span class="std std-ref">NvBlastExtAuthoringTypes.h</span></a>: Defines basic types used by NvBlastExtAuthoring.</p></li>
 </ul>
-</section>
 </section>
 
 
@@ -113,8 +159,8 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2017-2023, NVIDIA.
-      <span class="lastupdated">Last updated on Nov 12, 2023.
+    <p>&#169; Copyright 2017-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jan 22, 2024.
       </span></p>
   </div>
 
