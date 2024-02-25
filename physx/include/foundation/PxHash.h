@@ -98,6 +98,14 @@ PX_INLINE uint32_t PxComputeHash(const size_t key)
 }
 #endif
 
+#if PX_EMSCRIPTEN
+// hash for unsigned long, to make emscripten happy
+PX_FORCE_INLINE uint32_t PxComputeHash(const unsigned long key)
+{
+	return PxComputeHash(uint32_t(key));
+}
+#endif
+
 // Hash function for pointers
 PX_INLINE uint32_t PxComputeHash(const void* ptr)
 {
