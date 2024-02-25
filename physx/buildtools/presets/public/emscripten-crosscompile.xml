@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preset name="emscripten-crosscompile" comment="Wasm32 Emscripten PhysX SDK general settings">
+  <platform targetPlatform="wasm32" compiler="emscripten" generator="ninja" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="False" comment="Generate the snippets" />
+    <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="False" comment="Generate the OmniPVD project" />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/wasm32/PhysX" comment="Install path relative to PhysX SDK root" />
+    <cmakeParam name="CMAKE_CROSSCOMPILING" value="TRUE" />
+  </CMakeParams>
+</preset>

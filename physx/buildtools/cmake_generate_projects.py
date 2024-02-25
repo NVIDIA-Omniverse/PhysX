@@ -117,6 +117,8 @@ class CMakePreset:
             return False
         elif self.targetPlatform == 'linuxAarch64':
             return False
+        elif self.targetPlatform == 'wasm32':
+            return False
         return True
 
     def getCMakeSwitches(self):
@@ -164,10 +166,13 @@ class CMakePreset:
         elif self.compiler == 'xcode':
             outString = outString + '-G Xcode'
         # Linux
-        elif self.targetPlatform in ['linux', 'linuxAarch64']:
+        elif self.targetPlatform in ['linux', 'linuxAarch64', 'wasm32']:
             if self.generator is not None and self.generator == 'ninja':
                 outString = outString + '-G \"Ninja\"'
-                outString = outString + ' -DCMAKE_MAKE_PROGRAM=' + os.environ['PM_ninja_PATH'] + '/ninja'
+                if 'PM_ninja_PATH' in os.environ:
+                    outString = outString + ' -DCMAKE_MAKE_PROGRAM=' + os.environ['PM_ninja_PATH'] + '/ninja'
+                else:
+                    outString = outString + ' -DCMAKE_MAKE_PROGRAM=ninja'
             else:
                 outString = outString + '-G \"Unix Makefiles\"'
 
@@ -199,7 +204,6 @@ class CMakePreset:
                 else:
                     outString = outString + ' -DCMAKE_C_COMPILER=clang'
                     outString = outString + ' -DCMAKE_CXX_COMPILER=clang++'
-            return outString
         elif self.targetPlatform == 'linuxAarch64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=linux'
             outString = outString + ' -DPX_OUTPUT_ARCH=arm'
@@ -216,6 +220,20 @@ class CMakePreset:
         elif self.targetPlatform == 'mac64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
+            return outString
+        elif self.targetPlatform == 'wasm32':
+            # outString = outString + ' -DPX_OUTPUT_ARCH=wasm32'
+
+            if self.compiler == 'emscripten':
+                compiler_extension = '.bat' if sys.platform == 'win32' else ''
+                emscripten_root = os.environ['EMSDK'] + '/upstream/emscripten'
+                outString = outString + ' -DTARGET_BUILD_PLATFORM=wasm32'
+                outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
+                            emscripten_root + '/cmake/Modules/Platform/Emscripten.cmake'
+                outString = outString + ' -DCMAKE_C_COMPILER=' + \
+                            emscripten_root + 'emcc' + compiler_extension
+                outString = outString + ' -DCMAKE_CXX_COMPILER=' + \
+                            emscripten_root + 'em++' + compiler_extension
             return outString
         return ''
 

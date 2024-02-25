@@ -1,4 +1,5 @@
 bin/
 compiler/linux-*
 compiler/vc*
+compiler/emscripten*
 include/PxConfig.h
