@@ -1449,6 +1449,7 @@ void ImmediateScene::buildSolverConstraintDesc()
 		setupDesc(desc, mActors.begin(), mSolverBodies.begin(), pair.mID1, true);
 
 		//Cache pointer to our contact data structure and identify which type of constraint this is. We'll need this later after batching.
+		//We store our pointer in the desc.constraint field as this field is ignored by PxBatchConstraints. It will later be overwritten by PxCreateContactConstraints.
 		//If we choose not to perform batching and instead just create a single header per-pair, then this would not be necessary because
 		//the constraintDescs would not have been reordered
 		desc.constraint				= reinterpret_cast<PxU8*>(const_cast<ContactPair*>(&pair));
