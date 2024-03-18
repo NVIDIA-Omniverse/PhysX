@@ -375,6 +375,7 @@ PxU32 PxCustomGeometryExt::BaseConvexCallbacks::raycast(const PxVec3& origin, co
 		hit.distance = t;
 		hit.position = p;
 		hit.normal = n;
+		hit.flags |= PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
 		return 1;
 	}
 
