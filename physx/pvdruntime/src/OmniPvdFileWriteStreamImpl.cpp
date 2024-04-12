@@ -27,92 +27,86 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "OmniPvdFileWriteStreamImpl.h"
+#include <cstring> 
 
-OmniPvdFileWriteStreamImpl::OmniPvdFileWriteStreamImpl()
+OmniPvdFileWriteStreamImpl::OmniPvdFileWriteStreamImpl() :
+    mFileName(nullptr),
+    mFileWasOpened(false),
+    mPFile(nullptr)
 {
-	mFileName = 0;
-	mFileWasOpened = false;
-	mPFile = 0;
 }
 
 OmniPvdFileWriteStreamImpl::~OmniPvdFileWriteStreamImpl()
 {
-	closeFile();
-	delete[] mFileName;
-	mFileName = 0;
+    closeFile(); 
+    delete[] mFileName;
 }
 
 void OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::setFileName(const char* fileName)
 {
-	if (!fileName) return;
-	int n = (int)strlen(fileName) + 1;
-	if (n < 2) return;
-	delete[] mFileName;
-	mFileName = new char[n];
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	strcpy_s(mFileName, n, fileName);
-#else
-	strcpy(mFileName, fileName);
-#endif		
-	mFileName[n - 1] = 0;
+    if (!fileName || strlen(fileName) < 2) 
+        return;
+    
+    delete[] mFileName; 
+    size_t n = strlen(fileName) + 1;
+    mFileName = new char[n];
+    strcpy(mFileName, fileName);
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::openFile()
 {
-	if (mFileWasOpened)
-	{
-		return true;
-	}
-	if (!mFileName)
-	{
-		return false;
-	}
-	mPFile = 0;
-	mFileWasOpened = true;
+    if (mFileWasOpened || !mFileName) 
+        return mFileWasOpened;
+    
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	errno_t err = fopen_s(&mPFile, mFileName, "wb");
-	if (err != 0)
-	{
-		mFileWasOpened = false;
-	}
+    errno_t err = fopen_s(&mPFile, mFileName, "wb");
+    mFileWasOpened = (err == 0);
 #else
-	mPFile = fopen(mFileName, "wb");
+    mPFile = fopen(mFileName, "wb");
+    mFileWasOpened = (mPFile != nullptr);
 #endif
-	return mFileWasOpened;
+
+    return mFileWasOpened;
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::closeFile()
 {
-	if (mFileWasOpened)
-	{
-		fclose(mPFile);
-		mFileWasOpened = false;
-	}
-	return true;
+    if (mFileWasOpened && mPFile) 
+    {
+        fclose(mPFile);
+        mPFile = nullptr; 
+        mFileWasOpened = false;
+        return true;
+    }
+    return false;
 }
 
 uint64_t OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::writeBytes(const uint8_t *bytes, uint64_t nbrBytes)
 {
-	size_t result = 0;
-	if (mFileWasOpened)
-	{
-		result = fwrite(bytes, 1, nbrBytes, mPFile);
-		result++;
-	}
-	return result;
+    if (mFileWasOpened && mPFile)
+    {
+        size_t result = fwrite(bytes, 1, nbrBytes, mPFile);
+        return result; 
+    }
+    return 0;
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::flush()
 {
-	return true;
+    if (mFileWasOpened && mPFile)
+    {
+        fflush(mPFile); 
+        return true;
+    }
+    return false;
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::openStream()
 {
-	return openFile();
+    return openFile();
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::closeStream()
 {
-	return closeFile();
+    return closeFile();
 }
