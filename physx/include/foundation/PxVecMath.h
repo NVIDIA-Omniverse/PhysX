@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -302,10 +302,10 @@ PX_FORCE_INLINE FloatV FOne();
 PX_FORCE_INLINE FloatV FHalf();
 //(PX_EPS_REAL,PX_EPS_REAL,PX_EPS_REAL,PX_EPS_REAL)
 PX_FORCE_INLINE FloatV FEps();
-//! @cond
+//! \cond
 //(PX_MAX_REAL, PX_MAX_REAL, PX_MAX_REAL PX_MAX_REAL)
 PX_FORCE_INLINE FloatV FMax();
-//! @endcond
+//! \endcond
 //(-PX_MAX_REAL, -PX_MAX_REAL, -PX_MAX_REAL -PX_MAX_REAL)
 PX_FORCE_INLINE FloatV FNegMax();
 //(1e-6f, 1e-6f, 1e-6f, 1e-6f)
@@ -1258,34 +1258,56 @@ PX_FORCE_INLINE const PxVec3& V4ReadXYZ(const Vec4V& v)
 }
 
 // this macro transposes 4 Vec4V into 3 Vec4V (assuming that the W component can be ignored
-#define PX_TRANSPOSE_44_34(inA, inB, inC, inD, outA, outB, outC)                                                       \
-outA = V4UnpackXY(inA, inC);                                                                                           \
-inA = V4UnpackZW(inA, inC);                                                                                            \
-inC = V4UnpackXY(inB, inD);                                                                                            \
-inB = V4UnpackZW(inB, inD);                                                                                            \
-outB = V4UnpackZW(outA, inC);                                                                                          \
-outA = V4UnpackXY(outA, inC);                                                                                          \
+//inA:  1   2   3   4
+//inB:  5   6   7   8
+//inC:  9  10  11  12
+//inD:  13 14  15  16
+//outA: 1   5   9  13
+//outB: 2   6  10  14
+//outC: 3   7  11  15
+#define PX_TRANSPOSE_44_34(inA, inB, inC, inD, outA, outB, outC)	\
+outA = V4UnpackXY(inA, inC);                                        \
+inA = V4UnpackZW(inA, inC);                                         \
+inC = V4UnpackXY(inB, inD);                                         \
+inB = V4UnpackZW(inB, inD);                                         \
+outB = V4UnpackZW(outA, inC);                                       \
+outA = V4UnpackXY(outA, inC);                                       \
 outC = V4UnpackXY(inA, inB);
 
 // this macro transposes 3 Vec4V into 4 Vec4V (with W components as garbage!)
-#define PX_TRANSPOSE_34_44(inA, inB, inC, outA, outB, outC, outD)                                                      \
-	outA = V4UnpackXY(inA, inC);                                                                                       \
-	inA = V4UnpackZW(inA, inC);                                                                                        \
-	outC = V4UnpackXY(inB, inB);                                                                                       \
-	inC = V4UnpackZW(inB, inB);                                                                                        \
-	outB = V4UnpackZW(outA, outC);                                                                                     \
-	outA = V4UnpackXY(outA, outC);                                                                                     \
-	outC = V4UnpackXY(inA, inC);                                                                                       \
+//inA:  1   2   3   4
+//inB:  5   6   7   8
+//inC:  9  10  11  12
+//outA: 1   5   9  undefined
+//outB: 2   6  10  undefined
+//outC: 3   7  11  undefined
+//outD: 4   8  12  undefined
+#define PX_TRANSPOSE_34_44(inA, inB, inC, outA, outB, outC, outD)	\
+	outA = V4UnpackXY(inA, inC);                                    \
+	inA = V4UnpackZW(inA, inC);                                     \
+	outC = V4UnpackXY(inB, inB);                                    \
+	inC = V4UnpackZW(inB, inB);                                     \
+	outB = V4UnpackZW(outA, outC);                                  \
+	outA = V4UnpackXY(outA, outC);                                  \
+	outC = V4UnpackXY(inA, inC);                                    \
 	outD = V4UnpackZW(inA, inC);
 
-#define PX_TRANSPOSE_44(inA, inB, inC, inD, outA, outB, outC, outD)                                                    \
-	outA = V4UnpackXY(inA, inC);                                                                                       \
-	inA = V4UnpackZW(inA, inC);                                                                                        \
-	inC = V4UnpackXY(inB, inD);                                                                                        \
-	inB = V4UnpackZW(inB, inD);                                                                                        \
-	outB = V4UnpackZW(outA, inC);                                                                                      \
-	outA = V4UnpackXY(outA, inC);                                                                                      \
-	outC = V4UnpackXY(inA, inB);                                                                                       \
+//inA:  1   2   3   4
+//inB:  5   6   7   8
+//inC:  9  10  11  12
+//inD:  13 14  15  16
+//outA: 1   5   9  13
+//outB: 2   6  10  14
+//outC: 3   7  11  15
+//outD: 4   8  12  16
+#define PX_TRANSPOSE_44(inA, inB, inC, inD, outA, outB, outC, outD)	\
+	outA = V4UnpackXY(inA, inC);                                    \
+	inA = V4UnpackZW(inA, inC);                                     \
+	inC = V4UnpackXY(inB, inD);                                     \
+	inB = V4UnpackZW(inB, inD);                                     \
+	outB = V4UnpackZW(outA, inC);                                   \
+	outA = V4UnpackXY(outA, inC);                                   \
+	outC = V4UnpackXY(inA, inB);                                    \
 	outD = V4UnpackZW(inA, inB);
 
 // This function returns a Vec4V, where each element is the dot product of one pair of Vec3Vs. On PC, each element in

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -121,28 +121,12 @@ struct SolverContactPoint
 	PxF32 impulseMultiplier;
 	PxU32 pad;
 
-	PX_FORCE_INLINE FloatV getVelMultiplier() const			{ return V4GetW(raXn_velMultiplierW);			}
-	PX_FORCE_INLINE FloatV getImpulseMultiplier() const		{ return FLoad(impulseMultiplier);				}
+	PX_FORCE_INLINE FloatV getVelMultiplier() const			{ return V4GetW(raXn_velMultiplierW);	}
+	PX_FORCE_INLINE FloatV getImpulseMultiplier() const		{ return FLoad(impulseMultiplier);		}
 
-	PX_FORCE_INLINE FloatV getBiasedErr() const				{ return FLoad(biasedErr);						}
-	PX_FORCE_INLINE FloatV getMaxImpulse() const			{ return V4GetW(rbXn_maxImpulseW);				}
-
-	PX_FORCE_INLINE Vec3V getRaXn() const					{ return Vec3V_From_Vec4V(raXn_velMultiplierW);	}
-	PX_FORCE_INLINE Vec3V getRbXn() const					{ return Vec3V_From_Vec4V(rbXn_maxImpulseW);	}
-
-	/*PX_FORCE_INLINE void setRaXn(const PxVec3& v)			{V4WriteXYZ(raXn_velMultiplierW, v);}
-	PX_FORCE_INLINE void setRbXn(const PxVec3& v)			{V4WriteXYZ(rbXn_maxImpulseW, v);}
-	PX_FORCE_INLINE void setVelMultiplier(PxF32 f)			{V4WriteW(raXn_velMultiplierW, f);}
-
-	PX_FORCE_INLINE void setBiasedErr(PxF32 f)				{biasedErr = f;}
-	PX_FORCE_INLINE void setUnbiasedErr(PxF32 f)			{unbiasedErr = f;}
-
-	PX_FORCE_INLINE PxF32 getVelMultiplierPxF32() const		{return V4ReadW(raXn_velMultiplierW);}
-	PX_FORCE_INLINE const PxVec3& getRaXnPxVec3() const		{return V3ReadXYZ(raXn);}
-	PX_FORCE_INLINE const PxVec3& getRbXnPxVec3() const		{return V3ReadXYZ(rbXn);}
-	PX_FORCE_INLINE PxF32 getBiasedErrPxF32() const			{return biasedErr;}*/
+	PX_FORCE_INLINE FloatV getBiasedErr() const				{ return FLoad(biasedErr);				}
+	PX_FORCE_INLINE FloatV getMaxImpulse() const			{ return V4GetW(rbXn_maxImpulseW);		}
 }; 
-
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverContactPoint) == 48);
 
@@ -165,39 +149,19 @@ PX_COMPILE_TIME_ASSERT(sizeof(SolverContactPointExt) == 112);
 */
 struct SolverContactFriction
 {
+	// PT: TODO: there's room for 3 floats in the padding bytes so we could just stick appliedForce / velMultiplier / bias there
+	// and avoid doing all the data packing / unpacking for these members...
 	Vec4V normalXYZ_appliedForceW;		//16
 	Vec4V raXnXYZ_velMultiplierW;		//32
 	Vec4V rbXnXYZ_biasW;				//48
 	PxReal targetVel;					//52
 	PxU32 mPad[3];						//64
 
-	PX_FORCE_INLINE void setAppliedForce(const FloatV f)	{normalXYZ_appliedForceW=V4SetW(normalXYZ_appliedForceW,f);}
-	PX_FORCE_INLINE void setVelMultiplier(const FloatV f)	{raXnXYZ_velMultiplierW=V4SetW(raXnXYZ_velMultiplierW,f);}
-	PX_FORCE_INLINE void setBias(const FloatV f)			{rbXnXYZ_biasW=V4SetW(rbXnXYZ_biasW,f);}
+	PX_FORCE_INLINE void setAppliedForce(const FloatV f)	{ normalXYZ_appliedForceW = V4SetW(normalXYZ_appliedForceW,f);	}
+	PX_FORCE_INLINE void setBias(const FloatV f)			{ rbXnXYZ_biasW = V4SetW(rbXnXYZ_biasW,f);						}
 
-	PX_FORCE_INLINE FloatV getAppliedForce() const			{return V4GetW(normalXYZ_appliedForceW);}
-	PX_FORCE_INLINE FloatV getVelMultiplier() const			{return V4GetW(raXnXYZ_velMultiplierW);}
-	PX_FORCE_INLINE FloatV getBias() const					{return V4GetW(rbXnXYZ_biasW);}
-
-	PX_FORCE_INLINE Vec3V getNormal() const					{return Vec3V_From_Vec4V(normalXYZ_appliedForceW);}
-	PX_FORCE_INLINE Vec3V getRaXn() const					{return Vec3V_From_Vec4V(raXnXYZ_velMultiplierW);}
-	PX_FORCE_INLINE Vec3V getRbXn() const					{return Vec3V_From_Vec4V(rbXnXYZ_biasW);}
-
-	PX_FORCE_INLINE void setNormal(const PxVec3& v)			{V4WriteXYZ(normalXYZ_appliedForceW, v);}
-	PX_FORCE_INLINE void setRaXn(const PxVec3& v)			{V4WriteXYZ(raXnXYZ_velMultiplierW, v);}
-	PX_FORCE_INLINE void setRbXn(const PxVec3& v)			{V4WriteXYZ(rbXnXYZ_biasW, v);}
-
-	PX_FORCE_INLINE const PxVec3& getNormalPxVec3() const	{return V4ReadXYZ(normalXYZ_appliedForceW);}
-	PX_FORCE_INLINE const PxVec3& getRaXnPxVec3() const		{return V4ReadXYZ(raXnXYZ_velMultiplierW);}
-	PX_FORCE_INLINE const PxVec3& getRbXnPxVec3() const		{return V4ReadXYZ(rbXnXYZ_biasW);}
-
-	PX_FORCE_INLINE void setAppliedForce(PxF32 f)			{V4WriteW(normalXYZ_appliedForceW, f);}
-	PX_FORCE_INLINE void setVelMultiplier(PxF32 f)			{V4WriteW(raXnXYZ_velMultiplierW, f);}
-	PX_FORCE_INLINE void setBias(PxF32 f)					{V4WriteW(rbXnXYZ_biasW, f);}
-	
-	PX_FORCE_INLINE PxF32 getAppliedForcePxF32() const		{return V4ReadW(normalXYZ_appliedForceW);}
-	PX_FORCE_INLINE PxF32 getVelMultiplierPxF32() const		{return V4ReadW(raXnXYZ_velMultiplierW);}
-	PX_FORCE_INLINE PxF32 getBiasPxF32() const				{return V4ReadW(rbXnXYZ_biasW);}
+	PX_FORCE_INLINE Vec3V getNormal() const { return Vec3V_From_Vec4V(normalXYZ_appliedForceW); }
+	PX_FORCE_INLINE FloatV getAppliedForce() const { return V4GetW(normalXYZ_appliedForceW); }
 }; 
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverContactFriction) == 64);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_CUDA_CONTEXT_MANAGER_H
 #define PX_CUDA_CONTEXT_MANAGER_H
@@ -84,7 +84,7 @@ protected:
 /**
 \brief collection of set bits defined in NxCudaInteropRegisterFlag.
 
-@see NxCudaInteropRegisterFlag
+\see NxCudaInteropRegisterFlag
 */
 typedef PxFlags<PxCudaInteropRegisterFlag::Enum, uint32_t> PxCudaInteropRegisterFlags;
 PX_FLAGS_OPERATORS(PxCudaInteropRegisterFlag::Enum, uint32_t)
@@ -174,9 +174,10 @@ public:
 	* \brief Schedules clear operation for a device memory buffer on the specified stream
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated The replacement is PxCudaHelpersExt::memsetAsync.
 	*/
 	template<typename T>
-	void clearDeviceBufferAsync(T* deviceBuffer, PxU32 numElements, CUstream stream, PxI32 value = 0)
+	PX_DEPRECATED void clearDeviceBufferAsync(T* deviceBuffer, PxU32 numElements, CUstream stream, PxI32 value = 0)
 	{
 		clearDeviceBufferAsyncInternal(deviceBuffer, numElements * sizeof(T), stream, value);
 	}
@@ -185,9 +186,10 @@ public:
 	* \brief Copies a device buffer to the host
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated The replacement is PxCudaHelpersExt::copyDToH.
 	*/
 	template<typename T>
-	void copyDToH(T* hostBuffer, const T* deviceBuffer, PxU32 numElements)
+	PX_DEPRECATED void copyDToH(T* hostBuffer, const T* deviceBuffer, PxU32 numElements)
 	{
 		copyDToHInternal(hostBuffer, deviceBuffer, numElements * sizeof(T));
 	}
@@ -196,9 +198,10 @@ public:
 	* \brief Copies a host buffer to the device
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated The replacement is PxCudaHelpersExt::copyHtoD
 	*/
 	template<typename T>
-	void copyHToD(T* deviceBuffer, const T* hostBuffer, PxU32 numElements)
+	PX_DEPRECATED void copyHToD(T* deviceBuffer, const T* hostBuffer, PxU32 numElements)
 	{
 		copyHToDInternal(deviceBuffer, hostBuffer, numElements * sizeof(T));
 	}
@@ -207,9 +210,10 @@ public:
 	* \brief Schedules device to host copy operation on the specified stream
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated Use PxCudaHelpersExt::copyDToHAsync instead.
 	*/
 	template<typename T>
-	void copyDToHAsync(T* hostBuffer, const T* deviceBuffer, PxU32 numElements, CUstream stream)
+	PX_DEPRECATED void copyDToHAsync(T* hostBuffer, const T* deviceBuffer, PxU32 numElements, CUstream stream)
 	{
 		copyDToHAsyncInternal(hostBuffer, deviceBuffer, numElements * sizeof(T), stream);
 	}
@@ -218,9 +222,10 @@ public:
 	* \brief Schedules host to device copy operation on the specified stream
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated Use PxCudaHelpersExt::copyHToDAsync instead.
 	*/
 	template<typename T>
-	void copyHToDAsync(T* deviceBuffer, const T* hostBuffer, PxU32 numElements, CUstream stream)
+	PX_DEPRECATED void copyHToDAsync(T* deviceBuffer, const T* hostBuffer, PxU32 numElements, CUstream stream)
 	{
 		copyHToDAsyncInternal(deviceBuffer, hostBuffer, numElements * sizeof(T), stream);
 	}
@@ -229,9 +234,10 @@ public:
 	* \brief Schedules device to device copy operation on the specified stream
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated Use PxCudaHelpersExt::copyDToDAsync instead.
 	*/
 	template<typename T>
-	void copyDToDAsync(T* dstDeviceBuffer, const T* srcDeviceBuffer, PxU32 numElements, CUstream stream)
+	PX_DEPRECATED void copyDToDAsync(T* dstDeviceBuffer, const T* srcDeviceBuffer, PxU32 numElements, CUstream stream)
 	{
 		copyDToDAsyncInternal(dstDeviceBuffer, srcDeviceBuffer, numElements * sizeof(T), stream);
 	}
@@ -240,9 +246,10 @@ public:
 	* \brief Schedules a memset operation on the device on the specified stream. Only supported for 1 byte or 4 byte data types.
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated Use PxCudaHelpersExt::memsetAsync instead.
 	*/
 	template<typename T>
-	void memsetAsync(T* dstDeviceBuffer, const T& value, PxU32 numElements, CUstream stream)
+	PX_DEPRECATED void memsetAsync(T* dstDeviceBuffer, const T& value, PxU32 numElements, CUstream stream)
 	{
 		PX_COMPILE_TIME_ASSERT(sizeof(value) == sizeof(PxU32) || sizeof(value) == sizeof(PxU8));		
 
@@ -256,9 +263,10 @@ public:
 	* \brief Allocates a device buffer
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated - use PxCudaHelpersExt::allocDeviceBuffer instead.
 	*/
 	template<typename T>
-	void allocDeviceBuffer(T*& deviceBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
+	PX_DEPRECATED void allocDeviceBuffer(T*& deviceBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
 		void* ptr = allocDeviceBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		deviceBuffer = reinterpret_cast<T*>(ptr);
@@ -268,9 +276,10 @@ public:
 	* \brief Allocates a device buffer and returns the pointer to the memory
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated - use PxCudaHelpersExt::allocDeviceBuffer instead.
 	*/
 	template<typename T>
-	T* allocDeviceBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
+	PX_DEPRECATED T* allocDeviceBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
 		void* ptr = allocDeviceBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		return reinterpret_cast<T*>(ptr);
@@ -280,9 +289,10 @@ public:
 	* \brief Frees a device buffer
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated - use PxCudaHelpersExt::freeDeviceBuffer instead.
 	*/
 	template<typename T>
-	void freeDeviceBuffer(T*& deviceBuffer)
+	PX_DEPRECATED void freeDeviceBuffer(T*& deviceBuffer)
 	{
 		freeDeviceBufferInternal(deviceBuffer);
 		deviceBuffer = NULL;
@@ -293,10 +303,11 @@ public:
 	*
 	* A pinned host buffer can be used on the gpu after getting a mapped device pointer from the pinned host buffer pointer, see getMappedDevicePtr
 	* The cuda context will get acquired automatically
-	* @see getMappedDevicePtr
+	* \see getMappedDevicePtr
+	* \deprecated - use PxCudaHelpersExt::allocPinnedHostBuffer instead.
 	*/
 	template<typename T>
-	void allocPinnedHostBuffer(T*& pinnedHostBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
+	PX_DEPRECATED void allocPinnedHostBuffer(T*& pinnedHostBuffer, PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
 		void* ptr = allocPinnedHostBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		pinnedHostBuffer = reinterpret_cast<T*>(ptr);
@@ -307,10 +318,11 @@ public:
 	*
 	* A pinned host buffer can be used on the gpu after getting a mapped device pointer from the pinned host buffer pointer, see getMappedDevicePtr
 	* The cuda context will get acquired automatically
-	* @see getMappedDevicePtr
+	* \deprecated - use PxCudaHelpersExt::allocPinnedHostBuffer instead.
+	* \see getMappedDevicePtr
 	*/
 	template<typename T>
-	T* allocPinnedHostBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
+	PX_DEPRECATED T* allocPinnedHostBuffer(PxU32 numElements, const char* filename = __FILE__, PxI32 line = __LINE__)
 	{
 		void* ptr = allocPinnedHostBufferInternal(PxU64(numElements) * sizeof(T), filename, line);
 		return reinterpret_cast<T*>(ptr);
@@ -320,9 +332,10 @@ public:
 	* \brief Frees a pinned host buffer
 	*
 	* The cuda context will get acquired automatically
+	* \deprecated - use PxCudaHelpersExt::freePinnedHostBuffer instead.
 	*/
 	template<typename T>
-	void freePinnedHostBuffer(T*& pinnedHostBuffer)
+	PX_DEPRECATED void freePinnedHostBuffer(T*& pinnedHostBuffer)
 	{
 		freePinnedHostBufferInternal(pinnedHostBuffer);
 		pinnedHostBuffer = NULL;
@@ -439,31 +452,54 @@ protected:
      */
     virtual ~PxCudaContextManager() {}
 	
-	virtual void* allocDeviceBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;	
-	virtual void* allocPinnedHostBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;
+	PX_DEPRECATED virtual void* allocDeviceBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;	
+	PX_DEPRECATED virtual void* allocPinnedHostBufferInternal(PxU64 numBytes, const char* filename = NULL, PxI32 line = -1) = 0;
 	
-	virtual void freeDeviceBufferInternal(void* deviceBuffer) = 0;	
-	virtual void freePinnedHostBufferInternal(void* pinnedHostBuffer) = 0;	 
+	PX_DEPRECATED virtual void freeDeviceBufferInternal(void* deviceBuffer) = 0;	
+	PX_DEPRECATED virtual void freePinnedHostBufferInternal(void* pinnedHostBuffer) = 0;	 
 
-	virtual void clearDeviceBufferAsyncInternal(void* deviceBuffer, PxU32 numBytes, CUstream stream, PxI32 value) = 0;
+	PX_DEPRECATED virtual void clearDeviceBufferAsyncInternal(void* deviceBuffer, PxU32 numBytes, CUstream stream, PxI32 value) = 0;
 	 
-	virtual void copyDToHAsyncInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes, CUstream stream) = 0;
-	virtual void copyHToDAsyncInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes, CUstream stream) = 0;
-	virtual void copyDToDAsyncInternal(void* dstDeviceBuffer, const void* srcDeviceBuffer, PxU32 numBytes, CUstream stream) = 0;
+	PX_DEPRECATED virtual void copyDToHAsyncInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes, CUstream stream) = 0;
+	PX_DEPRECATED virtual void copyHToDAsyncInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes, CUstream stream) = 0;
+	PX_DEPRECATED virtual void copyDToDAsyncInternal(void* dstDeviceBuffer, const void* srcDeviceBuffer, PxU32 numBytes, CUstream stream) = 0;
 	 
-	virtual void copyDToHInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes) = 0;
-	virtual void copyHToDInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes) = 0;
+	PX_DEPRECATED virtual void copyDToHInternal(void* hostBuffer, const void* deviceBuffer, PxU32 numBytes) = 0;
+	PX_DEPRECATED virtual void copyHToDInternal(void* deviceBuffer, const void* hostBuffer, PxU32 numBytes) = 0;
 
-	virtual void memsetD8AsyncInternal(void* dstDeviceBuffer, const PxU8& value, PxU32 numBytes, CUstream stream) = 0;
-	virtual void memsetD32AsyncInternal(void* dstDeviceBuffer, const PxU32& value, PxU32 numIntegers, CUstream stream) = 0;
+	PX_DEPRECATED virtual void memsetD8AsyncInternal(void* dstDeviceBuffer, const PxU8& value, PxU32 numBytes, CUstream stream) = 0;
+	PX_DEPRECATED virtual void memsetD32AsyncInternal(void* dstDeviceBuffer, const PxU32& value, PxU32 numIntegers, CUstream stream) = 0;
 };
 
+// These macros are deprecated. Please use the functions in extensions/PxCudaHelpersExt.h
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_DEVICE_ALLOC(cudaContextManager, deviceBuffer, numElements) cudaContextManager->allocDeviceBuffer(deviceBuffer, numElements, PX_FL)
+
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_DEVICE_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocDeviceBuffer<T>(numElements, PX_FL)
+
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_DEVICE_FREE(cudaContextManager, deviceBuffer) cudaContextManager->freeDeviceBuffer(deviceBuffer);
 
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_PINNED_HOST_ALLOC(cudaContextManager, pinnedHostBuffer, numElements) cudaContextManager->allocPinnedHostBuffer(pinnedHostBuffer, numElements, PX_FL)
+
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_PINNED_HOST_ALLOC_T(T, cudaContextManager, numElements) cudaContextManager->allocPinnedHostBuffer<T>(numElements, PX_FL)
+
+/**
+ \deprecated Please use the functions in extensions/PxCudaHelpersExt.h
+ */
 #define PX_PINNED_HOST_FREE(cudaContextManager, pinnedHostBuffer) cudaContextManager->freePinnedHostBuffer(pinnedHostBuffer);
 
 /**

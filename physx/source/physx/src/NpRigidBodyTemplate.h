@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -95,23 +95,23 @@ public:
 	//~PxRigidActor
 
 	// PxRigidBody
-	virtual			PxTransform 		getCMassLocalPose() const	PX_OVERRIDE;
-	virtual			void				setMass(PxReal mass)	PX_OVERRIDE;
-	virtual			PxReal				getMass() const	PX_OVERRIDE;
-	virtual			PxReal				getInvMass() const	PX_OVERRIDE;
-	virtual			void				setMassSpaceInertiaTensor(const PxVec3& m)	PX_OVERRIDE;
-	virtual			PxVec3				getMassSpaceInertiaTensor() const	PX_OVERRIDE;
-	virtual			PxVec3				getMassSpaceInvInertiaTensor() const	PX_OVERRIDE;
-	virtual			void				setLinearDamping(PxReal linDamp)	PX_OVERRIDE;
-	virtual			PxReal				getLinearDamping()	const	PX_OVERRIDE;
-	virtual			void				setAngularDamping(PxReal angDamp)	PX_OVERRIDE;
-	virtual			PxReal				getAngularDamping()		const	PX_OVERRIDE;
-	virtual			PxVec3				getLinearVelocity()		const	PX_OVERRIDE;
-	virtual			PxVec3				getAngularVelocity()	const	PX_OVERRIDE;
-	virtual			void				setMaxLinearVelocity(PxReal maxLinVel)	PX_OVERRIDE;
-	virtual			PxReal				getMaxLinearVelocity()	const	PX_OVERRIDE;
-	virtual			void				setMaxAngularVelocity(PxReal maxAngVel)	PX_OVERRIDE;
-	virtual			PxReal				getMaxAngularVelocity()	const	PX_OVERRIDE;
+	virtual			PxTransform 		getCMassLocalPose() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMass(PxReal mass)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMass() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getInvMass() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMassSpaceInertiaTensor(const PxVec3& m)	PX_OVERRIDE PX_FINAL;
+	virtual			PxVec3				getMassSpaceInertiaTensor() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxVec3				getMassSpaceInvInertiaTensor() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setLinearDamping(PxReal linDamp)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getLinearDamping()	const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setAngularDamping(PxReal angDamp)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getAngularDamping()		const	PX_OVERRIDE PX_FINAL;
+	virtual			PxVec3				getLinearVelocity()		const	PX_OVERRIDE PX_FINAL;
+	virtual			PxVec3				getAngularVelocity()	const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMaxLinearVelocity(PxReal maxLinVel)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMaxLinearVelocity()	const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMaxAngularVelocity(PxReal maxAngVel)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMaxAngularVelocity()	const	PX_OVERRIDE PX_FINAL;
 	//~PxRigidBody
 
 	//---------------------------------------------------------------------------------
@@ -123,25 +123,25 @@ public:
 	PX_FORCE_INLINE	Sc::BodyCore&		getCore()				{ return mCore;			}
 
 	// Flags
-	virtual			void				setRigidBodyFlag(PxRigidBodyFlag::Enum, bool value)	PX_OVERRIDE;
-	virtual			void				setRigidBodyFlags(PxRigidBodyFlags inFlags)	PX_OVERRIDE;
+	virtual			void				setRigidBodyFlag(PxRigidBodyFlag::Enum, bool value)	PX_OVERRIDE PX_FINAL;
+	virtual			void				setRigidBodyFlags(PxRigidBodyFlags inFlags)	PX_OVERRIDE PX_FINAL;
 	PX_FORCE_INLINE	PxRigidBodyFlags	getRigidBodyFlagsFast() const	{ return mCore.getFlags();	}
-	virtual			PxRigidBodyFlags	getRigidBodyFlags() const	PX_OVERRIDE
+	virtual			PxRigidBodyFlags	getRigidBodyFlags() const	PX_OVERRIDE PX_FINAL
 										{
 											NP_READ_CHECK(RigidActorTemplateClass::getNpScene());
 											return getRigidBodyFlagsFast() & ~PxRigidBodyFlag::eRESERVED;
 										}
 
-	virtual			void				setMinCCDAdvanceCoefficient(PxReal advanceCoefficient)	PX_OVERRIDE;
-	virtual			PxReal				getMinCCDAdvanceCoefficient() const	PX_OVERRIDE;
-	virtual			void				setMaxDepenetrationVelocity(PxReal maxDepenVel)	PX_OVERRIDE;
-	virtual			PxReal				getMaxDepenetrationVelocity() const	PX_OVERRIDE;
-	virtual			void				setMaxContactImpulse(PxReal maxDepenVel)	PX_OVERRIDE;
-	virtual			PxReal				getMaxContactImpulse() const	PX_OVERRIDE;
-	virtual			void				setContactSlopCoefficient(PxReal slopCoefficient)	PX_OVERRIDE;
-	virtual			PxReal				getContactSlopCoefficient() const	PX_OVERRIDE;
+	virtual			void				setMinCCDAdvanceCoefficient(PxReal advanceCoefficient)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMinCCDAdvanceCoefficient() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMaxDepenetrationVelocity(PxReal maxDepenVel)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMaxDepenetrationVelocity() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setMaxContactImpulse(PxReal maxDepenVel)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getMaxContactImpulse() const	PX_OVERRIDE PX_FINAL;
+	virtual			void				setContactSlopCoefficient(PxReal slopCoefficient)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal				getContactSlopCoefficient() const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxNodeIndex			getInternalIslandNodeIndex() const	PX_OVERRIDE;
+	virtual			PxNodeIndex			getInternalIslandNodeIndex() const	PX_OVERRIDE PX_FINAL;
 
 protected:
 					void				setCMassLocalPoseInternal(const PxTransform&);
@@ -356,9 +356,13 @@ namespace
 
 	PX_FORCE_INLINE static bool isDynamicMesh(const PxGeometry& geom)
 	{
+		PX_ASSERT(geom.getType() == PxGeometryType::eTRIANGLEMESH);
 		const PxTriangleMeshGeometry& triGeom = static_cast<const PxTriangleMeshGeometry&>(geom);
 		const Gu::TriangleMesh* mesh = static_cast<const Gu::TriangleMesh*>(triGeom.triangleMesh);
-		return mesh->getSdfDataFast().mSdf != NULL && mesh->getMass() > 0.f;
+		return mesh->getSdfDataFast().mSdf != NULL;
+		// Note: We're not testing for (mesh->getMass() > 0.f) here because
+		// a) we cannot infer the mass of the rigid body from the mesh volume and
+		// b) in principle, it is ok to have zero-width meshes, even though collision quality may suffer
 	}
 
 	PX_FORCE_INLINE static bool isSimGeom(const PxShape& shape)
@@ -530,12 +534,12 @@ void NpRigidBodyTemplate<APIClass>::addSpatialForce(const PxVec3* force, const P
 			PxVec3 linVelDelta, angVelDelta;
 			if (force)
 			{
-				linVelDelta = ((*force) * mCore.getInverseMass());
+				linVelDelta = (*force) * mCore.getInverseMass();
 				force = &linVelDelta;
 			}
 			if (torque)
 			{
-				angVelDelta = (scGetGlobalInertiaTensorInverse() * (*torque));
+				angVelDelta = scGetGlobalInertiaTensorInverse() * (*torque);
 				torque = &angVelDelta;
 			}
 			scAddSpatialVelocity(force, torque);
@@ -581,12 +585,12 @@ void NpRigidBodyTemplate<APIClass>::setSpatialForce(const PxVec3* force, const P
 		PxVec3 linVelDelta, angVelDelta;
 		if (force)
 		{
-			linVelDelta = ((*force) * mCore.getInverseMass());
+			linVelDelta = (*force) * mCore.getInverseMass();
 			force = &linVelDelta;
 		}
 		if (torque)
 		{
-			angVelDelta = (scGetGlobalInertiaTensorInverse() * (*torque));
+			angVelDelta = scGetGlobalInertiaTensorInverse() * (*torque);
 			torque = &angVelDelta;
 		}
 		scAddSpatialVelocity(force, torque);
@@ -653,21 +657,25 @@ PX_FORCE_INLINE void NpRigidBodyTemplate<APIClass>::setRigidBodyFlagsInternal(co
 
 	if(kinematicSwitchingToDynamic)
 	{
-		NpShapeManager& shapeManager = this->getShapeManager();
-		PxU32 nbShapes = shapeManager.getNbShapes();
+		const NpShapeManager& shapeManager = this->getShapeManager();
+		const PxU32 nbShapes = shapeManager.getNbShapes();
 		NpShape*const* shapes = shapeManager.getShapes();
-		bool hasTriangleMesh = false;
-		for(PxU32 i=0;i<nbShapes;i++)
+		bool hasIllegalShape = false;
+		for(PxU32 i = 0; i < nbShapes; i++)
 		{
-			if((shapes[i]->getFlags() & PxShapeFlag::eSIMULATION_SHAPE) && (shapes[i]->getGeometryTypeFast()==PxGeometryType::eTRIANGLEMESH || shapes[i]->getGeometryTypeFast()==PxGeometryType::ePLANE || shapes[i]->getGeometryTypeFast()==PxGeometryType::eHEIGHTFIELD))
+			const PxShape& shape = *shapes[i];
+			const bool isSimShape_ = shape.getFlags() & PxShapeFlag::eSIMULATION_SHAPE;
+			const bool isSimGeom_ = isSimGeom(shape);
+			if(isSimShape_ && !isSimGeom_)
 			{
-				hasTriangleMesh = true;
+				// if shape is configured for simulation but underlying geometry does not support it, we have problem
+				hasIllegalShape = true;
 				break;
 			}
 		}
-		if(hasTriangleMesh)
+		if(hasIllegalShape)
 		{
-			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxRigidBody::setRigidBodyFlag(): dynamic meshes/planes/heightfields are not supported!");
+			PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxRigidBody::setRigidBodyFlag(): dynamic meshes (without SDF)/planes/heightfields are not supported!");
 			return;
 		}
 

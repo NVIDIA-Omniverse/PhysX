@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_QUERY_REPORT_H
 #define PX_QUERY_REPORT_H
-/** \addtogroup scenequery
-@{
-*/
 #include "foundation/PxVec3.h"
 #include "foundation/PxFlags.h"
 #include "foundation/PxAssert.h"
@@ -51,7 +48,7 @@ class PxRigidActor;
 
 Serves as a base class for PxQueryHit.
 
-@see PxQueryHit
+\see PxQueryHit
 */
 struct PxActorShape
 {
@@ -73,7 +70,7 @@ struct PxSweepHit : PxGeomSweepHit, PxActorShape		{};
 If callback returns true, traversal will continue and callback can be issued again.
 If callback returns false, traversal will stop, callback will not be issued again.
 
-@see PxHitCallback
+\see PxHitCallback
 */
 typedef bool PxAgain;
 
@@ -88,7 +85,7 @@ User overrides the virtual processTouches function to receive hits in (possibly 
 \note	in a child callback class.
 \note	Pre-made typedef shorthands, such as ::PxRaycastCallback can be used for raycast, overlap and sweep queries.
 
-@see PxHitBuffer PxRaycastHit PxSweepHit PxOverlapHit PxRaycastCallback PxOverlapCallback PxSweepCallback
+\see PxHitBuffer PxRaycastHit PxSweepHit PxOverlapHit PxRaycastCallback PxOverlapCallback PxSweepCallback
 */
 template<typename HitType>
 struct PxHitCallback : PxQueryThreadContext
@@ -119,7 +116,7 @@ struct PxHitCallback : PxQueryThreadContext
 	\note	If PxQueryFlag::eANY_HIT flag is used as a query parameter, hasBlock will be set to true and blockingHit will be used to receive the result.
 	\note	Both eTOUCH and eBLOCK hits will be registered as hasBlock=true and stored in PxHitCallback.block when eANY_HIT flag is used.
 
-	@see PxHitCallback.hasBlock PxHitCallback.block */
+	\see PxHitCallback.hasBlock PxHitCallback.block */
 	PxHitCallback(HitType* aTouches, PxU32 aMaxNbTouches)
 		: hasBlock(false), touches(aTouches), maxNbTouches(aMaxNbTouches), nbTouches(0)
 	{}
@@ -143,7 +140,7 @@ struct PxHitCallback : PxQueryThreadContext
 
 	\return	true to continue receiving callbacks in case there are more hits or false to stop.
 
-	@see PxAgain PxRaycastHit PxSweepHit PxOverlapHit */
+	\see PxAgain PxRaycastHit PxSweepHit PxOverlapHit */
 	virtual PxAgain processTouches(const HitType* buffer, PxU32 nbHits) = 0;
 
 	virtual void finalizeQuery() {} //!< Query finalization callback, called after the last processTouches callback.
@@ -164,8 +161,8 @@ callback is issued.
 
 \note	Pre-made typedef shorthands, such as ::PxRaycastBuffer can be used for raycast, overlap and sweep queries.
 
-@see PxHitCallback
-@see PxRaycastBuffer PxOverlapBuffer PxSweepBuffer PxRaycastBufferN PxOverlapBufferN PxSweepBufferN
+\see PxHitCallback
+\see PxRaycastBuffer PxOverlapBuffer PxSweepBuffer PxRaycastBufferN PxOverlapBufferN PxSweepBufferN
 */
 template<typename HitType>
 struct PxHitBuffer : public PxHitCallback<HitType>
@@ -179,7 +176,7 @@ struct PxHitBuffer : public PxHitCallback<HitType>
 	\param[in] aTouches			Optional buffer for recording PxQueryHitType::eTOUCH type hits.
 	\param[in] aMaxNbTouches	Size of touch buffer.
 
-	@see PxHitCallback */
+	\see PxHitCallback */
 	PxHitBuffer(HitType* aTouches = NULL, PxU32 aMaxNbTouches = 0) : PxHitCallback<HitType>(aTouches, aMaxNbTouches) {}
 
 	/** \brief Computes the number of any hits in this result, blocking or touching. */
@@ -258,7 +255,7 @@ when deleting shapes to invalidate cached references.
 
 The faceIndex field is an additional hint for a mesh or height field which is not currently used.
 
-@see PxScene.raycast
+\see PxScene.raycast
 */
 struct PxQueryCache
 {
@@ -281,5 +278,4 @@ struct PxQueryCache
 } // namespace physx
 #endif
 
-/** @} */
 #endif

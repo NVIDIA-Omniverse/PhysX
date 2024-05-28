@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #include "ExtDelaunayTetrahedralizer.h"
 #include "foundation/PxSort.h"
@@ -152,6 +152,7 @@ namespace Ext
 	void validateNeighborhood(const PxArray<Tetrahedron>& tets, PxArray<PxI32>& neighbors)
 	{
 		PxI32 borderCounter = 0;
+		PX_UNUSED(borderCounter);
 		for (PxU32 i = 0; i < neighbors.size(); ++i)
 			if (neighbors[i] == -1)
 				++borderCounter;
@@ -1555,7 +1556,7 @@ namespace Ext
 					previewFlip3to2(tip1, tip2, reflexEdgeA, reflexEdgeB, nonReflexTrianglePoint, tet1, tet2);
 					newTets.pushBack(tet1); newTets.pushBack(tet2);
 					removedTets.pushBack(tet1Id); removedTets.pushBack(tet2Id); removedTets.pushBack(candidate1);
-					return true;;
+					return true;
 				}
 			}
 		}

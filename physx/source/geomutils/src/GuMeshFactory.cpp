@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -738,16 +738,13 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 		const PxU32 nbTetRemapSize = readDword(mismatch, stream);
 
 		const PxU32 numVertsPerElement = (numTetsPerElement == 5 || numTetsPerElement == 6) ? 8 : 4;
-		const PxU32 numSimElements = nbGridModelTetrahedrons / numTetsPerElement;
+		const PxU32 numElements = nbGridModelTetrahedrons / numTetsPerElement;
 
 		data.mSimulationData.mGridModelMaxTetsPerPartitions = nbGMMaxTetsPerPartition;
 		data.mSimulationData.mNumTetsPerElement = numTetsPerElement;
+
 		data.mMappingData.mTetsRemapSize = nbTetRemapSize;
 
-		/*data.allocateGridModelData(nbGridModelTetrahedrons, nbGridModelVertices, 
-			data.mCollisionMesh.mNbVertices, nbGridModelPartitions, nbGMRemapOutputSize,
-			nbGMTotalTetReferenceCount, nbTetRemapSize, data.mCollisionMesh.mNbTetrahedrons,
-			serialFlags & IMSF_GRB_DATA);*/
 		data.mSimulationMesh.allocateTetrahedrons(nbGridModelTetrahedrons, serialFlags & IMSF_GRB_DATA);
 		data.mSimulationMesh.allocateVertices(nbGridModelVertices, serialFlags & IMSF_GRB_DATA);
 		data.mSimulationData.allocateGridModelData(nbGridModelTetrahedrons, nbGridModelVertices,
@@ -772,17 +769,24 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 					flip(materials[i]);
 			}
 		}
+
 		stream.read(data.mSimulationData.mGridModelInvMass, sizeof(PxReal) * nbGridModelVertices);
 
 		stream.read(data.mSimulationData.mGridModelTetraRestPoses, sizeof(PxMat33) * nbGridModelTetrahedrons);
 
-		stream.read(data.mSimulationData.mGridModelOrderedTetrahedrons, sizeof(PxU32) * numSimElements);
+		stream.read(data.mSimulationData.mGridModelOrderedTetrahedrons, sizeof(PxU32) * numElements);
 
-		stream.read(data.mSimulationData.mGMRemapOutputCP, sizeof(PxU32) * numSimElements * numVertsPerElement);
+		if (data.mSimulationData.mGMRemapOutputSize) // tet mesh only (or old hex mesh)
+		{
+			stream.read(data.mSimulationData.mGMRemapOutputCP, sizeof(PxU32) * numElements * numVertsPerElement);
+		}
 
 		stream.read(data.mSimulationData.mGMAccumulatedPartitionsCP, sizeof(PxU32) * nbGridModelPartitions);
 		
-		stream.read(data.mSimulationData.mGMAccumulatedCopiesCP, sizeof(PxU32) * data.mSimulationMesh.mNbVertices);
+		if (data.mSimulationData.mGMRemapOutputSize) // tet mesh only (or old hex mesh)
+		{
+			stream.read(data.mSimulationData.mGMAccumulatedCopiesCP, sizeof(PxU32) * data.mSimulationMesh.mNbVertices);
+		}
 
 		stream.read(data.mMappingData.mCollisionAccumulatedTetrahedronsRef, sizeof(PxU32) * data.mCollisionMesh.mNbVertices);
 
@@ -793,7 +797,7 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 		stream.read(data.mMappingData.mCollisionSurfaceVertToTetRemap, sizeof(PxU32) * data.mCollisionMesh.mNbVertices);
 
 		//stream.read(data->mVertsBarycentricInGridModel, sizeof(PxReal) * 4 * data->mNbVertices);
-		stream.read(data.mSimulationData.mGMPullIndices, sizeof(PxU32) * numSimElements * numVertsPerElement);
+		stream.read(data.mSimulationData.mGMPullIndices, sizeof(PxU32) * numElements * numVertsPerElement);
 
 		//stream.read(data->mVertsBarycentricInGridModel, sizeof(PxReal) * 4 * data->mNbVertices);
 		stream.read(data.mMappingData.mVertsBarycentricInGridModel, sizeof(PxReal) * 4 * data.mCollisionMesh.mNbVertices);

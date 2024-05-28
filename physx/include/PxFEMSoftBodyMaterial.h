@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_FEM_SOFT_BODY_MATERIAL_H
 #define PX_FEM_SOFT_BODY_MATERIAL_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxFEMMaterial.h"
 
@@ -52,7 +49,7 @@ namespace physx
 	/**
 	\brief Material class to represent a set of softbody FEM material properties.
 
-	@see PxPhysics.createFEMSoftBodyMaterial
+	\see PxPhysics.createFEMSoftBodyMaterial
 	*/
 	class PxFEMSoftBodyMaterial : public PxFEMMaterial
 	{
@@ -63,7 +60,7 @@ namespace physx
 
 		\param[in] damping Material velocity damping term. <b>Range:</b> [0, PX_MAX_F32)<br>		
 
-		@see getDamping
+		\see getDamping
 		*/
 		virtual		void	setDamping(PxReal damping) = 0;
 
@@ -71,7 +68,7 @@ namespace physx
 		\brief Retrieves velocity damping
 		\return The velocity damping.
 
-		@see setDamping()
+		\see setDamping()
 		*/
 		virtual		PxReal	getDamping() const = 0;
 
@@ -80,7 +77,7 @@ namespace physx
 
 		\param[in] scale Damping scale term. <b>Default:</b> 1 <b>Range:</b> [0, 1]
 
-		@see getDampingScale
+		\see getDampingScale
 		*/
 		virtual		void	setDampingScale(PxReal scale) = 0;
 
@@ -88,7 +85,7 @@ namespace physx
 		\brief Retrieves material damping scale.
 		\return The damping scale term.
 
-		@see setDamping()
+		\see setDamping()
 		*/
 		virtual		PxReal	getDampingScale() const = 0;
 
@@ -97,7 +94,7 @@ namespace physx
 
 		\param[in] model The material model
 
-		@see getMaterialModel
+		\see getMaterialModel
 		*/
 		virtual		void	setMaterialModel(PxFEMSoftBodyMaterialModel::Enum model) = 0;
 		
@@ -105,7 +102,7 @@ namespace physx
 		\brief Retrieves the material model.
 		\return The material model.
 
-		@see setMaterialModel()
+		\see setMaterialModel()
 		*/
 		virtual		PxFEMSoftBodyMaterialModel::Enum getMaterialModel() const = 0;
 
@@ -122,5 +119,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

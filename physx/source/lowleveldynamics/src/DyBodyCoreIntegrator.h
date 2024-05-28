@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -122,50 +122,58 @@ PX_FORCE_INLINE void integrateCore(PxVec3& motionLinearVelocity, PxVec3& motionA
 		}
 	}
 
-	// Integrate linear part
-	const PxVec3 linearMotionVel = solverBodyData.linearVelocity + motionLinearVelocity;
-	const PxVec3 delta = linearMotionVel * dt;
-	PxVec3 angularMotionVel = solverBodyData.angularVelocity + solverBodyData.sqrtInvInertia * motionAngularVelocity;
-	PxReal w = angularMotionVel.magnitudeSquared();
-	solverBodyData.body2World.p += delta;
-	PX_ASSERT(solverBodyData.body2World.p.isFinite());
-
-	//Store back the linear and angular velocities
-	//core.linearVelocity += solverBody.linearVelocity * solverBodyData.sqrtInvMass;
-	solverBodyData.linearVelocity += solverBody.linearVelocity;
-	solverBodyData.angularVelocity += solverBodyData.sqrtInvInertia * solverBody.angularState;
-	
-	// Integrate the rotation using closed form quaternion integrator
-	if (w != 0.0f)
 	{
-		w = PxSqrt(w);
-		// Perform a post-solver clamping
-		// TODO(dsequeira): ignore this for the moment
-		//just clamp motionVel to half float-range
-		const PxReal maxW = 1e+7f;		//Should be about sqrt(PX_MAX_REAL/2) or smaller
-		if (w > maxW)
-		{
-			angularMotionVel = angularMotionVel.getNormalized() * maxW;
-			w = maxW;
-		}
-		const PxReal v = dt * w * 0.5f;
-		PxReal s, q;
-		PxSinCos(v, s, q);
-		s /= w;
+		// Integrate linear part
+		const PxVec3 linearMotionVel = solverBodyData.linearVelocity + motionLinearVelocity;
+		motionLinearVelocity = linearMotionVel;
+		const PxVec3 delta = linearMotionVel * dt;
 
-		const PxVec3 pqr = angularMotionVel * s;
-		const PxQuat quatVel(pqr.x, pqr.y, pqr.z, 0);
-		PxQuat result = quatVel * solverBodyData.body2World.q;
-
-		result += solverBodyData.body2World.q * q;
-
-		solverBodyData.body2World.q = result.getNormalized();
-		PX_ASSERT(solverBodyData.body2World.q.isSane());
-		PX_ASSERT(solverBodyData.body2World.q.isFinite());
+		solverBodyData.body2World.p += delta;
+		PX_ASSERT(solverBodyData.body2World.p.isFinite());
 	}
 
-	motionLinearVelocity = linearMotionVel;
-	motionAngularVelocity = angularMotionVel;
+	{
+		PxVec3 angularMotionVel = solverBodyData.angularVelocity + solverBodyData.sqrtInvInertia * motionAngularVelocity;
+		PxReal w = angularMotionVel.magnitudeSquared();
+
+		// Integrate the rotation using closed form quaternion integrator
+		if (w != 0.0f)
+		{
+			w = PxSqrt(w);
+			// Perform a post-solver clamping
+			// TODO(dsequeira): ignore this for the moment
+			//just clamp motionVel to half float-range
+			const PxReal maxW = 1e+7f;		//Should be about sqrt(PX_MAX_REAL/2) or smaller
+			if (w > maxW)
+			{
+				angularMotionVel = angularMotionVel.getNormalized() * maxW;
+				w = maxW;
+			}
+			const PxReal v = dt * w * 0.5f;
+			PxReal s, q;
+			PxSinCos(v, s, q);
+			s /= w;
+
+			const PxVec3 pqr = angularMotionVel * s;
+			const PxQuat quatVel(pqr.x, pqr.y, pqr.z, 0);
+			PxQuat result = quatVel * solverBodyData.body2World.q;
+
+			result += solverBodyData.body2World.q * q;
+
+			solverBodyData.body2World.q = result.getNormalized();
+			PX_ASSERT(solverBodyData.body2World.q.isSane());
+			PX_ASSERT(solverBodyData.body2World.q.isFinite());
+		}
+
+		motionAngularVelocity = angularMotionVel;
+	}
+
+	{
+		//Store back the linear and angular velocities
+		//core.linearVelocity += solverBody.linearVelocity * solverBodyData.sqrtInvMass;
+		solverBodyData.linearVelocity += solverBody.linearVelocity;
+		solverBodyData.angularVelocity += solverBodyData.sqrtInvInertia * solverBody.angularState;
+	}
 }
 }
 }

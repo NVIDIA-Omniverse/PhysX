@@ -22,46 +22,20 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_ARTICULATION_UTILS_H
 #define DY_ARTICULATION_UTILS_H
 
-#include "foundation/PxBitUtils.h"
-#include "foundation/PxVecMath.h"
 #include "CmSpatialVector.h"
-#include "DyVArticulation.h"
 
 namespace physx
 {
 
 namespace Dy
 {
-	struct ArticulationCore;
-	struct ArticulationLink;
-
-#define DY_ARTICULATION_DEBUG_VERIFY 0
-
-PX_FORCE_INLINE PxU32 ArticulationLowestSetBit(ArticulationBitField val)
-{
-	PxU32 low = PxU32(val&0xffffffff), high = PxU32(val>>32);
-	PxU32 mask = PxU32((!low)-1);
-	PxU32 result = (mask&PxLowestSetBitUnsafe(low)) | ((~mask)&(PxLowestSetBitUnsafe(high)+32));
-	PX_ASSERT(val & (PxU64(1)<<result));
-	PX_ASSERT(!(val & ((PxU64(1)<<result)-1)));
-	return result;
-}
-
-PX_FORCE_INLINE PxU32 ArticulationHighestSetBit(ArticulationBitField val)
-{
-	PxU32 low = PxU32(val & 0xffffffff), high = PxU32(val >> 32);
-	PxU32 mask = PxU32((!high) - 1);
-	PxU32 result = ((~mask)&PxHighestSetBitUnsafe(low)) | ((mask)&(PxHighestSetBitUnsafe(high) + 32));
-	PX_ASSERT(val & (PxU64(1) << result));
-	return result;
-}
 
 using namespace aos;
 

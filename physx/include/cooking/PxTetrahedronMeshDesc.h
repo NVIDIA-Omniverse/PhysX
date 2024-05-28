@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TETRAHEDRON_MESH_DESC_H
 #define PX_TETRAHEDRON_MESH_DESC_H
-/** \addtogroup cooking
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "foundation/PxVec3.h"
@@ -46,7 +43,7 @@ namespace physx
 	/**
 	\brief Descriptor class for #PxTetrahedronMesh (contains only pure geometric data).
 
-	@see PxTetrahedronMesh PxShape
+	\see PxTetrahedronMesh PxShape
 	*/
 	class PxTetrahedronMeshDesc
 	{
@@ -58,7 +55,7 @@ namespace physx
 		enum PxMeshFormat
 		{
 			eTET_MESH,	//!< Normal tetmesh with arbitrary tetrahedra
-			eHEX_MESH 	//!< 6 tetrahedra in a row will form a hexahedron
+			eHEX_MESH 	//!< 5 or 6 tetrahedra in a row will form a hexahedron
 		};
 
 
@@ -76,7 +73,7 @@ namespace physx
 
 		<b>Default:</b> NULL
 
-		@see materialIndexStride
+		\see materialIndexStride
 		*/
 		PxTypedStridedData<PxFEMMaterialTableIndex> materialIndices;
 
@@ -111,7 +108,7 @@ namespace physx
 		/**
 		\brief Used for simulation meshes only. Defines if this tet mesh should be simulated as a tet mesh,
 		or if a set of tetrahedra should be used to represent another shape, e.g. a hexahedral mesh constructed 
-		from 6 elements.
+		from 5 or 6 elements.
 		*/
 		PxU16 tetsPerElement;
 
@@ -189,7 +186,7 @@ namespace physx
 	///**
 	//\brief Descriptor class for #PxSoftBodyMesh (contains only additional data used for softbody simulation).
 
-	//@see PxSoftBodyMesh PxShape
+	//\see PxSoftBodyMesh PxShape
 	//*/
 	class PxSoftBodySimulationDataDesc
 	{
@@ -230,5 +227,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

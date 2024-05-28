@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -137,7 +137,7 @@ namespace physx
 			PX_PHYSX_COMMON_API	bool								build(const AABBTreeBuildParams& params, PxArray<IncrementalAABBTreeNode*>& mapping);			
 
 			// insert a new index into the tree
-			PX_PHYSX_COMMON_API	IncrementalAABBTreeNode*			insert(const PoolIndex index,  const PxBounds3* bounds, NodeList& changedLeaf);
+			PX_PHYSX_COMMON_API	IncrementalAABBTreeNode*			insert(const PoolIndex index, const PxBounds3* bounds, NodeList& changedLeaf);
 
 			// update the object in the tree - full update insert/remove
 			PX_PHYSX_COMMON_API	IncrementalAABBTreeNode*			update(IncrementalAABBTreeNode* node, const PoolIndex index, const PxBounds3* bounds, NodeList& changedLeaf);

@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef GU_VEC_BOX_H
 #define GU_VEC_BOX_H
 
-/** \addtogroup geomutils
-@{
-*/
 #include "foundation/PxTransform.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "geometry/PxBoxGeometry.h"
@@ -172,14 +169,14 @@ namespace Gu
 		PX_FORCE_INLINE aos::Vec3V supportLocal(const aos::Vec3VArg dir)const  
 		{
 			using namespace aos;
-			return V3Sel(V3IsGrtr(dir,  V3Zero()), extents, V3Neg(extents));
+			return V3Sel(V3IsGrtr(dir, V3Zero()), extents, V3Neg(extents));
 		}
 
 		//this is used in the sat test for the full contact gen
 		PX_SUPPORT_INLINE void supportLocal(const aos::Vec3VArg dir, aos::FloatV& min, aos::FloatV& max)const
 		{
 			using namespace aos;
-			const Vec3V point = V3Sel(V3IsGrtr(dir,  V3Zero()), extents, V3Neg(extents));
+			const Vec3V point = V3Sel(V3IsGrtr(dir, V3Zero()), extents, V3Neg(extents));
 			max = V3Dot(dir, point);
 			min = FNeg(max);
 		}
@@ -221,5 +218,4 @@ namespace Gu
 
 }
 
-/** @} */
 #endif

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,7 +32,7 @@
 #include "OmniPvdDefines.h"
 
 /**
- * @brief Used to abstract a memory write stream
+ * \brief Used to abstract a memory write stream
  *
  * Allows to write bytes as well as open/close the stream.
  */
@@ -44,32 +44,32 @@ public:
 	}
 
 	/**
-	 * @brief Write n bytes to the shared memory buffer
+	 * \brief Write n bytes to the shared memory buffer
 	 *
-	 * @param bytes pointer to the bytes to write
-	 * @param nbrBytes The requested number of bytes to write
-	 * @return The actual number of bytes written
+	 * \param bytes pointer to the bytes to write
+	 * \param nbrBytes The requested number of bytes to write
+	 * \return The actual number of bytes written
 	 */
 	virtual uint64_t OMNI_PVD_CALL writeBytes(const uint8_t* bytes, uint64_t nbrBytes) = 0;
 
 	/**
-	 * @brief Flushes the writes
+	 * \brief Flushes the writes
 	 *
-	 * @return The success of the operation
+	 * \return The success of the operation
 	 */
 	virtual bool OMNI_PVD_CALL flush() = 0;
 
 	/**
-	 * @brief Opens the stream
+	 * \brief Opens the stream
 	 *
-	 * @return The success of the operation
+	 * \return The success of the operation
 	 */
 	virtual bool OMNI_PVD_CALL openStream() = 0;
 
 	/**
-	 * @brief Closes the stream
+	 * \brief Closes the stream
 	 *
-	 * @return The success of the operation
+	 * \return The success of the operation
 	 */
 	virtual bool OMNI_PVD_CALL closeStream() = 0;
 };

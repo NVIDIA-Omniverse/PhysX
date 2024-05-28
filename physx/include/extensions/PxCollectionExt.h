@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_COLLECTION_EXT_H
 #define PX_COLLECTION_EXT_H
-/** \addtogroup extensions
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxCollection.h"
@@ -72,7 +69,7 @@ namespace physx
 		\param[in] concreteType PxConcreteType of sdk objects that should be removed	
 		\param[in,out] to Optional collection to which the removed objects are added
 
-		@see PxCollection, PxConcreteType
+		\see PxCollection, PxConcreteType
 		*/	
 		static void remove(PxCollection& collection, PxType concreteType, PxCollection* to = NULL);
 
@@ -88,7 +85,7 @@ namespace physx
 		\param[in] physics The physics SDK instance from which objects are collected. See #PxPhysics
 		\return Collection to which objects are added. See #PxCollection
 
-		@see PxCollection, PxPhysics
+		\see PxCollection, PxPhysics
 		*/
 		static  PxCollection*	createCollection(PxPhysics& physics);
 	
@@ -106,7 +103,7 @@ namespace physx
 		\param[in] scene The PxScene instance from which objects are collected. See #PxScene
 		\return Collection to which objects are added. See #PxCollection
 
-		@see PxCollection, PxScene, PxSerialization.complete()
+		\see PxCollection, PxScene, PxSerialization.complete()
 		*/
 		static	PxCollection*	createCollection(PxScene& scene);
 	};
@@ -115,5 +112,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

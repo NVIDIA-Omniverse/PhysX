@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -47,8 +47,6 @@
 #include "PxsFEMSoftBodyMaterialCore.h"
 #include "PxsFEMClothMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
-#include "PxsFLIPMaterialCore.h"
-#include "PxsMPMMaterialCore.h"
 
 namespace physx
 {
@@ -65,7 +63,7 @@ class NpArticulationJointReducedCoordinate;
 class NpArticulationReducedCoordinate;
 class NpArticulationSpatialTendon;
 class NpArticulationFixedTendon;
-class NpArticulationSensor;
+class NpArticulationMimicJoint;
 class NpActor;
 class NpScene;
 
@@ -73,8 +71,6 @@ class NpScene;
 class NpSoftBody;
 class NpFEMCloth;
 class NpPBDParticleSystem;
-class NpFLIPParticleSystem;
-class NpMPMParticleSystem;
 class NpHairSystem;
 #endif
 
@@ -167,9 +163,9 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void updatePvdProperties(const NpArticulationFixedTendon* articulationTendon);
 	void releasePvdInstance(const NpArticulationFixedTendon* articulationTendon);
 
-	void createPvdInstance(const NpArticulationSensor* sensor);
-	void updatePvdProperties(const NpArticulationSensor* sensor);
-	void releasePvdInstance(const NpArticulationSensor* sensor);
+	void createPvdInstance(const NpArticulationMimicJoint* mimicJoint);
+	void updatePvdProperties(const NpArticulationMimicJoint* mimicJoint);
+	void releasePvdInstance(const NpArticulationMimicJoint* mimicJoint);
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -188,14 +184,6 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void createPvdInstance	(const PxsPBDMaterialCore* materialCore);
 	void updatePvdProperties(const PxsPBDMaterialCore* materialCore);
 	void releasePvdInstance	(const PxsPBDMaterialCore* materialCore);
-
-	void createPvdInstance	(const PxsFLIPMaterialCore* materialCore);
-	void updatePvdProperties(const PxsFLIPMaterialCore* materialCore);
-	void releasePvdInstance	(const PxsFLIPMaterialCore* materialCore);
-
-	void createPvdInstance	(const PxsMPMMaterialCore* materialCore);
-	void updatePvdProperties(const PxsMPMMaterialCore* materialCore);
-	void releasePvdInstance	(const PxsMPMMaterialCore* materialCore);
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -231,18 +219,6 @@ class PvdSceneClient : public PxPvdSceneClient, public PvdClient, public PvdVisu
 	void attachAggregateActor(const NpPBDParticleSystem* particleSystem, NpActor* actor);
 	void detachAggregateActor(const NpPBDParticleSystem* particleSystem, NpActor* actor);
 	void releasePvdInstance(const NpPBDParticleSystem* particleSystem);
-
-	void createPvdInstance(const NpFLIPParticleSystem* particleSystem);
-	void updatePvdProperties(const NpFLIPParticleSystem* particleSystem);
-	void attachAggregateActor(const NpFLIPParticleSystem* particleSystem, NpActor* actor);
-	void detachAggregateActor(const NpFLIPParticleSystem* particleSystem, NpActor* actor);
-	void releasePvdInstance(const NpFLIPParticleSystem* particleSystem);
-
-	void createPvdInstance(const NpMPMParticleSystem* particleSystem);
-	void updatePvdProperties(const NpMPMParticleSystem* particleSystem);
-	void attachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor);
-	void detachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor);
-	void releasePvdInstance(const NpMPMParticleSystem* particleSystem);
 
 	void createPvdInstance(const NpHairSystem* hairSystem);
 	void updatePvdProperties(const NpHairSystem* hairSystem);

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -68,7 +68,7 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 	//static endl_obj endl;
 
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, bool inData ) { ioStream << (inData ? "true" : "false"); return ioStream; }
-	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxI32 inData ) { return toStream( ioStream, "%d",  inData ); }
+	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxI32 inData ) { return toStream( ioStream, "%d", inData ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU16 inData ) {	return toStream( ioStream, "%u", PxU32(inData) ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU8 inData ) {	return toStream( ioStream, "%u", PxU32(inData) ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, char inData ) {	return toStream( ioStream, "%c", inData ); }

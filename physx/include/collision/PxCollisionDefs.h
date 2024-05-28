@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -54,7 +54,7 @@ public:
 
 	\return the newly-allocated memory. The returned address must be 16-byte aligned.
 
-	@see PxCache, PxGenerateContacts
+	\see PxCache, PxGenerateContacts
 	*/
 	virtual PxU8* allocateCacheData(const PxU32 byteSize) = 0;
 
@@ -69,7 +69,7 @@ struct PxCache
 	PxU8*		mCachedData;	//!< Cached data pointer. Allocated via PxCacheAllocator
 	PxU16		mCachedSize;	//!< The total size of the cached data 
 	PxU8		mPairData;		//!< Pair data information used and cached internally by some contact generation functions to accelerate performance.
-	PxU8		mManifoldFlags;	//!< Manifold flags used to identify the format the cached data is stored in. @see Gu::ManifoldFlags
+	PxU8		mManifoldFlags;	//!< Manifold flags used to identify the format the cached data is stored in.
 
 	PX_FORCE_INLINE	PxCache() : mCachedData(NULL), mCachedSize(0), mPairData(0), mManifoldFlags(0)
 	{

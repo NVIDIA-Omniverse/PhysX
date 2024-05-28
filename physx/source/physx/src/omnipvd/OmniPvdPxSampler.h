@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,13 +45,13 @@ namespace physx
 	class PxShape;
 	class PxMaterial;
 
+	class PxArticulationReducedCoordinate;
+
 	class PxFEMClothMaterial;
 	class PxFEMMaterial;
 	class PxFEMSoftBodyMaterial;
-	class PxFLIPMaterial;
-	class PxMPMMaterial;
-	class PxParticleMaterial;
 	class PxPBDMaterial;
+	class PxDiffuseParticleParams;
 
 	struct OmniPvdPxCoreRegistrationData;
 
@@ -60,16 +60,15 @@ namespace physx
 
 void streamActorName(const physx::PxActor & a, const char* name);
 void streamSceneName(const physx::PxScene & s, const char* name);
+void streamArticulationName(const physx::PxArticulationReducedCoordinate & art, const char* name);
 
 void streamShapeMaterials(const physx::PxShape&, physx::PxMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxFEMClothMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxFEMMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxFEMSoftBodyMaterial* const * mats, physx::PxU32 nbrMaterials);
-void streamShapeMaterials(const physx::PxShape&, physx::PxFLIPMaterial* const * mats, physx::PxU32 nbrMaterials);
-void streamShapeMaterials(const physx::PxShape&, physx::PxMPMMaterial* const * mats, physx::PxU32 nbrMaterials);
-void streamShapeMaterials(const physx::PxShape&, physx::PxParticleMaterial* const * mats, physx::PxU32 nbrMaterials);
 void streamShapeMaterials(const physx::PxShape&, physx::PxPBDMaterial* const * mats, physx::PxU32 nbrMaterials);
 
+void streamDiffuseParticleParamsAttributes(const physx::PxDiffuseParticleParams& diffuseParams);
 
 enum OmniPvdSharedMeshEnum {
 	eOmniPvdTriMesh     = 0,
@@ -86,7 +85,7 @@ class OmniPvdPxSampler : public physx::PxUserAllocated
 public:
 	OmniPvdPxSampler();
 	~OmniPvdPxSampler();
-	void startSampling();
+	bool startSampling();
 	bool isSampling();
 	void setOmniPvdInstance(physx::NpOmniPvd* omniPvdIntance);
 
@@ -100,7 +99,8 @@ public:
 
 	void onObjectAdd(const physx::PxBase& object);
 	void onObjectRemove(const physx::PxBase& object);
-
+	
+	void removeSampledScene(physx::NpScene* scene);
 
 private:
 	OmniPvdPxScene* getSampledScene(physx::NpScene* scene);

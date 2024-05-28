@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -340,8 +340,23 @@ namespace physx
 	void PxTetrahedronMeshExt::createPointsToTetrahedronMap(const PxArray<PxVec3>& tetMeshVertices, const PxArray<PxU32>& tetMeshIndices, 
 		const PxArray<PxVec3>& pointsToEmbed, PxArray<PxVec4>& barycentricCoordinates, PxArray<PxU32>& tetLinks)
 	{
+		barycentricCoordinates.resize(0);
+		tetLinks.resize(0);
+
+		if (tetMeshVertices.size() == 0 || tetMeshIndices.size() == 0) 
+		{
+			PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "Point in Tetmesh embedding: Input mesh does not have any tetrahedra or points.");
+			return;
+		}
+
+		if (pointsToEmbed.size() == 0)
+			return;
+
 		PxArray<Gu::BVHNode> tree;
 		buildTree(tetMeshIndices.begin(), tetMeshIndices.size() / 4, tetMeshVertices.begin(), tree);
+
+		if (tree.size() == 0)
+			return;
 
 		ClosestDistanceToTetmeshTraversalController cd(tetMeshIndices.begin(), tetMeshVertices.begin(), tree.begin());
 

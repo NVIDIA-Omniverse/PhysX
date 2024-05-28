@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SOFT_BODY_H
 #define PX_SOFT_BODY_H
-/** \addtogroup physics
-@{ */
 
 #include "PxFEMParameter.h"
 #include "PxActor.h"
@@ -53,9 +51,22 @@ namespace physx
 	class PxParticleBuffer;
 
 	/**
-	\brief The maximum tetrahedron index supported in the model.
+	\brief The maximum number of tetrahedrons supported in a softbody tetrahedron mesh
 	*/
-	#define	PX_MAX_TETID	0x000fffff
+	#define PX_MAX_NB_SOFTBODY_TET 0x000fffff
+
+	/**
+	\deprecated Use PX_MAX_NB_SOFTBODY_TET instead.
+	
+	\brief The maximum number of tetrahedrons supported in a softbody tetrahedron
+	mesh (The maximum supported ID is actually PX_MAX_TETID - 1)
+	*/
+	#define	PX_MAX_TETID PX_MAX_NB_SOFTBODY_TET
+
+	/**
+	\brief The maximum number of softbodies supported in a scene
+	*/
+	#define PX_MAX_NB_SOFTBODY 0xfff
 
 	/**
 	\brief Flags to enable or disable special modes of a SoftBody
@@ -134,7 +145,7 @@ namespace physx
 		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary.
 		The first 3 floats specify the vertex position and the last float contains the inverse mass of the
 		vertex. The size of the buffer is the number of vertices of the collision mesh * sizeof(PxVec4).
-		@see PxTetrahedronMesh::getNbVertices().
+		\see PxTetrahedronMesh::getNbVertices().
 
 		The device memory pointed to by this pointer is allocated when a shape is attached to the 
 		softbody. Calling PxSoftBody::detachShape() will deallocate the memory.
@@ -164,7 +175,7 @@ namespace physx
 
 		The simulation expects 4 floats per vertex, aligned to a 16B boundary. The first 3 specify the 
 		rest position. The last float is unused. The size of the buffer is the number of vertices in 
-		the collision mesh * sizeof(PxVec4). @see PxTetrahedronMesh::getNbVertices().
+		the collision mesh * sizeof(PxVec4). \see PxTetrahedronMesh::getNbVertices().
 
 		The device memory pointed to by this pointer is allocated when a shape is attached to the softbody.
 		Calling PxSoftBody::detachShape() will deallocate the memory.
@@ -193,7 +204,7 @@ namespace physx
 		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary. The 
 		first 3 floats specify the positions and the last float specifies the inverse mass of the vertex.
 		The size of the buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
-		@see PxTetrahedronMesh::getNbVertices().
+		\see PxTetrahedronMesh::getNbVertices().
 
 		The device memory pointed to by this pointer is allocated when a simulation mesh is attached to the 
 		softbody. Calling PxSoftBody::detachSimulationMesh() will deallocate the memory.
@@ -224,7 +235,7 @@ namespace physx
 		The simulation expects 4 consecutive floats for each vertex, aligned to a 16B boundary. The 
 		first 3 specify the velocities for each vertex. The final float is unused. The size of the 
 		buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
-		@see PxTetrahedronMesh::getNbVertices().
+		\see PxTetrahedronMesh::getNbVertices().
 
 		The device memory pointed to by this pointer is allocated when a simulation mesh is attached to the 
 		softbody. Calling PxSoftBody::detachSimulationMesh() will deallocate the memory.
@@ -252,7 +263,7 @@ namespace physx
 		This function can be called multiple times, and dirty flags are accumulated internally until 
 		PxScene::simulate() is called.
 
-		@see getPositionInvMassBufferD, getSimVelocityBufferD, getRestPositionBufferD, getSimPositionInvMassBufferD
+		\see getPositionInvMassBufferD, getSimVelocityBufferD, getRestPositionBufferD, getSimPositionInvMassBufferD
 		
 		\param flags The buffers that have been updated.
 		*/
@@ -270,10 +281,10 @@ namespace physx
 		For a softbody with the flag PxSoftBodyFlag::eKINEMATIC raised, all target positions are considered
 		valid. In case a softbody has the PxSoftBodyFlag::ePARTIALLY_KINEMATIC raised, only target 
 		positions whose corresponding last float has been set to 0.f are considered valid target positions.
-		@see PxConfigureSoftBodyKinematicTarget
+		\see PxConfigureSoftBodyKinematicTarget
 
 		The size of the buffer is the number of vertices of the simulation mesh * sizeof(PxVec4).
-		@see PxTetrahedronMesh::getNbVertices().
+		\see PxTetrahedronMesh::getNbVertices().
 
 		It is the users responsibility to manage the memory pointed to by the input to this function,
 		as well as guaranteeing the integrity of the input data. In particular, this means that it is
@@ -315,7 +326,7 @@ namespace physx
 
 		\param[in] wakeCounterValue Wake counter value. <b>Range:</b> [0, PX_MAX_F32)
 
-		@see isSleeping() getWakeCounter()
+		\see isSleeping() getWakeCounter()
 		*/
 		virtual		void				setWakeCounter(PxReal wakeCounterValue) = 0;
 
@@ -324,7 +335,7 @@ namespace physx
 
 		\return The wake counter of the soft body.
 
-		@see isSleeping() setWakeCounter()
+		\see isSleeping() setWakeCounter()
 		*/
 		virtual		PxReal				getWakeCounter() const = 0;
 
@@ -338,7 +349,7 @@ namespace physx
 		A soft body can only go to sleep if all vertices are ready for sleeping. A soft body is guaranteed to be awake
 		if at least one of the following holds:
 
-		\li The wake counter is positive (@see setWakeCounter()).
+		\li The wake counter is positive (\see setWakeCounter()).
 		\li The velocity of any vertex is above the sleep threshold.
 
 		If a soft body is sleeping, the following state is guaranteed:
@@ -353,7 +364,7 @@ namespace physx
 
 		\return True if the soft body is sleeping.
 
-		@see isSleeping()
+		\see isSleeping()
 		*/
 		virtual		bool				isSleeping() const = 0;
 
@@ -372,14 +383,14 @@ namespace physx
 		\param[in] minPositionIters Minimal number of position iterations the solver should perform for this body. <b>Range:</b> [1,255]
 		\param[in] minVelocityIters Minimal number of velocity iterations the solver should perform for this body. <b>Range:</b> [1,255]
 
-		@see getSolverIterationCounts()
+		\see getSolverIterationCounts()
 		*/
 		virtual		void				setSolverIterationCounts(PxU32 minPositionIters, PxU32 minVelocityIters = 1) = 0;
 
 		/**
 		\brief Retrieves the solver iteration counts.
 
-		@see setSolverIterationCounts()
+		\see setSolverIterationCounts()
 		*/
 		virtual		void				getSolverIterationCounts(PxU32& minPositionIters, PxU32& minVelocityIters) const = 0;
 
@@ -388,7 +399,7 @@ namespace physx
 		\brief Retrieves the shape pointer belonging to the actor.
 
 		\return Pointer to the collision mesh's shape
-		@see PxShape getNbShapes() PxShape::release()
+		\see PxShape getNbShapes() PxShape::release()
 		*/
 		virtual		PxShape*			getShape() = 0;
 
@@ -459,7 +470,7 @@ namespace physx
 
 		Detaches the shape used for collision detection.
 
-		@see void detachSimulationMesh()
+		\see void detachSimulationMesh()
 		*/
 		virtual     void				detachShape() = 0;
 
@@ -468,7 +479,7 @@ namespace physx
 
 		Detaches the simulation mesh and simulation state used to compute the softbody deformation.
 
-		@see void detachShape()
+		\see void detachShape()
 		*/
 		virtual		void				detachSimulationMesh() = 0;
 
@@ -485,9 +496,9 @@ namespace physx
 		\param[in] particlesystem The particle system used for the collision filter
 		\param[in] buffer The PxParticleBuffer to which the particle belongs to.
 		\param[in] particleId The particle whose collisions with the tetrahedron in the soft body are filtered.
-		\param[in] tetId The tetradedron in the soft body that is filtered. If tetId is PX_MAX_TETID, this particle will filter against all tetrahedra in this soft body
+		\param[in] tetId The tetradedron in the soft body that is filtered. If tetId is PX_MAX_NB_SOFTBODY_TET, this particle will filter against all tetrahedra in this soft body.
 		*/
-		virtual		void				addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
+		PX_DEPRECATED	virtual		void	addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
 		
 		/**
 		\brief Removes a collision filter between a particle and a tetrahedron in the soft body's collision mesh.
@@ -497,7 +508,7 @@ namespace physx
 		\param[in] particleId The particle whose collisions with the tetrahedron in the soft body are filtered.
 		\param[in] tetId The tetrahedron in the soft body is filtered.
 		*/
-		virtual		void				removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
+		PX_DEPRECATED	virtual		void	removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId) = 0;
 		
 		/**
 		\brief Creates an attachment between a particle and a soft body.
@@ -511,7 +522,7 @@ namespace physx
 		\param[in] barycentric The barycentric coordinates of the particle attachment position with respect to the tetrahedron specified with tetId.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
-		virtual		PxU32				addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric) = 0;
+		PX_DEPRECATED	virtual		PxU32	addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric) = 0;
 		
 		
 		/**
@@ -522,7 +533,7 @@ namespace physx
 		\param[in] particlesystem The particle system used for the attachment
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addParticleAttachment when the attachment is created
 		*/
-		virtual		void				removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle) = 0;
+		PX_DEPRECATED	virtual		void	removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle) = 0;
 
 		/**
 		\brief Creates a collision filter between a vertex in a soft body and a rigid body.
@@ -530,7 +541,7 @@ namespace physx
 		\param[in] actor The rigid body actor used for the collision filter
 		\param[in] vertId The index of a vertex in the softbody's collision mesh whose collisions with the rigid body are filtered.
 		*/
-		virtual		void				addRigidFilter(PxRigidActor* actor, PxU32 vertId) = 0;
+		PX_DEPRECATED	virtual		void	addRigidFilter(PxRigidActor* actor, PxU32 vertId) = 0;
 
 		/**
 		\brief Removes a collision filter between a vertex in a soft body and a rigid body.
@@ -538,7 +549,7 @@ namespace physx
 		\param[in] actor The rigid body actor used for the collision filter
 		\param[in] vertId The index of a vertex in the softbody's collision mesh whose collisions with the rigid body are filtered.
 		*/
-		virtual		void				removeRigidFilter(PxRigidActor* actor, PxU32 vertId) = 0;
+		PX_DEPRECATED	virtual		void	removeRigidFilter(PxRigidActor* actor, PxU32 vertId) = 0;
 
 		/**
 		\brief Creates a rigid attachment between a soft body and a rigid body.
@@ -553,7 +564,7 @@ namespace physx
 		\param[in] constraint The user defined cone distance limit constraint to limit the movement between a vertex in the soft body and rigid body.
 		\return Returns a handle that identifies the attachment created. This handle can be used to relese the attachment later
 		*/
-		virtual		PxU32					addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint = NULL) = 0;
+		PX_DEPRECATED	virtual		PxU32	addRigidAttachment(PxRigidActor* actor, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint = NULL) = 0;
 
 		/**
 		\brief Releases a rigid attachment between a soft body and a rigid body.
@@ -565,7 +576,7 @@ namespace physx
 		\param[in] actor The rigid body actor used for the attachment
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addRigidAttachment when the attachment is created
 		*/
-		virtual		void					removeRigidAttachment(PxRigidActor* actor, PxU32 handle) = 0;
+		PX_DEPRECATED	virtual		void	removeRigidAttachment(PxRigidActor* actor, PxU32 handle) = 0;
 
 		/**
 		\brief Creates collision filter between a tetrahedron in a soft body and a rigid body.
@@ -573,7 +584,7 @@ namespace physx
 		\param[in] actor The rigid body actor used for collision filter
 		\param[in] tetIdx The index of a tetrahedron in the softbody's collision mesh whose collisions with the rigid body is filtered.
 		*/
-		virtual		void					addTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	addTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx) = 0;
 		
 		/**
 		\brief Removes collision filter between a tetrahedron in a soft body and a rigid body.
@@ -581,7 +592,7 @@ namespace physx
 		\param[in] actor The rigid body actor used for collision filter
 		\param[in] tetIdx The index of a tetrahedron in the softbody's collision mesh whose collisions with the rigid body is filtered.
 		*/
-		virtual		void					removeTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	removeTetRigidFilter(PxRigidActor* actor, PxU32 tetIdx) = 0;
 
 		/**
 		\brief Creates a rigid attachment between a soft body and a rigid body.
@@ -597,16 +608,16 @@ namespace physx
 		\param[in] constraint The user defined cone distance limit constraint to limit the movement between a tet and rigid body.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
-		virtual		PxU32					addTetRigidAttachment(PxRigidActor* actor, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint = NULL) = 0;
+		PX_DEPRECATED	virtual		PxU32	addTetRigidAttachment(PxRigidActor* actor, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint = NULL) = 0;
 
 		/**
 		\brief Creates collision filter between a tetrahedron in a soft body and a tetrahedron in another soft body.
 
 		\param[in] otherSoftBody The other soft body actor used for collision filter
 		\param[in] otherTetIdx The index of the tetrahedron in the other softbody's collision mesh to be filtered.
-		\param[in] tetIdx1 The index of the tetrahedron in the softbody's collision mesh to be filtered.
+		\param[in] tetIdx1 The index of the tetrahedron in the softbody's collision mesh to be filtered. If tetId1 is PX_MAX_NB_SOFTBODY_TET, the tetrahedron with index `otherTetIdx' in the other softbody will filter against all tetrahedra in this soft body.
 		*/
-		virtual		void					addSoftBodyFilter(PxSoftBody* otherSoftBody, PxU32 otherTetIdx, PxU32 tetIdx1) = 0;
+		PX_DEPRECATED	virtual		void	addSoftBodyFilter(PxSoftBody* otherSoftBody, PxU32 otherTetIdx, PxU32 tetIdx1) = 0;
 
 		/**
 		\brief Removes collision filter between a tetrahedron in a soft body and a tetrahedron in other soft body.
@@ -615,7 +626,7 @@ namespace physx
 		\param[in] otherTetIdx The index of the other tetrahedron in the other softbody's collision mesh whose collision with the tetrahedron with the soft body is filtered.
 		\param[in] tetIdx1 The index of the tetrahedron in the softbody's collision mesh whose collision with the other tetrahedron with the other soft body is filtered.
 		*/
-		virtual		void					removeSoftBodyFilter(PxSoftBody* otherSoftBody, PxU32 otherTetIdx, PxU32 tetIdx1) = 0;
+		PX_DEPRECATED	virtual		void	removeSoftBodyFilter(PxSoftBody* otherSoftBody, PxU32 otherTetIdx, PxU32 tetIdx1) = 0;
 
 		/**
 		\brief Creates collision filters between a tetrahedron in a soft body with another soft body.
@@ -625,7 +636,7 @@ namespace physx
 		\param[in] tetIndices The indices of the tetrahedron of the softbody's collision mesh to be filtered.
 		\param[in] tetIndicesSize The size of tetIndices.
 		*/
-		virtual		void					addSoftBodyFilters(PxSoftBody* otherSoftBody, PxU32* otherTetIndices, PxU32* tetIndices, PxU32 tetIndicesSize) = 0;
+		PX_DEPRECATED	virtual		void	addSoftBodyFilters(PxSoftBody* otherSoftBody, PxU32* otherTetIndices, PxU32* tetIndices, PxU32 tetIndicesSize) = 0;
 
 		/**
 		\brief Removes collision filters between a tetrahedron in a soft body with another soft body.
@@ -635,7 +646,7 @@ namespace physx
 		\param[in] tetIndices The indices of the tetrahedron of the softbody's collision mesh to be filtered.
 		\param[in] tetIndicesSize The size of tetIndices.
 		*/
-		virtual		void					removeSoftBodyFilters(PxSoftBody* otherSoftBody, PxU32* otherTetIndices, PxU32* tetIndices, PxU32 tetIndicesSize) = 0;
+		PX_DEPRECATED	virtual		void	removeSoftBodyFilters(PxSoftBody* otherSoftBody, PxU32* otherTetIndices, PxU32* tetIndices, PxU32 tetIndicesSize) = 0;
 
 		/**
 		\brief Creates an attachment between two soft bodies.
@@ -651,7 +662,7 @@ namespace physx
 		\param[in] constraintOffset Offsets the cone and distance limit constraint along its axis, in order to specify the location of the cone tip.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
-		virtual		PxU32					addSoftBodyAttachment(PxSoftBody* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
+		PX_DEPRECATED	virtual		PxU32	addSoftBodyAttachment(PxSoftBody* softbody0, PxU32 tetIdx0, const PxVec4& tetBarycentric0, PxU32 tetIdx1, const PxVec4& tetBarycentric1,
 											PxConeLimitedConstraint* constraint = NULL, PxReal constraintOffset = 0.0f) = 0;
 
 		/**
@@ -663,7 +674,7 @@ namespace physx
 		\param[in] softbody0 The softbody actor used for the attachment.
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addSoftBodyAttachment when the attachment is created.
 		*/
-		virtual		void					removeSoftBodyAttachment(PxSoftBody* softbody0, PxU32 handle) = 0;
+		PX_DEPRECATED	virtual		void	removeSoftBodyAttachment(PxSoftBody* softbody0, PxU32 handle) = 0;
 
 		/**
 		\brief Creates collision filter between a tetrahedron in a soft body and a triangle in a cloth.
@@ -671,9 +682,9 @@ namespace physx
 
 		\param[in] cloth The cloth actor used for collision filter
 		\param[in] triIdx The index of the triangle in the cloth mesh to be filtered.
-		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
+		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered. If tetId is PX_MAX_NB_SOFTBODY_TET, this cloth triangle will filter against all tetrahedra in this soft body.
 		*/
-		virtual		void					addClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	addClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
 
 		/**
 		\brief Removes collision filter between a tetrahedron in a soft body and a triangle in a cloth.
@@ -683,7 +694,7 @@ namespace physx
 		\param[in] triIdx The index of the triangle in the cloth mesh to be filtered.
 		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
 		*/
-		virtual		void					removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	removeClothFilter(PxFEMCloth* cloth, PxU32 triIdx, PxU32 tetIdx) = 0;
 
 		/**
 		\brief Creates collision filter between a tetrahedron in a soft body and a vertex in a cloth.
@@ -691,9 +702,9 @@ namespace physx
 
 		\param[in] cloth The cloth actor used for collision filter
 		\param[in] vertIdx The index of the vertex in the cloth mesh to be filtered.
-		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
+		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered. If tetId is PX_MAX_NB_SOFTBODY_TET, this cloth vertex will filter against all tetrahedra in this soft body.
 		*/
-		virtual		void					addVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	addVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
 
 		/**
 		\brief Removes collision filter between a tetrahedron in a soft body and a vertex in a cloth.
@@ -703,7 +714,7 @@ namespace physx
 		\param[in] vertIdx The index of the vertex in the cloth mesh to be filtered.
 		\param[in] tetIdx The index of the tetrahedron in the softbody's collision mesh to be filtered.
 		*/
-		virtual		void					removeVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
+		PX_DEPRECATED	virtual		void	removeVertClothFilter(PxFEMCloth* cloth, PxU32 vertIdx, PxU32 tetIdx) = 0;
 
 		/**
 		\brief Creates an attachment between a soft body and a cloth.
@@ -723,7 +734,7 @@ namespace physx
 		\param[in] constraintOffset Offsets the cone and distance limit constraint along its axis, in order to specify the location of the cone tip.
 		\return Returns a handle that identifies the attachment created. This handle can be used to release the attachment later
 		*/
-		virtual		PxU32					addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
+		PX_DEPRECATED	virtual		PxU32	addClothAttachment(PxFEMCloth* cloth, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric,
 											PxConeLimitedConstraint* constraint = NULL, PxReal constraintOffset = 0.0f) = 0;
 
 		/**
@@ -738,7 +749,7 @@ namespace physx
 		\param[in] cloth The cloth actor used for the attachment
 		\param[in] handle Index that identifies the attachment. This handle gets returned by the addClothAttachment when the attachment is created
 		*/
-		virtual		void					removeClothAttachment(PxFEMCloth* cloth, PxU32 handle) = 0;
+		PX_DEPRECATED	virtual		void	removeClothAttachment(PxFEMCloth* cloth, PxU32 handle) = 0;
 
 		/**
 		\brief Retrieves the axis aligned bounding box enclosing the soft body.
@@ -750,7 +761,7 @@ namespace physx
 
 		\return The soft body's bounding box.
 
-		@see PxBounds3
+		\see PxBounds3
 		*/
 		virtual		PxBounds3		getWorldBounds(float inflation = 1.01f) const = 0;
 
@@ -811,5 +822,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

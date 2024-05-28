@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_REPX_SERIALIZER_H
 #define PX_REPX_SERIALIZER_H
-/** \addtogroup Serializers
-  @{
-*/
 
 #include "common/PxBase.h"
 #include "extensions/PxRepXSimpleType.h"
@@ -63,7 +60,7 @@ namespace physx
 
 	\note Implementing a PxRepXSerializer is currently not practical without including the internal PhysXExtension header "SnRepXSerializerImpl.h". 
 
-	@see PxSerializer, PX_NEW_REPX_SERIALIZER, PxSerializationRegistry::registerRepXSerializer
+	\see PxSerializer, PX_NEW_REPX_SERIALIZER, PxSerializationRegistry::registerRepXSerializer
 	*/
 	class PX_DEPRECATED PxRepXSerializer
 	{
@@ -73,7 +70,7 @@ namespace physx
 		
 		/**
 		\brief The type this Serializer is meant to operate on.
-		@see PxRepXObject::typeName
+		\see PxRepXObject::typeName
 		*/
 		virtual const char* getTypeName() = 0;
 
@@ -141,7 +138,7 @@ PX_DEPRECATED PX_INLINE physx::PxRepXObject PxCreateRepXObject(const TDataType* 
 \deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 */
 #define PX_NEW_REPX_SERIALIZER(T) \
-		*PX_PLACEMENT_NEW(PxGetAllocatorCallback()->allocate(sizeof(T), "PxRepXSerializer",  PX_FL ), T)(*PxGetAllocatorCallback())
+		*PX_PLACEMENT_NEW(PxGetAllocatorCallback()->allocate(sizeof(T), "PxRepXSerializer", PX_FL), T)(*PxGetAllocatorCallback())
 
 /**
 \brief Preprocessor Macro to simplify RepX serializer delete.
@@ -151,6 +148,5 @@ PX_DEPRECATED PX_INLINE physx::PxRepXObject PxCreateRepXObject(const TDataType* 
 		{ PxRepXSerializer* s = x; if (s) { PxGetAllocatorCallback()->deallocate(s); } }
 
 
-/** @} */
 #endif
 

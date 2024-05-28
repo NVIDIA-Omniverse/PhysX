@@ -22,15 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
+#include "DySoftBodyCore.h"
+#include "PxsHeapMemoryAllocator.h"
+#include "PxsMemoryManager.h"
 #include "foundation/PxPreprocessor.h"
 
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpSoftBody.h"
-#include "NpParticleSystem.h"
+#include "NpPBDParticleSystem.h"
 #include "NpCheck.h"
 #include "NpScene.h"
 #include "NpShape.h"
@@ -44,23 +47,28 @@
 #include "NpArticulationLink.h"
 #include "ScSoftBodySim.h"
 #include "NpFEMSoftBodyMaterial.h"
-#include "cudamanager/PxCudaContext.h"
 
 using namespace physx;
+
+class PxCudaContextManager;
 
 namespace physx
 {
 	NpSoftBody::NpSoftBody(PxCudaContextManager& cudaContextManager) :
 		NpActorTemplate	(PxConcreteType::eSOFT_BODY, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE, NpType::eSOFTBODY),
 		mShape			(NULL),
-		mCudaContextManager(&cudaContextManager)
+		mCudaContextManager(&cudaContextManager),
+		mMemoryManager(NULL),
+		mDeviceMemoryAllocator(NULL)
 	{
 	}
 
 	NpSoftBody::NpSoftBody(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager) :
 		NpActorTemplate	(baseFlags), 
 		mShape			(NULL),
-		mCudaContextManager(&cudaContextManager)
+		mCudaContextManager(&cudaContextManager),
+		mMemoryManager(NULL),
+		mDeviceMemoryAllocator(NULL)
 	{
 	}
 
@@ -257,15 +265,17 @@ namespace physx
 
 		PX_CHECK_AND_RETURN_NULL(core.mSimPositionInvMass == NULL, "NpSoftBody::attachSimulationMesh: mSimPositionInvMass already exists, overwrite not allowed, call detachSimulationMesh first");
 		PX_CHECK_AND_RETURN_NULL(core.mSimVelocity == NULL, "NpSoftBody::attachSimulationMesh: mSimVelocity already exists, overwrite not allowed, call detachSimulationMesh first");
+		Gu::TetrahedronMesh& tetMesh = static_cast<Gu::TetrahedronMesh&>(simulationMesh);
+		PX_CHECK_AND_RETURN_NULL(tetMesh.getNbTetrahedronsFast() <= PX_MAX_NB_SOFTBODY_TET, "NpSoftBody::attachSimulationMesh: simulation mesh contains too many tetrahedons, see PX_MAX_NB_SOFTBODY_TET");
 
-		mSimulationMesh = static_cast<Gu::TetrahedronMesh*>(&simulationMesh);
+		mSimulationMesh = &tetMesh;
 		mSoftBodyAuxData = static_cast<Gu::SoftBodyAuxData*>(&softBodyAuxData);
+		const PxU32 numVertsGM = tetMesh.getNbVerticesFast();
 
-		Gu::TetrahedronMesh* tetMesh = static_cast<Gu::TetrahedronMesh*>(&simulationMesh);
+		createAllocator();
 
-		const PxU32 numVertsGM = tetMesh->getNbVerticesFast();
-		core.mSimPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVertsGM);
-		core.mSimVelocity = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVertsGM);
+		core.mSimPositionInvMass = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVertsGM * sizeof(PxVec4), PxsHeapStats::eSHARED_SOFTBODY, PX_FL));
+		core.mSimVelocity = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVertsGM * sizeof(PxVec4), PxsHeapStats::eSHARED_SOFTBODY, PX_FL));
 
 		return true;
 	}
@@ -287,12 +297,14 @@ namespace physx
 		NpShape* npShape = static_cast<NpShape*>(&shape);
 
 		PX_CHECK_AND_RETURN_NULL(npShape->getGeometryTypeFast() == PxGeometryType::eTETRAHEDRONMESH, "NpSoftBody::attachShape: Geometry type must be tetrahedron mesh geometry");
+		const PxTetrahedronMeshGeometry& tetGeometry = static_cast<const PxTetrahedronMeshGeometry&>(npShape->getGeometry());
+		PX_CHECK_AND_RETURN_NULL(tetGeometry.tetrahedronMesh != NULL, "NpSoftBody::attachShape: PxTetrahedronMeshGeometry::tetrahedronMesh is NULL");
+		Gu::BVTetrahedronMesh* tetMesh = static_cast<Gu::BVTetrahedronMesh*>(tetGeometry.tetrahedronMesh);
+		PX_CHECK_AND_RETURN_NULL(tetMesh->getNbTetrahedronsFast() <= PX_MAX_NB_SOFTBODY_TET, "NpSoftBody::attachShape: collision mesh consists of too many tetrahedons, see PX_MAX_NB_SOFTBODY_TET");
 		PX_CHECK_AND_RETURN_NULL(mShape == NULL, "NpSoftBody::attachShape: soft body can just have one shape");
 		PX_CHECK_AND_RETURN_NULL(shape.isExclusive(), "NpSoftBody::attachShape: shape must be exclusive");
 		PX_CHECK_AND_RETURN_NULL(npShape->getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eSOFT_BODY_SHAPE, "NpSoftBody::attachShape: shape must be a soft body shape!");
-
 		Dy::SoftBodyCore& core = mCore.getCore();
-
 		PX_CHECK_AND_RETURN_NULL(core.mPositionInvMass == NULL, "NpSoftBody::attachShape: mPositionInvMass already exists, overwrite not allowed, call detachShape first");
 
 		mShape = npShape;
@@ -300,13 +312,10 @@ namespace physx
 		PX_ASSERT(shape.getActor() == NULL);
 		npShape->onActorAttach(*this);
 
-		const PxGeometryHolder gh(mShape->getGeometry());	// PT: TODO: avoid that copy
-		const PxTetrahedronMeshGeometry& tetGeometry = gh.tetMesh();
-		Gu::BVTetrahedronMesh* tetMesh = static_cast<Gu::BVTetrahedronMesh*>(tetGeometry.tetrahedronMesh);
+		createAllocator();
 		const PxU32 numVerts = tetMesh->getNbVerticesFast();
-
-		core.mPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
-		core.mRestPosition = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+		core.mPositionInvMass = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVerts * sizeof(PxVec4), PxsHeapStats::eSHARED_SOFTBODY, PX_FL));
+		core.mRestPosition = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVerts * sizeof(PxVec4), PxsHeapStats::eSHARED_SOFTBODY, PX_FL));
 
 		updateMaterials();
 
@@ -317,15 +326,17 @@ namespace physx
 	{
 		PX_CHECK_MSG(getNpSceneFromActor(*this) == NULL, "Detaching a shape from a softbody is currenly only allowed as long as it is not part of a scene. Please remove the softbody from its scene first.");
 
+		PX_ASSERT(mDeviceMemoryAllocator);
+
 		Dy::SoftBodyCore& core = mCore.getCore();
 		if (core.mRestPosition)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mRestPosition);
+			mDeviceMemoryAllocator->deallocate(core.mRestPosition);
 			core.mRestPosition = NULL;
 		}
 		if (core.mPositionInvMass)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mPositionInvMass);
+			mDeviceMemoryAllocator->deallocate(core.mPositionInvMass);
 			core.mPositionInvMass = NULL;
 		}
 
@@ -336,16 +347,18 @@ namespace physx
 
 	void NpSoftBody::detachSimulationMesh()
 	{
+		PX_ASSERT(mDeviceMemoryAllocator);
+
 		Dy::SoftBodyCore& core = mCore.getCore();
 		if (core.mSimPositionInvMass)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mSimPositionInvMass);
+			mDeviceMemoryAllocator->deallocate(core.mSimPositionInvMass);
 			core.mSimPositionInvMass = NULL;
 		}
 
 		if (core.mSimVelocity)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mSimVelocity);
+			mDeviceMemoryAllocator->deallocate(core.mSimVelocity);
 			core.mSimVelocity = NULL;
 		}
 
@@ -371,20 +384,8 @@ namespace physx
 		detachShape();
 
 		PX_ASSERT(!isAPIWriteForbidden());
-
+		releaseAllocator();
 		NpDestroySoftBody(this);
-	}
-
-	void NpSoftBody::setName(const char* debugName)
-	{
-		NP_WRITE_CHECK(getNpScene());
-		mName = debugName;
-	}
-
-	const char* NpSoftBody::getName() const
-	{
-		NP_READ_CHECK(getNpScene());
-		return mName;
 	}
 
 	void NpSoftBody::addParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
@@ -397,7 +398,7 @@ namespace physx
 
 		NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
 		Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-		mCore.addParticleFilter(&core, particleId, buffer ? buffer->bufferUniqueId : 0, tetId);
+		mCore.addParticleFilter(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId);
 	}
 
 	void NpSoftBody::removeParticleFilter(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId)
@@ -410,7 +411,7 @@ namespace physx
 
 		NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
 		Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-		mCore.removeParticleFilter(&core, particleId, buffer ? buffer->bufferUniqueId : 0, tetId);
+		mCore.removeParticleFilter(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId);
 	}
 
 	PxU32 NpSoftBody::addParticleAttachment(PxPBDParticleSystem* particlesystem, const PxParticleBuffer* buffer, PxU32 particleId, PxU32 tetId, const PxVec4& barycentric)
@@ -423,7 +424,7 @@ namespace physx
 
 		NpPBDParticleSystem* npParticleSystem = static_cast<NpPBDParticleSystem*>(particlesystem);
 		Sc::ParticleSystemCore& core = npParticleSystem->getCore();
-		return mCore.addParticleAttachment(&core, particleId, buffer ? buffer->bufferUniqueId : 0, tetId, barycentric);
+		return mCore.addParticleAttachment(&core, particleId, buffer ? buffer->getUniqueId() : 0, tetId, barycentric);
 	}
 
 	void NpSoftBody::removeParticleAttachment(PxPBDParticleSystem* particlesystem, PxU32 handle)
@@ -748,6 +749,52 @@ namespace physx
 #else
 	void NpSoftBody::removeClothAttachment(PxFEMCloth*, PxU32) {}
 #endif
+
+	void NpSoftBody::createAllocator()
+	{
+		if (!mMemoryManager)
+		{
+			PxPhysXGpu* physXGpu = PxvGetPhysXGpu(true);
+			PX_ASSERT(physXGpu != NULL);
+
+			mMemoryManager = physXGpu->createGpuMemoryManager(mCudaContextManager);
+			mDeviceMemoryAllocator = mMemoryManager->getDeviceMemoryAllocator();
+		}
+		PX_ASSERT(mMemoryManager != NULL);
+		PX_ASSERT(mDeviceMemoryAllocator != NULL);
+	}
+
+	void NpSoftBody::releaseAllocator()
+	{
+		// deallocate device memory if not released already.
+		Dy::SoftBodyCore& core = mCore.getCore();
+		if (core.mSimVelocity)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mSimVelocity);
+			core.mSimVelocity = NULL;
+		}
+		if (core.mSimPositionInvMass)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mSimPositionInvMass);
+			core.mSimPositionInvMass = NULL;
+		}
+		if (core.mRestPosition)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mRestPosition);
+			core.mRestPosition = NULL;
+		}
+		if (core.mPositionInvMass)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mPositionInvMass);
+			core.mPositionInvMass = NULL;
+		}
+
+		if (mMemoryManager != NULL)
+		{
+			mDeviceMemoryAllocator = NULL; // released by memory manager
+			PX_DELETE(mMemoryManager);
+		}
+	}
 }
 
 #endif //PX_SUPPORT_GPU_PHYSX

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,23 +33,21 @@
 
 namespace physx
 {
-
 struct PxsShapeCore;
 struct PxsMaterialInfo;
-class PxcNpThreadContext;
+class PxContactBuffer;
 
-#define MATERIAL_METHOD_ARGS			\
-	const PxsShapeCore* shape0,			\
-	const PxsShapeCore* shape1,			\
-	PxcNpThreadContext& pairContext,	\
+#define MATERIAL_METHOD_ARGS				\
+	const PxsShapeCore* shape0,				\
+	const PxsShapeCore* shape1,				\
+	const PxContactBuffer& contactBuffer,	\
 	PxsMaterialInfo* materialInfo
 
-
-#define SINGLE_MATERIAL_METHOD_ARGS		\
-	const PxsShapeCore* shape,			\
-	const PxU32	index,					\
-	PxcNpThreadContext& pairContext,	\
-	PxsMaterialInfo* materialInfo			
+#define SINGLE_MATERIAL_METHOD_ARGS			\
+	const PxsShapeCore* shape,				\
+	PxU32 index,							\
+	const PxContactBuffer& contactBuffer,	\
+	PxsMaterialInfo* materialInfo
 
 /*!
 Method prototype for fetch material routines

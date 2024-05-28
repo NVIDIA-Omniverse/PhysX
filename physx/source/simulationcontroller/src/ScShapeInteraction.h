@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,11 +42,6 @@
 
 namespace physx
 {
-static PX_FORCE_INLINE bool isParticleSystem(const PxActorType::Enum actorType)
-{
-	return actorType == PxActorType::ePBD_PARTICLESYSTEM || actorType == PxActorType::eFLIP_PARTICLESYSTEM
-		|| actorType == PxActorType::eMPM_PARTICLESYSTEM;
-}
 
 class PxsContactManagerOutputIterator;
 namespace Sc
@@ -115,7 +110,7 @@ namespace Sc
 
 		PX_FORCE_INLINE	void					sendCCDRetouch(PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
 						void					setContactReportPostSolverVelocity(ContactStreamManager& cs);
-		PX_FORCE_INLINE	void					sendLostTouchReport(bool shapeVolumeRemoved, PxU32 ccdPass, PxsContactManagerOutputIterator& ouptuts);
+						void					sendLostTouchReport(bool shapeVolumeRemoved, PxU32 ccdPass, PxsContactManagerOutputIterator& ouptuts);
 						void					resetManagerCachedState()	const;
 	
 		PX_FORCE_INLINE	ActorPair*				getActorPair()				const	{ return mActorPair;							}
@@ -157,7 +152,7 @@ namespace Sc
 						PxU32					mContactReportStamp;
 						PxU32					mReportPairIndex;	// Owned by NPhaseCore for its report pair list
 						PxU32					mEdgeIndex;
-						PxU16					mReportStreamIndex;  // position of this pair in the contact report stream
+						PxU32					mReportStreamIndex;  // position of this pair in the contact report stream
 
 						void					createManager(void* contactManager);
 		PX_INLINE		bool					updateManager(void* contactManager);
@@ -189,39 +184,6 @@ namespace Sc
 	};
 
 } // namespace Sc
-
-// PT: TODO: is there a reason for force-inlining all that stuff?
-
-PX_FORCE_INLINE void Sc::ShapeInteraction::sendLostTouchReport(bool shapeVolumeRemoved, PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
-{
-	PX_ASSERT(hasTouch());
-	PX_ASSERT(isReportPair());
-
-	const PxU32 pairFlags = getPairFlags();
-	const PxU32 notifyTouchLost = pairFlags & PxU32(PxPairFlag::eNOTIFY_TOUCH_LOST);
-	const PxIntBool thresholdExceeded = readFlag(ShapeInteraction::FORCE_THRESHOLD_EXCEEDED_NOW);
-	const PxU32 notifyThresholdLost = thresholdExceeded ? (pairFlags & PxU32(PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST)) : 0;
-	if(!notifyTouchLost && !notifyThresholdLost)
-		return;
-
-	PxU16 infoFlag = 0;
-	if(mActorPair->getTouchCount() == 1)  // this code assumes that the actor pair touch count does get decremented afterwards
-		infoFlag |= PxContactPairFlag::eACTOR_PAIR_LOST_TOUCH;
-
-	//Lost touch is processed after solver, so we should use the previous transform to update the pose for objects if user request eCONTACT_EVENT_POSE
-	const bool useCurrentTransform = false;
-
-	const PxU32 triggeredFlags = notifyTouchLost | notifyThresholdLost;
-	PX_ASSERT(triggeredFlags); 
-	processUserNotification(triggeredFlags, infoFlag, true, ccdPass, useCurrentTransform, outputs);
-
-	if(shapeVolumeRemoved)
-	{
-		ActorPairReport& apr = getActorPairReport();
-		ContactStreamManager& cs = apr.getContactStreamManager();
-		cs.raiseFlags(ContactStreamManagerFlag::eTEST_FOR_REMOVED_SHAPES);
-	}
-}
 
 PX_FORCE_INLINE void Sc::ShapeInteraction::setPairFlags(PxPairFlags flags)
 {
@@ -316,14 +278,14 @@ PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 	PX_ASSERT(bodySim0.isDynamicRigid());
 #endif
 
-	// PT: try to prevent https://omniverse-jirasw.nvidia.com/browse/OM-103695
+	// PT: try to prevent OM-103695 / PX-4509
+	// ### DEFENSIVE
 	if(!bodySim0.getNodeIndex().isValid())
-		return false;
+		return PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "ShapeInteraction::activeManagerAllowed: found invalid node!");
 
 	const IG::IslandSim& islandSim = getScene().getSimpleIslandManager()->getSpeculativeIslandSim();
 
 	//check whether active in the speculative sim!
-
 	return (islandSim.getNode(bodySim0.getNodeIndex()).isActive() ||
 		(!bodySim1.isStaticRigid() && islandSim.getNode(bodySim1.getNodeIndex()).isActive()));
 }

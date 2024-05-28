@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef EXT_DELAUNAY_BOUNDARY_INSERTER_H
 #define EXT_DELAUNAY_BOUNDARY_INSERTER_H
@@ -37,7 +37,6 @@
 #include "extensions/PxTetrahedronMeshAnalysisResult.h"
 
 #include "ExtDelaunayTetrahedralizer.h"
-
 namespace physx
 {
 namespace Ext
@@ -47,15 +46,18 @@ namespace Ext
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsX, PxU32 numVoxelsY, PxU32 numVoxelsZ,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5,
+		bool avoidVoxelDuplication = false);
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxReal voxelEdgeLength,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5,
+		bool avoidVoxelDuplication = false);
 
 	//Generates a tetmesh that that matches the surface of the input tetmesh approximately but creats very regular shaped tetrahedra.
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsAlongLongestBoundingBoxAxis,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5);
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices = NULL, PxU32 numTetsPerVoxel = 5,
+		bool avoidVoxelDuplication = false);
 
 	//Extracts the surface triangles from the specified tetrahedra
 	void extractTetmeshSurface(const PxArray<PxI32>& tets, PxArray<PxI32>& triangles);

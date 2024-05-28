@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "vehicle2/PxVehicleFunctions.h"
 
@@ -56,7 +53,7 @@ namespace vehicle2
 \param[in] steerAngle is the steer angle in radians applied to the wheel.
 \param[in] rotationAngle is the angle around the wheel's lateral axis.
 \return The quaterion of the wheel in the rigid body frame.
-@see PxVehicleComputeWheelOrientation
+\see PxVehicleComputeWheelOrientation
 */
 PX_FORCE_INLINE PxQuat PxVehicleComputeWheelLocalOrientation
 (const PxVehicleFrame& frame,
@@ -80,7 +77,7 @@ PX_FORCE_INLINE PxQuat PxVehicleComputeWheelLocalOrientation
 \param[in] rigidBodyOrientation is the quaterion of the rigid body in the world frame.
 \param[in] rotationAngle is the angle around the wheel's lateral axis.
 \return The quaterion of the wheel in the world frame.
-@see PxVehicleComputeWheelLocalOrientation
+\see PxVehicleComputeWheelLocalOrientation
 */
 PX_FORCE_INLINE PxQuat PxVehicleComputeWheelOrientation
 (const PxVehicleFrame& frame,
@@ -113,11 +110,11 @@ PX_FORCE_INLINE PxTransform PxVehicleComputeWheelLocalPose
 {
 	//Full equation:
 		//PxTransform(suspAttachment.p + suspParams.suspensionTravelDir*suspDist, suspAttachment.q) * 
-		//PxTransform(PxVec3(0), PxQuat(camber,  0, steer+toe)) *
+		//PxTransform(PxVec3(0), PxQuat(camber, 0, steer+toe)) *
 		//wheelAttachment *
 		//PxTransform(PxVec3(0), PxQuat(0, rotation, 0))
 	//Reduces to:
-		//PxTransform(suspAttachment.p + suspParams.suspensionTravelDir*suspDist, suspAttachment.q * PxQuat(camber,  0, steer+toe)) *
+		//PxTransform(suspAttachment.p + suspParams.suspensionTravelDir*suspDist, suspAttachment.q * PxQuat(camber, 0, steer+toe)) *
 		//PxTranfsorm(wheelAttachment.p, wheelAttachment.q * PxQuat(0, rotation, 0))
 	const PxF32 suspDist = (suspensionState.jounce != PX_VEHICLE_UNSPECIFIED_JOUNCE) ? (suspensionParams.suspensionTravelDist - suspensionState.jounce) : 0.0f;
 	const PxTransform wheelLocalPose =
@@ -206,7 +203,7 @@ PX_FORCE_INLINE PxTransform PxVehicleComputeWheelPose
 \param[in] suspState The state of the suspension to check.
 \return True if the wheel connects to the ground, else false.
 
-@see PxVehicleSuspensionState
+\see PxVehicleSuspensionState
 */
 PX_FORCE_INLINE bool PxVehicleIsWheelOnGround(const PxVehicleSuspensionState& suspState)
 {
@@ -218,4 +215,3 @@ PX_FORCE_INLINE bool PxVehicleIsWheelOnGround(const PxVehicleSuspensionState& su
 } // namespace physx
 #endif
 
-/** @} */

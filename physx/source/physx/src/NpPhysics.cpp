@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,9 +39,10 @@
 #include "CmUtils.h"
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
+#include "omnipvd/OmniPvdPxSampler.h"
 #if PX_SUPPORT_GPU_PHYSX
 #include "NpSoftBody.h"
-#include "NpParticleSystem.h"
+#include "NpPBDParticleSystem.h"
 #include "NpHairSystem.h"
 #endif
 #include "NpArticulationReducedCoordinate.h"
@@ -58,6 +59,7 @@
 #include "PxPhysicsSerialization.h"
 #include "PvdPhysicsClient.h"
 #include "omnipvd/NpOmniPvdSetData.h"
+#include "cudamanager/PxCudaContext.h"
 
 #if PX_SUPPORT_OMNI_PVD
 #include "omnipvd/NpOmniPvd.h"
@@ -191,8 +193,6 @@ NpPhysics::~NpPhysics()
 	mMasterPBDMaterialManager.releaseMaterials();
 	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	mMasterFEMClothMaterialManager.releaseMaterials();
-	mMasterFLIPMaterialManager.releaseMaterials();
-	mMasterMPMMaterialManager.releaseMaterials();
 	#endif
 #endif
 
@@ -253,8 +253,6 @@ void NpPhysics::initOffsetTables(PxvOffsetTable& pxvOffsetTable)
 		offsetTable.scSoftBody2PxActor				= -ptrdiff_t(NpSoftBody::getCoreOffset());
 		offsetTable.scPBDParticleSystem2PxActor		= -ptrdiff_t(NpPBDParticleSystem::getCoreOffset());
 	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-		offsetTable.scFLIPParticleSystem2PxActor	= -ptrdiff_t(NpFLIPParticleSystem::getCoreOffset());
-		offsetTable.scMPMParticleSystem2PxActor		= -ptrdiff_t(NpMPMParticleSystem::getCoreOffset());
 		offsetTable.scHairSystem2PxActor			= -ptrdiff_t(NpHairSystem::getCoreOffset());
 	#endif
 #endif
@@ -270,8 +268,6 @@ void NpPhysics::initOffsetTables(PxvOffsetTable& pxvOffsetTable)
 		offsetTable.scCore2PxActor[PxActorType::eARTICULATION_LINK] = offsetTable.scArticulationLink2PxActor;
 		offsetTable.scCore2PxActor[PxActorType::eSOFTBODY] = offsetTable.scSoftBody2PxActor;
 		offsetTable.scCore2PxActor[PxActorType::ePBD_PARTICLESYSTEM] = offsetTable.scPBDParticleSystem2PxActor;
-		offsetTable.scCore2PxActor[PxActorType::eFLIP_PARTICLESYSTEM] = offsetTable.scFLIPParticleSystem2PxActor;
-		offsetTable.scCore2PxActor[PxActorType::eMPM_PARTICLESYSTEM] = offsetTable.scMPMParticleSystem2PxActor;
 		offsetTable.scCore2PxActor[PxActorType::eHAIRSYSTEM] = offsetTable.scHairSystem2PxActor;
 	}
 	{
@@ -400,7 +396,19 @@ PxScene* NpPhysics::createScene(const PxSceneDesc& desc)
 	}
 #endif
 
-	if (!sendMaterialTable(*npScene) || !npScene->getScScene().isValid())
+	// checks for allocation errors in cuda context.
+#if PX_SUPPORT_GPU_PHYSX
+	bool gpuValid = true;
+
+	if (npScene->getCudaContextManager() && npScene->getScScene().isUsingGpuDynamicsOrBp())
+	{
+		gpuValid = !npScene->getCudaContextManager()->getCudaContext()->isInAbortMode();
+	}
+#else
+	bool gpuValid = true;
+#endif
+
+	if (!sendMaterialTable(*npScene) || !npScene->getScScene().isValid() || !gpuValid)
 	{
 		PX_DELETE(npScene);
 		mFoundation.error(PxErrorCode::eOUT_OF_MEMORY, PX_FL, "Unable to create scene.");
@@ -525,28 +533,19 @@ PxSoftBody* NpPhysics::createSoftBody(PxCudaContextManager& cudaContextManager)
 #endif
 }
 
-PxPBDParticleSystem* NpPhysics::createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood)
+PxPBDParticleSystem* NpPhysics::createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood, PxReal neighborhoodScale)
 {
 #if PX_SUPPORT_GPU_PHYSX
-	return NpFactory::getInstance().createPBDParticleSystem(maxNeighborhood, cudaContextManager);
+	return NpFactory::getInstance().createPBDParticleSystem(maxNeighborhood, neighborhoodScale, cudaContextManager);
 #else
 	PX_UNUSED(cudaContextManager);
 	PX_UNUSED(maxNeighborhood);
+	PX_UNUSED(neighborhoodScale);
 	return NULL;
 #endif
 }
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
-	PxFLIPParticleSystem* NpPhysics::createFLIPParticleSystem(PxCudaContextManager& cudaContextManager)
-	{
-		return NpFactory::getInstance().createFLIPParticleSystem(cudaContextManager);
-	}
-
-	PxMPMParticleSystem* NpPhysics::createMPMParticleSystem(PxCudaContextManager& cudaContextManager)
-	{
-		return NpFactory::getInstance().createMPMParticleSystem( cudaContextManager);
-	}
-
 	PxFEMCloth* NpPhysics::createFEMCloth(PxCudaContextManager& cudaContextManager)
 	{
 		return NpFactory::getInstance().createFEMCloth(cudaContextManager);
@@ -557,8 +556,6 @@ PxPBDParticleSystem* NpPhysics::createPBDParticleSystem(PxCudaContextManager& cu
 		return NpFactory::getInstance().createHairSystem(cudaContextManager);
 	}
 #else
-	PxFLIPParticleSystem* NpPhysics::createFLIPParticleSystem(PxCudaContextManager&)	{ return NULL;	}
-	PxMPMParticleSystem* NpPhysics::createMPMParticleSystem(PxCudaContextManager&)		{ return NULL;	}
 	PxFEMCloth* NpPhysics::createFEMCloth(PxCudaContextManager&)						{ return NULL;	}
 	PxHairSystem* NpPhysics::createHairSystem(PxCudaContextManager&)					{ return NULL;	}
 #endif
@@ -690,7 +687,9 @@ static void sendMaterialTable(NpScene& scene, const NpMaterialManager<NpMaterial
 
 bool NpPhysics::sendMaterialTable(NpScene& scene)
 {
-	// note: no lock here because this method gets only called at scene creation and there we do lock
+	// relies on NpPhysics::mSceneAndMaterialMutex being locked when calling this to
+	// prevent clashes with mMasterMaterialManager access as well as access to the
+	// event list in NpScene::addMaterial()
 
 	::sendMaterialTable(scene, mMasterMaterialManager);
 
@@ -700,8 +699,6 @@ bool NpPhysics::sendMaterialTable(NpScene& scene)
 
 	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	::sendMaterialTable(scene, mMasterFEMClothMaterialManager);
-	::sendMaterialTable(scene, mMasterFLIPMaterialManager);
-	::sendMaterialTable(scene, mMasterMPMMaterialManager);
 	#endif
 #endif
 
@@ -816,60 +813,6 @@ IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpMaterial, mMasterMaterialManager, "PxPhy
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
-	PxFLIPMaterial* NpPhysics::createFLIPMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, PxReal viscosity, PxReal gravityScale)
-	{
-		PxFLIPMaterial* m = NpFactory::getInstance().createFLIPMaterial(friction, damping, maxVelocity, viscosity, gravityScale);
-		return addMaterial(static_cast<NpFLIPMaterial*>(m));
-	}
-
-	PxU32 NpPhysics::getNbFLIPMaterials() const
-	{
-		PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
-		return mMasterFLIPMaterialManager.getNumMaterials();
-	}
-
-	PxU32 NpPhysics::getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
-	{
-		return ::getMaterials(mMasterFLIPMaterialManager, mSceneAndMaterialMutex, userBuffer, bufferSize, startIndex);
-	}
-
-	IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpFLIPMaterial, mMasterFLIPMaterialManager, "PxPhysics::createFLIPMaterial: limit of 64K materials reached.")
-#else
-	PxFLIPMaterial* NpPhysics::createFLIPMaterial(PxReal, PxReal, PxReal, PxReal, PxReal)			{ return NULL;	}
-	PxU32 NpPhysics::getNbFLIPMaterials()													const	{ return 0;		}
-	PxU32 NpPhysics::getFLIPMaterials(PxFLIPMaterial**, PxU32, PxU32)						const	{ return 0;		}
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION && PX_SUPPORT_GPU_PHYSX
-	PxMPMMaterial* NpPhysics::createMPMMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, bool isPlastic, PxReal youngsModulus, PxReal poissons, PxReal hardening, PxReal criticalCompression, PxReal criticalStretch, PxReal tensileDamageSensitivity, PxReal compressiveDamageSensitivity, PxReal attractiveForceResidual, PxReal gravityScale)
-	{
-		PxMPMMaterial* m = NpFactory::getInstance().createMPMMaterial(friction, damping, maxVelocity, isPlastic, youngsModulus, poissons, hardening, criticalCompression, criticalStretch, tensileDamageSensitivity, compressiveDamageSensitivity, attractiveForceResidual, gravityScale);
-		return addMaterial(static_cast<NpMPMMaterial*>(m));
-	}
-
-	PxU32 NpPhysics::getNbMPMMaterials() const
-	{
-		PxMutex::ScopedLock lock(const_cast<PxMutex&>(mSceneAndMaterialMutex));
-		return mMasterMPMMaterialManager.getNumMaterials();
-	}
-
-	PxU32 NpPhysics::getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
-	{
-		return ::getMaterials(mMasterMPMMaterialManager, mSceneAndMaterialMutex, userBuffer, bufferSize, startIndex);
-	}
-
-	IMPLEMENT_INTERNAL_MATERIAL_FUNCTIONS(NpMPMMaterial, mMasterMPMMaterialManager, "PxPhysics::createMPMMaterial: limit of 64K materials reached.")
-#else
-	PxMPMMaterial* NpPhysics::createMPMMaterial(PxReal, PxReal, PxReal, bool, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal, PxReal)	{ return NULL;	}
-	PxU32 NpPhysics::getNbMPMMaterials()																										const	{ return 0;		}
-	PxU32 NpPhysics::getMPMMaterials(PxMPMMaterial**, PxU32, PxU32)																				const	{ return 0;		}
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
 PxTriangleMesh* NpPhysics::createTriangleMesh(PxInputStream& stream)
 {
 	return NpFactory::getInstance().createTriangleMesh(stream);
@@ -963,22 +906,38 @@ PxU32 NpPhysics::getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex)
 #if PX_SUPPORT_GPU_PHYSX
 PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)
 {
-	return NpFactory::getInstance().createParticleBuffer(maxParticles, maxVolumes, cudaContextManager);
+	if (cudaContextManager)
+	{
+		return NpFactory::getInstance().createParticleBuffer(maxParticles, maxVolumes, *cudaContextManager);
+	}
+	return NULL;
 }
 
 PxParticleAndDiffuseBuffer* NpPhysics::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
 {
-	return NpFactory::getInstance().createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager);
+	if (cudaContextManager)
+	{
+		return NpFactory::getInstance().createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, *cudaContextManager);
+	}
+	return NULL;
 }
 
 PxParticleClothBuffer* NpPhysics::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)
 {
-	return NpFactory::getInstance().createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager);
+	if (cudaContextManager)
+	{
+		return NpFactory::getInstance().createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, *cudaContextManager);
+	}
+	return NULL;
 }
 
 PxParticleRigidBuffer* NpPhysics::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)
 {
-	return NpFactory::getInstance().createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager);
+	if (cudaContextManager)
+	{
+		return NpFactory::getInstance().createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, *cudaContextManager);
+	}
+	return NULL;
 }
 #else
 PxParticleBuffer* NpPhysics::createParticleBuffer(PxU32, PxU32, PxCudaContextManager*)
@@ -1158,12 +1117,16 @@ void NpPhysics::notifyDeletionListeners(const PxBase* base, void* userData, PxDe
 #if PX_SUPPORT_OMNI_PVD
 void NpPhysics::OmniPvdListener::onObjectAdd(const PxBase* object)
 {
-	::OmniPvdPxSampler::getInstance()->onObjectAdd(*object);
+	OmniPvdPxSampler* sampler = ::OmniPvdPxSampler::getInstance();
+	if (sampler)
+		sampler->onObjectAdd(*object);
 }
 
 void NpPhysics::OmniPvdListener::onObjectRemove(const PxBase* object)
 {
-	::OmniPvdPxSampler::getInstance()->onObjectRemove(*object);
+	OmniPvdPxSampler* sampler = ::OmniPvdPxSampler::getInstance();
+	if (sampler)
+		sampler->onObjectRemove(*object);
 }
 #endif
 

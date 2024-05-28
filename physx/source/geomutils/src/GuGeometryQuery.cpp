@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -416,6 +416,7 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 
 			Gu::PCMConvexVsMeshContactGeneration contactGeneration(contactDist, replaceBreakingThreshold, boxTransform, meshTransform, multiManifold, contactBuffer0, polyData, &boxMap, &deferredContacts, idtScaling, true, true, NULL);
 			contactGeneration.processTriangle(triangleVertices, triangleIndex, Gu::ETD_CONVEX_EDGE_ALL, triangleIndices);
+			contactGeneration.generateLastContacts();
 			contactGeneration.processContacts(GU_SINGLE_MANIFOLD_CACHE_SIZE, false);
 
 			break;
@@ -446,11 +447,13 @@ bool PxGeometryQuery::generateTriangleContacts(const PxGeometry& geom, const PxT
 
 			Gu::PCMConvexVsMeshContactGeneration contactGeneration(contactDist, replaceBreakingThreshold, convexTransform, meshTransform, multiManifold, contactBuffer0, polyData, &convexMap, &deferredContacts, convexScaling, idtConvexScale, true, NULL);
 			contactGeneration.processTriangle(triangleVertices, triangleIndex, Gu::ETD_CONVEX_EDGE_ALL, triangleIndices);
+			contactGeneration.generateLastContacts();
 			contactGeneration.processContacts(GU_SINGLE_MANIFOLD_CACHE_SIZE, false);
 
 			break;
 		}
 		default:
+			PX_ASSERT(0); // Unsupported gepmetry type
 			break;
 	}
 

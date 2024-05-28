@@ -22,22 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
      
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
-#include "PxcNpWorkUnit.h"
 #include "DyThreadContext.h"
 #include "PxcNpContactPrepShared.h"
+#include "DyContactPrepShared.h"
+#include "DyAllocator.h"
 
 using namespace physx;
 using namespace Gu;
-
-#include "PxsMaterialManager.h"
-#include "DyContactPrepShared.h"
-
 using namespace aos;
 
 namespace physx
@@ -55,21 +52,22 @@ PxcCreateFinalizeSolverContactMethod4 createFinalizeMethods4[3] =
 inline bool ValidateVec4(const Vec4V v)
 {
 	PX_ALIGN(16, PxVec4 vF);
-	aos::V4StoreA(v, &vF.x);
+	V4StoreA(v, &vF.x);
 	return vF.isFinite();
 }
 
 static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT descs, CorrelationBuffer& c, PxU8* PX_RESTRICT workspace,
 											PxReal invDtF32, PxReal dtF32, PxReal bounceThresholdF32,
-											const aos::Vec4VArg invMassScale0, const aos::Vec4VArg invInertiaScale0, 
-											const aos::Vec4VArg invMassScale1, const aos::Vec4VArg invInertiaScale1)
+											const Vec4VArg invMassScale0, const Vec4VArg invInertiaScale0, 
+											const Vec4VArg invMassScale1, const Vec4VArg invInertiaScale1)
 {
 	//OK, we have a workspace of pre-allocated space to store all 4 descs in. We now need to create the constraints in it
 
-	const Vec4V ccdMaxSeparation = aos::V4LoadXYZW(descs[0].maxCCDSeparation, descs[1].maxCCDSeparation, descs[2].maxCCDSeparation, descs[3].maxCCDSeparation);
-	const Vec4V solverOffsetSlop = aos::V4LoadXYZW(descs[0].offsetSlop, descs[1].offsetSlop, descs[2].offsetSlop, descs[3].offsetSlop);
+	const Vec4V ccdMaxSeparation = V4LoadXYZW(descs[0].maxCCDSeparation, descs[1].maxCCDSeparation, descs[2].maxCCDSeparation, descs[3].maxCCDSeparation);
+	const Vec4V solverOffsetSlop = V4LoadXYZW(descs[0].offsetSlop, descs[1].offsetSlop, descs[2].offsetSlop, descs[3].offsetSlop);
 
 	const Vec4V zero = V4Zero();
+	const Vec4V one = V4One();
 	const BoolV bFalse = BFFFF();
 	const BoolV bTrue = BTTTT();
 	const FloatV fZero = FZero();
@@ -88,7 +86,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 	for(PxU32 a = 0; a < 4; ++a)
 	{
 		isDynamic = isDynamic || (descs[a].bodyState1 == PxSolverContactDesc::eDYNAMIC_BODY);
-		hasKinematic = hasKinematic || descs[a].bodyState1 == PxSolverContactDesc::eKINEMATIC_BODY;
+		hasKinematic = hasKinematic || (descs[a].bodyState1 == PxSolverContactDesc::eKINEMATIC_BODY);
 	}
 	
 	const PxU32 constraintSize = isDynamic ? sizeof(SolverContactBatchPointDynamic4) : sizeof(SolverContactBatchPointBase4);
@@ -158,37 +156,37 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 	const Vec4V invMass0D0 = V4Mul(dom0, invMass0);
 	const Vec4V invMass1D1 = V4Mul(dom1, invMass1);
 
-	Vec4V invInertia00X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[0].data0->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia00Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[0].data0->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia00Z = Vec4V_From_Vec3V(V3LoadU(descs[0].data0->sqrtInvInertia.column2));
+	Vec4V invInertia00X = V4LoadU(&descs[0].data0->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia00Y = V4LoadU(&descs[0].data0->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia00Z = V4LoadU(&descs[0].data0->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia10X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[1].data0->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia10Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[1].data0->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia10Z = Vec4V_From_Vec3V(V3LoadU(descs[1].data0->sqrtInvInertia.column2));
+	Vec4V invInertia10X = V4LoadU(&descs[1].data0->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia10Y = V4LoadU(&descs[1].data0->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia10Z = V4LoadU(&descs[1].data0->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia20X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[2].data0->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia20Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[2].data0->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia20Z = Vec4V_From_Vec3V(V3LoadU(descs[2].data0->sqrtInvInertia.column2));
+	Vec4V invInertia20X = V4LoadU(&descs[2].data0->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia20Y = V4LoadU(&descs[2].data0->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia20Z = V4LoadU(&descs[2].data0->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia30X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[3].data0->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia30Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[3].data0->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia30Z = Vec4V_From_Vec3V(V3LoadU(descs[3].data0->sqrtInvInertia.column2));
+	Vec4V invInertia30X = V4LoadU(&descs[3].data0->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia30Y = V4LoadU(&descs[3].data0->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia30Z = V4LoadU(&descs[3].data0->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia01X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[0].data1->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia01Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[0].data1->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia01Z = Vec4V_From_Vec3V(V3LoadU(descs[0].data1->sqrtInvInertia.column2));
+	Vec4V invInertia01X = V4LoadU(&descs[0].data1->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia01Y = V4LoadU(&descs[0].data1->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia01Z = V4LoadU(&descs[0].data1->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia11X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[1].data1->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia11Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[1].data1->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia11Z = Vec4V_From_Vec3V(V3LoadU(descs[1].data1->sqrtInvInertia.column2));
+	Vec4V invInertia11X = V4LoadU(&descs[1].data1->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia11Y = V4LoadU(&descs[1].data1->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia11Z = V4LoadU(&descs[1].data1->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia21X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[2].data1->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia21Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[2].data1->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia21Z = Vec4V_From_Vec3V(V3LoadU(descs[2].data1->sqrtInvInertia.column2));
+	Vec4V invInertia21X = V4LoadU(&descs[2].data1->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia21Y = V4LoadU(&descs[2].data1->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia21Z = V4LoadU(&descs[2].data1->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
-	Vec4V invInertia31X = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[3].data1->sqrtInvInertia.column0));	// PT: safe because 'column1' follows 'column0' in PxMat33
-	Vec4V invInertia31Y = Vec4V_From_Vec3V(V3LoadU_SafeReadW(descs[3].data1->sqrtInvInertia.column1));	// PT: safe because 'column2' follows 'column1' in PxMat33
-	Vec4V invInertia31Z = Vec4V_From_Vec3V(V3LoadU(descs[3].data1->sqrtInvInertia.column2));
+	Vec4V invInertia31X = V4LoadU(&descs[3].data1->sqrtInvInertia.column0.x);	// PT: safe because 'column1' follows 'column0' in PxMat33
+	Vec4V invInertia31Y = V4LoadU(&descs[3].data1->sqrtInvInertia.column1.x);	// PT: safe because 'column2' follows 'column1' in PxMat33
+	Vec4V invInertia31Z = V4LoadU(&descs[3].data1->sqrtInvInertia.column2.x);	// PT: safe because sqrtInvInertia is not the last member of PxSolverBodyData, see compile-time-assert in PxSolverBodyData
 
 	Vec4V invInertia0X0, invInertia0X1, invInertia0X2;
 	Vec4V invInertia0Y0, invInertia0Y1, invInertia0Y2;
@@ -214,28 +212,18 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 
 	const FloatV invDtp8 = FMul(invDt, p8);
 
-	const Vec3V bodyFrame00p = V3LoadU(descs[0].bodyFrame0.p);
-	const Vec3V bodyFrame01p = V3LoadU(descs[1].bodyFrame0.p);
-	const Vec3V bodyFrame02p = V3LoadU(descs[2].bodyFrame0.p);
-	const Vec3V bodyFrame03p = V3LoadU(descs[3].bodyFrame0.p);
-
-	Vec4V bodyFrame00p4 = Vec4V_From_Vec3V(bodyFrame00p);
-	Vec4V bodyFrame01p4 = Vec4V_From_Vec3V(bodyFrame01p);
-	Vec4V bodyFrame02p4 = Vec4V_From_Vec3V(bodyFrame02p);
-	Vec4V bodyFrame03p4 = Vec4V_From_Vec3V(bodyFrame03p);
+	Vec4V bodyFrame00p4 = V4LoadU(&descs[0].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame01p4 = V4LoadU(&descs[1].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame02p4 = V4LoadU(&descs[2].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame03p4 = V4LoadU(&descs[3].bodyFrame0.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
 
 	Vec4V bodyFrame0pX, bodyFrame0pY, bodyFrame0pZ;
 	PX_TRANSPOSE_44_34(bodyFrame00p4, bodyFrame01p4, bodyFrame02p4, bodyFrame03p4, bodyFrame0pX, bodyFrame0pY, bodyFrame0pZ);
 	
-	const Vec3V bodyFrame10p = V3LoadU(descs[0].bodyFrame1.p);
-	const Vec3V bodyFrame11p = V3LoadU(descs[1].bodyFrame1.p);
-	const Vec3V bodyFrame12p = V3LoadU(descs[2].bodyFrame1.p);
-	const Vec3V bodyFrame13p = V3LoadU(descs[3].bodyFrame1.p);
-
-	Vec4V bodyFrame10p4 = Vec4V_From_Vec3V(bodyFrame10p);
-	Vec4V bodyFrame11p4 = Vec4V_From_Vec3V(bodyFrame11p);
-	Vec4V bodyFrame12p4 = Vec4V_From_Vec3V(bodyFrame12p);
-	Vec4V bodyFrame13p4 = Vec4V_From_Vec3V(bodyFrame13p);
+	Vec4V bodyFrame10p4 = V4LoadU(&descs[0].bodyFrame1.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame11p4 = V4LoadU(&descs[1].bodyFrame1.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame12p4 = V4LoadU(&descs[2].bodyFrame1.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
+	Vec4V bodyFrame13p4 = V4LoadU(&descs[3].bodyFrame1.p.x);	// PT: safe because of compile-time-assert in PxSolverConstraintPrepDescBase
 
 	Vec4V bodyFrame1pX, bodyFrame1pY, bodyFrame1pZ;
 	PX_TRANSPOSE_44_34(bodyFrame10p4, bodyFrame11p4, bodyFrame12p4, bodyFrame13p4, bodyFrame1pX, bodyFrame1pY, bodyFrame1pZ);
@@ -304,10 +292,16 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 		const PxContactPoint* contactBase2 = descs[2].contacts + c.contactPatches[firstPatch2].start;
 		const PxContactPoint* contactBase3 = descs[3].contacts + c.contactPatches[firstPatch3].start;
 
+		// negative restitution
 		const Vec4V restitution = V4Neg(V4LoadXYZW(contactBase0->restitution, contactBase1->restitution, contactBase2->restitution,
 			contactBase3->restitution));
 		const Vec4V damping = V4LoadXYZW(contactBase0->damping, contactBase1->damping, contactBase2->damping, contactBase3->damping);
-
+		const bool accelSpring_[] = { !!(contactBase0->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING),
+			                          !!(contactBase1->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING),
+			                          !!(contactBase2->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING),
+			                          !!(contactBase3->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING) };
+		const BoolV accelSpring = BLoad(accelSpring_);
+		
 		SolverContactHeader4* PX_RESTRICT header = reinterpret_cast<SolverContactHeader4*>(ptr);
 		ptr += sizeof(SolverContactHeader4);	
 	
@@ -361,7 +355,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 
 		const Vec4V norVel0 = V4MulAdd(normalZ, linVelT20, V4MulAdd(normalY, linVelT10, V4Mul(normalX, linVelT00)));
 		const Vec4V norVel1 = V4MulAdd(normalZ, linVelT21, V4MulAdd(normalY, linVelT11, V4Mul(normalX, linVelT01)));
-		const Vec4V relNorVel  = V4Sub(norVel0, norVel1);
+		const Vec4V relNorVel = V4Sub(norVel0, norVel1);
 
 		//For all correlation heads - need to pull this out I think
 
@@ -556,26 +550,34 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 				const Vec4V penetration = V4Sub(separation, restDistance);
 				const Vec4V penInvDtPt8 = V4Max(maxPenBias, V4Scale(penetration, invDtp8));
 
+				const Vec4V penetrationInvDt = V4Scale(penetration, invDt);
+				const BoolV isSeparated = V4IsGrtrOrEq(penetration, zero);
+				const BoolV collidingWithVrel = V4IsGrtr(V4Neg(vrel), penetrationInvDt);
+
+				const Vec4V recipResponse = V4Sel(V4IsGrtr(unitResponse, zero), V4Recip(unitResponse), zero);
+
 				//..././....
 				const BoolV isCompliant = V4IsGrtr(restitution, zero);
-				const Vec4V rdt = V4Scale(restitution, dt);
-				const Vec4V a = V4Scale(V4Add(damping, rdt), dt);
-				const Vec4V b = V4Scale(V4Mul(restitution, penetration), dt);
-				const Vec4V x = V4Recip(V4MulAdd(a, unitResponse, V4One()));
-				const Vec4V velMultiplier = V4Sel(isCompliant, V4Mul(x, a), V4Sel(V4IsGrtr(unitResponse, zero), V4Recip(unitResponse), zero));
-				const Vec4V impulseMultiplier = V4Sub(V4One(), V4Sel(isCompliant, x, zero));
-		
-				Vec4V scaledBias = V4Mul(penInvDtPt8, velMultiplier);
+				// rdt, a, b, x only needed in compliant case
+				const Vec4V rdt = V4Scale(restitution, dt); // dt*stiffness
+				const Vec4V dampingIfEnabled = V4Sel(BAndNot(isSeparated, collidingWithVrel), zero, damping);
+				const Vec4V a = V4Scale(V4Add(dampingIfEnabled, rdt), dt); // a = dt * (damping + dt*stiffness)
+				const Vec4V massIfAccelElseOne = V4Sel(accelSpring, recipResponse, one);
+				const Vec4V b = V4Mul(V4Mul(rdt, penetration), massIfAccelElseOne); // b = dt * (stiffness * penetration)
+				const Vec4V x = V4Recip(V4MulAdd(a, V4Sel(accelSpring, one, unitResponse), one));
+				const Vec4V velMultiplier = V4Sel(isCompliant, V4Mul(V4Mul(x, a), massIfAccelElseOne), recipResponse);
+				const Vec4V impulseMultiplier = V4Sub(one, V4Sel(isCompliant, x, zero));
 
-				const Vec4V penetrationInvDt = V4Scale(penetration, invDt);
+				Vec4V scaledBias = V4Mul(V4Sel(isSeparated, penetrationInvDt, penInvDtPt8), velMultiplier);
 
 				const BoolV isGreater2 = BAnd(BAnd(V4IsGrtr(zero, restitution), V4IsGrtr(bounceThreshold, vrel)),
-					V4IsGrtr(V4Neg(vrel), penetrationInvDt));
+					collidingWithVrel);
 
 				const BoolV ccdSeparationCondition = V4IsGrtrOrEq(ccdMaxSeparation, penetration);
 
 				scaledBias = V4Neg(V4Sel(isCompliant, V4Mul(x, b), V4Sel(BAnd(ccdSeparationCondition, isGreater2), zero, scaledBias)));
 
+				// targetVelocity is actually the targetVelocity * velMultiplier, i.e., the bias due to the velocity error during prepping
 				const Vec4V targetVelocity = V4Mul(V4Add(V4Sub(cTargetNorVel, vrel), V4Sel(isGreater2, V4Mul(vrel, restitution), zero)), velMultiplier);
 
 				const Vec4V biasedErr = V4Add(targetVelocity, scaledBias);
@@ -787,10 +789,10 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 					t1Y = V4Mul(maxImpulseScale, t1Y);
 					t1Z = V4Mul(maxImpulseScale, t1Z);
 
-					const Vec3V body0Anchor0 = V3LoadU(frictionPatch0.body0Anchors[index0]);
-					const Vec3V body0Anchor1 = V3LoadU(frictionPatch1.body0Anchors[index1]);
-					const Vec3V body0Anchor2 = V3LoadU(frictionPatch2.body0Anchors[index2]);
-					const Vec3V body0Anchor3 = V3LoadU(frictionPatch3.body0Anchors[index3]);
+					const Vec3V body0Anchor0 = V3LoadU_SafeReadW(frictionPatch0.body0Anchors[index0]);
+					const Vec3V body0Anchor1 = V3LoadU_SafeReadW(frictionPatch1.body0Anchors[index1]);
+					const Vec3V body0Anchor2 = V3LoadU_SafeReadW(frictionPatch2.body0Anchors[index2]);
+					const Vec3V body0Anchor3 = V3LoadU_SafeReadW(frictionPatch3.body0Anchors[index3]);
 
 					Vec4V ra0 = Vec4V_From_Vec3V(QuatRotate(bodyFrame00q, body0Anchor0));
 					Vec4V ra1 = Vec4V_From_Vec3V(QuatRotate(bodyFrame01q, body0Anchor1));
@@ -808,10 +810,10 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 					const Vec4V raWorldY = V4Add(raY, bodyFrame0pY);
 					const Vec4V raWorldZ = V4Add(raZ, bodyFrame0pZ);
 
-					const Vec3V body1Anchor0 = V3LoadU(frictionPatch0.body1Anchors[index0]);	
-					const Vec3V body1Anchor1 = V3LoadU(frictionPatch1.body1Anchors[index1]);
-					const Vec3V body1Anchor2 = V3LoadU(frictionPatch2.body1Anchors[index2]);
-					const Vec3V body1Anchor3 = V3LoadU(frictionPatch3.body1Anchors[index3]);
+					const Vec3V body1Anchor0 = V3LoadU_SafeReadW(frictionPatch0.body1Anchors[index0]);	
+					const Vec3V body1Anchor1 = V3LoadU_SafeReadW(frictionPatch1.body1Anchors[index1]);
+					const Vec3V body1Anchor2 = V3LoadU_SafeReadW(frictionPatch2.body1Anchors[index2]);
+					const Vec3V body1Anchor3 = V3LoadU_SafeReadW(frictionPatch3.body1Anchors[index3]);
 				
 					Vec4V rb0 = Vec4V_From_Vec3V(QuatRotate(bodyFrame10q, body1Anchor0));
 					Vec4V rb1 = Vec4V_From_Vec3V(QuatRotate(bodyFrame11q, body1Anchor1));
@@ -1044,7 +1046,7 @@ static void setupFinalizeSolverConstraints4(PxSolverContactDesc* PX_RESTRICT des
 						f1->raXnZ = delAngVel0Z;
 						f1->scaledBias = V4Mul(bias, velMultiplier);
 						f1->velMultiplier = velMultiplier;
-					}				
+					}
 				}
 
 				frictionPatchWritebackAddrIndex0++;
@@ -1092,23 +1094,8 @@ static bool reserveFrictionBlockStreams(const CorrelationBuffer& c, PxConstraint
 	if(frictionPatchByteSize > 0)
 	{
 		frictionPatches = reinterpret_cast<FrictionPatch*>(constraintAllocator.reserveFrictionData(frictionPatchByteSize));
-
-		if(0==frictionPatches || (reinterpret_cast<FrictionPatch*>(-1))==frictionPatches)
-		{
-			if(0==frictionPatches)
-			{
-				PX_WARN_ONCE(
-					"Reached limit set by PxSceneDesc::maxNbContactDataBlocks - ran out of buffer space for constraint prep. "
-					"Either accept dropped contacts or increase buffer size allocated for narrow phase by increasing PxSceneDesc::maxNbContactDataBlocks.");
-			}
-			else
-			{
-				PX_WARN_ONCE(
-					"Attempting to allocate more than 16K of friction data for a single contact pair in constraint prep. "
-					"Either accept dropped contacts or simplify collision geometry.");
-				frictionPatches=NULL;
-			}
-		}
+		if(!checkFrictionDataPtr(frictionPatches))
+			frictionPatches = NULL;
 	}
 
 	_frictionPatches = frictionPatches;
@@ -1197,7 +1184,7 @@ void computeBlockStreamByteSizes4(PxSolverContactDesc* descs,
 
 	//If we have max impulse, reserve a buffer for it
 	if(hasMaxImpulse)
-		constraintSize += sizeof(aos::Vec4V) * totalContacts;
+		constraintSize += sizeof(Vec4V) * totalContacts;
 
 	_solverConstraintByteSize = ((constraintSize + headerSize + 0x0f) & ~0x0f);
 	PX_ASSERT(0 == (_solverConstraintByteSize & 0x0f));
@@ -1227,23 +1214,8 @@ static SolverConstraintPrepState::Enum reserveBlockStreams4(PxSolverContactDesc*
 			return SolverConstraintPrepState::eUNBATCHABLE;
 
 		constraintBlock = constraintAllocator.reserveConstraintData(constraintBlockByteSize + 16u);
-
-		if(0==constraintBlock || (reinterpret_cast<PxU8*>(-1))==constraintBlock)
-		{
-			if(0==constraintBlock)
-			{
-				PX_WARN_ONCE(
-					"Reached limit set by PxSceneDesc::maxNbContactDataBlocks - ran out of buffer space for constraint prep. "
-					"Either accept dropped contacts or increase buffer size allocated for narrow phase by increasing PxSceneDesc::maxNbContactDataBlocks.");
-			}
-			else
-			{
-				PX_WARN_ONCE(
-					"Attempting to allocate more than 16K of contact data for a single contact pair in constraint prep. "
-					"Either accept dropped contacts or simplify collision geometry.");
-				constraintBlock=NULL;
-			}
-		}
+		if(!checkConstraintDataPtr<false>(constraintBlock))
+			constraintBlock = NULL;
 	}
 
 	//Patch up the individual ptrs to the buffer returned by the constraint block reservation (assuming the reservation didn't fail).
@@ -1373,11 +1345,7 @@ SolverConstraintPrepState::Enum createFinalizeSolverContacts4(
 			//Initialise friction buffer.
 			if (frictionPatches)
 			{
-				// PT: TODO: revisit this... not very satisfying
-				//const PxU32 maxSize = numFrictionPatches*sizeof(FrictionPatch);
-				PxPrefetchLine(frictionPatches);
-				PxPrefetchLine(frictionPatches, 128);
-				PxPrefetchLine(frictionPatches, 256);
+				frictionPatches->prefetch();
 
 				for (PxU32 i = 0; i<blockDesc.numFrictionPatches; i++)
 				{

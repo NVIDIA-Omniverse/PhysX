@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -43,13 +43,13 @@ using namespace physx;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation = NULL;
-static PxPhysics*				gPhysics	= NULL;
-static PxDefaultCpuDispatcher*	gDispatcher = NULL;
-static PxScene*					gScene		= NULL;
-static PxMaterial*				gMaterial	= NULL;
-static PxPvd*					gPvd = NULL;
-static PxCudaContextManager*	gCudaContextManager = NULL;
+static PxFoundation*			gFoundation			= NULL;
+static PxPhysics*				gPhysics			= NULL;
+static PxDefaultCpuDispatcher*	gDispatcher			= NULL;
+static PxScene*					gScene				= NULL;
+static PxMaterial*				gMaterial			= NULL;
+static PxPvd*					gPvd				= NULL;
+static PxCudaContextManager*	gCudaContextManager	= NULL;
 
 static PxReal stackZ = 10.0f;
 
@@ -154,14 +154,14 @@ void cleanupPhysics(bool /*interactive*/)
 	if(gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();	gPvd = NULL;
+		PX_RELEASE(gPvd);
 		PX_RELEASE(transport);
 	}
 
 	PX_RELEASE(gCudaContextManager);
 	PX_RELEASE(gFoundation);
 	
-	printf("SnippetHelloWorld done.\n");
+	printf("SnippetHelloGRB done.\n");
 }
 
 void keyPress(unsigned char key, const PxTransform& camera)

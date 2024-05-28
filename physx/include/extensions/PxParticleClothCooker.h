@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PARTICLE_CLOTH_COOKER_H
 #define PX_PARTICLE_CLOTH_COOKER_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec4.h"
@@ -45,8 +42,10 @@ namespace ExtGpu
 
 /**
 \brief Holds all the information for a particle cloth constraint used in the PxParticleClothCooker.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-struct PxParticleClothConstraint
+struct PX_DEPRECATED PxParticleClothConstraint
 {
 	enum
 	{
@@ -66,8 +65,10 @@ struct PxParticleClothConstraint
 
 /*
 \brief Generates PxParticleClothConstraint constraints that connect the individual particles of a particle cloth.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-class PxParticleClothCooker
+class PX_DEPRECATED PxParticleClothCooker
 {
 public:
 	virtual void release() = 0;
@@ -96,6 +97,8 @@ protected:
 /**
 \brief Creates a PxParticleClothCooker.
 
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
+
 \param[in] vertexCount The number of vertices of the particle cloth.
 \param[in] inVertices The vertex positions of the particle cloth.
 \param[in] triangleIndexCount The number of triangles of the cloth mesh.
@@ -106,7 +109,7 @@ protected:
 
 \return A pointer to the new PxParticleClothCooker.
 */
-ExtGpu::PxParticleClothCooker* PxCreateParticleClothCooker(PxU32 vertexCount, physx::PxVec4* inVertices, PxU32 triangleIndexCount, PxU32* inTriangleIndices,
+PX_DEPRECATED ExtGpu::PxParticleClothCooker* PxCreateParticleClothCooker(PxU32 vertexCount, physx::PxVec4* inVertices, PxU32 triangleIndexCount, PxU32* inTriangleIndices,
 	PxU32 constraintTypeFlags = ExtGpu::PxParticleClothConstraint::eTYPE_ALL,
 	PxVec3 verticalDirection = PxVec3(0.0f, 1.0f, 0.0f), PxReal bendingConstraintMaxAngle = 20.0f*PxTwoPi/360.0f
 );
@@ -116,5 +119,4 @@ ExtGpu::PxParticleClothCooker* PxCreateParticleClothCooker(PxU32 vertexCount, ph
 } // namespace physx
 #endif
 
-/** @} */
 #endif

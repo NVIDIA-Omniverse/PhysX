@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -122,7 +122,7 @@ namespace physx { namespace profile {
 		uint32_t		mLength;
 		bool		mFail;
 
-		EventDeserializer( const uint8_t* inData,  uint32_t inLength )
+		EventDeserializer( const uint8_t* inData, uint32_t inLength )
 			: mData( inData )
 			, mLength( inLength )
 			, mFail( false )

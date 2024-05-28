@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -912,7 +912,7 @@ bool physx::Gu::sweepBox_MeshGeom_BV4(	const TriangleMesh* mesh, const PxTriangl
 
 			bool hasContacts = false;
 			if(hitFlags & PxHitFlag::eMTD)
-				hasContacts = computeBox_TriangleMeshMTD(triMeshGeom, pose, box, boxTransform, inflation, bothTriangleSidesCollide,  sweepHit);
+				hasContacts = computeBox_TriangleMeshMTD(triMeshGeom, pose, box, boxTransform, inflation, bothTriangleSidesCollide, sweepHit);
 
 			setupSweepHitForMTD(sweepHit, hasContacts, unitDir);
 		}
@@ -937,7 +937,7 @@ bool physx::Gu::sweepBox_MeshGeom_BV4(	const TriangleMesh* mesh, const PxTriangl
 		const PxMat33Padded worldToMeshRot(pose.q.getConjugate()); // extract rotation matrix from pose.q
 		meshSpaceOrigin = worldToMeshRot.transform(box.center - pose.p);
 		meshSpaceDir = worldToMeshRot.transform(unitDir) * distance;
-		PxMat33 boxToMeshRot = worldToMeshRot * box.rot;
+		const PxMat33 boxToMeshRot = worldToMeshRot * box.rot;
 		sweptAABBMeshSpaceExtents = boxToMeshRot.column0.abs() * box.extents.x + 
 						   boxToMeshRot.column1.abs() * box.extents.y + 
 						   boxToMeshRot.column2.abs() * box.extents.z;
@@ -1057,10 +1057,6 @@ void Gu::pointMeshDistance_BV4(const TriangleMesh* mesh, const PxTriangleMeshGeo
 
 bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
 							const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
-							PxMeshMeshQueryFlags meshMeshFlags, float tolerance);
-
-bool BV4_OverlapMeshVsMesh(	PxReportCallback<PxGeomIndexPair>& callback,
-							const BV4Tree& tree0, const BV4Tree& tree1, const PxMat44* mat0to1, const PxMat44* mat1to0,
 							const PxTransform& meshPose0, const PxTransform& meshPose1,
 							const PxMeshScale& meshScale0, const PxMeshScale& meshScale1,
 							PxMeshMeshQueryFlags meshMeshFlags, float tolerance);
@@ -1084,9 +1080,6 @@ bool physx::Gu::intersectMeshVsMesh_BV4(PxReportCallback<PxGeomIndexPair>& callb
 	BV4_ALIGN16(PxMat44 World1to0);
 	const PxMat44* TM1to0 = setupWorldMatrix(World1to0, &t1to0.p.x, &t1to0.q.x);
 
-	if(!meshScale0.isIdentity() || !meshScale1.isIdentity())
-		return BV4_OverlapMeshVsMesh(callback, tree0, tree1, TM0to1, TM1to0, meshPose0, meshPose1, meshScale0, meshScale1, meshMeshFlags, tolerance)!=0;
-	else
-		return BV4_OverlapMeshVsMesh(callback, tree0, tree1, TM0to1, TM1to0, meshMeshFlags, tolerance)!=0;
+	return BV4_OverlapMeshVsMesh(callback, tree0, tree1, TM0to1, TM1to0, meshPose0, meshPose1, meshScale0, meshScale1, meshMeshFlags, tolerance)!=0;
 }
 

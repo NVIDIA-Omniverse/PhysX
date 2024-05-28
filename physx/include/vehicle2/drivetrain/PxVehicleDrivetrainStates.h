@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "vehicle2/commands/PxVehicleCommandStates.h"
 
@@ -209,7 +206,7 @@ struct PxVehicleWheelConstraintGroupState
 	/**
 	\brief Return the number of wheel constraint groups in the vehicle.
 	\return The number of wheel constraint groups.
-	@see getNbWheelsInConstraintGroup()
+	\see getNbWheelsInConstraintGroup()
 	*/
 	PX_FORCE_INLINE PxU32 getNbConstraintGroups() const
 	{
@@ -220,7 +217,7 @@ struct PxVehicleWheelConstraintGroupState
 	\brief Return the number of wheels in the ith constraint group.
 	\param[in] i specifies the constraint group to be queried for its wheel count.
 	\return The number of wheels in the specified constraint group.
-	@see getWheelInConstraintGroup()
+	\see getWheelInConstraintGroup()
 	*/
 	PX_FORCE_INLINE PxU32 getNbWheelsInConstraintGroup(const PxU32 i) const
 	{
@@ -232,7 +229,7 @@ struct PxVehicleWheelConstraintGroupState
 	\param[in] j specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified constraint group.
 	\param[in] i specifies the constraint group to be queried.
 	\return The wheel id of the jth wheel in the ith constraint group.
-	@see getNbWheelsInConstraintGroup()
+	\see getNbWheelsInConstraintGroup()
 	*/
 	PX_FORCE_INLINE PxU32 getWheelInConstraintGroup(const PxU32 j, const PxU32 i) const
 	{
@@ -285,4 +282,3 @@ struct PxVehicleClutchSlipState
 } // namespace physx
 #endif
 
-/** @} */

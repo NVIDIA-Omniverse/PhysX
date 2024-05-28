@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -402,16 +402,16 @@ public:
 	void generateEEContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,const aos::Vec3VArg c, const aos::Vec3VArg normal, PxU32 triangleIndex, 
 		const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg sqInflatedRadius, PxU32 previousNumContacts, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts);
 
-	void generateEE(const aos::Vec3VArg p, const aos::Vec3VArg q,  const aos::FloatVArg sqInflatedRadius, const aos::Vec3VArg normal, PxU32 triangleIndex,
+	void generateEE(const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg sqInflatedRadius, const aos::Vec3VArg normal, PxU32 triangleIndex,
 		const aos::Vec3VArg a, const aos::Vec3VArg b, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts);
 	
-	static void generateContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,const aos::Vec3VArg c, const aos::Vec3VArg planeNormal, const aos::Vec3VArg normal,  
+	static void generateContacts(const aos::Vec3VArg a, const aos::Vec3VArg b,const aos::Vec3VArg c, const aos::Vec3VArg planeNormal, const aos::Vec3VArg normal,
 		PxU32 triangleIndex, const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts);
 
 	static void generateEEContactsMTD(const aos::Vec3VArg a, const aos::Vec3VArg b,const aos::Vec3VArg c, const aos::Vec3VArg normal, PxU32 triangleIndex,
 		const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts);
 
-	static void generateEEMTD(const aos::Vec3VArg p, const aos::Vec3VArg q,  const aos::FloatVArg inflatedRadius, const aos::Vec3VArg normal, PxU32 triangleIndex, 
+	static void generateEEMTD(const aos::Vec3VArg p, const aos::Vec3VArg q, const aos::FloatVArg inflatedRadius, const aos::Vec3VArg normal, PxU32 triangleIndex, 
 		const aos::Vec3VArg a, const aos::Vec3VArg b, Gu::MeshPersistentContact* manifoldContacts, PxU32& numContacts);
 
 	bool processTriangle(const PxVec3* verts, PxU32 triangleIndex, PxU8 triFlags, const PxU32* vertInds);

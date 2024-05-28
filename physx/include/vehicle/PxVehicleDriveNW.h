@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,9 +47,11 @@ class PxMaterial;
 class PxRigidDynamic;
 
 /**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+
 \brief Data structure describing configuration data of a vehicle with up to PX_MAX_NB_WHEELS driven equally through the differential. The vehicle has an
 engine, clutch, gears, autobox, differential.
-@see PxVehicleDriveSimData
+\see PxVehicleDriveSimData
 */
 class PX_DEPRECATED PxVehicleDriveSimDataNW : public PxVehicleDriveSimData
 {
@@ -80,14 +82,14 @@ private:
 
 	/**
 	\brief Differential simulation data
-	@see setDiffData, getDiffData
+	\see setDiffData, getDiffData
 	*/
 	PxVehicleDifferentialNWData mDiff;
 
 	/**
 	\brief Test if the NW-drive simulation data has been setup with legal data.
 	Call only after setting all components.
-	@see setEngineData, setClutchData, setGearsData, setAutoboxData, setDiffData, setAckermannGeometryData 
+	\see setEngineData, setClutchData, setGearsData, setAutoboxData, setDiffData, setAckermannGeometryData 
 	*/
 	bool isValid() const;
 
@@ -101,9 +103,11 @@ PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleDriveSimDataNW) & 15));
 
 
 /**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+
 \brief The control inputs for a PxVehicleDriveNW.
 
-@see PxVehicleDriveDynData::setAnalogInput, PxVehicleDriveDynData::getAnalogInput
+\see PxVehicleDriveDynData::setAnalogInput, PxVehicleDriveDynData::getAnalogInput
 */
 struct PX_DEPRECATED PxVehicleDriveNWControl
 {
@@ -119,6 +123,8 @@ struct PX_DEPRECATED PxVehicleDriveNWControl
 };
 
 /**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+
 \brief Data structure with instanced dynamics data and configuration data of a vehicle with up to PX_MAX_NB_WHEELS driven wheels.
 */
 class PX_DEPRECATED PxVehicleDriveNW : public PxVehicleDrive
@@ -134,13 +140,13 @@ public:
 
 	\return The instantiated vehicle.
 
-	@see free, setup
+	\see free, setup
 	*/
 	static PxVehicleDriveNW* allocate(const PxU32 nbWheels);
 
 	/**
 	\brief Deallocate a PxVehicleDriveNW instance.
-	@see allocate
+	\see allocate
 	*/
 	void free();
 
@@ -152,7 +158,7 @@ public:
 	\param[in] driveData describes the properties of the vehicle's drive model (gears/engine/clutch/differential/autobox).  The vehicle instance takes a copy of this data.
 	\param[in] nbWheels is the number of wheels on the vehicle.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheelsSimData::setWheelShapeMapping.
-	@see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
 	*/
 	void setup
 		(PxPhysics* physics, PxRigidDynamic* vehActor,
@@ -168,7 +174,7 @@ public:
 	\param[in] nbWheels is the number of wheels on the vehicle.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheelsSimData::setWheelShapeMapping.
 	\return The instantiated vehicle.
-	@see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
 	*/
 	static PxVehicleDriveNW* create
 		(PxPhysics* physics, PxRigidDynamic* vehActor,
@@ -180,13 +186,13 @@ public:
 	to the state they were in immediately after setup or create.
 	\note Calling setToRestState invalidates the cached raycast hit planes under each wheel meaning that suspension line
 	raycasts need to be performed at least once with PxVehicleSuspensionRaycasts before calling PxVehicleUpdates. 
-	@see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
+	\see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
 	*/
 	void setToRestState();
 
 	/**
 	\brief Simulation data that describes the configuration of the vehicle's drive model.
-	@see setup, create
+	\see setup, create
 	*/
 	PxVehicleDriveSimDataNW mDriveSimData;
 

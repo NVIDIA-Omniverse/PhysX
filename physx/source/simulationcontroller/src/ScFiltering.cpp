@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -473,9 +473,10 @@ static PX_FORCE_INLINE bool testElementSimPointers(const ElementSim* e0, const E
 	PX_ASSERT(e0);
 	PX_ASSERT(e1);
 
-	// PT: a bit of defensive coding added for OM-74224. In theory this should not be needed, as the broadphase is not
+	// PT: a bit of defensive coding added for OM-74224 / PX-3571. In theory this should not be needed, as the broadphase is not
 	// supposed to return null pointers here. But there seems to be an issue somewhere, most probably in the GPU BP kernels,
 	// and this is an attempt at preventing a crash. We could/should remove this eventually.
+	// ### DEFENSIVE
 	if(!e0 || !e1)
 		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "NPhaseCore::runOverlapFilters: found null elements!");
 	return true;
@@ -488,12 +489,12 @@ static PX_FORCE_INLINE bool testShapeSimCorePointers(const ShapeSimBase* s0, con
 	PX_ASSERT(isValid0);
 	PX_ASSERT(isValid1);
 
-	// GW: further defensive coding added for OM-111249
+	// GW: further defensive coding added for OM-111249 / PX-4478.
 	// This is only a temporary / immediate solution to mitigate crashes
 	// Still need to root-cause what is causing null pointers here
+	// ### DEFENSIVE
 	if(!isValid0 || !isValid1)
-		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__,
-		                                                 "NPhaseCore::runOverlapFilters: found null PxsShapeCore pointers!");
+		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "NPhaseCore::runOverlapFilters: found null PxsShapeCore pointers!");
 	return true;
 }
 

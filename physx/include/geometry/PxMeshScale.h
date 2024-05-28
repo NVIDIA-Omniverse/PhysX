@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_MESH_SCALE_H
 #define PX_MESH_SCALE_H
-/** \addtogroup geomutils
-@{
-*/
 
 #include "common/PxPhysXCommonConfig.h"
 #include "foundation/PxMat33.h"
@@ -63,7 +60,7 @@ the coordinates of vertex v from the mesh-local frame to the scaling-axes frame.
 \note	Only positive scale values are supported for PxConvexMeshGeometry
 		with values for each component within [PX_MIN_ABS_MESH_SCALE, PX_MAX_ABS_MESH_SCALE] range).
 
-@see PxConvexMeshGeometry PxTriangleMeshGeometry
+\see PxConvexMeshGeometry PxTriangleMeshGeometry
 */
 class PxMeshScale
 {
@@ -162,5 +159,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

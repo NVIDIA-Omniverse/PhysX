@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_FIXED_JOINT_H
 #define PX_FIXED_JOINT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "extensions/PxJoint.h"
 
@@ -50,7 +47,7 @@ class PxFixedJoint;
  \param[in] actor1		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
  \param[in] localFrame1	The position and orientation of the joint relative to actor1 
 
-@see PxFixedJoint
+\see PxFixedJoint
 */
 PxFixedJoint*	PxFixedJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
@@ -59,7 +56,7 @@ PxFixedJoint*	PxFixedJointCreate(PxPhysics& physics, PxRigidActor* actor0, const
 
  \image html fixedJoint.png
 
- @see PxFixedJointCreate() PxJoint
+ \see PxFixedJointCreate() PxJoint
 */
 class PxFixedJoint : public PxJoint
 {
@@ -96,5 +93,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

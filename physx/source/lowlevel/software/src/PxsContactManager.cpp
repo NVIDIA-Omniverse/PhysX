@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,14 +35,14 @@ PxsContactManager::PxsContactManager(PxsContext*, PxU32 index)
 	mFlags = 0;
 
 	// PT: TODO: any reason why we don't initialize all members here, e.g. shapeCore pointers?
-	mNpUnit.index				= index;
-	mNpUnit.rigidCore0			= NULL;
-	mNpUnit.rigidCore1			= NULL;
-	mNpUnit.restDistance		= 0;
-	mNpUnit.dominance0			= 1u;
-	mNpUnit.dominance1			= 1u;
-	mNpUnit.frictionDataPtr		= NULL;
-	mNpUnit.frictionPatchCount	= 0;
+	mNpUnit.mIndex				= index;
+	mNpUnit.mRigidCore0			= NULL;
+	mNpUnit.mRigidCore1			= NULL;
+	mNpUnit.mRestDistance		= 0;
+	mNpUnit.mDominance0			= 1u;
+	mNpUnit.mDominance1			= 1u;
+	mNpUnit.mFrictionDataPtr	= NULL;
+	mNpUnit.mFrictionPatchCount	= 0;
 }
 
 PxsContactManager::~PxsContactManager()

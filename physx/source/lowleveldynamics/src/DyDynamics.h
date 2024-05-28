@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -144,7 +144,8 @@ public:
 														bool useEnhancedDeterminism,
 														PxReal maxBiasCoefficient,
 														bool frictionEveryIteration,
-														PxReal lengthScale
+														PxReal lengthScale,
+														bool isResidualReportingEnabled
 														);
 
 	virtual								~DynamicsContext();
@@ -220,7 +221,7 @@ protected:
 	void								preIntegrationParallel(
 											   PxF32 dt,
 											   PxsBodyCore*const* bodyArray,					// INOUT: core body attributes
-											   PxsRigidBody*const* originalBodyArray,			// IN: original body atom names (LEGACY - DON'T deref the ptrs!!)
+											   PxsRigidBody*const* originalBodyArray,			// IN: original body atom names
 											   PxU32 const* nodeIndexArray,						// IN: island node index
 											   PxU32 bodyCount,									// IN: body count
 											   PxSolverBody* solverBodyPool,					// IN: solver atom pool (space preallocated)
@@ -237,7 +238,7 @@ protected:
 	\param[in] params Solver parameter structure
 	*/
 
-	void								solveParallel(SolverIslandParams& params, IG::IslandSim& islandSim, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV);
+	void								solveParallel(SolverIslandParams& params, IG::IslandSim& islandSim, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator);
 
 	void								integrateCoreParallel(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, IG::IslandSim& islandSim);
 

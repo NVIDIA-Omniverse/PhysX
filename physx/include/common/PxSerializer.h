@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SERIALIZER_H
 #define PX_SERIALIZER_H
-/** \addtogroup extensions
-@{
-*/
 
 #include "foundation/PxAssert.h"
 #include "foundation/PxAllocatorCallback.h"
@@ -57,7 +54,7 @@ namespace physx
 
  A default implementation is available as a template adapter (PxSerializerDefaultAdapter).
 
- @see PxSerializerDefaultAdapter, PX_NEW_SERIALIZER_ADAPTER, PxSerializationRegistry::registerSerializer
+ \see PxSerializerDefaultAdapter, PX_NEW_SERIALIZER_ADAPTER, PxSerializationRegistry::registerSerializer
 */
 class PxSerializer
 {
@@ -65,9 +62,9 @@ public:
 
 	/**********************************************************************************************************************/
 
-	/** @name Basics needed for Binary- and RepX-Serialization
+	/** \name Basics needed for Binary- and RepX-Serialization
 	*/
-	//@{
+	//\{
 	
 	/**
 	\brief Returns string name of dynamic type.
@@ -81,7 +78,7 @@ public:
 	 
 	This method does not add the required objects recursively, e.g. objects required by required objects.
 	 
-	@see PxCollection, PxSerialization::complete
+	\see PxCollection, PxSerialization::complete
 	*/
 	virtual			void			requiresObjects(PxBase&, PxProcessPxBaseCallback&) const									= 0;
 	
@@ -92,18 +89,18 @@ public:
 
 	\return	Whether the class is subordinate
 	
-	@see PxSerialization::isSerializable
+	\see PxSerialization::isSerializable
 	*/
 	virtual			bool			isSubordinate() const																= 0;
 
-	//@}
+	//\}
 	/**********************************************************************************************************************/
 
 	/**********************************************************************************************************************/
 
-	/** @name Functionality needed for Binary Serialization only
+	/** \name Functionality needed for Binary Serialization only
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Exports object's extra data to stream.
@@ -136,7 +133,7 @@ public:
 	*/
 	virtual         PxBase*			createObject(PxU8*& address, PxDeserializationContext& context) const	= 0; 
 
-	//@}
+	//\}
 	/**********************************************************************************************************************/
 	virtual ~PxSerializer() {}
 };
@@ -152,9 +149,9 @@ public:
 
 	/************************************************************************************************/
 
-	/** @name Basics needed for Binary- and RepX-Serialization
+	/** \name Basics needed for Binary- and RepX-Serialization
 	*/
-	//@{
+	//\{
 
 	PxSerializerDefaultAdapter(const char* name) : mTypeName(name){}
 
@@ -174,12 +171,12 @@ public:
 		return false;
 	}
 		
-	//@}
+	//\}
 	/************************************************************************************************/
 
-	/** @name Functionality needed for Binary Serialization only
+	/** \name Functionality needed for Binary Serialization only
 	*/
-	//@{
+	//\{
 
 	// object methods
 
@@ -233,7 +230,7 @@ public:
 	}
 
 
-	//@}
+	//\}
 	/************************************************************************************************/
 
 private:
@@ -247,7 +244,7 @@ private:
 */
 #define PX_NEW_SERIALIZER_ADAPTER(x) \
 	*new( PxGetAllocatorCallback()->allocate(sizeof(PxSerializerDefaultAdapter<x>), \
-	"PxSerializerDefaultAdapter",  PX_FL)) PxSerializerDefaultAdapter<x>(#x)
+	"PxSerializerDefaultAdapter", PX_FL)) PxSerializerDefaultAdapter<x>(#x)
 
 /** 
  \brief Preprocessor Macro to simplify adapter deletion.
@@ -259,5 +256,4 @@ private:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

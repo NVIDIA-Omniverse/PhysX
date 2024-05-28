@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxMemory.h"
@@ -62,7 +59,7 @@ struct PxVehicleTireDirectionState
 /**
 \brief PxVehicleTireSpeedState stores the components of the instantaneous velocity of the rigid body at the tire contact point projected 
 along the lateral and longitudinal axes of the tire.
-@see PxVehicleTireDirectionState
+\see PxVehicleTireDirectionState
 */
 struct PxVehicleTireSpeedState
 {
@@ -76,7 +73,7 @@ struct PxVehicleTireSpeedState
 
 /**
 \brief The lateral and longitudinal tire slips.
-@see PxVehicleTireSpeedState
+\see PxVehicleTireSpeedState
 */
 struct PxVehicleTireSlipState
 {
@@ -127,8 +124,8 @@ struct PxVehicleTireCamberAngleState
 /**
 \brief Prolonged low speeds in the lateral and longitudinal directions may be handled with "sticky" velocity constraints that activate after
 a speed below a threshold has been recorded for a threshold time.
-@see PxVehicleTireStickyParams
-@see PxVehicleTireSpeedState
+\see PxVehicleTireStickyParams
+\see PxVehicleTireSpeedState
 */
 struct PxVehicleTireStickyState
 {
@@ -178,4 +175,3 @@ struct PxVehicleTireForce
 } // namespace physx
 #endif
 
-/** @} */

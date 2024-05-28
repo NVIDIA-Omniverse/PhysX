@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TETRAHEDRON_MESH_H
 #define PX_TETRAHEDRON_MESH_H
-/** \addtogroup geomutils
-@{ */
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxBounds3.h"
@@ -53,7 +51,7 @@ namespace physx
 	/**
 	\brief collection of set bits defined in PxTetrahedronMeshFlag.
 
-	@see PxTetrahedronMeshFlag
+	\see PxTetrahedronMeshFlag
 	*/
 	typedef PxFlags<PxTetrahedronMeshFlag::Enum, PxU8> PxTetrahedronMeshFlags;
 	PX_FLAGS_OPERATORS(PxTetrahedronMeshFlag::Enum, PxU8)
@@ -72,7 +70,7 @@ namespace physx
 		/**
 		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
 
-		@see PxPhysics.createTetrahedronMesh()
+		\see PxPhysics.createTetrahedronMesh()
 		*/
 		virtual void					release() = 0;
 
@@ -116,7 +114,7 @@ namespace physx
 	\li #PxVisualizationParameter::eCOLLISION_FNORMALS
 	\li #PxVisualizationParameter::eCOLLISION_EDGES
 
-	@see PxTetrahedronMeshDesc PxTetrahedronMeshGeometry PxShape PxPhysics.createTetrahedronMesh()
+	\see PxTetrahedronMeshDesc PxTetrahedronMeshGeometry PxShape PxPhysics.createTetrahedronMesh()
 	*/
 	class PxTetrahedronMesh : public PxRefCounted
 	{
@@ -124,14 +122,14 @@ namespace physx
 		/**
 		\brief Returns the number of vertices.
 		\return	number of vertices
-		@see getVertices()
+		\see getVertices()
 		*/
 		virtual	PxU32				getNbVertices()									const = 0;
 
 		/**
 		\brief Returns the vertices
 		\return	array of vertices
-		@see getNbVertices()
+		\see getNbVertices()
 		*/
 		virtual	const PxVec3*			getVertices()									const = 0;
 
@@ -139,7 +137,7 @@ namespace physx
 		/**
 		\brief Returns the number of tetrahedrons.
 		\return	number of tetrahedrons
-		@see getTetrahedrons()
+		\see getTetrahedrons()
 		*/
 		virtual	PxU32					getNbTetrahedrons()								const = 0;
 
@@ -152,7 +150,7 @@ namespace physx
 		The number of indices is the number of tetrahedrons * 4.
 
 		\return	array of tetrahedrons
-		@see getNbTetrahedron() getTetrahedronMeshFlags() getTetrahedraRemap()
+		\see getNbTetrahedron() getTetrahedronMeshFlags() getTetrahedraRemap()
 		*/
 		virtual	const void*				getTetrahedrons()									const = 0;
 
@@ -176,7 +174,7 @@ namespace physx
 			remapTable[ internalTetrahedronIndex ] = originalTetrahedronIndex
 
 		\return	the remapping table (or NULL if 'PxCookingParams::suppressTriangleMeshRemapTable' has been used)
-		@see getNbTetrahedron() getTetrahedrons() PxCookingParams::suppressTriangleMeshRemapTable
+		\see getNbTetrahedron() getTetrahedrons() PxCookingParams::suppressTriangleMeshRemapTable
 		*/
 		virtual	const PxU32*	getTetrahedraRemap()	const = 0;
 
@@ -190,7 +188,7 @@ namespace physx
 		/**
 		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
 
-		@see PxPhysics.createTetrahedronMesh()
+		\see PxPhysics.createTetrahedronMesh()
 		*/
 		virtual void					release() = 0;
 
@@ -223,28 +221,28 @@ namespace physx
 		/**
 		\brief Const accecssor to the softbody's collision mesh.
 
-		@see PxTetrahedronMesh
+		\see PxTetrahedronMesh
 		*/
 		virtual const PxTetrahedronMesh* getCollisionMesh() const = 0;
 		
 		/**
 		\brief Accecssor to the softbody's collision mesh.
 
-		@see PxTetrahedronMesh
+		\see PxTetrahedronMesh
 		*/
 		virtual PxTetrahedronMesh* getCollisionMesh() = 0;
 
 		/**
 		\brief Const accessor to the softbody's simulation mesh.
 
-		@see PxTetrahedronMesh
+		\see PxTetrahedronMesh
 		*/
 		virtual const PxTetrahedronMesh* getSimulationMesh() const = 0;
 		
 		/**
 		\brief Accecssor to the softbody's simulation mesh.
 
-		@see PxTetrahedronMesh
+		\see PxTetrahedronMesh
 		*/
 		virtual PxTetrahedronMesh* getSimulationMesh() = 0;
 
@@ -252,21 +250,21 @@ namespace physx
 		/**
 		\brief Const accessor to the softbodies simulation state.
 
-		@see PxSoftBodyAuxData
+		\see PxSoftBodyAuxData
 		*/
 		virtual const PxSoftBodyAuxData* getSoftBodyAuxData() const = 0;
 
 		/**
 		\brief Accessor to the softbody's auxilary data like mass and rest pose information
 
-		@see PxSoftBodyAuxData
+		\see PxSoftBodyAuxData
 		*/
 		virtual PxSoftBodyAuxData* getSoftBodyAuxData() = 0;
 
 		/**
 		\brief Decrements the reference count of a tetrahedron mesh and releases it if the new reference count is zero.
 
-		@see PxPhysics.createTetrahedronMesh()
+		\see PxPhysics.createTetrahedronMesh()
 		*/
 		virtual void					release() = 0;
 
@@ -284,7 +282,7 @@ namespace physx
 
 	\brief Contains information about how to update the collision mesh's vertices given a deformed simulation tetmesh.
 
-	@see PxTetrahedronMeshData
+	\see PxTetrahedronMeshData
 	*/
 	class PxCollisionMeshMappingData : public PxUserAllocated
 	{
@@ -298,7 +296,7 @@ namespace physx
 
 	\brief Stores data to accelerate collision detection of a tetrahedral mesh
 
-	@see PxTetrahedronMeshData
+	\see PxTetrahedronMeshData
 	*/
 	class PxSoftBodyCollisionData : public PxUserAllocated
 	{
@@ -309,7 +307,7 @@ namespace physx
 
 	\brief Contains raw geometry information describing the tetmesh's vertices and its elements (tetrahedra)
 
-	@see PxTetrahedronMeshData
+	\see PxTetrahedronMeshData
 	*/
 	class PxTetrahedronMeshData : public PxUserAllocated
 	{
@@ -320,7 +318,7 @@ namespace physx
 
 	\brief Stores data to compute and store the state of a deformed tetrahedral mesh
 
-	@see PxTetrahedronMeshData
+	\see PxTetrahedronMeshData
 	*/
 	class PxSoftBodySimulationData : public PxUserAllocated
 	{
@@ -331,7 +329,7 @@ namespace physx
 
 	\brief Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData
 
-	@see PxTetrahedronMeshData PxSoftBodyCollisionData
+	\see PxTetrahedronMeshData PxSoftBodyCollisionData
 	*/
 	class PxCollisionTetrahedronMeshData : public PxUserAllocated
 	{
@@ -349,7 +347,7 @@ namespace physx
 
 	\brief Conbines PxTetrahedronMeshData and PxSoftBodyCollisionData
 
-	@see PxTetrahedronMeshData PxSoftBodySimulationData
+	\see PxTetrahedronMeshData PxSoftBodySimulationData
 	*/
 	class PxSimulationTetrahedronMeshData : public PxUserAllocated
 	{
@@ -365,5 +363,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

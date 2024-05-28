@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -33,27 +33,27 @@
 #include "foundation/PxMutex.h"
 #include "foundation/PxAtomic.h"
 #include "foundation/PxTempAllocator.h"
+
 #include "FdFoundation.h"
 
 #if PX_VC
 #pragma warning(disable : 4706) // assignment within conditional expression
 #endif
 
+physx::AllocFreeTable& getTempAllocFreeTable();
+physx::Mutex& getTempAllocMutex();
+
 namespace physx
 {
+union PxTempAllocatorChunk
+{
+	PxTempAllocatorChunk* mNext; // while chunk is free
+	PxU32 mIndex;           // while chunk is allocated
+	PxU8 mPad[16];          // 16 byte aligned allocations
+};
 namespace
 {
 typedef PxTempAllocatorChunk Chunk;
-typedef PxArray<Chunk*, PxAllocator> AllocFreeTable;
-
-PX_INLINE Foundation::AllocFreeTable& getFreeTable()
-{
-	return getFoundation().getTempAllocFreeTable();
-}
-PX_INLINE Foundation::Mutex& getMutex()
-{
-	return getFoundation().getTempAllocMutex();
-}
 
 const PxU32 sMinIndex = 8;  // 256B min
 const PxU32 sMaxIndex = 17; // 128kB max
@@ -69,11 +69,12 @@ void* PxTempAllocator::allocate(size_t size, const char* filename, PxI32 line)
 	Chunk* chunk = 0;
 	if(index < sMaxIndex)
 	{
-		Foundation::Mutex::ScopedLock lock(getMutex());
+		Mutex::ScopedLock lock(getTempAllocMutex());
 
 		// find chunk up to 16x bigger than necessary
-		Chunk** it = getFreeTable().begin() + index - sMinIndex;
-		Chunk** end = PxMin(it + 3, getFreeTable().end());
+		AllocFreeTable& freeTable = getTempAllocFreeTable();
+		Chunk** it = freeTable.begin() + index - sMinIndex;
+		Chunk** end = PxMin(it + 3, freeTable.end());
 		while(it < end && !(*it))
 			++it;
 
@@ -82,7 +83,7 @@ void* PxTempAllocator::allocate(size_t size, const char* filename, PxI32 line)
 			// pop top off freelist
 			chunk = *it;
 			*it = chunk->mNext;
-			index = PxU32(it - getFreeTable().begin() + sMinIndex);
+			index = PxU32(it - freeTable.begin() + sMinIndex);
 		}
 		else
 			// create new chunk
@@ -111,14 +112,34 @@ void PxTempAllocator::deallocate(void* ptr)
 	if(index >= sMaxIndex)
 		return PxAllocator().deallocate(chunk);
 
-	Foundation::Mutex::ScopedLock lock(getMutex());
+	Mutex::ScopedLock lock(getTempAllocMutex());
 
 	index -= sMinIndex;
-	if(getFreeTable().size() <= index)
-		getFreeTable().resize(index + 1);
 
-	chunk->mNext = getFreeTable()[index];
-	getFreeTable()[index] = chunk;
+	AllocFreeTable& freeTable = getTempAllocFreeTable();
+
+	if(freeTable.size() <= index)
+		freeTable.resize(index + 1);
+
+	chunk->mNext = freeTable[index];
+	freeTable[index] = chunk;
 }
 
 } // namespace physx
+
+using namespace physx;
+
+void deallocateTempBufferAllocations(AllocFreeTable& mTempAllocFreeTable)
+{
+	PxAllocator alloc;
+	for(PxU32 i = 0; i < mTempAllocFreeTable.size(); ++i)
+	{
+		for(PxTempAllocatorChunk* ptr = mTempAllocFreeTable[i]; ptr;)
+		{
+			PxTempAllocatorChunk* next = ptr->mNext;
+			alloc.deallocate(ptr);
+			ptr = next;
+		}
+	}
+	mTempAllocFreeTable.reset();
+}

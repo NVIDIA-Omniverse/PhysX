@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,9 +48,10 @@ class PxMaterial;
 class PxRigidDynamic;
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief The ordering of the wheels of a PxVehicleDriveTank.
 
-@see PxVehicleWheelsSimData, PxVehicleWheelsDynData
+\see PxVehicleWheelsSimData, PxVehicleWheelsDynData
 */
 struct PX_DEPRECATED PxVehicleDriveTankWheelOrder
 {
@@ -81,6 +82,7 @@ struct PX_DEPRECATED PxVehicleDriveTankWheelOrder
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief The control inputs for a PxVehicleDriveTank.
 
 \note The values of eANALOG_INPUT_THRUST_LEFT and eANALOG_INPUT_THRUST_RIGHT determine how much 
@@ -95,7 +97,7 @@ to divert the available drive torque to the left and wheels. If eANALOG_INPUT_TH
 the tank will turn to the right.  If eANALOG_INPUT_THRUST_RIGHT > eANALOG_INPUT_THRUST_LEFT
 the tank will turn to the left.
 
-@see PxVehicleDriveDynData::setAnalogInput, PxVehicleDriveDynData::getAnalogInput
+\see PxVehicleDriveDynData::setAnalogInput, PxVehicleDriveDynData::getAnalogInput
 */
 
 struct PX_DEPRECATED PxVehicleDriveTankControl
@@ -112,6 +114,7 @@ struct PX_DEPRECATED PxVehicleDriveTankControl
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Two driving models are supported.
 
 \note If eSTANDARD is chosen the left and right wheels are always driven in the same direction.  If the tank is in 
@@ -128,7 +131,7 @@ thrust to the right wheels.
 
 \note In both modes the legal ranges of acceleration and left/right brake are all (0,1).
 
-@see PxVehicleDriveTank::setDriveModel
+\see PxVehicleDriveTank::setDriveModel
 */
 struct PX_DEPRECATED PxVehicleDriveTankControlModel
 {
@@ -141,6 +144,7 @@ struct PX_DEPRECATED PxVehicleDriveTankControlModel
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Data structure with instanced dynamics data and configuration data of a tank.
 */
 class PX_DEPRECATED PxVehicleDriveTank : public PxVehicleDrive
@@ -159,13 +163,13 @@ public:
 
 	\return The instantiated vehicle.
 
-	@see free, setup
+	\see free, setup
 	*/
 	static PxVehicleDriveTank* allocate(const PxU32 nbWheels);
 
 	/**
 	\brief Deallocate a PxVehicleDriveTank instance.
-	@see allocate
+	\see allocate
 	*/
 	void free();
 
@@ -177,7 +181,7 @@ public:
 	\param[in] driveData describes the properties of the tank's drive model (gears/engine/clutch/autobox).  The tank instance takes a copy of this data.
 	\param[in] nbDrivenWheels is the number of wheels on the tank.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheelsSimData::setWheelShapeMapping.
-	@see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
 	\note nbDrivenWheels must be an even number
 	\note The wheels must be arranged according to PxVehicleDriveTankWheelOrder; that is, 
 	the even wheels are on the left side of the tank and the odd wheels are on the right side of the tank. 
@@ -196,7 +200,7 @@ public:
 	\param[in] nbDrivenWheels is the number of wheels on the tank.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheelsSimData::setWheelShapeMapping.
 	\return The instantiated vehicle.
-	@see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheelsSimData::setWheelShapeMapping
 	*/
 	static PxVehicleDriveTank* create
 		(PxPhysics* physics, PxRigidDynamic* vehActor, 
@@ -224,13 +228,13 @@ public:
 	to the state they were in immediately after setup or create.
 	\note Calling setToRestState invalidates the cached raycast hit planes under each wheel meaning that suspension line
 	raycasts need to be performed at least once with PxVehicleSuspensionRaycasts before calling PxVehicleUpdates. 
-	@see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
+	\see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
 	*/
 	void setToRestState();
 
 	/**
 	\brief Simulation data that models vehicle components
-	@see setup, create
+	\see setup, create
 	*/
 	PxVehicleDriveSimData mDriveSimData;
 
@@ -242,7 +246,7 @@ private:
 
 	/**
 	\brief Drive model
-	@see setDriveModel, getDriveModel, PxVehicleDriveTankControlModel
+	\see setDriveModel, getDriveModel, PxVehicleDriveTankControlModel
 	*/
 	PxVehicleDriveTankControlModel::Enum mDriveModel;
 

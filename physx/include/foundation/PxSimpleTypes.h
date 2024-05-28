@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_SIMPLE_TYPES_H
 #define PX_SIMPLE_TYPES_H
 
-/** \addtogroup foundation
-  @{
-*/
 
 // Platform specific types:
 // Design note: Its OK to use int for general loop variables and temps.
@@ -43,10 +40,6 @@
 // header
 #endif
 
-#if PX_LINUX
-#define __STDC_LIMIT_MACROS
-#endif
-
 #include <stdint.h>
 #if PX_VC
 #pragma warning(pop)
@@ -55,9 +48,6 @@
 #if PX_VC // we could use inttypes.h starting with VC12
 #define PX_PRIu64 "I64u"
 #else
-#if !PX_APPLE_FAMILY
-#define __STDC_FORMAT_MACROS
-#endif
 #include <inttypes.h>
 #define PX_PRIu64 PRIu64
 #endif
@@ -81,6 +71,12 @@ typedef float PxReal;
 typedef PxI32 PxIntBool;
 static const PxIntBool PxIntFalse = 0;
 static const PxIntBool PxIntTrue = 1;
+
+// types for direct-GPU API
+typedef PxU32 PxArticulationGPUIndex;
+typedef PxU32 PxRigidDynamicGPUIndex;
+typedef PxU32 PxShapeGPUIndex;
+
 #if !PX_DOXYGEN
 } // namespace physx
 #endif
@@ -114,6 +110,5 @@ static const PxIntBool PxIntTrue = 1;
 #define PX_MAX_U32 UINT32_MAX
 #define PX_MIN_U32 UINT32_MIN
 
-/** @} */
 #endif
 

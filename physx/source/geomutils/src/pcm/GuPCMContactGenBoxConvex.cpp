@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -70,8 +70,8 @@ static bool testFaceNormal(const PolygonalData& polyData0, const PolygonalData& 
 	const Vec3V zeroV = V3Zero();
 	const Vec3V shapeSpaceCenter1 = V3LoadU(polyData1.mCenter);
 	const Vec3V internalCenter1In0 = transform1To0.transform(shapeSpaceCenter1);
-	const FloatV internalRadius1 = FLoad(polyData1.mInternal.mRadius);
-	const Vec3V internalExtents1 = V3LoadU(polyData1.mInternal.mExtents);
+	const FloatV internalRadius1 = FLoad(polyData1.mInternal.mInternalRadius);
+	const Vec3V internalExtents1 = V3LoadU_SafeReadW(polyData1.mInternal.mInternalExtents);
 	const Vec3V negInternalExtents1 = V3Neg(internalExtents1);
 #endif
 
@@ -206,12 +206,12 @@ static bool testEdgeNormal(const PolygonalData& polyData0, const PolygonalData& 
 #if PCM_USE_INTERNAL_OBJECT
 	const Vec3V zeroV = V3Zero();
 	const Vec3V internalCenter1In0 = V3Sub(transform1To0.transform(shapeSpaceCenter1), shapeSpaceCenter0);
-	const FloatV internalRadius1 = FLoad(polyData1.mInternal.mRadius);
-	const Vec3V internalExtents1 = V3LoadU(polyData1.mInternal.mExtents);
+	const FloatV internalRadius1 = FLoad(polyData1.mInternal.mInternalRadius);
+	const Vec3V internalExtents1 = V3LoadU_SafeReadW(polyData1.mInternal.mInternalExtents);
 	const Vec3V negInternalExtents1 = V3Neg(internalExtents1);
 
-	const FloatV internalRadius0 = FLoad(polyData0.mInternal.mRadius);
-	const Vec3V internalExtents0 = V3LoadU(polyData0.mInternal.mExtents);
+	const FloatV internalRadius0 = FLoad(polyData0.mInternal.mInternalRadius);
+	const Vec3V internalExtents0 = V3LoadU_SafeReadW(polyData0.mInternal.mInternalExtents);
 	const Vec3V negInternalExtents0 = V3Neg(internalExtents0);
 #endif
 
@@ -328,7 +328,7 @@ static bool testEdgeNormal(const PolygonalData& polyData0, const PolygonalData& 
 }
 
 //contactNormal is in the space of polyData0
-static void generatedContacts(const PolygonalData& polyData0, const PolygonalData& polyData1, const HullPolygonData& referencePolygon, const HullPolygonData& incidentPolygon,  
+static void generatedContacts(const PolygonalData& polyData0, const PolygonalData& polyData1, const HullPolygonData& referencePolygon, const HullPolygonData& incidentPolygon,
 	const SupportLocal* map0, const SupportLocal* map1, const PxMatTransformV& transform0To1, PersistentContact* manifoldContacts, 
 	PxU32& numContacts, const FloatVArg contactDist, PxRenderOutput* renderOutput)
 {
@@ -573,7 +573,7 @@ EdgeTest:
 			const Vec3V n = transform0To1V.rotate(minNormal);
 			const HullPolygonData& incidentPolygon = polyData1.mPolygons[getPolygonIndex(polyData1, map1, n)];
 				
-			generatedContacts(polyData0, polyData1, referencePolygon,  incidentPolygon, map0, map1, transform0To1V, manifoldContacts, numContacts, contactDist, renderOutput);
+			generatedContacts(polyData0, polyData1, referencePolygon, incidentPolygon, map0, map1, transform0To1V, manifoldContacts, numContacts, contactDist, renderOutput);
 				
 			if (numContacts > 0)
 			{
@@ -595,7 +595,7 @@ EdgeTest:
 			const HullPolygonData& incidentPolygon = polyData0.mPolygons[getPolygonIndex(polyData0, map0, transform1To0V.rotate(minNormal))];
 				
 			//reference face is polyData1
-			generatedContacts(polyData1, polyData0, referencePolygon,  incidentPolygon, map1, map0, transform1To0V, manifoldContacts, numContacts, contactDist, renderOutput);
+			generatedContacts(polyData1, polyData0, referencePolygon, incidentPolygon, map1, map0, transform1To0V, manifoldContacts, numContacts, contactDist, renderOutput);
 
 		}
 		else //if(status == EDGE0)
@@ -604,7 +604,7 @@ EdgeTest:
 			
 			const HullPolygonData& incidentPolygon = polyData0.mPolygons[getPolygonIndex(polyData0, map0, V3Neg(minNormal))];
 			const HullPolygonData& referencePolygon = polyData1.mPolygons[getPolygonIndex(polyData1, map1, transform0To1V.rotate(minNormal))];
-			generatedContacts(polyData1, polyData0, referencePolygon,  incidentPolygon, map1, map0, transform1To0V, manifoldContacts, numContacts, contactDist, renderOutput);
+			generatedContacts(polyData1, polyData0, referencePolygon, incidentPolygon, map1, map0, transform1To0V, manifoldContacts, numContacts, contactDist, renderOutput);
 		}
 
 		if(numContacts == 0 && !doEdgeTest)

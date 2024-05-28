@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -98,6 +98,7 @@ OMNI_PVD_ENUM_END		(PxD6Motion)
 // PxJoint
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_BEGIN					(PxJoint)
+OMNI_PVD_ATTRIBUTE						(PxJoint, constraint,				PxConstraint* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE_FLAG					(PxJoint, type,						PxJointConcreteType::Enum, PxJointConcreteType)
 OMNI_PVD_ATTRIBUTE						(PxJoint, actor0,					PxRigidActor* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_ATTRIBUTE						(PxJoint, actor1,					PxRigidActor* const, OmniPvdDataType::eOBJECT_HANDLE)

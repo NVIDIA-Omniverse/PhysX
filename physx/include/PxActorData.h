@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,10 +30,8 @@
 #ifndef PX_ACTOR_DATA_H
 #define PX_ACTOR_DATA_H
 
-/** \addtogroup physics
-  @{
-*/
 
+#include "foundation/PxPreprocessor.h"
 #include "foundation/PxVec4.h"
 #include "foundation/PxQuat.h"
 #include "foundation/PxFlags.h"
@@ -47,9 +45,11 @@ namespace physx
 
 	/**
 	\brief Identifies each type of information for retrieving from actor.
-	@see PxScene::applyActorData
+	\see PxScene::applyActorData
+
+	\deprecated Only used in the deprecated function PxScene::applyActorData(). Use PxDirectGPUAPI::setRigidDynamicData() instead.
 	*/
-	struct PxActorCacheFlag
+	PX_DEPRECATED struct PxActorCacheFlag
 	{
 		enum Enum
 		{
@@ -62,17 +62,20 @@ namespace physx
 	/**
 	\brief Collection of set bits defined in PxActorCacheFlag.
 
-	@see PxActorCacheFlag
+	\see PxActorCacheFlag
 	*/
 	typedef PxFlags<PxActorCacheFlag::Enum, PxU16> PxActorCacheFlags;
 	PX_FLAGS_OPERATORS(PxActorCacheFlag::Enum, PxU16)
 
 	/**
 	\brief State of a body used when interfacing with the GPU rigid body pipeline
-	@see PxScene.copyBodyData()
+	\see PxScene.copyBodyData()
+
+	\deprecated Only used in the deprecated function PxScene::copyBodyData().
+	Use PxDirectGPUAPI::getRigidDynamicData() instead.
 	*/
 	PX_ALIGN_PREFIX(16)
-	struct PxGpuBodyData
+	PX_DEPRECATED struct PxGpuBodyData
 	{
 		PxQuat			quat;		/*!< actor global pose quaternion in world frame */
 		PxVec4			pos;		/*!< (x,y,z members): actor global pose position in world frame */
@@ -83,9 +86,12 @@ namespace physx
 
 	/**
 	\brief Pair correspondence used for matching array indices with body node indices
+
+	\deprecated Only used in the deprecated functions PxScene::copyBodyData() and PxScene::applyActorData().
+	Use PxDirectGPUAPI::getRigidDynamicData() and PxDirectGPUAPI::setRigidDynamicData() instead.
 	*/
 	PX_ALIGN_PREFIX(8)
-	struct PxGpuActorPair
+	PX_DEPRECATED struct PxGpuActorPair
 	{
 		PxU32 srcIndex;					//Defines which index in src array we read
 		PxNodeIndex nodeIndex;			//Defines which actor this entry in src array is updating
@@ -95,9 +101,12 @@ namespace physx
 	/**
 	\brief Maps numeric index to a data pointer.
 
-	@see PxScene::computeDenseJacobians(), PxScene::computeGeneralizedMassMatrices(), PxScene::computeGeneralizedGravityForces(), PxScene::computeCoriolisAndCentrifugalForces()
+	\see PxScene::computeDenseJacobians(), PxScene::computeGeneralizedMassMatrices(), PxScene::computeGeneralizedGravityForces(), PxScene::computeCoriolisAndCentrifugalForces()
+
+	\deprecated Only used in the deprecated functions PxScene::computeDenseJacobians(), PxScene::computeGeneralizedMassMatrices(), PxScene::computeGeneralizedGravityForces(), PxScene::computeCoriolisAndCentrifugalForces().
+	Use PxDirectGPUAPI::computeArticulationData() instead.
 	*/	
-	struct PxIndexDataPair
+	PX_DEPRECATED struct PxIndexDataPair
 	{
 		PxU32 index;
 		void* data;
@@ -107,5 +116,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

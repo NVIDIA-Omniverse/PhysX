@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -96,7 +96,7 @@ struct AccumCallback: public MeshHitCallback<PxGeomRaycastHit>
 	}
 
 	virtual PxAgain processHit( // all reported coords are in mesh local space including hit.position
-		const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal&, const PxU32*)
+		const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal&, const PxU32*)	PX_OVERRIDE PX_FINAL
 	{
 		mResult.pushBack(hit.faceIndex);
 		return true;
@@ -113,7 +113,7 @@ struct EntityReportContainerCallback : public OverlapReport
 	}
 	virtual ~EntityReportContainerCallback() {}
 
-	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)
+	virtual bool reportTouchedTris(PxU32 nb, const PxU32* indices)	PX_OVERRIDE PX_FINAL
 	{
 		for(PxU32 i=0; i<nb; i++)
 			container.pushBack(indices[i]);
@@ -681,7 +681,7 @@ PxReal SweepEstimateAnyShapeMesh(GU_SWEEP_ESTIMATE_ARGS)
 			}
 
 			virtual PxAgain processHit( // all reported coords are in mesh local space including hit.position
-				const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal& shrunkMaxT, const PxU32*)
+				const PxGeomRaycastHit& hit, const PxVec3&, const PxVec3&, const PxVec3&, PxReal& shrunkMaxT, const PxU32*)	PX_OVERRIDE PX_FINAL
 			{
 				const TriangleHelper convexPartOfMesh1(shapeMesh, meshScaling, hit.faceIndex);
 				const PxVec3 resultNormal = -transform1.rotate(convexPartOfMesh1.getPolygonNormal());

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_RIGID_ACTOR_H
 #define PX_RIGID_ACTOR_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxActor.h"
 #include "PxShape.h"
@@ -47,7 +44,7 @@ class PxConstraint;
 
 PxRigidActor objects specify the geometry of the object by defining a set of attached shapes (see #PxShape).
 
-@see PxActor
+\see PxActor
 */
 class PxRigidActor : public PxActor
 {
@@ -66,7 +63,7 @@ public:
 
 	Calls #PxActor::release() so you might want to check the documentation of that method as well.
 
-	@see PxActor::release()
+	\see PxActor::release()
 	*/
 	virtual		void			release() = 0;
 
@@ -80,7 +77,7 @@ public:
 	virtual PxU32				getInternalActorIndex() const = 0;
 
 /************************************************************************************************/
-/** @name Global Pose Manipulation
+/** \name Global Pose Manipulation
 */
 
 	/**
@@ -93,7 +90,7 @@ public:
 
 	\return Global pose of object.
 
-	@see PxRigidDynamic.setGlobalPose() PxRigidStatic.setGlobalPose()
+	\see PxRigidDynamic.setGlobalPose() PxRigidStatic.setGlobalPose()
 	*/
 	virtual		PxTransform 	getGlobalPose()		const = 0;
 
@@ -123,12 +120,12 @@ public:
 	\param[in] pose Transformation from the actors local frame to the global frame. <b>Range:</b> rigid body transform.
 	\param[in] autowake whether to wake the object if it is dynamic. This parameter has no effect for static or kinematic actors. If true and the current wake counter value is smaller than #PxSceneDesc::wakeCounterResetValue it will get increased to the reset value.
 
-	@see getGlobalPose()
+	\see getGlobalPose()
 	*/
 	virtual		void			setGlobalPose(const PxTransform& pose, bool autowake = true) = 0;
 
 /************************************************************************************************/
-/** @name Shapes
+/** \name Shapes
 */
 
 	/**
@@ -170,7 +167,7 @@ public:
 
 	\return Number of shapes associated with this actor.
 
-	@see PxShape getShapes()
+	\see PxShape getShapes()
 	*/
 	virtual		PxU32			getNbShapes()		const	= 0;
 
@@ -188,12 +185,12 @@ public:
 	\param[in] startIndex Index of first shape pointer to be retrieved
 	\return Number of shape pointers written to the buffer.
 
-	@see PxShape getNbShapes() PxShape::release()
+	\see PxShape getNbShapes() PxShape::release()
 	*/
 	virtual		PxU32			getShapes(PxShape** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)			const	= 0;
 
 /************************************************************************************************/
-/** @name Constraints
+/** \name Constraints
 */
 
 	/**
@@ -203,7 +200,7 @@ public:
 
 	\return Number of constraint shaders attached to this actor.
 
-	@see PxConstraint getConstraints()
+	\see PxConstraint getConstraints()
 	*/
 	virtual		PxU32			getNbConstraints()		const	= 0;
 
@@ -219,7 +216,7 @@ public:
 	\param[in] startIndex Index of first constraint pointer to be retrieved
 	\return Number of constraint shader pointers written to the buffer.
 
-	@see PxConstraint getNbConstraints() PxConstraint::release()
+	\see PxConstraint getNbConstraints() PxConstraint::release()
 	*/
 	virtual		PxU32			getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)		const	= 0;
 
@@ -234,5 +231,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

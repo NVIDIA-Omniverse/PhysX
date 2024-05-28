@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,8 +39,38 @@ namespace physx
 {
 	namespace Gu
 	{
-		PX_PHYSX_COMMON_API PxVec4 PointOutsideOfPlane4(const PxVec3& p, const PxVec3& _a, const PxVec3& _b,
-			const PxVec3& _c, const PxVec3& _d);
+		PX_INLINE PX_CUDA_CALLABLE PxVec4 PointOutsideOfPlane4(const PxVec3& p, const PxVec3& _a, const PxVec3& _b,
+			const PxVec3& _c, const PxVec3& _d)
+		{
+			const PxVec3 ap = p - _a;
+			const PxVec3 ab = _b - _a;
+			const PxVec3 ac = _c - _a;
+			const PxVec3 ad = _d - _a;
+
+			const PxVec3 v0 = ab.cross(ac);
+			const float signa0 = v0.dot(ap);
+			const float signd0 = v0.dot(ad);// V3Dot(v0, _d);
+
+			const PxVec3 v1 = ac.cross(ad);
+			const float signa1 = v1.dot(ap);
+			const float signd1 = v1.dot(ab);
+
+			const PxVec3 v2 = ad.cross(ab);
+			const float signa2 = v2.dot(ap);
+			const float signd2 = v2.dot(ac);// V3Dot(v2, _c);
+
+			const PxVec3 bd = _d - _b;
+			const PxVec3 bc = _c - _b;
+
+			const PxVec3 v3 = bd.cross(bc);
+			const float signd3 = v3.dot(p - _b);
+			const float signa3 = v3.dot(_a - _b);
+
+			//if combined signDist is least zero, p is outside of that face
+			PxVec4 result = PxVec4(signa0 * signd0, signa1 * signd1, signa2 * signd2, signa3 * signd3);
+
+			return result;
+		}
 
 		PX_PHYSX_COMMON_API PxVec3 closestPtPointTetrahedron(const PxVec3& p, const PxVec3& a, const PxVec3& b, const PxVec3& c, const PxVec3& d, const PxVec4& result);
 

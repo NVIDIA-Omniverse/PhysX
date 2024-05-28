@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build Snippetvehicle2 common template
@@ -53,7 +53,6 @@ ENDFOREACH()
 
 FILE(GLOB_RECURSE RAPIDJSON_FILES ${PM_RAPIDJSON_INCLUDE_PATH}/rapidjson/*.h)
 SOURCE_GROUP(common\\rapidjson FILES ${RAPIDJSON_FILES})
-LIST(APPEND SnippetVehicle2Sources ${RAPIDJSON_FILES})
 
 SET(TEMP_SOURCES "")
 FILE(GLOB TEMP_SOURCES ${PHYSX_ROOT_DIR}/snippets/snippetvehicle2common/*.cpp ${PHYSX_ROOT_DIR}/snippets/snippetvehicle2common/*.h)
@@ -63,6 +62,7 @@ LIST(APPEND SnippetVehicle2Sources ${TEMP_SOURCES})
 ADD_EXECUTABLE(Snippet${SNIPPET_NAME} ${SNIPPET_BUNDLE}
 	${SNIPPET_PLATFORM_SOURCES}
 	${SnippetVehicle2Sources}
+	${RAPIDJSON_FILES}
 )
 
 TARGET_INCLUDE_DIRECTORIES(Snippet${SNIPPET_NAME}

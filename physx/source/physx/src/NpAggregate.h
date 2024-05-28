@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -53,17 +53,17 @@ public:
 		virtual									~NpAggregate();
 
 		// PxAggregate
-		virtual			void					release()	PX_OVERRIDE;
-		virtual			bool					addActor(PxActor&, const PxBVH*)	PX_OVERRIDE;
-		virtual			bool					removeActor(PxActor&)	PX_OVERRIDE;
-		virtual			bool					addArticulation(PxArticulationReducedCoordinate&)	PX_OVERRIDE;
-		virtual			bool					removeArticulation(PxArticulationReducedCoordinate&)	PX_OVERRIDE;
-		virtual			PxU32					getNbActors() const	PX_OVERRIDE;
-		virtual			PxU32					getMaxNbActors() const	PX_OVERRIDE;
-		virtual			PxU32					getMaxNbShapes() const	PX_OVERRIDE;
-		virtual			PxU32					getActors(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE;
-		virtual			PxScene*				getScene()	PX_OVERRIDE;
-		virtual			bool					getSelfCollision()	const	PX_OVERRIDE;
+		virtual			void					release()	PX_OVERRIDE PX_FINAL;
+		virtual			bool					addActor(PxActor&, const PxBVH*)	PX_OVERRIDE PX_FINAL;
+		virtual			bool					removeActor(PxActor&)	PX_OVERRIDE PX_FINAL;
+		virtual			bool					addArticulation(PxArticulationReducedCoordinate&)	PX_OVERRIDE PX_FINAL;
+		virtual			bool					removeArticulation(PxArticulationReducedCoordinate&)	PX_OVERRIDE PX_FINAL;
+		virtual			PxU32					getNbActors() const	PX_OVERRIDE PX_FINAL;
+		virtual			PxU32					getMaxNbActors() const	PX_OVERRIDE PX_FINAL;
+		virtual			PxU32					getMaxNbShapes() const	PX_OVERRIDE PX_FINAL;
+		virtual			PxU32					getActors(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE PX_FINAL;
+		virtual			PxScene*				getScene()	PX_OVERRIDE PX_FINAL;
+		virtual			bool					getSelfCollision()	const	PX_OVERRIDE PX_FINAL;
 		//~PxAggregate
 
 		PX_FORCE_INLINE	PxU32					getMaxNbShapesFast()	const	{ return mMaxNbShapes;	}

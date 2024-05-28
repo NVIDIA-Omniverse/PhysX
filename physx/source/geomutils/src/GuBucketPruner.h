@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,7 +61,7 @@ namespace Gu
 		PxVec3	mExtents;
 		PxU32	mData1;		// Integer-encoded max value along sorting axis
 
-	#ifdef _DEBUG
+	#if PX_DEBUG
 		// PT: we need the original min value for debug checks. Using the center/extents version
 		// fails because recomputing the min from them introduces FPU accuracy errors in the values.
 		float	mDebugMin;
@@ -82,7 +82,7 @@ namespace Gu
 			mCenter = PxVec3(0.0f);
 			mExtents = PxVec3(-PX_MAX_BOUNDS_EXTENTS);
 
-	#ifdef _DEBUG
+	#if PX_DEBUG
 			mDebugMin = PX_MAX_BOUNDS_EXTENTS;
 	#endif
 		}

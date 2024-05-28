@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1870,7 +1870,7 @@ FloatV SinglePersistentContactManifold::refreshContactPoints(const PxMatTransfor
 		const Vec3V localNormal = Vec3V_From_Vec4V(manifoldPoint.mLocalNormalPen); // normal in b space
 		const FloatV dist= V3Dot(v, localNormal);
 
-		const Vec3V projectedPoint = V3NegScaleSub(localNormal,  dist, localAInB);//manifoldPoint.worldPointA - manifoldPoint.worldPointB * manifoldPoint.m_distance1;
+		const Vec3V projectedPoint = V3NegScaleSub(localNormal, dist, localAInB);//manifoldPoint.worldPointA - manifoldPoint.worldPointB * manifoldPoint.m_distance1;
 		const Vec3V projectedDifference = V3Sub(localBInB, projectedPoint);
 
 		const FloatV distance2d = V3Dot(projectedDifference, projectedDifference);
@@ -1995,7 +1995,7 @@ static FloatV addBatchManifoldContactsToSingleManifold(SinglePersistentContactMa
 	switch(maxContactsPerManifold)
 	{
 	case GU_SPHERE_MANIFOLD_CACHE_SIZE://sphere
-		return manifold->addBatchManifoldContactsSphere(manifoldContact, numManifoldContacts, *patch,  sqReplaceBreakingThreshold);
+		return manifold->addBatchManifoldContactsSphere(manifoldContact, numManifoldContacts, *patch, sqReplaceBreakingThreshold);
 	case GU_CAPSULE_MANIFOLD_CACHE_SIZE://capsule, need to implement keep two deepest
 		return manifold->addBatchManifoldContactsCapsule(manifoldContact, numManifoldContacts, *patch, sqReplaceBreakingThreshold);
 	default://cache size GU_SINGLE_MANIFOLD_CACHE_SIZE
@@ -2200,7 +2200,7 @@ void MultiplePersistentContactManifold::fromBuffer(PxU8* PX_RESTRICT buffer)
 	{
 		PX_ASSERT(((uintptr_t(buffer)) & 0xF) == 0);
 		PxU8* PX_RESTRICT buff = buffer;
-		MultiPersistentManifoldHeader* PX_RESTRICT header = reinterpret_cast<MultiPersistentManifoldHeader*>(buff);
+		const MultiPersistentManifoldHeader* PX_RESTRICT header = reinterpret_cast<const MultiPersistentManifoldHeader*>(buff);
 		buff += sizeof(MultiPersistentManifoldHeader);
 
 		numManifolds = header->mNumManifolds;
@@ -2211,14 +2211,14 @@ void MultiplePersistentContactManifold::fromBuffer(PxU8* PX_RESTRICT buffer)
 		for (PxU32 a = 0; a < numManifolds; ++a)
 		{
 			mManifoldIndices[a] = PxU8(a);
-			SingleManifoldHeader* PX_RESTRICT manHeader = reinterpret_cast<SingleManifoldHeader*>(buff);
+			const SingleManifoldHeader* PX_RESTRICT manHeader = reinterpret_cast<const SingleManifoldHeader*>(buff);
 			buff += sizeof(SingleManifoldHeader);
-			PxU32 numContacts = manHeader->mNumContacts;
+			const PxU32 numContacts = manHeader->mNumContacts;
 			PX_ASSERT(numContacts <= GU_SINGLE_MANIFOLD_CACHE_SIZE);
 			SinglePersistentContactManifold& manifold = mManifolds[a];
 			manifold.mNumContacts = numContacts;
 			PX_ASSERT((uintptr_t(buff) & 0xf) == 0);
-			CachedMeshPersistentContact* contacts = reinterpret_cast<CachedMeshPersistentContact*>(buff);
+			const CachedMeshPersistentContact* contacts = reinterpret_cast<const CachedMeshPersistentContact*>(buff);
 			for (PxU32 b = 0; b < manifold.mNumContacts; ++b)
 			{
 				manifold.mContactPoints[b].mLocalPointA = Vec3V_From_Vec4V(V4LoadA(&contacts[b].mLocalPointA.x));

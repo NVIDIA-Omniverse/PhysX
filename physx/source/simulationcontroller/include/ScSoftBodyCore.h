@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -127,7 +127,7 @@ namespace physx
 
 			PxU32						addClothAttachment(Sc::FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, PxU32 tetIdx, const PxVec4& tetBarycentric, 
 										PxConeLimitedConstraint* constraint, PxReal constraintOffset);
-			void						removeClothAttachment(Sc::FEMClothCore& core,  PxU32 handle);
+			void						removeClothAttachment(Sc::FEMClothCore& core, PxU32 handle);
 
 			PxU32						getGpuSoftBodyIndex()	const;
 

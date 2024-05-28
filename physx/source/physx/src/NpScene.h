@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,6 +48,7 @@
 #include "NpSceneQueries.h"
 #include "NpSceneAccessor.h"
 #include "NpPruningStructure.h"
+#include "NpDirectGPUAPI.h"
 
 #if PX_SUPPORT_PVD
 	#include "PxPhysics.h"
@@ -84,7 +85,7 @@ class NpArticulationAttachment;
 class NpArticulationTendonJoint;
 class NpArticulationSpatialTendon;
 class NpArticulationFixedTendon;
-class NpArticulationSensor;
+class NpArticulationMimicJoint;
 class NpShapeManager;
 class NpBatchQuery;
 class NpActor;
@@ -97,13 +98,9 @@ class NpFEMCloth;
 class NpHairSystem;
 
 class NpPBDParticleSystem;
-class NpFLIPParticleSystem;
-class NpMPMParticleSystem;
 class NpFEMSoftBodyMaterial;
 class NpFEMClothMaterial;
 class NpPBDMaterial;
-class NpFLIPMaterial;
-class NpMPMMaterial;
 #endif
 
 class NpContactCallbackTask : public physx::PxLightCpuTask
@@ -116,13 +113,16 @@ public:
 
 	void setData(NpScene* scene, const PxContactPairHeader* contactPairHeaders, const uint32_t nbContactPairHeaders);
 
-	virtual void run();
+	virtual void run()	PX_OVERRIDE PX_FINAL;
 
-	virtual const char* getName() const
+	virtual const char* getName() const	PX_OVERRIDE PX_FINAL
 	{
 		return "NpContactCallbackTask";
 	}
 };
+
+// returns an error if scene state is corrupted due to GPU errors.
+#define NP_CHECK_SCENE_CORRUPTION if(mCorruptedState) { return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Scene state is corrupted. Simulation cannot continue!"); }	
 
 class NpScene : public NpSceneAccessor, public PxUserAllocated
 {
@@ -131,245 +131,246 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	PX_NOCOPY(NpScene)
 	public:
 
-	virtual			void							release();
+	virtual			void							release()	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setFlag(PxSceneFlag::Enum flag, bool value);
-	virtual			PxSceneFlags					getFlags() const;
+	virtual			void							setFlag(PxSceneFlag::Enum flag, bool value)	PX_OVERRIDE PX_FINAL;
+	virtual			PxSceneFlags					getFlags() const							PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setName(const char* name);
-	virtual			const char*						getName() const;
+	virtual			void							setName(const char* name)	PX_OVERRIDE PX_FINAL;
+	virtual			const char*						getName() const				PX_OVERRIDE PX_FINAL;
 
 	// implement PxScene:
 
-	virtual			void							setGravity(const PxVec3&);
-	virtual			PxVec3							getGravity() const;
+	virtual			void							setGravity(const PxVec3&)	PX_OVERRIDE PX_FINAL;
+	virtual			PxVec3							getGravity() const			PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setBounceThresholdVelocity(const PxReal t);
-	virtual			PxReal							getBounceThresholdVelocity() const;
-	virtual			void							setMaxBiasCoefficient(const PxReal t);
-	virtual			PxReal							getMaxBiasCoefficient() const;
-	virtual			void							setFrictionOffsetThreshold(const PxReal t);
-	virtual			PxReal							getFrictionOffsetThreshold() const;
-	virtual			void							setFrictionCorrelationDistance(const PxReal t);
-	virtual			PxReal							getFrictionCorrelationDistance() const;
+	virtual			void							setBounceThresholdVelocity(const PxReal t)		PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getBounceThresholdVelocity() const				PX_OVERRIDE PX_FINAL;
+	virtual			void							setMaxBiasCoefficient(const PxReal t)			PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getMaxBiasCoefficient() const					PX_OVERRIDE PX_FINAL;
+	virtual			void							setFrictionOffsetThreshold(const PxReal t)		PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getFrictionOffsetThreshold() const				PX_OVERRIDE PX_FINAL;
+	virtual			void							setFrictionCorrelationDistance(const PxReal t)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getFrictionCorrelationDistance() const			PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setLimits(const PxSceneLimits& limits);
-	virtual			PxSceneLimits					getLimits() const;
+	virtual			void							setLimits(const PxSceneLimits& limits)	PX_OVERRIDE PX_FINAL;
+	virtual			PxSceneLimits					getLimits() const						PX_OVERRIDE PX_FINAL;
 
-	virtual			bool							addActor(PxActor& actor, const PxBVH* bvh);
-	virtual			void							removeActor(PxActor& actor, bool wakeOnLostTouch);
+	virtual			bool							addActor(PxActor& actor, const PxBVH* bvh)	PX_OVERRIDE PX_FINAL;
+	virtual			void							removeActor(PxActor& actor, bool wakeOnLostTouch)	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbConstraints() const;
-	virtual			PxU32							getConstraints(PxConstraint** buffer, PxU32 bufferSize, PxU32 startIndex=0) const;
+	virtual			PxU32							getNbConstraints() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getConstraints(PxConstraint** buffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			bool							addArticulation(PxArticulationReducedCoordinate&);
-	virtual			void							removeArticulation(PxArticulationReducedCoordinate&, bool wakeOnLostTouch);
+	virtual			bool							addArticulation(PxArticulationReducedCoordinate&)	PX_OVERRIDE PX_FINAL;
+	virtual			void							removeArticulation(PxArticulationReducedCoordinate&, bool wakeOnLostTouch)	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbArticulations() const;
-	virtual			PxU32							getArticulations(PxArticulationReducedCoordinate** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
+	virtual			PxU32							getNbArticulations() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getArticulations(PxArticulationReducedCoordinate** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbSoftBodies() const;
-	virtual			PxU32							getSoftBodies(PxSoftBody** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
+	virtual			PxU32							getNbSoftBodies() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getSoftBodies(PxSoftBody** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbParticleSystems(PxParticleSolverType::Enum type) const;
-	virtual			PxU32							getParticleSystems(PxParticleSolverType::Enum type, PxParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
+	virtual			PxU32							getNbPBDParticleSystems() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getPBDParticleSystems(PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbFEMCloths() const;
-	virtual			PxU32							getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
+	virtual			PxU32							getNbParticleSystems(PxParticleSolverType::Enum type) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getParticleSystems(PxParticleSolverType::Enum type, PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbHairSystems() const;
-	virtual			PxU32							getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const;
+	virtual			PxU32							getNbFEMCloths() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
+
+	virtual			PxU32							getNbHairSystems() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
 	// Aggregates
-    virtual			bool							addAggregate(PxAggregate&);
-	virtual			void							removeAggregate(PxAggregate&, bool wakeOnLostTouch);
-	virtual			PxU32							getNbAggregates()	const;
-	virtual			PxU32							getAggregates(PxAggregate** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const;
+    virtual			bool							addAggregate(PxAggregate&)	PX_OVERRIDE PX_FINAL;
+	virtual			void							removeAggregate(PxAggregate&, bool wakeOnLostTouch)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getNbAggregates()	const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getAggregates(PxAggregate** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const	PX_OVERRIDE PX_FINAL;
 	
-	virtual			bool							addCollection(const PxCollection& collection);
+	virtual			bool							addCollection(const PxCollection& collection)	PX_OVERRIDE PX_FINAL;
 
 	// Groups
-	virtual			void							setDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2, const PxDominanceGroupPair& dominance);
-	virtual			PxDominanceGroupPair			getDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2) const;
+	virtual			void							setDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2, const PxDominanceGroupPair& dominance)	PX_OVERRIDE PX_FINAL;
+	virtual			PxDominanceGroupPair			getDominanceGroupPair(PxDominanceGroup group1, PxDominanceGroup group2) const	PX_OVERRIDE PX_FINAL;
 
 	// Actors
-	virtual			PxU32							getNbActors(PxActorTypeFlags types) const;
-	virtual			PxU32							getActors(PxActorTypeFlags types, PxActor** buffer, PxU32 bufferSize, PxU32 startIndex=0) const;
-	virtual			PxActor**						getActiveActors(PxU32& nbActorsOut);
+	virtual			PxU32							getNbActors(PxActorTypeFlags types) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getActors(PxActorTypeFlags types, PxActor** buffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxActor**						getActiveActors(PxU32& nbActorsOut)	PX_OVERRIDE PX_FINAL;
 
 	// Run
-	virtual			void							getSimulationStatistics(PxSimulationStatistics& s) const;
+	virtual			void							getSimulationStatistics(PxSimulationStatistics& s) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxSceneResidual					getSolverResidual() const PX_OVERRIDE PX_FINAL { return mScene.getSolverResidual(); }
 
 	// Multiclient 
-	virtual			PxClientID						createClient();
+	virtual			PxClientID						createClient()	PX_OVERRIDE PX_FINAL;
 
 	// FrictionModel
-	virtual			PxFrictionType::Enum			getFrictionType() const;
+	virtual			PxFrictionType::Enum			getFrictionType() const	PX_OVERRIDE PX_FINAL;
 
 	// Callbacks
-	virtual			void							setSimulationEventCallback(PxSimulationEventCallback* callback);
-	virtual			PxSimulationEventCallback*		getSimulationEventCallback()	const;
-	virtual			void							setContactModifyCallback(PxContactModifyCallback* callback);
-	virtual			PxContactModifyCallback*		getContactModifyCallback()	const;
-	virtual			void							setCCDContactModifyCallback(PxCCDContactModifyCallback* callback);
-	virtual			PxCCDContactModifyCallback*		getCCDContactModifyCallback()	const;
-	virtual			void							setBroadPhaseCallback(PxBroadPhaseCallback* callback);
-	virtual			PxBroadPhaseCallback*			getBroadPhaseCallback()		const;
+	virtual			void							setSimulationEventCallback(PxSimulationEventCallback* callback)		PX_OVERRIDE PX_FINAL;
+	virtual			PxSimulationEventCallback*		getSimulationEventCallback()	const								PX_OVERRIDE PX_FINAL;
+	virtual			void							setContactModifyCallback(PxContactModifyCallback* callback)			PX_OVERRIDE PX_FINAL;
+	virtual			PxContactModifyCallback*		getContactModifyCallback()	const									PX_OVERRIDE PX_FINAL;
+	virtual			void							setCCDContactModifyCallback(PxCCDContactModifyCallback* callback)	PX_OVERRIDE PX_FINAL;
+	virtual			PxCCDContactModifyCallback*		getCCDContactModifyCallback()	const								PX_OVERRIDE PX_FINAL;
+	virtual			void							setBroadPhaseCallback(PxBroadPhaseCallback* callback)				PX_OVERRIDE PX_FINAL;
+	virtual			PxBroadPhaseCallback*			getBroadPhaseCallback()		const									PX_OVERRIDE PX_FINAL;
 
 	//CCD
-	virtual			void							setCCDMaxPasses(PxU32 ccdMaxPasses);
-	virtual			PxU32							getCCDMaxPasses()	const;
-	virtual			void							setCCDMaxSeparation(const PxReal t);
-	virtual			PxReal							getCCDMaxSeparation() const;
-	virtual			void							setCCDThreshold(const PxReal t);
-	virtual			PxReal							getCCDThreshold() const;
+	virtual			void							setCCDMaxPasses(PxU32 ccdMaxPasses)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getCCDMaxPasses()	const			PX_OVERRIDE PX_FINAL;
+	virtual			void							setCCDMaxSeparation(const PxReal t)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getCCDMaxSeparation() const			PX_OVERRIDE PX_FINAL;
+	virtual			void							setCCDThreshold(const PxReal t)		PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getCCDThreshold() const				PX_OVERRIDE PX_FINAL;
 
 	// Collision filtering
-	virtual			void							setFilterShaderData(const void* data, PxU32 dataSize);
-	virtual			const void*						getFilterShaderData() const;
-	virtual			PxU32							getFilterShaderDataSize() const;
-	virtual			PxSimulationFilterShader		getFilterShader() const;
-	virtual			PxSimulationFilterCallback*		getFilterCallback() const;
-	virtual			bool							resetFiltering(PxActor& actor);
-	virtual			bool							resetFiltering(PxRigidActor& actor, PxShape*const* shapes, PxU32 shapeCount);
-	virtual			PxPairFilteringMode::Enum		getKinematicKinematicFilteringMode()	const;
-	virtual			PxPairFilteringMode::Enum		getStaticKinematicFilteringMode()		const;
+	virtual			void							setFilterShaderData(const void* data, PxU32 dataSize)							PX_OVERRIDE PX_FINAL;
+	virtual			const void*						getFilterShaderData() const														PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getFilterShaderDataSize() const													PX_OVERRIDE PX_FINAL;
+	virtual			PxSimulationFilterShader		getFilterShader() const															PX_OVERRIDE PX_FINAL;
+	virtual			PxSimulationFilterCallback*		getFilterCallback() const														PX_OVERRIDE PX_FINAL;
+	virtual			bool							resetFiltering(PxActor& actor)													PX_OVERRIDE PX_FINAL;
+	virtual			bool							resetFiltering(PxRigidActor& actor, PxShape*const* shapes, PxU32 shapeCount)	PX_OVERRIDE PX_FINAL;
+	virtual			PxPairFilteringMode::Enum		getKinematicKinematicFilteringMode()	const									PX_OVERRIDE PX_FINAL;
+	virtual			PxPairFilteringMode::Enum		getStaticKinematicFilteringMode()		const									PX_OVERRIDE PX_FINAL;
 
 	// Get Physics SDK
-	virtual			PxPhysics&						getPhysics();
+	virtual			PxPhysics&						getPhysics()	PX_OVERRIDE PX_FINAL;
 
 	// new API methods
-	virtual			bool							simulate(PxReal elapsedTime, physx::PxBaseTask* completionTask, void* scratchBlock, PxU32 scratchBlockSize, bool controlSimulation);
-	virtual			bool							advance(physx::PxBaseTask* completionTask);
-	virtual			bool							collide(PxReal elapsedTime, physx::PxBaseTask* completionTask, void* scratchBlock, PxU32 scratchBlockSize, bool controlSimulation = true);
-	virtual			bool							checkResults(bool block);
-	virtual			bool							checkCollision(bool block);
-	virtual			bool							fetchCollision(bool block);
-	virtual			bool							fetchResults(bool block, PxU32* errorState);
-	virtual			bool							fetchResultsStart(const PxContactPairHeader*& contactPairs, PxU32& nbContactPairs, bool block = false);
-	virtual			void							processCallbacks(physx::PxBaseTask* continuation);
-	virtual			void							fetchResultsFinish(PxU32* errorState = 0);
+	virtual			bool							simulate(PxReal elapsedTime, physx::PxBaseTask* completionTask, void* scratchBlock, PxU32 scratchBlockSize, bool controlSimulation)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							advance(physx::PxBaseTask* completionTask)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							collide(PxReal elapsedTime, physx::PxBaseTask* completionTask, void* scratchBlock, PxU32 scratchBlockSize, bool controlSimulation = true)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							checkResults(bool block)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							fetchCollision(bool block)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							fetchResults(bool block, PxU32* errorState)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							fetchResultsStart(const PxContactPairHeader*& contactPairs, PxU32& nbContactPairs, bool block = false)	PX_OVERRIDE PX_FINAL;
+	virtual			void							processCallbacks(physx::PxBaseTask* continuation)	PX_OVERRIDE PX_FINAL;
+	virtual			void							fetchResultsFinish(PxU32* errorState = 0)	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							flush(bool sendPendingReports) { flushSimulation(sendPendingReports); }
-	virtual			void							flushSimulation(bool sendPendingReports);
-	virtual			const PxRenderBuffer&			getRenderBuffer();
+	virtual			void							flushSimulation(bool sendPendingReports)	PX_OVERRIDE PX_FINAL;
+	virtual			const PxRenderBuffer&			getRenderBuffer()	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setSolverBatchSize(PxU32 solverBatchSize);
-	virtual			PxU32							getSolverBatchSize(void) const;
+	virtual			void							setSolverBatchSize(PxU32 solverBatchSize)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getSolverBatchSize(void) const				PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setSolverArticulationBatchSize(PxU32 solverBatchSize);
-	virtual			PxU32							getSolverArticulationBatchSize(void) const;
+	virtual			void							setSolverArticulationBatchSize(PxU32 solverBatchSize)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getSolverArticulationBatchSize(void) const				PX_OVERRIDE PX_FINAL;
 
-	virtual			bool							setVisualizationParameter(PxVisualizationParameter::Enum param, PxReal value);
-	virtual			PxReal							getVisualizationParameter(PxVisualizationParameter::Enum param) const;
+	virtual			bool							setVisualizationParameter(PxVisualizationParameter::Enum param, PxReal value)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal							getVisualizationParameter(PxVisualizationParameter::Enum param) const			PX_OVERRIDE PX_FINAL;
 
-	virtual			void							setVisualizationCullingBox(const PxBounds3& box);
-	virtual			PxBounds3						getVisualizationCullingBox() const;
+	virtual			void							setVisualizationCullingBox(const PxBounds3& box)	PX_OVERRIDE PX_FINAL;
+	virtual			PxBounds3						getVisualizationCullingBox() const					PX_OVERRIDE PX_FINAL;
 
-	virtual			PxTaskManager*					getTaskManager()	const	{ return mTaskManager; }
-					void							checkBeginWrite()	const	{}
+	virtual			PxTaskManager*					getTaskManager()	const	PX_OVERRIDE PX_FINAL	{ return mTaskManager; }
 
-	virtual			PxCudaContextManager*			getCudaContextManager() { return mCudaContextManager; }
-					
-	virtual         void							setNbContactDataBlocks(PxU32 numBlocks);
-	virtual         PxU32							getNbContactDataBlocksUsed() const;
-	virtual         PxU32							getMaxNbContactDataBlocksUsed() const;
+	virtual         void							setNbContactDataBlocks(PxU32 numBlocks)	PX_OVERRIDE PX_FINAL;
+	virtual         PxU32							getNbContactDataBlocksUsed() const	PX_OVERRIDE PX_FINAL;
+	virtual         PxU32							getMaxNbContactDataBlocksUsed() const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getContactReportStreamBufferSize() const;
+	virtual			PxU32							getContactReportStreamBufferSize() const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getTimestamp()	const;
+	virtual			PxU32							getTimestamp()	const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxCpuDispatcher*				getCpuDispatcher() const;
-	virtual			PxCudaContextManager*			getCudaContextManager() const;
+	virtual			PxCpuDispatcher*				getCpuDispatcher() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxCudaContextManager*			getCudaContextManager() const	PX_OVERRIDE PX_FINAL	{ return mCudaContextManager;	}
 
+	virtual			PxBroadPhaseType::Enum			getBroadPhaseType()									const	PX_OVERRIDE PX_FINAL;
+	virtual			bool							getBroadPhaseCaps(PxBroadPhaseCaps& caps)			const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getNbBroadPhaseRegions()							const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getBroadPhaseRegions(PxBroadPhaseRegionInfo* userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							addBroadPhaseRegion(const PxBroadPhaseRegion& region, bool populateRegion)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							removeBroadPhaseRegion(PxU32 handle)	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxBroadPhaseType::Enum			getBroadPhaseType()									const;
-	virtual			bool							getBroadPhaseCaps(PxBroadPhaseCaps& caps)			const;
-	virtual			PxU32							getNbBroadPhaseRegions()							const;
-	virtual			PxU32							getBroadPhaseRegions(PxBroadPhaseRegionInfo* userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const;
-	virtual			PxU32							addBroadPhaseRegion(const PxBroadPhaseRegion& region, bool populateRegion);
-	virtual			bool							removeBroadPhaseRegion(PxU32 handle);
+	virtual			bool							addActors(PxActor*const* actors, PxU32 nbActors)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							addActors(const PxPruningStructure& prunerStructure)	PX_OVERRIDE PX_FINAL;
+	virtual			void							removeActors(PxActor*const* actors, PxU32 nbActors, bool wakeOnLostTouch)	PX_OVERRIDE PX_FINAL;
 
-	virtual			bool							addActors(PxActor*const* actors, PxU32 nbActors);
-	virtual			bool							addActors(const PxPruningStructure& prunerStructure);
-	virtual			void							removeActors(PxActor*const* actors, PxU32 nbActors, bool wakeOnLostTouch);
+	virtual			void							lockRead(const char* file=NULL, PxU32 line=0)	PX_OVERRIDE PX_FINAL;
+	virtual			void							unlockRead()	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							lockRead(const char* file=NULL, PxU32 line=0);
-	virtual			void							unlockRead();
+	virtual			void							lockWrite(const char* file=NULL, PxU32 line=0)	PX_OVERRIDE PX_FINAL;
+	virtual			void							unlockWrite()	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							lockWrite(const char* file=NULL, PxU32 line=0);
-	virtual			void							unlockWrite();
+	virtual			PxReal							getWakeCounterResetValue() const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxReal							getWakeCounterResetValue() const;
+	virtual			void							shiftOrigin(const PxVec3& shift)	PX_OVERRIDE PX_FINAL;
 
-	virtual			void							shiftOrigin(const PxVec3& shift);
+	virtual         PxPvdSceneClient*				getScenePvdClient()	PX_OVERRIDE PX_FINAL;
 
-	virtual         PxPvdSceneClient*				getScenePvdClient();
+	PX_DEPRECATED	virtual	void					copyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
-	virtual			void							copyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbCopyArticulations, CUevent copyEvent);
-	virtual			void							applyArticulationData(void* data, void* index, PxArticulationGpuDataType::Enum dataType, const PxU32 nbUpdatedArticulations, CUevent waitEvent, CUevent signalEvent);
-	virtual 		void							updateArticulationsKinematic(CUevent signalEvent);
-	virtual			void							copyContactData(void* data, const PxU32 numContactPatches, void* numContactPairs, CUevent copyEvent);
+	PX_DEPRECATED	virtual	void					updateArticulationsKinematic(CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					copyContactData(void* data, const PxU32 numContactPatches, void* numContactPairs, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
 	
-	virtual			void							copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent);
-	virtual			void							applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent);
+	PX_DEPRECATED	virtual	void					copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
-	virtual			void							copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, CUevent copyEvent);	
-	virtual			void							applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, CUevent waitEvent, CUevent signalEvent);
+	PX_DEPRECATED	virtual	void					copyBodyData(PxGpuBodyData* data, PxGpuActorPair* index, const PxU32 nbCopyActors, CUevent copyEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					applyActorData(void* data, PxGpuActorPair* index, PxActorCacheFlag::Enum flag, const PxU32 nbUpdatedActors, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
-	virtual			void							evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* samplePointsConcatenated, const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event);
+	PX_DEPRECATED	virtual	void					evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* samplePointsConcatenated, const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event)	PX_OVERRIDE	PX_FINAL;
 
-	virtual			void							computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent);
-	virtual			void							computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent);
-	virtual			void							computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent);
-	virtual			void							computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent);
-	virtual			void							applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent);
+	PX_DEPRECATED	virtual	void					computeDenseJacobians(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					computeGeneralizedMassMatrices(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
+	PX_DEPRECATED	virtual	void					applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
 
-	virtual			PxSolverType::Enum				getSolverType()	const;
+	virtual			PxSolverType::Enum				getSolverType()	const	PX_OVERRIDE PX_FINAL;
+
+	virtual 		PxDirectGPUAPI&					getDirectGPUAPI()	PX_OVERRIDE	PX_FINAL;
 
 	// NpSceneAccessor
-	virtual			PxsSimulationController*		getSimulationController();
-	virtual			void							setActiveActors(PxActor** actors, PxU32 nbActors);
-	virtual			PxActor**						getFrozenActors(PxU32& nbActorsOut);
-	virtual			void							setFrozenActorFlag(const bool buildFrozenActors);
-	virtual			void							forceSceneQueryRebuild();
-	virtual			void							frameEnd();
+	virtual			PxsSimulationController*		getSimulationController()	PX_OVERRIDE PX_FINAL;
+	virtual			void							setActiveActors(PxActor** actors, PxU32 nbActors)	PX_OVERRIDE PX_FINAL;
+	virtual			PxActor**						getFrozenActors(PxU32& nbActorsOut)	PX_OVERRIDE PX_FINAL;
+	virtual			void							setFrozenActorFlag(const bool buildFrozenActors)	PX_OVERRIDE PX_FINAL;
+	virtual			void							forceSceneQueryRebuild()	PX_OVERRIDE PX_FINAL;
+	virtual			void							frameEnd()	PX_OVERRIDE PX_FINAL;
 	//~NpSceneAccessor
 
 	// PxSceneQuerySystemBase
-	virtual			void							setDynamicTreeRebuildRateHint(PxU32 dynamicTreeRebuildRateHint);
-	virtual			PxU32							getDynamicTreeRebuildRateHint() const;
-	virtual			void							forceRebuildDynamicTree(PxU32 prunerIndex);
-	virtual			void							setUpdateMode(PxSceneQueryUpdateMode::Enum updateMode);
-	virtual			PxSceneQueryUpdateMode::Enum	getUpdateMode() const;
-	virtual			PxU32							getStaticTimestamp()	const;
-	virtual			void							flushUpdates();
+	virtual			void							setDynamicTreeRebuildRateHint(PxU32 dynamicTreeRebuildRateHint)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getDynamicTreeRebuildRateHint() const	PX_OVERRIDE PX_FINAL;
+	virtual			void							forceRebuildDynamicTree(PxU32 prunerIndex)	PX_OVERRIDE PX_FINAL;
+	virtual			void							setUpdateMode(PxSceneQueryUpdateMode::Enum updateMode)	PX_OVERRIDE PX_FINAL;
+	virtual			PxSceneQueryUpdateMode::Enum	getUpdateMode() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getStaticTimestamp()	const	PX_OVERRIDE PX_FINAL;
+	virtual			void							flushUpdates()	PX_OVERRIDE PX_FINAL;
 	virtual			bool							raycast(
 														const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,	// Ray data
 														PxRaycastCallback& hitCall, PxHitFlags hitFlags,
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, PxGeometryQueryFlags flags) const;
+														const PxQueryCache* cache, PxGeometryQueryFlags flags) const	PX_OVERRIDE PX_FINAL;
 
 	virtual			bool							sweep(
 														const PxGeometry& geometry, const PxTransform& pose,	// GeomObject data
 														const PxVec3& unitDir, const PxReal distance,	// Ray data
 														PxSweepCallback& hitCall, PxHitFlags hitFlags,
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags) const;
+														const PxQueryCache* cache, const PxReal inflation, PxGeometryQueryFlags flags) const	PX_OVERRIDE PX_FINAL;
 
 	virtual			bool							overlap(
 														const PxGeometry& geometry, const PxTransform& transform,	// GeomObject data
 														PxOverlapCallback& hitCall, 
 														const PxQueryFilterData& filterData, PxQueryFilterCallback* filterCall,
-														const PxQueryCache* cache, PxGeometryQueryFlags flags) const;
+														const PxQueryCache* cache, PxGeometryQueryFlags flags) const	PX_OVERRIDE PX_FINAL;
 	//~PxSceneQuerySystemBase
 
 	// PxSceneSQSystem
-	virtual			PxPruningStructureType::Enum	getStaticStructure()	const;
-	virtual			PxPruningStructureType::Enum	getDynamicStructure()	const;
-	virtual			void							sceneQueriesUpdate(physx::PxBaseTask* completionTask, bool controlSimulation);
-	virtual			bool							checkQueries(bool block);
-	virtual			bool							fetchQueries(bool block);
+	virtual			PxPruningStructureType::Enum	getStaticStructure()	const	PX_OVERRIDE PX_FINAL;
+	virtual			PxPruningStructureType::Enum	getDynamicStructure()	const	PX_OVERRIDE PX_FINAL;
+	virtual			void							sceneQueriesUpdate(physx::PxBaseTask* completionTask, bool controlSimulation)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							checkQueries(bool block)	PX_OVERRIDE PX_FINAL;
+	virtual			bool							fetchQueries(bool block)	PX_OVERRIDE PX_FINAL;
 	//~PxSceneSQSystem
 
 	public:
@@ -394,7 +395,7 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					bool							addActorsInternal(PxActor*const* PX_RESTRICT actors, PxU32 nbActors, const Sq::PruningStructure* ps = NULL);
 
 					bool							addArticulationInternal(PxArticulationReducedCoordinate&);
-					void							removeArticulationInternal(PxArticulationReducedCoordinate&, bool wakeOnLostTouch,  bool removeFromAggregate);
+					void							removeArticulationInternal(PxArticulationReducedCoordinate&, bool wakeOnLostTouch, bool removeFromAggregate);
 	// materials
 					void							addMaterial(const NpMaterial& mat);
 					void							updateMaterial(const NpMaterial& mat);
@@ -411,14 +412,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							addMaterial(const NpPBDMaterial& mat);
 					void							updateMaterial(const NpPBDMaterial& mat);
 					void							removeMaterial(const NpPBDMaterial& mat);
-					
-					void							addMaterial(const NpFLIPMaterial& mat);
-					void							updateMaterial(const NpFLIPMaterial& mat);
-					void							removeMaterial(const NpFLIPMaterial& mat);
-					
-					void							addMaterial(const NpMPMMaterial& mat);
-					void							updateMaterial(const NpMPMMaterial& mat);
-					void							removeMaterial(const NpMPMMaterial& mat);
 #endif
 
 					void							executeScene(PxBaseTask* continuation);
@@ -436,8 +429,6 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	PX_FORCE_INLINE	void							removeFromSoftBodyList(PxSoftBody&);
 	PX_FORCE_INLINE	void							removeFromFEMClothList(PxFEMCloth&);
 	PX_FORCE_INLINE	void							removeFromParticleSystemList(PxPBDParticleSystem&);
-	PX_FORCE_INLINE	void							removeFromParticleSystemList(PxFLIPParticleSystem&);
-	PX_FORCE_INLINE	void							removeFromParticleSystemList(PxMPMParticleSystem&);
 	PX_FORCE_INLINE	void							removeFromHairSystemList(PxHairSystem&);
 	PX_FORCE_INLINE	void							removeFromAggregateList(PxAggregate&);
 
@@ -459,7 +450,7 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							removeArticulationTendonJoint(NpArticulationTendonJoint& joint);
 
 					void							removeArticulationTendons(PxArticulationReducedCoordinate& articulation);
-					void							removeArticulationSensors(PxArticulationReducedCoordinate& articulation);
+					void							removeArticulationMimicJoints(PxArticulationReducedCoordinate& articulation);
 
 					struct StartWriteResult
 					{
@@ -507,10 +498,12 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	PX_FORCE_INLINE	const Sc::Scene&				getScScene()						const	{ return mScene;					}
 	PX_FORCE_INLINE	Sc::Scene&						getScScene()								{ return mScene;					}
 
-	PX_FORCE_INLINE	PxU32							getFlagsFast()						const	{ return mScene.getFlags();			}
+	PX_FORCE_INLINE	PxSceneFlags					getFlagsFast()						const	{ return mScene.getFlags();			}
 	PX_FORCE_INLINE PxReal							getWakeCounterResetValueInternal()	const	{ return mWakeCounterResetValue;	}
 
 	PX_FORCE_INLINE bool							isDirectGPUAPIInitialized()				 	{ return mScene.isDirectGPUAPIInitialized(); }
+
+	PX_FORCE_INLINE PxReal							getElapsedTime()					const	{ return mElapsedTime;				}
 
 					// PT: TODO: consider merging the "sc" methods with the np ones, as we did for constraints
 
@@ -530,13 +523,7 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 #endif
 					void							scAddParticleSystem(NpPBDParticleSystem&);
 					void							scRemoveParticleSystem(NpPBDParticleSystem&);
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-					void							scAddParticleSystem(NpFLIPParticleSystem&);
-					void							scRemoveParticleSystem(NpFLIPParticleSystem&);
 
-					void							scAddParticleSystem(NpMPMParticleSystem&);
-					void							scRemoveParticleSystem(NpMPMParticleSystem&);
-#endif
 					void							scAddHairSystem(NpHairSystem&);
 					void							scRemoveHairSystem(NpHairSystem&);
 #endif
@@ -552,8 +539,8 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							scAddArticulationFixedTendon(NpArticulationFixedTendon&);
 					void							scRemoveArticulationFixedTendon(NpArticulationFixedTendon&);
 
-					void							scAddArticulationSensor(NpArticulationSensor&);
-					void							scRemoveArticulationSensor(NpArticulationSensor&);
+					void							scAddArticulationMimicJoint(NpArticulationMimicJoint&);
+					void							scRemoveArticulationMimicJoint(NpArticulationMimicJoint&);
 
 					void							createInOmniPVD(const PxSceneDesc& desc);
 	PX_FORCE_INLINE	void							updatePvdProperties()
@@ -567,12 +554,15 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 
 					void							updateConstants(const PxArray<NpConstraint*>& constraints);
 
-					virtual		PxgDynamicsMemoryConfig getGpuDynamicsConfig() const { return mGpuDynamicsConfig; }
+	virtual			PxGpuDynamicsMemoryConfig		getGpuDynamicsConfig() const	PX_OVERRIDE PX_FINAL	{ return mGpuDynamicsConfig; }
+
 private:
 					bool							checkResultsInternal(bool block);
 					bool							checkCollisionInternal(bool block);
 					bool							checkSceneQueriesInternal(bool block);
 					bool							simulateOrCollide(PxReal elapsedTime, physx::PxBaseTask* completionTask, void* scratchBlock, PxU32 scratchBlockSize, bool controlSimulation, const char* invalidCallMsg, Sc::SimulationStage::Enum simStage);
+					bool 							checkSceneStateAndCudaErrors(bool isCollide = false);
+					bool							checkGpuErrorsPreSim(bool isCollide = false);
 
 					bool							addRigidStatic(NpRigidStatic& , const Gu::BVH* bvh, const Sq::PruningStructure* ps = NULL);
 					void							removeRigidStatic(NpRigidStatic&, bool wakeOnLostTouch, bool removeFromAggregate);
@@ -582,8 +572,8 @@ private:
 					bool							addSoftBody(PxSoftBody&);
 					void							removeSoftBody(PxSoftBody&, bool wakeOnLostTouch);
 
-					bool							addParticleSystem(PxParticleSystem& particleSystem);
-					void							removeParticleSystem(PxParticleSystem& particleSystem, bool wakeOnLostTouch);
+					bool							addParticleSystem(PxPBDParticleSystem& particleSystem);
+					void							removeParticleSystem(PxPBDParticleSystem& particleSystem, bool wakeOnLostTouch);
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 					bool							addFEMCloth(PxFEMCloth&);
 					void							removeFEMCloth(PxFEMCloth&, bool wakeOnLostTouch);
@@ -602,7 +592,7 @@ private:
 					bool							addSpatialTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
 					bool							addFixedTendonInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
 
-					bool							addArticulationSensorInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
+					bool							addArticulationMimicJointInternal(NpArticulationReducedCoordinate* npaRC, Sc::ArticulationSim* scArtSim);
 
 					void							syncSQ();
 					void							sceneQueriesStaticPrunerUpdate(PxBaseTask* continuation);
@@ -620,18 +610,27 @@ private:
 					Cm::RenderBuffer				mRenderBuffer;
 	public:
 					Cm::IDPool						mRigidActorIndexPool;
+					struct Acceleration
+					{
+						PX_FORCE_INLINE	Acceleration() : mLinAccel(0.0f), mAngAccel(0.0f), mPrevLinVel(0.0f), mPrevAngVel(0.0f)
+						{}
+						PxVec3	mLinAccel;
+						PxVec3	mAngAccel;
+						PxVec3	mPrevLinVel;
+						PxVec3	mPrevAngVel;
+					};
 	private:
-					PxArray<NpRigidDynamic*>								mRigidDynamics;  // no hash set used because it would be quite a bit slower when adding a large number of actors
-					PxArray<NpRigidStatic*>									mRigidStatics;  // no hash set used because it would be quite a bit slower when adding a large number of actors
+					PxArray<NpRigidDynamic*>								mRigidDynamics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
+					PxArray<NpRigidStatic*>									mRigidStatics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
 					PxCoalescedHashSet<PxArticulationReducedCoordinate*>	mArticulations;
 					PxCoalescedHashSet<PxSoftBody*>							mSoftBodies;
 					PxCoalescedHashSet<PxFEMCloth*>							mFEMCloths;
 					PxCoalescedHashSet<PxPBDParticleSystem*>				mPBDParticleSystems;
-					PxCoalescedHashSet<PxFLIPParticleSystem*>				mFLIPParticleSystems;
-					PxCoalescedHashSet<PxMPMParticleSystem*>				mMPMParticleSystems;
 					PxCoalescedHashSet<PxHairSystem*>						mHairSystems;
 					PxCoalescedHashSet<PxAggregate*>						mAggregates;
-
+	public:
+					PxArray<Acceleration>									mRigidDynamicsAccelerations;
+	private:
 #ifdef NEW_DIRTY_SHADERS_CODE
 					PxArray<NpConstraint*>									mAlwaysUpdatedConstraints;
 					PxArray<NpConstraint*>									mDirtyConstraints;
@@ -660,7 +659,7 @@ private:
 						//the scene may be deleted. That means this running task may also be deleted.
 						//As such, we call mSync.set() inside release() to avoid a crash because the v-table on this
 						//task might be deleted between the call to runInternal() and release() in the worker thread.
-						virtual void release() 
+						virtual void release()	PX_OVERRIDE PX_FINAL
 						{ 
 							//We cache the continuation pointer because this class may be deleted 
 							//as soon as mSync.set() is called if the application releases the scene.
@@ -673,7 +672,7 @@ private:
 							//was deleted.
 							if(c) c->removeReference(); 
 						}
-						virtual const char* getName() const { return "NpScene.completion"; }
+						virtual const char* getName() const	PX_OVERRIDE PX_FINAL	{ return "NpScene.completion"; }
 
 						//	//This method just is called in the split sim approach as a way to set continuation after the task has been initialized
 						void setDependent(PxBaseTask* task){PX_ASSERT(mCont == NULL); mCont = task; if(task)task->addReference();}
@@ -717,6 +716,7 @@ private:
 
 					bool							mBetweenFetchResults;
 					bool							mBuildFrozenActors;
+					bool							mCorruptedState; // true in case we abort simulation.
 
 					//
 	public:
@@ -741,21 +741,14 @@ private:
 					PxArray<MaterialEvent>		mSceneFEMSoftBodyMaterialBuffer;
 					PxArray<MaterialEvent>		mSceneFEMClothMaterialBuffer;
 					PxArray<MaterialEvent>		mScenePBDMaterialBuffer;
-					PxArray<MaterialEvent>		mSceneFLIPMaterialBuffer;
-					PxArray<MaterialEvent>		mSceneMPMMaterialBuffer;
-					PxMutex						mSceneMaterialBufferLock;
-					PxMutex						mSceneFEMSoftBodyMaterialBufferLock;
-					PxMutex						mSceneFEMClothMaterialBufferLock;
-					PxMutex						mScenePBDMaterialBufferLock;
-					PxMutex						mSceneFLIPMaterialBufferLock;
-					PxMutex						mSceneMPMMaterialBufferLock;
 					Sc::Scene					mScene;
+					NpDirectGPUAPI*				mDirectGPUAPI;
 #if PX_SUPPORT_PVD
 					Vd::PvdSceneClient			mScenePvdClient;
 #endif
 					const PxReal				mWakeCounterResetValue;
 
-					PxgDynamicsMemoryConfig		mGpuDynamicsConfig;
+					PxGpuDynamicsMemoryConfig		mGpuDynamicsConfig;
 
 					NpPhysics&					mPhysics;
 					const char*				    mName;
@@ -800,22 +793,6 @@ PX_FORCE_INLINE	void NpScene::removeFromParticleSystemList(PxPBDParticleSystem& 
 	PX_ASSERT(exists);
 	PX_UNUSED(exists);
 }
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-PX_FORCE_INLINE	void NpScene::removeFromParticleSystemList(PxFLIPParticleSystem& particleSystem)
-{
-	const bool exists = mFLIPParticleSystems.erase(&particleSystem);
-	PX_ASSERT(exists);
-	PX_UNUSED(exists);
-}
-
-PX_FORCE_INLINE	void NpScene::removeFromParticleSystemList(PxMPMParticleSystem& particleSystem)
-{
-	const bool exists = mMPMParticleSystems.erase(&particleSystem);
-	PX_ASSERT(exists);
-	PX_UNUSED(exists);
-}
-#endif
 
 PX_FORCE_INLINE void NpScene::removeFromHairSystemList(PxHairSystem& hairSystem)
 {

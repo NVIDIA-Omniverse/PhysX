@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -65,7 +65,7 @@ namespace Bp
 
 /**
 \brief Integer representation of PxBounds3 used by BroadPhase
-@see BroadPhaseUpdateData
+\see BroadPhaseUpdateData
 */
 
 typedef PxU32 ValType;
@@ -151,7 +151,7 @@ public:
 	This keeps the bounds constant when its shape is subjected to small global pose perturbations.  In turn, this helps 
 	reduce computational effort in the broadphase update by reducing the amount of sorting required on near-stationary 
 	bodies that are aligned along one or more axis.
-	@see decode
+	\see decode
 	*/
 	PX_FORCE_INLINE	void encode(const PxBounds3& bounds)
 	{
@@ -171,7 +171,7 @@ public:
 	\param[out] bounds is the decoded float bounds
 	\note Encode followed by decode will produce a float bound larger than the original
 	due to the masking in encode.
-	@see encode
+	\see encode
 	*/
 	PX_FORCE_INLINE	void decode(PxBounds3& bounds)	const
 	{
@@ -188,7 +188,7 @@ public:
 	/*
 	\brief Encode a single minimum value from integer bounds to float bounds	
 	\note The encoding process masks off the last four bits for minima
-	@see encode
+	\see encode
 	*/
 	static PX_FORCE_INLINE ValType encodeFloatMin(PxU32 source)
 	{
@@ -198,7 +198,7 @@ public:
 	/*
 	\brief Encode a single maximum value from integer bounds to float bounds	
 	\note The encoding process masks on the last four bits for maxima
-	@see encode
+	\see encode
 	*/
 	static PX_FORCE_INLINE ValType encodeFloatMax(PxU32 source)
 	{

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,16 +46,16 @@ class PxvNphaseImplementationContext;
 class PxsContext;
 class PxsKernelWranglerManager;
 class PxvNphaseImplementationFallback;
-struct PxgDynamicsMemoryConfig;
+struct PxGpuDynamicsMemoryConfig;
 class PxsMemoryManager;
 class PxsHeapMemoryAllocatorManager;
 class PxsSimulationController;
 class PxsSimulationControllerCallback;
+class PxsParticleBuffer;
+class PxsParticleAndDiffuseBuffer;
+class PxsParticleClothBuffer;
+class PxsParticleRigidBuffer;
 class PxDelayLoadHook;
-class PxParticleBuffer;
-class PxParticleAndDiffuseBuffer;
-class PxParticleClothBuffer;
-class PxParticleRigidBuffer;
 
 class PxIsosurfaceExtractor;
 class PxSparseGridIsosurfaceExtractor;
@@ -109,10 +109,10 @@ public:
 	*/
 	virtual		void					release() = 0;
 
-	virtual PxParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
-	virtual PxParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
-	virtual PxParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
-	virtual PxParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager, PxU64* memStat, void (*onParticleBufferRelease)(PxParticleBuffer* buffer)) = 0;
+	virtual PxsParticleBuffer* createParticleBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxsParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxsParticleClothBuffer* createParticleClothBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxsParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxNumParticles, PxU32 maxVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager) = 0;
 	
 	/**
 	Create GPU memory manager.
@@ -138,7 +138,7 @@ public:
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxCudaContextManager* cudaContextManager,
 		const PxU32 gpuComputeVersion,
-		const PxgDynamicsMemoryConfig& config,
+		const PxGpuDynamicsMemoryConfig& config,
 		PxsHeapMemoryAllocatorManager* heapMemoryManager, PxU64 contextID) = 0;
 
 
@@ -149,7 +149,7 @@ public:
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxCudaContextManager* cudaContextManager,
 		const PxU32 gpuComputeVersion,
-		const PxgDynamicsMemoryConfig& config,
+		const PxGpuDynamicsMemoryConfig& config,
 		PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		Bp::BroadPhase& bp, 
 		Bp::BoundsArray& boundsArray, 
@@ -166,7 +166,7 @@ public:
 	virtual PxvNphaseImplementationContext* createGpuNphaseImplementationContext(PxsContext& context,
 		PxsKernelWranglerManager* gpuKernelWrangler,
 		PxvNphaseImplementationFallback* fallbackForUnsupportedCMs,
-		const PxgDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
+		const PxGpuDynamicsMemoryConfig& gpuDynamicsConfig, void* contactStreamBase, void* patchStreamBase, void* forceAndIndiceStreamBase,
 		PxBoundsArrayPinned& bounds, IG::IslandSim* islandSim,
 		physx::Dy::Context* dynamicsContext, const PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		bool useGpuBP) = 0;
@@ -177,19 +177,21 @@ public:
 	virtual PxsSimulationController* createGpuSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, 
 		PxCudaContextManager* cudaContextManager,
 		Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
-		const bool useGpuBroadphase, IG::SimpleIslandManager* simpleIslandSim,
-		PxsSimulationControllerCallback* callback, const PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		const PxU32 maxSoftBodyContacts, const PxU32 maxFemClothContacts, const PxU32 maxParticleContacts, const PxU32 maxHairContacts) = 0;
+		bool useGpuBroadphase, IG::SimpleIslandManager* simpleIslandSim,
+		PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+		PxU32 maxSoftBodyContacts, PxU32 maxFemClothContacts, PxU32 maxParticleContacts, PxU32 maxHairContacts,
+		PxU32 collisionStackSizeBytes, bool enableBodyAccelerations) = 0;
 
 	/**
 	Create GPU dynamics context.
 	*/
 	virtual Dy::Context* createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 		PxCudaContextManager* cudaContextManager, 
-		const PxgDynamicsMemoryConfig& config, IG::SimpleIslandManager* islandManager, const PxU32 maxNumPartitions, const PxU32 maxNumStaticPartitions,
-		const bool enableStabilization, const bool useEnhancedDeterminism, const PxReal maxBiasCoefficient,
-		const PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		const bool frictionEveryIteration, PxSolverType::Enum solverType, const PxReal lengthScale, bool enableDirectGPUAPI) = 0;
+		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager* islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
+		bool enableStabilization, bool useEnhancedDeterminism, PxReal maxBiasCoefficient,
+		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
+		bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
+		PxReal lengthScale, bool enableDirectGPUAPI, PxU64 contextID, bool isResidualReportingEnabled) = 0;
 };
 
 }

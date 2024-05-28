@@ -22,25 +22,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "foundation/PxPreprocessor.h"
-
-#include "foundation/PxAllocator.h"
 #include "foundation/PxAtomic.h"
-#include "foundation/PxIntrinsics.h"
 #include "DySolverBody.h"
-#include "DySolverConstraint1D.h"
-#include "DySolverContact.h"
 #include "DyThresholdTable.h"
 #include "DySolverControl.h"
 #include "DyArticulationPImpl.h"
-#include "foundation/PxThread.h"
-#include "DySolverConstraintDesc.h"
 #include "DySolverContext.h"
-#include "DyArticulationCpuGpu.h"
+#include "DyCpuGpuArticulation.h"
 
 namespace physx
 {
@@ -89,7 +82,6 @@ static SolveBlockMethod gVTableSolveBlock[] PX_UNUSED_ATTRIBUTE =
 	solveExtContactBlock,			// DY_SC_TYPE_EXT_CONTACT
 	solveExt1DBlock,				// DY_SC_TYPE_EXT_1D
 	solveContact_BStaticBlock,		// DY_SC_TYPE_STATIC_CONTACT
-	solveContactBlock,				// DY_SC_TYPE_NOFRICTION_RB_CONTACT
 	solveContactPreBlock,			// DY_SC_TYPE_BLOCK_RB_CONTACT
 	solveContactPreBlock_Static,	// DY_SC_TYPE_BLOCK_STATIC_RB_CONTACT
 	solve1D4_Block,					// DY_SC_TYPE_BLOCK_1D,
@@ -103,7 +95,6 @@ static SolveWriteBackBlockMethod gVTableSolveWriteBackBlock[] PX_UNUSED_ATTRIBUT
 	solveExtContactBlockWriteBack,			// DY_SC_TYPE_EXT_CONTACT
 	solveExt1DBlockWriteBack,				// DY_SC_TYPE_EXT_1D
 	solveContact_BStaticBlockWriteBack,		// DY_SC_TYPE_STATIC_CONTACT
-	solveContactBlockWriteBack,				// DY_SC_TYPE_NOFRICTION_RB_CONTACT
 	solveContactPreBlock_WriteBack,			// DY_SC_TYPE_BLOCK_RB_CONTACT
 	solveContactPreBlock_WriteBackStatic,	// DY_SC_TYPE_BLOCK_STATIC_RB_CONTACT
 	solve1D4Block_WriteBack,				// DY_SC_TYPE_BLOCK_1D,
@@ -117,7 +108,6 @@ static SolveBlockMethod gVTableSolveConcludeBlock[] PX_UNUSED_ATTRIBUTE =
 	solveExtContactConcludeBlock,			// DY_SC_TYPE_EXT_CONTACT
 	solveExt1DConcludeBlock,				// DY_SC_TYPE_EXT_1D
 	solveContact_BStaticConcludeBlock,		// DY_SC_TYPE_STATIC_CONTACT
-	solveContactConcludeBlock,				// DY_SC_TYPE_NOFRICTION_RB_CONTACT
 	solveContactPreBlock_Conclude,			// DY_SC_TYPE_BLOCK_RB_CONTACT
 	solveContactPreBlock_ConcludeStatic,	// DY_SC_TYPE_BLOCK_STATIC_RB_CONTACT
 	solve1D4Block_Conclude,					// DY_SC_TYPE_BLOCK_1D,
@@ -138,54 +128,11 @@ SolveWriteBackBlockMethod* getSolveWritebackBlockTable()
 	return gVTableSolveWriteBackBlock;
 }
 
-// PT: TODO: ideally we could reuse this in immediate mode as well, but the code currently uses separate arrays of PxVec3s instead of
-// spatial vectors so the SIMD code won't work there. Switching to spatial vectors requires a change in the immediate mode API (PxSolveConstraints).
-void saveMotionVelocities(PxU32 nbBodies, PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray)
-{
-	for(PxU32 i=0; i<nbBodies; i++)
-	{
-		Cm::SpatialVector& motionVel = motionVelocityArray[i];
-		const PxSolverBody& atom = solverBodies[i];
-
-		V4StoreA(V4LoadA(&atom.linearVelocity.x), &motionVel.linear.x);
-		V4StoreA(V4LoadA(&atom.angularState.x), &motionVel.angular.x);
-	}
-}
-
-// PT: this case is reached when e.g. a lot of objects falling but not touching yet. So there are no contacts but potentially a lot of bodies.
-// See LegacyBenchmark/falling_spheres for example.
-void solveNoContactsCase(	PxU32 nbBodies, PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
-							PxU32 nbArticulations, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT Z, Cm::SpatialVectorF* PX_RESTRICT deltaV,
-							PxU32 nbPosIter, PxU32 nbVelIter, PxF32 dt, PxF32 invDt)
-{
-	saveMotionVelocities(nbBodies, solverBodies, motionVelocityArray);
-
-	if(!nbArticulations)
-		return;
-
-	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;	// PT: TODO: unify this number with immediate mode (it's not 0.8 there!)
-	const bool isTGS = false;
-
-	//Even thought there are no external constraints, there may still be internal constraints in the articulations...
-	for(PxU32 i=0; i<nbPosIter; i++)
-		for(PxU32 j=0; j<nbArticulations; j++)
-			articulationListStart[j].articulation->solveInternalConstraints(dt, invDt, Z, deltaV, false, isTGS, 0.0f, biasCoefficient);
-
-	for(PxU32 i=0; i<nbArticulations; i++)
-		ArticulationPImpl::saveVelocity(articulationListStart[i].articulation, deltaV);
-
-	for(PxU32 i=0; i<nbVelIter; i++)
-		for(PxU32 j=0; j<nbArticulations; j++)
-			articulationListStart[j].articulation->solveInternalConstraints(dt, invDt, Z, deltaV, true, isTGS, 0.0f, biasCoefficient);
-
-	for(PxU32 j=0; j<nbArticulations; j++)
-		articulationListStart[j].articulation->writebackInternalConstraints(isTGS);
-}
-
 void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 {
 	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 	const bool isTGS = false;
+	const bool residualReportingActive = params.errorAccumulator != NULL;
 
 	const PxI32 TempThresholdStreamSize = 32;
 	ThresholdStreamElement tempThresholdStream[TempThresholdStreamSize];
@@ -196,12 +143,11 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 	cache.mThresholdStreamLength	= TempThresholdStreamSize;
 	cache.mThresholdStreamIndex		= 0;
 	cache.writeBackIteration		= false;
-	cache.Z							= params.Z;
 	cache.deltaV					= params.deltaV;
 
 	const PxI32 batchCount = PxI32(params.numConstraintHeaders);
 
-	PxSolverBody* PX_RESTRICT bodyListStart = params.bodyListStart;
+	const PxSolverBody* PX_RESTRICT bodyListStart = params.bodyListStart;
 	const PxU32 bodyListSize = params.bodyListSize;
 
 	Cm::SpatialVector* PX_RESTRICT motionVelocityArray = params.motionVelocityArray;
@@ -219,27 +165,32 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 	if(numConstraintHeaders == 0)
 	{
 		solveNoContactsCase(bodyListSize, bodyListStart, motionVelocityArray,
-							articulationListSize, articulationListStart, cache.Z, cache.deltaV,
-							positionIterations, velocityIterations, params.dt, params.invDt);
+							articulationListSize, articulationListStart, cache.deltaV,
+							positionIterations, velocityIterations, params.dt, params.invDt, residualReportingActive);
 		return;
 	}
 
 	BatchIterator contactIterator(params.constraintBatchHeaders, params.numConstraintHeaders);
 
-	PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
+	const PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
 
 	//0-(n-1) iterations
 	PxI32 normalIter = 0;
 
+	cache.isPositionIteration = true;
+	cache.contactErrorAccumulator = residualReportingActive ? &params.errorAccumulator->mPositionIterationErrorAccumulator : NULL;
 	for (PxU32 iteration = positionIterations; iteration > 0; iteration--)	//decreasing positive numbers == position iters
 	{
+		if (cache.contactErrorAccumulator)
+			cache.contactErrorAccumulator->reset();
+
 		cache.doFriction = mFrictionEveryIteration ? true : iteration <= 3;
 
 		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
 			cache, contactIterator, iteration == 1 ? gVTableSolveConcludeBlock : gVTableSolveBlock, normalIter);
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, cache.Z, cache.deltaV, false, isTGS, 0.f, biasCoefficient);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 
 		++normalIter;
 	}
@@ -251,15 +202,18 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 
 	const PxI32 velItersMinOne = (PxI32(velocityIterations)) - 1;
 
-	PxI32 iteration = 0;
-
-	for(; iteration < velItersMinOne; ++iteration)
+	cache.isPositionIteration = false;
+	cache.contactErrorAccumulator = residualReportingActive ? &params.errorAccumulator->mVelocityIterationErrorAccumulator : NULL;
+	for(PxI32 iteration = 0; iteration < velItersMinOne; ++iteration)
 	{
+		if (cache.contactErrorAccumulator)
+			cache.contactErrorAccumulator->reset();
+
 		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
 			cache, contactIterator, gVTableSolveBlock, normalIter);
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, cache.Z, cache.deltaV, true, isTGS, 0.f, biasCoefficient);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 		++normalIter;
 	}
 
@@ -267,18 +221,21 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 	ThresholdStreamElement* PX_RESTRICT thresholdStream = params.thresholdStream;
 	PxU32 thresholdStreamLength = params.thresholdStreamLength;
 
-	cache.writeBackIteration = true;
+	cache.writeBackIteration = true;	
 	cache.mSharedThresholdStream = thresholdStream;
 	cache.mSharedThresholdStreamLength = thresholdStreamLength;
 	cache.mSharedOutThresholdPairs = outThresholdPairs;
 	//PGS solver always runs at least one velocity iteration (otherwise writeback won't happen)
 	{
+		if (cache.contactErrorAccumulator)
+			cache.contactErrorAccumulator->reset();
+
 		SolveBlockParallel(constraintList, batchCount, normalIter * batchCount, batchCount, 
 			cache, contactIterator, gVTableSolveWriteBackBlock, normalIter);
 
 		for (PxU32 i = 0; i < articulationListSize; ++i)
 		{
-			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, cache.Z, cache.deltaV, true, isTGS, 0.f, biasCoefficient);
+			articulationListStart[i].articulation->solveInternalConstraints(params.dt, params.invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 			articulationListStart[i].articulation->writebackInternalConstraints(false);
 		}
 
@@ -298,7 +255,7 @@ void SolverCoreGeneral::solveV_Blocks(SolverIslandParams& params) const
 	}
 }
 
-void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const
+void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator) const
 {
 #if PX_PROFILE_SOLVE_STALLS
 	PxU64 startTime = readTimer();
@@ -307,6 +264,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 #endif
 	const PxF32 biasCoefficient = DY_ARTICULATION_PGS_BIAS_COEFFICIENT;
 	const bool isTGS = false;
+	const bool residualReportingActive = errorAccumulator != NULL;
 
 	SolverContext cache;
 	cache.solverBodyArray = params.bodyDataList;
@@ -327,7 +285,6 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	cache.mThresholdStreamLength = TempThresholdStreamSize;
 	cache.mThresholdStreamIndex = 0;
 	cache.writeBackIteration = false;
-	cache.Z = Z;
 	cache.deltaV = deltaV;
 
 	const PxReal dt = params.dt;
@@ -342,13 +299,13 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	PxI32* articIndex = &params.articSolveIndex;
 	PxI32* articIndexCompleted = &params.articSolveIndexCompleted;
 
-	PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
+	const PxSolverConstraintDesc* PX_RESTRICT constraintList = params.constraintList;
 
-	ArticulationSolverDesc* PX_RESTRICT articulationListStart = params.articulationListStart;
+	const ArticulationSolverDesc* PX_RESTRICT articulationListStart = params.articulationListStart;
 
 	const PxU32 nbPartitions = params.nbPartitions;	
 
-	PxU32* headersPerPartition = params.headersPerPartition;
+	const PxU32* headersPerPartition = params.headersPerPartition;
 
 	PX_UNUSED(velocityIterations);
 
@@ -371,12 +328,17 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	PxI32 targetConstraintIndex = 0;
 	PxI32 targetArticIndex = 0;
 	
+	cache.contactErrorAccumulator = residualReportingActive ? &errorAccumulator->mPositionIterationErrorAccumulator : NULL;
+	cache.isPositionIteration = true;
 	for(PxU32 i = 0; i < 2; ++i)
 	{
 		SolveBlockMethod* solveTable = i == 0 ? gVTableSolveBlock : gVTableSolveConcludeBlock;
 		for(; a < positionIterations - 1 + i; ++a)
 		{
 			WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti solve of previous iteration
+
+			if (i == 0 && cache.contactErrorAccumulator)
+				cache.contactErrorAccumulator->reset();
 
 			cache.doFriction = mFrictionEveryIteration ? true : (positionIterations - a) <= 3;
 			for(PxU32 b = 0; b < nbPartitions; ++b)
@@ -420,7 +382,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 				PxI32 nbSolved = 0;
 				while (articSolveStart < endIdx)
 				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, cache.Z, cache.deltaV, false, isTGS, 0.f, biasCoefficient);
+					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 					articSolveStart++;
 					nbSolved++;
 				}
@@ -449,7 +411,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	PxI32* bodyListIndex = &params.bodyListIndex;
 	PxI32* bodyListIndexCompleted = &params.bodyListIndexCompleted;
 
-	PxSolverBody* PX_RESTRICT bodyListStart = params.bodyListStart;
+	const PxSolverBody* PX_RESTRICT bodyListStart = params.bodyListStart;
 	Cm::SpatialVector* PX_RESTRICT motionVelocityArray = params.motionVelocityArray;
 
 	//Save velocity - articulated
@@ -483,17 +445,9 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 		{
 			const PxI32 remainder = PxMin(endIndexCount2, (bodyListSize - index2));
 			endIndexCount2 -= remainder;
-			for(PxI32 b = 0; b < remainder; ++b, ++index2)
-			{
-				PxPrefetchLine(&bodyListStart[index2 + 8]);
-				PxPrefetchLine(&motionVelocityArray[index2 + 8]);
-				PxSolverBody& body = bodyListStart[index2];
-				Cm::SpatialVector& motionVel = motionVelocityArray[index2];
-				motionVel.linear = body.linearVelocity;
-				motionVel.angular = body.angularState;
-				PX_ASSERT(motionVel.linear.isFinite());
-				PX_ASSERT(motionVel.angular.isFinite());
-			}
+
+			saveMotionVelocities(remainder, bodyListStart + index2, motionVelocityArray + index2);
+			index2 += remainder;
 
 			nbConcluded += remainder;
 			
@@ -513,11 +467,18 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	}
 
 	WAIT_FOR_PROGRESS(bodyListIndexCompleted, (bodyListSize + articulationListSize)); // wait for all velocity saves to be done
+	
+	cache.contactErrorAccumulator = residualReportingActive ? &errorAccumulator->mVelocityIterationErrorAccumulator : NULL;
+	cache.isPositionIteration = false;
 
 	a = 1;
 	for(; a < params.velocityIterations; ++a)
 	{
 		WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti solve of previous iteration
+		
+		if (residualReportingActive)
+			cache.contactErrorAccumulator->reset();
+		
 		for(PxU32 b = 0; b < nbPartitions; ++b)
 		{
 			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid solve of previous partition
@@ -559,7 +520,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 			PxI32 nbSolved = 0;
 			while (articSolveStart < endIdx)
 			{
-				articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, cache.Z, cache.deltaV, true, isTGS, 0.f, biasCoefficient);
+				articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, true, isTGS, 0.f, biasCoefficient, residualReportingActive);
 				articSolveStart++;
 				nbSolved++;
 			}
@@ -594,6 +555,10 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	cache.writeBackIteration = true;
 	{
 		WAIT_FOR_PROGRESS(articIndexCompleted, targetArticIndex); // wait for arti velocity iterations to be done
+		
+		if (residualReportingActive)
+			cache.contactErrorAccumulator->reset();
+		
 		for(PxU32 b = 0; b < nbPartitions; ++b)
 		{
 			WAIT_FOR_PROGRESS(constraintIndexCompleted, targetConstraintIndex); // wait for rigid partition velocity iterations to be done resp. previous partition writeback iteration
@@ -637,7 +602,7 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 				PxI32 nbSolved = 0;
 				while (articSolveStart < endIdx)
 				{
-					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, cache.Z, cache.deltaV, false, isTGS, 0.f, biasCoefficient);
+					articulationListStart[articSolveStart - articIndexCounter].articulation->solveInternalConstraints(dt, invDt, false, isTGS, 0.f, biasCoefficient, residualReportingActive);
 					articulationListStart[articSolveStart - articIndexCounter].articulation->writebackInternalConstraints(false);
 					articSolveStart++;
 					nbSolved++;

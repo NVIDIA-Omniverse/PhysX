@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -178,7 +178,6 @@ public:
 	PX_FORCE_INLINE	PxvNphaseImplementationContext*	getNphaseFallbackImplementationContext()	const							{ return mNpFallbackImplementationContext;	}
 	PX_FORCE_INLINE	void							setNphaseFallbackImplementationContext(PxvNphaseImplementationContext* ctx)	{ mNpFallbackImplementationContext = ctx;	}
 
-					PxU32							getTotalCompressedContactSize() const	{ return mTotalCompressedCacheSize; }
 					PxU32							getMaxPatchCount() const				{ return mMaxPatches; }
 
 	PX_FORCE_INLINE	PxcNpThreadContext*			getNpThreadContext()
@@ -236,8 +235,6 @@ public:
 private:
 						void					mergeCMDiscreteUpdateResults(PxBaseTask* continuation);
 							
-						PxU32					mIndex;
-
 	// Threading
 	PxcThreadCoherentCache<PxcNpThreadContext, PxcNpContext>
 												mNpThreadContextPool;
@@ -286,7 +283,6 @@ private:
 					const PxFloatArrayPinned*	mContactDistances;
 
 					PxU32						mMaxPatches;
-					PxU32						mTotalCompressedCacheSize;
 
 					const PxU64					mContextID;
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -397,7 +397,7 @@ bool ConvexHullBuilder::copy(ConvexHullData& hullData, PxU32& mNb)
 	PxU16 hasGRBData = PxU16(mBuildGRBData);
 	hasGRBData = PxU16(hasGRBData << 15);
 	PX_ASSERT(mHull->mNbEdges <((1 << 15) - 1));	
-	hullData.mNbEdges = PxU16(mHull->mNbEdges | hasGRBData);;
+	hullData.mNbEdges = PxU16(mHull->mNbEdges | hasGRBData);
 	hullData.mNbPolygons = PxTo8(computeNbPolygons());
 	PxU32 nb = 0;
 	for (PxU32 i = 0; i < mHull->mNbPolygons; i++)

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef PXD_PARTICLESYSTEM_H
@@ -57,7 +57,8 @@ namespace physx
 				eUPDATE_PARAMS						= 1 << 1,
 				eUPDATE_MATERIAL					= 1 << 2,
 				eUPDATE_PHASE						= 1 << 3,
-				eUPDATE_ACTIVE_PARTICLECOUNT		= 1 << 4
+				eUPDATE_ACTIVE_PARTICLECOUNT		= 1 << 4,
+				eENABLE_GPU_DATA_SYNC				= 1 << 5,
 			};
 		};
 

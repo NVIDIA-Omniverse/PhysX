@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -63,9 +63,11 @@ public:
 	\param[in] maxExtents The maximum corner location of the axis aligned box containing the SDF samples.
 	\param[in] cellCenteredSamples Determines if the sample points are located at the center of a SDF cell or at the lower left (=min) corner of a cell.
 	\param[out] sdf The distance values. Must provide space for width*height*depth distance samples. Negative distance means the sample point is located inside of the triangle mesh.
-	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally.	
+	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally.
+
+	\return A boolean that indicates whether the SDF creation succeeded.	
 	*/
-	virtual void buildSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
+	virtual bool buildSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		const PxVec3& minExtents, const PxVec3& maxExtents, bool cellCenteredSamples, PxReal* sdf, CUstream stream = 0) = 0;
 
 	/**
@@ -88,8 +90,10 @@ public:
 	\param[out] sdfSubgrids3DTexBlockDimY Used to store y dimension of the texture block that stores the subgrids
 	\param[out] sdfSubgrids3DTexBlockDimZ Used to store z dimension of the texture block that stores the subgrids
 	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally.		
+
+	\return A boolean that indicates whether the SDF creation succeeded.
 	*/
-	virtual void buildSparseSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
+	virtual bool buildSparseSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		const PxVec3& minExtents, const PxVec3& maxExtents, PxReal narrowBandThickness, PxU32 cellsPerSubgrid, PxSdfBitsPerSubgridPixel::Enum bitsPerSubgridPixel,
 		PxArray<PxReal>& sdfCoarse, PxArray<PxU32>& sdfSubgridsStartSlots, PxArray<PxU8>& sdfDataSubgrids, 
 		PxReal& subgridsMinSdfValue, PxReal& subgridsMaxSdfValue, 

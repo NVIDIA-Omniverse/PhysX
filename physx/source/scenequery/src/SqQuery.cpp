@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -628,23 +628,23 @@ struct MultiQueryCallback : public PrunerRaycastCallback, public PrunerOverlapCa
 		return true;
 	}
 
-	virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)
+	virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)	PX_OVERRIDE PX_FINAL
 	{
 		return _invoke<false>(aDist, primIndex, payloads, transforms, NULL);
 	}
 
-	virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)
+	virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)	PX_OVERRIDE PX_FINAL
 	{
 		float unused = 0.0f;
 		return _invoke<false>(unused, primIndex, payloads, transforms, NULL);
 	}
 
-	virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms, const PxTransform* compoundPose)
+	virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms, const PxTransform* compoundPose)	PX_OVERRIDE PX_FINAL
 	{
 		return _invoke<false>(aDist, primIndex, payloads, transforms, compoundPose);
 	}
 
-	virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms, const PxTransform* compoundPose)
+	virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms, const PxTransform* compoundPose)	PX_OVERRIDE PX_FINAL
 	{
 		float unused = 0.0f;
 		return _invoke<false>(unused, primIndex, payloads, transforms, compoundPose);

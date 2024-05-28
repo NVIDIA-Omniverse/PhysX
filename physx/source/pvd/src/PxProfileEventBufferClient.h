@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PROFILE_EVENT_BUFFER_CLIENT_H
 #define PX_PROFILE_EVENT_BUFFER_CLIENT_H
@@ -47,7 +47,7 @@ namespace physx { namespace profile {
 		\param inData Provided buffer data.
 		\param inLength Data length.
 
-		@see PxProfileEventHandler::parseEventBuffer.
+		\see PxProfileEventHandler::parseEventBuffer.
 		 */
 		virtual void handleBufferFlush( const uint8_t* inData, uint32_t inLength ) = 0;
 

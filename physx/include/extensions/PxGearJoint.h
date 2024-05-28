@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_GEAR_JOINT_H
 #define PX_GEAR_JOINT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "extensions/PxJoint.h"
 
@@ -50,14 +47,14 @@ namespace physx
 	\param[in] actor1		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
 	\param[in] localFrame1	The position and orientation of the joint relative to actor1
 
-	@see PxGearJoint
+	\see PxGearJoint
 	*/
 	PxGearJoint*	PxGearJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
 	/**
 	\brief A joint that connects two existing revolute joints and constrains their relative angular velocity and position with respect to each other.
 
-	@see PxGearJointCreate PxJoint
+	\see PxGearJointCreate PxJoint
 	*/
 	class PxGearJoint : public PxJoint
 	{
@@ -125,5 +122,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

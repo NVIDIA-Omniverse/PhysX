@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -221,6 +221,16 @@ void NpArticulationLink::setCMassLocalPose(const PxTransform& pose)
 		// PT:: tag: scalar transform*transform
 		j->scSetParentPose(comShift.transform(j->getCore().getParentPose()));
 	}
+}
+
+PxVec3 NpArticulationLink::getLinearAcceleration() const
+{
+	return mRoot ? mRoot->getLinkAcceleration(getLinkIndex()).linear : PxVec3(0.0f);
+}
+
+PxVec3 NpArticulationLink::getAngularAcceleration() const
+{
+	return mRoot ? mRoot->getLinkAcceleration(getLinkIndex()).angular : PxVec3(0.0f);
 }
 
 void NpArticulationLink::addForce(const PxVec3& force, PxForceMode::Enum mode, bool autowake)

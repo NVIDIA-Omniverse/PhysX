@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,11 +61,7 @@ void combineMaterials(const PxsMaterialManager* materialManager, PxU16 origMatIn
 	const PxsMaterialData& data0 = *materialManager->getMaterial(origMatIndex0);
 	const PxsMaterialData& data1 = *materialManager->getMaterial(origMatIndex1);
 
-	combinedRestitution = PxsCombineRestitution(data0, data1);
-
-	combinedDamping = PxMax(data0.damping, data1.damping);
-
-	PxsCombineIsotropicFriction(data0, data1, dynamicFriction, staticFriction, materialFlags);
+	PxsCombineMaterials(data0, data1, staticFriction, dynamicFriction, combinedRestitution, materialFlags, combinedDamping);
 }
 
 struct StridePatch
@@ -79,6 +75,7 @@ struct StridePatch
 
 PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT contactPoints, const PxU32 numContactPoints, PxcNpThreadContext* threadContext,
 									PxU16& writtenContactCount, PxU8*& outContactPatches, PxU8*& outContactPoints, PxU16& compressedContactSize, PxReal*& outContactForces, PxU32 contactForceByteSize,
+									PxU8*& outFrictionPatches, PxcDataStreamPool* frictionPatchesStreamPool,
 									const PxsMaterialManager* materialManager, bool hasModifiableContacts, bool forceNoResponse, const PxsMaterialInfo* PX_RESTRICT pMaterial, PxU8& numPatches,
 									PxU32 additionalHeaderSize, PxsConstraintBlockManager* manager, PxcConstraintBlockStream* blockStream, bool insertAveragePoint,
 									PxcDataStreamPool* contactStreamPool, PxcDataStreamPool* patchStreamPool, PxcDataStreamPool* forceStreamPool, const bool isMeshType)
@@ -91,6 +88,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		outContactForces = NULL;
 		compressedContactSize = 0;
 		numPatches = 0;
+		outFrictionPatches = NULL;
 		return 0;
 	}
 
@@ -193,6 +191,12 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	PxReal* PX_RESTRICT forceData = NULL;
 	PxU32* PX_RESTRICT triangleIndice = NULL;
 
+	// Calculate friction data size
+
+	PxU32 frictionPatchesSize = numPatches * sizeof(PxFrictionPatch);
+
+	PxU8* PX_RESTRICT frictionPatchesData = NULL;
+
 	if(contactStreamPool && !isModifiable && additionalHeaderSize == 0) //If the contacts are modifiable, we **DON'T** allocate them in GPU pinned memory. This will be handled later when they're modified
 	{
 		bool isOverflown = false;
@@ -216,7 +220,17 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		}
 
 		patchData = patchStreamPool->mDataStream + patchStreamPool->mDataStreamSize - patchIndex;
-	
+
+		PxU32 frictionPatchesIndex = PxTo32(PxAtomicAdd(&frictionPatchesStreamPool->mSharedDataIndex, PxI32(frictionPatchesSize)));
+		
+		if (frictionPatchesStreamPool->isOverflown())
+		{
+			PX_WARN_ONCE("Friction patch buffer overflow detected, please increase its size in the scene desc!\n");
+			isOverflown = true;
+		}
+
+		frictionPatchesData = frictionPatchesStreamPool->mDataStream + frictionPatchesStreamPool->mDataStreamSize - frictionPatchesIndex;
+
 		if(contactForceByteSize)
 		{
 			contactForceByteSize = isMeshType ? contactForceByteSize * 2 : contactForceByteSize;
@@ -244,9 +258,9 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	}
 	else
 	{
-		PxU32 alignedRequiredSize = (requiredContactSize + requiredPatchSize + 0xf) & 0xfffffff0;
+		const PxU32 alignedRequiredSize = computeAlignedSize(requiredContactSize + requiredPatchSize);
 		contactForceByteSize = (isMeshType ? contactForceByteSize * 2 : contactForceByteSize);
-		PxU32 totalSize = alignedRequiredSize + contactForceByteSize;
+		const PxU32 totalSize = alignedRequiredSize + contactForceByteSize + frictionPatchesSize;
 		PxU8* data = manager ? blockStream->reserve(totalSize, *manager) : threadContext->mContactBlockStream.reserve(totalSize);
 
 		patchData = data;
@@ -262,6 +276,12 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 			if(data)
 			{
 				PxMemZero(forceData, contactForceByteSize);
+			}
+
+			if (frictionPatchesSize)
+			{
+				frictionPatchesData = data + alignedRequiredSize + contactForceByteSize;
+				PxMemZero(frictionPatchesData, frictionPatchesSize);
 			}
 		}
 
@@ -279,6 +299,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		outContactForces = NULL;
 		compressedContactSize = 0;
 		numPatches = 0;
+		outFrictionPatches = NULL;
 		return 0;
 	}
 
@@ -286,7 +307,6 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	if(threadContext)
 	{
 		threadContext->mCompressedCacheSize += totalRequiredSize;
-		threadContext->mTotalCompressedCacheSize += totalRequiredSize;
 	}
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
@@ -310,6 +330,8 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	outContactPatches = patchData;
 	outContactPoints = contactData;
 	outContactForces = forceData;
+
+	outFrictionPatches = frictionPatchesData;
 
 	struct Local
 	{

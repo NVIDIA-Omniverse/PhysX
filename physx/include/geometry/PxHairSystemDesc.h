@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef PX_HAIRSYSTEM_DESC_H
 #define PX_HAIRSYSTEM_DESC_H
-/** \addtogroup geomutils
-@{
-*/
 
 #include "foundation/PxFlags.h"
 #include "common/PxCoreUtilityTypes.h"
@@ -196,5 +193,4 @@ namespace physx
 
 #endif
 
-/** @} */
 #endif

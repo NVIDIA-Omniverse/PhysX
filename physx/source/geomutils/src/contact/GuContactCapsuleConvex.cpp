@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -271,10 +271,10 @@ static void GuGenerateVFContacts2(PxContactBuffer& contactBuffer,
 									//
 									PxU32 nbPts,
 									const PxVec3* PX_RESTRICT points,
-									const PxReal radius,		// Capsule's radius
+									PxReal radius,		// Capsule's radius
 									//
 									const PxVec3& normal,
-									const PxReal contactDistance)
+									PxReal contactDistance)
 {
 	PX_ASSERT(PxAbs(normal.magnitudeSquared()-1)<1e-4f);
 
@@ -301,8 +301,8 @@ static void GuGenerateVFContacts2(PxContactBuffer& contactBuffer,
 static void GuGenerateEEContacts(	PxContactBuffer& contactBuffer,
 									//
 									const Segment& segment,
-									const PxReal radius,
-									const PxReal contactDistance,
+									PxReal radius,
+									PxReal contactDistance,
 									//
 									const PolygonalData& polyData,
 									const PxTransform& transform,
@@ -366,14 +366,14 @@ static void GuGenerateEEContacts(	PxContactBuffer& contactBuffer,
 static void GuGenerateEEContacts2b(PxContactBuffer& contactBuffer,
 									//
 									const Segment& segment, 
-									const PxReal radius, 
+									PxReal radius, 
 									//
 									const PxMat34& transform,
 									const PolygonalData& polyData,
 									const FastVertex2ShapeScaling& scaling,
 									//
 									const PxVec3& normal,
-									const PxReal contactDistance)
+									PxReal contactDistance)
 {
 	// TODO:
 	// - local space

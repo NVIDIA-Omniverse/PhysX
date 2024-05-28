@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_JOINT_LIMIT_H
 #define PX_JOINT_LIMIT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "foundation/PxMath.h"
 #include "common/PxTolerancesScale.h"
@@ -151,7 +148,7 @@ public:
 
 	\param[in] extent	The extent of the limit
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLinearLimit(PxReal extent) : value(extent)
 	{
@@ -163,7 +160,7 @@ public:
 	\param[in] extent the extent of the limit
 	\param[in] spring the stiffness and damping parameters for the limit spring
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLinearLimit(PxReal extent, const PxSpring& spring) : value(extent)
 	{
@@ -207,7 +204,7 @@ public:
 	\param[in] lowerLimit	The lower distance of the limit
 	\param[in] upperLimit	The upper distance of the limit
 
-	@see PxJointLimitParameters PxTolerancesScale
+	\see PxJointLimitParameters PxTolerancesScale
 	*/
 	PxJointLinearLimitPair(const PxTolerancesScale& scale, PxReal lowerLimit = -PX_MAX_F32/3.0f, PxReal upperLimit = PX_MAX_F32/3.0f) :
 		upper(upperLimit),
@@ -223,7 +220,7 @@ public:
 	\param[in] upperLimit	The upper distance of the limit
 	\param[in] spring		The stiffness and damping parameters of the limit spring
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLinearLimitPair(PxReal lowerLimit, PxReal upperLimit, const PxSpring& spring) :
 		upper(upperLimit),
@@ -267,7 +264,7 @@ public:
 	\param[in] lowerLimit	The lower angle of the limit
 	\param[in] upperLimit	The upper angle of the limit
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointAngularLimitPair(PxReal lowerLimit, PxReal upperLimit) :
 		upper(upperLimit),
@@ -285,7 +282,7 @@ public:
 	\param[in] upperLimit	The upper angle of the limit
 	\param[in] spring		The stiffness and damping of the limit spring
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointAngularLimitPair(PxReal lowerLimit, PxReal upperLimit, const PxSpring& spring) :
 		upper(upperLimit),
@@ -311,7 +308,7 @@ public:
 \brief Describes an elliptical conical joint limit. Note that very small or highly elliptical limit cones may 
 result in jitter.
 
-@see PxD6Joint PxSphericalJoint
+\see PxD6Joint PxSphericalJoint
 */
 class PxJointLimitCone : public PxJointLimitParameters
 {
@@ -340,7 +337,7 @@ public:
 	\param[in] yLimitAngle	The limit angle from the Y-axis of the constraint frame
 	\param[in] zLimitAngle	The limit angle from the Z-axis of the constraint frame
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLimitCone(PxReal yLimitAngle, PxReal zLimitAngle) :
 		yAngle(yLimitAngle),
@@ -356,7 +353,7 @@ public:
 	\param[in] zLimitAngle	The limit angle from the Z-axis of the constraint frame
 	\param[in] spring		The stiffness and damping of the limit spring
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLimitCone(PxReal yLimitAngle, PxReal zLimitAngle, const PxSpring& spring) :
 		yAngle(yLimitAngle),
@@ -382,7 +379,7 @@ public:
 /**
 \brief Describes a pyramidal joint limit.
 
-@see PxD6Joint
+\see PxD6Joint
 */
 class PxJointLimitPyramid : public PxJointLimitParameters
 {
@@ -431,7 +428,7 @@ public:
 	\param[in] zLimitAngleMin	The minimum limit angle from the Z-axis of the constraint frame
 	\param[in] zLimitAngleMax	The maximum limit angle from the Z-axis of the constraint frame
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLimitPyramid(PxReal yLimitAngleMin, PxReal yLimitAngleMax, PxReal zLimitAngleMin, PxReal zLimitAngleMax) :
 		yAngleMin(yLimitAngleMin),
@@ -451,7 +448,7 @@ public:
 	\param[in] zLimitAngleMax	The maximum limit angle from the Z-axis of the constraint frame
 	\param[in] spring			The stiffness and damping of the limit spring
 
-	@see PxJointLimitParameters
+	\see PxJointLimitParameters
 	*/
 	PxJointLimitPyramid(PxReal yLimitAngleMin, PxReal yLimitAngleMax, PxReal zLimitAngleMin, PxReal zLimitAngleMax, const PxSpring& spring) :
 		yAngleMin(yLimitAngleMin),
@@ -483,5 +480,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

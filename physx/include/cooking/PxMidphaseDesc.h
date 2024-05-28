@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_MIDPHASE_DESC_H
 #define PX_MIDPHASE_DESC_H
-/** \addtogroup cooking
-@{
-*/
 
 #include "geometry/PxTriangleMesh.h"
 #include "cooking/PxBVH33MidphaseDesc.h"
@@ -45,7 +42,7 @@ namespace physx
 
 \brief Structure describing parameters affecting midphase mesh structure.
 
-@see PxCookingParams, PxBVH33MidphaseDesc, PxBVH34MidphaseDesc
+\see PxCookingParams, PxBVH33MidphaseDesc, PxBVH34MidphaseDesc
 */
 class PxMidphaseDesc
 {
@@ -56,14 +53,14 @@ public:
 	\brief	Returns type of midphase mesh structure.
 	\return	PxMeshMidPhase::Enum 
 
-	@see PxMeshMidPhase::Enum
+	\see PxMeshMidPhase::Enum
 	*/
 	PX_FORCE_INLINE PxMeshMidPhase::Enum getType() const { return mType; }
 
 	/**
 	\brief	Midphase descriptors union
 
-	@see PxBV33MidphaseDesc, PxBV34MidphaseDesc
+	\see PxBV33MidphaseDesc, PxBV34MidphaseDesc
 	*/
 	union {		
 		PxBVH33MidphaseDesc  mBVH33Desc;
@@ -74,7 +71,7 @@ public:
 	\brief	Initialize the midphase mesh structure descriptor
 	\param[in] type Midphase mesh structure descriptor
 
-	@see PxBV33MidphaseDesc, PxBV34MidphaseDesc
+	\see PxBV33MidphaseDesc, PxBV34MidphaseDesc
 	*/
 	void setToDefault(PxMeshMidPhase::Enum type)
 	{
@@ -117,6 +114,5 @@ protected:
 #endif
 
 
-  /** @} */
 #endif
 

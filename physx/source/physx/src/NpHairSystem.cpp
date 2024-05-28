@@ -22,8 +22,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
+#include "cudamanager/PxCudaTypes.h"
 #include "foundation/PxPreprocessor.h"
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -105,10 +106,9 @@ namespace physx
 
 		if (mMemoryManager != NULL)
 		{
-			mMemoryManager->~PxsMemoryManager();
 			mHostMemoryAllocator = NULL; // released by memory manager
 			mDeviceMemoryAllocator = NULL; // released by memory manager
-			PX_FREE(mMemoryManager);
+			PX_DELETE(mMemoryManager);
 		}
 	}
 
@@ -591,7 +591,7 @@ namespace physx
 			llCore.mRestPositionsD = mRestPositionsInternal.begin();
 
 			// use user-provided restPos if available, otherwise current positions
-			mCudaContextManager->copyHToD<PxVec4>(llCore.mRestPositionsD, restPos ? restPos : llCore.mPositionInvMass, llCore.mNumVertices);
+			mCudaContextManager->getCudaContext()->memcpyHtoD(reinterpret_cast<CUdeviceptr>(llCore.mRestPositionsD), restPos ? restPos : llCore.mPositionInvMass, llCore.mNumVertices * sizeof(PxVec4));
 		}
 		else if (mRestPositionsInternal.begin() != restPos)
 		{
@@ -852,18 +852,6 @@ namespace physx
 			*numLevels = mCore.getShapeCore().getLLCore().mLodNumLevels;
 		}
 		return mCore.getShapeCore().getLLCore().mLodLevel;
-	}
-
-	void NpHairSystem::setName(const char* debugName)
-	{
-		NP_WRITE_CHECK(getNpScene());
-		mName = debugName;
-	}
-
-	const char* NpHairSystem::getName() const
-	{
-		NP_READ_CHECK(getNpScene());
-		return mName;
 	}
 
 	void NpHairSystem::getSegmentDimensions(PxReal& length, PxReal& radius) const

@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PVD_ERROR_CODES_H
 #define PX_PVD_ERROR_CODES_H
 
-/** \addtogroup pvd
-@{
-*/
 
 #include "foundation/Px.h"
 
@@ -58,6 +55,5 @@ typedef PvdErrorType::Enum PvdError;
 }
 }
 #endif
-/** @} */
 #endif
 

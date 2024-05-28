@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,8 +33,7 @@
 #include "ScBodySim.h"
 #include "ScConstraintSim.h"
 #include "ScArticulationTendonSim.h"
-#include "ScArticulationSensorSim.h"
-#include "ScArticulationSensor.h"
+#include "ScArticulationMimicJointSim.h"
 #include "ScScene.h"
 
 #include "DyConstraint.h"
@@ -242,7 +241,7 @@ void Sc::ArticulationSim::removeBody(BodySim& body)
 	}
 }
 
-void Sc::ArticulationSim::addTendon(ArticulationSpatialTendonSim* tendonSim)
+void Sc::ArticulationSim::addTendon(ArticulationSpatialTendonSim* const tendonSim)
 {
 	tendonSim->mArtiSim = this;
 
@@ -254,7 +253,7 @@ void Sc::ArticulationSim::addTendon(ArticulationSpatialTendonSim* tendonSim)
 	//mSpatialTendons.pushBack(&tendonSim->mLLTendon);
 }
 
-void Sc::ArticulationSim::addTendon(ArticulationFixedTendonSim* tendonSim)
+void Sc::ArticulationSim::addTendon(ArticulationFixedTendonSim* const tendonSim)
 {
 	tendonSim->mArtiSim = this;
 	
@@ -264,18 +263,16 @@ void Sc::ArticulationSim::addTendon(ArticulationFixedTendonSim* tendonSim)
 	mFixedTendons.pushBack(&llTendon);
 }
 
-void Sc::ArticulationSim::addSensor(ArticulationSensorSim* sensorSim, const PxU32 linkID)
+void Sc::ArticulationSim::addMimicJoint(ArticulationMimicJointSim* const mimicJointSim, const PxU32 linkA, const PxU32 linkB)
 {
-	const PxU32 index = mSensors.size();
-	sensorSim->setLowLevelIndex(index);
-	sensorSim->mArticulationSim = this;
+	const PxU32 index = mMimicJoints.size();
+	mimicJointSim->setLowLevelIndex(index);
+	mimicJointSim->mArticulationSim = this;
 
-	Dy::ArticulationSensor& llSensor = sensorSim->getLLSensor();
-	llSensor.mLinkID = PxU16(linkID);
-	mSensors.pushBack(&llSensor);
-	mSensorForces.insert();
-	mSensorForces.back().force = PxVec3(0.f);
-	mSensorForces.back().torque = PxVec3(0.f);
+	Dy::ArticulationMimicJointCore& llMimicJoint = mimicJointSim->getLLMimicJoint();
+	llMimicJoint.linkA = linkA;
+	llMimicJoint.linkB = linkB;
+	mMimicJoints.pushBack(&llMimicJoint);
 }
 
 void Sc::ArticulationSim::createLLStructure()
@@ -283,13 +280,13 @@ void Sc::ArticulationSim::createLLStructure()
 	if(!mBodies.size())
 		return;
 
-	mLLArticulation->setupLinks(mLinks.size(), const_cast<Dy::ArticulationLink*>(mLinks.begin()));
+	mLLArticulation->setupLinks(mLinks.size(), mLinks.begin());
 
-	mLLArticulation->assignTendons(mSpatialTendons.size(), const_cast<Dy::ArticulationSpatialTendon**>(mSpatialTendons.begin()));
+	mLLArticulation->assignTendons(mSpatialTendons.size(), mSpatialTendons.begin());
 
-	mLLArticulation->assignTendons(mFixedTendons.size(), const_cast<Dy::ArticulationFixedTendon**>(mFixedTendons.begin()));
+	mLLArticulation->assignTendons(mFixedTendons.size(), mFixedTendons.begin());
 	
-	mLLArticulation->assignSensors(mSensors.size(), const_cast<Dy::ArticulationSensor**>(mSensors.begin()), const_cast<PxSpatialForce*>(mSensorForces.begin()));
+	mLLArticulation->assignMimicJoints(mMimicJoints.size(), mMimicJoints.begin());
 
 	mIsLLArticulationInitialized = true;
 }
@@ -519,7 +516,7 @@ void Sc::ArticulationSim::updateForces(PxReal dt)
 			PxPrefetchLine(mBodies[i+1],256);
 		}
 
-		anyForcesApplied |= mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i]);
+		anyForcesApplied |= mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i], NULL);
 	}
 	if(anyForcesApplied)
 		mLLArticulation->raiseGPUDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL);
@@ -553,7 +550,7 @@ void Sc::ArticulationSim::clearAcceleration(PxReal dt)
 		}
 		else
 		{
-			mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i]);
+			mBodies[i]->updateForces(dt, NULL, NULL, count, &mLLArticulation->getSolverDesc().acceleration[i], NULL);
 		}
 
 		// we need to raise the dirty flag if retain accelerations is on
@@ -609,12 +606,12 @@ PxU32 Sc::ArticulationSim::getDof(const PxU32 linkID) const
 PX_COMPILE_TIME_ASSERT(sizeof(Cm::SpatialVector)==sizeof(PxSpatialForce));
 PxArticulationCache* Sc::ArticulationSim::createCache()
 {
-	return FeatherstoneArticulation::createCache(getDofs(), mLinks.size(), mSensors.size());
+	return FeatherstoneArticulation::createCache(getDofs(), mLinks.size());
 }
 
 PxU32 Sc::ArticulationSim::getCacheDataSize() const
 {
-	return FeatherstoneArticulation::getCacheDataSize(getDofs(), mLinks.size(), mSensors.size());
+	return FeatherstoneArticulation::getCacheDataSize(getDofs(), mLinks.size());
 }
 
 void Sc::ArticulationSim::zeroCache(PxArticulationCache& cache) const
@@ -778,7 +775,7 @@ void Sc::ArticulationSim::debugCheckWakeCounterOfLinks(PxReal wakeCounter) const
 {
 	PX_UNUSED(wakeCounter);
 
-#ifdef _DEBUG
+#if PX_DEBUG
 	// make sure the links are in sync with the articulation
 	for(PxU32 i=0; i < mBodies.size(); i++)
 	{
@@ -791,7 +788,7 @@ void Sc::ArticulationSim::debugCheckSleepStateOfLinks(bool isSleeping) const
 {
 	PX_UNUSED(isSleeping);
 
-#ifdef _DEBUG
+#if PX_DEBUG
 	// make sure the links are in sync with the articulation
 	for(PxU32 i=0; i < mBodies.size(); i++)
 	{
@@ -810,9 +807,4 @@ void Sc::ArticulationSim::debugCheckSleepStateOfLinks(bool isSleeping) const
 PxU32 Sc::ArticulationSim::getRootActorIndex() const
 {
 	return mBodies[0]->getActorID();
-}
-
-const PxSpatialForce& Sc::ArticulationSim::getSensorForce(const PxU32 lowLevelIndex) const
-{
-	return mSensorForces[lowLevelIndex];
 }

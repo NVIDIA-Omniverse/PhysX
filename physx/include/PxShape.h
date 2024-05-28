@@ -22,18 +22,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SHAPE_H
 #define PX_SHAPE_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxBase.h"
+#include "foundation/PxSimpleTypes.h"
 #include "geometry/PxGeometry.h"
 #include "geometry/PxGeometryHelpers.h"
 
@@ -62,7 +60,7 @@ class PxFEMClothMaterial;
 /**
 \brief Flags which affect the behavior of PxShapes.
 
-@see PxShape PxShape.setFlag()
+\see PxShape PxShape.setFlag()
 */
 struct PxShapeFlag
 {
@@ -78,7 +76,7 @@ struct PxShapeFlag
 
 		\note This flag has no effect if simulation is disabled for the corresponding actor (see #PxActorFlag::eDISABLE_SIMULATION).
 
-		@see PxSimulationEventCallback.onContact() PxScene.setSimulationEventCallback() PxShape.setFlag(), PxShape.setFlags()
+		\see PxSimulationEventCallback.onContact() PxScene.setSimulationEventCallback() PxShape.setFlag(), PxShape.setFlags()
 		*/
 		eSIMULATION_SHAPE				= (1<<0),
 
@@ -105,14 +103,14 @@ struct PxShapeFlag
 
 		\note This flag has no effect if simulation is disabled for the corresponding actor (see #PxActorFlag::eDISABLE_SIMULATION).
 
-		@see PxSimulationEventCallback.onTrigger() PxScene.setSimulationEventCallback() PxShape.setFlag(), PxShape.setFlags()
+		\see PxSimulationEventCallback.onTrigger() PxScene.setSimulationEventCallback() PxShape.setFlag(), PxShape.setFlags()
 		*/
 		eTRIGGER_SHAPE					= (1<<2),
 
 		/**
 		\brief Enable debug renderer for this shape
 
-		@see PxScene.getRenderBuffer() PxRenderBuffer PxVisualizationParameter
+		\see PxScene.getRenderBuffer() PxRenderBuffer PxVisualizationParameter
 		*/
 		eVISUALIZATION					= (1<<3)
 	};
@@ -121,7 +119,7 @@ struct PxShapeFlag
 /**
 \brief collection of set bits defined in PxShapeFlag.
 
-@see PxShapeFlag
+\see PxShapeFlag
 */
 typedef PxFlags<PxShapeFlag::Enum,PxU8> PxShapeFlags;
 PX_FLAGS_OPERATORS(PxShapeFlag::Enum,PxU8)
@@ -139,7 +137,7 @@ the createShape() method of the PxPhysics class.
 \li PxVisualizationParameter::eCOLLISION_SHAPES
 \li PxVisualizationParameter::eCOLLISION_AXES
 
-@see PxPhysics.createShape() PxRigidActor.createShape() PxBoxGeometry PxSphereGeometry PxCapsuleGeometry PxPlaneGeometry PxConvexMeshGeometry
+\see PxPhysics.createShape() PxRigidActor.createShape() PxBoxGeometry PxSphereGeometry PxCapsuleGeometry PxPlaneGeometry PxConvexMeshGeometry
 PxTriangleMeshGeometry PxHeightFieldGeometry
 */
 class PxShape : public PxRefCounted
@@ -153,7 +151,7 @@ public:
 	a shape from an actor. If the shape to be detached was created with PxActor::createShape(), the actor holds the only counted reference,
 	and so when the shape is detached it will also be destroyed. 
 
-	@see PxRigidActor::createShape() PxPhysics::createShape() PxRigidActor::attachShape() PxRigidActor::detachShape()
+	\see PxRigidActor::createShape() PxPhysics::createShape() PxRigidActor::attachShape() PxRigidActor::detachShape()
 	*/
 	virtual		void	release() = 0;
 
@@ -166,7 +164,7 @@ public:
 
 	\param[in] geometry New geometry of the shape.
 
-	@see PxGeometry PxGeometryType getGeometryType()
+	\see PxGeometry PxGeometryType getGeometryType()
 	*/
 	virtual		void	setGeometry(const PxGeometry& geometry) = 0;
 
@@ -177,7 +175,7 @@ public:
 
 	\return	Reference to internal PxGeometry object.
 
-	@see PxGeometry PxGeometryType getGeometryType() setGeometry()
+	\see PxGeometry PxGeometryType getGeometryType() setGeometry()
 	*/
 	virtual		const PxGeometry&	getGeometry() const = 0;
 
@@ -186,15 +184,15 @@ public:
 
 	\return The actor this shape is associated with, if it is an exclusive shape, else NULL
 
-	@see PxRigidStatic, PxRigidDynamic, PxArticulationLink
+	\see PxRigidStatic, PxRigidDynamic, PxArticulationLink
 	*/
 	virtual		PxRigidActor*	getActor() const = 0;
 
 /************************************************************************************************/
 
-/** @name Pose Manipulation
+/** \name Pose Manipulation
 */
-//@{
+//\{
 
 	/**
 	\brief Sets the pose of the shape in actor space, i.e. relative to the actors to which they are attached.
@@ -212,7 +210,7 @@ public:
 
 	\param[in] pose	The new transform from the actor frame to the shape frame. <b>Range:</b> rigid body transform
 
-	@see getLocalPose() 
+	\see getLocalPose() 
 	*/
 	virtual		void	setLocalPose(const PxTransform& pose)		= 0;
 
@@ -223,16 +221,16 @@ public:
 
 	\return Pose of shape relative to the actor's frame.
 
-	@see setLocalPose() 
+	\see setLocalPose() 
 	*/
 	virtual		PxTransform	getLocalPose()	const	= 0;
 
-//@}
+//\}
 /************************************************************************************************/
 
-/** @name Collision Filtering
+/** \name Collision Filtering
 */
-//@{
+//\{
 
 	/**
 	\brief Sets the user definable collision filter data.
@@ -242,14 +240,14 @@ public:
 
 	<b>Default:</b> (0,0,0,0)
 
-	@see getSimulationFilterData() 
+	\see getSimulationFilterData() 
 	*/
 	virtual		void	setSimulationFilterData(const PxFilterData& data)	= 0;
 
 	/**
 	\brief Retrieves the shape's collision filter data.
 
-	@see setSimulationFilterData() 
+	\see setSimulationFilterData() 
 	*/
 	virtual		PxFilterData	getSimulationFilterData()	const	= 0;
 
@@ -258,18 +256,18 @@ public:
 
 	<b>Default:</b> (0,0,0,0)
 
-	@see getQueryFilterData() 
+	\see getQueryFilterData() 
 	*/
 	virtual		void	setQueryFilterData(const PxFilterData& data)	= 0;
 
 	/**
 	\brief Retrieves the shape's Query filter data.
 
-	@see setQueryFilterData() 
+	\see setQueryFilterData() 
 	*/
 	virtual		PxFilterData	getQueryFilterData()	const	= 0;
 
-//@}
+//\}
 /************************************************************************************************/
 
 	/**
@@ -280,7 +278,7 @@ public:
 	\param[in] materials List of material pointers to assign to the shape. See #PxMaterial
 	\param[in] materialCount The number of materials provided.
 
-	@see PxPhysics.createMaterial() getMaterials() 
+	\see PxPhysics.createMaterial() getMaterials() 
 	*/
 	virtual		void	setMaterials(PxMaterial*const* materials, PxU16 materialCount) = 0;
 
@@ -292,7 +290,7 @@ public:
 	\param[in] materials List of material pointers to assign to the shape. See #PxFEMSoftBodyMaterial
 	\param[in] materialCount The number of materials provided.
 
-	@see PxPhysics.createFEMSoftBodyMaterial() getSoftBodyMaterials() 
+	\see PxPhysics.createFEMSoftBodyMaterial() getSoftBodyMaterials() 
 	*/
 	virtual		void	setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount) = 0;
 
@@ -305,7 +303,7 @@ public:
 	\param[in] materials List of material pointers to assign to the shape. See #PxFEMClothMaterial
 	\param[in] materialCount The number of materials provided.
 
-	@see PxPhysics.createFEMClothMaterial() getClothMaterials() 
+	\see PxPhysics.createFEMClothMaterial() getClothMaterials() 
 	*/
 	virtual		void	setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount) = 0;
 
@@ -316,7 +314,7 @@ public:
 
 	\return Number of materials associated with this shape.
 
-	@see PxMaterial getMaterials()
+	\see PxMaterial getMaterials()
 	*/
 	virtual		PxU16	getNbMaterials()		const	= 0;
 
@@ -332,7 +330,7 @@ public:
 	\param[in] startIndex Index of first material pointer to be retrieved
 	\return Number of material pointers written to the buffer.
 
-	@see PxMaterial getNbMaterials() PxMaterial::release()
+	\see PxMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const = 0;
 
@@ -348,7 +346,7 @@ public:
 	\param[in] startIndex Index of first material pointer to be retrieved
 	\return Number of material pointers written to the buffer.
 
-	@see PxFEMSoftBodyMaterial getNbMaterials() PxMaterial::release()
+	\see PxFEMSoftBodyMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -365,7 +363,7 @@ public:
 	\param[in] startIndex Index of first material pointer to be retrieved
 	\return Number of material pointers written to the buffer.
 
-	@see PxFEMClothMaterial getNbMaterials() PxMaterial::release()
+	\see PxFEMClothMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxU32	getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -385,7 +383,7 @@ public:
 	\note If faceIndex value of 0xFFFFffff is passed as an input for mesh and heightfield shapes, this function will issue a warning and return NULL.
 	\note Scene queries set the value of PxQueryHit::faceIndex to 0xFFFFffff whenever it is undefined or does not apply.
 
-	@see PxMaterial getNbMaterials() PxMaterial::release()
+	\see PxMaterial getNbMaterials() PxMaterial::release()
 	*/
 	virtual		PxBaseMaterial*		getMaterialFromInternalFaceIndex(PxU32 faceIndex) const = 0;
 
@@ -403,7 +401,7 @@ public:
 
 	\param[in] contactOffset <b>Range:</b> [maximum(0,restOffset), PX_MAX_F32)
 
-	@see getContactOffset PxTolerancesScale setRestOffset
+	\see getContactOffset PxTolerancesScale setRestOffset
 	*/
 	virtual		void	setContactOffset(PxReal contactOffset)	= 0;
 
@@ -412,7 +410,7 @@ public:
 
 	\return The contact offset of the shape.
 
-	@see setContactOffset()
+	\see setContactOffset()
 	*/
 	virtual		PxReal	getContactOffset() const	= 0;
 
@@ -429,7 +427,7 @@ public:
 
 	\param[in] restOffset	<b>Range:</b> (-PX_MAX_F32, contactOffset)
 
-	@see getRestOffset setContactOffset
+	\see getRestOffset setContactOffset
 	*/
 	virtual		void	setRestOffset(PxReal restOffset)	= 0;
 
@@ -438,7 +436,7 @@ public:
 
 	\return The rest offset of the shape.
 
-	@see setRestOffset()
+	\see setRestOffset()
 	*/
 	virtual		PxReal	getRestOffset() const	= 0;
 
@@ -453,7 +451,7 @@ public:
 
 	\param[in] densityForFluid	<b>Range:</b> (0, PX_MAX_F32)
 
-	@see getDensityForFluid
+	\see getDensityForFluid
 	*/
 	virtual		void	setDensityForFluid(PxReal densityForFluid)	= 0;
 
@@ -462,7 +460,7 @@ public:
 
 	\return The density of the body when interacting with fluid.
 
-	@see setDensityForFluid()
+	\see setDensityForFluid()
 	*/
 	virtual		PxReal	getDensityForFluid() const	= 0;
 
@@ -523,12 +521,26 @@ public:
 	\brief Gets internal shape id
 
 	The internal shape id can be used to reference a specific shape when processing data on the gpu.
+
+	This is not supported on the CPU, and the function will return PX_INVALID_U32;
 	
 	\return The shape id
 
-	@see PxScene evaluateSDFDistances()
+	\see PxScene evaluateSDFDistances()
+	\deprecated, use getGPUIndex() instead.
 	*/
-	virtual		PxU32	getInternalShapeIndex() const = 0;
+	virtual	PX_DEPRECATED	PxU32	getInternalShapeIndex() const = 0;
+
+	/**
+	\brief Returns the GPU shape index.
+
+	\note This function only returns valid results if GPU dynamics is enabled.
+
+	\return The GPU index, or 0xFFFFFFFF if the shape is not attached to a PxActor that is inserted into a PxScene.
+
+	\see PxDirectGPUAPI::evaluateSDFDistances().
+	*/
+	virtual PxShapeGPUIndex  getGPUIndex() const = 0;
 
 /************************************************************************************************/
 
@@ -542,14 +554,14 @@ public:
 
 	<b>Default:</b> PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE
 
-	@see PxShapeFlag getFlags()
+	\see PxShapeFlag getFlags()
 	*/
 	virtual		void	setFlag(PxShapeFlag::Enum flag, bool value) = 0;
 
 	/**
 	\brief Sets shape flags
 
-	@see PxShapeFlag getFlags()
+	\see PxShapeFlag getFlags()
 	*/
 	virtual		void	setFlags(PxShapeFlags inFlags) = 0;
 
@@ -558,14 +570,14 @@ public:
 
 	\return The values of the shape flags.
 
-	@see PxShapeFlag setFlag()
+	\see PxShapeFlag setFlag()
 	*/
 	virtual		PxShapeFlags	getFlags() const = 0;
 
 	/**
 	\brief Returns true if the shape is exclusive to an actor.
 	
-	@see PxPhysics::createShape()
+	\see PxPhysics::createShape()
 	*/
 	virtual		bool	isExclusive() const	= 0;
 
@@ -579,7 +591,7 @@ public:
 	
 	\param[in] name The name string to set the objects name to.
 
-	@see getName()
+	\see getName()
 	*/
 	virtual		void	setName(const char* name)		= 0;
 
@@ -587,7 +599,7 @@ public:
 	\brief retrieves the name string set with setName().
 	\return The name associated with the shape.
 
-	@see setName()
+	\see setName()
 	*/
 	virtual		const char*	getName()			const	= 0;
 
@@ -609,5 +621,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

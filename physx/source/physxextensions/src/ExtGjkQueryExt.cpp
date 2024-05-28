@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -146,7 +146,7 @@ PxVec3 PxGjkQueryExt::ConvexMeshSupport::supportLocal(const PxVec3& dir) const
 	if (convexMesh == NULL)
 		return PxVec3(0.0f);
 
-	PxVec3 d = scaleRotation.rotateInv(scaleRotation.rotate(dir).multiply(PxVec3(1.0f / scale.x, 1.0f / scale.y, 1.0f / scale.z)));
+	PxVec3 d = scaleRotation.rotateInv(scaleRotation.rotate(dir).multiply(scale));
 	const PxVec3* verts = convexMesh->getVertices();
 	int count = int(convexMesh->getNbVertices());
 	float maxDot = -FLT_MAX;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -126,7 +126,7 @@ PX_FORCE_INLINE PxF32 processPositiveAnalogValue
 
 //process value in range(-1,1)
 PX_FORCE_INLINE PxF32 processAnalogValue
-(const PxF32 riseRate, const PxF32 fallRate,  
+(const PxF32 riseRate, const PxF32 fallRate,
  const PxF32 currentVal, const PxF32 targetVal,
  const PxF32 timestep)
 {

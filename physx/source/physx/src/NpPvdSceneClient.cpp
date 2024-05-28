@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -32,8 +32,6 @@
 #include "common/PxRenderBuffer.h"
 #include "PxParticleSystem.h"
 #include "PxPBDParticleSystem.h"
-//#include "PxFLIPParticleSystem.h"
-//#include "PxMPMParticleSystem.h"
 #include "PxPhysics.h"
 #include "PxConstraintDesc.h"
 #include "NpPvdSceneClient.h"
@@ -177,12 +175,6 @@ namespace
 			break;
 		case PxActorType::ePBD_PARTICLESYSTEM:
 			op(*static_cast<const PxPBDParticleSystem*>(actor));
-			break;
-		case PxActorType::eFLIP_PARTICLESYSTEM:
-			//op(*static_cast<const PxFLIPParticleSystem*>(actor));
-			break;
-		case PxActorType::eMPM_PARTICLESYSTEM:
-			//op(*static_cast<const PxMPMParticleSystem*>(actor));
 			break;
 		case PxActorType::eHAIRSYSTEM:
 			//op(*static_cast<const PxHairSystem*>(actor));
@@ -672,20 +664,21 @@ void PvdSceneClient::releasePvdInstance(const NpArticulationFixedTendon* articul
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void PvdSceneClient::createPvdInstance(const NpArticulationSensor* sensor)
+void PvdSceneClient::createPvdInstance(const NpArticulationMimicJoint* mimicJoint)
 {
-	PX_UNUSED(sensor);
+	PX_UNUSED(mimicJoint);
 }
 
-void PvdSceneClient::updatePvdProperties(const NpArticulationSensor* sensor)
+void PvdSceneClient::updatePvdProperties(const NpArticulationMimicJoint* mimicJoint)
 {
-	PX_UNUSED(sensor);
+	PX_UNUSED(mimicJoint);
 }
 
-void PvdSceneClient::releasePvdInstance(const NpArticulationSensor* sensor)
+void PvdSceneClient::releasePvdInstance(const NpArticulationMimicJoint* mimicJoint)
 {
-	PX_UNUSED(sensor);
+	PX_UNUSED(mimicJoint);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -765,36 +758,6 @@ void PvdSceneClient::updatePvdProperties(const PxsPBDMaterialCore* /*materialCor
 }
 
 void PvdSceneClient::releasePvdInstance(const PxsPBDMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::createPvdInstance(const PxsFLIPMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::updatePvdProperties(const PxsFLIPMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::releasePvdInstance(const PxsFLIPMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::createPvdInstance(const PxsMPMMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::updatePvdProperties(const PxsMPMMaterialCore* /*materialCore*/)
-{
-//	PX_ASSERT(0);
-}
-
-void PvdSceneClient::releasePvdInstance(const PxsMPMMaterialCore* /*materialCore*/)
 {
 //	PX_ASSERT(0);
 }
@@ -1080,72 +1043,6 @@ void PvdSceneClient::releasePvdInstance(const NpPBDParticleSystem* particleSyste
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void PvdSceneClient::createPvdInstance(const NpFLIPParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-void PvdSceneClient::updatePvdProperties(const NpFLIPParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-void PvdSceneClient::attachAggregateActor(const NpFLIPParticleSystem* particleSystem, NpActor* actor)
-{
-	PX_UNUSED(particleSystem);
-	PX_UNUSED(actor);
-	//Todo
-}
-
-void PvdSceneClient::detachAggregateActor(const NpFLIPParticleSystem* particleSystem, NpActor* actor)
-{
-	PX_UNUSED(particleSystem);
-	PX_UNUSED(actor);
-	//Todo
-}
-
-void PvdSceneClient::releasePvdInstance(const NpFLIPParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void PvdSceneClient::createPvdInstance(const NpMPMParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-void PvdSceneClient::updatePvdProperties(const NpMPMParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-void PvdSceneClient::attachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor)
-{
-	PX_UNUSED(particleSystem);
-	PX_UNUSED(actor);
-	//Todo
-}
-
-void PvdSceneClient::detachAggregateActor(const NpMPMParticleSystem* particleSystem, NpActor* actor)
-{
-	PX_UNUSED(particleSystem);
-	PX_UNUSED(actor);
-	//Todo
-}
-
-void PvdSceneClient::releasePvdInstance(const NpMPMParticleSystem* particleSystem)
-{
-	PX_UNUSED(particleSystem);
-	//Todo
-}
-
-///////////////////////////////////////////////////////////////////////////////
 
 void PvdSceneClient::createPvdInstance(const NpHairSystem* hairSystem)
 {
@@ -1193,7 +1090,6 @@ void PvdSceneClient::updateJoints()
 
 		Sc::ConstraintCore*const * constraints = mScene.getScScene().getConstraints();
 		const PxU32 nbConstraints = mScene.getScScene().getNbConstraints();
-		PxI64 constraintCount = 0;
 
 		for(PxU32 i=0; i<nbConstraints; i++)
 		{
@@ -1221,7 +1117,6 @@ void PvdSceneClient::updateJoints()
 					(*constraint->getVisualize())(viz, sim->getConstantsLL(), t0, t1, 0xffffFFFF);
 				}
 			}
-			++constraintCount;
 		}
 
 		mUserRender->flushRenderEvents();

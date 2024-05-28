@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -81,8 +81,9 @@ public:
 	static			NpShapeManager*			getShapeManager_(PxRigidActor& actor);			// bit misplaced here, but we don't want a separate subclass just for this
 	static			const NpShapeManager*	getShapeManager_(const PxRigidActor& actor);	// bit misplaced here, but we don't want a separate subclass just for this
 
-	static			NpActor&				getFromPxActor(PxActor& actor)			{ 	return *PxPointerOffset<NpActor*>(&actor, ptrdiff_t(sOffsets.pxActorToNpActor[actor.getConcreteType()])); }
-	static			const NpActor&			getFromPxActor(const PxActor& actor)	{	return *PxPointerOffset<const NpActor*>(&actor, ptrdiff_t(sOffsets.pxActorToNpActor[actor.getConcreteType()])); }
+	static			NpActor&				getFromPxActor(PxActor& actor)			{ return *PxPointerOffset<NpActor*>(&actor, ptrdiff_t(sOffsets.pxActorToNpActor[actor.getConcreteType()])); }
+	static			const NpActor&			getFromPxActor(const PxActor& actor)	{ return *PxPointerOffset<const NpActor*>(&actor, ptrdiff_t(sOffsets.pxActorToNpActor[actor.getConcreteType()])); }
+	static			NpActor*				getNpActor(PxRigidActor* a)				{ return a ? &NpActor::getFromPxActor(*a) : NULL;	}
 				
 					const PxActor*			getPxActor() const;
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,7 +30,7 @@
 #include "foundation/PxVecMath.h"
 #include "DyCorrelationBuffer.h"
 #include "DySolverConstraintExtShared.h"
-#include "DyArticulationCpuGpu.h"
+#include "DyCpuGpuArticulation.h"
 #include "DyFeatherstoneArticulation.h"
 
 using namespace physx::Gu;
@@ -185,7 +185,7 @@ Cm::SpatialVectorV createImpulseResponseVector(const aos::Vec3V& linear, const a
 
 PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impulse0, Cm::SpatialVector& deltaV0, PxReal dom0, PxReal angDom0, 
 	const SolverExtBody& b1, const Cm::SpatialVector& impulse1, Cm::SpatialVector& deltaV1, PxReal dom1, PxReal angDom1, 
-	Cm::SpatialVectorF* Z, bool allowSelfCollision)
+	bool allowSelfCollision)
 {
 	PxReal response;
 	allowSelfCollision = false;
@@ -197,7 +197,7 @@ PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impu
 		/*ArticulationHelper::getImpulseSelfResponse(*b0.mFsData,b0.mLinkIndex, impulse0, deltaV0, 
 													  b1.mLinkIndex, impulse1, deltaV1);*/
 
-		b0.mArticulation->getImpulseSelfResponse(b0.mLinkIndex, b1.mLinkIndex, Z, impulse0.scale(dom0, angDom0), impulse1.scale(dom1, angDom1), 
+		b0.mArticulation->getImpulseSelfResponse(b0.mLinkIndex, b1.mLinkIndex, impulse0.scale(dom0, angDom0), impulse1.scale(dom1, angDom1), 
 			deltaV0, deltaV1);
 		
 		response = impulse0.dot(deltaV0) + impulse1.dot(deltaV1);
@@ -211,7 +211,7 @@ PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impu
 		}
 		else
 		{
-			b0.mArticulation->getImpulseResponse(b0.mLinkIndex, Z, impulse0.scale(dom0, angDom0), deltaV0);
+			b0.mArticulation->getImpulseResponse(b0.mLinkIndex, impulse0.scale(dom0, angDom0), deltaV0);
 		}
 
 		response = impulse0.dot(deltaV0);
@@ -222,7 +222,7 @@ PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impu
 		}
 		else
 		{
-			b1.mArticulation->getImpulseResponse( b1.mLinkIndex, Z, impulse1.scale(dom1, angDom1), deltaV1);
+			b1.mArticulation->getImpulseResponse( b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
 		}
 		response += impulse1.dot(deltaV1);
 	}
@@ -232,19 +232,19 @@ PxReal getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVector& impu
 
 FloatV getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVectorV& impulse0, Cm::SpatialVectorV& deltaV0, const FloatV& dom0, const FloatV& angDom0,
 	const SolverExtBody& b1, const Cm::SpatialVectorV& impulse1, Cm::SpatialVectorV& deltaV1, const FloatV& dom1, const FloatV& angDom1,
-	Cm::SpatialVectorV* Z, bool /*allowSelfCollision*/)
+	bool /*allowSelfCollision*/)
 {
 	Vec3V response;
 	{
 
 		if (b0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 		{
-			deltaV0.linear = V3Scale(impulse0.linear,  FMul(FLoad(b0.mBodyData->invMass), dom0));
+			deltaV0.linear = V3Scale(impulse0.linear, FMul(FLoad(b0.mBodyData->invMass), dom0));
 			deltaV0.angular = V3Scale(impulse0.angular, angDom0);
 		}
 		else
 		{
-			b0.mArticulation->getImpulseResponse(b0.mLinkIndex, Z, impulse0.scale(dom0, angDom0), deltaV0);
+			b0.mArticulation->getImpulseResponse(b0.mLinkIndex, impulse0.scale(dom0, angDom0), deltaV0);
 		}
 
 		response = V3Add(V3Mul(impulse0.linear, deltaV0.linear), V3Mul(impulse0.angular, deltaV0.angular));
@@ -255,7 +255,7 @@ FloatV getImpulseResponse(const SolverExtBody& b0, const Cm::SpatialVectorV& imp
 		}
 		else
 		{
-			b1.mArticulation->getImpulseResponse(b1.mLinkIndex, Z, impulse1.scale(dom1, angDom1), deltaV1);
+			b1.mArticulation->getImpulseResponse(b1.mLinkIndex, impulse1.scale(dom1, angDom1), deltaV1);
 		}
 		response = V3Add(response, V3Add(V3Mul(impulse1.linear, deltaV1.linear), V3Mul(impulse1.angular, deltaV1.angular)));
 	}
@@ -329,7 +329,6 @@ void setupFinalizeExtSolverContacts(
 
 	const FloatV quarter = FLoad(0.25f);
 
-
 	const FloatV d0 = FLoad(invMassScale0);
 	const FloatV d1 = FLoad(invMassScale1);
 
@@ -339,8 +338,8 @@ void setupFinalizeExtSolverContacts(
 	const FloatV angD1 = FLoad(invInertiaScale1);
 
 	Vec4V staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4Zero();
-	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d0);
-	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d1);
+	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetZ(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d0);
+	staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W = V4SetW(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, d1);
 
 	const FloatV restDistance = FLoad(restDist); 
 
@@ -376,6 +375,7 @@ void setupFinalizeExtSolverContacts(
 		const bool disableStrongFriction = !!(contactBase0->materialFlags & PxMaterialFlag::eDISABLE_FRICTION);
 		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetX(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(staticFriction));
 		staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W=V4SetY(staticFrictionX_dynamicFrictionY_dominance0Z_dominance1W, FLoad(dynamicFriction));
+		const BoolV accelerationSpring = BLoad(!!(contactBase0->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING));
 	
 		SolverContactHeader* PX_RESTRICT header = reinterpret_cast<SolverContactHeader*>(ptr);
 		ptr += sizeof(SolverContactHeader);		
@@ -427,8 +427,7 @@ void setupFinalizeExtSolverContacts(
 				p += pointStride;
 
 				accumImpulse = FAdd(accumImpulse, setupExtSolverContact(b0, b1, d0, d1, angD0, angD1, frame0p, frame1p, normal, invDt, invDtp8, dt, restDistance, maxPenBias, restitution,
-					bounceThreshold, contact, *solverContact, ccdMaxSeparation, Z, vel0, vel1, cfm, solverOffsetSlop, norVel0, norVel1, damping));
-			
+					bounceThreshold, contact, *solverContact, ccdMaxSeparation, Z, vel0, vel1, cfm, solverOffsetSlop, norVel0, norVel1, damping, accelerationSpring));
 			}
 
 			ptr = p;
@@ -448,7 +447,6 @@ void setupFinalizeExtSolverContacts(
 		{
 			//const Vec3V normal = Vec3V_From_PxVec3(buffer.contacts[c.contactPatches[c.correlationListHeads[i]].start].normal);
 			//Vec3V normalS = V3LoadA(buffer[c.contactPatches[c.correlationListHeads[i]].start].normal);
-
 
 			const Vec3V linVrel = V3Sub(vel0.linear, vel1.linear);
 			//const Vec3V normal = Vec3V_From_PxVec3_Aligned(buffer.contacts[c.contactPatches[c.correlationListHeads[i]].start].normal);
@@ -517,7 +515,7 @@ void setupFinalizeExtSolverContacts(
 					else if(b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 						targetVel = FAdd(targetVel, b1.projectVelocity(t0, rbXn));
 
-					f0->normalXYZ_appliedForceW = V4SetW(t0, zero);
+					f0->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t0));
 					f0->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), velMultiplier);
 					f0->rbXnXYZ_biasW = V4SetW(V4Neg(Vec4V_From_Vec3V(resp1.angular)), FMul(V3Dot(t0, error), invDt));
 					f0->linDeltaVA = deltaV0.linear;
@@ -553,7 +551,7 @@ void setupFinalizeExtSolverContacts(
 					else if(b1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
 						targetVel = FAdd(targetVel, b1.projectVelocity(t1, rbXn));
 
-					f1->normalXYZ_appliedForceW = V4SetW(t1, zero);
+					f1->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t1));
 					f1->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), velMultiplier);
 					f1->rbXnXYZ_biasW = V4SetW(V4Neg(Vec4V_From_Vec3V(resp1.angular)), FMul(V3Dot(t1, error), invDt));
 					f1->linDeltaVA = deltaV0.linear;

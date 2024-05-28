@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -300,7 +300,7 @@ namespace Gu
 
 		size = 3;
 	
-		const FloatV eps = FEps();
+		const FloatV eps2 = FLoad(PX_EPS_REAL * PX_EPS_REAL);
 		const Vec3V a = Q[0];
 		const Vec3V b = Q[1];
 		const Vec3V c = Q[2];
@@ -308,7 +308,7 @@ namespace Gu
 		const Vec3V ac = V3Sub(c, a);
 		const Vec3V signArea = V3Cross(ab, ac);//0.5*(abXac)
 		const FloatV area = V3Dot(signArea, signArea);
-		if(FAllGrtrOrEq(eps, area))
+		if(FAllGrtrOrEq(eps2, area))
 		{
 			//degenerate
 			size = 2;
@@ -343,7 +343,7 @@ namespace Gu
 
 		size = 3;
 	
-		const FloatV eps = FEps();
+		const FloatV eps2 = FLoad(PX_EPS_REAL * PX_EPS_REAL);
 
 		const Vec3V a = Q[0];
 		const Vec3V b = Q[1];
@@ -352,7 +352,7 @@ namespace Gu
 		const Vec3V ac = V3Sub(c, a);
 		const Vec3V signArea = V3Cross(ab, ac);//0.5*(abXac)
 		const FloatV area = V3Dot(signArea, signArea);
-		if(FAllGrtrOrEq(eps, area))
+		if(FAllGrtrOrEq(eps2, area))
 		{
 			//degenerate
 			size = 2;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -74,7 +74,7 @@ namespace physx
 		virtual ~PxsHeapMemoryAllocator(){}
 
 		// PxVirtualAllocatorCallback
-		//virtual void* allocate(const size_t size, const int group, const char* file, const int line) = 0;
+		//virtual void* allocate(size_t size, int group, const char* file, int line) = 0;
 		//virtual void deallocate(void* ptr) = 0;
 		//~PxVirtualAllocatorCallback
 	};
@@ -86,6 +86,7 @@ namespace physx
 
 		virtual PxU64 getDeviceMemorySize() const = 0;
 		virtual PxsHeapStats getDeviceHeapStats() const = 0;
+		virtual void flushDeferredDeallocs() = 0;
 
 		PxsHeapMemoryAllocator* mMappedMemoryAllocators;
 	};

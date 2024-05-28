@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -158,7 +158,7 @@ namespace Gu
 														PxReal& t, PxReal& u, PxReal& v, 
 														float enlarge=0.0f)
 	{
-		return intersectRayTriangle(orig, dir, vert0, vert1, vert2,  t, u, v, true, enlarge);
+		return intersectRayTriangle(orig, dir, vert0, vert1, vert2, t, u, v, true, enlarge);
 	}
 
 	/*	\note	u, v and t will remain unchanged if false is returned. */
@@ -167,7 +167,7 @@ namespace Gu
 														PxReal& t, PxReal& u, PxReal& v, 
 														float enlarge=0.0f)
 	{
-		return intersectRayTriangle(orig, dir, vert0, vert1, vert2,  t, u, v, false, enlarge);
+		return intersectRayTriangle(orig, dir, vert0, vert1, vert2, t, u, v, false, enlarge);
 	}
 
 } // namespace Gu

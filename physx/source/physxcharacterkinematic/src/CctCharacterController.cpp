@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -1078,7 +1078,7 @@ void SweepTest::updateCachedShapesRegistration(PxU32 startIndex, bool unregister
 	}
 }
 
-void SweepTest::onObstacleAdded(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance )
+void SweepTest::onObstacleAdded(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, PxReal distance)
 {
 	if(mTouchedObstacleHandle != PX_INVALID_OBSTACLE_HANDLE)
 	{
@@ -1112,7 +1112,7 @@ void SweepTest::onObstacleRemoved(PxObstacleHandle index)
 	}
 }
 
-void SweepTest::onObstacleUpdated(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance)
+void SweepTest::onObstacleUpdated(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, PxReal distance)
 {
 	if(index == mTouchedObstacleHandle)
 	{
@@ -2076,7 +2076,7 @@ void Controller::findTouchedObject(const PxControllerFilters& filters, const PxO
 		class ControllerFilter : public PxQueryFilterCallback
 		{
 		public:
-			virtual	PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags)
+			virtual	PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape, const PxRigidActor* actor, PxHitFlags& queryFlags)	PX_OVERRIDE	PX_FINAL
 			{
 				// PT: ignore triggers
 				if(shape->getFlags() & physx::PxShapeFlag::eTRIGGER_SHAPE)
@@ -2093,7 +2093,7 @@ void Controller::findTouchedObject(const PxControllerFilters& filters, const PxO
 				return PxQueryHitType::eBLOCK;
 			}
 
-			virtual PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor)
+			virtual PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit, const PxShape* shape, const PxRigidActor* actor)	PX_OVERRIDE	PX_FINAL
 			{
 				// PT: we may get called if users have asked for such a callback
 				if(mUserFilterCallback && (mUserFilterFlags & PxQueryFlag::ePOSTFILTER))

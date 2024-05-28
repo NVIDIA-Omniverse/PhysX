@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -848,7 +848,7 @@ bool physx::Gu::sweepBox_MeshGeom_RTREE(const TriangleMesh* mesh, const PxTriang
 		const PxMat33Padded worldToMeshRot(pose.q.getConjugate()); // extract rotation matrix from pose.q
 		meshSpaceOrigin = worldToMeshRot.transform(box.center - pose.p);
 		meshSpaceDir = worldToMeshRot.transform(unitDir) * distance;
-		PxMat33 boxToMeshRot = worldToMeshRot * box.rot;
+		const PxMat33 boxToMeshRot = worldToMeshRot * box.rot;
 		sweptAABBMeshSpaceExtents = boxToMeshRot.column0.abs() * box.extents.x + 
 						   boxToMeshRot.column1.abs() * box.extents.y + 
 						   boxToMeshRot.column2.abs() * box.extents.z;

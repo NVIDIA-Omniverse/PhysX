@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -45,6 +45,7 @@ namespace physx
 #endif
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to produce smooth steering values in the presence of discontinuities when a vehicle e.g. lands on the ground.
 Use a zero sharpness value to disable the feature (backward compatibility with previous PhysX versions).
 */
@@ -74,8 +75,9 @@ struct PX_DEPRECATED PxVehicleSteerFilter
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to produce smooth vehicle driving control values from key inputs.
-@see PxVehicle4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicle4WSmoothAnalogRawInputsAndSetAnalogInputs
+\see PxVehicle4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicle4WSmoothAnalogRawInputsAndSetAnalogInputs
 */
 struct PX_DEPRECATED PxVehicleKeySmoothingData
 {
@@ -92,8 +94,9 @@ struct PX_DEPRECATED PxVehicleKeySmoothingData
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleKeySmoothingData)& 0x0f));
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to produce smooth analog vehicle control values from analog inputs.
-@see PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs
+\see PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs
 */
 struct PX_DEPRECATED PxVehiclePadSmoothingData
 {
@@ -110,8 +113,9 @@ struct PX_DEPRECATED PxVehiclePadSmoothingData
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehiclePadSmoothingData)& 0x0f));
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to produce smooth vehicle driving control values from analog and digital inputs.
-@see PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs
+\see PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs
 */
 class PX_DEPRECATED PxVehicleDrive4WRawInputData
 {
@@ -300,6 +304,7 @@ private:
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog vehicle control values (accel,brake,handbrake,steer) from digital inputs (keyboard).
  Also used to set boolean gearup, geardown values.
  \param[in] keySmoothing describes the rise and fall rates of the corresponding analog values when keys are pressed on and off.
@@ -318,6 +323,7 @@ PX_DEPRECATED void PxVehicleDrive4WSmoothDigitalRawInputsAndSetAnalogInputs
 	 const PxVec3& forwardAxis = PxVehicleGetDefaultContext().forwardAxis);
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog vehicle control values from analog inputs (gamepad).
 Also used to set boolean gearup, geardown values.
 \param[in] padSmoothing describes how quickly the control values applied to the vehicle blend from the current vehicle values towards the raw analog values from the gamepad.
@@ -337,8 +343,9 @@ PX_DEPRECATED void PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to produce smooth vehicle driving control values from analog and digital inputs.
-@see PxVehicleDriveNWSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs
+\see PxVehicleDriveNWSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs
 */
 class PX_DEPRECATED PxVehicleDriveNWRawInputData : public PxVehicleDrive4WRawInputData
 {
@@ -349,6 +356,7 @@ public:
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog vehicle control values (accel,brake,handbrake,steer) from digital inputs (keyboard).
  Also used to set boolean gearup, geardown values.
  \param[in] keySmoothing describes the rise and fall rates of the corresponding analog values when keys are pressed on and off.
@@ -367,6 +375,7 @@ PX_DEPRECATED void PxVehicleDriveNWSmoothDigitalRawInputsAndSetAnalogInputs
 	 const PxVec3& forwardAxis = PxVehicleGetDefaultContext().forwardAxis);
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog vehicle control values from analog inputs (gamepad).
 Also used to set boolean gearup, geardown values.
 \param[in] padSmoothing describes how quickly the control values applied to the vehicle blend from the current vehicle values towards the raw analog values from the gamepad.
@@ -387,7 +396,7 @@ PX_DEPRECATED void PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs
 
 /**
 \brief Used to produce smooth analog tank control values from analog and digital inputs.
-@see PxVehicleDriveTankSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDriveTankSmoothAnalogRawInputsAndSetAnalogInputs
+\see PxVehicleDriveTankSmoothDigitalRawInputsAndSetAnalogInputs, PxVehicleDriveTankSmoothAnalogRawInputsAndSetAnalogInputs
 */
 class PX_DEPRECATED PxVehicleDriveTankRawInputData
 {
@@ -640,6 +649,7 @@ private:
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog tank control values from digital inputs (keyboard).
 Also used to set boolean gearup, geardown values.
 \param[in] keySmoothing describes the rise and fall rates of the corresponding analog values when keys are pressed on and off.
@@ -655,6 +665,7 @@ PX_DEPRECATED void PxVehicleDriveTankSmoothDigitalRawInputsAndSetAnalogInputs
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used to smooth and set analog tank control values from analog inputs (gamepad).
 Also used to set boolean gearup, geardown values.
 \param[in] padSmoothing describes how quickly the control values applied to the vehicle blend from the current vehicle values towards the raw analog values from the gamepad.

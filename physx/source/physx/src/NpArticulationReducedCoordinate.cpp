@@ -22,13 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "NpArticulationReducedCoordinate.h"
 #include "NpArticulationTendon.h"
-#include "NpArticulationSensor.h"
 
 #include "DyFeatherstoneArticulation.h"
 #include "ScArticulationSim.h"
@@ -515,7 +514,7 @@ PxSpatialVelocity NpArticulationReducedCoordinate::getLinkAcceleration(const PxU
 {
 	NP_READ_CHECK(getNpScene());
 	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::getLinkAcceleration: Articulation must be in a scene.", PxSpatialVelocity());
-	PX_CHECK_AND_RETURN_VAL(linkId < 64, "PxArticulationReducedCoordinate::getLinkAcceleration index is not valid.", PxSpatialVelocity());
+	PX_CHECK_AND_RETURN_VAL(linkId < mArticulationLinks.size(), "PxArticulationReducedCoordinate::getLinkAcceleration index is not valid.", PxSpatialVelocity());
 
 	PX_CHECK_SCENE_API_READ_FORBIDDEN_EXCEPT_COLLIDE_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::getLinkAcceleration() not allowed while simulation is running, except in a split simulation during PxScene::collide() and up to PxScene::advance().", PxSpatialVelocity());
 
@@ -526,12 +525,15 @@ PxSpatialVelocity NpArticulationReducedCoordinate::getLinkAcceleration(const PxU
 
 PxU32 NpArticulationReducedCoordinate::getGpuArticulationIndex()
 {
+	return getGPUIndex();
+}
+
+PxArticulationGPUIndex NpArticulationReducedCoordinate::getGPUIndex() const
+{
 	NP_READ_CHECK(getNpScene());
-	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::getGpuArticulationIndex: Articulation must be in a scene.", 0xffffffff);
-	
-	if (getScene()->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
-		return mCore.getGpuArticulationIndex();
-	return 0xffffffff;
+	PX_CHECK_AND_RETURN_VAL(getNpScene(), "PxArticulationReducedCoordinate::getGPUIndex: Articulation must be in a scene.", 0xffffffff);
+
+	return mCore.getGpuArticulationIndex();
 }
 
 PxArticulationSpatialTendon* NpArticulationReducedCoordinate::createSpatialTendon()
@@ -583,70 +585,61 @@ void NpArticulationReducedCoordinate::removeFixedTendonInternal(NpArticulationFi
 	getNpScene()->scRemoveArticulationFixedTendon(*npTendon);
 }
 
-void NpArticulationReducedCoordinate::removeSensorInternal(NpArticulationSensor* npSensor)
+void NpArticulationReducedCoordinate::removeMimicJointInternal(NpArticulationMimicJoint* npMimicJoint)
 {
-	//we don't need to remove low-level sensor from the articulation sim because the only case the tendon can be removed is
+	//we don't need to remove low-level mimic joint from the articulation sim because the only case the mimic joint can be removed is
 	//when the whole articulation is removed from the scene and the ArticulationSim get destroyed
-	getNpScene()->scRemoveArticulationSensor(*npSensor);
+	getNpScene()->scRemoveArticulationMimicJoint(*npMimicJoint);
 }
 
-PxArticulationSensor* NpArticulationReducedCoordinate::createSensor(PxArticulationLink* link, const PxTransform& relativePose)
+PxArticulationMimicJoint* NpArticulationReducedCoordinate::createMimicJoint(const PxArticulationJointReducedCoordinate& jointA, PxArticulationAxis::Enum axisA, const PxArticulationJointReducedCoordinate& jointB, PxArticulationAxis::Enum axisB, PxReal gearRatio, PxReal offset)
 {
 	if (getNpScene())
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::createSensor() not allowed while the articulation is in a scene. Call will be ignored.");
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::createMimicJoint() not allowed while the articulation is in a scene. Call will be ignored.");
 		return NULL;
 	}
 
-	void* sensorMem = PX_ALLOC(sizeof(NpArticulationSensor), "NpArticulationSensor");
-	PxMarkSerializedMemory(sensorMem, sizeof(NpArticulationSensor));
-	NpArticulationSensor* sensor = PX_PLACEMENT_NEW(sensorMem, NpArticulationSensor)(link, relativePose);
-
-	sensor->setHandle(mSensors.size());
-	mSensors.pushBack(sensor);
-
-	mTopologyChanged = true;
-	return sensor;
-}
-
-void NpArticulationReducedCoordinate::releaseSensor(PxArticulationSensor& sensor)
-{
-	if (getNpScene())
+	if(&jointA == &jointB && axisA == axisB)
 	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::releaseSensor() not allowed while the articulation is in a scene. Call will be ignored.");
-		return;
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::createMimicJoint() cannot couple a joint dof to itself.");
+		return NULL;
 	}
 
-	NpArticulationSensor* npSensor = static_cast<NpArticulationSensor*>(&sensor);
+	if(&jointA.getChildArticulationLink().getArticulation() != &jointB.getChildArticulationLink().getArticulation())
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::createMimicJoint() is only allowed to couple two joints of the same articulation instance.");
+		return NULL;
+	}
+	
+	if(0.0f == gearRatio)
+	{
+		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxArticulationReducedCoordinate::createMimicJoint() requires a non-zero gear ratio.");
+		return NULL;		
+	}
 
-	const PxU32 handle = npSensor->getHandle();
+	NpArticulationMimicJoint* mimicJoint = NpFactory::getInstance().createNpArticulationMimicJoint(jointA, axisA, jointB, axisB, gearRatio, offset);
 
-	PX_CHECK_AND_RETURN(handle < mSensors.size() && mSensors[handle] == npSensor,
-		"PxArticulationReducedCoordinate::releaseSensor: Attempt to release sensor that is not part of this articulation.");
-
-	mSensors.back()->setHandle(handle);
-	mSensors.replaceWithLast(handle);
-	npSensor->~NpArticulationSensor();
-
-	if (npSensor->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
-		PX_FREE(npSensor);
+	mimicJoint->setHandle(mMimicJoints.size());
+	mMimicJoints.pushBack(mimicJoint);
 
 	mTopologyChanged = true;
+	return mimicJoint;
 }
 
-PxU32 NpArticulationReducedCoordinate::getSensors(PxArticulationSensor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
+PxU32 NpArticulationReducedCoordinate::getMimicJoints(PxArticulationMimicJoint** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
-	return Cm::getArrayOfPointers(userBuffer, bufferSize, startIndex, mSensors.begin(), mSensors.size());
+	return Cm::getArrayOfPointers(userBuffer, bufferSize, startIndex, mMimicJoints.begin(), mMimicJoints.size());
 }
 
-PxU32 NpArticulationReducedCoordinate::getNbSensors()
+PxU32 NpArticulationReducedCoordinate::getNbMimicJoints() const
 {
-	return mSensors.size();
+	return mMimicJoints.size();
 }
 
-NpArticulationSensor* NpArticulationReducedCoordinate::getSensor(const PxU32 index) const
+NpArticulationMimicJoint* NpArticulationReducedCoordinate::getMimicJoint(const PxU32 index) const
 {
-	return mSensors[index];
+	return mMimicJoints[index];
 }
 
 PxU32 NpArticulationReducedCoordinate::getSpatialTendons(PxArticulationSpatialTendon** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
@@ -654,7 +647,7 @@ PxU32 NpArticulationReducedCoordinate::getSpatialTendons(PxArticulationSpatialTe
 	return Cm::getArrayOfPointers(userBuffer, bufferSize, startIndex, mSpatialTendons.begin(), mSpatialTendons.size());
 }
 
-PxU32 NpArticulationReducedCoordinate::getNbSpatialTendons()
+PxU32 NpArticulationReducedCoordinate::getNbSpatialTendons() const
 {
 	return mSpatialTendons.size();
 }
@@ -669,7 +662,7 @@ PxU32 NpArticulationReducedCoordinate::getFixedTendons(PxArticulationFixedTendon
 	return Cm::getArrayOfPointers(userBuffer, bufferSize, startIndex, mFixedTendons.begin(), mFixedTendons.size());
 }
 
-PxU32 NpArticulationReducedCoordinate::getNbFixedTendons()
+PxU32 NpArticulationReducedCoordinate::getNbFixedTendons() const
 {
 	return mFixedTendons.size();
 }
@@ -732,15 +725,14 @@ NpArticulationReducedCoordinate::~NpArticulationReducedCoordinate()
 		}
 	}
 
-	for (PxU32 i = 0; i < mSensors.size(); ++i)
+	for (PxU32 i = 0; i < mMimicJoints.size(); ++i)
 	{
-		if (mSensors[i])
+		if (mMimicJoints[i])
 		{
-			mSensors[i]->~NpArticulationSensor();
-			if(mSensors[i]->getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
-				PX_FREE(mSensors[i]);
+			NpDestroyArticulationMimicJoint(mMimicJoints[i]);
 		}
 	}
+
 
 	NpFactory::getInstance().onArticulationRelease(this);
 }
@@ -786,10 +778,6 @@ void NpArticulationReducedCoordinate::requiresObjects(PxProcessPxBaseCallback& c
 	for (PxU32 i = 0; i < nbLinks; i++)
 		c.process(*mArticulationLinks[i]);
 
-	const PxU32 nbSensors = mSensors.size();
-	for (PxU32 i = 0; i < nbSensors; i++)
-		c.process(*mSensors[i]);
-
 	const PxU32 nbSpatialTendons = mSpatialTendons.size();
 	for (PxU32 i = 0; i < nbSpatialTendons; i++)
 		c.process(*mSpatialTendons[i]);
@@ -798,6 +786,10 @@ void NpArticulationReducedCoordinate::requiresObjects(PxProcessPxBaseCallback& c
 	for (PxU32 i = 0; i < nbFixedTendons; i++)
 		c.process(*mFixedTendons[i]);
 
+	const PxU32 nbMimicJoints = mMimicJoints.size();
+	for (PxU32 i = 0; i < nbMimicJoints; i++)
+		c.process(*mMimicJoints[i]);
+
 }
 
 void NpArticulationReducedCoordinate::exportExtraData(PxSerializationContext& stream)
@@ -805,7 +797,7 @@ void NpArticulationReducedCoordinate::exportExtraData(PxSerializationContext& st
 	Cm::exportInlineArray(mArticulationLinks, stream);
 	Cm::exportArray(mSpatialTendons, stream);
 	Cm::exportArray(mFixedTendons, stream);
-	Cm::exportArray(mSensors, stream);
+	Cm::exportArray(mMimicJoints, stream);
 
 	stream.writeName(mName);
 }
@@ -815,7 +807,7 @@ void NpArticulationReducedCoordinate::importExtraData(PxDeserializationContext& 
 	Cm::importInlineArray(mArticulationLinks, context);
 	Cm::importArray(mSpatialTendons, context);
 	Cm::importArray(mFixedTendons, context);
-	Cm::importArray(mSensors, context);
+	Cm::importArray(mMimicJoints, context);
 
 	context.readName(mName);
 }
@@ -829,11 +821,11 @@ void NpArticulationReducedCoordinate::resolveReferences(PxDeserializationContext
 		context.translatePxBase(link);
 	}
 
-	const PxU32 nbSensors = mSensors.size();
-	for (PxU32 i = 0; i < nbSensors; i++)
+	const PxU32 nbMimicJoints = mMimicJoints.size();
+	for (PxU32 i = 0; i < nbMimicJoints; i++)
 	{
-		NpArticulationSensor*& sensor = mSensors[i];
-		context.translatePxBase(sensor);
+		NpArticulationMimicJoint*& mimicJoint = mMimicJoints[i];
+		context.translatePxBase(mimicJoint);
 	}
 
 	const PxU32 nbSpatialTendons = mSpatialTendons.size();
@@ -884,7 +876,7 @@ void NpArticulationReducedCoordinate::release()
 	if (npScene)
 	{
 		npScene->removeArticulationTendons(*this);
-		npScene->removeArticulationSensors(*this);
+		npScene->removeArticulationMimicJoints(*this);
 		npScene->scRemoveArticulation(*this);
 		npScene->removeFromArticulationList(*this);
 	}
@@ -1208,6 +1200,10 @@ void NpArticulationReducedCoordinate::setName(const char* debugName)
 {
 	NP_WRITE_CHECK(getNpScene());
 	mName = debugName;
+#if PX_SUPPORT_OMNI_PVD
+	PxArticulationReducedCoordinate & a = *this;
+	streamArticulationName(a, mName);
+#endif
 }
 
 const char* NpArticulationReducedCoordinate::getName() const
@@ -1229,4 +1225,20 @@ void NpArticulationReducedCoordinate::setAggregate(PxAggregate* a)
 { 
 	mAggregate = static_cast<NpAggregate*>(a); 
 }
+
+PxArticulationResidual NpArticulationReducedCoordinate::getSolverResidual() const
+{
+	PxArticulationResidual result;
+
+	const Dy::ErrorAccumulator& errorAccumulatorVelIter = mCore.getSim()->getLowLevelArticulation()->mInternalErrorAccumulatorVelIter;
+	result.velocityIterationResidual.maxResidual = errorAccumulatorVelIter.mMaxError;
+	result.velocityIterationResidual.rmsResidual = PxSqrt(1.0f / PxMax(1, errorAccumulatorVelIter.mCounter) * errorAccumulatorVelIter.mErrorSumOfSquares);
+
+	const Dy::ErrorAccumulator& errorAccumulatorPosIter = mCore.getSim()->getLowLevelArticulation()->mInternalErrorAccumulatorPosIter;
+	result.positionIterationResidual.maxResidual = errorAccumulatorPosIter.mMaxError;
+	result.positionIterationResidual.rmsResidual = PxSqrt(1.0f / PxMax(1, errorAccumulatorPosIter.mCounter) * errorAccumulatorPosIter.mErrorSumOfSquares);
+
+	return result;
+}
+
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -213,6 +213,8 @@ namespace physx
 		PxReal subgridsMaxSdfValue = 1.0f;
 		PxReal narrowBandThickness = sdfDesc.narrowBandThicknessRelativeToSdfBoundsDiagonal * edges.magnitude();
 
+		bool success = true; // catch GPU errors.
+
 		if (sdfDesc.sdfBuilder == NULL) 
 		{		
 			PxArray<PxReal> denseSdf;			
@@ -255,7 +257,7 @@ namespace physx
 				numTriangleIndices = repairedIndices.size();
 
 			//The GPU SDF builder does sparse SDF, 3d texture layout and quantization in one go to best utilize the gpu
-			sdfDesc.sdfBuilder->buildSparseSDF(verts,
+			success = sdfDesc.sdfBuilder->buildSparseSDF(verts,
 				numVertices,
 				ind,
 				numTriangleIndices,
@@ -263,7 +265,7 @@ namespace physx
 				meshLower, meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, narrowBandThickness, sdfDesc.subgridSize, sdfDesc.bitsPerSubgridPixel,
 				sdfCoarse, sdfSubgridsStartSlots, sdfDataSubgrids, subgridsMinSdfValue, subgridsMaxSdfValue, 
 				sdfDesc.sdfSubgrids3DTexBlockDim.x, sdfDesc.sdfSubgrids3DTexBlockDim.y, sdfDesc.sdfSubgrids3DTexBlockDim.z, 0);
-		}
+		}		
 
 		sdfDesc.sdf.count = sdfCoarse.size();
 		sdfDesc.sdf.stride = sizeof(PxReal);
@@ -278,7 +280,7 @@ namespace physx
 		sdfDesc.subgridsMinSdfValue = subgridsMinSdfValue;
 		sdfDesc.subgridsMaxSdfValue = subgridsMaxSdfValue;
 
-		return true;
+		return success; // false if we had GPU errors.
 	}
 
 	static bool createSDF(PxTriangleMeshDesc& desc, PxSDFDesc& sdfDesc, PxArray<PxReal>& sdf, PxArray<PxU8>& sdfDataSubgrids, PxArray<PxU32>& sdfSubgridsStartSlots)
@@ -378,8 +380,12 @@ namespace physx
 			if (repairedIndices.size() > 0)
 				numTriangleIndices = repairedIndices.size();
 
-			sdfDesc.sdfBuilder->buildSDF(verts, numVertices, ind, numTriangleIndices, dx, dy, dz, meshLower,
+			bool success = sdfDesc.sdfBuilder->buildSDF(verts, numVertices, ind, numTriangleIndices, dx, dy, dz, meshLower,
 				meshLower + PxVec3(static_cast<PxReal>(dx), static_cast<PxReal>(dy), static_cast<PxReal>(dz)) * spacing, true, &sdf[0]);
+
+			// return false if the cooking failed.
+			if (!success)
+				return false;
 		}
 
 		sdfDesc.sdf.count = sdfDesc.dims.x * sdfDesc.dims.y * sdfDesc.dims.z;
@@ -396,7 +402,9 @@ namespace physx
 		if (!sdfDesc.sdf.data && sdfDesc.spacing > 0.f)
 		{
 			// Calculate signed distance field here if no sdf data provided.
-			createSDF(desc, sdfDesc, sdf, sdfDataSubgrids, sdfSubgridsStartSlots);
+			if (!createSDF(desc, sdfDesc, sdf, sdfDataSubgrids, sdfSubgridsStartSlots))
+				return false;
+
 			sdfDesc.sdf.stride = sizeof(PxReal);
 		}
 		return true;

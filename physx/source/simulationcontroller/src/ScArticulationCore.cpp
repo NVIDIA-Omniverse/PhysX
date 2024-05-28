@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -69,7 +69,7 @@ void Sc::ArticulationCore::setWakeCounter(const PxReal v)
 		mSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_WAKECOUNTER);
 	}
 
-#ifdef _DEBUG
+#if PX_DEBUG
 	if(mSim)
 		mSim->debugCheckWakeCounterOfLinks(v);
 #endif
@@ -110,7 +110,7 @@ void Sc::ArticulationCore::wakeUp(PxReal wakeCounter)
 		arti->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_WAKECOUNTER);
 	}
 
-#ifdef _DEBUG
+#if PX_DEBUG
 	if(mSim)
 		mSim->debugCheckSleepStateOfLinks(false);
 #endif
@@ -126,7 +126,7 @@ void Sc::ArticulationCore::putToSleep()
 		arti->setGpuDirtyFlag(Dy::ArticulationDirtyFlag::eDIRTY_WAKECOUNTER);
 	}
 
-#ifdef _DEBUG
+#if PX_DEBUG
 	if(mSim)
 		mSim->debugCheckSleepStateOfLinks(true);
 #endif

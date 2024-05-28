@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,6 +39,7 @@
 #include "../snippetutils/SnippetUtils.h"
 
 #include "extensions/PxParticleExt.h"
+#include "extensions/PxCudaHelpersExt.h"
 #include "PxIsosurfaceExtraction.h"
 #include "PxAnisotropy.h"
 #include "PxSmoothing.h"
@@ -51,15 +52,16 @@ using namespace physx;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation 		= NULL;
-static PxPhysics*				gPhysics 			= NULL;
-static PxDefaultCpuDispatcher*	gDispatcher 		= NULL;
-static PxScene*					gScene 				= NULL;
-static PxMaterial*				gMaterial 			= NULL;
-static PxPvd*					gPvd 				= NULL;
-static PxPBDParticleSystem*		gParticleSystem 	= NULL;
-static PxParticleBuffer*		gParticleBuffer 	= NULL;
-static bool						gIsRunning 			= true;
+static PxFoundation*			gFoundation			= NULL;
+static PxPhysics*				gPhysics			= NULL;
+static PxDefaultCpuDispatcher*	gDispatcher			= NULL;
+static PxCudaContextManager*	gCudaContextManager	= NULL;
+static PxScene*					gScene				= NULL;
+static PxMaterial*				gMaterial			= NULL;
+static PxPvd*					gPvd				= NULL;
+static PxPBDParticleSystem*		gParticleSystem		= NULL;
+static PxParticleBuffer*		gParticleBuffer		= NULL;
+static bool						gIsRunning			= true;
 
 
 PxRigidDynamic* movingWall;
@@ -97,6 +99,11 @@ public:
 		PxU32 maxNumVertices, PxU32 maxNumTriangles, PxU32 maxNumParticles)
 	{
 		mCudaContextManager = cudaContextManager;
+		if (mCudaContextManager == NULL)
+		{
+			mMaxVertices = 0;
+			return;
+		}
 		mMaxVertices = maxNumVertices;
 		/*ExtGpu::PxIsosurfaceParams p;
 		p.isosurfaceValue =threshold;
@@ -105,16 +112,16 @@ public:
 		PxPhysicsGpu* pxGpu = PxGetPhysicsGpu();
 
 		mSmoothedPositionGenerator = pxGpu->createSmoothedPositionGenerator(cudaContextManager, maxNumParticles, 0.5f);
-		PX_DEVICE_ALLOC(cudaContextManager, mSmoothedPositionsDeviceBuffer, maxNumParticles);
+		mSmoothedPositionsDeviceBuffer = PX_EXT_DEVICE_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxNumParticles);
 		mSmoothedPositionGenerator->setResultBufferDevice(mSmoothedPositionsDeviceBuffer);
 
 		//Too small minAnisotropy values will shrink particles to ellipsoids that are smaller than a isosurface grid cell which can lead to unpleasant aliasing/flickering 
 		PxReal minAnisotropy = 1.0f;// 0.5f; // 0.1f;
 		PxReal anisotropyScale = 5.0f;
 		mAnisotropyGenerator = pxGpu->createAnisotropyGenerator(cudaContextManager, maxNumParticles, anisotropyScale, minAnisotropy, 2.0f);
-		PX_DEVICE_ALLOC(cudaContextManager, mAnisotropyDeviceBuffer1, maxNumParticles);
-		PX_DEVICE_ALLOC(cudaContextManager, mAnisotropyDeviceBuffer2, maxNumParticles);
-		PX_DEVICE_ALLOC(cudaContextManager, mAnisotropyDeviceBuffer3, maxNumParticles);
+		mAnisotropyDeviceBuffer1 = PX_EXT_DEVICE_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxNumParticles);
+		mAnisotropyDeviceBuffer2 = PX_EXT_DEVICE_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxNumParticles);
+		mAnisotropyDeviceBuffer3 = PX_EXT_DEVICE_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxNumParticles);
 		mAnisotropyGenerator->setResultBufferDevice(mAnisotropyDeviceBuffer1, mAnisotropyDeviceBuffer2, mAnisotropyDeviceBuffer3);
 
 		gIsosurfaceVertices.resize(maxNumVertices);
@@ -165,22 +172,25 @@ public:
 		gIsosurfaceIndices.reset();
 		gIsosurfaceNormals.reset();
 
-		mIsosurfaceExtractor->release();
-		PX_DELETE(mIsosurfaceExtractor);
+		if (mIsosurfaceExtractor)
+		{
+			mIsosurfaceExtractor->release();
+			PX_DELETE(mIsosurfaceExtractor);
+		}
 
 		PX_DELETE(mArrayConverter);
 
 		if (mAnisotropyGenerator)
 		{
 			mAnisotropyGenerator->release();
-			mCudaContextManager->freeDeviceBuffer(mAnisotropyDeviceBuffer1);
-			mCudaContextManager->freeDeviceBuffer(mAnisotropyDeviceBuffer2);
-			mCudaContextManager->freeDeviceBuffer(mAnisotropyDeviceBuffer3);
+			PX_EXT_DEVICE_MEMORY_FREE(*mCudaContextManager, mAnisotropyDeviceBuffer1);
+			PX_EXT_DEVICE_MEMORY_FREE(*mCudaContextManager, mAnisotropyDeviceBuffer2);
+			PX_EXT_DEVICE_MEMORY_FREE(*mCudaContextManager, mAnisotropyDeviceBuffer3);
 		}
 		if (mSmoothedPositionGenerator)
 		{
 			mSmoothedPositionGenerator->release();
-			mCudaContextManager->freeDeviceBuffer(mSmoothedPositionsDeviceBuffer);
+			PX_EXT_DEVICE_MEMORY_FREE(*mCudaContextManager, mSmoothedPositionsDeviceBuffer);
 		}
 	}
 };
@@ -190,32 +200,16 @@ static IsosurfaceCallback gIsosuraceCallback;
 // -----------------------------------------------------------------------------------------------------------------
 static void initScene()
 {
-	PxCudaContextManager* cudaContextManager = NULL;
-	if (PxGetSuggestedCudaDeviceOrdinal(gFoundation->getErrorCallback()) >= 0)
-	{
-		// initialize CUDA
-		PxCudaContextManagerDesc cudaContextManagerDesc;
-		cudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
-		if (cudaContextManager && !cudaContextManager->contextIsValid())
-		{
-			cudaContextManager->release();
-			cudaContextManager = NULL;
-		}
-	}
-	if (cudaContextManager == NULL)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Failed to initialize CUDA!\n");
-	}
-
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	gDispatcher = PxDefaultCpuDispatcherCreate(2);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
-	sceneDesc.cudaContextManager = cudaContextManager;
+	sceneDesc.cudaContextManager = gCudaContextManager;
 	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
+	sceneDesc.flags |= PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS;
 	sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
 	sceneDesc.solverType = PxSolverType::eTGS;
 	gScene = gPhysics->createScene(sceneDesc);
@@ -226,14 +220,14 @@ static PxReal initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ
 {
 	PxCudaContextManager* cudaContextManager = gScene->getCudaContextManager();
 	if (cudaContextManager == NULL)
-		return -1;
+		return 0.0f;
 
 	const PxU32 maxParticles = numX * numY * numZ;
 
 	const PxReal fluidRestOffset = 0.5f * particleSpacing;
 	
 	// Material setup
-	PxPBDMaterial* defaultMat = gPhysics->createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f);	
+	PxPBDMaterial* defaultMat = gPhysics->createPBDMaterial(0.05f, 0.05f, 0.f, 0.001f, 0.5f, 0.005f, 0.01f, 0.f, 0.f, 0.5f);	
 
 	PxPBDParticleSystem *particleSystem = gPhysics->createPBDParticleSystem(*cudaContextManager, 96);
 	gParticleSystem = particleSystem;
@@ -264,7 +258,7 @@ static PxReal initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ
 	particleSystem->setParticleContactOffset(fluidRestOffset / 0.6f);
 	particleSystem->setSolidRestOffset(solidRestOffset);
 	particleSystem->setFluidRestOffset(fluidRestOffset);
-	particleSystem->enableCCD(false);
+	particleSystem->setParticleFlag(PxParticleFlag::eENABLE_SPECULATIVE_CCD, true);
 	particleSystem->setMaxVelocity(100.f);
 
 	gScene->addActor(*particleSystem);
@@ -273,9 +267,9 @@ static PxReal initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ
 	// Create particles and add them to the particle system
 	const PxU32 particlePhase = particleSystem->createPhase(defaultMat, PxParticlePhaseFlags(PxParticlePhaseFlag::eParticlePhaseFluid | PxParticlePhaseFlag::eParticlePhaseSelfCollide));
 
-	PxU32* phase = cudaContextManager->allocPinnedHostBuffer<PxU32>(maxParticles);
-	PxVec4* positionInvMass = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
-	PxVec4* velocity = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
+	PxU32* phase = PX_EXT_PINNED_MEMORY_ALLOC(PxU32, *cudaContextManager, maxParticles);
+	PxVec4* positionInvMass = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxParticles);
+	PxVec4* velocity = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxParticles);
 
 	PxReal x = position.x;
 	PxReal y = position.y;
@@ -315,9 +309,9 @@ static PxReal initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ
 	gParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleBuffer(bufferDesc, cudaContextManager);
 	gParticleSystem->addParticleBuffer(gParticleBuffer);
 	
-	cudaContextManager->freePinnedHostBuffer(positionInvMass);
-	cudaContextManager->freePinnedHostBuffer(velocity);
-	cudaContextManager->freePinnedHostBuffer(phase);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, positionInvMass);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, velocity);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, phase);
 
 	return particleSpacing;
 }
@@ -352,6 +346,16 @@ void initPhysics(bool /*interactive*/)
 	gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+
+	// initialize cuda
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
+	if (gCudaContextManager && !gCudaContextManager->contextIsValid())
+	{
+		PX_RELEASE(gCudaContextManager);
+		printf("Failed to initialize cuda context.\n");
+		printf("The Isosurface feature is currently only supported on the GPU.\n");
+	}
 
 	initScene();
 
@@ -414,7 +418,10 @@ void initPhysics(bool /*interactive*/)
 	p.numMeshNormalSmoothingPasses = 4;
 
 	gIsosuraceCallback.initialize(gScene->getCudaContextManager(), sgIsosurfaceParams, p, 2*1024 * 1024, 4*1024 * 1024, numX * numY * numZ);
-	gParticleSystem->setParticleSystemCallback(&gIsosuraceCallback);
+	if (gParticleSystem)
+	{
+		gParticleSystem->setParticleSystemCallback(&gIsosuraceCallback);
+	}
 
 	// Setup rigid bodies
 	const PxReal dynamicsDensity = fluidDensity * 0.5f;
@@ -468,16 +475,20 @@ void stepPhysics(bool /*interactive*/)
 	
 void cleanupPhysics(bool /*interactive*/)
 {
-	gParticleSystem->setParticleSystemCallback(NULL);
+	if (gParticleSystem)
+	{
+		gParticleSystem->setParticleSystemCallback(NULL);
+	}
 	gIsosuraceCallback.release();
 	
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
+	PX_RELEASE(gCudaContextManager);
 	if(gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();	gPvd = NULL;
+		PX_RELEASE(gPvd);
 		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);

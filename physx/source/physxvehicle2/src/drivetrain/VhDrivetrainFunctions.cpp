@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -283,7 +283,7 @@ void PxVehicleDifferentialStateUpdate
 		const PxU32  wheel1 = diffParams.frontWheelIds[1];
 		const PxU32  wheel2 = diffParams.rearWheelIds[0];
 		const PxU32  wheel3 = diffParams.rearWheelIds[1];
-		const PxU32 wheelIds[4] = { wheel0, wheel1,  wheel2,  wheel3 };
+		const PxU32 wheelIds[4] = { wheel0, wheel1, wheel2,  wheel3 };
 		const PxF32 constraintMultipliers[4] = { 1.0f, f, Tc*(1 + f) / (1 + r), r*Tc*(1 + f) / (1 + r) };
 		wheelConstraintGroupState.addConstraintGroup(4, wheelIds, constraintMultipliers);
 	}
@@ -429,7 +429,7 @@ void PxVehicleEngineDriveActuationStateUpdate
 (const PxVehicleAxleDescription& axleDescription,
  const PxVehicleGearboxParams& gearboxParams, 
  const PxVehicleArrayData<const PxReal>& brakeResponseStates,
- const PxVehicleEngineDriveThrottleCommandResponseState& throttleResponseState,  
+ const PxVehicleEngineDriveThrottleCommandResponseState& throttleResponseState,
  const PxVehicleGearboxState& gearboxState, const PxVehicleDifferentialState& diffState, const PxVehicleClutchCommandResponseState& clutchResponseState,
  PxVehicleArrayData<PxVehicleWheelActuationState>& actuationStates)
 {

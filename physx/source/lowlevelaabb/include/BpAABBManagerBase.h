@@ -22,13 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef BP_AABBMANAGER_BASE_H
 #define BP_AABBMANAGER_BASE_H
 
+#include "foundation/PxAllocator.h"
 #include "foundation/PxPinnedArray.h"
 #include "foundation/PxBitMap.h"
 #include "foundation/PxSList.h"
@@ -38,6 +39,7 @@
 #include "GuBounds.h"
 #include "PxFiltering.h"
 #include "PxAggregate.h"
+#include "foundation/PxSimpleTypes.h"
 
 namespace physx
 {
@@ -58,7 +60,7 @@ namespace Bp
 	/**
 	\brief Changes to the configuration of overlap pairs are reported as void* pairs.
 	\note Each void* in the pair corresponds to the void* passed to AABBManager::createVolume.
-	@see AABBManager::createVolume, AABBManager::getCreatedOverlaps, AABBManager::getDestroyedOverlaps
+	\see AABBManager::createVolume, AABBManager::getCreatedOverlaps, AABBManager::getDestroyedOverlaps
 	*/
 	struct AABBOverlap
 	{
@@ -251,6 +253,15 @@ namespace Bp
 		virtual			void					setGPUStateChanged()			{}
 		virtual			void					setPersistentStateChanged()		{}
 
+#if PX_ENABLE_SIM_STATS
+						PxU32					getGpuDynamicsLostFoundPairsStats()				{ return mGpuDynamicsLostFoundPairsStats; }
+						PxU32					getGpuDynamicsTotalAggregatePairsStats()		{ return mGpuDynamicsTotalAggregatePairsStats; }
+						PxU32					getGpuDynamicsLostFoundAggregatePairsStats()	{ return mGpuDynamicsLostFoundAggregatePairsStats; }
+#else
+	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
+#endif
+
+
 	protected:
 						void					reserveShapeSpace(PxU32 nbShapes);
 
@@ -328,6 +339,14 @@ namespace Bp
 
 						PxU32					mUsedSize;				// highest used value + 1
 						PxU32					mNbAggregates;
+
+#if PX_ENABLE_SIM_STATS
+						PxU32					mGpuDynamicsLostFoundPairsStats;
+						PxU32					mGpuDynamicsTotalAggregatePairsStats;
+						PxU32					mGpuDynamicsLostFoundAggregatePairsStats;
+#else
+	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
+#endif
 
 #ifdef BP_USE_AGGREGATE_GROUP_TAIL
 		// PT: TODO: even in the 3.4 trunk this stuff is a clumsy mess: groups are "BpHandle" suddenly passed

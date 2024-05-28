@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -838,6 +838,7 @@ bool ExtendedBucketPruner::checkValidity()
 					PX_ASSERT(mergeTreeTestBitmap.test(index) == PxIntFalse);
 					mergeTreeTestBitmap.set(index);
 
+#if PX_ENABLE_ASSERTS
 					const PrunerPayload& payload = mPruningPool->getObjects()[index];
 					const ExtendedBucketPrunerMap::Entry* extendedPrunerSwapEntry = mExtendedBucketPrunerMap.find(payload);
 					PX_ASSERT(extendedPrunerSwapEntry);
@@ -845,6 +846,7 @@ bool ExtendedBucketPruner::checkValidity()
 					const ExtendedBucketPrunerData& data = extendedPrunerSwapEntry->second;
 					PX_ASSERT(data.mMergeIndex == i);
 					PX_ASSERT(data.mSubTreeNode == j);
+#endif
 				}
 			}
 		}
@@ -854,6 +856,7 @@ bool ExtendedBucketPruner::checkValidity()
 		PX_ASSERT(mMergedTrees[i].mTree->getIndices() == NULL);
 		PX_ASSERT(mMergedTrees[i].mTree->getNodes() == NULL);
 	}
+#if PX_ENABLE_ASSERTS
 	for (ExtendedBucketPrunerMap::Iterator iter = mExtendedBucketPrunerMap.getIterator(); !iter.done(); ++iter)
 	{		
 		const ExtendedBucketPrunerData& data = iter->second;
@@ -861,6 +864,7 @@ bool ExtendedBucketPruner::checkValidity()
 		PX_ASSERT(data.mMergeIndex < mCurrentTreeIndex);
 		PX_ASSERT(data.mSubTreeNode < mMergedTrees[data.mMergeIndex].mTree->getNbNodes());
 	}
+#endif
 	return true;
 }
 #endif

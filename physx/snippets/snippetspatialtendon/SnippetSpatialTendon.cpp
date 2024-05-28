@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -86,7 +86,7 @@ static void createSpatialTendonArticulation(PxArticulationReducedCoordinate* art
 
 	// setup revolute joints:
 	{
-		PxArticulationJointReducedCoordinate *joint = static_cast<PxArticulationJointReducedCoordinate*>(leftLink->getInboundJoint());
+		PxArticulationJointReducedCoordinate* joint = leftLink->getInboundJoint();
 		if(joint)
 		{
 			PxVec3 parentOffset(-linkExtents.x, 0.0f, 0.0f);
@@ -99,7 +99,7 @@ static void createSpatialTendonArticulation(PxArticulationReducedCoordinate* art
 	}
 
 	{
-		PxArticulationJointReducedCoordinate *joint = static_cast<PxArticulationJointReducedCoordinate*>(rightLink->getInboundJoint());
+		PxArticulationJointReducedCoordinate* joint = rightLink->getInboundJoint();
 		if(joint)
 		{
 			PxVec3 parentOffset(linkExtents.x, 0.0f, 0.0f);
@@ -253,9 +253,12 @@ void cleanupPhysics(bool /*interactive*/)
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
-	PxPvdTransport* transport = gPvd->getTransport();
-	gPvd->release();
-	transport->release();
+	if (gPvd)
+	{
+		PxPvdTransport* transport = gPvd->getTransport();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
+	}
 	PxCloseExtensions();
 	PX_RELEASE(gFoundation);
 

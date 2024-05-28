@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_ACTOR_H
 #define PX_ACTOR_H
 
-/** \addtogroup physics
-  @{
-*/
 
 #include "PxPhysXConfig.h"
 #include "foundation/PxBounds3.h"
@@ -58,7 +55,7 @@ typedef PxU8 PxDominanceGroup;		// Must be < 32, PxU8.
 /**
 \brief Flags which control the behavior of an actor.
 
-@see PxActorFlags PxActor PxActor.setActorFlag() PxActor.getActorFlags()
+\see PxActorFlags PxActor PxActor.setActorFlag() PxActor.getActorFlags()
 */
 struct PxActorFlag
 {
@@ -67,7 +64,7 @@ struct PxActorFlag
 		/**
 		\brief Enable debug renderer for this actor
 
-		@see PxScene.getRenderBuffer() PxRenderBuffer PxVisualizationParameter
+		\see PxScene.getRenderBuffer() PxRenderBuffer PxVisualizationParameter
 		*/
 		eVISUALIZATION					= (1<<0),
 
@@ -79,7 +76,7 @@ struct PxActorFlag
 		/**
 		\brief Enables the sending of PxSimulationEventCallback::onWake() and PxSimulationEventCallback::onSleep() notify events
 
-		@see PxSimulationEventCallback::onWake() PxSimulationEventCallback::onSleep()
+		\see PxSimulationEventCallback::onWake() PxSimulationEventCallback::onSleep()
 		*/
 		eSEND_SLEEP_NOTIFIES			= (1<<2),
 
@@ -106,14 +103,14 @@ struct PxActorFlag
 /**
 \brief collection of set bits defined in PxActorFlag.
 
-@see PxActorFlag
+\see PxActorFlag
 */
 typedef PxFlags<PxActorFlag::Enum,PxU8> PxActorFlags;
 PX_FLAGS_OPERATORS(PxActorFlag::Enum,PxU8)
 
 /**
 \brief Identifies each type of actor.
-@see PxActor 
+\see PxActor 
 */
 struct PxActorType
 {
@@ -121,59 +118,45 @@ struct PxActorType
 	{
 		/**
 		\brief A static rigid body
-		@see PxRigidStatic
+		\see PxRigidStatic
 		*/
 		eRIGID_STATIC,
 
 		/**
 		\brief A dynamic rigid body
-		@see PxRigidDynamic
+		\see PxRigidDynamic
 		*/
 		eRIGID_DYNAMIC,
 		
 		/**
 		\brief An articulation link
-		@see PxArticulationLink
+		\see PxArticulationLink
 		*/
 		eARTICULATION_LINK,
 
 		/**
 		\brief A FEM-based soft body
-		@see PxSoftBody
+		\see PxSoftBody
 		*/
 		eSOFTBODY,
 
 		/**
 		\brief A FEM-based cloth
 		\note In development
-		@see PxFEMCloth
+		\see PxFEMCloth
 		*/
 		eFEMCLOTH,
 
 		/**
 		\brief A PBD ParticleSystem
-		@see PxPBDParticleSystem
+		\see PxPBDParticleSystem
 		*/
 		ePBD_PARTICLESYSTEM,
 
 		/**
-		\brief A FLIP ParticleSystem
-		\note In development
-		@see PxFLIPParticleSystem
-		*/
-		eFLIP_PARTICLESYSTEM,
-
-		/**
-		\brief A MPM ParticleSystem
-		\note In development
-		@see PxMPMParticleSystem
-		*/
-		eMPM_PARTICLESYSTEM,
-
-		/**
 		\brief A HairSystem
 		\note In development
-		@see PxHairSystem
+		\see PxHairSystem
 		*/
 		eHAIRSYSTEM,
 
@@ -200,7 +183,7 @@ public:
 
 	If the actor belongs to a #PxAggregate object, it is automatically removed from the aggregate.
 
-	@see PxBase.release(), PxAggregate
+	\see PxBase.release(), PxAggregate
 	*/
 	virtual		void			release() = 0;
 
@@ -209,7 +192,7 @@ public:
 
 	\return The actor type of the actor.
 
-	@see PxActorType
+	\see PxActorType
 	*/
 	virtual		PxActorType::Enum	getType()	const = 0;
 
@@ -218,7 +201,7 @@ public:
 
 	\return Owner Scene. NULL if not part of a scene.
 
-	@see PxScene
+	\see PxScene
 	*/
 	virtual		PxScene*		getScene()	const = 0;
 
@@ -234,7 +217,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see getName()
+	\see getName()
 	*/
 	virtual		void			setName(const char* name)		= 0;
 
@@ -243,7 +226,7 @@ public:
 
 	\return Name string associated with object.
 
-	@see setName()
+	\see setName()
 	*/
 	virtual		const char*		getName()			const	= 0;
 
@@ -257,7 +240,7 @@ public:
 
 	\return The actor's bounding box.
 
-	@see PxBounds3
+	\see PxBounds3
 	*/
 	virtual		PxBounds3		getWorldBounds(float inflation=1.01f) const = 0;
 
@@ -271,7 +254,7 @@ public:
 	\param[in] flag  The PxActor flag to raise(set) or clear. See #PxActorFlag.
 	\param[in] value The boolean value to assign to the flag.
 
-	@see PxActorFlag getActorFlags() 
+	\see PxActorFlag getActorFlags() 
 	*/
 	virtual		void			setActorFlag(PxActorFlag::Enum flag, bool value) = 0;
 
@@ -279,7 +262,7 @@ public:
 	\brief Sets the actor flags.
 	
 	See the list of flags #PxActorFlag
-	@see PxActorFlag setActorFlag() 
+	\see PxActorFlag setActorFlag() 
 	*/
 	virtual		void			setActorFlags( PxActorFlags inFlags ) = 0;
 
@@ -290,7 +273,7 @@ public:
 
 	\return The values of the PxActor flags.
 
-	@see PxActorFlag setActorFlag() 
+	\see PxActorFlag setActorFlag() 
 	*/
 	virtual		PxActorFlags	getActorFlags()	const = 0;
 
@@ -308,7 +291,7 @@ public:
 
 	\param[in] dominanceGroup The dominance group identifier. <b>Range:</b> [0..31]
 
-	@see getDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
+	\see getDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
 	*/
 	virtual		void			setDominanceGroup(PxDominanceGroup dominanceGroup)		 = 0;
 	
@@ -317,7 +300,7 @@ public:
 
 	\return The dominance group of this actor.
 
-	@see setDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
+	\see setDominanceGroup() PxDominanceGroup PxScene::setDominanceGroupPair()
 	*/
 	virtual		PxDominanceGroup	getDominanceGroup() const = 0;
 
@@ -329,7 +312,7 @@ public:
 
 	<b>Default:</b> PX_DEFAULT_CLIENT
 
-	@see PxClientID PxScene::createClient() 
+	\see PxClientID PxScene::createClient() 
 	*/
 	virtual		void			setOwnerClient( PxClientID inClient ) = 0;
 
@@ -338,7 +321,7 @@ public:
 
 	This value cannot be changed once the object is placed into the scene.
 
-	@see PxClientID PxScene::createClient()
+	\see PxClientID PxScene::createClient()
 	*/
 	virtual		PxClientID		getOwnerClient() const = 0;
 
@@ -347,7 +330,7 @@ public:
 
 	\return The aggregate the actor is a part of, or NULL if the actor does not belong to an aggregate.
 
-	@see PxAggregate
+	\see PxAggregate
 	*/
 	virtual		PxAggregate*	getAggregate()	const = 0;
 
@@ -367,5 +350,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

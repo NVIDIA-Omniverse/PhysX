@@ -22,10 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
+#include "PxsHeapMemoryAllocator.h"
+#include "PxsMemoryManager.h"
+#include "foundation/PxAllocator.h"
 #include "foundation/PxPreprocessor.h"
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -45,7 +48,10 @@
 #include "GuTriangleMesh.h"
 #include "ScFEMClothSim.h"
 
+
 using namespace physx;
+
+class PxCudaContextManager;
 
 namespace physx
 {
@@ -54,14 +60,18 @@ namespace physx
 		:
 		NpActorTemplate(PxConcreteType::eFEM_CLOTH, PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE, NpType::eFEMCLOTH),
 		mShape(NULL),
-		mCudaContextManager(&cudaContextManager)
+		mCudaContextManager(&cudaContextManager),
+		mMemoryManager(NULL),
+		mDeviceMemoryAllocator(NULL)
 	{
 	}
 
 	NpFEMCloth::NpFEMCloth(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager) :
 		NpActorTemplate(baseFlags),
 		mShape(NULL),
-		mCudaContextManager(&cudaContextManager)
+		mCudaContextManager(&cudaContextManager),
+		mMemoryManager(NULL),
+		mDeviceMemoryAllocator(NULL)
 	{
 	}
 
@@ -382,6 +392,7 @@ namespace physx
 
 		const PxTriangleMeshGeometry& geom = static_cast<const PxTriangleMeshGeometry&>(npShape->getGeometry());
 		Gu::TriangleMesh* guMesh = static_cast<Gu::TriangleMesh*>(geom.triangleMesh);
+		PX_CHECK_AND_RETURN_NULL(guMesh->getNbTrianglesFast() <= PX_MAX_NB_FEMCLOTH_TRI, "NpFEMCloth::attachShape: triangle mesh consists of too many triangles, see PX_MAX_NB_FEMCLOTH_TRI")
 
 #if PX_CHECKED
 		const PxU32 triangleReference = guMesh->getNbTriangleReferences();
@@ -397,9 +408,12 @@ namespace physx
 
 		const PxU32 numVerts = guMesh->getNbVerticesFast();
 
-		core.mPositionInvMass = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
-		core.mVelocity = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
-		core.mRestPosition = PX_DEVICE_ALLOC_T(PxVec4, mCudaContextManager, numVerts);
+		createAllocator();
+
+		// AD: these allocations need to happen immediately. We cannot defer these to the PxgSimulationController.
+		core.mPositionInvMass = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVerts * sizeof(PxVec4), PxsHeapStats::eSHARED_FEMCLOTH, PX_FL));
+		core.mVelocity = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVerts * sizeof(PxVec4), PxsHeapStats::eSHARED_FEMCLOTH, PX_FL));
+		core.mRestPosition = reinterpret_cast<PxVec4*>(mDeviceMemoryAllocator->allocate(numVerts * sizeof(PxVec4), PxsHeapStats::eSHARED_FEMCLOTH, PX_FL));
 
 		return true;
 	}
@@ -586,21 +600,23 @@ namespace physx
 	{
 		Dy::FEMClothCore& core = mCore.getCore();
 
+		PX_ASSERT(mDeviceMemoryAllocator);
+
 		if (core.mPositionInvMass)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mPositionInvMass);
+			mDeviceMemoryAllocator->deallocate(core.mPositionInvMass);
 			core.mPositionInvMass = NULL;
 		}
 
 		if (core.mVelocity)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mVelocity);
+			mDeviceMemoryAllocator->deallocate(core.mVelocity);
 			core.mVelocity = NULL;
 		}
 
 		if (core.mRestPosition)
 		{
-			PX_DEVICE_FREE(mCudaContextManager, core.mRestPosition);
+			mDeviceMemoryAllocator->deallocate(core.mRestPosition);
 			core.mRestPosition = NULL;
 		}
 
@@ -623,19 +639,8 @@ namespace physx
 		detachShape();
 
 		PX_ASSERT(!isAPIWriteForbidden());
+		releaseAllocator();
 		NpDestroyFEMCloth(this);
-	}
-
-	void NpFEMCloth::setName(const char* debugName)
-	{
-		NP_WRITE_CHECK(getNpScene());
-		mName = debugName;
-	}
-
-	const char* NpFEMCloth::getName() const
-	{
-		NP_READ_CHECK(getNpScene());
-		return mName;
 	}
 
 	bool NpFEMCloth::isSleeping() const
@@ -657,6 +662,47 @@ namespace physx
 			PxFEMClothMaterial* material;
 			mShape->getClothMaterials(&material, 1, i);
 			core.setMaterial(static_cast<NpFEMClothMaterial*>(material)->mMaterial.mMaterialIndex);
+		}
+	}
+
+	void NpFEMCloth::createAllocator()
+	{
+		if (!mMemoryManager)
+		{
+			PxPhysXGpu* physXGpu = PxvGetPhysXGpu(true);
+			PX_ASSERT(physXGpu != NULL);
+
+			mMemoryManager = physXGpu->createGpuMemoryManager(mCudaContextManager);
+			mDeviceMemoryAllocator = mMemoryManager->getDeviceMemoryAllocator();
+		}
+		PX_ASSERT(mMemoryManager != NULL);
+		PX_ASSERT(mDeviceMemoryAllocator != NULL);
+	}
+
+	void NpFEMCloth::releaseAllocator()
+	{
+		// deallocate device memory if not released already.
+		Dy::FEMClothCore& core = mCore.getCore();
+		if (core.mPositionInvMass)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mPositionInvMass);
+			core.mPositionInvMass = NULL;
+		}
+		if (core.mVelocity)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mVelocity);
+			core.mVelocity = NULL;
+		}
+		if (core.mRestPosition)
+		{
+			mDeviceMemoryAllocator->deallocate(core.mRestPosition);
+			core.mRestPosition = NULL;
+		}
+
+		if (mMemoryManager != NULL)
+		{
+			mDeviceMemoryAllocator = NULL; // released by memory manager
+			PX_DELETE(mMemoryManager);
 		}
 	}
 #endif

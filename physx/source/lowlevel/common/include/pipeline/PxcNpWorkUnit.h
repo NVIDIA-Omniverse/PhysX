@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -76,31 +76,30 @@ struct PxcNpWorkUnitStatusFlag
 	};
 };
 
-// PT: TODO: fix the inconsistent namings (mXXX) in this class
 struct PxcNpWorkUnit
 {
-	const PxsRigidCore*	rigidCore0;					// INPUT								//4		//8
-	const PxsRigidCore*	rigidCore1;					// INPUT								//8		//16
+	const PxsRigidCore*	mRigidCore0;				// INPUT								//4		//8
+	const PxsRigidCore*	mRigidCore1;				// INPUT								//8		//16
 		
-	const PxsShapeCore*	shapeCore0;					// INPUT								//12	//24
-	const PxsShapeCore*	shapeCore1;					// INPUT								//16	//32
+	const PxsShapeCore*	mShapeCore0;				// INPUT								//12	//24
+	const PxsShapeCore*	mShapeCore1;				// INPUT								//16	//32
 
-	PxU8*				ccdContacts;				// OUTPUT								//20	//40
+	PxU8*				mCCDContacts;				// OUTPUT								//20	//40
 
-	PxU8*				frictionDataPtr;			// INOUT								//24	//48
+	PxU8*				mFrictionDataPtr;			// INOUT								//24	//48
 
-	PxU16				flags;						// INPUT								//26	//50
-	PxU8				frictionPatchCount;			// INOUT 								//27	//51
-	PxU8				statusFlags;				// OUTPUT (see PxcNpWorkUnitStatusFlag) //28	//52
+	PxU16				mFlags;						// INPUT								//26	//50
+	PxU8				mFrictionPatchCount;		// INOUT 								//27	//51
+	PxU8				mStatusFlags;				// OUTPUT (see PxcNpWorkUnitStatusFlag) //28	//52
 
-	PxU8				dominance0;					// INPUT								//29	//53
-	PxU8				dominance1;					// INPUT								//30	//54
-	PxU8				geomType0;					// INPUT								//31	//55
-	PxU8				geomType1;					// INPUT								//32	//56
+	PxU8				mDominance0;				// INPUT								//29	//53
+	PxU8				mDominance1;				// INPUT								//30	//54
+	PxU8				mGeomType0;					// INPUT								//31	//55
+	PxU8				mGeomType1;					// INPUT								//32	//56
 
-	PxU32				index;						// INPUT								//36	//60
+	PxU32				mIndex;						// INPUT								//36	//60
 
-	PxReal				restDistance;				// INPUT								//40	//64
+	PxReal				mRestDistance;				// INPUT								//40	//64
 
 	PxU32				mTransformCache0;			//										//44	//68
 	PxU32				mTransformCache1;			//										//48	//72
@@ -114,9 +113,9 @@ struct PxcNpWorkUnit
 
 	PX_FORCE_INLINE void	clearCachedState()
 	{
-		frictionDataPtr = NULL;
-		frictionPatchCount = 0;
-		ccdContacts = NULL;
+		mFrictionDataPtr = NULL;
+		mFrictionPatchCount = 0;
+		mCCDContacts = NULL;
 	}
 };
 

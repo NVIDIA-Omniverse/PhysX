@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SIMPLE_FACTORY_H
 #define PX_SIMPLE_FACTORY_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "common/PxPhysXCommonConfig.h"
 #include "foundation/PxTransform.h"
@@ -61,7 +58,7 @@ namespace physx
 	\return a new dynamic actor with the PxRigidBodyFlag, or NULL if it could 
 	not be constructed
 
-	@see PxRigidDynamic PxShapeFlag
+	\see PxRigidDynamic PxShapeFlag
 */
 PxRigidDynamic*	PxCreateDynamic(PxPhysics& sdk,
 								const PxTransform& transform,
@@ -80,7 +77,7 @@ PxRigidDynamic*	PxCreateDynamic(PxPhysics& sdk,
 	\return a new dynamic actor with the PxRigidBodyFlag, or NULL if it could 
 	not be constructed
 
-	@see PxRigidDynamic PxShapeFlag
+	\see PxRigidDynamic PxShapeFlag
 */
 PxRigidDynamic*	PxCreateDynamic(PxPhysics& sdk,
 								const PxTransform& transform,
@@ -104,7 +101,7 @@ PxRigidDynamic*	PxCreateDynamic(PxPhysics& sdk,
 	\return a new dynamic actor with the PxRigidBodyFlag::eKINEMATIC set, or NULL if it could 
 	not be constructed
 
-	@see PxRigidDynamic PxShapeFlag
+	\see PxRigidDynamic PxShapeFlag
 */
 PxRigidDynamic*	PxCreateKinematic(PxPhysics& sdk,
 								  const PxTransform& transform,
@@ -128,7 +125,7 @@ PxRigidDynamic*	PxCreateKinematic(PxPhysics& sdk,
 	\return a new dynamic actor with the PxRigidBodyFlag::eKINEMATIC set, or NULL if it could 
 	not be constructed
 
-	@see PxRigidDynamic PxShapeFlag
+	\see PxRigidDynamic PxShapeFlag
 */
 PxRigidDynamic*	PxCreateKinematic(PxPhysics& sdk,
 								  const PxTransform& transform,
@@ -145,7 +142,7 @@ PxRigidDynamic*	PxCreateKinematic(PxPhysics& sdk,
 
 	\return a new static actor, or NULL if it could not be constructed
 
-	@see PxRigidStatic
+	\see PxRigidStatic
 */
 PxRigidStatic*	PxCreateStatic(PxPhysics& sdk,
 							   const PxTransform& transform,
@@ -161,7 +158,7 @@ PxRigidStatic*	PxCreateStatic(PxPhysics& sdk,
 
 	\return a new static actor, or NULL if it could not be constructed
 
-	@see PxRigidStatic
+	\see PxRigidStatic
 */
 PxRigidStatic*	PxCreateStatic(PxPhysics& sdk,
 							   const PxTransform& transform,
@@ -270,7 +267,7 @@ PxRigidDynamic*	PxCloneDynamic(PxPhysics& physicsSDK,
 
 	\return a new static actor, or NULL if it could not be constructed
 
-	@see PxRigidStatic
+	\see PxRigidStatic
 */
 PxRigidStatic*	PxCreatePlane(PxPhysics& sdk,
 							  const PxPlane& plane,
@@ -293,5 +290,4 @@ void PxScaleRigidActor(PxRigidActor& actor, PxReal scale, bool scaleMassProps = 
 } // namespace physx
 #endif
 
-/** @} */
 #endif

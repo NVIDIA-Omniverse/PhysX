@@ -7,13 +7,19 @@
 
 ## Required packages to generate projects:
 
-* Windows OS + headers for at least Win7 (`_WIN32_WINNT = 0x0601`)
+* Microsoft Windows 10 (or later) + headers for at least Win7 (`_WIN32_WINNT = 0x0601`)
 * CMake, minimum version 3.21
 * Python, minimum version 3.5
 
+Compilers and C++ Standard:
+  * Microsoft Visual Studio 2017, 2019, 2022 (64 bit)
+  * C++17 compatible
+
 ## PhysX GPU Acceleration:
 
-* Requires CUDA 11.8 compatible display driver. The corresponding driver version can be found [here](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions).
+* Running GPU-accelerated simulations requires a CUDA toolkit 11.8 compatible display driver. The corresponding driver version can be found [here](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions).
+* Pascal, CUDA ARCH 6.0 GPU or higher
+* Note that CUDA is not required for building PhysX, it is only a runtime requirement for GPU-accelerated scenes.
 
 ## Generating solutions for Visual Studio:
 

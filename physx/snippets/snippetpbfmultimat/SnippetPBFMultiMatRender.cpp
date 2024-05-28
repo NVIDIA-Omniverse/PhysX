@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -137,19 +137,18 @@ void onBeforeRenderParticles()
 
 void renderParticles()
 {
-
-	Snippets::DrawPoints(*sPosBuffer3H, *sColorBuffer3H, 2.0f);
+	if (sPosBuffer3H && sColorBuffer3H)
+	{
+		Snippets::DrawPoints(*sPosBuffer3H, *sColorBuffer3H, 2.0f);
+	}
 }
 
 void allocParticleBuffers()
 {
-	PxParticleSystem* particleSystem = getParticleSystem();
-	//const PxU32 maxParticles = particleSystem->getMaxParticles();
-	if (particleSystem)
+	PxParticleBuffer* userBuffer = getParticleBuffer();
+	if (userBuffer)
 	{
-		PxParticleBuffer* userBuffer = getParticleBuffer();
 		const PxU32 maxParticles = userBuffer->getMaxParticles();
-
 		sPosBufferH = new PxArray<PxVec4>(maxParticles);
 		sPosBuffer3H = new PxArray<PxVec3>(maxParticles);
 		sVelBufferH = new PxArray<PxVec4>(maxParticles);
@@ -206,7 +205,7 @@ void renderLoop()
 {
 	sCamera = new Snippets::Camera(PxVec3(15.0f, 10.0f, 15.0f), PxVec3(-0.6f,-0.2f,-0.6f));
 
-	Snippets::setupDefault("PhysX Snippet PBFFluid", sCamera, keyPress, renderCallback, exitCallback);
+	Snippets::setupDefault("PhysX Snippet PBFFluid MultiMat", sCamera, keyPress, renderCallback, exitCallback);
 
 	initPhysics(true);
 

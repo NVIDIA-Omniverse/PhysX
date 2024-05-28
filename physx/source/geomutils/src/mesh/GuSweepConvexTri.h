@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -41,7 +41,7 @@ static PX_FORCE_INLINE bool sweepConvexVsTriangle(
 	ConvexHullV& convexHull, const aos::PxMatTransformV& meshToConvex, const aos::PxTransformV& convexTransfV,
 	const aos::Vec3VArg convexSpaceDir, const PxVec3& unitDir, const PxVec3& meshSpaceUnitDir,
 	const aos::FloatVArg fullDistance, PxReal shrunkDistance,
-	PxGeomSweepHit& hit, bool isDoubleSided, const PxReal inflation, bool& initialOverlap, PxU32 faceIndex)
+	PxGeomSweepHit& hit, bool isDoubleSided, PxReal inflation, bool& initialOverlap, PxU32 faceIndex)
 {
 	using namespace aos;
 	if(!isDoubleSided)

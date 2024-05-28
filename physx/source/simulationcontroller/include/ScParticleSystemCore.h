@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -112,30 +112,22 @@ namespace physx
 
 			PxActor*					getPxActor() const;
 
-			// TOFIX
-			void						enableCCD(const bool enable);
 
 			PxParticleFlags				getFlags() const { return mShapeCore.getLLCore().mFlags; }
 
-			//void						setFlags(PxParticleFlags flags) { mShapeCore.getLLCore().mFlags = flags; }
 			void						setFlags(PxParticleFlags flags);
+
+			PxParticleLockFlags			getLockFlags() const { return mShapeCore.getLLCore().mLockFlags; }
+
+			void						setLockFlags(PxParticleLockFlags lockFlags) { mShapeCore.getLLCore().mLockFlags = lockFlags; }
 
 			void						setWind(const PxVec3& wind) {mShapeCore.getLLCore().mWind = wind;}
 
 			PxVec3						getWind() const { return mShapeCore.getLLCore().mWind; }
 
-			void						setSolverType(const PxParticleSolverType::Enum solverType) { mShapeCore.getLLCore().solverType = solverType; }
-			PxParticleSolverType::Enum	getSolverType() const { return mShapeCore.getLLCore().solverType; }
-			
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 			PxSparseGridParams			getSparseGridParams() const { return mShapeCore.getLLCore().sparseGridParams; }
 			void						setSparseGridParams(const PxSparseGridParams& params) { mShapeCore.getLLCore().sparseGridParams = params; }
-
-			PxFLIPParams				getFLIPParams() const { return mShapeCore.getLLCore().flipParams; }
-			void						setFLIPParams(const PxFLIPParams& params) { mShapeCore.getLLCore().flipParams = params; }
-
-			PxMPMParams					getMPMParams() const { return mShapeCore.getLLCore().mpmParams; }
-			void						setMPMParams(const PxMPMParams& params) { mShapeCore.getLLCore().mpmParams = params; }
 #endif
 			
 			void						addRigidAttachment(Sc::BodyCore* core);

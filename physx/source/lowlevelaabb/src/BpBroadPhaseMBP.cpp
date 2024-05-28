@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1333,7 +1333,7 @@ mNbUpdatedBoxes = 0;
 				posList[j] = dynamicBoxes[j].mMinX;
 			}
 		}
-#if PX_DEBUG
+#if PX_ENABLE_ASSERTS
 		else
 		{
 			for(PxU32 i=0;i<nbNonUpdated;i++)
@@ -2690,6 +2690,7 @@ bool MBP::updateObjectAfterNewRegionAdded(MBP_Handle handle, const MBP_AABB& box
 #if PX_DEBUG
 		const RegionData* PX_RESTRICT regions = mRegions.begin();
 		const RegionData& currentRegion = regions[regionIndex];
+		PX_UNUSED(currentRegion);
 		PX_ASSERT(currentRegion.mBox.intersects(box));
 #endif
 		const MBP_Index BPHandle = addedRegion->addObject(box, handle, isStatic!=0);

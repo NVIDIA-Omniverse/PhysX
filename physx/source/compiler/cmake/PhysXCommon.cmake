@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXCommon common
@@ -307,7 +307,6 @@ SET(PHYSXCOMMON_GU_DISTANCE_SOURCE
 	${GU_SOURCE_DIR}/src/distance/GuDistancePointSegment.h
 	${GU_SOURCE_DIR}/src/distance/GuDistanceSegmentTriangle.h
 	${GU_SOURCE_DIR}/src/distance/GuDistanceTriangleTriangle.h
-	${GU_SOURCE_DIR}/src/distance/GuDistancePointTetrahedron.h
 )
 SOURCE_GROUP(geomutils\\src\\distance FILES ${PHYSXCOMMON_GU_DISTANCE_SOURCE})
 

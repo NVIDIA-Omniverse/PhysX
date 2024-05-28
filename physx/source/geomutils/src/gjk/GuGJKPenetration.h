@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,16 +39,13 @@
 
 #define	GJK_VALIDATE 0
 
-
 namespace physx
 {
 namespace Gu
 {
-
 	class ConvexV;
 
-
-	PX_FORCE_INLINE void assignWarmStartValue(PxU8* PX_RESTRICT aIndices, PxU8* PX_RESTRICT bIndices, PxU8& size_, PxI32* PX_RESTRICT aInd, PxI32* PX_RESTRICT bInd,  PxU32 size )
+	PX_FORCE_INLINE void assignWarmStartValue(PxU8* PX_RESTRICT aIndices, PxU8* PX_RESTRICT bIndices, PxU8& size_, PxI32* PX_RESTRICT aInd, PxI32* PX_RESTRICT bInd, PxU32 size )
 	{
 		if(aIndices)
 		{
@@ -61,7 +58,6 @@ namespace Gu
 			}
 		}
 	}
-
 
 	PX_FORCE_INLINE void validateDuplicateVertex(const aos::Vec3V* Q, const aos::Vec3VArg support, const PxU32 size)
 	{
@@ -82,7 +78,6 @@ namespace Gu
 			PX_ASSERT(0);
 		}
 	}
-
 
 	//*Each convex has
 	//*         a support function

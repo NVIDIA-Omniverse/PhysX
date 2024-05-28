@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -64,7 +64,8 @@ namespace Cct
 
 	//Implements the PxControllerManager interface, this class used to be called ControllerManager
 	class CharacterControllerManager : public PxControllerManager, public PxUserAllocated, public PxDeletionListener
-	{		
+	{
+														PX_NOCOPY(CharacterControllerManager)
 	public:
 														CharacterControllerManager(PxScene& scene, bool lockingEnabled = false);
 	private:
@@ -72,28 +73,28 @@ namespace Cct
 	public:
 
 		// PxControllerManager
-		virtual			void							release()	PX_OVERRIDE;
-		virtual			PxScene&						getScene() const	PX_OVERRIDE;
-		virtual			PxU32							getNbControllers()	const	PX_OVERRIDE;
-		virtual			PxController*					getController(PxU32 index)	PX_OVERRIDE;
-        virtual			PxController*					createController(const PxControllerDesc& desc)	PX_OVERRIDE;
+		virtual			void							release()	PX_OVERRIDE	PX_FINAL;
+		virtual			PxScene&						getScene() const	PX_OVERRIDE	PX_FINAL;
+		virtual			PxU32							getNbControllers()	const	PX_OVERRIDE	PX_FINAL;
+		virtual			PxController*					getController(PxU32 index)	PX_OVERRIDE	PX_FINAL;
+        virtual			PxController*					createController(const PxControllerDesc& desc)	PX_OVERRIDE	PX_FINAL;
        
-		virtual			void							purgeControllers()	PX_OVERRIDE;
-		virtual			PxRenderBuffer&					getRenderBuffer()	PX_OVERRIDE;
-		virtual			void							setDebugRenderingFlags(PxControllerDebugRenderFlags flags)	PX_OVERRIDE;
-		virtual			PxU32							getNbObstacleContexts() const	PX_OVERRIDE;
-		virtual			PxObstacleContext*				getObstacleContext(PxU32 index)	PX_OVERRIDE;
-		virtual			PxObstacleContext*				createObstacleContext()	PX_OVERRIDE;
-		virtual			void							computeInteractions(PxF32 elapsedTime, PxControllerFilterCallback* cctFilterCb)	PX_OVERRIDE;
-		virtual			void							setTessellation(bool flag, float maxEdgeLength)	PX_OVERRIDE;
-		virtual			void							setOverlapRecoveryModule(bool flag)	PX_OVERRIDE;
-		virtual			void							setPreciseSweeps(bool flag)	PX_OVERRIDE;
-		virtual			void							setPreventVerticalSlidingAgainstCeiling(bool flag)	PX_OVERRIDE;
-		virtual			void							shiftOrigin(const PxVec3& shift)	PX_OVERRIDE;
+		virtual			void							purgeControllers()	PX_OVERRIDE	PX_FINAL;
+		virtual			PxRenderBuffer&					getRenderBuffer()	PX_OVERRIDE	PX_FINAL;
+		virtual			void							setDebugRenderingFlags(PxControllerDebugRenderFlags flags)	PX_OVERRIDE	PX_FINAL;
+		virtual			PxU32							getNbObstacleContexts() const	PX_OVERRIDE	PX_FINAL;
+		virtual			PxObstacleContext*				getObstacleContext(PxU32 index)	PX_OVERRIDE	PX_FINAL;
+		virtual			PxObstacleContext*				createObstacleContext()	PX_OVERRIDE	PX_FINAL;
+		virtual			void							computeInteractions(PxF32 elapsedTime, PxControllerFilterCallback* cctFilterCb)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							setTessellation(bool flag, float maxEdgeLength)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							setOverlapRecoveryModule(bool flag)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							setPreciseSweeps(bool flag)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							setPreventVerticalSlidingAgainstCeiling(bool flag)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							shiftOrigin(const PxVec3& shift)	PX_OVERRIDE	PX_FINAL;
 		//~PxControllerManager
 
 		// PxDeletionListener
-		virtual		void								onRelease(const PxBase* observed, void* userData, PxDeletionEventFlag::Enum deletionEvent)	PX_OVERRIDE;
+		virtual		void								onRelease(const PxBase* observed, void* userData, PxDeletionEventFlag::Enum deletionEvent)	PX_OVERRIDE	PX_FINAL;
 		//~PxDeletionListener
 						void							registerObservedObject(const PxBase* obj);
 						void							unregisterObservedObject(const PxBase* obj);
@@ -132,11 +133,6 @@ namespace Cct
 						bool							mPreventVerticalSlidingAgainstCeiling;
 
 						bool							mLockingEnabled;						
-
-	protected:
-		CharacterControllerManager &operator=(const CharacterControllerManager &);
-		CharacterControllerManager(const CharacterControllerManager& );
-
 	private:
 						ObservedRefCountMap				mObservedRefCountMap;
 						mutable	PxMutex					mWriteLock;			// Lock used for guarding pointers in observedrefcountmap

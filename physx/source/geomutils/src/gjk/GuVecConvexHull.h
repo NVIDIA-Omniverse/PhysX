@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -51,14 +51,13 @@ namespace Gu
 #define TOLERANCE_MARGIN_RATIO		0.08f
 #define TOLERANCE_MIN_MARGIN_RATIO	0.05f
 
-
 	//This margin is used in Persistent contact manifold
 	PX_SUPPORT_FORCE_INLINE aos::FloatV CalculatePCMConvexMargin(const Gu::ConvexHullData* hullData, const aos::Vec3VArg scale, 
 		const PxReal toleranceLength, const PxReal toleranceRatio = TOLERANCE_MIN_MARGIN_RATIO)
 	{
 		
 		using namespace aos;
-		const Vec3V extents= V3Mul(V3LoadU(hullData->mInternal.mExtents), scale);
+		const Vec3V extents= V3Mul(V3LoadU_SafeReadW(hullData->mInternal.mInternalExtents), scale);
 		const FloatV min = V3ExtractMin(extents);
 		const FloatV toleranceMargin = FLoad(toleranceLength * toleranceRatio);
 		//ML: 25% of the minimum extents of the internal AABB as this convex hull's margin
@@ -68,12 +67,11 @@ namespace Gu
 	PX_SUPPORT_FORCE_INLINE aos::FloatV CalculateMTDConvexMargin(const Gu::ConvexHullData* hullData, const aos::Vec3VArg scale)
 	{
 		using namespace aos;
-		const Vec3V extents = V3Mul(V3LoadU(hullData->mInternal.mExtents), scale);
+		const Vec3V extents = V3Mul(V3LoadU_SafeReadW(hullData->mInternal.mInternalExtents), scale);
 		const FloatV min = V3ExtractMin(extents);
 		//ML: 25% of the minimum extents of the internal AABB as this convex hull's margin
 		return FMul(min, FLoad(0.25f));
 	}
-
 
 	//This minMargin is used in PCM contact gen
 	PX_SUPPORT_FORCE_INLINE void CalculateConvexMargin(const InternalObjectsData& internalObject, PxReal& margin, PxReal& minMargin, PxReal& sweepMargin,
@@ -81,7 +79,7 @@ namespace Gu
 	{
 		using namespace aos;
 		
-		const Vec3V extents = V3Mul(V3LoadU(internalObject.mExtents), scale);
+		const Vec3V extents = V3Mul(V3LoadU_SafeReadW(internalObject.mInternalExtents), scale);
 		const FloatV min_ = V3ExtractMin(extents);
 
 		PxReal minExtent;

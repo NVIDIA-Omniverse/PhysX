@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -49,6 +49,13 @@ AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PxFl
 	mBoundsArray			(boundsArray),
 	mUsedSize				(0),
 	mNbAggregates			(0),
+#if PX_ENABLE_SIM_STATS
+	mGpuDynamicsLostFoundPairsStats(0),
+	mGpuDynamicsTotalAggregatePairsStats(0),
+	mGpuDynamicsLostFoundAggregatePairsStats(0),
+#else
+	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
+#endif
 #ifdef BP_USE_AGGREGATE_GROUP_TAIL
 	mAggregateGroupTide		(PxU32(Bp::FilterGroup::eAGGREGATE_BASE)),
 #endif

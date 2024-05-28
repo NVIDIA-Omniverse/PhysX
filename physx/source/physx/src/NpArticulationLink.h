@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -71,57 +71,61 @@ public:
 	static		NpArticulationLink*			createObject(PxU8*& address, PxDeserializationContext& context);
 	static		void						getBinaryMetaData(PxOutputStream& stream);		
 //~PX_SERIALIZATION
+											NpArticulationLink(const PxTransform& bodyPose, PxArticulationReducedCoordinate& root, NpArticulationLink* parent);
 	virtual									~NpArticulationLink();
 
-	//---------------------------------------------------------------------------------
-	// PxArticulationLink implementation
-	//---------------------------------------------------------------------------------
-	virtual		void						release();
+	// PxBase
+	virtual		void						release()	PX_OVERRIDE PX_FINAL;
+	//~PxBase
 
+	// PxActor
+	virtual		PxActorType::Enum			getType() const	PX_OVERRIDE PX_FINAL	{ return PxActorType::eARTICULATION_LINK; }
+	//~PxActor
 
-	virtual		PxActorType::Enum			getType() const { return PxActorType::eARTICULATION_LINK; }
+	// PxRigidActor
+	virtual		PxTransform					getGlobalPose() const	PX_OVERRIDE PX_FINAL;
+	virtual		void 						setGlobalPose(const PxTransform& /*pose*/, bool /*wake*/) PX_OVERRIDE PX_FINAL	{ /*return false; */}
+	virtual	    bool						attachShape(PxShape& shape)	PX_OVERRIDE PX_FINAL;
+	virtual     void						detachShape(PxShape& shape, bool wakeOnLostTouch = true)	PX_OVERRIDE PX_FINAL;
+	//~PxRigidActor
 
-	// Pose
-	virtual		void 						setGlobalPose(const PxTransform& /*pose*/, bool /*wake*/) { /*return false; */}
-	virtual		PxTransform					getGlobalPose() const;
+	// PxRigidBody
+	virtual		void						setCMassLocalPose(const PxTransform&)	PX_OVERRIDE PX_FINAL;
+	virtual		PxVec3						getLinearAcceleration()		const PX_OVERRIDE PX_FINAL;
+	virtual		PxVec3						getAngularAcceleration()	const PX_OVERRIDE PX_FINAL;
+	virtual		void						addForce(const PxVec3& force, PxForceMode::Enum mode = PxForceMode::eFORCE, bool autowake = true)	PX_OVERRIDE PX_FINAL;
+	virtual		void						addTorque(const PxVec3& torque, PxForceMode::Enum mode = PxForceMode::eFORCE, bool autowake = true)	PX_OVERRIDE PX_FINAL;
+	virtual		void						clearForce(PxForceMode::Enum mode = PxForceMode::eFORCE)	PX_OVERRIDE PX_FINAL;
+	virtual		void						clearTorque(PxForceMode::Enum mode = PxForceMode::eFORCE)	PX_OVERRIDE PX_FINAL;
+	virtual		void						setForceAndTorque(const PxVec3& force, const PxVec3& torque, PxForceMode::Enum mode = PxForceMode::eFORCE)	PX_OVERRIDE PX_FINAL;
+	//~PxRigidBody
 
-
-	virtual	    bool					   attachShape(PxShape& shape);
-	virtual     void				       detachShape(PxShape& shape, bool wakeOnLostTouch = true);
-
-	virtual		PxArticulationReducedCoordinate&		getArticulation() const;
-	virtual		PxArticulationJointReducedCoordinate*	getInboundJoint() const;
-	virtual		PxU32									getInboundJointDof() const;
-
-	virtual		PxU32						getNbChildren() const;
-	virtual		PxU32						getChildren(PxArticulationLink** userBuffer, PxU32 bufferSize, PxU32 startIndex) const;
-	virtual		PxU32						getLinkIndex() const;
-	virtual		void						setCMassLocalPose(const PxTransform& pose);
-
-	virtual		void						addForce(const PxVec3& force, PxForceMode::Enum mode = PxForceMode::eFORCE, bool autowake = true);
-	virtual		void						addTorque(const PxVec3& torque, PxForceMode::Enum mode = PxForceMode::eFORCE, bool autowake = true);
-	virtual		void						setForceAndTorque(const PxVec3& force, const PxVec3& torque, PxForceMode::Enum mode = PxForceMode::eFORCE);
-	virtual		void						clearForce(PxForceMode::Enum mode = PxForceMode::eFORCE);
-	virtual		void						clearTorque(PxForceMode::Enum mode = PxForceMode::eFORCE);
-
-	virtual		void						setCfmScale(const PxReal cfmScale);
-	virtual		PxReal						getCfmScale() const;
-	//---------------------------------------------------------------------------------
-	// Miscellaneous
-	//---------------------------------------------------------------------------------
-											NpArticulationLink(const PxTransform& bodyPose, PxArticulationReducedCoordinate& root, NpArticulationLink* parent);
+	// PxArticulationLink
+	virtual		PxArticulationReducedCoordinate&		getArticulation() const	PX_OVERRIDE PX_FINAL;
+	virtual		PxArticulationJointReducedCoordinate*	getInboundJoint() const	PX_OVERRIDE PX_FINAL;
+	virtual		PxU32									getInboundJointDof() const	PX_OVERRIDE PX_FINAL;
+	virtual		PxU32									getNbChildren() const	PX_OVERRIDE PX_FINAL;
+	virtual		PxU32									getLinkIndex() const	PX_OVERRIDE PX_FINAL;
+	virtual		PxU32									getChildren(PxArticulationLink** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE PX_FINAL;
+	virtual		void									setCfmScale(const PxReal cfmScale)	PX_OVERRIDE PX_FINAL;
+	virtual		PxReal									getCfmScale() const	PX_OVERRIDE PX_FINAL;
+	//~PxArticulationLink
 
 				void						releaseInternal();
 
-	PX_INLINE	PxArticulationReducedCoordinate&			getRoot()			{ return *mRoot; }
-	PX_INLINE	NpArticulationLink*							getParent()			{ return mParent; }
-	PX_INLINE	const NpArticulationLink*					getParent()	const	{ return mParent; }
+	PX_INLINE	PxArticulationReducedCoordinate&	getRoot()			{ return *mRoot; }
+	PX_INLINE	NpArticulationLink*					getParent()			{ return mParent; }
+	PX_INLINE	const NpArticulationLink*			getParent()	const	{ return mParent; }
 
-	PX_INLINE	void						setInboundJoint(PxArticulationJointReducedCoordinate& joint) { mInboundJoint = &joint; }
+	PX_INLINE	void						setInboundJoint(PxArticulationJointReducedCoordinate& joint)
+											{
+												mInboundJoint = &joint;
+												OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxArticulationLink, inboundJoint, *this, mInboundJoint);
+											}
 			
-	void 									setGlobalPoseInternal(const PxTransform& pose, bool autowake);
-	void									setLLIndex(const PxU32 index) { mLLIndex = index; }
-	void									setInboundJointDof(const PxU32 index);
+				void 						setGlobalPoseInternal(const PxTransform& pose, bool autowake);
+				void						setLLIndex(const PxU32 index) { mLLIndex = index; }
+				void						setInboundJointDof(const PxU32 index);
 	static PX_FORCE_INLINE size_t			getCoreOffset() { return PX_OFFSET_OF_RT(NpArticulationLink, mCore); }
 private:
 	PX_INLINE	void						addToChildList(NpArticulationLink& link) { mChildLinks.pushBack(&link); }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -141,7 +141,7 @@ BodySim::~BodySim()
 
 	// PX-4603. AD: assuming that the articulation code cleans up the dirty state in case this is an articulation link.
 	if (!isArticulationLink())
-		scene.getVelocityModifyMap().boundedReset(mNodeIndex.index()); 
+		mScene.getVelocityModifyMap().boundedReset(mNodeIndex.index()); 
 
 	PX_ASSERT(!readInternalFlag(BF_ON_DEATHROW)); // Before 3.0 it could happen that destroy could get called twice. Assert to make sure this is fixed.
 	raiseInternalFlag(BF_ON_DEATHROW);
@@ -301,33 +301,37 @@ void BodySim::setKinematicTarget(const PxTransform& p)
 
 void BodySim::addSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
-	notifyAddSpatialAcceleration();
+	notifyDirtySpatialAcceleration();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
 		setupSimStateData(false);
 
 	VelocityMod* velmod = mSimStateData->getVelocityModData();
-	if (linAcc) velmod->accumulateLinearVelModPerSec(*linAcc);
-	if (angAcc) velmod->accumulateAngularVelModPerSec(*angAcc);
+	if (linAcc)
+		velmod->accumulateLinearVelModPerSec(*linAcc);
+	if (angAcc)
+		velmod->accumulateAngularVelModPerSec(*angAcc);
 }
 
 void BodySim::setSpatialAcceleration(const PxVec3* linAcc, const PxVec3* angAcc)
 {
-	notifyAddSpatialAcceleration();
+	notifyDirtySpatialAcceleration();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
 		setupSimStateData(false);
 
 	VelocityMod* velmod = mSimStateData->getVelocityModData();
-	if (linAcc) velmod->setLinearVelModPerSec(*linAcc);
-	if (angAcc) velmod->setAngularVelModPerSec(*angAcc);
+	if (linAcc)
+		velmod->setLinearVelModPerSec(*linAcc);
+	if (angAcc)
+		velmod->setAngularVelModPerSec(*angAcc);
 }
 
 void BodySim::clearSpatialAcceleration(bool force, bool torque)
 {
 	PX_ASSERT(force || torque);
 
-	notifyClearSpatialAcceleration();
+	notifyDirtySpatialAcceleration();
 
 	if (mSimStateData)
 	{
@@ -342,7 +346,7 @@ void BodySim::clearSpatialAcceleration(bool force, bool torque)
 
 void BodySim::addSpatialVelocity(const PxVec3* linVelDelta, const PxVec3* angVelDelta)
 {
-	notifyAddSpatialVelocity();
+	notifyDirtySpatialVelocity();
 
 	if (!mSimStateData || !mSimStateData->isVelMod())
 		setupSimStateData(false);
@@ -358,7 +362,7 @@ void BodySim::clearSpatialVelocity(bool force, bool torque)
 {
 	PX_ASSERT(force || torque);
 
-	notifyClearSpatialVelocity();
+	notifyDirtySpatialVelocity();
 
 	if (mSimStateData)
 	{
@@ -395,6 +399,9 @@ void BodySim::postActorFlagChange(PxU32 oldFlags, PxU32 newFlags)
 			raiseVelocityModFlag(VMF_GRAVITY_DIRTY);
 
 		getBodyCore().getCore().disableGravity = isWeightless!=0;
+
+		if(mArticulation)
+			mArticulation->setArticulationDirty(ArticulationDirtyFlag::eDIRTY_LINKS); // forces an update in PxgSimulationController::updateGpuArticulationSim
 	}
 }
 
@@ -509,8 +516,8 @@ void BodySim::putToSleep()
 	PX_ASSERT(getBodyCore().getLinearVelocity().isZero());
 	PX_ASSERT(getBodyCore().getAngularVelocity().isZero());
 
-	notifyClearSpatialAcceleration();
-	notifyClearSpatialVelocity();
+	notifyDirtySpatialAcceleration();
+	notifyDirtySpatialVelocity();
 	simStateClearVelMod(getSimStateData_Unchecked());
 
 	setActive(false);
@@ -581,8 +588,8 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 	PxReal wc = core.getWakeCounter();
 	
 	{
-		PxVec3 bcSleepLinVelAcc = mLLBody.sleepLinVelAcc;
-		PxVec3 bcSleepAngVelAcc = mLLBody.sleepAngVelAcc;
+		PxVec3 bcSleepLinVelAcc = mLLBody.mSleepLinVelAcc;
+		PxVec3 bcSleepAngVelAcc = mLLBody.mSleepAngVelAcc;
 
 		if(wc < wakeCounterResetTime * 0.5f || wc < dt)
 		{
@@ -625,8 +632,8 @@ PxReal BodySim::updateWakeCounter(PxReal dt, PxReal energyThreshold, const Cm::S
 			}
 		}
 
-		mLLBody.sleepLinVelAcc = bcSleepLinVelAcc;
-		mLLBody.sleepAngVelAcc = bcSleepAngVelAcc;
+		mLLBody.mSleepLinVelAcc = bcSleepLinVelAcc;
+		mLLBody.mSleepAngVelAcc = bcSleepAngVelAcc;
 	}
 
 	wc = PxMax(wc-dt, 0.0f);
@@ -646,7 +653,8 @@ PX_FORCE_INLINE void BodySim::initKinematicStateBase(BodyCore&, bool asPartOfCre
 	// Need to be before setting setRigidBodyFlag::KINEMATIC
 }
 
-bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration)
+bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* updatedBodyNodeIndices, PxU32& index, Cm::SpatialVector* acceleration, 
+	PxsExternalAccelerationProvider* externalAccelerations, PxU32 maxNumExternalAccelerations)
 {
 	PxVec3 linVelDt(0.0f), angVelDt(0.0f);
 
@@ -690,7 +698,17 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 		}
 		else
 		{
-			getBodyCore().updateVelocities(linVelDt, angVelDt);
+			if (mScene.getFlags() & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS)
+			{
+				if (linVelDt != PxVec3(0.0f) || angVelDt != PxVec3(0.0f)) 
+				{
+					const PxReal invDt = 1.f / dt;
+					PxsRigidBodyExternalAcceleration acc(linVelDt * invDt, angVelDt * invDt);
+					externalAccelerations->setValue(acc, getNodeIndex().index(), maxNumExternalAccelerations);
+				}
+			}
+			else
+				getBodyCore().updateVelocities(linVelDt, angVelDt);
 		}
 
 		forceChangeApplied = true;

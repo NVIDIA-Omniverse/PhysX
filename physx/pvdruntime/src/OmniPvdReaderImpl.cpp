@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -130,15 +130,14 @@ static OmniPvdDataType::Enum readDataType(OmniPvdReadStream& stream)
 OmniPvdCommand::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getNextCommand()
 {
 	OmniPvdCommand::Enum cmdType = OmniPvdCommand::eINVALID;
-
+	resetCommandParams();
 	if (!mIsReadingStarted)
 	{
 		if (!startReading(mCmdMajorVersion, mCmdMinorVersion, mCmdPatch))
 		{
 			return cmdType;
 		}
-	}
-	
+	}	
 	if (mStream) {
 		OmniPvdCommandStorageType command;
 		if (mStream->readBytes(&command, sizeof(OmniPvdCommandStorageType)))
@@ -311,7 +310,6 @@ OmniPvdCommand::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getNextCommand()
 	}
 }
 
-
 uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getMajorVersion()
 {
 	return mCmdMajorVersion;
@@ -342,59 +340,73 @@ OmniPvdClassHandle OMNI_PVD_CALL OmniPvdReaderImpl::getBaseClassHandle()
 	return mCmdBaseClassHandle;
 }
 
-uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeHandle() {
+uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeHandle()
+{
 	return mCmdAttributeHandle;
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getObjectHandle() {
+uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getObjectHandle()
+{
 	return mCmdObjectHandle;
 }
 
-const char* OMNI_PVD_CALL OmniPvdReaderImpl::getClassName() {
+const char* OMNI_PVD_CALL OmniPvdReaderImpl::getClassName()
+{
 	return mCmdClassName;
 }
 
-const char* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeName() {
+const char* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeName()
+{
 	return mCmdAttributeName;
 }
 
-const char* OMNI_PVD_CALL OmniPvdReaderImpl::getObjectName() {
+const char* OMNI_PVD_CALL OmniPvdReaderImpl::getObjectName()
+{
 	return mCmdObjectName;
 }
 
-const uint8_t* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataPointer() {
+const uint8_t* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataPointer()
+{
 	return mCmdAttributeDataPtr;
 }
 
-OmniPvdDataType::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataType() {
+OmniPvdDataType::Enum OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataType()
+{
 	return mCmdAttributeDataType;
 }
 
-uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataLength() {
+uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeDataLength()
+{
 	return mCmdAttributeDataLen;
 }
 
-uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeNumberElements() {
+uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeNumberElements()
+{
 	return mCmdAttributeNbElements;
 }
 
-OmniPvdClassHandle OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeClassHandle() {
+OmniPvdClassHandle OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeClassHandle()
+{
 	return mCmdAttributeClassHandle;
 }
 
-uint8_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeNumberHandles() {
+uint8_t OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeNumberHandles()
+{
 	return mCmdAttributeHandleDepth;
 }
 
-uint32_t* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeHandles() {
+uint32_t* OMNI_PVD_CALL OmniPvdReaderImpl::getAttributeHandles()
+{
 	return mCmdAttributeHandleStack;
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getFrameTimeStart() {
+uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getFrameTimeStart()
+{
 	return mCmdFrameTimeStart;
 }
 
-uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getFrameTimeStop() {
+uint64_t OMNI_PVD_CALL OmniPvdReaderImpl::getFrameTimeStop()
+{
 	return mCmdFrameTimeStop;
 }
 
@@ -408,13 +420,87 @@ uint32_t OMNI_PVD_CALL OmniPvdReaderImpl::getEnumValue()
 	return mCmdEnumValue;
 }
 
-void OmniPvdReaderImpl::readLongDataFromStream(uint32_t streamByteLen) {
+void OmniPvdReaderImpl::readLongDataFromStream(uint32_t streamByteLen)
+{
 	if (streamByteLen < 1) return;
 	if (streamByteLen > mDataBuffAllocatedLen) {
 		delete[] mDataBuffer;
 		mDataBuffAllocatedLen = (uint32_t)(streamByteLen * 1.3f);
 		mDataBuffer = new uint8_t[mDataBuffAllocatedLen];
-		mCmdAttributeDataPtr = mDataBuffer;
 	}
+	mCmdAttributeDataPtr = mDataBuffer;
 	mStream->readBytes(mCmdAttributeDataPtr, streamByteLen);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Resets all command parameters before a new read command is executed,
+// except for those parameters that are "stateful" which are left commented out.
+////////////////////////////////////////////////////////////////////////////////
+void OmniPvdReaderImpl::resetCommandParams()
+{	
+	////////////////////////////////////////////////////////////////////////////////
+	// Stateful: Depends on the version of the stream reader
+	////////////////////////////////////////////////////////////////////////////////
+	// OmniPvdVersionType mMajorVersion;
+	// OmniPvdVersionType mMinorVersion;
+	// OmniPvdVersionType mPatch;
+	////////////////////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Stateful: Depends on the stream being read and stay the same
+	////////////////////////////////////////////////////////////////////////////////
+	// OmniPvdVersionType mCmdMajorVersion;
+	// OmniPvdVersionType mCmdMinorVersion;
+	// OmniPvdVersionType mCmdPatch;
+	////////////////////////////////////////////////////////////////////////////////
+
+	mCmdContextHandle = OMNI_PVD_INVALID_HANDLE;
+	mCmdObjectHandle = OMNI_PVD_INVALID_HANDLE;
+
+	mCmdClassHandle = OMNI_PVD_INVALID_HANDLE;
+	mCmdBaseClassHandle = OMNI_PVD_INVALID_HANDLE;
+	mCmdAttributeHandle = OMNI_PVD_INVALID_HANDLE;
+		
+	mCmdClassName[0] = 0;
+	mCmdAttributeName[0] = 0;
+	mCmdObjectName[0] = 0;
+
+	mCmdClassNameLen = 0;
+	mCmdAttributeNameLen = 0;
+	mCmdObjectNameLen = 0;
+
+	mCmdAttributeDataPtr = 0;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Unsure how to handle this, a zero value could still be valid
+	////////////////////////////////////////////////////////////////////////////////
+	//mCmdAttributeDataType = OmniPvdDataType::eINT8; // int 8 is 0
+	////////////////////////////////////////////////////////////////////////////////
+	
+	mCmdAttributeDataLen = 0;
+	mCmdAttributeNbElements = 0;
+	mCmdEnumValue = 0;
+	mCmdEnumClassHandle = OMNI_PVD_INVALID_HANDLE;
+	mCmdAttributeClassHandle = OMNI_PVD_INVALID_HANDLE;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Left untouched/dirty : instead depends on the depth parameter below
+	////////////////////////////////////////////////////////////////////////////////
+	// OmniPvdAttributeHandle mCmdAttributeHandleStack[32];
+	////////////////////////////////////////////////////////////////////////////////
+	mCmdAttributeHandleDepth = 0;
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Stateful for the duration of a frame
+	////////////////////////////////////////////////////////////////////////////////
+	// uint64_t mCmdFrameTimeStart;
+	// uint64_t mCmdFrameTimeStop;
+	////////////////////////////////////////////////////////////////////////////////
+
+	////////////////////////////////////////////////////////////////////////////////
+	// Internal scratch buffer, instead the mCmdAttributeDataPtr is set to 0
+	////////////////////////////////////////////////////////////////////////////////
+	// uint8_t *mDataBuffer;
+	// uint32_t mDataBuffAllocatedLen;
+	////////////////////////////////////////////////////////////////////////////////
 }

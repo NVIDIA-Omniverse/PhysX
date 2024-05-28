@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TRIANGLE_MESH_DESC_H
 #define PX_TRIANGLE_MESH_DESC_H
-/** \addtogroup cooking
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "geometry/PxSimpleTriangleMesh.h"
@@ -49,7 +46,7 @@ Note that this class is derived from PxSimpleTriangleMesh which contains the mem
 The mesh data is *copied* when an PxTriangleMesh object is created from this descriptor. After the call the
 user may discard the triangle data.
 
-@see PxTriangleMesh PxTriangleMeshGeometry PxShape
+\see PxTriangleMesh PxTriangleMeshGeometry PxShape
 */
 class PxTriangleMeshDesc : public PxSimpleTriangleMesh
 {
@@ -69,7 +66,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see materialIndexStride
+	\see materialIndexStride
 	*/
 	PxTypedStridedData<PxMaterialTableIndex> materialIndices;
 
@@ -130,5 +127,4 @@ PX_INLINE bool PxTriangleMeshDesc::isValid() const
 } // namespace physx
 #endif
 
-/** @} */
 #endif

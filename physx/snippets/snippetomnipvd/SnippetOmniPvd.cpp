@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -78,26 +78,26 @@ void initPhysicsWithOmniPvd()
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
 	if (!gFoundation)
 	{
-		printf("Error : could not create PxFoundation!");
+		printf("Error : could not create PxFoundation!\n");
 		return;
 	}
 
 	gOmniPvd = PxCreateOmniPvd(*gFoundation);
 	if (!gOmniPvd)
 	{
-		printf("Error : could not create PxOmniPvd!");
+		printf("Error : could not create PxOmniPvd!\n");
 		return;
 	}
 	OmniPvdWriter* omniWriter = gOmniPvd->getWriter();
 	if (!omniWriter)
 	{
-		printf("Error : could not get an instance of PxOmniPvdWriter!");
+		printf("Error : could not get an instance of PxOmniPvdWriter!\n");
 		return;
 	}
 	OmniPvdFileWriteStream* fStream = gOmniPvd->getFileWriteStream();
 	if (!fStream)
 	{
-		printf("Error : could not get an instance of PxOmniPvdFileWriteStream!");
+		printf("Error : could not get an instance of PxOmniPvdFileWriteStream!\n");
 		return;
 	}
 	fStream->setFileName(gOmniPvdPath);
@@ -106,17 +106,20 @@ void initPhysicsWithOmniPvd()
 	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, NULL, gOmniPvd);
 	if (!gPhysics)
 	{
-		printf("Error : could not create a PhysX instance!");
+		printf("Error : could not create a PhysX instance!\n");
 		return;
 	}
 
 	if (gPhysics->getOmniPvd())
 	{
-		gPhysics->getOmniPvd()->startSampling();
+		if (!gPhysics->getOmniPvd()->startSampling())
+		{
+			printf("Error : could not start OmniPvd sampling to file(%s)\n", gOmniPvdPath);
+		}
 	}
 	else
 	{
-		printf("Error : could not start OmniPvd sampling!");
+		printf("Error : could not start OmniPvd sampling to file(%s)\n", gOmniPvdPath);
 		return;
 	}
 

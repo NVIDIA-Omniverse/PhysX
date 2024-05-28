@@ -22,20 +22,13 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysX (PROJECT not SOLUTION)
 #
 
-IF(PX_USE_NVTX)
-	FIND_PACKAGE(nvToolsExt $ENV{PM_nvToolsExt_VERSION} REQUIRED)
-	MESSAGE("Using nvtx lib: ${NVTOOLSEXT_LIB} path: ${NVTOOLSEXTSDK_PATH}")
-	SET(NV_TOOLS_EXT_LIB ${NVTOOLSEXT_LIB})
-ENDIF()
-
 SET(PHYSX_PLATFORM_INCLUDES
-	${NVTOOLSEXT_INCLUDE_DIRS}
 )
 
 SET(PHYSX_GPU_HEADERS
@@ -140,7 +133,7 @@ ENDIF()
 
 IF(NOT PX_GENERATE_STATIC_LIBRARIES)
 	SET(PHYSX_PRIVATE_PLATFORM_LINKED_LIBS
-			LowLevel LowLevelAABB LowLevelDynamics PhysXTask SceneQuery SimulationController ${NV_TOOLS_EXT_LIB}
+			LowLevel LowLevelAABB LowLevelDynamics PhysXTask SceneQuery SimulationController
 	)
 ENDIF()
 

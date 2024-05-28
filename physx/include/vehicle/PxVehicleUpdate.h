@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,9 +48,10 @@ namespace physx
 	class PxBatchQueryExt;
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Structure containing data describing the non-persistent state of each suspension/wheel/tire unit.
 	This structure is filled out in PxVehicleUpdates and PxVehicleUpdateSingleVehicleAndStoreTelemetryData
-	@see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData
+	\see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData
 	*/
 	struct PX_DEPRECATED PxWheelQueryResult
 	{
@@ -65,21 +66,21 @@ namespace physx
 		/**
 		\brief Start point of suspension line raycast/sweep used in the raycast/sweep completed immediately before PxVehicleUpdates.
 		\note If no raycast/sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then (0,0,0) is stored.
-		@see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
+		\see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
 		*/
 		PxVec3 suspLineStart;
 
 		/**
 		\brief Directions of suspension line raycast/sweep used in the raycast/sweep completed immediately before PxVehicleUpdates.
 		\note If no raycast/sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then (0,0,0) is stored.
-		@see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
+		\see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
 		*/
 		PxVec3 suspLineDir;
 
 		/**
 		\brief Lengths of suspension line raycast/sweep used in raycast/sweep completed immediately before PxVehicleUpdates.
 		\note If no raycast/sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then 0 is stored.
-		@see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
+		\see PxVehicleSuspensionRaycasts, PxVehicleSuspensionRaycasts
 		*/
 		PxReal suspLineLength;
 
@@ -121,7 +122,7 @@ namespace physx
 		PxVehicleDrivableSurfaceType::eSURFACE_TYPE_UNKNOWN.
 		\note If no raycast/sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then 
 		PxVehicleDrivableSurfaceType::eSURFACE_TYPE_UNKNOWN is stored.
-		@see PxVehicleDrivableSurfaceToTireFrictionPairs
+		\see PxVehicleDrivableSurfaceToTireFrictionPairs
 		*/	
 		PxU32 tireSurfaceType;
 
@@ -145,7 +146,7 @@ namespace physx
 		\note If suspension travel limits forbid the wheel from touching the drivable surface then the tire friction is 0.
 		\note If no raycast or sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then the 
 		stored tire friction is the value computed in PxVehicleUpdates that immediately followed the last raycast or sweep.
-		@see PxVehicleDrivableSurfaceToTireFrictionPairs, PxVehicleTireData
+		\see PxVehicleDrivableSurfaceToTireFrictionPairs, PxVehicleTireData
 		*/	
 		PxReal tireFriction;
 
@@ -164,7 +165,7 @@ namespace physx
 		\note If suspension travel limits forbid the wheel from touching the drivable surface then the force is 0
 		\note If no raycast or sweep for the corresponding suspension was performed immediately prior to PxVehicleUpdates then the 
 		suspension spring force is computed using the contact plane that was hit by the most recent suspension line raycast or sweep.
-		@see PxVehicleWheelsSimData::getSuspTravelDirection
+		\see PxVehicleWheelsSimData::getSuspTravelDirection
 		*/
 		PxReal suspSpringForce;
 
@@ -206,7 +207,7 @@ namespace physx
 
 		/**
 		\brief Steer angle of the wheel about the "up" vector accounting for input steer and toe and, if applicable, Ackermann steer correction.
-		@see PxVehicleWheelData::mToeAngle
+		\see PxVehicleWheelData::mToeAngle
 		*/	
 		PxReal steerAngle;
 
@@ -216,6 +217,9 @@ namespace physx
 		PxTransform localPose;
 	};
 
+	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+	*/
 	struct PX_DEPRECATED PxVehicleWheelQueryResult
 	{
 		/**
@@ -224,7 +228,7 @@ namespace physx
 		A NULL pointer is permitted.
 		The wheelQueryResults buffer is left unmodified in PxVehicleUpdates for vehicles with sleeping rigid bodies 
 		whose control inputs indicate they should remain inert.
-		@see PxVehicleUpdates
+		\see PxVehicleUpdates
 		*/
 		PxWheelQueryResult* wheelQueryResults;
 
@@ -236,10 +240,11 @@ namespace physx
 	};
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Structure containing data that is computed for a wheel during concurrent calls to PxVehicleUpdates or 
 	PxVehicleUpdateSingleVehicleAndStoreTelemetryData but which cannot be safely concurrently applied. 
 
-	@see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehiclePostUpdates, PxVehicleConcurrentUpdate
+	\see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehiclePostUpdates, PxVehicleConcurrentUpdate
 	*/
 	struct PX_DEPRECATED PxVehicleWheelConcurrentUpdateData
 	{
@@ -262,10 +267,11 @@ namespace physx
 	};
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Structure containing data that is computed for a vehicle and its wheels during concurrent calls to PxVehicleUpdates or
 	PxVehicleUpdateSingleVehicleAndStoreTelemetryData but which cannot be safely concurrently applied. 
 
-	@see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehiclePostUpdates, PxVehicleWheelConcurrentUpdateData
+	\see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehiclePostUpdates, PxVehicleWheelConcurrentUpdateData
 	*/
 
 	struct PX_DEPRECATED PxVehicleConcurrentUpdateData
@@ -286,7 +292,7 @@ namespace physx
 		\brief Pointer to an PxVehicleWheelConcurrentUpdate buffer of length nbConcurrentWheelUpdates
 		The concurrentWheelUpdates buffer must persist until the end of PxVehiclePostUpdates
 		A NULL pointer is not permitted.
-		@see PxVehicleUpdates, PxVehiclePostUpdates
+		\see PxVehicleUpdates, PxVehiclePostUpdates
 		*/
 		PxVehicleWheelConcurrentUpdateData* concurrentWheelUpdates;
 
@@ -336,9 +342,9 @@ namespace physx
 
 	\note Only blocking hits are supported (PxQueryHitType::eBLOCK).
 
-	@see PxVehicleDrive4W::setToRestState, PxVehicleDriveNW::setToRestState, PxVehicleDriveTank::setToRestState, PxVehicleNoDrive::setToRestState
+	\see PxVehicleDrive4W::setToRestState, PxVehicleDriveNW::setToRestState, PxVehicleDriveTank::setToRestState, PxVehicleNoDrive::setToRestState
 
-	@see PxBatchQueryExt::raycast
+	\see PxBatchQueryExt::raycast
 	*/
 	PX_DEPRECATED void PxVehicleSuspensionRaycasts(	PxBatchQueryExt* batchQuery,
 										const PxU32 nbVehicles, PxVehicleWheels** vehicles,
@@ -346,6 +352,7 @@ namespace physx
 										const PxQueryFlags queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER);
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Perform sweeps for all suspension lines for all vehicles.  
 
 	\param[in] batchQuery is a PxBatchQueryExt instance used to specify shader data and functions for the sweep scene queries.
@@ -396,11 +403,11 @@ namespace physx
 	objects, it is recommended to use non-blocking hits.  The vehicle update function will analyze all returned hits and choose the most appropriate using the thresholds 
 	set in PxVehicleSetSweepHitRejectionAngles.
 
-	@see PxVehicleDrive4W::setToRestState, PxVehicleDriveNW::setToRestState, PxVehicleDriveTank::setToRestState, PxVehicleNoDrive::setToRestState
+	\see PxVehicleDrive4W::setToRestState, PxVehicleDriveNW::setToRestState, PxVehicleDriveTank::setToRestState, PxVehicleNoDrive::setToRestState
 
-	@see PxBatchQueryExt::sweep PxScene::sweep()
+	\see PxBatchQueryExt::sweep PxScene::sweep()
 
-	@see PxVehicleSetSweepHitRejectionAngles
+	\see PxVehicleSetSweepHitRejectionAngles
 	*/
 	PX_DEPRECATED void PxVehicleSuspensionSweeps(	PxBatchQueryExt* batchQuery,
 									const PxU32 nbVehicles, PxVehicleWheels** vehicles, 
@@ -411,6 +418,7 @@ namespace physx
 									const PxVehicleContext& context = PxVehicleGetDefaultContext());
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief A function called from PxContactModifyCallback::onContactModify.  The function determines if rigid body contact points
 	recorded for the wheel's PxShape are likely to be duplicated and resolved by the wheel's suspension raycast.   Contact points that will be
 	resolved by the suspension are ignored.  Contact points that are accepted (rather than ignored) are modified to account for the effect of the
@@ -442,7 +450,7 @@ namespace physx
 	\note Reduce maxImpulse if the wheels are frequently colliding with light objects with mass much less than the vehicle's mass.
 	Reducing this value encourages numerical stability.
 
-	@see PxContactModifyCallback::onContactModify, PxVehicleSetSweepHitRejectionAngles, PxVehicleContext
+	\see PxContactModifyCallback::onContactModify, PxVehicleSetSweepHitRejectionAngles, PxVehicleContext
 	*/
 	PX_DEPRECATED PxU32 PxVehicleModifyWheelContacts
 		(const PxVehicleWheels& vehicle, const PxU32 wheelId,
@@ -452,6 +460,7 @@ namespace physx
 
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Update an array of vehicles by either applying an acceleration to the rigid body actor associated with 
 	each vehicle or by an immediate update of the velocity of the actor.
 	
@@ -494,7 +503,7 @@ namespace physx
 	\note Concurrent calls to PxVehicleUpdates and PxVehicleUpdateSingleVehicleAndStoreTelemetryData are permitted if the parameter
 	vehicleConcurrentUpdates is used.
 
-	@see PxVehicleSetUpdateMode, PxVehicleWheelsSimData::disableWheel, PxVehicleWheelsSimData::setWheelShapeMapping, PxVehicleWheelsDynData::setWheelRotationSpeed,
+	\see PxVehicleSetUpdateMode, PxVehicleWheelsSimData::disableWheel, PxVehicleWheelsSimData::setWheelShapeMapping, PxVehicleWheelsDynData::setWheelRotationSpeed,
 	PxVehiclePostUpdates
 	*/
 	PX_DEPRECATED void PxVehicleUpdates(
@@ -505,6 +514,7 @@ namespace physx
 
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Apply actor changes that were computed in concurrent calls to PxVehicleUpdates or PxVehicleUpdateSingleVehicleAndStoreTelemetryData but 
 	which could not be safely applied due to the concurrency.
 
@@ -518,7 +528,7 @@ namespace physx
 
 	\param[in] context the vehicle context to use for the vehicle post update.
 
-	@see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData
+	\see PxVehicleUpdates, PxVehicleUpdateSingleVehicleAndStoreTelemetryData
 	*/
 	PX_DEPRECATED void PxVehiclePostUpdates(
 		const PxVehicleConcurrentUpdateData* vehicleConcurrentUpdates, const PxU32 nbVehicles, PxVehicleWheels** vehicles,
@@ -526,6 +536,7 @@ namespace physx
 
 
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Shift the origin of vehicles by the specified vector.
 
 	Call this method to adjust the internal data structures of vehicles to reflect the shifted origin location
@@ -545,6 +556,7 @@ namespace physx
 
 #if PX_DEBUG_VEHICLE_ON
 	/**
+	\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 	\brief Update an single vehicle by either applying an acceleration to the rigid body actor associated with 
 	each vehicle or by an immediate update of the velocity of the actor. Also record telemetry data from the 
 	vehicle so that it may be visualized or queried.
@@ -580,7 +592,7 @@ namespace physx
 	\note Concurrent calls to PxVehicleUpdateSingleVehicleAndStoreTelemetryData and PxVehicleUpdates are permitted if the parameter
 	vehicleConcurrentUpdates is used.
 
-	@see PxVehiclePostUpdates, PxVehicleSetUpdateMode, PxVehicleTelemetryData
+	\see PxVehiclePostUpdates, PxVehicleSetUpdateMode, PxVehicleTelemetryData
 	*/
 	PX_DEPRECATED void PxVehicleUpdateSingleVehicleAndStoreTelemetryData
 		(const PxReal timestep, const PxVec3& gravity, 

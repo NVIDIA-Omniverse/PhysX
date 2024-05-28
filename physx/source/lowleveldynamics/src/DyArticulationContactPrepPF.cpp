@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -135,7 +135,6 @@ bool setupFinalizeExtSolverContactsCoulomb(
 		const Vec3V normal = V3LoadA(contactBase0->normal);
 
 		const PxReal combinedRestitution = contactBase0->restitution;
-	
 		
 		SolverContactCoulombHeader* PX_RESTRICT header = reinterpret_cast<SolverContactCoulombHeader*>(ptr);
 		ptr += sizeof(SolverContactCoulombHeader);
@@ -146,7 +145,7 @@ bool setupFinalizeExtSolverContactsCoulomb(
 
 		const FloatV restitution = FLoad(combinedRestitution);
 		const FloatV damping = FLoad(contactBase0->damping);
-
+		const BoolV accelerationSpring = BLoad(!!(contactBase0->materialFlags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING));
 
 		header->numNormalConstr		= PxU8(contactCount);
 		header->type				= pointHeaderType;
@@ -180,7 +179,7 @@ bool setupFinalizeExtSolverContactsCoulomb(
 
 				setupExtSolverContact(b0, b1, d0, d1, angD0, angD1, bodyFrame0p, bodyFrame1p, normal, invDtV, invDtp8, dt, restDistance, maxPenBias, restitution,
 					bounceThreshold, contact, *solverContact, ccdMaxSeparation, Z, vel0, vel1, cfm, offsetSlop,
-					norVel0, norVel1, damping);
+					norVel0, norVel1, damping, accelerationSpring);
 			}			
 			ptr = p;
 		}
@@ -223,7 +222,6 @@ bool setupFinalizeExtSolverContactsCoulomb(
 		PxPrefetchLine(ptr, 128);
 		PxPrefetchLine(ptr, 256);
 		PxPrefetchLine(ptr, 384);
-
 
 		const PxVec3 t0Fallback1(0.f, -normal.z, normal.y);
 		const PxVec3 t0Fallback2(-normal.y, normal.x, 0.f);
@@ -294,8 +292,8 @@ bool setupFinalizeExtSolverContactsCoulomb(
 						const FloatV recipResponse = FSel(FIsGrtr(unitResponse, FZero()), FRecip(unitResponse), FZero());
 
 						f0->raXnXYZ_velMultiplierW = V4SetW(Vec4V_From_Vec3V(resp0.angular), recipResponse);
-						f0->rbXnXYZ_biasW = V4SetW(V4Neg(Vec4V_From_Vec3V(resp1.angular)), FZero());
-						f0->normalXYZ_appliedForceW = V4SetW(Vec4V_From_Vec3V(t0), FZero());
+						f0->rbXnXYZ_biasW = V4ClearW(V4Neg(Vec4V_From_Vec3V(resp1.angular)));
+						f0->normalXYZ_appliedForceW = V4ClearW(Vec4V_From_Vec3V(t0));
 						FStore(tv, &f0->targetVel);
 						f0->linDeltaVA = deltaV0.linear;
 						f0->angDeltaVA = deltaV0.angular;

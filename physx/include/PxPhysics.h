@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PHYSICS_H
 #define PX_PHYSICS_H
 
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxDeletionListener.h"
@@ -80,15 +77,15 @@ objects that can be shared across multiple scenes.
 
 You can get an instance of this class by calling PxCreatePhysics().
 
-@see PxCreatePhysics() PxScene
+\see PxCreatePhysics() PxScene
 */
 class PxPhysics
 {
 public:
 
-	/** @name Basics
+	/** \name Basics
 	*/
-	//@{
+	//\{
 
 	virtual ~PxPhysics() {}
 
@@ -108,7 +105,7 @@ public:
 
 	\note Releasing the PxPhysics instance is a prerequisite to releasing the PxFoundation instance.
 
-	@see PxCreatePhysics() PxFoundation
+	\see PxCreatePhysics() PxFoundation
 	*/
 	virtual	void release() = 0;
 
@@ -139,7 +136,7 @@ public:
 	\param	[in] filterHint		The aggregate's filtering hint.
 	\return The new aggregate.
 
-	@see PxAggregate PxAggregateFilterHint PxAggregateType PxPairFilteringMode
+	\see PxAggregate PxAggregateFilterHint PxAggregateType PxPairFilteringMode
 	*/
 	virtual	PxAggregate* createAggregate(PxU32 maxActor, PxU32 maxShape, PxAggregateFilterHint filterHint) = 0;
 
@@ -149,10 +146,10 @@ public:
 	*/
 	virtual const PxTolerancesScale& getTolerancesScale() const = 0;
 
-	//@}
-	/** @name Meshes
+	//\}
+	/** \name Meshes
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a triangle mesh object.
@@ -162,7 +159,7 @@ public:
 	\param	[in] stream	The triangle mesh stream.
 	\return The new triangle mesh.
 
-	@see PxTriangleMesh PxMeshPreprocessingFlag PxTriangleMesh.release() PxInputStream PxTriangleMeshFlag
+	\see PxTriangleMesh PxMeshPreprocessingFlag PxTriangleMesh.release() PxInputStream PxTriangleMeshFlag
 	*/
 	virtual PxTriangleMesh* createTriangleMesh(PxInputStream& stream) = 0;
 
@@ -171,7 +168,7 @@ public:
 
 	\return Number of triangle meshes.
 
-	@see getTriangleMeshes()
+	\see getTriangleMeshes()
 	*/
 	virtual PxU32 getNbTriangleMeshes() const = 0;
 
@@ -187,15 +184,15 @@ public:
 	\param	[in]  startIndex	Index of first mesh pointer to be retrieved.
 	\return The number of triangle mesh pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbTriangleMeshes() PxTriangleMesh
+	\see getNbTriangleMeshes() PxTriangleMesh
 	*/
 	virtual	PxU32 getTriangleMeshes(PxTriangleMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 
-	//@}
-	/** @name Tetrahedron Meshes
+	//\}
+	/** \name Tetrahedron Meshes
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a tetrahedron mesh object.
@@ -205,7 +202,7 @@ public:
 	\param[in] stream The tetrahedron mesh stream.
 	\return The new tetrahedron mesh.
 
-	@see PxTetrahedronMesh PxMeshPreprocessingFlag PxTetrahedronMesh.release() PxInputStream PxTriangleMeshFlag
+	\see PxTetrahedronMesh PxMeshPreprocessingFlag PxTetrahedronMesh.release() PxInputStream PxTriangleMeshFlag
 	*/
 	virtual PxTetrahedronMesh* createTetrahedronMesh(PxInputStream& stream) = 0;
 
@@ -215,7 +212,7 @@ public:
 	\param[in] stream The softbody mesh stream.
 	\return The new softbody mesh.
 
-	@see createTetrahedronMesh
+	\see createTetrahedronMesh
 	*/
 	virtual PxSoftBodyMesh* createSoftBodyMesh(PxInputStream& stream) = 0;
 
@@ -224,7 +221,7 @@ public:
 
 	\return Number of tetrahedron meshes.
 
-	@see getTetrahedronMeshes()
+	\see getTetrahedronMeshes()
 	*/
 	virtual PxU32 getNbTetrahedronMeshes() const = 0;
 
@@ -240,7 +237,7 @@ public:
 	\param[in] startIndex Index of first mesh pointer to be retrieved.
 	\return The number of tetrahedron mesh pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbTetrahedronMeshes() PxTetrahedronMesh
+	\see getNbTetrahedronMeshes() PxTetrahedronMesh
 	*/
 	virtual	PxU32 getTetrahedronMeshes(PxTetrahedronMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -252,7 +249,7 @@ public:
 	\param	[in] stream	The heightfield mesh stream.
 	\return The new heightfield.
 
-	@see PxHeightField PxHeightField.release() PxInputStream
+	\see PxHeightField PxHeightField.release() PxInputStream
 	*/
 	virtual PxHeightField* createHeightField(PxInputStream& stream) = 0;
 
@@ -261,7 +258,7 @@ public:
 
 	\return Number of heightfields.
 
-	@see getHeightFields()
+	\see getHeightFields()
 	*/
 	virtual PxU32 getNbHeightFields() const = 0;
 
@@ -277,7 +274,7 @@ public:
 	\param	[in]  startIndex	Index of first heightfield pointer to be retrieved.
 	\return The number of heightfield pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbHeightFields() PxHeightField
+	\see getNbHeightFields() PxHeightField
 	*/
 	virtual	PxU32 getHeightFields(PxHeightField** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -289,7 +286,7 @@ public:
 	\param	[in] stream	The stream to load the convex mesh from.
 	\return The new convex mesh.
 
-	@see PxConvexMesh PxConvexMesh.release() PxInputStream createTriangleMesh() PxConvexMeshGeometry PxShape
+	\see PxConvexMesh PxConvexMesh.release() PxInputStream createTriangleMesh() PxConvexMeshGeometry PxShape
 	*/
 	virtual PxConvexMesh* createConvexMesh(PxInputStream& stream) = 0;
 
@@ -298,7 +295,7 @@ public:
 
 	\return Number of convex meshes.
 
-	@see getConvexMeshes()
+	\see getConvexMeshes()
 	*/
 	virtual PxU32 getNbConvexMeshes() const = 0;
 
@@ -314,7 +311,7 @@ public:
 	\param	[in]  startIndex	Index of first convex mesh pointer to be retrieved.
 	\return The number of convex mesh pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbConvexMeshes() PxConvexMesh
+	\see getNbConvexMeshes() PxConvexMesh
 	*/
 	virtual	PxU32 getConvexMeshes(PxConvexMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -324,7 +321,7 @@ public:
 	\param	[in] stream	The stream to load the BVH from.
 	\return The new BVH.
 
-	@see PxBVH PxInputStream
+	\see PxBVH PxInputStream
 	*/
 	virtual PxBVH* createBVH(PxInputStream& stream) = 0;
 
@@ -333,7 +330,7 @@ public:
 
 	\return Number of bounding volume hierarchies.
 
-	@see PxBVH getBVHs()
+	\see PxBVH getBVHs()
 	*/
 	virtual PxU32 getNbBVHs() const = 0;
 
@@ -349,14 +346,14 @@ public:
 	\param	[in]  startIndex	Index of first BVH pointer to be retrieved.
 	\return The number of BVH pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbBVHs() PxBVH
+	\see getNbBVHs() PxBVH
 	*/
 	virtual	PxU32 getBVHs(PxBVH** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
-	//@}
-	/** @name Scenes
+	//\}
+	/** \name Scenes
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a scene.
@@ -367,7 +364,7 @@ public:
 	\param	[in] sceneDesc	Scene descriptor. See #PxSceneDesc
 	\return The new scene object.
 
-	@see PxScene PxScene.release() PxSceneDesc
+	\see PxScene PxScene.release() PxSceneDesc
 	*/
 	virtual PxScene* createScene(const PxSceneDesc& sceneDesc) = 0;
 
@@ -376,7 +373,7 @@ public:
 
 	\return The number of scenes created.
 
-	@see getScenes()
+	\see getScenes()
 	*/
 	virtual PxU32 getNbScenes() const = 0;
 
@@ -392,14 +389,14 @@ public:
 	\param	[in]  startIndex	Index of first scene pointer to be retrieved.
 	\return The number of scene pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbScenes() PxScene
+	\see getNbScenes() PxScene
 	*/
 	virtual	PxU32 getScenes(PxScene** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
-	//@}
-	/** @name Actors
+	//\}
+	/** \name Actors
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a static rigid actor with the specified pose and all other fields initialized
@@ -407,7 +404,7 @@ public:
 
 	\param	[in] pose	The initial pose of the actor. Must be a valid transform.
 
-	@see PxRigidStatic
+	\see PxRigidStatic
 	*/
 	virtual PxRigidStatic* createRigidStatic(const PxTransform& pose) = 0;
 
@@ -417,7 +414,7 @@ public:
 
 	\param	[in] pose	The initial pose of the actor. Must be a valid transform.
 
-	@see PxRigidDynamic
+	\see PxRigidDynamic
 	*/
 	virtual PxRigidDynamic* createRigidDynamic(const PxTransform& pose) = 0;
 
@@ -432,14 +429,14 @@ public:
 	\param	[in] actors		Array of actors to add to the pruning structure. Must be non NULL.
 	\param	[in] nbActors	Number of actors in the array. Must be >0.
 	\return Pruning structure created from given actors, or NULL if any of the actors did not comply with the above requirements.
-	@see PxActor PxPruningStructure
+	\see PxActor PxPruningStructure
 	*/
 	virtual PxPruningStructure* createPruningStructure(PxRigidActor*const* actors, PxU32 nbActors) = 0;
 
-	//@}
-	/** @name Shapes
+	//\}
+	/** \name Shapes
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a shape which may be attached to multiple actors
@@ -454,7 +451,7 @@ public:
 
 	\note Shared shapes are not mutable when they are attached to an actor
 
-	@see PxShape
+	\see PxShape
 	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
 											const PxMaterial& material,
@@ -478,7 +475,7 @@ public:
 
 	\note Shared shapes are not mutable when they are attached to an actor
 
-	@see PxShape
+	\see PxShape
 	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
 											const PxFEMSoftBodyMaterial& material,
@@ -503,7 +500,7 @@ public:
 
 	\note Shared shapes are not mutable when they are attached to an actor
 
-	@see PxShape
+	\see PxShape
 	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
 											const PxFEMClothMaterial& material,
@@ -530,7 +527,7 @@ public:
 	\note Shared shapes are not mutable when they are attached to an actor
 	\note Shapes created from *SDF* triangle-mesh geometries do not support more than one material.
 
-	@see PxShape
+	\see PxShape
 	*/
 	virtual PxShape* createShape(	const PxGeometry& geometry,
 									PxMaterial*const * materials,
@@ -555,7 +552,7 @@ public:
 
 	\return Number of shapes.
 
-	@see getShapes()
+	\see getShapes()
 	*/
 	virtual PxU32 getNbShapes() const = 0;
 
@@ -571,14 +568,14 @@ public:
 	\param	[in]  startIndex	Index of first shape pointer to be retrieved
 	\return The number of shape pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbShapes() PxShape
+	\see getNbShapes() PxShape
 	*/
 	virtual	PxU32 getShapes(PxShape** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
-	//@}
-	/** @name Constraints and Articulations
+	//\}
+	/** \name Constraints and Articulations
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a constraint shader.
@@ -594,7 +591,7 @@ public:
 
 	\return The new constraint shader.
 
-	@see PxConstraint
+	\see PxConstraint
 	*/
 	virtual PxConstraint* createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize) = 0;
 
@@ -603,7 +600,7 @@ public:
 
 	\return the new articulation
 
-	@see PxArticulationReducedCoordinate
+	\see PxArticulationReducedCoordinate
 	*/
 	virtual PxArticulationReducedCoordinate* createArticulationReducedCoordinate() = 0;
 
@@ -615,7 +612,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new FEM-cloth
 
-	@see PxFEMCloth
+	\see PxFEMCloth
 	*/
 	virtual PxFEMCloth* createFEMCloth(PxCudaContextManager& cudaContextManager) = 0;
 
@@ -625,7 +622,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new soft body
 
-	@see PxSoftBody
+	\see PxSoftBody
 	*/
 	virtual PxSoftBody* createSoftBody(PxCudaContextManager& cudaContextManager) = 0;
 
@@ -636,7 +633,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
 	\return the new hair system
 
-	@see PxHairSystem
+	\see PxHairSystem
 	*/
 	virtual PxHairSystem* createHairSystem(PxCudaContextManager& cudaContextManager) = 0;
 
@@ -646,37 +643,24 @@ public:
 	A PBD particle system can be used to simulate particle systems with fluid and granular particles. It also allows simulating cloth using
 	mass-spring constraints and rigid bodies by shape matching the bodies with particles.
 
-	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\param[in] maxNeighborhood The maximum number of particles considered in neighborhood-based particle interaction calculations (e.g. fluid density constraints).
-	\return the new particle system
+	In order to accelerate neighborhood finding for particle-particle interactions (e.g.: for fluid density constraints) a regular grid is used.
+	This grid is built every time step but may provide inaccurate neighborhood information during the solver iterations. The neighborhood scale
+	parameter can be used to configure the grid such that it provides a more conservative neighborhood at the cost of run-time performance. 
+	The grid cell width is defined as 2*particleContactOffset*neighborhoodScale. \see PxParticleSystem::setParticleContactOffset.
+	The neighborhood scale parameter should typically not be much larger than 1.
 
-	@see PxPBDParticleSystem
-	*/
-	virtual PxPBDParticleSystem* createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood = 96) = 0;
-
-	/**
-	\brief Creates a particle system with a fluid-implicit particle solver (FLIP).
-	\warning Feature under development, only for internal usage.
+	The maxNeighborhood defines how many particles fit into the neighborhood, at the cost of memory.
+	
+	Both maxNeighborhood and neighborhoodScale should be set as low as possible for performance, but high enough to not cause any behavioral degredation.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
+	\param[in] maxNeighborhood The maximum number of particles considered in neighborhood-based particle interaction calculations.
+	\param[in] neighborhoodScale Scale applied to the particle contact offset used to define the particle neighborhood size spatially. <b>Range:</b> (1.0, PX_MAX_F32)
 	\return the new particle system
 
-	@see PxFLIPParticleSystem
+	\see PxPBDParticleSystem
 	*/
-	virtual PxFLIPParticleSystem* createFLIPParticleSystem(PxCudaContextManager& cudaContextManager) = 0;
-
-	/**
-	\brief Creates a particle system with a material-point-method solver (MPM).
-	\warning Feature under development, only for internal usage.
-
-	A MPM particle system can be used to simulate fluid dynamics and deformable body effects using particles.
-
-	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\return the new particle system
-
-	@see PxMPMParticleSystem
-	*/
-	virtual PxMPMParticleSystem* createMPMParticleSystem(PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxPBDParticleSystem* createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood = 96, PxReal neighborhoodScale = 1.01f) = 0;
 
 	/**
 	\brief Create particle buffer to simulate fluid/granular material.
@@ -686,7 +670,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
 	\return PxParticleBuffer instance
 
-	@see PxParticleBuffer
+	\see PxParticleBuffer
 	*/
 	virtual PxParticleBuffer* createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager) = 0;
 
@@ -700,7 +684,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
 	\return PxParticleAndDiffuseBuffer instance
 
-	@see PxParticleAndDiffuseBuffer, PxDiffuseParticleParams
+	\see PxParticleAndDiffuseBuffer, PxDiffuseParticleParams
 	*/
 	virtual PxParticleAndDiffuseBuffer* createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager) = 0;
 
@@ -715,7 +699,7 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
 	\return PxParticleClothBuffer instance
 
-	@see PxParticleClothBuffer
+	\see PxParticleClothBuffer
 	*/
 	virtual PxParticleClothBuffer* createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager) = 0;
 	
@@ -728,14 +712,14 @@ public:
 	\param[in] cudaContextManager The PxCudaContextManager this buffer is tied to.
 	\return PxParticleRigidBuffer instance
 
-	@see PxParticleRigidBuffer
+	\see PxParticleRigidBuffer
 	*/
 	virtual PxParticleRigidBuffer* createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager) = 0;
 
-	//@}
-	/** @name Materials
+	//\}
+	/** \name Materials
 	*/
-	//@{
+	//\{
 
 	/**
 	\brief Creates a new rigid body material with certain default properties.
@@ -746,7 +730,7 @@ public:
 	\param	[in] dynamicFriction	The coefficient of dynamic friction
 	\param	[in] restitution		The coefficient of restitution
 
-	@see PxMaterial
+	\see PxMaterial
 	*/
 	virtual PxMaterial* createMaterial(PxReal staticFriction, PxReal dynamicFriction, PxReal restitution) = 0;
 
@@ -755,7 +739,7 @@ public:
 
 	\return Number of rigid body materials.
 
-	@see getMaterials()
+	\see getMaterials()
 	*/
 	virtual PxU32 getNbMaterials() const = 0;
 
@@ -771,7 +755,7 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbMaterials() PxMaterial
+	\see getNbMaterials() PxMaterial
 	*/
 	virtual PxU32 getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -784,7 +768,7 @@ public:
 	\param	[in] poissons				The poissons's ratio
 	\param	[in] dynamicFriction		The dynamic friction coefficient
 
-	@see PxFEMSoftBodyMaterial
+	\see PxFEMSoftBodyMaterial
 	*/
 	virtual PxFEMSoftBodyMaterial* createFEMSoftBodyMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
 
@@ -793,7 +777,7 @@ public:
 
 	\return Number of FEM materials.
 
-	@see getFEMSoftBodyMaterials()
+	\see getFEMSoftBodyMaterials()
 	*/
 	virtual PxU32 getNbFEMSoftBodyMaterials() const = 0;
 
@@ -809,7 +793,7 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbFEMSoftBodyMaterials() PxFEMSoftBodyMaterial
+	\see getNbFEMSoftBodyMaterials() PxFEMSoftBodyMaterial
 	*/
 	virtual PxU32 getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -824,7 +808,7 @@ public:
 	\param	[in] dynamicFriction		The dynamic friction coefficient
 	\param	[in] thickness				The cloth's thickness
 
-	@see PxFEMClothMaterial
+	\see PxFEMClothMaterial
 	*/
 	virtual PxFEMClothMaterial* createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness = 0.001f) = 0;
 
@@ -833,7 +817,7 @@ public:
 
 	\return Number of FEM cloth materials.
 
-	@see getFEMClothMaterials()
+	\see getFEMClothMaterials()
 	*/
 	virtual PxU32 getNbFEMClothMaterials() const = 0;
 
@@ -849,7 +833,7 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbFEMClothMaterials() PxFEMClothMaterial
+	\see getNbFEMClothMaterials() PxFEMClothMaterial
 	*/
 	virtual PxU32 getFEMClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -869,7 +853,7 @@ public:
 	\param	[in]  gravityScale			The gravity scale
 	\return The new PBD material.
 
-	@see PxPBDMaterial
+	\see PxPBDMaterial
 	*/
 	virtual PxPBDMaterial* createPBDMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal vorticityConfinement, PxReal surfaceTension, PxReal cohesion, PxReal lift, PxReal drag, PxReal cflCoefficient = 1.f, PxReal gravityScale = 1.f) = 0;
 
@@ -878,7 +862,7 @@ public:
 
 	\return Number of PBD materials.
 
-	@see getPBDMaterials()
+	\see getPBDMaterials()
 	*/
 	virtual PxU32 getNbPBDMaterials() const = 0;
 
@@ -894,106 +878,14 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	@see getNbPBDMaterials() PxPBDMaterial
+	\see getNbPBDMaterials() PxPBDMaterial
 	*/
 	virtual PxU32 getPBDMaterials(PxPBDMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 	
-	/**
-	\brief Creates a new FLIP material with certain default properties.
-	\warning Feature under development, only for internal usage.
-
-	\param	[in]  friction				The friction parameter
-	\param	[in]  damping				The velocity damping parameter
-	\param	[in]  adhesion				The maximum velocity magnitude of particles
-	\param	[in]  viscosity				The viscosity parameter
-	\param	[in]  gravityScale			The gravity scale
-	\return The new FLIP material.
-
-	@see PxFLIPMaterial
+	//\}
+	/** \name Deletion Listeners
 	*/
-	virtual PxFLIPMaterial* createFLIPMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal gravityScale = 1.f) = 0;
-
-	/**
-	\brief Return the number of FLIP materials that currently exist.
-	\warning Feature under development, only for internal usage.
-
-	\return Number of FLIP materials.
-
-	@see getFLIPMaterials()
-	*/
-	virtual PxU32 getNbFLIPMaterials() const = 0;
-
-	/**
-	\brief Writes the array of FLIP material pointers to a user buffer.
-	\warning Feature under development, only for internal usage.
-
-	Returns the number of pointers written.
-
-	The ordering of the materials in the array is not specified.
-
-	\param	[out] userBuffer	The buffer to receive material pointers.
-	\param	[in]  bufferSize	The number of material pointers which can be stored in the buffer.
-	\param	[in]  startIndex	Index of first material pointer to be retrieved.
-	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
-
-	@see getNbFLIPMaterials() PxFLIPMaterial
-	*/
-	virtual PxU32 getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-	
-	/**
-	\brief Creates a new MPM material with certain default properties.
-	\warning Feature under development, only for internal usage.
-	
-	\param	[in]  friction						The friction parameter
-	\param	[in]  damping						The velocity damping parameter
-	\param	[in]  adhesion						The maximum velocity magnitude of particles
-	\param	[in]  isPlastic						True if plastic
-	\param	[in]  youngsModulus					The Young's modulus
-	\param	[in]  poissons						The Poissons's ratio
-	\param	[in]  hardening						The hardening parameter
-	\param	[in]  criticalCompression			The critical compression parameter
-	\param	[in]  criticalStretch				The critical stretch parameter
-	\param	[in]  tensileDamageSensitivity		The tensile damage sensitivity parameter
-	\param	[in]  compressiveDamageSensitivity	The compressive damage sensitivity parameter
-	\param	[in]  attractiveForceResidual		The attractive force residual parameter
-	\param	[in]  gravityScale					The gravity scale
-	\return The new MPM material.
-
-	@see PxMPMMaterial
-	*/
-	virtual PxMPMMaterial* createMPMMaterial(PxReal friction, PxReal damping, PxReal adhesion, bool isPlastic, PxReal youngsModulus, PxReal poissons, PxReal hardening, PxReal criticalCompression, PxReal criticalStretch, PxReal tensileDamageSensitivity, PxReal compressiveDamageSensitivity, PxReal attractiveForceResidual, PxReal gravityScale = 1.0f) = 0;
-
-	/**
-	\brief Return the number of MPM materials that currently exist.
-	\warning Feature under development, only for internal usage.
-
-	\return Number of MPM materials.
-
-	@see getMPMMaterials()
-	*/
-	virtual PxU32 getNbMPMMaterials() const = 0;
-
-	/**
-	\brief Writes the array of MPM material pointers to a user buffer.
-	\warning Feature under development, only for internal usage.
-
-	Returns the number of pointers written.
-
-	The ordering of the materials in the array is not specified.
-
-	\param	[out] userBuffer	The buffer to receive material pointers.
-	\param	[in]  bufferSize	The number of material pointers which can be stored in the buffer.
-	\param	[in]  startIndex	Index of first material pointer to be retrieved.
-	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
-
-	@see getNbMPMMaterials() PxMPMMaterial
-	*/
-	virtual PxU32 getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-	
-	//@}
-	/** @name Deletion Listeners
-	*/
-	//@{
+	//\{
 
 	/**
 	\brief Register a deletion listener. Listeners will be called whenever an object is deleted.
@@ -1008,7 +900,7 @@ public:
 	\param	[in] deletionEvents			The deletion event types to get notified of.
 	\param	[in] restrictedObjectSet	If false, the deletion listener will get events from all objects, else the objects to receive events from have to be specified explicitly through #registerDeletionListenerObjects.
 
-	@see PxDeletionListener unregisterDeletionListener
+	\see PxDeletionListener unregisterDeletionListener
 	*/
 	virtual void registerDeletionListener(PxDeletionListener& observer, const PxDeletionEventFlags& deletionEvents, bool restrictedObjectSet = false) = 0;
 
@@ -1019,7 +911,7 @@ public:
 
 	\param	[in] observer	Observer object to stop sending notifications to.
 
-	@see PxDeletionListener registerDeletionListener
+	\see PxDeletionListener registerDeletionListener
 	*/
 	virtual void unregisterDeletionListener(PxDeletionListener& observer) = 0;
 
@@ -1036,7 +928,7 @@ public:
 	\param	[in] observables		List of objects for which to receive deletion events. Only PhysX core objects are supported. In the case of PxJoint objects, the underlying PxConstraint can be used to get the events.
 	\param	[in] observableCount	Size of the observables list.
 
-	@see PxDeletionListener unregisterDeletionListenerObjects
+	\see PxDeletionListener unregisterDeletionListenerObjects
 	*/
 	virtual void registerDeletionListenerObjects(PxDeletionListener& observer, const PxBase* const* observables, PxU32 observableCount) = 0;
 
@@ -1053,7 +945,7 @@ public:
 	\param	[in] observables		List of objects for which to not receive deletion events anymore.
 	\param	[in] observableCount	Size of the observables list.
 
-	@see PxDeletionListener registerDeletionListenerObjects
+	\see PxDeletionListener registerDeletionListenerObjects
 	*/
 	virtual void unregisterDeletionListenerObjects(PxDeletionListener& observer, const PxBase* const* observables, PxU32 observableCount) = 0;
 
@@ -1062,12 +954,12 @@ public:
 
 	The insertion interface is needed for PxCreateTriangleMesh, PxCooking::createTriangleMesh etc., this allows runtime mesh creation.
 
-	@see PxCreateTriangleMesh PxCreateHeightField PxCreateTetrahedronMesh PxCreateBVH
+	\see PxCreateTriangleMesh PxCreateHeightField PxCreateTetrahedronMesh PxCreateBVH
 	     PxCooking::createTriangleMesh PxCooking::createHeightfield PxCooking::createTetrahedronMesh PxCooking::createBVH
 	*/
 	virtual PxInsertionCallback& getPhysicsInsertionCallback() = 0;
 
-	//@}
+	//\}
 };
 
 #if !PX_DOXYGEN
@@ -1095,7 +987,7 @@ has been created already will result in an error message and NULL will be return
 			set in the PxOmniPvd object.
 \return PxPhysics instance on success, NULL if operation failed
 
-@see PxPhysics
+\see PxPhysics
 */
 PX_C_EXPORT PX_PHYSX_CORE_API  physx::PxPhysics* PxCreatePhysics(physx::PxU32 version,
 																physx::PxFoundation& foundation,
@@ -1122,5 +1014,4 @@ PX_C_EXPORT PX_PHYSX_CORE_API physx::PxPhysics& PX_CALL_CONV PxGetPhysics();
 #pragma clang diagnostic pop
 #endif
 
-/** @} */
 #endif

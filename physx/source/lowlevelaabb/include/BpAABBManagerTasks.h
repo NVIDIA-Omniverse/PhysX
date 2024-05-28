@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -34,7 +34,6 @@
 
 namespace physx
 {
-	class PxcScratchAllocator;
 namespace Bp
 {
 	class AABBManager;
@@ -42,58 +41,52 @@ namespace Bp
 
 	class AggregateBoundsComputationTask : public Cm::Task, public PxUserAllocated
 	{
+		PX_NOCOPY(AggregateBoundsComputationTask)
 		public:
-										AggregateBoundsComputationTask(PxU64 contextId) :
-											Cm::Task	(contextId),
-											mManager	(NULL),
-											mStart		(0),
-											mNbToGo		(0),
-											mAggregates	(NULL)
-										{}
-										~AggregateBoundsComputationTask()	{}
+								AggregateBoundsComputationTask(PxU64 contextId) :
+									Cm::Task	(contextId),
+									mManager	(NULL),
+									mStart		(0),
+									mNbToGo		(0),
+									mAggregates	(NULL)
+								{}
+								~AggregateBoundsComputationTask()	{}
 
-		virtual const char*				getName() const { return "AggregateBoundsComputationTask"; }
-		virtual void					runInternal();
+		virtual const char*		getName() const { return "AggregateBoundsComputationTask"; }
+		virtual void			runInternal();
 
-				void					Init(AABBManager* manager, PxU32 start, PxU32 nb, Aggregate** aggregates)
-										{
-											mManager	= manager;
-											mStart		= start;
-											mNbToGo		= nb;
-											mAggregates	= aggregates;
-										}
+				void			Init(AABBManager* manager, PxU32 start, PxU32 nb, Aggregate** aggregates)
+								{
+									mManager	= manager;
+									mStart		= start;
+									mNbToGo		= nb;
+									mAggregates	= aggregates;
+								}
 		private:
-				AABBManager*			mManager;
-				PxU32					mStart;
-				PxU32					mNbToGo;
-				Aggregate**				mAggregates;
-
-		AggregateBoundsComputationTask& operator=(const AggregateBoundsComputationTask&);
+				AABBManager*	mManager;
+				PxU32			mStart;
+				PxU32			mNbToGo;
+				Aggregate**		mAggregates;
 	};
 
 	class PreBpUpdateTask : public Cm::Task, public PxUserAllocated
 	{
+		PX_NOCOPY(PreBpUpdateTask)
 	public:
-		PreBpUpdateTask(PxU64 contextId) :
-			Cm::Task(contextId),
-			mManager(NULL),
-			mNumCpuTasks(0)
-		{}
-		~PreBpUpdateTask() {}
+								PreBpUpdateTask(PxU64 contextId) : Cm::Task(contextId), mManager(NULL), mNumCpuTasks(0)	{}
+								~PreBpUpdateTask() {}
 
-		virtual const char*				getName() const { return "PreBpUpdateTask"; }
-		virtual void					runInternal();
+		virtual const char*		getName() const { return "PreBpUpdateTask"; }
+		virtual void			runInternal();
 
-		void					Init(AABBManager* manager, PxU32 numCpuTasks)
-		{
-			mManager = manager;
-			mNumCpuTasks = numCpuTasks;
-		}
+				void			Init(AABBManager* manager, PxU32 numCpuTasks)
+								{
+									mManager = manager;
+									mNumCpuTasks = numCpuTasks;
+								}
 	private:
-		AABBManager * mManager;
-		PxU32					mNumCpuTasks;
-
-		PreBpUpdateTask& operator=(const PreBpUpdateTask&);
+				AABBManager*	mManager;
+				PxU32			mNumCpuTasks;
 	};
 
 }

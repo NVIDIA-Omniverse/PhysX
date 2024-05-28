@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -710,8 +710,14 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 	bool useExtendedLimits,
 	PxVec3p& cA2wOut, PxVec3p& cB2wOut)
 {
+	//bA2w is the pose of the centre of mass of body a expressed in the world frame.
+	//bB2w is the pose of the centre of mass of body b expressed in the world frame.
+
 	const D6JointData& data = *reinterpret_cast<const D6JointData*>(constantBlock);
 
+	//cA2w is Ga*Ja where Ga is the global pose of actor a and Ja is the joint frame associated with actor a.
+	//cB2w is Gb*Jb where Gb is the global pose of actor b and Jb is the joint frame associated with actor b.
+	//ch caches cA2w and cB2w as well as ra = ca2w.p - bA2w.p and rb = cb2w.p - bB2w.p
 	PxTransform32 cA2w, cB2w;
 	joint::ConstraintHelper ch(constraints, invMassScale, cA2w, cB2w, body0WorldOffset, data, bA2w, bB2w);
 
@@ -732,6 +738,12 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 	if(!useExtendedLimits)
 		joint::applyNeighborhoodOperator(cA2w, cB2w);
 
+	//cB2cA = cA2w^-1 * cB2w
+	//This allows us to compute the constraint error in joint frame associated with body A.
+	//We want to compute cA2w.rotateInv(cA2w.p - cB2w.p) to be consistent with the specification we have for the Jacobian.
+	//But (cA2w^-1 * cB2w).p = cA2w.rotateInv(cB2w.p - cA2w.p) 
+	//The geometric error in the joint frame associated with body A is therefore -cB2cA.p.
+	//This is useful to know when calling prepareLockedAxes().
 	const PxTransform cB2cA = cA2w.transformInv(cB2w);
 
 	PX_ASSERT(data.c2b[0].isValid());
@@ -916,7 +928,7 @@ static PxU32 D6JointSolverPrep(Px1DConstraint* constraints,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxConstraintShaderTable gD6JointShaders = { D6JointSolverPrep, D6JointVisualize, /*PxConstraintFlag::Enum(0)*/PxConstraintFlag::eGPU_COMPATIBLE };
+static PxConstraintShaderTable gD6JointShaders = { D6JointSolverPrep, D6JointVisualize, PxConstraintFlag::eGPU_COMPATIBLE };
 
 PxConstraintSolverPrep D6Joint::getPrep()	const	{ return gD6JointShaders.solverPrep; }
 

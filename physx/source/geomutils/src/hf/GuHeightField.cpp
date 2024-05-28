@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -151,11 +151,6 @@ bool HeightField::modifySamples(PxI32 startCol, PxI32 startRow, const PxHeightFi
 				(reinterpret_cast<const PxHeightFieldSample*>(desc.samples.data))[col - startCol + (row - startRow) * desc.nbColumns];
 			*targetSample = sourceSample;
 
-			if(isCollisionVertexPreca(vertexIndex, row, col, PxHeightFieldMaterial::eHOLE))
-				targetSample->materialIndex1.setBit();
-			else
-				targetSample->materialIndex1.clearBit();
-
 			// grow (but not shrink) the height extents
 			const PxReal h = getHeight(vertexIndex);
 			minHeight = physx::intrinsics::selectMin(h, minHeight);
@@ -171,10 +166,10 @@ bool HeightField::modifySamples(PxI32 startCol, PxI32 startRow, const PxHeightFi
 		// have to recompute the min&max from scratch...
 		for (PxU32 vertexIndex = 0; vertexIndex < nbRows * nbCols; vertexIndex ++)
 		{
-				// update height extents
-				const PxReal h = getHeight(vertexIndex);
-				minHeight = physx::intrinsics::selectMin(h, minHeight);
-				maxHeight = physx::intrinsics::selectMax(h, maxHeight);
+			// update height extents
+			const PxReal h = getHeight(vertexIndex);
+			minHeight = physx::intrinsics::selectMin(h, minHeight);
+			maxHeight = physx::intrinsics::selectMax(h, maxHeight);
 		}
 	}
 	mMinHeight = minHeight;
@@ -314,8 +309,6 @@ bool HeightField::loadFromDesc(const PxHeightFieldDesc& desc)
 
 	PX_ASSERT(mMaxHeight >= mMinHeight);
 
-	parseTrianglesForCollisionVertices(PxHeightFieldMaterial::eHOLE);
-
 // PT: "mNbSamples" only used by binary converter
 	mNbSamples	= mData.rows * mData.columns;
 
@@ -328,7 +321,7 @@ bool HeightField::loadFromDesc(const PxHeightFieldDesc& desc)
 	bounds.maximum.x = PxReal(getNbRowsFast() - 1);
 	bounds.minimum.z = 0;
 	bounds.maximum.z = PxReal(getNbColumnsFast() - 1);
-	mData.mAABB=bounds;
+	mData.mAABB = bounds;
 
 	return true;
 }
@@ -409,303 +402,6 @@ namespace
 		PxU32	row;
 		PxU32	column;
 	};
-}
-
-// PT: TODO: use those faster functions everywhere
-static PxU32 getVertexEdgeIndices(const HeightField& heightfield, PxU32 vertexIndex, PxU32 row, PxU32 column, EdgeData edgeIndices[8])
-{
-	const PxU32 nbColumns = heightfield.getData().columns;
-	const PxU32 nbRows = heightfield.getData().rows;
-	PX_ASSERT((vertexIndex / nbColumns)==row);
-	PX_ASSERT((vertexIndex % nbColumns)==column);
-
-	PxU32 count = 0;
-	
-	if (row > 0) 
-	{
-//		edgeIndices[count++] = 3 * (vertexIndex - nbColumns) + 2;
-		const PxU32 cell = vertexIndex - nbColumns;
-		edgeIndices[count].edgeIndex	= 3 * cell + 2;
-		edgeIndices[count].cell			= cell;
-		edgeIndices[count].row			= row-1;
-		edgeIndices[count].column		= column;
-		count++;
-	}
-	
-	if (column < nbColumns-1)
-	{
-		if (row > 0)
-		{
-			if (!heightfield.isZerothVertexShared(vertexIndex - nbColumns))
-			{
-//				edgeIndices[count++] = 3 * (vertexIndex - nbColumns) + 1;
-				const PxU32 cell = vertexIndex - nbColumns;
-				edgeIndices[count].edgeIndex	= 3 * cell + 1;
-				edgeIndices[count].cell			= cell;
-				edgeIndices[count].row			= row-1;
-				edgeIndices[count].column		= column;
-				count++;
-			}
-		}
-//		edgeIndices[count++] = 3 * vertexIndex;
-		edgeIndices[count].edgeIndex	= 3 * vertexIndex;
-		edgeIndices[count].cell			= vertexIndex;
-		edgeIndices[count].row			= row;
-		edgeIndices[count].column		= column;
-		count++;
-
-		if (row < nbRows - 1)
-		{
-			if (heightfield.isZerothVertexShared(vertexIndex))
-			{
-//				edgeIndices[count++] = 3 * vertexIndex + 1;
-				edgeIndices[count].edgeIndex	= 3 * vertexIndex + 1;
-				edgeIndices[count].cell			= vertexIndex;
-				edgeIndices[count].row			= row;
-				edgeIndices[count].column		= column;
-				count++;
-			}
-		}
-	}
-
-	if (row < nbRows - 1)
-	{
-//		edgeIndices[count++] = 3 * vertexIndex + 2;
-		edgeIndices[count].edgeIndex	= 3 * vertexIndex + 2;
-		edgeIndices[count].cell			= vertexIndex;
-		edgeIndices[count].row			= row;
-		edgeIndices[count].column		= column;
-		count++;
-	}
-
-	if (column > 0)
-	{
-		if (row < nbRows - 1)
-		{
-			if (!heightfield.isZerothVertexShared(vertexIndex - 1))
-			{
-//				edgeIndices[count++] = 3 * (vertexIndex - 1) + 1;
-				const PxU32 cell = vertexIndex - 1;
-				edgeIndices[count].edgeIndex	= 3 * cell + 1;
-				edgeIndices[count].cell			= cell;
-				edgeIndices[count].row			= row;
-				edgeIndices[count].column		= column-1;
-				count++;
-			}
-		}
-//		edgeIndices[count++] = 3 * (vertexIndex - 1);
-		const PxU32 cell = vertexIndex - 1;
-		edgeIndices[count].edgeIndex	= 3 * cell;
-		edgeIndices[count].cell			= cell;
-		edgeIndices[count].row			= row;
-		edgeIndices[count].column		= column-1;
-		count++;
-		if (row > 0)
-		{
-			if (heightfield.isZerothVertexShared(vertexIndex - nbColumns - 1))
-			{
-//				edgeIndices[count++] = 3 * (vertexIndex - nbColumns - 1) + 1;
-				const PxU32 cell1 = vertexIndex - nbColumns - 1;
-				edgeIndices[count].edgeIndex	= 3 * cell1 + 1;
-				edgeIndices[count].cell			= cell1;
-				edgeIndices[count].row			= row-1;
-				edgeIndices[count].column		= column-1;
-				count++;
-			}
-		}
-	}
-	return count;
-}
-
-static PxU32 getEdgeTriangleIndices(const HeightField& heightfield, const EdgeData& edgeData, PxU32* PX_RESTRICT triangleIndices)
-{
-	const PxU32 nbColumns = heightfield.getData().columns;
-	const PxU32 nbRows = heightfield.getData().rows;
-
-	const PxU32 edgeIndex	= edgeData.edgeIndex;
-	const PxU32 cell		= edgeData.cell;
-	const PxU32 row			= edgeData.row;
-	const PxU32 column		= edgeData.column;
-	PX_ASSERT(cell==edgeIndex / 3);
-	PX_ASSERT(row==cell / nbColumns);
-	PX_ASSERT(column==cell % nbColumns);
-	PxU32 count = 0;
-	switch (edgeIndex - cell*3)
-	{
-		case 0:
-			if (column < nbColumns - 1)
-			{
-				if (row > 0)
-				{
-					if (heightfield.isZerothVertexShared(cell - nbColumns))
-						triangleIndices[count++] = ((cell - nbColumns) << 1);
-					else 
-						triangleIndices[count++] = ((cell - nbColumns) << 1) + 1;
-				}
-				if (row < nbRows - 1)
-				{
-					if (heightfield.isZerothVertexShared(cell))
-						triangleIndices[count++] = (cell << 1) + 1;
-					else 
-						triangleIndices[count++] = cell << 1;
-				}
-			}
-			break;
-		case 1:
-			if ((row < nbRows - 1) && (column < nbColumns - 1))
-			{
-				triangleIndices[count++] = cell << 1;
-				triangleIndices[count++] = (cell << 1) + 1;
-			}
-			break;
-		case 2:
-			if (row < nbRows - 1)
-			{
-				if (column > 0)
-				{
-					triangleIndices[count++] = ((cell - 1) << 1) + 1;
-				}
-				if (column < nbColumns - 1)
-				{
-					triangleIndices[count++] = cell << 1;
-				}
-			}
-			break;
-	}
-
-	return count;
-}
-
-PX_FORCE_INLINE PxU32 anyHole(PxU32 doubleMatIndex, PxU16 holeMaterialIndex)
-{
-	return PxU32((doubleMatIndex & 0xFFFF) == holeMaterialIndex) | (PxU32(doubleMatIndex >> 16) == holeMaterialIndex);
-}
-
-void HeightField::parseTrianglesForCollisionVertices(PxU16 holeMaterialIndex)
-{	
-	const PxU32 nbColumns = getNbColumnsFast();
-	const PxU32 nbRows = getNbRowsFast();
-
-	PxBitMap rowHoles[2];
-	rowHoles[0].resizeAndClear(nbColumns + 1);
-	rowHoles[1].resizeAndClear(nbColumns + 1);
-
-	for (PxU32 iCol = 0; iCol < nbColumns; iCol++)
-	{
-		if (anyHole(getMaterialIndex01(iCol), holeMaterialIndex))
-		{
-			rowHoles[0].set(iCol);
-			rowHoles[0].set(iCol + 1);
-		}
-		PxU32 vertIndex = iCol;
-		if(isCollisionVertexPreca(vertIndex, 0, iCol, holeMaterialIndex))
-			mData.samples[vertIndex].materialIndex1.setBit();
-		else
-			mData.samples[vertIndex].materialIndex1.clearBit();
-	}
-
-	PxU32 nextRow = 1, currentRow = 0;
-	for (PxU32 iRow = 1; iRow < nbRows; iRow++)
-	{
-		PxU32 rowOffset = iRow*nbColumns;
-		for (PxU32 iCol = 0; iCol < nbColumns; iCol++)
-		{
-			const PxU32 vertIndex = rowOffset + iCol; // column index plus current row offset (vertex/cell index)
-			if(anyHole(getMaterialIndex01(vertIndex), holeMaterialIndex))
-			{
-				rowHoles[currentRow].set(iCol);
-				rowHoles[currentRow].set(iCol + 1);
-				rowHoles[nextRow].set(iCol);
-				rowHoles[nextRow].set(iCol + 1);
-			}
-
-			if ((iCol == 0) || (iCol == nbColumns - 1) || (iRow == nbRows - 1) || rowHoles[currentRow].test(iCol))
-			{
-				if(isCollisionVertexPreca(vertIndex, iRow, iCol, holeMaterialIndex))
-					mData.samples[vertIndex].materialIndex1.setBit();
-				else
-					mData.samples[vertIndex].materialIndex1.clearBit();
-			} else
-			{
-				if (isConvexVertex(vertIndex, iRow, iCol))
-					mData.samples[vertIndex].materialIndex1.setBit();
-			}
-		}
-
-		rowHoles[currentRow].clear();
-
-		// swap prevRow and prevPrevRow
-		nextRow ^= 1; currentRow ^= 1;
-	}
-}
-
-bool HeightField::isSolidVertex(PxU32 vertexIndex, PxU32 row, PxU32 column, PxU16 holeMaterialIndex, bool& nbSolid) const
-{
-	// check if solid and boundary
-	// retrieve edge indices for current vertexIndex
-	EdgeData edgeIndices[8];
-	const PxU32 edgeCount = ::getVertexEdgeIndices(*this, vertexIndex, row, column, edgeIndices);
-
-	PxU32 faceCounts[8];
-	PxU32 faceIndices[2 * 8];
-	PxU32* dst = faceIndices;
-	for (PxU32 i = 0; i < edgeCount; i++)
-	{
-		faceCounts[i] = ::getEdgeTriangleIndices(*this, edgeIndices[i], dst);
-		dst += 2;
-	}
-	
-	nbSolid = false;
-	const PxU32* currentfaceIndices = faceIndices; // parallel array of pairs of face indices per edge index
-	for (PxU32 i = 0; i < edgeCount; i++)
-	{
-		if (faceCounts[i] > 1)
-		{
-			const PxU16& material0 = getTriangleMaterial(currentfaceIndices[0]);
-			const PxU16& material1 = getTriangleMaterial(currentfaceIndices[1]);
-			// ptchernev TODO: this is a bit arbitrary
-			if (material0 != holeMaterialIndex)
-			{
-				nbSolid = true;
-				if (material1 == holeMaterialIndex)
-					return true; // edge between solid and hole => return true
-			}
-			if (material1 != holeMaterialIndex)
-			{
-				nbSolid = true;
-				if (material0 == holeMaterialIndex)
-					return true; // edge between hole and solid => return true
-			}
-		}
-		else
-		{
-			if (getTriangleMaterial(currentfaceIndices[0]) != holeMaterialIndex)
-				return true;
-		}
-		currentfaceIndices += 2; // 2 face indices per edge
-	}
-	return false;
-}
-
-bool HeightField::isCollisionVertexPreca(PxU32 vertexIndex, PxU32 row, PxU32 column, PxU16 holeMaterialIndex) const
-{
-#ifdef PX_HEIGHTFIELD_DEBUG
-	PX_ASSERT(isValidVertex(vertexIndex));
-#endif
-	PX_ASSERT((vertexIndex / getNbColumnsFast()) == row);
-	PX_ASSERT((vertexIndex % getNbColumnsFast()) == column);
-
-	// check boundary conditions - boundary edges shouldn't produce collision with eNO_BOUNDARY_EDGES flag
-	if(mData.flags & PxHeightFieldFlag::eNO_BOUNDARY_EDGES) 
-		if ((row == 0) || (column == 0) || (row >= mData.rows-1) || (column >= mData.columns-1))
-			return false;
-
-	bool nbSolid;
-	if(isSolidVertex(vertexIndex, row, column, holeMaterialIndex, nbSolid))
-		return true;
-
-	// return true if it is boundary or solid and convex
-	return (nbSolid && isConvexVertex(vertexIndex, row, column));
 }
 
 // AP: this naming is confusing and inconsistent with return value. the function appears to compute vertex coord rather than cell coords

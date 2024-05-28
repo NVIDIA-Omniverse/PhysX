@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,11 +31,11 @@
 
 #include "foundation/PxVec3.h"
 #include "PxvConfig.h"
-#include "DyArticulationUtils.h"
 #include "DySolverConstraintTypes.h"
 #include "DySolverBody.h"
 #include "PxConstraintDesc.h"
 #include "DySolverConstraintDesc.h"
+#include "DyCpuGpu1dConstraint.h"
 
 namespace physx
 {
@@ -83,12 +83,62 @@ public:
 	PxReal		impulseMultiplier;		//!< constraint impulse multiplier
 
 	PxVec3		ang0Writeback;			//!< unscaled angular velocity projection (body 0)
-	PxU32		pad;
+	PxReal		residualVelIter;
 
 	PxReal		minImpulse;				//!< Lower bound on impulse magnitude	 
 	PxReal		maxImpulse;				//!< Upper bound on impulse magnitude
 	PxReal		appliedForce;			//!< applied force to correct velocity+bias
-	PxU32		flags;
+private:
+	union 
+	{		
+		PxU32		flags; //Use only the most significant bit (which corresponds to the float's sign bit)
+		PxReal		residualPosIter;
+	};
+public:	
+
+	void setSolverConstants(const Constraint1dSolverConstantsPGS& solverConstants)
+	{
+		constant = solverConstants.constant;
+		unbiasedConstant = solverConstants.unbiasedConstant;
+		velMultiplier = solverConstants.velMultiplier;
+		impulseMultiplier = solverConstants.impulseMultiplier;
+	}
+
+	PX_FORCE_INLINE PxU32 setBit(PxU32 value, PxU32 bitLocation, bool bitState)
+	{
+		if (bitState)
+			return value | (1 << bitLocation);
+		else
+			return value & (~(1 << bitLocation));
+	}
+
+	PX_FORCE_INLINE void setOutputForceFlag(bool outputForce)
+	{
+		flags = setBit(flags, 31, outputForce);
+	}
+	
+	PX_FORCE_INLINE bool getOutputForceFlag() const
+	{
+		return flags & 0x80000000;
+	}
+
+	PX_FORCE_INLINE void setPositionIterationResidual(PxReal residual)
+	{
+		bool flag = getOutputForceFlag();
+		residualPosIter = residual;
+		setOutputForceFlag(flag);
+	}
+	
+	PX_FORCE_INLINE PxReal getPositionIterationResidual() const
+	{
+		return PxAbs(residualPosIter);
+	}
+
+	PX_FORCE_INLINE void setVelocityIterationResidual(PxReal r)
+	{
+		residualVelIter = r;
+	}
+
 } PX_ALIGN_SUFFIX(16); 	
 
 PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1D) == 96);
@@ -101,7 +151,7 @@ public:
 	Cm::SpatialVectorV deltaVB;
 };
 
-PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DExt) == 160);
+//PX_COMPILE_TIME_ASSERT(sizeof(SolverConstraint1DExt) == 160);
 
 
 PX_FORCE_INLINE void init(SolverConstraint1DHeader& h, 
@@ -131,70 +181,16 @@ PX_FORCE_INLINE void init(SolverConstraint1D& c,
 	c.ang1					= _angular1;
 	c.minImpulse			= _minImpulse;
 	c.maxImpulse			= _maxImpulse;
-	c.flags					= 0;
+	c.setOutputForceFlag(false);
 	c.appliedForce			= 0;
+	c.residualVelIter		= 0;
+	c.setPositionIterationResidual(0.0f);
 }
 
 PX_FORCE_INLINE bool needsNormalVel(const Px1DConstraint &c)
 {
 	return c.flags & Px1DConstraintFlag::eRESTITUTION
 		|| (c.flags & Px1DConstraintFlag::eSPRING && c.flags & Px1DConstraintFlag::eACCELERATION_SPRING);
-}
-
-PX_FORCE_INLINE void setSolverConstants(PxReal& constant,
-										PxReal& unbiasedConstant,
-										PxReal& velMultiplier,
-										PxReal& impulseMultiplier,
-										const Px1DConstraint& c,
-										PxReal normalVel,
-										PxReal unitResponse,
-										PxReal minRowResponse,
-										PxReal erp,
-										PxReal dt,
-										PxReal recipdt)
-{
-	PX_ASSERT(PxIsFinite(unitResponse));
-	PxReal recipResponse = unitResponse <= minRowResponse ? 0 : 1.0f/unitResponse;
-
-	
-
-	if(c.flags & Px1DConstraintFlag::eSPRING)
-	{
-		PxReal a = dt * dt * c.mods.spring.stiffness + dt * c.mods.spring.damping;
-		PxReal b = dt * (c.mods.spring.damping * c.velocityTarget - c.mods.spring.stiffness * c.geometricError);
-
-		if(c.flags & Px1DConstraintFlag::eACCELERATION_SPRING)
-		{	
-			PxReal x = 1.0f/(1.0f+a);
-			constant = unbiasedConstant = x * recipResponse * b;
-			velMultiplier = -x * recipResponse * a;
-			impulseMultiplier = 1.0f-x;
-		}
-		else
-		{
-			PxReal x = unitResponse == 0.f ? 0.f : 1.0f/(1.0f+a*unitResponse);
-			constant = unbiasedConstant = x * b;
-			velMultiplier = -x*a;
-			impulseMultiplier = 1.0f-x;
-		}
-	}
-	else
-	{
-		PxReal geomError = c.geometricError * erp;
-		velMultiplier = -recipResponse;
-		impulseMultiplier = 1.0f;
-
-		if(c.flags & Px1DConstraintFlag::eRESTITUTION && -normalVel>c.mods.bounce.velocityThreshold)
-		{
-			unbiasedConstant = constant = recipResponse * c.mods.bounce.restitution*-normalVel;
-		}
-		else
-		{
-			// see usage of 'for internal use' in preprocessRows()
-			constant = recipResponse * (c.velocityTarget - geomError*recipdt);
-			unbiasedConstant = recipResponse * (c.velocityTarget - c.forInternalUse*recipdt);
-		}
-	}
 }
 
 }

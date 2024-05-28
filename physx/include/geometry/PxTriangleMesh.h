@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TRIANGLE_MESH_H
 #define PX_TRIANGLE_MESH_H
-/** \addtogroup geomutils 
-@{ */
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxBounds3.h"
@@ -56,7 +54,7 @@ struct PxMeshMidPhase
 {
 	enum Enum
 	{
-		eBVH33 = 0,		//!< Default midphase mesh structure, as used up to PhysX 3.3 (deprecated)
+		eBVH33 = 0,		//!< \deprecated Use eBVH34 instead. Used to be default midphase mesh structure up to PhysX 3.3
 		eBVH34 = 1,		//!< New midphase mesh structure, introduced in PhysX 3.4
 
 		eLAST
@@ -81,7 +79,7 @@ struct PxTriangleMeshFlag
 /**
 \brief collection of set bits defined in PxTriangleMeshFlag.
 
-@see PxTriangleMeshFlag
+\see PxTriangleMeshFlag
 */
 typedef PxFlags<PxTriangleMeshFlag::Enum,PxU8> PxTriangleMeshFlags;
 PX_FLAGS_OPERATORS(PxTriangleMeshFlag::Enum,PxU8)
@@ -112,7 +110,7 @@ once you have released all of its PxShape instances.
 \li #PxVisualizationParameter::eCOLLISION_FNORMALS
 \li #PxVisualizationParameter::eCOLLISION_EDGES
 
-@see PxTriangleMeshDesc PxTriangleMeshGeometry PxShape PxPhysics.createTriangleMesh()
+\see PxTriangleMeshDesc PxTriangleMeshGeometry PxShape PxPhysics.createTriangleMesh()
 */
 class PxTriangleMesh : public PxRefCounted
 {
@@ -120,14 +118,14 @@ class PxTriangleMesh : public PxRefCounted
 	/**
 	\brief Returns the number of vertices.
 	\return	number of vertices
-	@see getVertices()
+	\see getVertices()
 	*/
 	virtual	PxU32	getNbVertices()	const	= 0;
 
 	/**
 	\brief Returns the vertices.
 	\return	array of vertices
-	@see getNbVertices()
+	\see getNbVertices()
 	*/
 	virtual	const PxVec3*	getVertices()	const	= 0;
 
@@ -147,8 +145,8 @@ class PxTriangleMesh : public PxRefCounted
 	\note To achieve unchanged 1-to-1 index mapping with orignal mesh data (before cooking) please use the following cooking flags:
 	\note eWELD_VERTICES = 0, eDISABLE_CLEAN_MESH = 1.
 	\note It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled.
-	@see getNbVertices()
-	@see refitBVH()	
+	\see getNbVertices()
+	\see refitBVH()	
 	*/
 	virtual PxVec3*	getVerticesForModification() = 0;
 
@@ -166,16 +164,16 @@ class PxTriangleMesh : public PxRefCounted
 	\note PxShape::setGeometry does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry.
 	\note It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled.
 	\note Active edges information will be lost during refit, the rigid body mesh contact generation might not perform as expected.
-	@see getNbVertices()
-	@see getVerticesForModification()
-	@see PxBVH34MidphaseDesc::quantized
+	\see getNbVertices()
+	\see getVerticesForModification()
+	\see PxBVH34MidphaseDesc::quantized
 	*/
 	virtual PxBounds3	refitBVH() = 0;
 
 	/**
 	\brief Returns the number of triangles.
 	\return	number of triangles
-	@see getTriangles() getTrianglesRemap()
+	\see getTriangles() getTrianglesRemap()
 	*/
 	virtual	PxU32	getNbTriangles()	const	= 0;
 
@@ -188,7 +186,7 @@ class PxTriangleMesh : public PxRefCounted
 	The number of indices is the number of triangles * 3.
 
 	\return	array of triangles
-	@see getNbTriangles() getTriangleMeshFlags() getTrianglesRemap()
+	\see getNbTriangles() getTriangleMeshFlags() getTrianglesRemap()
 	*/
 	virtual	const void*	getTriangles()	const	= 0;
 
@@ -199,7 +197,7 @@ class PxTriangleMesh : public PxRefCounted
 
 	\return The values of the PxTriangleMesh flags.
 
-	@see PxTriangleMesh
+	\see PxTriangleMesh
 	*/
 	virtual	PxTriangleMeshFlags		getTriangleMeshFlags()	const = 0;
 
@@ -213,14 +211,14 @@ class PxTriangleMesh : public PxRefCounted
 		remapTable[ internalTriangleIndex ] = originalTriangleIndex
 
 	\return	the remapping table (or NULL if 'PxCookingParams::suppressTriangleMeshRemapTable' has been used)
-	@see getNbTriangles() getTriangles() PxCookingParams::suppressTriangleMeshRemapTable
+	\see getNbTriangles() getTriangles() PxCookingParams::suppressTriangleMeshRemapTable
 	*/
 	virtual	const PxU32*	getTrianglesRemap()	const	= 0;
 
 	/**	
 	\brief Decrements the reference count of a triangle mesh and releases it if the new reference count is zero.	
 	
-	@see PxPhysics.createTriangleMesh()
+	\see PxPhysics.createTriangleMesh()
 	*/
 	virtual void	release()	= 0;
 
@@ -298,11 +296,11 @@ protected:
 };
 
 /**
+\deprecated Use PxBVH34TriangleMesh instead.
 
 \brief A triangle mesh containing the PxMeshMidPhase::eBVH33 structure.
 
-@see PxMeshMidPhase
-@deprecated
+\see PxMeshMidPhase
 */
 class PX_DEPRECATED PxBVH33TriangleMesh : public PxTriangleMesh
 {
@@ -318,7 +316,7 @@ protected:
 
 \brief A triangle mesh containing the PxMeshMidPhase::eBVH34 structure.
 
-@see PxMeshMidPhase
+\see PxMeshMidPhase
 */
 class PxBVH34TriangleMesh : public PxTriangleMesh
 {
@@ -334,5 +332,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

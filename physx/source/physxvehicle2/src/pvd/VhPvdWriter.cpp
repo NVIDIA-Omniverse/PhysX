@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -266,7 +266,7 @@ void writeWheelResponseParams
 void writeSteerResponseParams
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleSteerCommandResponseParams& steerResponseParams,
- const OmniPvdObjectHandle oh,  const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+ const OmniPvdObjectHandle oh, const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
 {
 	writeWheelResponseParams(axleDesc, steerResponseParams, oh, ah, omniWriter, ch);
 }
@@ -274,7 +274,7 @@ void writeSteerResponseParams
 void writeBrakeResponseParams
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleBrakeCommandResponseParams& brakeResponseParams,
- const OmniPvdObjectHandle oh,  const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
+ const OmniPvdObjectHandle oh, const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch)
 {
 	writeWheelResponseParams(axleDesc, brakeResponseParams, oh, ah, omniWriter, ch);
 }
@@ -443,7 +443,7 @@ RoadGeometryState registerRoadGeomState(OmniPvdWriter& omniWriter)
 	r.planeAH = omniWriter.registerAttribute(r.CH, "plane", OmniPvdDataType::eFLOAT32, 4);
 	r.frictionAH = omniWriter.registerAttribute(r.CH, "friction", OmniPvdDataType::eFLOAT32, 1);
 	r.hitStateAH = omniWriter.registerFlagsAttribute(r.CH, "hitState", boolAsEnum.CH);
-	r.velocityAH = omniWriter.registerAttribute(r.CH,  "hitVelocity", OmniPvdDataType::eFLOAT32, 3);
+	r.velocityAH = omniWriter.registerAttribute(r.CH, "hitVelocity", OmniPvdDataType::eFLOAT32, 3);
 	return r;
 }
 
@@ -1131,7 +1131,7 @@ void writeEngineParams
 		torqueCurve[2*i + 1] = PX_MAX_F32;
 	}
 
-	writeFloatArrayAttribute(omniWriter, ch, oh, ah.torqueCurveAH, torqueCurve,  PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES*2);
+	writeFloatArrayAttribute(omniWriter, ch, oh, ah.torqueCurveAH, torqueCurve, PxVehicleEngineParams::eMAX_NB_ENGINE_TORQUE_CURVE_ENTRIES*2);
 	writeFloatAttribute(omniWriter, ch, oh, ah.peakTorqueAH, engineParams.peakTorque);
 	writeFloatAttribute(omniWriter, ch, oh, ah.moiAH, engineParams.moi);
 	writeFloatAttribute(omniWriter, ch, oh, ah.idleOmegaAH, engineParams.idleOmega);
@@ -1164,7 +1164,7 @@ void writeGearboxParams
 		ratios[i] = PX_MAX_F32;
 	}
 	writeFloatArrayAttribute(omniWriter, ch, oh, ah.ratiosAH, ratios, PxVehicleGearboxParams::eMAX_NB_GEARS);
-	writeUInt32Attribute(omniWriter, ch, oh, ah.nbRatiosAH,  gearboxParams.nbRatios);
+	writeUInt32Attribute(omniWriter, ch, oh, ah.nbRatiosAH, gearboxParams.nbRatios);
 	writeUInt32Attribute(omniWriter, ch, oh, ah.neutralGearAH, gearboxParams.neutralGear);
 	writeFloatAttribute(omniWriter, ch, oh, ah.finalRatioAH, gearboxParams.finalRatio);
 	writeFloatAttribute(omniWriter, ch, oh, ah.switchTimeAH, gearboxParams.switchTime);
@@ -1778,5 +1778,3 @@ Vehicle registerVehicle(OmniPvdWriter& omniWriter)
 
 } // namespace vehicle2
 } // namespace physx
-
-/** @} */

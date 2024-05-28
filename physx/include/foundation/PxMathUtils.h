@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_MATH_UTILS_H
 #define PX_MATH_UTILS_H
 
-/** \addtogroup common
-  @{
-*/
 
 #include "foundation/PxFoundationConfig.h"
 #include "foundation/Px.h"
@@ -524,5 +521,4 @@ PX_INLINE PX_CUDA_CALLABLE PxReal PxSdfSample(const PxReal* PX_RESTRICT sdf, con
 } // namespace physx
 #endif
 
-/** @} */
 #endif

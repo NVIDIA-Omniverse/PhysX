@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -114,7 +114,7 @@ PX_FORCE_INLINE static void updateHierarchyAfterInsert(IncrementalAABBTreeNode* 
 }
 
 // add an index into the leaf indices list and update the node bounds
-PX_FORCE_INLINE static void addPrimitiveIntoNode(IncrementalAABBTreeNode* node, const PoolIndex index,  const Vec4V& minV,  const Vec4V& maxV)
+PX_FORCE_INLINE static void addPrimitiveIntoNode(IncrementalAABBTreeNode* node, const PoolIndex index, const Vec4V& minV,  const Vec4V& maxV)
 {
 	PX_ASSERT(node->isLeaf());
 	AABBTreeIndices& nodeIndices = *node->mIndices;
@@ -131,7 +131,7 @@ PX_FORCE_INLINE static void addPrimitiveIntoNode(IncrementalAABBTreeNode* node, 
 }
 
 // check if node does intersect with given bounds
-PX_FORCE_INLINE static bool nodeIntersection(IncrementalAABBTreeNode& node, const Vec4V& minV,  const Vec4V& maxV)
+PX_FORCE_INLINE static bool nodeIntersection(IncrementalAABBTreeNode& node, const Vec4V& minV, const Vec4V& maxV)
 {
 	return !(PxIntBool(V4AnyGrtr3(node.mBVMin, maxV)) || PxIntBool(V4AnyGrtr3(minV, node.mBVMax)));
 }
@@ -245,7 +245,7 @@ PX_FORCE_INLINE static void updateHierarchyAfterRemove(IncrementalAABBTreeNode* 
 }
 
 // split the leaf node along the most significant axis
-IncrementalAABBTreeNode* IncrementalAABBTree::splitLeafNode(IncrementalAABBTreeNode* node, const PoolIndex index,  const Vec4V& minV,  const Vec4V& maxV, const PxBounds3* bounds)
+IncrementalAABBTreeNode* IncrementalAABBTree::splitLeafNode(IncrementalAABBTreeNode* node, const PoolIndex index, const Vec4V& minV,  const Vec4V& maxV, const PxBounds3* bounds)
 {
 	PX_ASSERT(node->isLeaf());
 

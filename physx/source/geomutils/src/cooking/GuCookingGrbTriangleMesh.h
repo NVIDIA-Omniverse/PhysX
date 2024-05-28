@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -73,7 +73,7 @@ struct EdgeTriLookup
 	}
 };
 
-static PxU32 binarySearch(const EdgeTriLookup* __restrict data, const PxU32 numElements, const EdgeTriLookup& value)
+static PxU32 binarySearch(const EdgeTriLookup* PX_RESTRICT data, const PxU32 numElements, const EdgeTriLookup& value)
 {
 	PxU32 left = 0;
 	PxU32 right = numElements;

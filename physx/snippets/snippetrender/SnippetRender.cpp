@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -134,6 +134,8 @@ static void renderSoftBodyGeometry(const PxTetrahedronMesh& mesh, const PxVec4* 
 	const PxU32* intIndices = reinterpret_cast<const PxU32*>(indexBuffer);
 	const PxU16* shortIndices = reinterpret_cast<const PxU16*>(indexBuffer);
 	PxU32 numTotalTriangles = 0;
+	PX_UNUSED(numTotalTriangles);
+
 	for (PxU32 i = 0; i < tetCount; ++i)
 	{
 		PxU32 vref[4];
@@ -1070,6 +1072,8 @@ void renderMesh(physx::PxU32 /*nbVerts*/, const physx::PxU8* verts, const PxU32 
 		prepareVertexBuffer();
 
 		PxU32 numTotalTriangles = 0;
+		PX_UNUSED(numTotalTriangles);
+
 		for(PxU32 i=0; i <nbTris; ++i)
 		{
 			PxU32 vref0, vref1, vref2;

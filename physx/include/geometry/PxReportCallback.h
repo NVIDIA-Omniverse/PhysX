@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_REPORT_CALLBACK_H
 #define PX_REPORT_CALLBACK_H
 
-/** \addtogroup geomutils
-  @{
-*/
 
 #include "common/PxPhysXCommonConfig.h"
 #include "foundation/PxArray.h"
@@ -53,7 +50,7 @@ namespace physx
 	- or pushed back to their own PxArray
 	- etc
 
-	@see PxRegularReportCallback PxLocalStorageReportCallback PxExternalStorageReportCallback PxDynamicArrayReportCallback
+	\see PxRegularReportCallback PxLocalStorageReportCallback PxExternalStorageReportCallback PxDynamicArrayReportCallback
 	*/
 	template<class T>
 	class PxReportCallback
@@ -92,7 +89,7 @@ namespace physx
 	The capacity parameter dictates how many items can be reported at a time,
 	i.e. how many times the flushResults/processResults function will be called by the system.
 
-	@see PxReportCallback
+	\see PxReportCallback
 	*/
 	template<class T>
 	class PxRegularReportCallback : public PxReportCallback<T>
@@ -132,7 +129,7 @@ namespace physx
 	The capacity of the embedded buffer (determined by a template parameter) dictates how many items can be reported at a time,
 	i.e. how many times the flushResults/processResults function will be called by the system.
 
-	@see PxReportCallback
+	\see PxReportCallback
 	*/
 	template<class T, const PxU32 capacityT>
 	class PxLocalStorageReportCallback : public PxReportCallback<T>
@@ -179,7 +176,7 @@ namespace physx
 	The capacity parameter dictates how many items can be reported at a time,
 	i.e. how many times the flushResults/processResults function will be called by the system.
 
-	@see PxReportCallback
+	\see PxReportCallback
 	*/
 	template<class T>
 	class PxExternalStorageReportCallback : public PxReportCallback<T>
@@ -218,7 +215,7 @@ namespace physx
 	available afterwards in the provided dynamic array. This would be the same as having a PxArray
 	directly in the query interface.
 
-	@see PxReportCallback
+	\see PxReportCallback
 	*/
 	template<class T>
 	class PxDynamicArrayReportCallback : public PxReportCallback<T>
@@ -255,5 +252,4 @@ namespace physx
 }
 #endif
 
-/** @} */
 #endif

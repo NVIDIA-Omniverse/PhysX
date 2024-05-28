@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -52,7 +52,7 @@ OmniPvdClassHandle classHandle, OmniPvdObjectHandle objectHandle, const char* ob
 }
 
 PX_FORCE_INLINE void writeObjectHandleAttribute
-(OmniPvdWriter& omniWriter, OmniPvdContextHandle ch,  OmniPvdObjectHandle oh, OmniPvdAttributeHandle ah, 
+(OmniPvdWriter& omniWriter, OmniPvdContextHandle ch, OmniPvdObjectHandle oh, OmniPvdAttributeHandle ah, 
  OmniPvdObjectHandle val)
 {
 	PX_ASSERT(oh);
@@ -62,7 +62,7 @@ PX_FORCE_INLINE void writeObjectHandleAttribute
 }
 
 PX_FORCE_INLINE void addObjectHandleToUniqueList
-(OmniPvdWriter& ow, OmniPvdContextHandle ch, OmniPvdObjectHandle setOwnerOH,  OmniPvdAttributeHandle setAH, OmniPvdObjectHandle ohToAdd)
+(OmniPvdWriter& ow, OmniPvdContextHandle ch, OmniPvdObjectHandle setOwnerOH, OmniPvdAttributeHandle setAH, OmniPvdObjectHandle ohToAdd)
 {	
 	PX_ASSERT(setOwnerOH);
 	PX_ASSERT(setAH);
@@ -134,7 +134,7 @@ void PxVehiclePvdRigidBodyWrite
 
 	if(oh.rigidBodyParamsOH && rbodyParams)
 	{
-		writeRigidBodyParams(*rbodyParams,  oh.rigidBodyParamsOH, ah.rigidBodyParams, ow, ch);
+		writeRigidBodyParams(*rbodyParams, oh.rigidBodyParamsOH, ah.rigidBodyParams, ow, ch);
 	}
 
 	if(oh.rigidBodyStateOH && rbodyState)
@@ -1887,5 +1887,3 @@ void PxVehiclePvdPhysXSteerStateWrite
 
 } // namespace vehicle2
 } // namespace physx
-
-/** @} */

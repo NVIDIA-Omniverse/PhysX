@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -328,7 +328,7 @@ PX_FORCE_INLINE void intersectCylinderPlane
 }
 
 static void limitSuspensionExpansionVelocity
-(const PxReal jounceSpeed, const PxReal previousJounceSpeed, const PxReal previousJounce,  
+(const PxReal jounceSpeed, const PxReal previousJounceSpeed, const PxReal previousJounce,
  const PxReal suspStiffness, const PxReal suspDamping,
  const PxVec3& suspDirWorld, const PxReal wheelMass, 
  const PxReal dt, const PxVec3& gravity, const bool hasGroundHit,

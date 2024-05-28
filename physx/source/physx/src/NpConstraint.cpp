@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,7 +47,6 @@ PX_IMPLEMENT_OUTPUT_ERROR
 
 static PX_FORCE_INLINE PxConstraintFlags scGetFlags(const ConstraintCore& core)
 {
-//	return core.getFlags() & (~(PxConstraintFlag::eBROKEN | PxConstraintFlag::eGPU_COMPATIBLE));
 	return core.getFlags() & (~(PxConstraintFlag::eGPU_COMPATIBLE));
 }
 
@@ -70,25 +69,6 @@ static NpScene* getSceneFromActors(const PxRigidActor* actor0, const PxRigidActo
 		return s0 ? s0 : s1;
 	else
 		return NULL;
-}
-
-// PT: TODO: refactor with version in ScScene.cpp & with NpActor::getFromPxActor
-static NpActor* getNpActor(PxRigidActor* a)
-{
-	if(!a)
-		return NULL;
-
-	const PxType type = a->getConcreteType();
-
-	if (type == PxConcreteType::eRIGID_DYNAMIC)
-		return static_cast<NpRigidDynamic*>(a);
-	else if (type == PxConcreteType::eARTICULATION_LINK)
-		return static_cast<NpArticulationLink*>(a);
-	else
-	{
-		PX_ASSERT(type == PxConcreteType::eRIGID_STATIC);
-		return static_cast<NpRigidStatic*>(a);
-	}
 }
 
 void NpConstraint::setConstraintFunctions(PxConstraintConnector& n, const PxConstraintShaderTable& shaders)
@@ -265,13 +245,13 @@ void NpConstraint::setActors(PxRigidActor* actor0, PxRigidActor* actor1)
 		if(oldScene)
 			oldScene->removeFromConstraintList(*this);
 
-		scSetBodies(mCore, getNpActor(actor0), getNpActor(actor1));
+		scSetBodies(mCore, NpActor::getNpActor(actor0), NpActor::getNpActor(actor1));
 
 		if(newScene)
 			newScene->addToConstraintList(*this);
 	}
 //	else
-//		scSetBodies(mCore, getNpActor(actor0), getNpActor(actor1));
+//		scSetBodies(mCore, NpActor::getNpActor(actor0), NpActor::getNpActor(actor1));
 
 	UPDATE_PVD_PROPERTY
 }

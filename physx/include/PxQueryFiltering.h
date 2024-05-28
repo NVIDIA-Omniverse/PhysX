@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_QUERY_FILTERING_H
 #define PX_QUERY_FILTERING_H
-/** \addtogroup scenequery
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxFiltering.h"
@@ -49,7 +46,7 @@ struct PxQueryHit;
 /**
 \brief Filtering flags for scene queries.
 
-@see PxQueryFilterData.flags
+\see PxQueryFilterData.flags
 */
 struct PxQueryFlag
 {
@@ -108,7 +105,7 @@ All overlap() eTOUCH type hits are reported (zero touchDistance <= zero blockDis
 For raycast/sweep/overlap calls with zero touch buffer or PxHitCallback::nbTouches member,
 only the closest hit of type eBLOCK is returned. All eTOUCH hits are discarded.
 
-@see PxQueryFilterCallback.preFilter PxQueryFilterCallback.postFilter PxScene.raycast PxScene.sweep PxScene.overlap
+\see PxQueryFilterCallback.preFilter PxQueryFilterCallback.postFilter PxScene.raycast PxScene.sweep PxScene.overlap
 */
 struct PxQueryHitType
 {
@@ -132,7 +129,7 @@ queryFilterData is zero, the shape is skipped
 to type #PxQueryHitType::eBLOCK when the value of PxHitCallback::nbTouches provided with the query is zero and to type
 #PxQueryHitType::eTOUCH when PxHitCallback::nbTouches is positive.
 
-@see PxScene.raycast PxScene.sweep PxScene.overlap PxQueryFlag::eANY_HIT
+\see PxScene.raycast PxScene.sweep PxScene.overlap PxQueryFlag::eANY_HIT
 */
 struct PxQueryFilterData
 {
@@ -169,7 +166,7 @@ This overrides any touch/block status previously returned from the preFilter fun
 
 Filtering calls are not guaranteed to be sorted along the ray or sweep direction.
 
-@see PxScene.raycast PxScene.sweep PxScene.overlap PxQueryFlags PxHitFlags
+\see PxScene.raycast PxScene.sweep PxScene.overlap PxQueryFlags PxHitFlags
 */
 class PxQueryFilterCallback
 {
@@ -208,5 +205,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

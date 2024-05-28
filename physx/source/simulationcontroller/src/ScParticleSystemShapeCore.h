@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.  
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.  
 
 #ifndef SC_PARTICLESYSTEM_SHAPECORE_H
 #define SC_PARTICLESYSTEM_SHAPECORE_H
@@ -60,10 +60,7 @@ namespace physx
 
 			PX_FORCE_INLINE	Dy::ParticleSystemCore&	getLLCore() { return mLLCore; }
 
-			void initializeLLCoreData( PxU32 maxNeighborhood);	
-
-			void addParticleBuffer(PxParticleBuffer* particleBuffer);
-			void removeParticleBuffer(PxParticleBuffer* particleBuffer);
+			void initializeLLCoreData(PxU32 maxNeighborhood, PxReal neighborhoodScale);
 
 			PxU64 getGpuMemStat() { return mGpuMemStat; }
 

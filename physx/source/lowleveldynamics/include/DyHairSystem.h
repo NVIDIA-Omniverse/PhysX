@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef DY_HAIR_SYSTEM_H
 #define DY_HAIR_SYSTEM_H
@@ -70,6 +70,9 @@ namespace physx
 				eALL = (1 << 13) - 1									//!> everything needs updating
 			};
 		};
+
+		// AD: if this gets bigger, you need to change some of the casts when passing this enum as a function parameter.
+		PX_COMPILE_TIME_ASSERT(sizeof(HairSystemDirtyFlag::Enum) == sizeof(PxU32));
 
 
 		struct HairSystemSolverDesc

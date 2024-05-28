@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SPHERICAL_JOINT_H
 #define PX_SPHERICAL_JOINT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "extensions/PxJoint.h"
 #include "extensions/PxJointLimit.h"
@@ -51,7 +48,7 @@ class PxSphericalJoint;
  \param[in] actor1		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
  \param[in] localFrame1	The position and orientation of the joint relative to actor1 
 
-@see PxSphericalJoint
+\see PxSphericalJoint
 */
 PxSphericalJoint*	PxSphericalJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
@@ -59,7 +56,7 @@ PxSphericalJoint*	PxSphericalJointCreate(PxPhysics& physics, PxRigidActor* actor
 /**
 \brief Flags specific to the spherical joint.
 
-@see PxSphericalJoint
+\see PxSphericalJoint
 */
 struct PxSphericalJointFlag
 {
@@ -83,7 +80,7 @@ PX_FLAGS_OPERATORS(PxSphericalJointFlag::Enum, PxU16)
  
  Projection, drive and limits are activated by setting the appropriate flags on the joint.
 
- @see PxRevoluteJointCreate() PxJoint
+ \see PxRevoluteJointCreate() PxJoint
 */
 class PxSphericalJoint : public PxJoint
 {
@@ -97,7 +94,7 @@ public:
 
 	\return the limit cone
 
-	@see PxJointLimitCone setLimit() 
+	\see PxJointLimitCone setLimit() 
 	*/
 	virtual PxJointLimitCone	getLimitCone()	const	= 0;
 
@@ -106,7 +103,7 @@ public:
 
 	\param[in] limit the limit cone
 
-	@see PxJointLimitCone getLimit() 
+	\see PxJointLimitCone getLimit() 
 	*/
 	virtual void				setLimitCone(const PxJointLimitCone& limit)	= 0;
 
@@ -127,7 +124,7 @@ public:
 
 	\param[in] flags The joint flags.
 
-	@see PxSphericalJointFlag setFlag() getFlags()
+	\see PxSphericalJointFlag setFlag() getFlags()
 	*/
 	virtual void				setSphericalJointFlags(PxSphericalJointFlags flags) = 0;
 
@@ -137,7 +134,7 @@ public:
 	\param[in] flag The flag to set or clear.
 	\param[in] value the value to which to set the flag
 
-	@see PxSphericalJointFlag, getFlags() setFlags()
+	\see PxSphericalJointFlag, getFlags() setFlags()
 	*/
 	virtual void				setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool value) = 0;
 
@@ -146,7 +143,7 @@ public:
 
 	\return the joint flags
 
-	@see PxSphericalJoint::flags, PxSphericalJointFlag setFlag() setFlags()
+	\see PxSphericalJoint::flags, PxSphericalJointFlag setFlag() setFlags()
 	*/
 	virtual PxSphericalJointFlags	getSphericalJointFlags()	const	= 0;
 
@@ -181,5 +178,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

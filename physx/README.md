@@ -1,6 +1,6 @@
 # NVIDIA PhysX SDK 5
 
-Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -31,13 +31,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Welcome to the NVIDIA PhysX SDK source code repository.
 
-The NVIDIA PhysX SDK is a scalable multi-platform physics solution. PhysX is integrated into [NVIDIA Omniverse](https://developer.nvidia.com/omniverse). See also [PhysX SDK on developer.nvidia.com](https://developer.nvidia.com/physx-sdk).
+The NVIDIA PhysX SDK is a scalable multi-platform physics solution supporting a wide range of devices, from smartphones to high-end multicore CPUs and GPUs. PhysX is already integrated into some of the most popular game engines, including Unreal Engine, and Unity3D. [PhysX SDK on developer.nvidia.com](https://developer.nvidia.com/physx-sdk).
 
 Please see [Release Notes](./CHANGELOG.md) for updates pertaining to the latest version.
-
-## CPU Source and GPU Binaries
-
-The source made available in this repository is restricted to CPU code. GPU acceleration is made available through precompiled binaries.
 
 ## User Guide and API Documentation
 

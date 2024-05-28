@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -324,7 +324,8 @@ namespace Cct
 	};
 
 	class SweepTest
-	{		
+	{
+										PX_NOCOPY(SweepTest)
 	public:
 										SweepTest(bool registerDeletionListener);
 										~SweepTest();
@@ -358,8 +359,8 @@ namespace Cct
 
 		// observer notifications
 					void				onObstacleRemoved(PxObstacleHandle index);
-					void				onObstacleUpdated(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance);
-					void				onObstacleAdded(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance);
+					void				onObstacleUpdated(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, PxReal distance);
+					void				onObstacleAdded(PxObstacleHandle index, const PxObstacleContext* context, const PxVec3& origin, const PxVec3& unitDir, PxReal distance);
 
 					void				onOriginShift(const PxVec3& shift);
 
@@ -425,8 +426,6 @@ namespace Cct
 															const PxExtendedBounds3& worldBox, const PxControllerFilters& filters, const PxVec3& sideVector);				
 
 				CharacterControllerManager*	mCctManager;
-				SweepTest(const SweepTest&);
-				SweepTest& operator=(const SweepTest& );
 	};
 
 	class CCTFilter	// PT: internal filter data, could be replaced with PxControllerFilters eventually

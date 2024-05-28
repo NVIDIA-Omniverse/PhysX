@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -212,7 +212,7 @@ const PxF32 gSolverTolerance = 1e-10f;
 void computeSprungMasses(const PxU32 numSprungMasses, const PxVec3* sprungMassCoordinates, const PxVec3& centreOfMass, const PxReal totalMass, const PxU32 gravityDirection, PxReal* sprungMasses)
 {
 #if PX_CHECKED
-	PX_CHECK_AND_RETURN(numSprungMasses > 0,  "PxVehicleComputeSprungMasses: numSprungMasses must be greater than zero");
+	PX_CHECK_AND_RETURN(numSprungMasses > 0, "PxVehicleComputeSprungMasses: numSprungMasses must be greater than zero");
 	PX_CHECK_AND_RETURN(numSprungMasses <= PX_MAX_NB_WHEELS, "PxVehicleComputeSprungMasses: numSprungMasses must be less than or equal to 20");
 	for(PxU32 i=0;i<numSprungMasses;i++)
 	{
@@ -1532,7 +1532,7 @@ void computeIsAccelApplied(const PxF32* aveWheelSpeedContributions, bool* isAcce
 
 PX_FORCE_INLINE void computeAckermannSteerAngles
 (const PxF32 steer, const PxF32 steerGain, 
- const PxF32 ackermannAccuracy, const PxF32 width, const PxF32 axleSeparation,  
+ const PxF32 ackermannAccuracy, const PxF32 width, const PxF32 axleSeparation,
  PxF32* PX_RESTRICT leftAckermannSteerAngle, PxF32* PX_RESTRICT rightAckermannSteerAngle)
 {
 	PX_ASSERT(steer>=-1.01f && steer<=1.01f);
@@ -1628,7 +1628,7 @@ PX_FORCE_INLINE void computeWheelActiveStates(const PxU32 startId, PxU32* bitmap
 ////////////////////////////////////////////////////////////////////////////
 
 PX_FORCE_INLINE void computeNoDriveBrakeTorques
-(const PxVehicleWheelData* PX_RESTRICT wheelDatas, const PxF32* PX_RESTRICT wheelOmegas,  const PxF32* PX_RESTRICT rawBrakeTroques, 
+(const PxVehicleWheelData* PX_RESTRICT wheelDatas, const PxF32* PX_RESTRICT wheelOmegas, const PxF32* PX_RESTRICT rawBrakeTroques, 
  PxF32* PX_RESTRICT brakeTorques, bool* PX_RESTRICT isBrakeApplied)
 {
 	PX_UNUSED(wheelDatas);
@@ -1868,7 +1868,7 @@ PX_FORCE_INLINE void computeTireFriction(const PxVehicleTireData& tireData, cons
 ////////////////////////////////////////////////////////////////////////////
 
 PX_FORCE_INLINE void updateLowForwardSpeedTimer
-(const PxF32 longSpeed, const PxF32 wheelOmega, const PxF32 wheelRadius, const PxF32 recipWheelRadius,  const bool isIntentionToAccelerate,
+(const PxF32 longSpeed, const PxF32 wheelOmega, const PxF32 wheelRadius, const PxF32 recipWheelRadius, const bool isIntentionToAccelerate,
  const PxF32 timestep, PxF32& lowForwardSpeedTime)
 {
 	PX_UNUSED(wheelRadius);
@@ -5269,8 +5269,8 @@ VehicleTelemetryDataContext* vehTelemetryDataContext, const PxVehicleContext& co
 		//a = (x -x0 - v0*dt)/(dt*dt) = [(x-x0)/dt - v0/dt]
 		//Rearrange again with v = (x-x0)/dt
 		//a = (v - v0)/dt
-		vehicleConcurrentUpdates.linearMomentumChange = (carChassisLinVel-carChassisLinVelOrig)*recipTimestep;;
-		vehicleConcurrentUpdates.angularMomentumChange = (carChassisAngVel-carChassisAngVelOrig)*recipTimestep;;
+		vehicleConcurrentUpdates.linearMomentumChange = (carChassisLinVel-carChassisLinVelOrig)*recipTimestep;
+		vehicleConcurrentUpdates.angularMomentumChange = (carChassisAngVel-carChassisAngVelOrig)*recipTimestep;
 	}
 
 	//Compute and pose the wheels from jounces, rotations angles, and steer angles.

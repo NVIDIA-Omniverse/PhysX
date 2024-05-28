@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_CONTROLLER_OBSTACLES_H
 #define PX_CONTROLLER_OBSTACLES_H
-/** \addtogroup character
-  @{
-*/
 
 #include "characterkinematic/PxExtended.h"
 #include "geometry/PxGeometry.h"
@@ -47,7 +44,7 @@ namespace physx
 	/**
 	\brief Base class for obstacles.
 
-	@see PxBoxObstacle PxCapsuleObstacle PxObstacleContext
+	\see PxBoxObstacle PxCapsuleObstacle PxObstacleContext
 	*/
 	class PxObstacle
 	{
@@ -72,7 +69,7 @@ namespace physx
 	/**
 	\brief A box obstacle.
 
-	@see PxObstacle PxCapsuleObstacle PxObstacleContext
+	\see PxObstacle PxCapsuleObstacle PxObstacleContext
 	*/
 	class PxBoxObstacle : public PxObstacle
 	{
@@ -87,7 +84,7 @@ namespace physx
 	/**
 	\brief A capsule obstacle.
 
-	@see PxBoxObstacle PxObstacle PxObstacleContext
+	\see PxBoxObstacle PxObstacle PxObstacleContext
 	*/
 	class PxCapsuleObstacle : public PxObstacle
 	{
@@ -108,7 +105,7 @@ namespace physx
 
 	An obstacle context class contains and manages a set of user-defined obstacles.
 
-	@see PxBoxObstacle PxCapsuleObstacle PxObstacle
+	\see PxBoxObstacle PxCapsuleObstacle PxObstacle
 	*/
 	class PxObstacleContext
 	{
@@ -186,5 +183,4 @@ namespace physx
 }
 #endif
 
-/** @} */
 #endif

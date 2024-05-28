@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,8 +33,6 @@
 #include "PxsFEMSoftBodyMaterialCore.h"
 #include "PxsFEMClothMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
-#include "PxsFLIPMaterialCore.h"
-#include "PxsMPMMaterialCore.h"
 #include "foundation/PxAlignedMalloc.h"
 
 namespace physx
@@ -52,7 +50,7 @@ namespace physx
 		PxsMaterialManagerT()
 		{
 			const PxU32 matCount = 128;
-			materials = reinterpret_cast<MaterialCore*>(physx::PxAlignedAllocator<16>().allocate(sizeof(MaterialCore)*matCount,  PX_FL));
+			materials = reinterpret_cast<MaterialCore*>(physx::PxAlignedAllocator<16>().allocate(sizeof(MaterialCore)*matCount, PX_FL));
 			maxMaterials = matCount;
 			for(PxU32 i=0; i<matCount; ++i)
 			{
@@ -101,7 +99,7 @@ namespace physx
 			const PxU32 numMaterials = maxMaterials;
 			
 			maxMaterials = (minValueForMax+31)&~31;
-			MaterialCore* mat = reinterpret_cast<MaterialCore*>(physx::PxAlignedAllocator<16>().allocate(sizeof(MaterialCore)*maxMaterials,  PX_FL));
+			MaterialCore* mat = reinterpret_cast<MaterialCore*>(physx::PxAlignedAllocator<16>().allocate(sizeof(MaterialCore)*maxMaterials, PX_FL));
 			for(PxU32 i=0; i<numMaterials; ++i)
 				mat[i] = materials[i];
 
@@ -135,14 +133,6 @@ namespace physx
 	};
 
 	class PxsPBDMaterialManager : public PxsMaterialManagerT<PxsPBDMaterialCore>
-	{
-	};
-
-	class PxsFLIPMaterialManager : public PxsMaterialManagerT<PxsFLIPMaterialCore>
-	{
-	};
-
-	class PxsMPMMaterialManager : public PxsMaterialManagerT<PxsMPMMaterialCore>
 	{
 	};
 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,7 +42,7 @@ namespace physx
 		NpMaterialManager()
 		{
 			const PxU32 matCount = 128;
-			mMaterials = reinterpret_cast<Material**>(PX_ALLOC(sizeof(Material*) * matCount,  "NpMaterialManager::initialise"));
+			mMaterials = reinterpret_cast<Material**>(PX_ALLOC(sizeof(Material*) * matCount, "NpMaterialManager::initialise"));
 			mMaxMaterials = matCount;
 			PxMemZero(mMaterials, sizeof(Material*)*mMaxMaterials);
 		}
@@ -122,7 +122,7 @@ namespace physx
 			const PxU32 numMaterials = mMaxMaterials;
 			mMaxMaterials = PxMin(mMaxMaterials*2, PxU32(MATERIAL_INVALID_HANDLE));
 
-			Material** mat = reinterpret_cast<Material**>(PX_ALLOC(sizeof(Material*)*mMaxMaterials,  "NpMaterialManager::resize"));
+			Material** mat = reinterpret_cast<Material**>(PX_ALLOC(sizeof(Material*)*mMaxMaterials, "NpMaterialManager::resize"));
 			PxMemZero(mat, sizeof(Material*)*mMaxMaterials);
 			for(PxU32 i=0; i<numMaterials; ++i)
 				mat[i] = mMaterials[i];

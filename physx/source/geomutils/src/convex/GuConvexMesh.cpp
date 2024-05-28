@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -59,8 +59,8 @@ static void initConvexHullData(ConvexHullData& data)
 	data.mNbPolygons = 0;
 	data.mPolygons = NULL;
 	data.mBigConvexRawData = NULL;
-	data.mInternal.mRadius = 0.0f;
-	data.mInternal.mExtents[0] = data.mInternal.mExtents[1] = data.mInternal.mExtents[2] = 0.0f;
+	data.mInternal.mInternalExtents = PxVec3(0.0f);
+	data.mInternal.mInternalRadius= 0.0f;
 }
 
 ConvexMesh::ConvexMesh(MeshFactory* factory) :
@@ -413,12 +413,19 @@ bool ConvexMesh::load(PxInputStream& stream)
 */
 
 // TEST_INTERNAL_OBJECTS
-	readFloatBuffer(&mHullData.mInternal.mRadius, 4, mismatch, stream);
+	// PT: this data was saved in ConvexMeshBuilder::save(), in this order: 'radius' first then 'extents'.
+	// That order matched the previous in-memory data structure, but it changed later. So we read the data to a temp buffer and copy it afterwards.
+	float internalObjectsData[4];
+	readFloatBuffer(internalObjectsData, 4, mismatch, stream);
+	mHullData.mInternal.mInternalRadius	= internalObjectsData[0];
+	mHullData.mInternal.mInternalExtents.x = internalObjectsData[1];
+	mHullData.mInternal.mInternalExtents.y = internalObjectsData[2];
+	mHullData.mInternal.mInternalExtents.z = internalObjectsData[3];
 
-	PX_ASSERT(PxVec3(mHullData.mInternal.mExtents[0], mHullData.mInternal.mExtents[1], mHullData.mInternal.mExtents[2]).isFinite());
-	PX_ASSERT(mHullData.mInternal.mExtents[0] != 0.0f);
-	PX_ASSERT(mHullData.mInternal.mExtents[1] != 0.0f);
-	PX_ASSERT(mHullData.mInternal.mExtents[2] != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.isFinite());
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.x != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.y != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.z != 0.0f);
 //~TEST_INTERNAL_OBJECTS
 	return true;
 }

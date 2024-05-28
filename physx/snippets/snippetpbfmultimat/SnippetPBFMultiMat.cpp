@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,6 +39,7 @@
 #include "../snippetcommon/SnippetPVD.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "extensions/PxParticleExt.h"
+#include "extensions/PxCudaHelpersExt.h"
 
 using namespace physx;
 using namespace ExtGpu;
@@ -48,6 +49,7 @@ static PxDefaultErrorCallback	gErrorCallback;
 static PxFoundation*			gFoundation			= NULL;
 static PxPhysics*				gPhysics			= NULL;
 static PxDefaultCpuDispatcher*	gDispatcher			= NULL;
+static PxCudaContextManager*	gCudaContextManager	= NULL;
 static PxScene*					gScene				= NULL;
 static PxMaterial*				gMaterial			= NULL;
 static PxPvd*					gPvd				= NULL;
@@ -57,29 +59,12 @@ static bool						gIsRunning			= true;
 
 static void initScene()
 {
-	PxCudaContextManager* cudaContextManager = NULL;
-	if (PxGetSuggestedCudaDeviceOrdinal(gFoundation->getErrorCallback()) >= 0)
-	{
-		// initialize CUDA
-		PxCudaContextManagerDesc cudaContextManagerDesc;
-		cudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
-		if (cudaContextManager && !cudaContextManager->contextIsValid())
-		{
-			cudaContextManager->release();
-			cudaContextManager = NULL;
-		}
-	}
-	if (cudaContextManager == NULL)
-	{
-		PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "Failed to initialize CUDA!\n");
-	}
-
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	gDispatcher = PxDefaultCpuDispatcherCreate(2);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
-	sceneDesc.cudaContextManager = cudaContextManager;
+	sceneDesc.cudaContextManager = gCudaContextManager;
 	sceneDesc.staticStructure = PxPruningStructureType::eDYNAMIC_AABB_TREE;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_GPU_DYNAMICS;
@@ -106,15 +91,15 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 	gParticleSystem->setParticleContactOffset(PxMax(solidRestOffset + 0.01f, fluidRestOffset / 0.6f));
 	gParticleSystem->setSolidRestOffset(solidRestOffset);
 	gParticleSystem->setFluidRestOffset(fluidRestOffset);
-	gParticleSystem->enableCCD(false);
+	gParticleSystem->setParticleFlag(PxParticleFlag::eENABLE_SPECULATIVE_CCD, false);
 	
 	gScene->addActor(*gParticleSystem);
 	
 	// Create particles and add them to the particle system
-	
-	PxU32* phase = cudaContextManager->allocPinnedHostBuffer<PxU32>(maxParticles);
-	PxVec4* positionInvMass = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
-	PxVec4* velocity = cudaContextManager->allocPinnedHostBuffer<PxVec4>(maxParticles);
+
+	PxU32* phase = PX_EXT_PINNED_MEMORY_ALLOC(PxU32, *cudaContextManager, maxParticles);
+	PxVec4* positionInvMass = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxParticles);
+	PxVec4* velocity = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, maxParticles);
 
 	// We are applying different material parameters for each section
 	const PxU32 maxMaterials = 3;
@@ -162,9 +147,9 @@ static void initParticles(const PxU32 numX, const PxU32 numY, const PxU32 numZ, 
 	gParticleBuffer = physx::ExtGpu::PxCreateAndPopulateParticleBuffer(bufferDesc, cudaContextManager);
 	gParticleSystem->addParticleBuffer(gParticleBuffer);
 
-	cudaContextManager->freePinnedHostBuffer(positionInvMass);
-	cudaContextManager->freePinnedHostBuffer(velocity);
-	cudaContextManager->freePinnedHostBuffer(phase);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, positionInvMass);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, velocity);
+	PX_EXT_PINNED_MEMORY_FREE(*cudaContextManager, phase);
 }
 
 PxParticleSystem* getParticleSystem()
@@ -185,8 +170,18 @@ void initPhysics(bool /*interactive*/)
 	PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate(PVD_HOST, 5425, 10);
 	gPvd->connect(*transport,PxPvdInstrumentationFlag::eALL);
 
-	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(),true,gPvd);
+	gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
 	
+	// initialize cuda
+	PxCudaContextManagerDesc cudaContextManagerDesc;
+	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
+	if (gCudaContextManager && !gCudaContextManager->contextIsValid())
+	{
+		PX_RELEASE(gCudaContextManager);
+		printf("Failed to initialize cuda context.\n");
+		printf("The particle feature is currently only supported on GPU.\n");
+	}
+
 	initScene();
 
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
@@ -239,15 +234,16 @@ void cleanupPhysics(bool /*interactive*/)
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
+	PX_RELEASE(gCudaContextManager);
 	if(gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();	gPvd = NULL;
+		PX_RELEASE(gPvd);
 		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
 	
-	printf("SnippetPBFFluid done.\n");
+	printf("SnippetPBFMultiMat done.\n");
 }
 
 void keyPress(unsigned char key, const PxTransform& /*camera*/)

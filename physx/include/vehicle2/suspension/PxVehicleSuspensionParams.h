@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
-/** \addtogroup vehicle2
-  @{
-*/
 
 
 #include "foundation/PxTransform.h"
@@ -230,7 +227,7 @@ struct PxVehicleSuspensionComplianceParams
 
 /**
 \brief Suspension force is computed by converting suspenson state to suspension force under the assumption of a linear spring.
-@see PxVehicleSuspensionForceUpdate
+\see PxVehicleSuspensionForceUpdate
 */
 struct PxVehicleSuspensionForceParams
 {
@@ -278,9 +275,10 @@ struct PxVehicleSuspensionForceParams
 };
 
 /**
+\deprecated This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.
+
 \brief Suspension force is computed by converting suspenson state to suspension force under the assumption of a linear spring.
-@see PxVehicleSuspensionLegacyForceUpdate
-@deprecated
+\see PxVehicleSuspensionLegacyForceUpdate
 */
 struct PX_DEPRECATED PxVehicleSuspensionForceLegacyParams
 {
@@ -384,7 +382,7 @@ struct PxVehicleAntiRollForceParams
 			return false;
 
 		//Check that each wheel id is a valid wheel.
-		const PxU32 wheelIds[2] = { wheel0,  wheel1 };
+		const PxU32 wheelIds[2] = { wheel0, wheel1 };
 		for (PxU32 k = 0; k < 2; k++)
 		{
 			const PxU32 wheelToFind = wheelIds[k];
@@ -411,4 +409,3 @@ struct PxVehicleAntiRollForceParams
 } // namespace physx
 #endif
 
-/** @} */

@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build LowLevel common
@@ -42,8 +42,6 @@ SET(LL_API_HEADERS
 	${LL_API_DIR}/include/PxsFEMSoftBodyMaterialCore.h
 	${LL_API_DIR}/include/PxsFEMClothMaterialCore.h
 	${LL_API_DIR}/include/PxsPBDMaterialCore.h
-	${LL_API_DIR}/include/PxsFLIPMaterialCore.h
-	${LL_API_DIR}/include/PxsMPMMaterialCore.h
 	${LL_API_DIR}/include/PxsMaterialManager.h
 	${LL_API_DIR}/include/PxvConfig.h
 	${LL_API_DIR}/include/PxvDynamics.h
@@ -109,6 +107,7 @@ SET(LL_SOFTWARE_HEADERS
 	${LL_SOFTWARE_DIR}/include/PxsMemoryManager.h
 	${LL_SOFTWARE_DIR}/include/PxsNphaseImplementationContext.h
 	${LL_SOFTWARE_DIR}/include/PxsRigidBody.h
+    ${LL_SOFTWARE_DIR}/include/PxsParticleBuffer.h
 	${LL_SOFTWARE_DIR}/include/PxsShapeSim.h
 	${LL_SOFTWARE_DIR}/include/PxsSimpleIslandManager.h
 	${LL_SOFTWARE_DIR}/include/PxsSimulationController.h
@@ -178,8 +177,9 @@ TARGET_INCLUDE_DIRECTORIES(LowLevel
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevel/common/include/pipeline
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevel/common/include/utils
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevel/software/include
+    
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/include
-
+	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/shared
 )
 
 TARGET_COMPILE_DEFINITIONS(LowLevel 

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,7 +44,7 @@ extern PxcContactMethod g_ContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT];
 extern const bool g_CanUseContactCache[][PxGeometryType::eGEOMETRY_COUNT];
 extern PxcContactMethod g_PCMContactMethodTable[][PxGeometryType::eGEOMETRY_COUNT];
 
-extern bool gEnablePCMCaching[][PxGeometryType::eGEOMETRY_COUNT];
+extern const bool gEnablePCMCaching[][PxGeometryType::eGEOMETRY_COUNT];
 }
 
 #endif

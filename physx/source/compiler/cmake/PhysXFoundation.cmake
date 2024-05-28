@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXFoundation common
@@ -131,9 +131,6 @@ INSTALL(FILES ${PHYSXFOUNDATION_HEADERS} DESTINATION include/foundation)
 
 TARGET_INCLUDE_DIRECTORIES(PhysXFoundation 
 	PUBLIC ${PHYSX_ROOT_DIR}/include
-    
-    # FIXME: This is really terrible! Don't export src directories
-	PUBLIC ${LL_SOURCE_DIR}/include
     
 	PRIVATE ${PHYSXFOUNDATION_PLATFORM_INCLUDES}
 )

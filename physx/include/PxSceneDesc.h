@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SCENE_DESC_H
 #define PX_SCENE_DESC_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxSceneQueryDesc.h"
 #include "PxPhysXConfig.h"
@@ -53,22 +50,26 @@ namespace physx
 /**
 \brief Enum for selecting the friction algorithm used for simulation.
 
-#PxFrictionType::ePATCH selects the patch friction model which typically leads to the most stable results at low solver iteration counts and is also quite inexpensive, as it uses only
-up to four scalar solver constraints per pair of touching objects.  The patch friction model is the same basic strong friction algorithm as PhysX 3.2 and before.  
+#PxFrictionType::ePATCH is the default friction logic (Couloumb type friction model). Friction gets computed per contact patch.
+Up to two contact points lying in the contact patch area are selected as friction anchors to which friction impulses are applied. If there
+are more than two contact points, to select anchors from, the anchors are selected using a heuristic that tries to maximize the distance
+between the anchors within the contact patch area. For each contact patch, two perpendicular axes of the contact patch plane are selected.
+A 1D-constraint along each of the two axes is used to implement friction at a friction anchor point. Note that the two axes are processed
+separately when the PGS solver type is selected. This can lead to asymmetries when transitioning from dynamic to static friction and vice
+versa in certain edge cases. The TGS solver type, on the other hand, works with the combined impulse along the two axes and as such avoids
+this potential problem, but this is slightly more computationally expensive. Another difference between TGS and PGS is that TGS applies
+friction throughout all position and all velocity iterations, while PGS by default applies friction throughout the last 3 position iterations
+and all velocity iterations (unless #PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION is used).
 
-#PxFrictionType::eTWO_DIRECTIONAL is identical to the one directional model, but it applies friction in both tangent directions simultaneously.  This hurts convergence a bit so it 
-requires more solver iterations, but is more accurate.  Like the one directional model, it is applied at every contact point, which makes it potentially more expensive
-than patch friction for scenarios with many contact points.
-
-#PxFrictionType::eFRICTION_COUNT is the total numer of friction models supported by the SDK.
+#PxFrictionType::eFRICTION_COUNT is the total number of friction models supported by the SDK.
 */
 struct PxFrictionType
 {
 	enum Enum
 	{
 		ePATCH,				//!< Select default patch-friction model.
-		eONE_DIRECTIONAL PX_DEPRECATED, //!< @deprecated Please do not use any longer.
-		eTWO_DIRECTIONAL,	//!< Select two directional per-contact friction model.
+		eONE_DIRECTIONAL PX_DEPRECATED, //!< \deprecated Will be removed in a future version without replacement. Please do not use.
+		eTWO_DIRECTIONAL PX_DEPRECATED,	//!< \deprecated Will be removed in a future version without replacement. Please do not use.
 		eFRICTION_COUNT		//!< The total number of friction models supported by the SDK.
 	};
 };
@@ -92,7 +93,7 @@ struct PxSolverType
 /**
 \brief flags for configuring properties of the scene
 
-@see PxScene
+\see PxScene
 */
 struct PxSceneFlag
 {
@@ -122,7 +123,7 @@ struct PxSceneFlag
 
 		<b>Default:</b> False
 
-		@see PxRigidBodyFlag::eENABLE_CCD, PxPairFlag::eDETECT_CCD_CONTACT, eDISABLE_CCD_RESWEEP
+		\see PxRigidBodyFlag::eENABLE_CCD, PxPairFlag::eDETECT_CCD_CONTACT, eDISABLE_CCD_RESWEEP
 		*/
 		eENABLE_CCD	= (1<<1),
 
@@ -143,7 +144,7 @@ struct PxSceneFlag
 
 		<b>Default:</b> False
 
-		@see PxRigidBodyFlag::eENABLE_CCD, PxPairFlag::eDETECT_CCD_CONTACT, eENABLE_CCD
+		\see PxRigidBodyFlag::eENABLE_CCD, PxPairFlag::eDETECT_CCD_CONTACT, eENABLE_CCD
 		*/
 		eDISABLE_CCD_RESWEEP	= (1<<2),
 
@@ -186,10 +187,10 @@ struct PxSceneFlag
 		
 		\note This flag is not mutable, and must be set in PxSceneDesc at scene creation.
 
-		@see PxScene::lockRead
-		@see PxScene::unlockRead
-		@see PxScene::lockWrite
-		@see PxScene::unlockWrite
+		\see PxScene::lockRead
+		\see PxScene::unlockRead
+		\see PxScene::lockWrite
+		\see PxScene::unlockWrite
 		
 		<b>Default:</b> false
 		*/
@@ -222,7 +223,7 @@ struct PxSceneFlag
 
 		\note This flag has only an effect in combination with eENABLE_ACTIVE_ACTORS.
 
-		@see eENABLE_ACTIVE_ACTORS
+		\see eENABLE_ACTIVE_ACTORS
 
 		<b>Default:</b> false
 		*/
@@ -275,6 +276,22 @@ struct PxSceneFlag
 		*/
 		eENABLE_FRICTION_EVERY_ITERATION = (1 << 15),
 
+		/**
+		\brief Controls application of gravity and other external forces per TGS solver position iterations
+
+		By default, external forces such as gravity are applied just once at the beginning of each simulate() call. With this
+		flag enabled the same forces are applied in each sub time step (position iteration) of the TGS solver, leading to greater stability and better solver convergence.
+		One consequence is that a body in freefall will move a shorter distance over the entire simulation step if the flag is raised.
+
+		Note that raising this flag makes the distance traveled under freefall dependent on the number of solver iterations.
+		Since solver iterations are determined per-island, bodies assigned to an island with fewer solver iterations will travel a larger distance than bodies assigned to an island with more iterations.
+
+		\note This feature is only supported for the TGS solver.
+
+		<b>Default</b> false
+		*/
+		eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS = (1 << 16),
+
 		/*
 		\brief Enables the direct-GPU API. Raising this flag is only allowed if eENABLE_GPU_DYNAMICS is raised and 
 		PxBroadphaseType::eGPU is used.
@@ -287,9 +304,42 @@ struct PxSceneFlag
 		PxScene::copySoftbodyData(), PxScene::copyContactData()), and reading state directly from the actor is not allowed.
 
 		\note This flag is not mutable and must be set in PxSceneDesc at scene creation.
+		\see PxScene::getDirectGPUAPI() PxDirectGPUAPI
 
+		<b>Default</b> false
 		*/
-		eENABLE_DIRECT_GPU_API = (1 << 16),
+		eENABLE_DIRECT_GPU_API = (1 << 17),
+
+		/**
+		\brief Enables the computation of body accelerations for PxRigidDynamic actors.
+
+		By default PhysX does not compute per-body accelerations for PxRigidDynamic actors (only for articulation links).
+		This flag tells the system to compute them.
+		
+		Retrieve the accelerations using PxRigidBody::getLinearAcceleration() and PxRigidBody::getAngularAcceleration().
+
+		If the flag is not enabled these functions will return valid accelerations for PxArticulationLink objects, but
+		it will return zero for PxRigidDynamic actors.
+		
+		If the flag is enabled, these functions will return valid accelerations for both PxArticulationLink and
+		PxRigidDynamic objects.
+
+		This flag also enables PxRigidDynamicGPUAPIReadType::eLINEAR_ACCELERATION and PxRigidDynamicGPUAPIReadType::eANGULAR_ACCELERATION
+		in the direct GPU API.
+
+		\note This flag is not mutable and must be set in PxSceneDesc at scene creation.
+		\see PxRigidBody::getLinearAcceleration() PxRigidBody::getAngularAcceleration() PxRigidDynamicGPUAPIReadType PxDirectGPUAPI
+
+		<b>Default</b> false
+		*/
+		eENABLE_BODY_ACCELERATIONS = (1 << 18),
+
+		/*
+		\brief Enables the solver residual reporting.
+
+		\note Enabling this flag can have a negative impact on the performance but the impact should be small.
+		*/
+		eENABLE_SOLVER_RESIDUAL_REPORTING = (1 << 19),
 
 		eMUTABLE_FLAGS = eENABLE_ACTIVE_ACTORS|eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS
 	};
@@ -298,7 +348,7 @@ struct PxSceneFlag
 /**
 \brief collection of set bits defined in PxSceneFlag.
 
-@see PxSceneFlag
+\see PxSceneFlag
 */
 typedef PxFlags<PxSceneFlag::Enum,PxU32> PxSceneFlags;
 PX_FLAGS_OPERATORS(PxSceneFlag::Enum,PxU32)
@@ -375,22 +425,22 @@ PX_INLINE bool PxSceneLimits::isValid() const
 \brief Sizes of pre-allocated buffers use for GPU dynamics
 */
 
-struct PxgDynamicsMemoryConfig
+struct PxGpuDynamicsMemoryConfig
 {
-	PxU32 tempBufferCapacity;				//!< Initial capacity of temp solver buffer allocated in pinned host memory. This buffer will grow if more memory is needed than specified here.
+	PxU64 tempBufferCapacity;				//!< Initial capacity of temp solver buffer allocated in pinned host memory. This buffer will grow if more memory is needed than specified here.
 	PxU32 maxRigidContactCount;				//!< Size of contact stream buffer allocated in pinned host memory. This is double-buffered so total allocation size = 2* contactStreamCapacity * sizeof(PxContact).
 	PxU32 maxRigidPatchCount;				//!< Size of the contact patch stream buffer allocated in pinned host memory. This is double-buffered so total allocation size = 2 * patchStreamCapacity * sizeof(PxContactPatch).
 	PxU32 heapCapacity;						//!< Initial capacity of the GPU and pinned host memory heaps. Additional memory will be allocated if more memory is required.
 	PxU32 foundLostPairsCapacity;			//!< Capacity of found and lost buffers allocated in GPU global memory. This is used for the found/lost pair reports in the BP. 
-	PxU32 foundLostAggregatePairsCapacity;	//!<Capacity of found and lost buffers in aggregate system allocated in GPU global memory. This is used for the found/lost pair reports in AABB manager
-	PxU32 totalAggregatePairsCapacity;		//!<Capacity of total number of aggregate pairs allocated in GPU global memory.
-	PxU32 maxSoftBodyContacts;
-	PxU32 maxFemClothContacts;
-	PxU32 maxParticleContacts;
-	PxU32 collisionStackSize;
-	PxU32 maxHairContacts;
+	PxU32 foundLostAggregatePairsCapacity;	//!< Capacity of found and lost buffers in aggregate system allocated in GPU global memory. This is used for the found/lost pair reports in AABB manager.
+	PxU32 totalAggregatePairsCapacity;		//!< Capacity of aggregate pair buffer allocated in GPU global memory.
+	PxU32 maxSoftBodyContacts;				//!< Capacity of softbody contact buffer allocated in GPU global memory.
+	PxU32 maxFemClothContacts;				//!< Capacity of femCloth contact buffer allocated in GPU global memory.
+	PxU32 maxParticleContacts;				//!< Capacity of particle contact buffer allocated in GPU global memory.
+	PxU32 collisionStackSize;				//!< Capacity of the collision stack buffer, used as scratch space during narrowphase collision detection.
+	PxU32 maxHairContacts;					//!< Capacity of hair system contact buffer allocated in GPU global memory.
 
-	PxgDynamicsMemoryConfig() :
+	PxGpuDynamicsMemoryConfig() :
 		tempBufferCapacity(16 * 1024 * 1024),
 		maxRigidContactCount(1024 * 512),
 		maxRigidPatchCount(1024 * 80),
@@ -409,7 +459,7 @@ struct PxgDynamicsMemoryConfig
 	PX_PHYSX_CORE_API bool isValid() const;
 };
 
-PX_INLINE bool PxgDynamicsMemoryConfig::isValid() const
+PX_INLINE bool PxGpuDynamicsMemoryConfig::isValid() const
 {
 	const bool isPowerOfTwo = PxIsPowerOfTwo(heapCapacity);
 	return isPowerOfTwo;
@@ -422,7 +472,7 @@ PX_INLINE bool PxgDynamicsMemoryConfig::isValid() const
 
 This struct must be initialized with the same PxTolerancesScale values used to initialize PxPhysics.
 
-@see PxScene PxPhysics.createScene PxTolerancesScale
+\see PxScene PxPhysics.createScene PxTolerancesScale
 */
 class PxSceneDesc : public PxSceneQueryDesc
 {
@@ -434,7 +484,7 @@ public:
 	<b>Range:</b> force vector<br>
 	<b>Default:</b> Zero
 
-	@see PxScene.setGravity() PxScene.getGravity()
+	\see PxScene.setGravity() PxScene.getGravity()
 
 	When setting gravity, you should probably also set bounce threshold.
 	*/
@@ -445,7 +495,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxSimulationEventCallback PxScene.setSimulationEventCallback() PxScene.getSimulationEventCallback()
+	\see PxSimulationEventCallback PxScene.setSimulationEventCallback() PxScene.getSimulationEventCallback()
 	*/
 	PxSimulationEventCallback*	simulationEventCallback;
 
@@ -454,7 +504,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxContactModifyCallback PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
+	\see PxContactModifyCallback PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
 	*/
 	PxContactModifyCallback*	contactModifyCallback;
 
@@ -463,7 +513,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxContactModifyCallback PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
+	\see PxContactModifyCallback PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
 	*/
 	PxCCDContactModifyCallback*	ccdContactModifyCallback;
 
@@ -474,7 +524,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxSimulationFilterShader PxScene.setFilterShaderData() PxScene.getFilterShaderData()
+	\see PxSimulationFilterShader PxScene.setFilterShaderData() PxScene.getFilterShaderData()
 	*/
 	const void*	filterShaderData;
 
@@ -483,7 +533,7 @@ public:
 
 	<b>Default:</b> 0
 
-	@see PxSimulationFilterShader filterShaderData PxScene.getFilterShaderDataSize()
+	\see PxSimulationFilterShader filterShaderData PxScene.getFilterShaderDataSize()
 	*/
 	PxU32	filterShaderDataSize;
 
@@ -494,7 +544,7 @@ public:
 	use the default shader #PxDefaultSimulationFilterShader which can be found in the PhysX extensions 
 	library.
 
-	@see PxSimulationFilterShader PxScene.getFilterShader()
+	\see PxSimulationFilterShader PxScene.getFilterShader()
 	*/
 	PxSimulationFilterShader	filterShader;
 
@@ -504,7 +554,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxSimulationFilterCallback PxScene.getFilterCallback()
+	\see PxSimulationFilterCallback PxScene.getFilterCallback()
 	*/
 	PxSimulationFilterCallback*	filterCallback;
 
@@ -513,7 +563,7 @@ public:
 
 	<b>Default:</b> PxPairFilteringMode::eDEFAULT
 
-	@see PxPairFilteringMode PxScene.getKinematicKinematicFilteringMode()
+	\see PxPairFilteringMode PxScene.getKinematicKinematicFilteringMode()
 	*/
 	PxPairFilteringMode::Enum	kineKineFilteringMode;
 
@@ -522,7 +572,7 @@ public:
 
 	<b>Default:</b> PxPairFilteringMode::eDEFAULT
 
-	@see PxPairFilteringMode PxScene.getStaticKinematicFilteringMode()
+	\see PxPairFilteringMode PxScene.getStaticKinematicFilteringMode()
 	*/
 	PxPairFilteringMode::Enum	staticKineFilteringMode;
 
@@ -531,7 +581,7 @@ public:
 
 	<b>Default:</b> PxBroadPhaseType::ePABP
 
-	@see PxBroadPhaseType PxScene.getBroadPhaseType()
+	\see PxBroadPhaseType PxScene.getBroadPhaseType()
 	*/
 	PxBroadPhaseType::Enum	broadPhaseType;
 
@@ -540,14 +590,14 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxBroadPhaseCallback PxScene.getBroadPhaseCallback() PxScene.setBroadPhaseCallback()
+	\see PxBroadPhaseCallback PxScene.getBroadPhaseCallback() PxScene.setBroadPhaseCallback()
 	*/
 	PxBroadPhaseCallback*	broadPhaseCallback;
 
 	/**
 	\brief Expected scene limits.
 
-	@see PxSceneLimits PxScene.getLimits()
+	\see PxSceneLimits PxScene.getLimits()
 	*/
 	PxSceneLimits	limits;
 
@@ -558,7 +608,7 @@ public:
 
 	<b>Default:</b> PxFrictionType::ePATCH
 
-	@see PxFrictionType PxScene.setFrictionType(), PxScene.getFrictionType()
+	\see PxFrictionType PxScene.setFrictionType(), PxScene.getFrictionType()
 	*/
 	PxFrictionType::Enum frictionType;
 
@@ -567,7 +617,7 @@ public:
 
 	<b>Default:</b> PxSolverType::ePGS
 
-	@see PxSolverType PxScene.getSolverType()
+	\see PxSolverType PxScene.getSolverType()
 	*/
 	PxSolverType::Enum	solverType;
 
@@ -578,7 +628,7 @@ public:
 	<b>Range:</b> (0, PX_MAX_F32)<br>
 	<b>Default:</b> 0.2 * PxTolerancesScale::speed
 
-	@see PxMaterial PxScene.setBounceThresholdVelocity() PxScene.getBounceThresholdVelocity()
+	\see PxMaterial PxScene.setBounceThresholdVelocity() PxScene.getBounceThresholdVelocity()
 	*/
 	PxReal bounceThresholdVelocity; 
 
@@ -595,7 +645,7 @@ public:
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	<b>Default:</b> 0.04 * PxTolerancesScale::length
 
-	@see PxScene.setFrictionOffsetThreshold() PxScene.getFrictionOffsetThreshold()
+	\see PxScene.setFrictionOffsetThreshold() PxScene.getFrictionOffsetThreshold()
 	*/
 	PxReal frictionOffsetThreshold;
 
@@ -609,7 +659,7 @@ public:
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	<b>Default:</b> 0.025f * PxTolerancesScale::length
 
-	@see PxScene.setFrictionCorrelationDistance() PxScene.getFrictionCorrelationDistance()
+	\see PxScene.setFrictionCorrelationDistance() PxScene.getFrictionCorrelationDistance()
 	*/
 	PxReal frictionCorrelationDistance;
 
@@ -618,14 +668,14 @@ public:
 
 	<b>Default:</b> PxSceneFlag::eENABLE_PCM
 
-	@see PxSceneFlag PxSceneFlags PxScene.getFlags() PxScene.setFlag()
+	\see PxSceneFlag PxSceneFlags PxScene.getFlags() PxScene.setFlag()
 	*/
 	PxSceneFlags	flags;
 
 	/**
 	\brief The CPU task dispatcher for the scene.
 
-	@see PxCpuDispatcher, PxScene::getCpuDispatcher
+	\see PxCpuDispatcher, PxScene::getCpuDispatcher
 	*/
 	PxCpuDispatcher*	cpuDispatcher;
 
@@ -634,7 +684,7 @@ public:
 
 	<b>Platform specific:</b> Applies to PC GPU only.
 
-	@see PxCudaContextManager, PxScene::getCudaContextManager
+	\see PxCudaContextManager, PxScene::getCudaContextManager
 	*/
 	PxCudaContextManager* 	cudaContextManager;
 
@@ -658,7 +708,7 @@ public:
 
 	<b>Default:</b> 128
 
-	@see PxScene.setSolverBatchSize() PxScene.getSolverBatchSize()
+	\see PxScene.setSolverBatchSize() PxScene.getSolverBatchSize()
 	*/
 	PxU32	solverBatchSize;
 
@@ -675,7 +725,7 @@ public:
 
 	<b>Default:</b> 16
 
-	@see PxScene.setSolverArticulationBatchSize() PxScene.getSolverArticulationBatchSize()
+	\see PxScene.setSolverArticulationBatchSize() PxScene.getSolverArticulationBatchSize()
 	*/
 	PxU32	solverArticulationBatchSize;
 
@@ -690,7 +740,7 @@ public:
 
 	<b>Range:</b> [0, PX_MAX_U32]<br>
 
-	@see PxPhysics::createScene PxScene::setNbContactDataBlocks 
+	\see PxPhysics::createScene PxScene::setNbContactDataBlocks 
 	*/
 	PxU32	nbContactDataBlocks;
 
@@ -710,7 +760,7 @@ public:
 
 	<b>Range:</b> [0, PX_MAX_U32]<br>
 
-	@see nbContactDataBlocks PxScene.setNbContactDataBlocks()
+	\see nbContactDataBlocks PxScene.setNbContactDataBlocks()
 	*/
 	PxU32	maxNbContactDataBlocks;
 
@@ -729,7 +779,7 @@ public:
 
 	<b> Range</b> [0, PX_MAX_F32] <br>
 
-	@see PxScene.setMaxBiasCoefficient() PxScene.getMaxBiasCoefficient()
+	\see PxScene.setMaxBiasCoefficient() PxScene.getMaxBiasCoefficient()
 	*/
 	PxReal	maxBiasCoefficient;
 
@@ -745,7 +795,7 @@ public:
 
 	<b>Range:</b> (0, PX_MAX_U32]<br>
 	
-	@see PxScene.getContactReportStreamBufferSize()
+	\see PxScene.getContactReportStreamBufferSize()
 	*/
 	PxU32	contactReportStreamBufferSize;
 
@@ -760,7 +810,7 @@ public:
 	<b>Default:</b> 1
 	<b>Range:</b> [1, PX_MAX_U32]<br>
 
-	@see PxScene.setCCDMaxPasses() PxScene.getCCDMaxPasses()
+	\see PxScene.setCCDMaxPasses() PxScene.getCCDMaxPasses()
 	*/
 	PxU32	ccdMaxPasses;
 
@@ -777,7 +827,7 @@ public:
 	<b>Default:</b> PX_MAX_F32
 	<b>Range:</b> [Eps, PX_MAX_F32]<br>
 
-	@see PxScene.setCCDThreshold() PxScene.getCCDThreshold()
+	\see PxScene.setCCDThreshold() PxScene.getCCDThreshold()
 	*/
 	PxReal	ccdThreshold;
 
@@ -789,7 +839,7 @@ public:
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	<b>Default:</b> 0.04 * PxTolerancesScale::length
 
-	@see PxScene.setCCDMaxSeparation() PxScene.getCCDMaxSeparation()
+	\see PxScene.setCCDMaxSeparation() PxScene.getCCDMaxSeparation()
 	*/
 	PxReal	ccdMaxSeparation;
 
@@ -801,7 +851,7 @@ public:
 	<b>Range:</b> (0, PX_MAX_F32)<br>
 	<b>Default:</b> 0.4 (which corresponds to 20 frames for a time step of 0.02)
 
-	@see PxRigidDynamic::wakeUp() PxArticulationReducedCoordinate::wakeUp() PxScene.getWakeCounterResetValue()
+	\see PxRigidDynamic::wakeUp() PxArticulationReducedCoordinate::wakeUp() PxScene.getWakeCounterResetValue()
 	*/
 	PxReal	wakeCounterResetValue;
 
@@ -819,7 +869,7 @@ public:
 	/**
 	\brief The pre-allocations performed in the GPU dynamics pipeline.
 	*/
-	PxgDynamicsMemoryConfig gpuDynamicsConfig;
+	PxGpuDynamicsMemoryConfig gpuDynamicsConfig;
 
 	/**
 	\brief Limitation for the partitions in the GPU dynamics pipeline.
@@ -859,7 +909,7 @@ public:
 	will be re-routed to the user-provided implementation. An external SQ implementation is available
 	in the Extensions library (see PxCreateExternalSceneQuerySystem). This can also be fully re-implemented by users if needed.
 
-	@see PxSceneQuerySystem
+	\see PxSceneQuerySystem
 	*/
 	PxSceneQuerySystem* sceneQuerySystem;
 
@@ -880,7 +930,7 @@ public:
 	\param[in] scale scale values for the tolerances in the scene, these must be the same values passed into
 	PxCreatePhysics(). The affected tolerances are bounceThresholdVelocity and frictionOffsetThreshold.
 
-	@see PxCreatePhysics() PxTolerancesScale bounceThresholdVelocity frictionOffsetThreshold
+	\see PxCreatePhysics() PxTolerancesScale bounceThresholdVelocity frictionOffsetThreshold
 	*/	
 	PX_INLINE PxSceneDesc(const PxTolerancesScale& scale);
 
@@ -890,7 +940,7 @@ public:
 	\param[in] scale scale values for the tolerances in the scene, these must be the same values passed into
 	PxCreatePhysics(). The affected tolerances are bounceThresholdVelocity and frictionOffsetThreshold.
 
-	@see PxCreatePhysics() PxTolerancesScale bounceThresholdVelocity frictionOffsetThreshold
+	\see PxCreatePhysics() PxTolerancesScale bounceThresholdVelocity frictionOffsetThreshold
 	*/
 	PX_INLINE void setToDefault(const PxTolerancesScale& scale);
 
@@ -1013,6 +1063,9 @@ PX_INLINE bool PxSceneDesc::isValid() const
 	if(!sanityBounds.isValid())
 		return false;
 
+	if(solverType == PxSolverType::ePGS && (flags & PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS))
+		return false;
+
 #if PX_SUPPORT_GPU_PHYSX
 	if(!PxIsPowerOfTwo(gpuMaxNumPartitions))
 		return false;
@@ -1040,5 +1093,4 @@ PX_INLINE bool PxSceneDesc::isValid() const
 } // namespace physx
 #endif
 
-/** @} */
 #endif

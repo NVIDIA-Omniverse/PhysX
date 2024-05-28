@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -147,7 +147,7 @@ namespace Ext
 		if ( newActor1 && newActor1->getScene())
 			inStream.pushBackObjectRef( newActor1, "Joints", &inJoint );
 
-		inStream.setPropertyValue( &inJoint, "Actors.actor0",  reinterpret_cast<const void*>(newActor0) );
+		inStream.setPropertyValue( &inJoint, "Actors.actor0", reinterpret_cast<const void*>(newActor0) );
 		inStream.setPropertyValue( &inJoint, "Actors.actor1", reinterpret_cast<const void*>(newActor1) );
 		const void* parent = newActor0 ? newActor0 : newActor1;
 		inStream.setPropertyValue( &inJoint, "Parent", parent );

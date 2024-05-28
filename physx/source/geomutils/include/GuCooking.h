@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef GU_COOKING_H
 #define GU_COOKING_H
-/** \addtogroup geomutils
-@{
-*/
 
 // PT: TODO: the SDK always had this questionable design decision that all APIs can include all high-level public headers,
 // regardless of where they fit in the header hierarchy. For example PhysXCommon can include headers from the higher-level
@@ -159,5 +156,4 @@ namespace physx
 	}
 }
 
-/** @} */
 #endif

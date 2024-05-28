@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -163,15 +163,14 @@ static PxHeightFieldGeometryLL extendForLL(const PxHeightFieldGeometry& hlGeom)
 	return llGeom;
 }
 
-ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const PxU16* materialIndices, PxU16 materialCount, bool isExclusive,
-	PxShapeCoreFlag::Enum softOrClothFlags) :
+ShapeCore::ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags, const PxU16* materialIndices, PxU16 materialCount, bool isExclusive, PxShapeCoreFlag::Enum coreFlags) :
 	mExclusiveSim(NULL)
 {
 	mCore.mShapeCoreFlags |= PxShapeCoreFlag::eOWNS_MATERIAL_IDX_MEMORY;
 	if(isExclusive)
 		mCore.mShapeCoreFlags |= PxShapeCoreFlag::eIS_EXCLUSIVE;
 
-	mCore.mShapeCoreFlags |= softOrClothFlags;
+	mCore.mShapeCoreFlags |= coreFlags;
 
 	PX_ASSERT(materialCount > 0);
 
@@ -307,10 +306,8 @@ void ShapeCore::setContactOffset(const PxReal offset)
 	mCore.mContactOffset = offset;
 
 	ShapeSim* exclusiveSim = getExclusiveSim();
-	if (exclusiveSim)
-	{
+	if(exclusiveSim)
 		exclusiveSim->getScene().updateContactDistance(exclusiveSim->getElementID(), offset);
-	}
 }
 
 // PX_SERIALIZATION
@@ -398,11 +395,6 @@ void ShapeCore::resolveReferences(PxDeserializationContext& context)
 	case PxGeometryType::eINVALID:
 	break;
 	}	
-}
-
-PxU32 ShapeCore::getInternalShapeIndex(PxsSimulationController& simulationController) const
-{
-	return simulationController.getInternalShapeIndex(getCore());
 }
 
 //~PX_SERIALIZATION

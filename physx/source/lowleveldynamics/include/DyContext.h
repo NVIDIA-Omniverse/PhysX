@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,6 +36,8 @@
 #include "DyConstraintWriteBack.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxUserAllocated.h"
+#include "PxsRigidBody.h"
+#include "DyResidualAccumulator.h"
 
 namespace physx
 {
@@ -120,8 +122,23 @@ public:
 	PX_FORCE_INLINE PxcDataStreamPool&							getContactStreamPool()			{ return mContactStreamPool;		}
 	PX_FORCE_INLINE PxcDataStreamPool&							getPatchStreamPool()			{ return mPatchStreamPool;			}
 	PX_FORCE_INLINE PxcDataStreamPool&							getForceStreamPool()			{ return mForceStreamPool;			}
-	PX_FORCE_INLINE PxPinnedArray<Dy::ConstraintWriteback>&		getConstraintWriteBackPool()	{ return mConstraintWriteBackPool;  }
+	PX_FORCE_INLINE PxPinnedArray<Dy::ConstraintWriteback>&		getConstraintWriteBackPool()	{ return mConstraintWriteBackPool;	}
+	PX_FORCE_INLINE PxcDataStreamPool&							getFrictionPatchStreamPool()	{ return mFrictionPatchStreamPool;	}
 
+	PX_FORCE_INLINE PxPinnedArray<PxReal>&						getConstraintPositionIterResidualPoolGpu() { return mConstraintPositionIterResidualPoolGpu; }
+
+	//Reports the sum of squared errors of the delta Force corrections. Geometric error was not possible because a compliant contact might have penetration (=geometric error) but can still be solved perfectly
+	PX_FORCE_INLINE PxReal										getContactError() const			{ return (mContactErrorVelIter ? mContactErrorVelIter->mErrorSumOfSquares : 0.0f) + (mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mErrorSumOfSquares : 0.0f); }
+	PX_FORCE_INLINE PxU32										getContactErrorCounter() const	{ return (mContactErrorVelIter ? mContactErrorVelIter->mCounter : 0u) + (mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mCounter : 0u); }
+	PX_FORCE_INLINE PxReal										getMaxContactError() const { return PxMax(mContactErrorVelIter ? mContactErrorVelIter->mMaxError : 0.0f, mArticulationContactErrorVelIter.size() ? mArticulationContactErrorVelIter[0].mMaxError : 0.0f); }
+	
+	PX_FORCE_INLINE PxReal										getContactErrorPosIter() const { return (mContactErrorPosIter ? mContactErrorPosIter->mErrorSumOfSquares : 0.0f) + (mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mErrorSumOfSquares : 0.0f); }
+	PX_FORCE_INLINE PxU32										getContactErrorCounterPosIter() const { return (mContactErrorPosIter ? mContactErrorPosIter->mCounter : 0u) + (mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mCounter : 0u); }
+	PX_FORCE_INLINE PxReal										getMaxContactErrorPosIter() const { return PxMax(mContactErrorPosIter ? mContactErrorPosIter->mMaxError : 0.0f, mArticulationContactErrorPosIter.size() ? mArticulationContactErrorPosIter[0].mMaxError : 0.0f); }
+
+
+	PX_FORCE_INLINE bool										isResidualReportingEnabled() const { return mIsResidualReportingEnabled; }
+	
 	/**
 	\brief Destroys this dynamics context
 	*/
@@ -164,11 +181,13 @@ public:
 
 	virtual PxSolverType::Enum			getSolverType()	const	= 0;
 
+	virtual PxsExternalAccelerationProvider& getExternalRigidAccelerations() { return mRigidExternalAccelerations; }
+
 protected:
 
 	Context(IG::SimpleIslandManager* islandManager, PxVirtualAllocatorCallback* allocatorCallback,
 			PxvSimStats& simStats, bool enableStabilization, bool useEnhancedDeterminism,
-			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID) :
+			PxReal maxBiasCoefficient, PxReal lengthScale, PxU64 contextID, bool isResidualReportingEnabled) :
 		mThresholdStream			(NULL),
 		mForceChangedThresholdStream(NULL),		
 		mIslandManager				(islandManager),
@@ -181,9 +200,16 @@ protected:
 		mLengthScale				(lengthScale),
 		mSolverBatchSize			(32),
 		mConstraintWriteBackPool	(PxVirtualAllocator(allocatorCallback)),
+		mConstraintPositionIterResidualPoolGpu(PxVirtualAllocator(allocatorCallback)),
+		mIsResidualReportingEnabled(isResidualReportingEnabled),
+		mContactErrorPosIter		(NULL),
+		mContactErrorVelIter		(NULL),
+		mArticulationContactErrorVelIter(PxVirtualAllocator(allocatorCallback)),
+		mArticulationContactErrorPosIter(PxVirtualAllocator(allocatorCallback)),
 		mSimStats					(simStats),
 		mContextID					(contextID),
-		mBodyStateDirty				(false)
+		mBodyStateDirty(false),
+		mTotalContactError			()
 		{
 		}
 
@@ -274,27 +300,68 @@ protected:
 	\brief Structure to encapsulate force stream allocations. Used by GPU solver to reference pre-allocated pinned host memory for force reports.
 	*/
 	PxcDataStreamPool		mForceStreamPool;
+
+	/**
+	\brief	Struct to encapsulate the friction patch stream allocations. Used by GPU solver to reference pre-allocated pinned host memory
+	*/
+	PxcDataStreamPool		mFrictionPatchStreamPool;
 	
 	/**
 	\brief Structure to encapsulate constraint write back allocations. Used by GPU/CPU solver to reference pre-allocated pinned host memory for breakable joint reports.
 	*/
 	PxPinnedArray<Dy::ConstraintWriteback>	mConstraintWriteBackPool;
 
+	/**
+	\brief Buffer that contains only the joint residuals for the gpu solver, cpu solver residuals take a different code path
+	*/
+	PxPinnedArray<PxReal>	mConstraintPositionIterResidualPoolGpu;
+
+	/**
+	\brief Indicates if solver residuals should get computed and reported
+	*/
+	bool mIsResidualReportingEnabled;
+
+	/**
+	\brief Pointer to contact error data during the last position iteration (can point to memory owned by the GPU solver context that is copied to the host asynchronously)
+	*/
+	Dy::ErrorAccumulator* mContactErrorPosIter;
+	
+	/**
+	\brief Pointer to contact error data during the last velocity iteration (can point to memory owned by the GPU solver context that is copied to the host asynchronously)
+	*/
+	Dy::ErrorAccumulator* mContactErrorVelIter;
+
+	/**
+	\brief Contains the articulation contact error during the last velocity iteration. Has size 1 if articulations are present in the scene. Pinned host memory for fast device to host copies.
+	*/
+	PxPinnedArray<Dy::ErrorAccumulator> mArticulationContactErrorVelIter;
+
+	/**
+	\brief Contains the articulation contact error during the last position iteration. Has size 1 if articulations are present in the scene. Pinned host memory for fast device to host copies.
+	*/
+	PxPinnedArray<Dy::ErrorAccumulator> mArticulationContactErrorPosIter;
+
+
 	PxvSimStats& mSimStats;
 
 	const PxU64	mContextID;
 
+	PxsExternalAccelerationProvider mRigidExternalAccelerations;
+
 	bool mBodyStateDirty;
+
+	Dy::ErrorAccumulatorEx mTotalContactError; 
 };
 
 Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
 								IG::SimpleIslandManager* islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism,
-								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale);
+								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled);
 
 Context* createTGSDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 									PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, PxsMaterialManager* materialManager,
-									IG::SimpleIslandManager* islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, PxReal lengthScale);
+									IG::SimpleIslandManager* islandManager, PxU64 contextID, bool enableStabilization, bool useEnhancedDeterminism, PxReal lengthScale, 
+									bool externalForcesEveryTgsIterationEnabled, bool isResidualReportingEnabled);
 }
 
 }

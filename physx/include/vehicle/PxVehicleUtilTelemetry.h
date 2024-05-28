@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,6 +40,9 @@ namespace physx
 
 #if PX_DEBUG_VEHICLE_ON
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 class PX_DEPRECATED PxVehicleGraphDesc
 {
 
@@ -86,6 +89,9 @@ private:
 	bool isValid() const;
 };
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 struct PX_DEPRECATED PxVehicleGraphChannelDesc
 {
 public:
@@ -130,6 +136,9 @@ private:
 	bool isValid() const;
 };
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 struct PX_DEPRECATED PxVehicleWheelGraphChannel
 {
 	enum Enum
@@ -149,6 +158,9 @@ struct PX_DEPRECATED PxVehicleWheelGraphChannel
 	};
 };
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 struct PX_DEPRECATED PxVehicleDriveGraphChannel
 {
 	enum Enum
@@ -166,6 +178,9 @@ struct PX_DEPRECATED PxVehicleDriveGraphChannel
 	};
 };
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 struct PX_DEPRECATED PxVehicleGraphType
 {
 	enum Enum
@@ -175,7 +190,9 @@ struct PX_DEPRECATED PxVehicleGraphType
 	};
 };
 
-
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 class PX_DEPRECATED PxVehicleGraph
 {
 public:
@@ -304,6 +321,9 @@ private:
 PX_COMPILE_TIME_ASSERT(PxU32(PxVehicleGraph::eMAX_NB_CHANNELS) >= PxU32(PxVehicleWheelGraphChannel::eMAX_NB_WHEEL_CHANNELS) && PxU32(PxVehicleGraph::eMAX_NB_CHANNELS) >= PxU32(PxVehicleDriveGraphChannel::eMAX_NB_DRIVE_CHANNELS));
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleGraph) & 15));
 
+/**
+ \deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+ */
 class PX_DEPRECATED PxVehicleTelemetryData
 {
 public:
@@ -312,13 +332,13 @@ public:
 
 	/**
 	\brief Allocate a PxVehicleNWTelemetryData instance for a vehicle with nbWheels
-	@see PxVehicleNWTelemetryDataFree
+	\see PxVehicleNWTelemetryDataFree
 	*/
 	static PxVehicleTelemetryData* allocate(const PxU32 nbWheels);
 
 	/**
 	\brief Free a PxVehicleNWTelemetryData instance for a vehicle.
-	@see PxVehicleNWTelemetryDataAllocate
+	\see PxVehicleNWTelemetryDataAllocate
 	*/
 	void free();
 
@@ -366,14 +386,14 @@ private:
 	/**
 	\brief Graph data for engine.
 	Used for storing single timeslices of debug data for engine graph.
-	@see PxVehicleGraph
+	\see PxVehicleGraph
 	*/
 	PxVehicleGraph* mEngineGraph;
 
 	/**
 	\brief Graph data for each wheel.
 	Used for storing single timeslices of debug data for wheel graphs.
-	@see PxVehicleGraph
+	\see PxVehicleGraph
 	*/
 	PxVehicleGraph* mWheelGraphs;
 

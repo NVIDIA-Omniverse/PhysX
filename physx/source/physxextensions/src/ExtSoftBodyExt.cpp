@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 #include "extensions/PxRemeshingExt.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "cudamanager/PxCudaContext.h"
+#include "extensions/PxCudaHelpersExt.h"
 
 using namespace physx;
 using namespace Cm;
@@ -327,7 +328,7 @@ PxSoftBodyMesh* PxSoftBodyExt::createSoftBodyMesh(const PxCookingParams& params,
 	physx::PxArray<physx::PxVec3> simulationMeshVertices;
 	physx::PxArray<physx::PxU32> simulationMeshIndices;
 	PxTetMaker::createVoxelTetrahedronMesh(meshDesc, numVoxelsAlongLongestAABBAxis, simulationMeshVertices, simulationMeshIndices, vertexToTet.begin());
-	PxTetrahedronMeshDesc simMeshDesc(simulationMeshVertices, simulationMeshIndices);
+	PxTetrahedronMeshDesc simMeshDesc(simulationMeshVertices, simulationMeshIndices, PxTetrahedronMeshDesc::PxMeshFormat::eHEX_MESH);
 	PxSoftBodySimulationDataDesc simDesc(vertexToTet);
 
 	physx::PxSoftBodyMesh* softBodyMesh = PxCreateSoftBodyMesh(params, simMeshDesc, meshDesc, simDesc, insertionCallback);
@@ -388,10 +389,10 @@ PxSoftBody* PxSoftBodyExt::createSoftBodyFromMesh(PxSoftBodyMesh* softBodyMesh, 
 
 #if PX_SUPPORT_GPU_PHYSX
 		PxCudaContextManager* mgr = &cudaContextManager;
-		PX_PINNED_HOST_FREE(mgr, simPositionInvMassPinned);
-		PX_PINNED_HOST_FREE(mgr, simVelocityPinned);
-		PX_PINNED_HOST_FREE(mgr, collPositionInvMassPinned);
-		PX_PINNED_HOST_FREE(mgr, restPositionPinned)
+		PX_EXT_PINNED_MEMORY_FREE(*mgr, simPositionInvMassPinned);
+		PX_EXT_PINNED_MEMORY_FREE(*mgr, simVelocityPinned);
+		PX_EXT_PINNED_MEMORY_FREE(*mgr, collPositionInvMassPinned);
+		PX_EXT_PINNED_MEMORY_FREE(*mgr, restPositionPinned)
 #endif
 	}
 	return softBody;
@@ -459,10 +460,10 @@ void PxSoftBodyExt::allocateAndInitializeHostMirror(PxSoftBody& softBody, PxCuda
 	PxU32 nbSimVerts = softBody.getSimulationMesh()->getNbVertices();
 
 #if PX_SUPPORT_GPU_PHYSX
-	simPositionInvMassPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbSimVerts);
-	simVelocityPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbSimVerts);
-	collPositionInvMassPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbCollVerts);
-	restPositionPinned = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, nbCollVerts);
+	simPositionInvMassPinned = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, nbSimVerts);
+	simVelocityPinned = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, nbSimVerts);
+	collPositionInvMassPinned = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, nbCollVerts);
+	restPositionPinned = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, nbCollVerts);
 #else
 	PX_UNUSED(cudaContextManager);
 #endif

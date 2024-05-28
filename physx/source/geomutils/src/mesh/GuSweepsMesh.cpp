@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -52,7 +52,7 @@ using namespace physx::aos;
 
 static bool sweepSphereTriangle(const PxTriangle& tri,
 								const PxVec3& center, PxReal radius,
-								const PxVec3& unitDir, const PxReal distance,
+								const PxVec3& unitDir, PxReal distance,
 								PxGeomSweepHit& hit, PxVec3& triNormalOut,
 								PxHitFlags hitFlags, bool isDoubleSided)
 {
@@ -254,7 +254,7 @@ bool sweepCapsule_MeshGeom(GU_CAPSULE_SWEEP_FUNC_PARAMS)
 
 SweepBoxMeshHitCallback::SweepBoxMeshHitCallback(	CallbackMode::Enum mode_, const PxMat34Padded& meshToBox, PxReal distance, bool bothTriangleSidesCollide,
 													const Box& box, const PxVec3& localMotion, const PxVec3& localDir, const PxVec3& unitDir,
-													const PxHitFlags& hitFlags, const PxReal inflation, bool flipNormal, float distCoef) :
+													const PxHitFlags& hitFlags, PxReal inflation, bool flipNormal, float distCoef) :
 	SweepShapeMeshHitCallback	(mode_, hitFlags, flipNormal,distCoef),
 	mMeshToBox					(meshToBox),
 	mDist						(distance),
@@ -454,8 +454,8 @@ bool sweepBox_MeshGeom(GU_BOX_SWEEP_FUNC_PARAMS)
 
 SweepConvexMeshHitCallback::SweepConvexMeshHitCallback(	const ConvexHullData& hull, const PxMeshScale& convexScale, const FastVertex2ShapeScaling& meshScale,
 														const PxTransform& convexPose, const PxTransform& meshPose,
-														const PxVec3& unitDir, const PxReal distance, PxHitFlags hitFlags, const bool bothTriangleSidesCollide, const PxReal inflation,
-														const bool anyHit, float distCoef) :
+														const PxVec3& unitDir, PxReal distance, PxHitFlags hitFlags, bool bothTriangleSidesCollide, PxReal inflation,
+														bool anyHit, float distCoef) :
 	SweepShapeMeshHitCallback	(CallbackMode::eMULTIPLE, hitFlags, meshScale.flipsNormal(), distCoef),
 	mMeshScale					(meshScale),
 	mUnitDir					(unitDir),
@@ -532,7 +532,7 @@ bool SweepConvexMeshHitCallback::finalizeHit(	PxGeomSweepHit& sweepHit, const Px
 	{
 		bool hasContacts = false;
 		if(isMtd)
-			hasContacts = computeConvex_TriangleMeshMTD(meshGeom,  pose, convexGeom, convexPose, inflation, bothTriangleSidesCollide, sweepHit);
+			hasContacts = computeConvex_TriangleMeshMTD(meshGeom, pose, convexGeom, convexPose, inflation, bothTriangleSidesCollide, sweepHit);
 
 		setupSweepHitForMTD(sweepHit, hasContacts, unitDir);
 

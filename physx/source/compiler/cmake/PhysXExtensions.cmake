@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXExtensions common
@@ -173,6 +173,7 @@ SET(PHYSX_EXTENSIONS_HEADERS
 	${PHYSX_ROOT_DIR}/include/extensions/PxBroadPhaseExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxCollectionExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxConvexMeshExt.h
+	${PHYSX_ROOT_DIR}/include/extensions/PxCudaHelpersExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultAllocator.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultCpuDispatcher.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultErrorCallback.h
@@ -282,6 +283,8 @@ SET(PHYSX_EXTENSIONS_SERIALIZATION_XML_SOURCE
 	${LL_SOURCE_DIR}/serialization/Xml/SnXmlVisitorReader.h
 	${LL_SOURCE_DIR}/serialization/Xml/SnXmlVisitorWriter.h
 	${LL_SOURCE_DIR}/serialization/Xml/SnXmlWriter.h
+	${LL_SOURCE_DIR}/serialization/Xml/PsFastXml.h
+	${LL_SOURCE_DIR}/serialization/Xml/PsFastXml.cpp
 )
 SOURCE_GROUP(serialization\\xml FILES ${PHYSX_EXTENSIONS_SERIALIZATION_XML_SOURCE})
 
@@ -361,8 +364,6 @@ TARGET_INCLUDE_DIRECTORIES(PhysXExtensions
 	PRIVATE ${PHYSX_SOURCE_DIR}/pvd/include
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/scenequery/include
-
-	PRIVATE ${PHYSX_SOURCE_DIR}/fastxml/include
 )
 
 TARGET_LINK_LIBRARIES(PhysXExtensions

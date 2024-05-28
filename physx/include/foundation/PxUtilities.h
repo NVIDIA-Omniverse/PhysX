@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -48,6 +48,11 @@ PX_INLINE char PxLittleEndian()
 PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxTo32(PxU64 value)
 {
 	PX_ASSERT(value <= 0xffffffff);
+	return PxU32(value);
+}
+PX_CUDA_CALLABLE PX_FORCE_INLINE PxU32 PxToU32(PxI32 value)
+{
+	PX_ASSERT(value >= 0);
 	return PxU32(value);
 }
 PX_CUDA_CALLABLE PX_FORCE_INLINE PxU16 PxTo16(PxU32 value)
@@ -77,14 +82,14 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxI8 PxToI8(PxU32 value)
 	return PxI8(value);
 }
 
-//! @cond
+//! \cond
 /*!
 Get number of elements in array
 */
 template <typename T, size_t N>
 char (&PxArraySizeHelper(T (&array)[N]))[N];
 #define PX_ARRAY_SIZE(_array) (sizeof(physx::PxArraySizeHelper(_array)))
-//! @endcond
+//! \endcond
 
 /*!
 Sort two elements using operator<

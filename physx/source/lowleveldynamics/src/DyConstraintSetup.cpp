@@ -22,14 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "foundation/PxMemory.h"
 #include "foundation/PxMathUtils.h"
 #include "DyConstraintPrep.h"
-#include "DyArticulationCpuGpu.h"
+#include "DyCpuGpuArticulation.h"
 #include "PxsRigidBody.h"
 #include "DySolverConstraint1D.h"
 #include "foundation/PxSort.h"
@@ -37,6 +37,8 @@
 #include "PxcConstraintBlockStream.h"
 #include "DyArticulationContactPrep.h"
 #include "foundation/PxSIMDHelpers.h"
+#include "DyArticulationUtils.h"
+#include "DyAllocator.h"
 
 namespace physx
 {
@@ -64,15 +66,10 @@ namespace Dy
 
 namespace
 {
-	PX_FORCE_INLINE Vec3V V3FromV4(Vec4V x)			{ return Vec3V_From_Vec4V(x); }
-	PX_FORCE_INLINE Vec3V V3FromV4Unsafe(Vec4V x)	{ return Vec3V_From_Vec4V_WUndefined(x); }
-	PX_FORCE_INLINE Vec4V V4FromV3(Vec3V x)			{ return Vec4V_From_Vec3V(x); }
-	//PX_FORCE_INLINE Vec4V V4ClearW(Vec4V x)			{ return V4SetW(x, FZero()); }
-
 struct MassProps
 {
-	FloatV invMass0;
-	FloatV invMass1;
+	FloatV invMass0;  // the inverse mass of body0 after inverse mass scale was applied
+	FloatV invMass1;  // the inverse mass of body1 after inverse mass scale was applied
 	FloatV invInertiaScale0;
 	FloatV invInertiaScale1;
 
@@ -84,9 +81,9 @@ struct MassProps
 	{}
 };
 
-PX_FORCE_INLINE PxReal innerProduct(const Px1DConstraint& row0, Px1DConstraint& row1, 
-								 PxVec4& row0AngSqrtInvInertia0, PxVec4& row0AngSqrtInvInertia1, 
-								 PxVec4& row1AngSqrtInvInertia0, PxVec4& row1AngSqrtInvInertia1, const MassProps& m)
+PX_FORCE_INLINE PxReal innerProduct(const Px1DConstraint& row0, const Px1DConstraint& row1, 
+								 const PxVec4& row0AngSqrtInvInertia0, const PxVec4& row0AngSqrtInvInertia1, 
+								 const PxVec4& row1AngSqrtInvInertia0, const PxVec4& row1AngSqrtInvInertia1, const MassProps& m)
 {
 	const Vec3V l0 = V3Mul(V3Scale(V3LoadA(row0.linear0), m.invMass0), V3LoadA(row1.linear0));
 	const Vec3V l1 = V3Mul(V3Scale(V3LoadA(row0.linear1), m.invMass1), V3LoadA(row1.linear1));
@@ -110,6 +107,7 @@ PX_FORCE_INLINE PxQuat indexedRotation(PxU32 axis, PxReal s, PxReal c)
 	return q;
 }
 
+// PT: TODO: refactor with duplicate in FdMathUtils.cpp
 PxQuat diagonalize(const PxMat33& m)	// jacobi rotation using quaternions 
 {
 	const PxU32 MAX_ITERS = 5;
@@ -123,28 +121,28 @@ PxQuat diagonalize(const PxMat33& m)	// jacobi rotation using quaternions
 		d = axes.getTranspose() * m * axes;
 
 		const PxReal d0 = PxAbs(d[1][2]), d1 = PxAbs(d[0][2]), d2 = PxAbs(d[0][1]);
-		const PxU32 a = PxU32(d0 > d1 && d0 > d2 ? 0 : d1 > d2 ? 1 : 2);						// rotation axis index, from largest off-diagonal element
+		const PxU32 a = PxU32(d0 > d1 && d0 > d2 ? 0 : d1 > d2 ? 1 : 2);	// rotation axis index, from largest off-diagonal element
 
 		const PxU32 a1 = PxGetNextIndex3(a), a2 = PxGetNextIndex3(a1);											
-		if(d[a1][a2] == 0.0f || PxAbs(d[a1][a1]-d[a2][a2]) > 2e6f*PxAbs(2.0f*d[a1][a2]))
+		if(d[a1][a2] == 0.0f || PxAbs(d[a1][a1] - d[a2][a2]) > 2e6f * PxAbs(2.0f * d[a1][a2]))
 			break;
 
-		const PxReal w = (d[a1][a1]-d[a2][a2]) / (2.0f*d[a1][a2]);					// cot(2 * phi), where phi is the rotation angle
+		const PxReal w = (d[a1][a1] - d[a2][a2]) / (2.0f * d[a1][a2]);	// cot(2 * phi), where phi is the rotation angle
 		const PxReal absw = PxAbs(w);
 
 		PxQuat r;
-		if(absw>1000)
-			r = indexedRotation(a, 1.0f/(4.0f*w), 1.f);									// h will be very close to 1, so use small angle approx instead
+		if(absw > 1000)
+			r = indexedRotation(a, 1.0f / (4.0f * w), 1.0f);	// h will be very close to 1, so use small angle approx instead
 		else
 		{
-  			const PxReal t = 1 / (absw + PxSqrt(w*w+1));								// absolute value of tan phi
-			const PxReal h = 1 / PxSqrt(t*t+1);										// absolute value of cos phi
+  			const PxReal t = 1.0f / (absw + PxSqrt(w * w + 1.0f));	// absolute value of tan phi
+			const PxReal h = 1.0f / PxSqrt(t * t + 1.0f);			// absolute value of cos phi
 
-			PX_ASSERT(h!=1);													// |w|<1000 guarantees this with typical IEEE754 machine eps (approx 6e-8)
-			r = indexedRotation(a, PxSqrt((1-h)/2) * PxSign(w), PxSqrt((1+h)/2));
+			PX_ASSERT(h != 1);	// |w|<1000 guarantees this with typical IEEE754 machine eps (approx 6e-8)
+			r = indexedRotation(a, PxSqrt((1.0f - h) / 2.0f) * PxSign(w), PxSqrt((1.0f + h) / 2.0f));
 		}
 	
-		q = (q*r).getNormalized();
+		q = (q * r).getNormalized();
 	}
 
 	return q;
@@ -183,7 +181,7 @@ PX_FORCE_INLINE void rescale4(const Mat33V& m, PxReal* a0, PxReal* a1, PxReal* a
 void diagonalize(Px1DConstraint** row,
 				 PxVec4* angSqrtInvInertia0,
 				 PxVec4* angSqrtInvInertia1,
-				 const MassProps &m)
+				 const MassProps& m)
 {
 	const PxReal a00 = innerProduct(*row[0], *row[0], angSqrtInvInertia0[0], angSqrtInvInertia1[0], angSqrtInvInertia0[0], angSqrtInvInertia1[0], m);
 	const PxReal a01 = innerProduct(*row[0], *row[1], angSqrtInvInertia0[0], angSqrtInvInertia1[0], angSqrtInvInertia0[1], angSqrtInvInertia1[1], m);
@@ -212,6 +210,106 @@ void diagonalize(Px1DConstraint** row,
 	rescale4(mn, &angSqrtInvInertia1[0].x, &angSqrtInvInertia1[1].x, &angSqrtInvInertia1[2].x);
 }
 
+//
+// A 1D constraint between two bodies (b0, b1) acts on specific linear and angular velocity
+// directions of these two bodies. Let the constrained linear velocity direction for body b0
+// be l0 and the constrained angular velocity direction be a0. Likewise, let l1 and a1 be
+// the corresponding constrained velocity directions for body b1.
+// 
+// Let the constraint Jacobian J be the 1x12 vector that combines the 3x1 vectors l0, a0, l1, a1
+// J = | l0^T, a0^T, l1^T, a1^T |
+// 
+// Let vl0, va0, vl1, va1 be the 3x1 linear/angular velocites of two bodies
+// and v be the 12x1 combination of those:
+// 
+//     | vl0 |
+// v = | va0 |
+//     | vl1 |
+//     | va1 |
+//
+// The constraint projected velocity scalar is then:
+// projV = J * v
+// 
+// Let M be the 12x12 mass matrix (with scalar masses m0, m1 and 3x3 inertias I0, I1)
+// 
+// | m0                            |
+// |    m0                         |
+// |       m0                      |
+// |         |    |                |
+// |         | I0 |                |
+// |         |    |                |
+// |                m1             |
+// |                   m1          |
+// |                      m1       |
+// |                        |    | |
+// |                        | I1 | |
+// |                        |    | |
+// 
+// Let p be the impulse scalar that results from solving the 1D constraint given
+// projV, geometric error etc.
+// Turning this impulse p to a 12x1 delta velocity vector dv:
+// 
+// dv = M^-1 * (J^T * p) =  M^-1 * J^T * p
+// 
+// Now to consider the case of multiple 1D constraints J0, J1, J2, ... operating
+// on the same body pair.
+// 
+// Let K be the matrix holding these constraints as rows
+// 
+//     |  J0  |
+// K = |  J1  |
+//     |  J2  |
+//     |  ... |
+// 
+// Applying these constraints:
+//
+// |                 |                | p0       |
+// | dv0 dv1 dv2 ... | = M^-1 * K^T * |    p1    |
+// |                 |                |       p2 |
+//
+// Let MK = (M^-1 * K^T)^T = K * M^-1  (M^-1 is symmetric). The transpose
+// is only used here to talk about constraint rows instead of columns (since
+// that expression seems to be used more commonly here).
+// 
+// dvMatrix = MK^T * pMatrix
+// 
+// The rows of MK define how an impulse affects the constrained velocity directions
+// of the two bodies. Ideally, the different constraint rows operate on independent
+// parts of the velocity such that constraints don't step on each others toe
+// (constraint A making the situation better with respect to its own constrained
+// velocity directions but worse for directions of constraint B and vice versa).
+// A formal way to specify this goal is to try to have the rows of MK be orthogonal
+// to each other, that is, to orthogonalize the MK matrix. This will eliminate
+// any action of a constraint in directions that have been touched by previous
+// constraints already. This re-configuration of constraint rows does not work in
+// general but for hard equality constraints (no spring, targetVelocity=0,
+// min/maxImpulse unlimited), changing the constraint rows to make them orthogonal
+// should not change the solution of the constraint problem. As an example, one
+// might consider a joint with two 1D constraints that lock linear movement in the
+// xy-plane (those are hard equality constraints). It's fine to choose different
+// constraint directions from the ones provided, assuming the new directions are
+// still in the xy-plane and that the geometric errors get patched up accordingly.
+// 
+// \param[in,out] row Pointers to the constraints to orthogonalize. The members
+//                    linear0/1, angular0/1, geometricError and velocityTarget will
+//                    get changed potentially
+// \param[in,out] angSqrtInvInertia0 body b0 angular velocity directions of the
+//                                   constraints provided in parameter row but
+//                                   multiplied by the square root ot the inverse
+//                                   inertia tensor of body b0.
+//                                   I0^(-1/2) * angularDirection0, ...
+//                                   Will be replaced by the orthogonalized vectors.
+//                                   Note: the fourth component of the vectors serves
+//                                   no purpose in this method.
+// \param[in,out] angSqrtInvInertia1 Same as previous parameter but for body b1.
+// \param[in] rowCount Number of entries in row, angSqrtInvInertia0, angSqrtInvInertia1
+// \param[in] eqRowCount Number of entries in row that represent equality constraints.
+//                       The method expects the entries in row to be sorted by equality
+//                       constraints first, followed by inequality constraints. The
+//                       latter get orthogonalized relative to the equality constraints
+//                       but not relative to the other inequality constraints.
+// \param[in] m	Some mass properties of the two bodies b0, b1.
+//
 void orthogonalize(Px1DConstraint** row,
 				   PxVec4* angSqrtInvInertia0,
 				   PxVec4* angSqrtInvInertia1,
@@ -232,8 +330,8 @@ void orthogonalize(Px1DConstraint** row,
 		Vec4V l0AndG = V4LoadA(&row[i]->linear0.x);		// linear0 and geometric error
 		Vec4V a0AndT = V4LoadA(&row[i]->angular0.x);	// angular0 and velocity target
 
-		Vec3V l1 = V3FromV4(V4LoadA(&row[i]->linear1.x));
-		Vec3V a1 = V3FromV4(V4LoadA(&row[i]->angular1.x));
+		Vec3V l1 = Vec3V_From_Vec4V(V4LoadA(&row[i]->linear1.x));
+		Vec3V a1 = Vec3V_From_Vec4V(V4LoadA(&row[i]->angular1.x));
 
 		Vec4V angSqrtL0 = V4LoadA(&angSqrtInvInertia0[i].x);
 		Vec4V angSqrtL1 = V4LoadA(&angSqrtInvInertia1[i].x);
@@ -241,16 +339,96 @@ void orthogonalize(Px1DConstraint** row,
 		const PxU32 eliminationRows = PxMin<PxU32>(i, eqRowCount);
 		for(PxU32 j=0;j<eliminationRows;j++)
 		{
-			const Vec3V s0 = V3MulAdd(l1, lin1m[j], V3FromV4Unsafe(V4Mul(l0AndG, lin0m[j])));
-			const Vec3V s1 = V3MulAdd(V3FromV4Unsafe(angSqrtL1), ang1m[j], V3FromV4Unsafe(V4Mul(angSqrtL0, ang0m[j])));
+			//
+			// Gram-Schmidt algorithm to get orthogonal vectors. A set of vectors
+			// v0, v1, v2..., can be turned into orthogonal vectors u0, u1, u2, ...
+			// as follows:
+			// 
+			// u0 = v0
+			// u1 = v1 - proj_u0(v1)
+			// u2 = v2 - proj_u0(v2) - proj_u1(v2)
+			// ...
+			// 
+			// proj_u(v) denotes the resulting vector when vector v gets
+			// projected onto the normalized vector u.
+			// 
+			//    __ v
+			//     /|
+			//    /
+			//   /
+			//  /
+			// ----->---------------->
+			//  proj_u(v)            u
+			//
+			// Let <v,u> be the dot/inner product of the two vectors v and u.
+			// 
+			// proj_u(v) = <v,normalize(u)> * normalize(u)
+			//           = <v,u/|u|> * (u/|u|) = <v,u> / (|u|*|u|)  *  u
+			//           = <v,u> / <u,u>  *  u
+			// 
+			// The implementation here maps as follows:
+			//
+			// u = [orthoLinear0, orthoAngular0, orthoLinear1, orthoAngular1]
+			// v = [row[]->linear0, row[]->angular0, row[]->linear1, row[]->angular1]
+			//
+			// Since the solver is using momocity, orthogonality should not be achieved for rows
+			// M^-1 * u but for rows uM = M^(-1/2) * u (with M^(-1/2) being the square root of the
+			// inverse mass matrix). Following the described orthogonalization procedure to turn
+			// v1m into u1m that is orthogonal to u0m:
+			// 
+			// u1M           = v1M - proj_u0M(v1M)
+			// M^(-1/2) * u1 = M^(-1/2) * v1  -  <v1M,u0M>/<u0M,u0M> * M^(-1/2) * u0
+			// 
+			// Since M^(-1/2) is multiplied on the left and right hand side, this can be transformed to:
+			// 
+			// u1 = v1  -  <v1M,u0M>/<u0M,u0M> * u0
+			// 
+			// For the computation of <v1M,u0M>/<u0M,u0M>, the following shall be considered:
+			//
+			// <vM,uM>
+			// = <M^(-1/2) * v, M^(-1/2) * u>
+			// = (M^(-1/2) * v)^T * (M^(-1/2) * u)  (v and u being seen as 12x1 vectors here)
+			// = v^T * M^(-1/2)^T * M^(-1/2) * u
+			// = v^T * M^-1 * u   (M^(-1/2) is a symmetric matrix, thus transposing has no effect)
+			// = <v, M^-1 * u>
+			// 
+			// Applying this:
+			// 
+			// <v1M,u0M>/<u0M,u0M> = <v1, M^-1 * u0> / <u0, M^-1 * u0>
+			//
+			// The code uses:
+			// 
+			// v1m_ = [v1Lin0, I0^(-1/2) * v1Ang0, v1Lin1, I1^(-1/2) * v1Ang1]
+			// u0m_ = [(1/m0) * u0Lin0, I0^(-1/2) * u0Ang0, (1/m1) * u0Lin1, I1^(-1/2) * u0Ang1]
+			// u0m* = u0m_ / <u0M,u0M>  (see variables named lin0m, ang0m, lin1m, ang1m in the code)
+			// 
+			// And then does:
+			// 
+			// <v1m_, u0m*> = <v1m_, u0m_> / <u0M,u0M> = <v, M^-1 * u> / <u0M,u0M> = <v1M,u0M>/<u0M,u0M>
+			// (see variable named t in the code)
+			// 
+			// note: u0, u1, ... get computed for equality constraints. Inequality constraints do not generate new
+			//       "base" vectors. Let's say u0, u1 are from equality constraints, then for inequality constraints
+			//       u2, u3:
+			// 
+			//       u2 = v2 - proj_u0(v2) - proj_u1(v2)
+			//       u3 = v3 - proj_u0(v3) - proj_u1(v3)
+			//
+			//       in other words: the inequality constraints will be orthogonal to the equality constraints but not
+			//       to other inequality constraints.
+			//
+
+			const Vec3V s0 = V3MulAdd(l1, lin1m[j], Vec3V_From_Vec4V_WUndefined(V4Mul(l0AndG, lin0m[j])));
+			const Vec3V s1 = V3MulAdd(Vec3V_From_Vec4V_WUndefined(angSqrtL1), ang1m[j], Vec3V_From_Vec4V_WUndefined(V4Mul(angSqrtL0, ang0m[j])));
 			const FloatV t = V3SumElems(V3Add(s0, s1));
 
-			l0AndG = V4NegScaleSub(lin0AndG[j], t, l0AndG);
-			a0AndT = V4NegScaleSub(ang0AndT[j], t, a0AndT);
+			l0AndG = V4NegScaleSub(lin0AndG[j], t, l0AndG);  // note: this can reduce the error term by the amount covered by the orthogonal base vectors
+			a0AndT = V4NegScaleSub(ang0AndT[j], t, a0AndT);  // note: for equality and inequality constraints, target velocity is expected to be 0
 			l1 = V3NegScaleSub(lin1[j], t, l1);
 			a1 = V3NegScaleSub(ang1[j], t, a1);
 			angSqrtL0 = V4NegScaleSub(V4LoadA(&angSqrtInvInertia0[j].x), t, angSqrtL0);
 			angSqrtL1 = V4NegScaleSub(V4LoadA(&angSqrtInvInertia1[j].x), t, angSqrtL1);
+			// note: angSqrtL1 is equivalent to I1^(-1/2) * a1 (and same goes for angSqrtL0)
 		}
 
 		V4StoreA(l0AndG, &row[i]->linear0.x);
@@ -265,31 +443,32 @@ void orthogonalize(Px1DConstraint** row,
 			lin0AndG[i] = l0AndG;	
 			ang0AndT[i] = a0AndT;
 			lin1[i] = l1;	
-			ang1[i] = a1;	
-			
-			const Vec3V l0 = V3FromV4(l0AndG);
+			ang1[i] = a1;
 
-			const Vec3V l0m = V3Scale(l0, m.invMass0);
+			//
+			// compute the base vector used for orthogonalization (see comments further above).
+			//
+			
+			const Vec3V l0 = Vec3V_From_Vec4V(l0AndG);
+
+			const Vec3V l0m = V3Scale(l0, m.invMass0);  // note that the invMass values used here have invMassScale applied already
 			const Vec3V l1m = V3Scale(l1, m.invMass1);
 			const Vec4V a0m = V4Scale(angSqrtL0, m.invInertiaScale0);
 			const Vec4V a1m = V4Scale(angSqrtL1, m.invInertiaScale1);
 
 			const Vec3V s0 = V3MulAdd(l0, l0m, V3Mul(l1, l1m));
 			const Vec4V s1 = V4MulAdd(a0m, angSqrtL0, V4Mul(a1m, angSqrtL1));
-			const FloatV s = V3SumElems(V3Add(s0, V3FromV4Unsafe(s1)));
+			const FloatV s = V3SumElems(V3Add(s0, Vec3V_From_Vec4V_WUndefined(s1)));
 			const FloatV a = FSel(FIsGrtr(s, zero), FRecip(s), zero);	// with mass scaling, it's possible for the inner product of a row to be zero
 
-			lin0m[i] = V4Scale(V4ClearW(V4FromV3(l0m)), a);	
+			lin0m[i] = V4Scale(V4ClearW(Vec4V_From_Vec3V(l0m)), a);	
 			ang0m[i] = V4Scale(V4ClearW(a0m), a);
 			lin1m[i] = V3Scale(l1m, a);
-			ang1m[i] = V3Scale(V3FromV4Unsafe(a1m), a);
+			ang1m[i] = V3Scale(Vec3V_From_Vec4V_WUndefined(a1m), a);
 		}
 	}
 }
 }
-
-// PT: make sure that there's at least a PxU32 after sqrtInvInertia in the PxSolverBodyData structure (for safe SIMD reads)
-//PX_COMPILE_TIME_ASSERT((sizeof(PxSolverBodyData) - PX_OFFSET_OF_RT(PxSolverBodyData, sqrtInvInertia)) >= (sizeof(PxMat33) + sizeof(PxU32)));
 
 // PT: make sure that there's at least a PxU32 after angular0/angular1 in the Px1DConstraint structure (for safe SIMD reads)
 // Note that the code was V4LoadAding these before anyway so it must be safe already.
@@ -338,13 +517,19 @@ void preprocessRows(Px1DConstraint** sorted,
 	for(PxU32 i=0;i<rowCount-1;i++)
 		PX_ASSERT(sorted[i]->solveHint <= sorted[i+1]->solveHint);
 
-	for (PxU32 i = 0; i<rowCount; i++)
-		rows[i].forInternalUse = rows[i].flags & Px1DConstraintFlag::eKEEPBIAS ? rows[i].geometricError : 0;
-
-	const Mat33V sqrtInvInertia0 = Mat33V(V3LoadU(sqrtInvInertia0F32.column0), V3LoadU(sqrtInvInertia0F32.column1),
+	// PT: it is always safe to use "V3LoadU_SafeReadW" on the two first columns of a PxMat33. However in this case the passed matrices
+	// come from PxSolverBodyData::sqrtInvInertia (PGS) or PxTGSSolverBodyTxInertia::sqrtInvInertia (TGS). It is currently unsafe to use
+	// V3LoadU_SafeReadW in the TGS case (the matrix is the last element of the structure). So we keep V3LoadU here for now. For PGS we
+	// have a compile-time-assert (see PxSolverBodyData struct) to ensure safe reads on sqrtInvInertia.
+	// Note that because we only use this in M33MulV4 below, the ClearW calls could also be skipped.
+	const Mat33V sqrtInvInertia0 = Mat33V(
+		V3LoadU_SafeReadW(sqrtInvInertia0F32.column0),
+		V3LoadU_SafeReadW(sqrtInvInertia0F32.column1),
 		V3LoadU(sqrtInvInertia0F32.column2));
 
-	const Mat33V sqrtInvInertia1 = Mat33V(V3LoadU(sqrtInvInertia1F32.column0), V3LoadU(sqrtInvInertia1F32.column1),
+	const Mat33V sqrtInvInertia1 = Mat33V(
+		V3LoadU_SafeReadW(sqrtInvInertia1F32.column0),
+		V3LoadU_SafeReadW(sqrtInvInertia1F32.column1),
 		V3LoadU(sqrtInvInertia1F32.column2));
 
 	PX_ASSERT(((uintptr_t(angSqrtInvInertia0)) & 0xF) == 0);
@@ -373,6 +558,21 @@ void preprocessRows(Px1DConstraint** sorted,
 
 		if(groupMajorId == 4 || (groupMajorId == 8))
 		{
+			//
+			// PGS:
+			// - make all equality constraints orthogonal to each other
+			// - make all inequality constraints orthogonal to all equality constraints
+			// This assumes only PxConstraintSolveHint::eEQUALITY and ::eINEQUALITY is used.
+			//
+			// TGS:
+			// - make all linear equality constraints orthogonal to each other
+			// - make all linear inequality constraints orthogonal to all linear equality constraints
+			// - make all angular equality constraints orthogonal to each other
+			// - make all angular inequality constraints orthogonal to all angular equality constraints
+			// This is achieved by internally turning PxConstraintSolveHint::eEQUALITY and ::eINEQUALITY into
+			// ::eROTATIONAL_EQUALITY and ::eROTATIONAL_INEQUALITY for angular constraints.
+			//
+
 			PxU32 bCount = start;		// count of bilateral constraints 
 			for(; bCount<i && (sorted[bCount]->solveHint&255)==0; bCount++)
 				;
@@ -396,8 +596,7 @@ void preprocessRows(Px1DConstraint** sorted,
 PxU32 ConstraintHelper::setupSolverConstraint(
 PxSolverConstraintPrepDesc& prepDesc,
 PxConstraintAllocator& allocator,
-PxReal dt, PxReal invdt,
-Cm::SpatialVectorF* Z)
+PxReal simDt, PxReal recipSimDt)
 {
 	if (prepDesc.numRows == 0)
 	{
@@ -418,24 +617,9 @@ Cm::SpatialVectorF* Z)
 	//KS - +16 is for the constraint progress counter, which needs to be the last element in the constraint (so that we
 	//know SPU DMAs have completed)
 	PxU8* ptr = allocator.reserveConstraintData(constraintLength + 16u);
-	if(NULL == ptr || (reinterpret_cast<PxU8*>(-1))==ptr)
-	{
-		if(NULL==ptr)
-		{
-			PX_WARN_ONCE(
-				"Reached limit set by PxSceneDesc::maxNbContactDataBlocks - ran out of buffer space for constraint prep. "
-				"Either accept joints detaching/exploding or increase buffer size allocated for constraint prep by increasing PxSceneDesc::maxNbContactDataBlocks.");
-			return 0;
-		}
-		else
-		{
-			PX_WARN_ONCE(
-				"Attempting to allocate more than 16K of constraint data. "
-				"Either accept joints detaching/exploding or simplify constraints.");
-			ptr=NULL;
-			return 0;
-		}
-	}
+	if(!checkConstraintDataPtr<true>(ptr))
+		return 0;
+
 	desc.constraint = ptr;
 
 	setConstraintLength(desc,constraintLength);
@@ -448,8 +632,8 @@ Cm::SpatialVectorF* Z)
 	PxU8* constraints = desc.constraint + sizeof(SolverConstraint1DHeader);
 	init(*header, PxTo8(prepDesc.numRows), isExtended, prepDesc.invMassScales);
 	header->body0WorldOffset = prepDesc.body0WorldOffset;
-	header->linBreakImpulse = prepDesc.linBreakForce * dt;
-	header->angBreakImpulse = prepDesc.angBreakForce * dt;
+	header->linBreakImpulse = prepDesc.linBreakForce * simDt;
+	header->angBreakImpulse = prepDesc.angBreakForce * simDt;
 	header->breakable = PxU8((prepDesc.linBreakForce != PX_MAX_F32) || (prepDesc.angBreakForce != PX_MAX_F32));
 	header->invMass0D0 = prepDesc.data0->invMass * prepDesc.invMassScales.linear0;
 	header->invMass1D1 = prepDesc.data1->invMass * prepDesc.invMassScales.linear1;
@@ -463,7 +647,7 @@ Cm::SpatialVectorF* Z)
 		prepDesc.data0->sqrtInvInertia, prepDesc.data1->sqrtInvInertia, prepDesc.data0->invMass, prepDesc.data1->invMass, 
 		prepDesc.invMassScales, isExtended || prepDesc.disablePreprocessing, prepDesc.improvedSlerp);
 
-	PxReal erp = 1.0f;
+	const PxReal erp = 1.0f;
 
 	PxU32 outCount = 0;
 
@@ -474,7 +658,6 @@ Cm::SpatialVectorF* Z)
 	if (isExtended)
 	{
 		cfm = PxMax(eb0.getCFM(), eb1.getCFM());
-		erp = 0.8f;
 	}
 
 	for (PxU32 i = 0; i<prepDesc.numRows; i++)
@@ -483,34 +666,56 @@ Cm::SpatialVectorF* Z)
 		SolverConstraint1D& s = *reinterpret_cast<SolverConstraint1D *>(constraints);
 		Px1DConstraint& c = *sorted[i];
 
-		const PxReal driveScale = c.flags&Px1DConstraintFlag::eHAS_DRIVE_LIMIT && prepDesc.driveLimitsAreForces ? PxMin(dt, 1.0f) : 1.0f;
+		PxReal minImpulse, maxImpulse;
+		computeMinMaxImpulseOrForceAsImpulse(
+			c.minImpulse, c.maxImpulse,
+			c.flags & Px1DConstraintFlag::eHAS_DRIVE_LIMIT, prepDesc.driveLimitsAreForces, simDt,
+			minImpulse, maxImpulse);
 
 		PxReal unitResponse;
-		PxReal normalVel = 0.0f;
-		PxReal initVel = 0.f;
+		PxReal jointSpeedForRestitutionBounce = 0.0f;
+		PxReal initJointSpeed = 0.0f;
 
-		PxReal minResponseThreshold = prepDesc.minResponseThreshold;
+		const PxReal minResponseThreshold = prepDesc.minResponseThreshold;
 
 		if(!isExtended)
 		{
+			//The theoretical formulation of the Jacobian J has 4 terms {linear0, angular0, linear1, angular1}
+			//s.lin0 and s.lin1 match J.linear0 and J.linear1.
+			//We compute s.ang0 and s.ang1 but these *must not* be confused with the angular terms of the theoretical Jacobian.
+			//s.ang0 and s.ang1 are part of the momocity system that computes deltas to the angular motion that are neither
+			//angular momentum nor angular velocity.
+			//s.ang0 = I0^(-1/2) * J.angular0 with I0 denoting the inertia of body0 in the world frame.
+			//s.ang1 = I1^(-1/2) * J.angular1 with I1 denoting the inertia of body1 in the world frame.
+			//We then compute the unit response r = J * M^-1 * JTranspose with M denoting the mass matrix.
+			//r = (1/m0)*|J.linear0|^2 + (1/m1)*|J.linear1|^2 + J.angular0 * I0^-1 * J.angular0 +  J.angular1 * I1^-1 * J.angular1
+			//We can write out the term [J.angular0 * I0^-1 * J.angular0] in a different way:
+			//J.angular0 * I0^-1 * J.angular0 = [J.angular0 * I0^(-1/2)] dot  [I0^(-1/2) * J.angular0]
+			//Noting that s.ang0 =  J.angular0 * I0^(-1/2) and the equivalent expression for body 1, we have the following:
+			//r = 	(1/m0)*|s.lin0|^2 + (1/m1)*|s.lin1|^2 + |s.ang0|^2 + |s.ang1|^2 
+			//Init vel is computed using the standard Jacobian method because at this stage we have linear and angular velocities.
+			//The code that resolves the constraints instead accumulates delta linear velocities and delta angular momocities compatible with 
+			//s.lin0/lin1 and s.ang0/ang1. Right now, though, we have only linear and angular velocities compatible with the theoretical
+			//Jacobian form:
+			//initVel = J.linear0.dot(linVel0) + J.angular0.dot(angvel0) - J.linear1.dot(linVel1) - J.angular1.dot(angvel1) 
 			init(s, c.linear0, c.linear1, PxVec3(angSqrtInvInertia0[i].x, angSqrtInvInertia0[i].y, angSqrtInvInertia0[i].z),
-				PxVec3(angSqrtInvInertia1[i].x, angSqrtInvInertia1[i].y, angSqrtInvInertia1[i].z), c.minImpulse * driveScale, c.maxImpulse * driveScale);
+				PxVec3(angSqrtInvInertia1[i].x, angSqrtInvInertia1[i].y, angSqrtInvInertia1[i].z), minImpulse, maxImpulse);
 			s.ang0Writeback = c.angular0;
 			const PxReal resp0 = s.lin0.magnitudeSquared() * prepDesc.data0->invMass * prepDesc.invMassScales.linear0 + s.ang0.magnitudeSquared() * prepDesc.invMassScales.angular0;
 			const PxReal resp1 = s.lin1.magnitudeSquared() * prepDesc.data1->invMass * prepDesc.invMassScales.linear1 + s.ang1.magnitudeSquared() * prepDesc.invMassScales.angular1;
 			unitResponse = resp0 + resp1;
-			initVel = normalVel = prepDesc.data0->projectVelocity(c.linear0, c.angular0) - prepDesc.data1->projectVelocity(c.linear1, c.angular1);
+			initJointSpeed = jointSpeedForRestitutionBounce = prepDesc.data0->projectVelocity(c.linear0, c.angular0) - prepDesc.data1->projectVelocity(c.linear1, c.angular1);
 		}
 		else
 		{
 			//this is articulation/soft body
-			init(s, c.linear0, c.linear1, c.angular0, c.angular1, c.minImpulse * driveScale, c.maxImpulse * driveScale);
+			init(s, c.linear0, c.linear1, c.angular0, c.angular1, minImpulse, maxImpulse);
 			SolverConstraint1DExt& e = static_cast<SolverConstraint1DExt&>(s);
 
 			const Cm::SpatialVector resp0 = createImpulseResponseVector(e.lin0, e.ang0, eb0);
 			const Cm::SpatialVector resp1 = createImpulseResponseVector(-e.lin1, -e.ang1, eb1);
 			unitResponse = getImpulseResponse(eb0, resp0, unsimdRef(e.deltaVA), prepDesc.invMassScales.linear0, prepDesc.invMassScales.angular0,
-				eb1, resp1, unsimdRef(e.deltaVB), prepDesc.invMassScales.linear1, prepDesc.invMassScales.angular1, Z, false);
+				eb1, resp1, unsimdRef(e.deltaVB), prepDesc.invMassScales.linear1, prepDesc.invMassScales.angular1, false);
 
 			//Add CFM term!
 
@@ -524,36 +729,33 @@ Cm::SpatialVectorF* Z)
 			s.lin1 = -resp1.linear;
 			s.ang1 = -resp1.angular;
 			PxReal vel0, vel1;
-			if(needsNormalVel(c) || eb0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY || eb1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
+			const bool b0IsRigidDynamic = (eb0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY);
+			const bool b1IsRigidDynamic = (eb1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY);
+			if(needsNormalVel(c) || b0IsRigidDynamic || b1IsRigidDynamic)
 			{
 				vel0 = eb0.projectVelocity(c.linear0, c.angular0);
 				vel1 = eb1.projectVelocity(c.linear1, c.angular1);
 
-				normalVel = vel0 - vel1;
-
-				//normalVel = eb0.projectVelocity(s.lin0, s.ang0) - eb1.projectVelocity(s.lin1, s.ang1);
-				if(eb0.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-					initVel = vel0;
-				else if(eb1.mLinkIndex == PxSolverConstraintDesc::RIGID_BODY)
-					initVel = -vel1;
+				Dy::computeJointSpeedPGS(vel0, b0IsRigidDynamic, vel1, b1IsRigidDynamic, jointSpeedForRestitutionBounce, initJointSpeed);
 			}
 
 			//minResponseThreshold = PxMax(minResponseThreshold, DY_ARTICULATION_MIN_RESPONSE);
 		}
 
-	
-		setSolverConstants(s.constant, s.unbiasedConstant, s.velMultiplier, s.impulseMultiplier, 
-			c, normalVel, unitResponse, minResponseThreshold, erp, dt, invdt);
-
-		//If we have a spring then we will do the following:
-		//s.constant = -dt*kd*(vTar - v0)/denom  - dt*ks*(xTar - x0)/denom
-		//s.unbiasedConstant = -dt*kd*(vTar - v0)/denom  - dt*ks*(xTar - x0)/denom
-		const PxReal velBias = initVel * s.velMultiplier;
-		s.constant += velBias;
-		s.unbiasedConstant += velBias;
+		const PxReal recipUnitResponse = computeRecipUnitResponse(unitResponse, minResponseThreshold);
+		s.setSolverConstants(
+			compute1dConstraintSolverConstantsPGS(
+			c.flags, 
+			c.mods.spring.stiffness, c.mods.spring.damping, 
+			c.mods.bounce.restitution, c.mods.bounce.velocityThreshold, 
+			c.geometricError, c.velocityTarget,
+			jointSpeedForRestitutionBounce, initJointSpeed, 
+			unitResponse, recipUnitResponse, 
+			erp, 
+			simDt, recipSimDt));
 
 		if(c.flags & Px1DConstraintFlag::eOUTPUT_FORCE)
-			s.flags |= DY_SC_FLAG_OUTPUT_FORCE;
+			s.setOutputForceFlag(true);
 
 		outCount++;
 
@@ -568,11 +770,11 @@ Cm::SpatialVectorF* Z)
 PxU32 SetupSolverConstraint(SolverConstraintShaderPrepDesc& shaderDesc,
 	PxSolverConstraintPrepDesc& prepDesc,
 	PxConstraintAllocator& allocator,
-	PxReal dt, PxReal invdt, Cm::SpatialVectorF* Z)
+	PxReal dt, PxReal invdt)
 {
 	// LL shouldn't see broken constraints
 	
-	PX_ASSERT(!(reinterpret_cast<ConstraintWriteback*>(prepDesc.writeback)->broken));
+	PX_ASSERT(!(reinterpret_cast<ConstraintWriteback*>(prepDesc.writeback)->isBroken()));
 
 	setConstraintLength(*prepDesc.desc, 0);
 
@@ -599,7 +801,7 @@ PxU32 SetupSolverConstraint(SolverConstraintShaderPrepDesc& shaderDesc,
 
 	prepDesc.rows = rows;
 
-	return ConstraintHelper::setupSolverConstraint(prepDesc, allocator, dt, invdt, Z);
+	return ConstraintHelper::setupSolverConstraint(prepDesc, allocator, dt, invdt);
 }
 
 }

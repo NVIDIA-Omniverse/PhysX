@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SCENE_QUERY_EXT_H
 #define PX_SCENE_QUERY_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "PxPhysXConfig.h"
 
@@ -42,6 +39,7 @@ namespace physx
 #endif
 
 // These types have been deprecated (removed) in PhysX 3.4. We typedef them to the new types here for easy migration from 3.3 to 3.4.
+// We will not remove these aliases for convenience.
 typedef PxQueryHit				PxSceneQueryHit;
 typedef PxQueryFilterData		PxSceneQueryFilterData;
 typedef PxQueryFilterCallback	PxSceneQueryFilterCallback;
@@ -50,13 +48,11 @@ typedef PxHitFlag				PxSceneQueryFlag;
 typedef PxHitFlags				PxSceneQueryFlags;
 
 /**
-\brief utility functions for use with PxScene, related to scene queries.
+\brief Utility functions for use with PxScene, related to scene queries.
 
 Some of these functions have been deprecated (removed) in PhysX 3.4. We re-implement them here for easy migration from 3.3 to 3.4.
-
-@see PxShape
+We will not remove them for convenience.
 */
-
 class PxSceneQueryExt
 {
 public:
@@ -80,7 +76,7 @@ public:
 							Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.
 	\return True if a blocking hit was found.
 
-	@see PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache PxSceneQueryHit
+	\see PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache PxSceneQueryHit
 	*/
 	static bool raycastAny(	const PxScene& scene,
 							const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
@@ -107,7 +103,7 @@ public:
 							Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.
 	\return True if a blocking hit was found.
 
-	@see PxSceneQueryFlags PxRaycastHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
+	\see PxSceneQueryFlags PxRaycastHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
 	*/
 	static bool raycastSingle(	const PxScene& scene,
 								const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
@@ -140,7 +136,7 @@ public:
 								Note: Using past touching hits as cache will produce incorrect behavior since the cached hit will always be treated as blocking.
 	\return Number of hits in the buffer, or -1 if the buffer overflowed.
 
-	@see PxSceneQueryFlags PxRaycastHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
+	\see PxSceneQueryFlags PxRaycastHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
 	*/
 	static PxI32 raycastMultiple(	const PxScene& scene,
 									const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
@@ -171,7 +167,7 @@ public:
 	\param[in] inflation	This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal.
 	\return True if a blocking hit was found.
 
-	@see PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryHit PxSceneQueryCache
+	\see PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryHit PxSceneQueryCache
 	*/
 	static bool sweepAny(	const PxScene& scene,
 							const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance,
@@ -204,7 +200,7 @@ public:
 	\param[in] inflation	This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal.
 	\return True if a blocking hit was found.
 
-	@see PxSceneQueryFlags PxSweepHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
+	\see PxSceneQueryFlags PxSweepHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
 	*/
 	static bool sweepSingle(const PxScene& scene,
 							const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance,
@@ -242,7 +238,7 @@ public:
 	\param[in] inflation		This parameter creates a skin around the swept geometry which increases its extents for sweeping. The sweep will register a hit as soon as the skin touches a shape, and will return the corresponding distance and normal.
 	\return Number of hits in the buffer, or -1 if the buffer overflowed.
 
-	@see PxSceneQueryFlags PxSweepHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
+	\see PxSceneQueryFlags PxSweepHit PxSceneQueryFilterData PxSceneQueryFilterCallback PxSceneQueryCache
 	*/
 	static PxI32 sweepMultiple(	const PxScene& scene,
 								const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance,
@@ -267,7 +263,7 @@ public:
 	\param[in] filterCall		Custom filtering logic (optional). Only used if the corresponding #PxHitFlag flags are set. If NULL, all hits are assumed to overlap.
 	\return Number of hits in the buffer, or -1 if the buffer overflowed.
 
-	@see PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback
+	\see PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback
 	*/
 	static PxI32 overlapMultiple(	const PxScene& scene,
 									const PxGeometry& geometry, const PxTransform& pose,
@@ -290,7 +286,7 @@ public:
 	\param[in] filterCall		Custom filtering logic (optional). Only used if the corresponding #PxHitFlag flags are set. If NULL, all hits are assumed to overlap.
 	\return True if an overlap was found.
 
-	@see PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback
+	\see PxSceneQueryFlags PxSceneQueryFilterData PxSceneQueryFilterCallback
 	*/
 	static bool	overlapAny(	const PxScene& scene,
 							const PxGeometry& geometry, const PxTransform& pose,
@@ -360,9 +356,9 @@ public:
 
 	\return Returns a PxRaycastBuffer pointer that will store the result of the query after execute() is completed.
 	This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor.
-	@see PxCreateBatchQueryExt
+	\see PxCreateBatchQueryExt
 
-	@see PxQueryFilterData PxQueryFilterCallback PxRaycastHit PxScene::raycast
+	\see PxQueryFilterData PxQueryFilterCallback PxRaycastHit PxScene::raycast
 	*/
 	virtual PxRaycastBuffer* raycast(
 		const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
@@ -396,9 +392,9 @@ public:
 
 	\return Returns a PxSweepBuffer pointer that will store the result of the query after execute() is completed.
 	This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor.
-	@see PxCreateBatchQueryExt
+	\see PxCreateBatchQueryExt
 
-	@see PxHitFlags PxQueryFilterData PxBatchQueryPreFilterShader PxBatchQueryPostFilterShader PxSweepHit
+	\see PxHitFlags PxQueryFilterData PxBatchQueryPreFilterShader PxBatchQueryPostFilterShader PxSweepHit
 	*/
 	virtual PxSweepBuffer* sweep(
 		const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance,
@@ -429,9 +425,9 @@ public:
 
 	\return Returns a PxOverlapBuffer pointer that will store the result of the query after execute() is completed.
 	This will point either to an element of the buffer allocated on construction or to a user buffer passed to the constructor. 
-	@see PxCreateBatchQueryExt
+	\see PxCreateBatchQueryExt
 
-	@see PxQueryFilterData PxQueryFilterCallback
+	\see PxQueryFilterData PxQueryFilterCallback
 	*/
 	virtual PxOverlapBuffer* overlap(
 		const PxGeometry& geometry, const PxTransform& pose,
@@ -505,5 +501,4 @@ PxBatchQueryExt* PxCreateBatchQueryExt(
 } // namespace physx
 #endif
 
-/** @} */
 #endif

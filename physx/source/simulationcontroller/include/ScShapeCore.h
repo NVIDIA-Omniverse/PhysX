@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,8 +36,7 @@
 
 namespace physx
 {
-class PxShape;
-class PxsSimulationController;
+class PxShape;	// PT: TODO: fw decl of higher-level class isn't great
 
 namespace Sc
 {
@@ -54,9 +53,9 @@ namespace Sc
 		static			void						getBinaryMetaData(PxOutputStream& stream);
 		                void                        resolveMaterialReference(PxU32 materialTableIndex, PxU16 materialIndex);
 //~PX_SERIALIZATION
-													ShapeCore(const PxGeometry& geometry, PxShapeFlags shapeFlags,
-															  const PxU16* materialIndices, PxU16 materialCount, bool isExclusive,
-														PxShapeCoreFlag::Enum softOrClothFlags = PxShapeCoreFlag::Enum(0));
+													ShapeCore(	const PxGeometry& geometry, PxShapeFlags shapeFlags,
+																const PxU16* materialIndices, PxU16 materialCount, bool isExclusive,
+																PxShapeCoreFlag::Enum coreFlags = PxShapeCoreFlag::Enum(0));
 
 													~ShapeCore();
 
@@ -99,25 +98,20 @@ namespace Sc
 		PX_FORCE_INLINE const PxsShapeCore&			getCore()									const	{ return mCore;								}
 		static PX_FORCE_INLINE size_t				getCoreOffset()										{ return PX_OFFSET_OF(ShapeCore, mCore);	}
 		static PX_FORCE_INLINE ShapeCore&			getCore(PxsShapeCore& core)			
-		{ 
-			return *reinterpret_cast<ShapeCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
-		}	
+													{
+														return *reinterpret_cast<ShapeCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
+													}	
 
 		PX_FORCE_INLINE ShapeSim*					getExclusiveSim() const			
-		{
-			return mExclusiveSim;
-		}
+													{
+														return mExclusiveSim;
+													}
 
 		PX_FORCE_INLINE void						setExclusiveSim(ShapeSim* sim)	
-		{
-			if (!sim || mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE))
-			{
-				mExclusiveSim = sim;
-			}
-		}
-
-						PxU32						getInternalShapeIndex(PxsSimulationController& simulationController) const;
-
+													{
+														if(!sim || mCore.mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE))
+															mExclusiveSim = sim;
+													}
 
 #if PX_WINDOWS_FAMILY	// PT: to avoid "error: offset of on non-standard-layout type" on Linux
 	protected:

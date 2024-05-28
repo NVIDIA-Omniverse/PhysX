@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_CONE_LIMITED_CONSTRAINT_H
 #define PX_CONE_LIMITED_CONSTRAINT_H
 
-/** \addtogroup physics
-@{
-*/
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"
@@ -103,7 +100,7 @@ struct PxConeLimitedConstraint
 
 /**
 \brief Compressed form of cone limit parameters
-@see PxConeLimitedConstraint
+\see PxConeLimitedConstraint
 */
 PX_ALIGN_PREFIX(16)
 struct PxConeLimitParams
@@ -124,5 +121,4 @@ struct PxConeLimitParams
 } // namespace physx
 #endif
 
-/** @} */
 #endif

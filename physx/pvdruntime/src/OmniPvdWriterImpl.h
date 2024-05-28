@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,6 +30,8 @@
 #define OMNI_PVD_WRITER_IMPL_H
 
 #include "OmniPvdWriter.h"
+#include "OmniPvdCommands.h"
+#include "OmniPvdDefinesInternal.h"
 #include "OmniPvdLog.h"
 
 class OmniPvdWriterImpl : public OmniPvdWriter {
@@ -58,11 +60,68 @@ public:
 	void OMNI_PVD_CALL destroyObject(OmniPvdContextHandle contextHandle, OmniPvdObjectHandle objectHandle);
 	void OMNI_PVD_CALL startFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp);
 	void OMNI_PVD_CALL stopFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp);
+
+	uint32_t OMNI_PVD_CALL getStatus();
+	void OMNI_PVD_CALL clearStatus();
+
+	void resetParams();
+
+	bool isFlagOn(OmniPvdWriterStatusFlag::Enum flagBitMask)
+	{
+		return mStatusFlags & uint32_t(flagBitMask);
+	}
 	
+	void setFlagOn(OmniPvdWriterStatusFlag::Enum flagBitMask)
+	{
+		mStatusFlags = mStatusFlags | uint32_t(flagBitMask);
+	}
+
+	void setFlagOff(OmniPvdWriterStatusFlag::Enum flagBitMask)
+	{
+		mStatusFlags = mStatusFlags & ~uint32_t(flagBitMask);
+	}
+
+	void setFlagVal(OmniPvdWriterStatusFlag::Enum flagBitMask, bool value)
+	{
+		if (value) 
+		{
+			setFlagOn(flagBitMask);
+		}
+		else
+		{
+			setFlagOff(flagBitMask);
+		}
+	}
+
+	void writeWithStatus(const uint8_t* writePtr, uint64_t nbrBytesToWrite) 
+	{
+		if (! (mStream && writePtr && (nbrBytesToWrite > 0)) ) return;
+		uint64_t nbrBytesWritten = mStream->writeBytes(writePtr, nbrBytesToWrite);
+		const bool writeFailure = nbrBytesWritten != nbrBytesToWrite;
+		if (writeFailure) {
+			setFlagOn(OmniPvdWriterStatusFlag::eSTREAM_WRITE_FAILURE);
+		}
+	}
+	
+	void writeDataType(OmniPvdDataType::Enum attributeDataType)
+	{
+		const OmniPvdDataTypeStorageType dataType = static_cast<OmniPvdDataTypeStorageType>(attributeDataType);
+		writeWithStatus((const uint8_t*)&dataType, sizeof(OmniPvdDataTypeStorageType));
+	}
+	
+	void writeCommand(OmniPvdCommand::Enum command)
+	{
+		const OmniPvdCommandStorageType commandTmp = static_cast<OmniPvdCommandStorageType>(command);
+		writeWithStatus((const uint8_t*)&commandTmp, sizeof(OmniPvdCommandStorageType));
+	}
+
 	bool mIsFirstWrite;
 	OmniPvdLog mLog;
 	OmniPvdWriteStream* mStream;
 	int mLastClassHandle;
-	int mLastAttributeHandle;};
+	int mLastAttributeHandle;
+
+	uint32_t mStatusFlags;
+};
 
 #endif

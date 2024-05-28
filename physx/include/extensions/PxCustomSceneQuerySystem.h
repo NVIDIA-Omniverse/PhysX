@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_NEW_SCENE_QUERY_SYSTEM_H
 #define PX_NEW_SCENE_QUERY_SYSTEM_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "PxSceneQuerySystem.h"
 
@@ -47,7 +44,7 @@ namespace physx
 
 	It might not be possible to support the whole PxSceneQuerySystem API in this context. See the source code for details.
 
-	@see PxSceneQuerySystem
+	\see PxSceneQuerySystem
 	*/
 	class PxCustomSceneQuerySystem : public PxSceneQuerySystem
 	{
@@ -73,7 +70,7 @@ namespace physx
 
 		\return	A pruner index
 
-		@see PxCustomSceneQuerySystem PxSceneQueryUpdateMode PxCustomSceneQuerySystemAdapter PxSceneDesc::sceneQuerySystem
+		\see PxCustomSceneQuerySystem PxSceneQueryUpdateMode PxCustomSceneQuerySystemAdapter PxSceneDesc::sceneQuerySystem
 		*/
 		virtual	PxU32	addPruner(PxPruningStructureType::Enum primaryType, PxDynamicTreeSecondaryPruner::Enum secondaryType, PxU32 preallocated=0)	= 0;
 
@@ -98,7 +95,7 @@ namespace physx
 
 		\return	The number of pruners in the system.
 
-		@see customBuildstep finishCustomBuildstep PxSceneQueryUpdateMode
+		\see customBuildstep finishCustomBuildstep PxSceneQueryUpdateMode
 		*/
 		virtual	PxU32	startCustomBuildstep()	= 0;
 
@@ -107,7 +104,7 @@ namespace physx
 
 		\param[in] index	Pruner index (should be between 0 and the number returned by startCustomBuildstep)
 
-		@see startCustomBuildstep finishCustomBuildstep
+		\see startCustomBuildstep finishCustomBuildstep
 		*/
 		virtual	void	customBuildstep(PxU32 index)	= 0;
 
@@ -116,7 +113,7 @@ namespace physx
 
 		Call this function once after all the customBuildstep() calls are done.
 
-		@see startCustomBuildstep customBuildstep
+		\see startCustomBuildstep customBuildstep
 		*/
 		virtual	void	finishCustomBuildstep()	= 0;
 	};
@@ -147,7 +144,7 @@ namespace physx
 
 		\return	A pruner index for this actor/shape.
 
-		@see PxRigidActor PxShape PxCustomSceneQuerySystem::addPruner
+		\see PxRigidActor PxShape PxCustomSceneQuerySystem::addPruner
 		*/
 		virtual	PxU32	getPrunerIndex(const PxRigidActor& actor, const PxShape& shape)	const	= 0;
 
@@ -179,7 +176,7 @@ namespace physx
 
 	\return	A custom SQ system instance
 
-	@see PxCustomSceneQuerySystem PxSceneQueryUpdateMode PxCustomSceneQuerySystemAdapter PxSceneDesc::sceneQuerySystem
+	\see PxCustomSceneQuerySystem PxSceneQueryUpdateMode PxCustomSceneQuerySystemAdapter PxSceneDesc::sceneQuerySystem
 	*/
 	PxCustomSceneQuerySystem* PxCreateCustomSceneQuerySystem(PxSceneQueryUpdateMode::Enum sceneQueryUpdateMode, PxU64 contextID, const PxCustomSceneQuerySystemAdapter& adapter, bool usesTreeOfPruners=false);
 
@@ -187,5 +184,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

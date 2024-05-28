@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SOFT_BODY_EXT_H
 #define PX_SOFT_BODY_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "foundation/PxTransform.h"
 #include "foundation/PxUserAllocated.h"
@@ -67,7 +64,7 @@ public:
 	\param[in] maxInvMassRatio Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh
 	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
 
-	@see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
+	\see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
 	*/
 	static void updateMass(PxSoftBody& softBody, const PxReal density, const PxReal maxInvMassRatio, PxVec4* simPositionsPinned);
 
@@ -83,7 +80,7 @@ public:
 	\param[in] maxInvMassRatio Maximum allowed ratio defined as max(vertexMasses) / min(vertexMasses) where vertexMasses is a list of float values with a mass for every vertex in the simulation mesh
 	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
 
-	@see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
+	\see PxSoftBody PxSoftBody::getSimPositionInvMassBufferD()
 	*/
 	static void setMass(PxSoftBody& softBody, const PxReal mass, const PxReal maxInvMassRatio, PxVec4* simPositionsPinned);
 
@@ -104,7 +101,7 @@ public:
 	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
 	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
 	
-	@see PxSoftBody
+	\see PxSoftBody
 	*/
 	static void transform(PxSoftBody& softBody, const PxTransform& transform, const PxReal scale, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned);
 
@@ -117,7 +114,7 @@ public:
 	\param[in] simPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the simulation mesh.
 	\param[in] collPositionsPinned A pointer to a pinned host memory buffer containing positions and inverse masses for each vertex of the collision mesh.
 
-	@see PxSoftBody
+	\see PxSoftBody
 	*/
 	static void updateEmbeddedCollisionMesh(PxSoftBody& softBody, PxVec4* simPositionsPinned, PxVec4* collPositionsPinned);
 
@@ -132,8 +129,8 @@ public:
 	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
 	\param[in] stream A cuda stream to perform the copies.
 	
-	@see PxSoftBody
-	@deprecated Use copyToDevice() instead.
+	\see PxSoftBody
+	\deprecated Use copyToDevice() instead.
 	*/
 	PX_DEPRECATED static void commit(PxSoftBody& softBody, PxSoftBodyDataFlags flags, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned, CUstream stream = CUstream(0));
 
@@ -148,7 +145,7 @@ public:
 	\param[in] restPositionsPinned A pointer to a pinned host memory buffer containing rest positions of the collision mesh.
 	\param[in] stream A cuda stream to perform the copies.
 	
-	@see PxSoftBody
+	\see PxSoftBody
 	*/
 	static void copyToDevice(PxSoftBody& softBody, PxSoftBodyDataFlags flags, PxVec4* simPositionsPinned, PxVec4* simVelocitiesPinned, PxVec4* collPositionsPinned, PxVec4* restPositionsPinned, CUstream stream = CUstream(0));
 
@@ -161,7 +158,7 @@ public:
 	\param[in] insertionCallback The insertion interface from PxPhysics
 	\param[in] validate If set to true the input triangle mesh will get analyzed to find possible deficiencies
 	\return SoftBody mesh if cooking was successful, NULL otherwise
-	@see PxSoftBodyMesh
+	\see PxSoftBodyMesh
 	*/
 	static PxSoftBodyMesh* createSoftBodyMesh(const PxCookingParams& params, const PxSimpleTriangleMesh& surfaceMesh, PxU32 numVoxelsAlongLongestAABBAxis, PxInsertionCallback& insertionCallback, const bool validate = true);
 
@@ -174,7 +171,7 @@ public:
 	\param[in] maxWeightRatioInTet Upper limit for the ratio of node weights that are adjacent to the same tetrahedron. The closer to one (while remaining larger than one), the more stable the simulation. 
 	\param[in] validate If set to true the input triangle mesh will get analyzed to find possible deficiencies
 	\return SoftBody mesh if cooking was successful, NULL otherwise
-	@see PxSoftBodyMesh
+	\see PxSoftBodyMesh
 	*/
 	static PxSoftBodyMesh* createSoftBodyMeshNoVoxels(const PxCookingParams& params, const PxSimpleTriangleMesh& surfaceMesh, PxInsertionCallback& insertionCallback, PxReal maxWeightRatioInTet = 1.5f, const bool validate = true);
 
@@ -191,7 +188,7 @@ public:
 	\param[in] femParams Additional parameters to specify e. g. damping
 	\param[in] scale The scaling of the SoftBody
 	\return SoftBody instance
-	@see PxSoftBodyMesh, PxSoftBody
+	\see PxSoftBodyMesh, PxSoftBody
 	*/
 	static PxSoftBody* createSoftBodyFromMesh(PxSoftBodyMesh* softBodyMesh, const PxTransform& transform, 
 		const PxFEMSoftBodyMaterial& material, PxCudaContextManager& cudaContextManager, PxReal density = 100.0f, PxU32 solverIterationCount = 30,
@@ -212,7 +209,7 @@ public:
 	\param[in] numVoxelsAlongLongestAABBAxis The number of voxels to use for the simulation mesh along the longest bounding box dimension
 	\param[in] scale The scaling of the SoftBody
 	\return SoftBody instance
-	@see PxSoftBodyMesh, PxSoftBody
+	\see PxSoftBodyMesh, PxSoftBody
 	*/
 	static PxSoftBody* createSoftBodyBox(const PxTransform& transform, const PxVec3& boxDimensions, const PxFEMSoftBodyMaterial& material,
 		PxCudaContextManager& cudaContextManager, PxReal maxEdgeLength = -1.0f, PxReal density = 100.0f, PxU32 solverIterationCount = 30, 
@@ -228,7 +225,7 @@ public:
     \param[in] collPositionInvMassPinned A reference to a pointer for the return value of the collPositionInvMassPinned buffer, will be set by this function.
     \param[in] restPositionPinned A reference to a pointer for the return value of the restPositionPinned buffer, will be set by this function.
 
-	@see PxSoftBody
+	\see PxSoftBody
 	 */
 	static void allocateAndInitializeHostMirror(PxSoftBody& softBody, PxCudaContextManager* cudaContextManager, PxVec4*& simPositionInvMassPinned, PxVec4*& simVelocityPinned, PxVec4*& collPositionInvMassPinned, PxVec4*& restPositionPinned);
 	
@@ -250,5 +247,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

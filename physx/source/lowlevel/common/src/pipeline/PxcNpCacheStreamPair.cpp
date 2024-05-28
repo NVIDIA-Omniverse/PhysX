@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,26 +32,25 @@
 
 using namespace physx;
 
-void PxcNpCacheStreamPair::reset()
-{
-	mBlock = NULL;
-	mUsed = 0;
-}
-
-PxcNpCacheStreamPair::PxcNpCacheStreamPair(PxcNpMemBlockPool& blockPool):
-  mBlockPool(blockPool), mBlock(NULL), mUsed(0)
+PxcNpCacheStreamPair::PxcNpCacheStreamPair(PxcNpMemBlockPool& blockPool) :
+	mBlockPool	(blockPool),
+	mBlock		(NULL),
+	mUsed		(0)
 {
 }
 
 // reserve can fail and return null. Read should never fail
-PxU8* PxcNpCacheStreamPair::reserve(PxU32 size)
+PxU8* PxcNpCacheStreamPair::reserve(PxU32 size, bool& sizeTooLarge)
 {
 	size = (size+15)&~15;
 
 	if(size>PxcNpMemBlock::SIZE)
 	{
-		return reinterpret_cast<PxU8*>(-1);
+		sizeTooLarge = true;
+		return NULL;
 	}
+
+	sizeTooLarge = false;
 
 	if(mBlock == NULL || mUsed + size > PxcNpMemBlock::SIZE)
 	{
@@ -61,10 +60,10 @@ PxU8* PxcNpCacheStreamPair::reserve(PxU32 size)
 
 	PxU8* ptr;
 	if(mBlock == NULL)
-		ptr = 0;
+		ptr = NULL;
 	else
 	{
-		ptr = mBlock->data+mUsed;
+		ptr = mBlock->data + mUsed;
 		mUsed += size;
 	}
 

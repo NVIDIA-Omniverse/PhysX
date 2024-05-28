@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,8 +42,9 @@ class PxCollection;
 class PxOutputStream;
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Driving surface type. Each PxMaterial is associated with a corresponding PxVehicleDrivableSurfaceType.
-@see PxMaterial, PxVehicleDrivableSurfaceToTireFrictionPairs
+\see PxMaterial, PxVehicleDrivableSurfaceToTireFrictionPairs
 */	
 struct PX_DEPRECATED PxVehicleDrivableSurfaceType
 {
@@ -55,8 +56,9 @@ struct PX_DEPRECATED PxVehicleDrivableSurfaceType
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Friction for each combination of driving surface type and tire type.
-@see PxVehicleDrivableSurfaceType, PxVehicleTireData::mType
+\see PxVehicleDrivableSurfaceType, PxVehicleTireData::mType
 */
 class PX_DEPRECATED PxVehicleDrivableSurfaceToTireFrictionPairs
 {
@@ -78,7 +80,7 @@ public:
 	
 	\return a PxVehicleDrivableSurfaceToTireFrictionPairs instance that can be reused later with new type and friction data.
 
-	@see setup
+	\see setup
 	*/
 	static PxVehicleDrivableSurfaceToTireFrictionPairs* allocate
 		(const PxU32 maxNbTireTypes, const PxU32 maxNbSurfaceTypes);
@@ -95,7 +97,7 @@ public:
 	and the friction is the value that is set with setTypePairFriction(drivableSurfaceTypes[x].mType, PxVehicleTireData::mType, frictionValue).
 	
 	\note A friction value of 1.0 will be assigned as default to each combination of tire and surface type.  To override this use setTypePairFriction.
-	@see release, setTypePairFriction, getTypePairFriction, PxVehicleTireData.mType
+	\see release, setTypePairFriction, getTypePairFriction, PxVehicleTireData.mType
 	*/
 	void setup
 		(const PxU32 nbTireTypes, const PxU32 nbSurfaceTypes, 
@@ -122,8 +124,8 @@ public:
 	\note The surface type may be used to query the friction of a surface type/tire type pair using getTypePairFriction()
 	\return The surface type associated with a specified PxMaterial instance.  
 	If surfaceMaterial is not referenced by the PxVehicleDrivableSurfaceToTireFrictionPairs a value of 0 will be returned.
-	@see setup
-	@see getTypePairFriction
+	\see setup
+	\see getTypePairFriction
 	*/
 	PxU32 getSurfaceType(const PxMaterial& surfaceMaterial) const;
 
@@ -133,8 +135,8 @@ public:
 	\note The final friction value used by the tire model is the value returned by getTypePairFriction
 	multiplied by the value computed from PxVehicleTireData::mFrictionVsSlipGraph
 	\note The surface type is associated with a PxMaterial.  The mapping between the two may be queried using getSurfaceType().
-	@see PxVehicleTireData::mFrictionVsSlipGraph
-	@see getSurfaceType
+	\see PxVehicleTireData::mFrictionVsSlipGraph
+	\see getSurfaceType
 	*/
 	PxReal getTypePairFriction(const PxU32 surfaceType, const PxU32 tireType) const;
 
@@ -145,21 +147,21 @@ public:
 	multiplied by the value computed from PxVehicleTireData::mFrictionVsSlipGraph
 	\note If surfaceMaterial is not referenced by the PxVehicleDrivableSurfaceToTireFrictionPairs 
 	a surfaceType of value 0 will be assumed and the corresponding friction value will be returned.
-	@see PxVehicleTireData::mFrictionVsSlipGraph
+	\see PxVehicleTireData::mFrictionVsSlipGraph
 	*/
 	PxReal getTypePairFriction(const PxMaterial& surfaceMaterial, const PxU32 tireType) const;
 
 	/**
 	\brief Return the maximum number of surface types
 	\return The maximum number of surface types
-	@see allocate
+	\see allocate
 	*/
 	PX_FORCE_INLINE PxU32 getMaxNbSurfaceTypes() const {return mMaxNbSurfaceTypes;}
 
 	/**
 	\brief Return the maximum number of tire types
 	\return The maximum number of tire types
-	@see allocate
+	\see allocate
 	*/
 	PX_FORCE_INLINE PxU32 getMaxNbTireTypes() const {return mMaxNbTireTypes;}
 
@@ -180,7 +182,7 @@ public:
 	The PxCollection instance may be used to serialize an entire scene that also references some or none of those material instances 
 	or particular objects in a scene or nothing at all.  The complementary deserialize() function requires the same collection instance 
 	or more typically a deserialized copy of the collection to be passed as a function argument. 
-	@see deserializeFromBinary
+	\see deserializeFromBinary
 	*/
 	static void serializeToBinary(const PxVehicleDrivableSurfaceToTireFrictionPairs& frictionTable, const PxSerialObjectId* materialIds, const PxU32 nbMaterialIds, PxCollection* collection, PxOutputStream& stream);
 
@@ -189,7 +191,7 @@ public:
 	\param[in] collection contains the PxMaterial instances that will be referenced by the friction table.
 	\param[in] memBlock is a binary array that may be retrieved or copied from the stream in the complementary serializeToBinary function.
 	\return A PxVehicleDrivableSurfaceToTireFrictionPairs instance whose base address is equal to the memBlock ptr.
-	@see serializeToBinary
+	\see serializeToBinary
 	*/
 	static PxVehicleDrivableSurfaceToTireFrictionPairs* deserializeFromBinary(const PxCollection& collection, void* memBlock);
 

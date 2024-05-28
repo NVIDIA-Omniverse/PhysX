@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -67,19 +67,19 @@ public:
 	// PxActor
 					void					removeShapes(PxSceneQuerySystem* sqManager);
 	virtual			PxActorType::Enum		getType() const = 0;
-	virtual			PxBounds3				getWorldBounds(float inflation=1.01f) const	PX_OVERRIDE;
-	virtual			void					setActorFlag(PxActorFlag::Enum flag, bool value)	PX_OVERRIDE;
-	virtual			void					setActorFlags(PxActorFlags inFlags)	PX_OVERRIDE;
+	virtual			PxBounds3				getWorldBounds(float inflation=1.01f) const	PX_OVERRIDE PX_FINAL;
+	virtual			void					setActorFlag(PxActorFlag::Enum flag, bool value)	PX_OVERRIDE PX_FINAL;
+	virtual			void					setActorFlags(PxActorFlags inFlags)	PX_OVERRIDE PX_FINAL;
 	//~PxActor
 
 	// PxRigidActor
-	virtual			PxU32					getInternalActorIndex() const	PX_OVERRIDE;
+	virtual			PxU32					getInternalActorIndex() const	PX_OVERRIDE PX_FINAL;
 	virtual			bool					attachShape(PxShape& s)	PX_OVERRIDE;
 	virtual			void					detachShape(PxShape& s, bool wakeOnLostTouch)	PX_OVERRIDE;
-	virtual			PxU32					getNbShapes() const	PX_OVERRIDE;
-	virtual			PxU32					getShapes(PxShape** buffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE;
-	virtual			PxU32					getNbConstraints() const	PX_OVERRIDE;
-	virtual			PxU32					getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE;
+	virtual			PxU32					getNbShapes() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32					getShapes(PxShape** buffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32					getNbConstraints() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32					getConstraints(PxConstraint** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
 	//~PxRigidActor
 											NpRigidActorTemplate(PxType concreteType, PxBaseFlags baseFlags, NpType::Enum type);
 
@@ -92,14 +92,13 @@ public:
 
 					void					updateShaderComs();
 
-	// index for the NpScene rigid dynamic or static array
+	// index into the NpScene rigid dynamic (mRigidDynamics) or static array (mRigidStatics)
 	// PT: note that this index changes during the lifetime of the object, e.g. when another object
 	// is removed and swaps happen in the scene's mRigidStatics/mRigidDynamics arrays.
 	PX_FORCE_INLINE PxU32					getRigidActorArrayIndex()			const	{ return NpBase::mFreeSlot;		}
 	PX_FORCE_INLINE void					setRigidActorArrayIndex(PxU32 index)		{ NpBase::mFreeSlot = index;	}
-//	PX_FORCE_INLINE PxU32					getRigidActorArrayIndex()			const	{ return mIndex;				}
-//	PX_FORCE_INLINE void					setRigidActorArrayIndex(PxU32 index)		{ mIndex = index;				}
-
+	// PT: ID from mRigidActorIndexPool. Contrary to getRigidActorArrayIndex(), this index uses the same source for statics/dynamics/links
+	// (yes, it also includes articulation links). On the other hand it is constant for the lifetime of the actor.
 	PX_FORCE_INLINE PxU32					getRigidActorSceneIndex()			const	{ return NpBase::getBaseIndex();	}
 	PX_FORCE_INLINE void					setRigidActorSceneIndex(PxU32 index)		{ NpBase::setBaseIndex(index);		}
 
@@ -115,10 +114,6 @@ protected:
 	PX_FORCE_INLINE void					setActorSimFlag(bool value);
 
 					NpShapeManager			mShapeManager;
-					// PT: note that this index changes during the lifetime of the object, e.g. when another object
-					// is removed and swaps happen in the scene's mRigidStatics/mRigidDynamics arrays.
-//					PxU32					mIndex;    // index for the NpScene rigid dynamic or static array
-					// PT: TODO: reduce padding
 };
 
 // PX_SERIALIZATION

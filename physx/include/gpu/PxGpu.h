@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_GPU_H
 #define PX_GPU_H
@@ -47,7 +47,7 @@ PxGpuLoadHook can be sub-classed to provide the custom filenames.
 
 Once the names are set, the instance must be set for use by PhysX.dll using PxSetPhysXGpuLoadHook(), 
 
-@see PxSetPhysXGpuLoadHook()
+\see PxSetPhysXGpuLoadHook()
 */
 class PxGpuLoadHook
 {
@@ -66,7 +66,7 @@ private:
 
 \param[in] hook GPU load hook.
 
-@see PxGpuLoadHook
+\see PxGpuLoadHook
 */
 PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxSetPhysXGpuLoadHook(const PxGpuLoadHook* hook);
 
@@ -86,7 +86,7 @@ PX_C_EXPORT PX_PHYSX_CORE_API int PX_CALL_CONV PxGetSuggestedCudaDeviceOrdinal(p
  \param[in] profilerCallback PhysX profiler callback instance.
  \param[in] launchSynchronous Set launchSynchronous to true for CUDA to report the actual point of failure.
 
- @see PxGetProfilerCallback()
+ \see PxGetProfilerCallback()
  */
 PX_C_EXPORT PX_PHYSX_CORE_API physx::PxCudaContextManager* PX_CALL_CONV PxCreateCudaContextManager(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback = NULL, bool launchSynchronous = false);
 
@@ -94,7 +94,7 @@ PX_C_EXPORT PX_PHYSX_CORE_API physx::PxCudaContextManager* PX_CALL_CONV PxCreate
  * \brief Sets profiler callback to PhysX GPU
  \param[in] profilerCallback PhysX profiler callback instance.
 
- @see PxGetProfilerCallback()
+ \see PxGetProfilerCallback()
  */
 PX_C_EXPORT PX_PHYSX_CORE_API void PX_CALL_CONV PxSetPhysXGpuProfilerCallback(physx::PxProfilerCallback* profilerCallback);
 

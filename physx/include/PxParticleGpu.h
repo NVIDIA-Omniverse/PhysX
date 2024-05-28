@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_GPU_PARTICLE_SYSTEM_H
 #define PX_GPU_PARTICLE_SYSTEM_H
-/** \addtogroup physics
-@{ */
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxVec3.h"
@@ -42,7 +40,7 @@ namespace physx
 #endif
 
 /**
-@brief Common material properties for particles. See #PxParticleMaterial.
+\brief Common material properties for particles. See #PxPBDMaterial.
 
 Accessed by either integration or particle-rigid collisions
 */
@@ -74,7 +72,7 @@ namespace physx
 #endif
 
 /**
-@brief An iterator class to iterate over the neighbors of a particle during particle system simulation. 
+\brief An iterator class to iterate over the neighbors of a particle during particle system simulation. 
 */
 class PxNeighborhoodIterator
 {
@@ -109,13 +107,14 @@ public:
 };
 
 /**
-@brief Structure that holds simulation parameters of a #PxGpuParticleSystem.
+\brief Structure that holds simulation parameters of a #PxGpuParticleSystem.
 */
 struct PxGpuParticleData
 {
-	PxU32	mGridSizeX;                     //!< Size of the x-dimension of the background simulation grid. Translates to an absolute size of mGridSizeX * mParticleContactDistance. 
-	PxU32	mGridSizeY;                     //!< Size of the y-dimension of the background simulation grid. Translates to an absolute size of mGridSizeY * mParticleContactDistance.
-	PxU32	mGridSizeZ;                     //!< Size of the z-dimension of the background simulation grid. Translates to an absolute size of mGridSizeZ * mParticleContactDistance.
+	PxReal	mGridCellWidth;                  //!< Grid cell width, derived from particle contact offset * neighborhood scale
+	PxU32	mGridSizeX;                     //!< Size of the x-dimension of the background simulation grid. Translates to an absolute size of mGridSizeX * mGridCellWidth. 
+	PxU32	mGridSizeY;                     //!< Size of the y-dimension of the background simulation grid. Translates to an absolute size of mGridSizeY * mGridCellWidth.
+	PxU32	mGridSizeZ;                     //!< Size of the z-dimension of the background simulation grid. Translates to an absolute size of mGridSizeZ * mGridCellWidth.
 
 	PxReal	mParticleContactDistance;       //!< Two particles start interacting if their distance is lower than mParticleContactDistance.
 	PxReal	mParticleContactDistanceInv;    //!< 1.f / mParticleContactDistance.
@@ -129,26 +128,26 @@ struct PxGpuParticleData
 };
 
 /**
-@brief Container class for a GPU particle system. Used to communicate particle system parameters and simulation state 
+\brief Container class for a GPU particle system. Used to communicate particle system parameters and simulation state 
 between the internal SDK simulation and the particle system callbacks.
 
-See #PxParticleSystem, #PxParticleSystemCallback.
+See #PxPBDParticleSystem, #PxParticleSystemCallback.
 */
 class PxGpuParticleSystem
 {
 public:
 
 	/**
-	@brief Returns the number of cells of the background simulation grid.
+	\brief Returns the number of cells of the background simulation grid.
 	 
-	@return PxU32 the number of cells. 
+	\return PxU32 the number of cells. 
 	*/
 	PX_FORCE_INLINE PxU32 getNumCells() { return mCommonData.mGridSizeX * mCommonData.mGridSizeY * mCommonData.mGridSizeZ; }
 	
 	/* Unsorted particle state buffers */
 	float4*                      mUnsortedPositions_InvMass;     //!< GPU pointer to unsorted particle positions and inverse masses.
 	float4*	                     mUnsortedVelocities;            //!< GPU pointer to unsorted particle velocities.
-	PxU32*	                     mUnsortedPhaseArray;            //!< GPU pointer to unsorted particle phase array. See #PxParticlePhase.
+	PxU32*	                     mUnsortedPhaseArray;            //!< GPU pointer to unsorted particle phase array. See #PxParticlePhaseFlag.
 
 	/* Sorted particle state buffers. Sorted by increasing hash value in background grid. */
 	float4*                      mSortedPositions_InvMass;       //!< GPU pointer to sorted particle positions
@@ -167,11 +166,11 @@ public:
 	PxGpuParticleData            mCommonData;                    //!< Structure holding simulation parameters and state for this particle system. See #PxGpuParticleData.
 
 	/**
-	@brief Get a PxNeighborhoodIterator initialized for usage with this particle system.
+	\brief Get a PxNeighborhoodIterator initialized for usage with this particle system.
 
-	@param particleId An initial particle index for the initialization of the iterator. 
+	\param particleId An initial particle index for the initialization of the iterator. 
 
-	@return An initialized PxNeighborhoodIterator.
+	\return An initialized PxNeighborhoodIterator.
 	*/
 	PX_CUDA_CALLABLE PxNeighborhoodIterator getIterator(PxU32 particleId) const
 	{
@@ -185,6 +184,5 @@ public:
 
 #endif
 
-/** @} */
 #endif
 

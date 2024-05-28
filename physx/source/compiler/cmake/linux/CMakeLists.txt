@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 STRING(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWERCASE)
 
@@ -42,7 +42,6 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Wstrict-aliasing=2 -W
     -Wno-float-equal \
     -Wno-format-nonliteral \
     -Wno-global-constructors \
-    -Wno-gnu-anonymous-struct \
     -Wno-implicit-fallthrough \
     -Wno-inconsistent-missing-destructor-override \
     -Wno-inconsistent-missing-override \
@@ -59,11 +58,9 @@ SET(CLANG_WARNINGS "-ferror-limit=0 -Wall -Wextra -Werror -Wstrict-aliasing=2 -W
     -Wno-switch-enum \
     -Wno-undef \
     -Wno-undefined-reinterpret-cast \
-    -Wno-unknown-pragmas \
     -Wno-unknown-warning-option \
     -Wno-unreachable-code \
     -Wno-unused-function \
-    -Wno-unused-local-typedef \
     -Wno-unused-macros \
     -Wno-unused-member-function \
     -Wno-unused-private-field \
@@ -194,7 +191,6 @@ ELSE()
 	INCLUDE(PhysXVehicle2.cmake)
 	INCLUDE(SceneQuery.cmake)
 	INCLUDE(SimulationController.cmake)
-	INCLUDE(FastXml.cmake)
 	INCLUDE(PhysXPvdSDK.cmake)
 	INCLUDE(PhysXTask.cmake)
 
@@ -211,7 +207,6 @@ ELSE()
 	SET_PROPERTY(TARGET LowLevelDynamics PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET SceneQuery PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET SimulationController PROPERTY FOLDER "PhysX SDK")
-	SET_PROPERTY(TARGET FastXml PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXPvdSDK PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXTask PROPERTY FOLDER "PhysX SDK")
 	SET_PROPERTY(TARGET PhysXFoundation PROPERTY FOLDER "PhysX SDK")

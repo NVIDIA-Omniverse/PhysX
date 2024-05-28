@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -198,12 +198,12 @@ static bool GuCapsuleOBBOverlap3(const Segment& segment, PxReal radius, const Bo
 static void GuGenerateVFContacts(	PxContactBuffer& contactBuffer,
 									//
 									const Segment& segment,
-									const PxReal radius,
+									PxReal radius,
 									//
 									const Box& worldBox,
 									//
 									const PxVec3& normal,
-									const PxReal contactDistance)
+									PxReal contactDistance)
 {
 	const PxVec3 Max = worldBox.extents;
 	const PxVec3 Min = -worldBox.extents;
@@ -288,12 +288,12 @@ static void GuGenerateEEContacts(	PxContactBuffer& contactBuffer,
 static void GuGenerateEEContacts2(	PxContactBuffer& contactBuffer,
 									//
 									const Segment& segment,
-									const PxReal radius,
+									PxReal radius,
 									//
 									const Box& worldBox,
 									//
 									const PxVec3& normal,
-									const PxReal contactDistance)
+									PxReal contactDistance)
 {
 	const PxU8* PX_RESTRICT Indices = getBoxEdges();
 

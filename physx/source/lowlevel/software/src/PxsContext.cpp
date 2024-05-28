@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -86,7 +86,7 @@ PxsContext::~PxsContext()
 // =========================== Create methods
 namespace physx
 {
-	bool gEnablePCMCaching[][PxGeometryType::eGEOMETRY_COUNT] =
+	const bool gEnablePCMCaching[][PxGeometryType::eGEOMETRY_COUNT] =
 	{
 		//eSPHERE,
 		{
@@ -375,7 +375,7 @@ void PxsContext::shiftOrigin(const PxVec3& shift)
 				{
 					PxcLocalContactsCache* lcc;
 					PxU8* contacts = PxcNpCacheRead(npwUnit.pairCache, lcc);
-#ifdef _DEBUG
+#if PX_DEBUG
 					PxcLocalContactsCache testCache;
 					PxU32 testBytes;
 					const PxU8* testPtr = PxcNpCacheRead2(npwUnit.pairCache, testCache, testBytes);
@@ -403,7 +403,7 @@ void PxsContext::shiftOrigin(const PxVec3& shift)
 						if(useFaceIndices)
 							contacts += 2 * sizeof(PxU32);
 					}
-#ifdef _DEBUG
+#if PX_DEBUG
 					PX_ASSERT(contacts == (testPtr + testBytes));
 #endif
 				}
@@ -471,10 +471,9 @@ void PxsContext::mergeCMDiscreteUpdateResults(PxBaseTask* /*continuation*/)
 #endif
 		mContactManagerTouchEvent.combineInPlace<PxBitMap::OR>(threadContext->getLocalChangeTouch());
 		//mContactManagerPatchChangeEvent.combineInPlace<PxBitMap::OR>(threadContext->getLocalPatchChangeMap());
-		mTotalCompressedCacheSize += threadContext->mTotalCompressedCacheSize;
 		mMaxPatches = PxMax(mMaxPatches, threadContext->mMaxPatches);
 
-		threadContext->mTotalCompressedCacheSize = threadContext->mMaxPatches = 0;
+		threadContext->mMaxPatches = 0;
 	}
 }
 

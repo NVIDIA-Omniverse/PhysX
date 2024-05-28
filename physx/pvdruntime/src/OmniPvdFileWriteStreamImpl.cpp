@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,8 +30,13 @@
 
 OmniPvdFileWriteStreamImpl::OmniPvdFileWriteStreamImpl()
 {
-	mFileName = 0;
-	mFileWasOpened = false;
+	mFileName = 0;	
+	resetFileParams();
+}
+
+void OmniPvdFileWriteStreamImpl::resetFileParams()
+{
+	mFileOpenAttempted = false;
 	mPFile = 0;
 }
 
@@ -59,52 +64,61 @@ void OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::setFileName(const char* fileName)
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::openFile()
 {
-	if (mFileWasOpened)
+	if (mFileOpenAttempted)
 	{
-		return true;
+		return (mPFile!=0);
 	}
 	if (!mFileName)
 	{
 		return false;
 	}
 	mPFile = 0;
-	mFileWasOpened = true;
+	mFileOpenAttempted = true;
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 	errno_t err = fopen_s(&mPFile, mFileName, "wb");
 	if (err != 0)
 	{
-		mFileWasOpened = false;
+		mPFile = 0;
 	}
 #else
 	mPFile = fopen(mFileName, "wb");
 #endif
-	return mFileWasOpened;
+	return (mPFile!=0);
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::closeFile()
 {
-	if (mFileWasOpened)
+	bool returnOK = true;
+	if (mFileOpenAttempted && (mPFile!=0))
 	{
 		fclose(mPFile);
-		mFileWasOpened = false;
 	}
-	return true;
+	else
+	{
+		returnOK = false;
+	}	
+	resetFileParams();
+	return returnOK;
 }
 
 uint64_t OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::writeBytes(const uint8_t *bytes, uint64_t nbrBytes)
 {
 	size_t result = 0;
-	if (mFileWasOpened)
+	if (mPFile!=0)
 	{
 		result = fwrite(bytes, 1, nbrBytes, mPFile);
-		result++;
 	}
 	return result;
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::flush()
 {
-	return true;
+	if (mPFile==0)
+	{
+		return false;
+	}
+	return fflush(mPFile) != 0;
 }
 
 bool OMNI_PVD_CALL OmniPvdFileWriteStreamImpl::openStream()

@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_BASE_H
 #define PX_BASE_H
 
-/** \addtogroup common
-@{
-*/
 
 #include "foundation/PxFlags.h"
 #include "foundation/PxString.h"
@@ -77,7 +74,7 @@ PX_FLAGS_OPERATORS(PxBaseFlag::Enum, PxU16)
 
 All PxBase sub-classes can be serialized.
 
-@see PxCollection 
+\see PxCollection 
 */
 class PxBase
 {
@@ -117,7 +114,7 @@ public:
 	\brief	Returns concrete type of object.
 	\return	PxConcreteType::Enum of serialized object
 
-	@see PxConcreteType
+	\see PxConcreteType
 	*/
 	PX_FORCE_INLINE	PxType			getConcreteType() const							{ return mConcreteType;	}
 				
@@ -134,7 +131,7 @@ public:
 
 	\param[in] inFlags The flags to be set
 
-	@see PxBaseFlags
+	\see PxBaseFlags
 	*/
 	PX_FORCE_INLINE	void			setBaseFlags(PxBaseFlags inFlags)				{ mBaseFlags = inFlags; }
 	
@@ -143,7 +140,7 @@ public:
 
 	\return	PxBaseFlags
 
-	@see PxBaseFlags
+	\see PxBaseFlags
 	*/
 	PX_FORCE_INLINE	PxBaseFlags		getBaseFlags() const							{ return mBaseFlags; }
 
@@ -154,7 +151,7 @@ public:
 
 	\return	Whether the class is subordinate
 	
-	@see PxSerialization::isSerializable
+	\see PxSerialization::isSerializable
 	*/
 	virtual		bool				isReleasable() const							{ return mBaseFlags & PxBaseFlag::eIS_RELEASABLE; }
 
@@ -239,5 +236,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

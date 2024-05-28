@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_ARTICULATION_JOINT_RC_H
 #define PX_ARTICULATION_JOINT_RC_H
-/** \addtogroup physics
-@{ */
 
 #include "PxPhysXConfig.h"
 #include "common/PxBase.h"
@@ -43,7 +41,7 @@ namespace physx
 	/**
 	\brief A joint between two links in an articulation.
 
-	@see PxArticulationReducedCoordinate, PxArticulationLink
+	\see PxArticulationReducedCoordinate, PxArticulationLink
 	*/
 	class PxArticulationJointReducedCoordinate : public PxBase
 	{
@@ -64,7 +62,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see getParentPose
+		\see getParentPose
 		*/
 		virtual		void				setParentPose(const PxTransform& pose) = 0;
 
@@ -73,7 +71,7 @@ namespace physx
 
 		\return The joint pose.
 
-		@see setParentPose
+		\see setParentPose
 		*/
 		virtual		PxTransform			getParentPose() const = 0;
 
@@ -92,7 +90,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see getChildPose
+		\see getChildPose
 		*/
 		virtual		void				setChildPose(const PxTransform& pose) = 0;
 
@@ -101,7 +99,7 @@ namespace physx
 
 		\return The joint pose.
 
-		@see setChildPose
+		\see setChildPose
 		*/
 		virtual		PxTransform			getChildPose() const = 0;
 
@@ -115,7 +113,7 @@ namespace physx
 
 		<b>Default:</b> PxArticulationJointType::eUNDEFINED
 
-		@see PxArticulationJointType, getJointType
+		\see PxArticulationJointType, getJointType
 		*/
 		virtual		void				setJointType(PxArticulationJointType::Enum jointType) = 0;
 		
@@ -124,7 +122,7 @@ namespace physx
 
 		\return The joint type.
 
-		@see PxArticulationJointType, setJointType
+		\see PxArticulationJointType, setJointType
 		*/
 		virtual		PxArticulationJointType::Enum	getJointType() const = 0;
 
@@ -139,7 +137,7 @@ namespace physx
 	
 		<b>Default:</b> PxArticulationMotion::eLOCKED
 
-		@see PxArticulationAxis, PxArticulationMotion, getMotion
+		\see PxArticulationAxis, PxArticulationMotion, getMotion
 		*/
 		virtual		void				setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum motion) = 0;
 
@@ -150,7 +148,7 @@ namespace physx
 
 		\return The joint motion of the given axis.
 
-		@see PxArticulationAxis, PxArticulationMotion, setMotion
+		\see PxArticulationAxis, PxArticulationMotion, setMotion
 		*/
 		virtual		PxArticulationMotion::Enum	getMotion(PxArticulationAxis::Enum axis) const = 0;
 
@@ -173,7 +171,7 @@ namespace physx
 		
 		<b>Default:</b> (0,0)
 
-		@see getLimitParams, PxArticulationAxis, PxArticulationLimit
+		\see getLimitParams, PxArticulationAxis, PxArticulationLimit
 		*/
 		virtual		void				setLimitParams(PxArticulationAxis::Enum axis, const PxArticulationLimit& limit) = 0;
 
@@ -184,7 +182,7 @@ namespace physx
 
 		\return The joint limits.
 
-		@see setLimitParams, PxArticulationAxis, PxArticulationLimit
+		\see setLimitParams, PxArticulationAxis, PxArticulationLimit
 		*/
 		virtual		PxArticulationLimit	getLimitParams(PxArticulationAxis::Enum axis) const = 0;
 
@@ -198,7 +196,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 		
-		@see getDriveParams, PxArticulationAxis, PxArticulationDrive
+		\see getDriveParams, PxArticulationAxis, PxArticulationDrive
 
 		<b>Default:</b> PxArticulationDrive(0.0f, 0.0f, 0.0f, PxArticulationDriveType::eNONE)
 		*/
@@ -210,7 +208,7 @@ namespace physx
 		\param[in] axis The target axis.
 		\return The drive parameters.
 
-		@see setDriveParams, PxArticulationAxis, PxArticulationDrive
+		\see setDriveParams, PxArticulationAxis, PxArticulationDrive
 		*/
 		virtual		PxArticulationDrive	getDriveParams(PxArticulationAxis::Enum axis) const = 0;
 		
@@ -232,7 +230,7 @@ namespace physx
 
 		\note For spherical joints with more than 1 degree of freedom, the joint target angles taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint drive target is not the shortest path rotation.  The joint pose J that is the outcome after driving to the target pose will always be the equivalent of the shortest path rotation.
 
-		@see PxArticulationAxis, getDriveTarget
+		\see PxArticulationAxis, getDriveTarget
 
 		<b>Default:</b> 0.0
 		*/
@@ -245,7 +243,7 @@ namespace physx
 		
 		\return The target position.
 
-		@see PxArticulationAxis, setDriveTarget
+		\see PxArticulationAxis, setDriveTarget
 		*/
 		virtual		PxReal				getDriveTarget(PxArticulationAxis::Enum axis) const = 0;
 		
@@ -261,7 +259,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see PxArticulationAxis, getDriveVelocity
+		\see PxArticulationAxis, getDriveVelocity
 
 		<b>Default:</b> 0.0
 		*/
@@ -274,7 +272,7 @@ namespace physx
 
 		\return The target velocity.
 
-		@see PxArticulationAxis, setDriveVelocity
+		\see PxArticulationAxis, setDriveVelocity
 		*/
 		virtual		PxReal				getDriveVelocity(PxArticulationAxis::Enum axis) const = 0;
 		
@@ -289,7 +287,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see PxArticulationAxis, getArmature
+		\see PxArticulationAxis, getArmature
 
 		<b>Default:</b> 0.0
 		*/
@@ -301,7 +299,7 @@ namespace physx
 		\param[in] axis The target axis.
 		\return The armature set on the given axis.
 
-		@see PxArticulationAxis, setArmature
+		\see PxArticulationAxis, setArmature
 		*/
 		virtual		PxReal				getArmature(PxArticulationAxis::Enum axis) const = 0;
 
@@ -318,7 +316,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see getFrictionCoefficient
+		\see getFrictionCoefficient
 
 		<b>Default:</b> 0.05
 		*/
@@ -329,7 +327,7 @@ namespace physx
 
 		\return The joint friction coefficient.
 
-		@see setFrictionCoefficient
+		\see setFrictionCoefficient
 		*/
 		virtual		PxReal				getFrictionCoefficient() const = 0;
 
@@ -343,7 +341,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see getMaxJointVelocity
+		\see getMaxJointVelocity
 
 		<b>Default:</b> 100.0
 		*/
@@ -354,7 +352,7 @@ namespace physx
 
 		\return The maximal per-axis joint velocity.
 
-		@see setMaxJointVelocity
+		\see setMaxJointVelocity
 		*/
 		virtual		PxReal				getMaxJointVelocity() const = 0;
 
@@ -379,7 +377,7 @@ namespace physx
 
 		\note For spherical joints with more than 1 degree of freedom, the input joint positions taken together can collectively represent a rotation of greater than Pi around a vector. When this happens the rotation that matches the joint positions is not the shortest path rotation.  The joint pose J that is the outcome of setting and applying the joint positions will always be the equivalent of the shortest path rotation.
 
-		@see PxArticulationAxis, getJointPosition, PxArticulationCache::jointPosition, PxArticulationReducedCoordinate::updateKinematic
+		\see PxArticulationAxis, getJointPosition, PxArticulationCache::jointPosition, PxArticulationReducedCoordinate::updateKinematic
 
 		<b>Default:</b> 0.0
 		*/
@@ -397,7 +395,7 @@ namespace physx
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
 
-		@see PxArticulationAxis, setJointPosition, PxArticulationCache::jointPosition
+		\see PxArticulationAxis, setJointPosition, PxArticulationCache::jointPosition
 		*/
 		virtual		PxReal				getJointPosition(PxArticulationAxis::Enum axis) const = 0;
 
@@ -413,7 +411,7 @@ namespace physx
 
 		\note This call is not allowed while the simulation is running.
 
-		@see PxArticulationAxis, getJointVelocity, PxArticulationCache::jointVelocity, PxArticulationReducedCoordinate::updateKinematic
+		\see PxArticulationAxis, getJointVelocity, PxArticulationCache::jointVelocity, PxArticulationReducedCoordinate::updateKinematic
 
 		<b>Default:</b> 0.0
 		*/
@@ -431,7 +429,7 @@ namespace physx
 		\note This call is not allowed while the simulation is running except in a split simulation during #PxScene::collide() and up to #PxScene::advance(),
 		and in PxContactModifyCallback or in contact report callbacks.
 
-		@see PxArticulationAxis, setJointVelocity, PxArticulationCache::jointVelocity
+		\see PxArticulationAxis, setJointVelocity, PxArticulationCache::jointVelocity
 		*/
 		virtual		PxReal				getJointVelocity(PxArticulationAxis::Enum axis) const = 0;
 
@@ -458,5 +456,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

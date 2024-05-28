@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,6 +31,7 @@
 
 #include "PxvDynamics.h"
 #include "CmSpatialVector.h"
+#include "foundation/PxMutex.h"
 
 namespace physx
 {
@@ -68,16 +69,15 @@ class PxsRigidBody
 	};
 
 	PX_FORCE_INLINE						PxsRigidBody(PxsBodyCore* core, PxReal freeze_count) :
-											// PT: TODO: unify naming conventions
 											mLastTransform			(core->body2World),
 											mInternalFlags			(0),
-											solverIterationCounts	(core->solverIterationCounts),
+											mSolverIterationCounts	(core->solverIterationCounts),
 											mCCD					(NULL),
 											mCore					(core),
-											sleepLinVelAcc			(PxVec3(0.0f)),
-											freezeCount				(freeze_count),
-											sleepAngVelAcc			(PxVec3(0.0f)),
-											accelScale				(1.0f)
+											mSleepLinVelAcc			(PxVec3(0.0f)),
+											mFreezeCount			(freeze_count),
+											mSleepAngVelAcc			(PxVec3(0.0f)),
+											mAccelScale				(1.0f)
 																	{}
 
 	PX_FORCE_INLINE						~PxsRigidBody()																			{}
@@ -124,7 +124,7 @@ class PxsRigidBody
 	PX_FORCE_INLINE	void				clearUnfreezeFlag()							{ mInternalFlags &= ~eUNFREEZE_THIS_FRAME;					}
 	PX_FORCE_INLINE	void				clearAllFrameFlags()						{ mInternalFlags &= ~(eFREEZE_THIS_FRAME | eUNFREEZE_THIS_FRAME | eACTIVATE_THIS_FRAME | eDEACTIVATE_THIS_FRAME);	}
 
-	PX_FORCE_INLINE	void				resetSleepFilter()							{ sleepAngVelAcc = sleepLinVelAcc = PxVec3(0.0f);			}
+	PX_FORCE_INLINE	void				resetSleepFilter()							{ mSleepAngVelAcc = mSleepLinVelAcc = PxVec3(0.0f);			}
 
 	// PT: implemented in PxsCCD.cpp:
 					void				advanceToToi(PxReal toi, PxReal dt, bool clip);
@@ -135,19 +135,19 @@ class PxsRigidBody
 					PxTransform			mLastTransform;			//28 (28)
 
 					PxU16				mInternalFlags;			//30 (30)
-					PxU16				solverIterationCounts;	//32 (32)
+					PxU16				mSolverIterationCounts;	//32 (32)
 
 					PxsCCDBody*			mCCD;					//36 (40)	// only valid during CCD	
 
 					PxsBodyCore*		mCore;					//40 (48)
 #if !PX_P64_FAMILY
-					PxU32				alignmentPad[2];		//48 (48)
+					PxU32				mAlignmentPad[2];		//48 (48)
 #endif
-					PxVec3				sleepLinVelAcc;			//60 (60)
-					PxReal				freezeCount;			//64 (64)
+					PxVec3				mSleepLinVelAcc;		//60 (60)
+					PxReal				mFreezeCount;			//64 (64)
 	   
-					PxVec3				sleepAngVelAcc;			//76 (76)
-					PxReal				accelScale;				//80 (80)
+					PxVec3				mSleepAngVelAcc;		//76 (76)
+					PxReal				mAccelScale;			//80 (80)
 }
 PX_ALIGN_SUFFIX(16);
 PX_COMPILE_TIME_ASSERT(0 == (sizeof(PxsRigidBody) & 0x0f));
@@ -179,6 +179,67 @@ void PxsRigidBody::constrainAngularVelocity()
 			mCore->angularVelocity.z = 0.0f;
 	}
 }
+
+
+struct PxsRigidBodyExternalAcceleration
+{
+	PxVec3 linearAcceleration;
+	PxVec3 angularAcceleration;
+
+	PxsRigidBodyExternalAcceleration() : linearAcceleration(PxVec3(0.0f)), angularAcceleration(PxVec3(0.0f))
+	{ }
+
+	PxsRigidBodyExternalAcceleration(const PxVec3& linearAcc, const PxVec3& angularAcc) : 
+		linearAcceleration(linearAcc), angularAcceleration(angularAcc)
+	{ }
+};
+
+struct PxsExternalAccelerationProvider
+{
+	PxArray<PxsRigidBodyExternalAcceleration> mAccelerations;
+	PxMutex mLock;
+	volatile PxU32 mArraySize; //Required because of multi threading
+
+	PxsExternalAccelerationProvider() : mArraySize(0)
+	{ }
+
+	PX_FORCE_INLINE void setValue(PxsRigidBodyExternalAcceleration& value, PxU32 index, PxU32 maxNumBodies)
+	{
+		if (mArraySize < maxNumBodies)
+		{
+			PxMutex::ScopedLock lock(mLock);
+			if (mArraySize < maxNumBodies) //Test again because only after the lock we are sure that only one thread is active at a time
+			{
+				mAccelerations.resize(maxNumBodies);
+				mArraySize = maxNumBodies; //Only now the resize is complete - mAccelerations.size() might already change before the array actually allocated the new memory
+			}
+		}
+		PX_ASSERT(index < mArraySize);
+		mAccelerations[index] = value;
+	}
+
+	PX_FORCE_INLINE bool hasAccelerations() const
+	{
+		return mArraySize > 0;
+	}
+
+	PX_FORCE_INLINE const PxsRigidBodyExternalAcceleration& get(PxU32 index) const
+	{
+		PX_ASSERT(index < mArraySize);
+		return mAccelerations[index];
+	}
+
+	PX_FORCE_INLINE void clearAll()
+	{
+		if (mArraySize > 0)
+		{
+			mAccelerations.clear();
+			mArraySize = 0;
+		}
+		else if (mAccelerations.capacity() > 0)
+			mAccelerations.reset();
+	}
+};
 
 }
 

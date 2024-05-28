@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -197,7 +197,7 @@ bool Gu::pcmContactBoxConvex(GU_CONTACT_METHOD_ARGS)
 
 	manifold.refreshContactPoints(aToB, projectBreakingThreshold, contactDist);  
 
-	const Vec3V extents = V3Mul(V3LoadU(hullData->mInternal.mExtents), vScale);
+	const Vec3V extents = V3Mul(V3LoadU_SafeReadW(hullData->mInternal.mInternalExtents), vScale);
 	const FloatV radiusA = V3Length(boxExtents);
 	const FloatV radiusB = V3Length(extents);
 	

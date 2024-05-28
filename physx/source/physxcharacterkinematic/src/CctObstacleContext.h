@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -81,23 +81,24 @@ namespace Cct
 
 	class ObstacleContext : public PxObstacleContext, public PxUserAllocated
 	{
+												PX_NOCOPY(ObstacleContext)
 		public:
 												ObstacleContext(CharacterControllerManager& );
 		virtual									~ObstacleContext();
 
 		// PxObstacleContext
-		virtual	void							release()	PX_OVERRIDE;
-		virtual PxControllerManager&			getControllerManager() const	PX_OVERRIDE;
-		virtual	PxObstacleHandle				addObstacle(const PxObstacle& obstacle)	PX_OVERRIDE;
-		virtual	bool							removeObstacle(PxObstacleHandle handle)	PX_OVERRIDE;
-		virtual	bool							updateObstacle(PxObstacleHandle handle, const PxObstacle& obstacle)	PX_OVERRIDE;
-		virtual	PxU32							getNbObstacles()		const	PX_OVERRIDE;
-		virtual	const PxObstacle*				getObstacle(PxU32 i)	const	PX_OVERRIDE;
-		virtual	const PxObstacle*				getObstacleByHandle(PxObstacleHandle handle)	const	PX_OVERRIDE;
+		virtual	void							release()	PX_OVERRIDE	PX_FINAL;
+		virtual PxControllerManager&			getControllerManager() const	PX_OVERRIDE	PX_FINAL;
+		virtual	PxObstacleHandle				addObstacle(const PxObstacle& obstacle)	PX_OVERRIDE	PX_FINAL;
+		virtual	bool							removeObstacle(PxObstacleHandle handle)	PX_OVERRIDE	PX_FINAL;
+		virtual	bool							updateObstacle(PxObstacleHandle handle, const PxObstacle& obstacle)	PX_OVERRIDE	PX_FINAL;
+		virtual	PxU32							getNbObstacles()		const	PX_OVERRIDE	PX_FINAL;
+		virtual	const PxObstacle*				getObstacle(PxU32 i)	const	PX_OVERRIDE	PX_FINAL;
+		virtual	const PxObstacle*				getObstacleByHandle(PxObstacleHandle handle)	const	PX_OVERRIDE	PX_FINAL;
 		//~PxObstacleContext
 
-				const PxObstacle*				raycastSingle(PxGeomRaycastHit& hit, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance, PxObstacleHandle& obstacleHandle)	const;
-				const PxObstacle*				raycastSingle(PxGeomRaycastHit& hit, const PxObstacleHandle& obstacleHandle, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance)	const; // raycast just one obstacle handle
+				const PxObstacle*				raycastSingle(PxGeomRaycastHit& hit, const PxVec3& origin, const PxVec3& unitDir, PxReal distance, PxObstacleHandle& obstacleHandle)	const;
+				const PxObstacle*				raycastSingle(PxGeomRaycastHit& hit, const PxObstacleHandle& obstacleHandle, const PxVec3& origin, const PxVec3& unitDir, PxReal distance)	const; // raycast just one obstacle handle
 
 				void							onOriginShift(const PxVec3& shift);
 
@@ -120,7 +121,6 @@ namespace Cct
 				PxArray<InternalCapsuleObstacle>	mCapsuleObstacles;
 
 	private:
-				ObstacleContext&				operator=(const ObstacleContext&);
 				HandleManager					mHandleManager;
 				CharacterControllerManager&		mCCTManager;
 	};

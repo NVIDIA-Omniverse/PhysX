@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -376,7 +376,7 @@ typename TConfig::Float mfTireLongitudinalForcePure(const typename TConfig::Floa
 \param[in] volatileSharedParams Model parameters not just used for longitudinal force
 \return Longitudinal force.
 
-@see mfTireLongitudinalForcePure()
+\see mfTireLongitudinalForcePure()
 */
 template<typename TConfig>
 typename TConfig::Float mfTireLongitudinalForceCombined(const typename TConfig::Float kappa, const typename TConfig::Float tanAlpha, const typename TConfig::Float fx0,
@@ -679,7 +679,7 @@ typename TConfig::Float mfTireLateralForcePure(const typename TConfig::Float tan
                to the pointer target.
 \return Lateral force.
 
-@see mfTireLateralForcePure()
+\see mfTireLateralForcePure()
 */
 template<typename TConfig>
 typename TConfig::Float mfTireLateralForceCombined(const typename TConfig::Float tanAlpha, const typename TConfig::Float kappa, 
@@ -931,7 +931,7 @@ typename TConfig::Float mfTireAligningTorquePurePneumaticTrail(const typename TC
 \param[in] volatileSharedParams Model parameters not just used for aligning torque
 \return Aligning torque (pneumatic trail term).
 
-@see mfTireAligningTorquePurePneumaticTrail
+\see mfTireAligningTorquePurePneumaticTrail
 */
 template<typename TConfig>
 typename TConfig::Float mfTireAligningTorqueCombinedPneumaticTrail(const typename TConfig::Float tanAlpha, const typename TConfig::Float kappaScaledSquared,
@@ -1121,7 +1121,7 @@ typename TConfig::Float mfTireAligningTorquePureResidualTorque(const typename TC
 \param[in] volatileSharedParams Model parameters not just used for aligning torque
 \return Aligning torque (residual torque term).
 
-@see mfTireAligningTorquePureResidualTorque()
+\see mfTireAligningTorquePureResidualTorque()
 */
 template<typename TConfig>
 typename TConfig::Float mfTireAligningTorqueCombinedResidualTorque(const typename TConfig::Float tanAlpha, const typename TConfig::Float kappaScaledSquared, 

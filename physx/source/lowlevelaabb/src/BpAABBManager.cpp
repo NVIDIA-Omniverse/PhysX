@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -81,7 +81,7 @@ static PX_FORCE_INLINE uint32_t PxComputeHash(const AggPair& p)
 	return PxU32(physx::PxComputeHash( (p.mIndex0&0xffff)|(p.mIndex1<<16)) );
 }
 
-static PX_FORCE_INLINE bool shouldPairBeDeleted(const PxPinnedArray<Bp::FilterGroup::Enum>& groups, ShapeHandle h0, ShapeHandle h1)
+static PX_FORCE_INLINE bool shouldPairBeDeleted(const GroupsArrayPinned& groups, ShapeHandle h0, ShapeHandle h1)
 {
 	PX_ASSERT(h0<groups.size());
 	PX_ASSERT(h1<groups.size());
@@ -100,7 +100,7 @@ static PX_FORCE_INLINE bool shouldPairBeDeleted(const PxPinnedArray<Bp::FilterGr
 														Aggregate(BoundsIndex index, PxAggregateFilterHint filterHint);
 														~Aggregate();
 
-						BoundsIndex						mIndex;
+						const BoundsIndex				mIndex;
 		private:
 						PxArray<BoundsIndex>			mAggregated;	// PT: TODO: replace with linked list?
 		public:
@@ -1146,7 +1146,6 @@ bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::Filte
 		}
 	}
 
-	// PT: TODO: remove or use this return value. Currently useless since always true. Gives birth to unreachable code in callers.
 	return true;
 }
 

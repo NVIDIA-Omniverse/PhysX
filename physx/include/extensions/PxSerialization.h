@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SERIALIZATION_H
 #define PX_SERIALIZATION_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxBase.h"
@@ -44,7 +41,7 @@
 PX_BINARY_SERIAL_VERSION is used to version the PhysX binary data and meta data. The global unique identifier of the PhysX SDK needs to match 
 the one in the data and meta data, otherwise they are considered incompatible. A 32 character wide GUID can be generated with https://www.guidgenerator.com/ for example. 
 */
-#define PX_BINARY_SERIAL_VERSION "F57A6B4570DF49E38116AB1E0284A98B"
+#define PX_BINARY_SERIAL_VERSION "EEDFDB718C504480BB77F9B8DA353B60"
 
 
 #if !PX_DOXYGEN
@@ -57,7 +54,7 @@ namespace physx
 /**
 \brief Utility functions for serialization
 
-@see PxCollection, PxSerializationRegistry
+\see PxCollection, PxSerializationRegistry
 */
 class PxSerialization
 {
@@ -70,7 +67,7 @@ public:
 	The PxXmlMiscParameter parameter can be serialized and deserialized along with PxCollection instances (XML only).
 	This is for application use only and has no impact on how objects are serialized or deserialized. 
 
-	@see PxSerialization::createCollectionFromXml, PxSerialization::serializeCollectionToXml
+	\see PxSerialization::createCollectionFromXml, PxSerialization::serializeCollectionToXml
 	*/
 	struct PX_DEPRECATED PxXmlMiscParameter
 	{
@@ -110,7 +107,7 @@ public:
 	\param[in] sr PxSerializationRegistry instance with information about registered classes.
 	\param[in] externalReferences the external References collection
 	\return  Whether the collection is serializable
-	@see PxSerialization::complete, PxSerialization::serializeCollectionToBinary, PxSerialization::serializeCollectionToXml, PxSerializationRegistry
+	\see PxSerialization::complete, PxSerialization::serializeCollectionToBinary, PxSerialization::serializeCollectionToXml, PxSerializationRegistry
 	*/
 	static	bool			isSerializable(PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* externalReferences = NULL);
 
@@ -139,7 +136,7 @@ public:
 	\param[in] sr PxSerializationRegistry instance with information about registered classes.
 	\param[in] exceptFor Optional exemption collection
 	\param[in] followJoints Specifies whether joints should be added for jointed actors
-	@see PxCollection, PxSerialization::serializeCollectionToBinary, PxSerialization::serializeCollectionToXml, PxSerializationRegistry
+	\see PxCollection, PxSerialization::serializeCollectionToBinary, PxSerialization::serializeCollectionToXml, PxSerializationRegistry
 	*/
 	static	void			complete(PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* exceptFor = NULL, bool followJoints = false);
 	
@@ -151,7 +148,7 @@ public:
 
 	\param[in,out] collection Collection for which names are created
 	\param[in] base Start address for PxSerialObjectId names
-	@see PxCollection
+	\see PxCollection
 	*/
 	static	void			createSerialObjectIds(PxCollection& collection, const PxSerialObjectId base);
 			
@@ -168,7 +165,7 @@ public:
 	\param outArgs Optional parameters of physics and scene deserialized from XML. See #PxSerialization::PxXmlMiscParameter
 	\return a pointer to a PxCollection if successful or NULL if it failed.
 
-	@see PxCollection, PxSerializationRegistry, PxInputData, PxStringTable, PxCooking, PxSerialization::PxXmlMiscParameter
+	\see PxCollection, PxSerializationRegistry, PxInputData, PxStringTable, PxCooking, PxSerialization::PxXmlMiscParameter
 	*/
 	PX_DEPRECATED static PxCollection* createCollectionFromXml(PxInputData& inputData, const PxCookingParams& params, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL, PxStringTable* stringTable = NULL, PxXmlMiscParameter* outArgs = NULL);
 	
@@ -187,7 +184,7 @@ public:
 	\param[in] sr PxSerializationRegistry instance with information about registered classes.
 	\param[in] externalRefs Collection to resolve external dependencies
 
-	@see PxCollection, PxSerialization::complete, PxSerialization::serializeCollectionToBinary, PxSerializationRegistry, PX_BINARY_SERIAL_VERSION
+	\see PxCollection, PxSerialization::complete, PxSerialization::serializeCollectionToBinary, PxSerializationRegistry, PX_BINARY_SERIAL_VERSION
 	*/
 	static	PxCollection*	createCollectionFromBinary(void* memBlock, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL);
 
@@ -196,7 +193,7 @@ public:
 
 	\deprecated Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.
 
-	The collection to be serialized needs to be complete @see PxSerialization.complete.
+	The collection to be serialized needs to be complete \see PxSerialization.complete.
 	Optionally the XML may contain meshes in binary cooked format for fast loading. It does this when providing a valid non-null PxCooking pointer.
 
 	\note Serialization of objects in a scene that is simultaneously being simulated is not supported and leads to undefined behavior. 
@@ -209,9 +206,9 @@ public:
 	\param inArgs Optional parameters of physics and scene serialized to XML along with the collection. See #PxSerialization::PxXmlMiscParameter
 	\return true if the collection is successfully serialized.
 
-	@see PxCollection, PxOutputStream, PxSerializationRegistry, PxCooking, PxSerialization::PxXmlMiscParameter
+	\see PxCollection, PxOutputStream, PxSerializationRegistry, PxCooking, PxSerialization::PxXmlMiscParameter
 	*/
-	PX_DEPRECATED static bool serializeCollectionToXml(PxOutputStream& outputStream, PxCollection& collection,  PxSerializationRegistry& sr, const PxCookingParams* params = NULL, const PxCollection* externalRefs = NULL, PxXmlMiscParameter* inArgs = NULL);
+	PX_DEPRECATED static bool serializeCollectionToXml(PxOutputStream& outputStream, PxCollection& collection, PxSerializationRegistry& sr, const PxCookingParams* params = NULL, const PxCollection* externalRefs = NULL, PxXmlMiscParameter* inArgs = NULL);
 	
 	/**
 	\brief Serializes a collection to a binary stream.
@@ -233,7 +230,7 @@ public:
 	\param[in] exportNames Specifies whether object names are serialized
 	\return Whether serialization was successful
 
-	@see PxCollection, PxOutputStream, PxSerialization::complete, PxSerialization::createCollectionFromBinary, PxSerializationRegistry
+	\see PxCollection, PxOutputStream, PxSerialization::complete, PxSerialization::createCollectionFromBinary, PxSerializationRegistry
 	*/
 	static	bool			serializeCollectionToBinary(PxOutputStream& outputStream, PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL, bool exportNames = false );
 
@@ -250,7 +247,7 @@ public:
 	- producing the binary meta data of the current runtime platform with PxSerialization::dumpBinaryMetaData
 	- converting the binary data stream with the PxBinaryConverter, using the binary meta for both source and destination
 
-	@see PxSerialization::serializeCollectionToBinary, PxSerialization::dumpBinaryMetaData, PxBinaryConverter
+	\see PxSerialization::serializeCollectionToBinary, PxSerialization::dumpBinaryMetaData, PxBinaryConverter
 	*/
 	PX_DEPRECATED static bool serializeCollectionToBinaryDeterministic(PxOutputStream& outputStream, PxCollection& collection, PxSerializationRegistry& sr, const PxCollection* externalRefs = NULL, bool exportNames = false);
 
@@ -268,7 +265,7 @@ public:
 	\param[out] outputStream Stream to write meta data to	
 	\param[in] sr PxSerializationRegistry instance with information about registered classes used for conversion.
 	
-	@see PxOutputStream, PxSerializationRegistry
+	\see PxOutputStream, PxSerializationRegistry
 	*/
 	PX_DEPRECATED static void dumpBinaryMetaData(PxOutputStream& outputStream, PxSerializationRegistry& sr);
 
@@ -288,7 +285,7 @@ public:
 	
 	\return PxSerializationRegistry instance.
 
-	@see PxSerializationRegistry
+	\see PxSerializationRegistry
 	*/
 	static PxSerializationRegistry* createSerializationRegistry(PxPhysics& physics);	
 };
@@ -297,5 +294,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

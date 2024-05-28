@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -89,6 +89,7 @@ struct PxcNpContext
 													mContactStreamPool		(NULL),
 													mPatchStreamPool		(NULL),
 													mForceAndIndiceStreamPool(NULL),
+													mFrictionPatchStreamPool(NULL),
 													mMaterialManager		(NULL)
 												{
 												}
@@ -101,7 +102,7 @@ struct PxcNpContext
 					PxcDataStreamPool*			mContactStreamPool;
 					PxcDataStreamPool*			mPatchStreamPool;
 					PxcDataStreamPool*			mForceAndIndiceStreamPool;
-					PxcDataStreamPool*			mConstraintWriteBackStreamPool;
+					PxcDataStreamPool*			mFrictionPatchStreamPool;
 					PxsMaterialManager*			mMaterialManager;
 
 	PX_FORCE_INLINE	PxReal						getToleranceLength()		const	{ return mToleranceLength;					}
@@ -133,12 +134,11 @@ public:
 	PX_FORCE_INLINE PxU32						getLocalNewTouchCount()					const	{ return mLocalNewTouchCount;				}
 	PX_FORCE_INLINE PxU32						getLocalLostTouchCount()				const	{ return mLocalLostTouchCount;				}
 
-
 	PX_FORCE_INLINE PxBitMap&					getLocalChangeTouch()							{ return mLocalChangeTouch;					}
 
-	void										reset(PxU32 cmCount);
+					void						reset(PxU32 cmCount);
 	// debugging
-						PxRenderOutput 			mRenderOutput;
+					PxRenderOutput 				mRenderOutput;
 
 	// dsequeira: Need to think about this block pool allocation a bit more. Ideally we'd be 
 	// taking blocks from a single pool, except that we want to be able to selectively reclaim
@@ -164,7 +164,6 @@ public:
 
 	// DS: this stuff got moved here from the PxcNpPairContext. As Pierre says:
 	////////// PT: those members shouldn't be there in the end, it's not necessary
-					PxArray<Sc::BodySim*>		mBodySimPool;
 					PxsTransformCache*			mTransformCache;
 					const PxReal*				mContactDistances;
 					bool						mPCM;
@@ -182,15 +181,13 @@ public:
 					PxU32						mCCDFaceIndex;
 
 					PxU32						mMaxPatches;
-					//PxU32						mTotalContactCount;
-					PxU32						mTotalCompressedCacheSize;
-					//PxU32						mTotalPatchCount;
 
 					PxcDataStreamPool*			mContactStreamPool;
 					PxcDataStreamPool*			mPatchStreamPool;
 					PxcDataStreamPool*			mForceAndIndiceStreamPool; //this stream is used to store the force buffer and triangle index if we are performing mesh/heightfield contact gen
-					PxcDataStreamPool*			mConstraintWriteBackStreamPool;
+					PxcDataStreamPool*			mFrictionPatchStreamPool;
 					PxsMaterialManager*			mMaterialManager;
+
 private:
 		// change touch handling.
 					PxBitMap					mLocalChangeTouch;

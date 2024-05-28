@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,8 +38,6 @@
 #include "NpFEMSoftBodyMaterial.h"
 #include "NpFEMClothMaterial.h"
 #include "NpPBDMaterial.h"
-#include "NpFLIPMaterial.h"
-#include "NpMPMMaterial.h"
 #include "NpPhysicsInsertionCallback.h"
 #include "NpMaterialManager.h"
 #include "ScPhysics.h"
@@ -143,9 +141,7 @@ public:
 	virtual		PxSoftBody*							createSoftBody(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxHairSystem*						createHairSystem(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxFEMCloth*							createFEMCloth(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual		PxPBDParticleSystem*				createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood)	PX_OVERRIDE;
-	virtual		PxFLIPParticleSystem*				createFLIPParticleSystem(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual		PxMPMParticleSystem*				createMPMParticleSystem(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual		PxPBDParticleSystem*				createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood, PxReal neighborhoodScale)	PX_OVERRIDE;
 
 	virtual		PxConstraint*				createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize)	PX_OVERRIDE;
 	virtual		PxAggregate*				createAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE;
@@ -173,14 +169,6 @@ public:
 	virtual		PxU32						getNbPBDMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getPBDMaterials(PxPBDMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 	
-	virtual		PxFLIPMaterial*				createFLIPMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, PxReal viscosity, PxReal gravityScale)	PX_OVERRIDE;
-	virtual		PxU32						getNbFLIPMaterials() const	PX_OVERRIDE;
-	virtual		PxU32						getFLIPMaterials(PxFLIPMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
-	
-	virtual		PxMPMMaterial*				createMPMMaterial(PxReal friction, PxReal damping, PxReal maxVelocity, bool isPlastic, PxReal youngsModulus, PxReal poissons, PxReal hardening, PxReal criticalCompression, PxReal criticalStretch, PxReal tensileDamageSensitivity, PxReal compressiveDamageSensitivity, PxReal attractiveForceResidual, PxReal gravityScale)	PX_OVERRIDE;
-	virtual		PxU32						getNbMPMMaterials() const	PX_OVERRIDE;
-	virtual		PxU32						getMPMMaterials(PxMPMMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
-
 	virtual		PxTriangleMesh*				createTriangleMesh(PxInputStream&)	PX_OVERRIDE;
 	virtual		PxU32						getNbTriangleMeshes()	const	PX_OVERRIDE;
 	virtual		PxU32						getTriangleMeshes(PxTriangleMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const	PX_OVERRIDE;
@@ -244,8 +232,6 @@ public:
 				NpMaterialManager<NpPBDMaterial>&			getPBDMaterialManager()			{ return mMasterPBDMaterialManager; }
 	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 				NpMaterialManager<NpFEMClothMaterial>&		getFEMClothMaterialManager()	{ return mMasterFEMClothMaterialManager; }
-				NpMaterialManager<NpFLIPMaterial>&			getFLIPMaterialManager()		{ return mMasterFLIPMaterialManager; }
-				NpMaterialManager<NpMPMMaterial>&			getMPMMaterialManager()			{ return mMasterMPMMaterialManager; }
 	#endif
 #endif
 				NpMaterial*									addMaterial(NpMaterial* np);
@@ -265,16 +251,11 @@ public:
 				NpFEMClothMaterial*							addMaterial(NpFEMClothMaterial* np);
 				void										removeMaterialFromTable(NpFEMClothMaterial&);
 				void										updateMaterial(NpFEMClothMaterial&);
-
-				NpFLIPMaterial*								addMaterial(NpFLIPMaterial* np);
-				void										removeMaterialFromTable(NpFLIPMaterial&);
-				void										updateMaterial(NpFLIPMaterial&);
-				
-				NpMPMMaterial*								addMaterial(NpMPMMaterial* np);
-				void										removeMaterialFromTable(NpMPMMaterial&);
-				void										updateMaterial(NpMPMMaterial&);
 	#endif
 #endif
+
+				PX_FORCE_INLINE PxMutex& getSceneAndMaterialMutex() { return mSceneAndMaterialMutex; }
+
 	static		void				initOffsetTables(PxvOffsetTable& pxvOffsetTable);
 
 	static bool apiReentryLock;
@@ -311,7 +292,19 @@ private:
 				MeshDeletionListener					mDeletionMeshListener;
 				bool									mDeletionListenersExist;
 
-				PxMutex									mSceneAndMaterialMutex;				// guarantees thread safety for API calls related to scene and material containers
+				PxMutex									mSceneAndMaterialMutex;
+				// guarantees thread safety for API calls related to scene and material containers
+				// For example:
+				// - add/remove scenes to/from scene pointer array
+				//   vs
+				//   adding material add/update/remove events to the scenes
+				//
+				// - parallel access to material
+				//
+				// The granularity seems a bit coarse though. Would rather expect two mutexes,
+				// one to protect access to the scene list and one for access to the material manager.
+				// This would probably need careful implementation to avoid deadlocks.
+				//
 
 				PxFoundation&							mFoundation;
 
@@ -349,8 +342,6 @@ private:
 #if PX_SUPPORT_GPU_PHYSX
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 				NpMaterialManager<NpFEMClothMaterial>			mMasterFEMClothMaterialManager;
-				NpMaterialManager<NpFLIPMaterial>				mMasterFLIPMaterialManager;
-				NpMaterialManager<NpMPMMaterial>				mMasterMPMMaterialManager;
 #endif
 #endif
 };
@@ -393,23 +384,6 @@ public:
 	}
 };
 
-template <> class NpMaterialAccessor<NpFLIPMaterial>
-{
-public:
-	static NpMaterialManager<NpFLIPMaterial>& getMaterialManager(NpPhysics& physics)
-	{
-		return physics.getFLIPMaterialManager();
-	}
-};
-
-template <> class NpMaterialAccessor<NpMPMMaterial>
-{
-public:
-	static NpMaterialManager<NpMPMMaterial>& getMaterialManager(NpPhysics& physics)
-	{
-		return physics.getMPMMaterialManager();
-	}
-};
 #endif
 #endif
 

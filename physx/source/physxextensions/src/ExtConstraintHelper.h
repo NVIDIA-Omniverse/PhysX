@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -49,10 +49,26 @@ namespace Ext
 				cB2w.q = -cB2w.q;
 		}
 
+		/*
+		\brief Transform the two joint frames into the world frame using the global poses of the associated actors.
+
+		\param[out]	cA2w	joint frame associated with body 0 expressed in the world frame
+							ie if g0 is the global pose of actor 0 then cA2w = g0 * jointFrame_0.
+		\param[out]	cB2w	joint frame associated with body 1 expressed in the world frame
+							ie if g1 is the global pose of actor 1 then cB2w = g1 * jointFrame_1.
+		\param[in]	data	contains cmLocalPose^-1 * jointFrame for each body.
+		\param[in]	bA2w	pose of the centre of mass of body 0 expressed in the world frame.
+		\param[in]	bB2w	pose of the centre of mass of body 1 expressed in the world frame.
+
+		\note b2w = g*cmLocalPose so we have g = b2w*cmLocalPose^-1. 
+		We therefore have g * jointFrame = b2w * cmLocalPose^-1 * jointFrame = b2w * data.c2b
+		*/
 		PX_INLINE void computeJointFrames(PxTransform32& cA2w, PxTransform32& cB2w, const JointData& data, const PxTransform& bA2w, const PxTransform& bB2w)
 		{
 			PX_ASSERT(bA2w.isValid() && bB2w.isValid());
 
+			//cA2w = bA2w * (cMassLocalPose0^-1 * jointFrame0)
+			//cB2w = bB2w * (cMassLocalPose1^-1 * jointFrame1)
 			aos::transformMultiply<false, true>(cA2w, bA2w, data.c2b[0]);
 			aos::transformMultiply<false, true>(cB2w, bB2w, data.c2b[1]);
 
@@ -246,6 +262,16 @@ namespace Ext
 
 					ra += errorVector;
 
+					//Note that our convention is that C(s) = geometricError = (xA + rA) - (xB + rB)
+					//where xA, xB are the positions of the two bodies in the world frame and rA, rB
+					//are the vectors in the world frame from each body to the joint anchor.
+					//We solve Jv + C(s)/dt = Jv + geometricError/dt = 0.
+					//With GA, GB denoting the actor poses in world frame and LA, LB denoting the 
+					//associated joint frames we have: cB2cAp = [(GA*LA)^-1 * (GB*LB)].p
+					//But cB2cAp = (GA*LA).q.getConjugate() * ((xB + rB) - (xA + rA))
+					//To match our convention we want geometricError = (GA*LA).q.getConjugate() * ((xA + rA) - (xB + rB))
+					//cB2cAp therefore has the wrong sign to be used directly as the geometric error.
+					//We need to negate cB2cAp to ensure that we set geometricError with the correct sign.				
 					if(lin&1) _linear(axes.column0, ra, rb, -cB2cAp.x, PxConstraintSolveHint::eEQUALITY, current++);
 					if(lin&2) _linear(axes.column1, ra, rb, -cB2cAp.y, PxConstraintSolveHint::eEQUALITY, current++);
 					if(lin&4) _linear(axes.column2, ra, rb, -cB2cAp.z, PxConstraintSolveHint::eEQUALITY, current++);
@@ -302,8 +328,63 @@ namespace Ext
 					c->solveHint = PxConstraintSolveHint::eINEQUALITY;
 					c->mods.bounce.restitution = limit.restitution;
 					c->mods.bounce.velocityThreshold = limit.bounceThreshold;
-					if(c->geometricError>0.0f)
+
+					if (c->geometricError > 0.0f)
+					{
 						flags |= Px1DConstraintFlag::eKEEPBIAS;
+						// note: positive error is the scenario where the limit is not hit yet. It reflects the
+						// distance to the limit. Using eKEEPBIAS feels unintuitive in general but what seems to
+						// be solved with this is:
+						//
+						// imagine the following scenario: object o moving towards a limit with velocity v
+						// 
+						//                  |
+						// o---> v          |
+						//                  |
+						//
+						// and let's denote the following distances
+						// 
+						// |<-------->|  |v|*dt  (travel distance assuming time step dt)
+						// |<-------------->|  |ge| (distance to limit = geometric error)
+						// 
+						// furthermore, the sign convention is that v as drawn here is negative and ge is
+						// positive. Since -v*dt is smaller than ge, the limit will not get hit in the dt time
+						// step range. This means, the velocity after the sim step should not change and remain v.
+						// For the solver this means no impulse should get applied.
+						// The impulse applied by the solver is of the form:
+						// 
+						// impulse = -r * ((v - vT) + ge/dt)  (r is a positive scalar value)
+						// 
+						// for this example, let's assume the target velocity vT is zero, so:
+						// 
+						// impulse = -r * (v + ge/dt)  (1)
+						// 
+						// Without Px1DConstraintFlag::eKEEPBIAS, the part related to the geometric error is ignored
+						// during velocity iterations:
+						//
+						// impulse = -r * v
+						// 
+						// The solver will apply the resulting (positive) impulse and this will change the velocity
+						// of the object. That would be wrong though because the object does not hit the limit yet
+						// and the velocity should stay the same.
+						// 
+						// Why does Px1DConstraintFlag::eKEEPBIAS prevent this from happening? In this case, equation
+						// (1) applies and since -v*dt < ge, the resulting impulse will be negative ((v + ge/dt) is
+						// positive). Limit constraints are inequality constraints and clamp the impulse in the range
+						// [0, maxImpulse], thus the negative impulse will get clamped to zero and the velocity will
+						// not change (as desired).
+						// 
+						// Why then create this constraint at all? Imagine the same scenario but with a velocity
+						// magnitude such that the limit gets hit in the dt time step range:
+						// 
+						// |<--------------------->|  |v|*dt
+						// |<-------------->|  |ge|
+						// 
+						// (v + ge/dt) will be negative and the impulse positive. The impulse will get applied and
+						// will make sure that the velocity is reduced by the right amount such that the object
+						// stops at the limit (and does not breach it).
+					}
+
 					if(limit.restitution>0.0f)
 						flags |= Px1DConstraintFlag::eRESTITUTION;
 				}

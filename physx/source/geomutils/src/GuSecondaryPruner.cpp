@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -404,7 +404,7 @@ bool CompanionPrunerAABBTree::removeObject(const PrunerPayload& object, PrunerHa
 	//
 	// - update the number of primitives in the node. In this case we update the contents of a leaf node, which means decreasing
 	//   the number of primitives there and reordering them so that there is no hole in the list. This requires an update map so
-	//   it uses more memory and more CPU time during the remove call. It also has a really, really, really nasty side-effect of
+	//   it uses more memory and more CPU time during the remove call. It also has a really, really, really vile side-effect of
 	//   invalidating the optimization that skips the object bounds test in the traversal code when the number of primitives is 1. (*)
 	//
 	// - the next step would be to recompute the *node* bounds, to take into account the fact that one of the bounds involved in
@@ -423,7 +423,7 @@ bool CompanionPrunerAABBTree::removeObject(const PrunerPayload& object, PrunerHa
 	//
 	// (*) the optimization relies on the fact that the narrow-phase test is roughly as expensive as the AABB test within the
 	// tree, so it skips it if there is only one primitive in the node. (With multiple primitives it's worth doing the test
-	// anyway since one AABB test can skip N narrow-phase tests). The nasty bit is that removing an object can suddenly mean
+	// anyway since one AABB test can skip N narrow-phase tests). The annoying bit is that removing an object can suddenly mean
 	// the AABB test isn't done anymore, and while it isn't a big deal in practice it's enough to break unit tests that don't
 	// expect that.
 

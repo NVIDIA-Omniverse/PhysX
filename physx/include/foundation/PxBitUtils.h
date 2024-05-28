@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -80,7 +80,26 @@ PX_INLINE uint32_t PxLowestSetBit(uint32_t x)
 Return the index of the highest set bit. Not valid for zero arg.
 */
 
+PX_INLINE uint32_t PxLowestSetBit(uint64_t x)
+{
+	PX_ASSERT(x);
+	return PxLowestSetBitUnsafe(x);
+}
+
+/*!
+Return the index of the highest set bit. Not valid for zero arg.
+*/
+
 PX_INLINE uint32_t PxHighestSetBit(uint32_t x)
+{
+	PX_ASSERT(x);
+	return PxHighestSetBitUnsafe(x);
+}
+
+/*!
+Return the index of the highest set bit. Not valid for zero arg.
+*/
+PX_INLINE uint32_t PxHighestSetBit(uint64_t x)
 {
 	PX_ASSERT(x);
 	return PxHighestSetBitUnsafe(x);

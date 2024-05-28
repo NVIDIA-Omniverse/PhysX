@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -145,7 +145,7 @@ void PxVehicleDifferentialNWData::setDrivenWheelStatus(PxU32 status)
 
 bool PxVehicleDifferentialNWData::isValid() const
 {
-	PX_CHECK_AND_RETURN_VAL(mNbDrivenWheels<=PX_MAX_NB_WHEELS,  "PxVehicleDifferentialNWData.mNbDrivenWheels must be in range (0,20)", false);
+	PX_CHECK_AND_RETURN_VAL(mNbDrivenWheels<=PX_MAX_NB_WHEELS, "PxVehicleDifferentialNWData.mNbDrivenWheels must be in range (0,20)", false);
 	return true;
 }
 

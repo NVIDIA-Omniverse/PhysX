@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -35,6 +35,7 @@
 #include "ScShapeCore.h"
 #include "NpPhysics.h"
 #include "CmPtrTable.h"
+#include "foundation/PxSimpleTypes.h"
 
 namespace physx
 {
@@ -63,46 +64,48 @@ public:
 	virtual										~NpShape();
 
 	// PxRefCounted
-	virtual			PxU32						getReferenceCount() const	PX_OVERRIDE;
-	virtual			void						acquireReference()	PX_OVERRIDE;
+	virtual			PxU32						getReferenceCount() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						acquireReference()	PX_OVERRIDE PX_FINAL;
 	//~PxRefCounted
 
 	// PxShape
-	virtual			void						release()	PX_OVERRIDE; //!< call to release from actor
-	virtual			void						setGeometry(const PxGeometry&)	PX_OVERRIDE;
-	virtual			const PxGeometry&			getGeometry() const	PX_OVERRIDE;
-	virtual			PxRigidActor*				getActor() const	PX_OVERRIDE;
-	virtual			void						setLocalPose(const PxTransform& pose)	PX_OVERRIDE;
-	virtual			PxTransform					getLocalPose() const	PX_OVERRIDE;
-	virtual			void						setSimulationFilterData(const PxFilterData& data)	PX_OVERRIDE;
-	virtual			PxFilterData				getSimulationFilterData() const	PX_OVERRIDE;
-	virtual			void						setQueryFilterData(const PxFilterData& data)	PX_OVERRIDE;
-	virtual			PxFilterData				getQueryFilterData() const	PX_OVERRIDE;
-	virtual			void						setMaterials(PxMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE;
-	virtual			void						setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE;
-	virtual			void						setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE;
-	virtual			PxU16						getNbMaterials()															const	PX_OVERRIDE;
-	virtual			PxU32						getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const	PX_OVERRIDE;
-	virtual			PxU32						getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const	PX_OVERRIDE;
-	virtual			PxU32						getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const	PX_OVERRIDE;
-	virtual			PxBaseMaterial*				getMaterialFromInternalFaceIndex(PxU32 faceIndex)							const	PX_OVERRIDE;
-	virtual			void						setContactOffset(PxReal)	PX_OVERRIDE;
-	virtual			PxReal						getContactOffset() const	PX_OVERRIDE;
-	virtual			void						setRestOffset(PxReal)	PX_OVERRIDE;
-	virtual			PxReal						getRestOffset() const	PX_OVERRIDE;
-	virtual			void						setDensityForFluid(PxReal)	PX_OVERRIDE;
-	virtual			PxReal						getDensityForFluid() const	PX_OVERRIDE;
-	virtual			void						setTorsionalPatchRadius(PxReal)	PX_OVERRIDE;
-	virtual			PxReal						getTorsionalPatchRadius() const	PX_OVERRIDE;
-	virtual			void						setMinTorsionalPatchRadius(PxReal)	PX_OVERRIDE;
-	virtual			PxReal						getMinTorsionalPatchRadius() const	PX_OVERRIDE;
-	virtual			PxU32						getInternalShapeIndex() const	PX_OVERRIDE;
-	virtual			void						setFlag(PxShapeFlag::Enum flag, bool value)	PX_OVERRIDE;
-	virtual			void						setFlags(PxShapeFlags inFlags)	PX_OVERRIDE;
-	virtual			PxShapeFlags				getFlags() const	PX_OVERRIDE;
-	virtual			bool						isExclusive() const	PX_OVERRIDE;
-	virtual			void						setName(const char* debugName)	PX_OVERRIDE;
-	virtual			const char*					getName() const	PX_OVERRIDE;
+	virtual			void						release()	PX_OVERRIDE PX_FINAL; //!< call to release from actor
+	virtual			void						setGeometry(const PxGeometry&)	PX_OVERRIDE PX_FINAL;
+	virtual			const PxGeometry&			getGeometry() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxRigidActor*				getActor() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setLocalPose(const PxTransform& pose)	PX_OVERRIDE PX_FINAL;
+	virtual			PxTransform					getLocalPose() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setSimulationFilterData(const PxFilterData& data)	PX_OVERRIDE PX_FINAL;
+	virtual			PxFilterData				getSimulationFilterData() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setQueryFilterData(const PxFilterData& data)	PX_OVERRIDE PX_FINAL;
+	virtual			PxFilterData				getQueryFilterData() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setMaterials(PxMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE PX_FINAL;
+	virtual			void						setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE PX_FINAL;
+	virtual			void						setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount)	PX_OVERRIDE PX_FINAL;
+	virtual			PxU16						getNbMaterials()															const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32						getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex=0)	const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32						getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32						getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const	PX_OVERRIDE PX_FINAL;
+	virtual			PxBaseMaterial*				getMaterialFromInternalFaceIndex(PxU32 faceIndex)							const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setContactOffset(PxReal)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal						getContactOffset() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setRestOffset(PxReal)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal						getRestOffset() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setDensityForFluid(PxReal)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal						getDensityForFluid() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setTorsionalPatchRadius(PxReal)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal						getTorsionalPatchRadius() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setMinTorsionalPatchRadius(PxReal)	PX_OVERRIDE PX_FINAL;
+	virtual			PxReal						getMinTorsionalPatchRadius() const	PX_OVERRIDE PX_FINAL;
+	PX_DEPRECATED	virtual			PxU32		getInternalShapeIndex() const	PX_OVERRIDE PX_FINAL; // deprecated
+	virtual			PxShapeGPUIndex				getGPUIndex() const PX_OVERRIDE PX_FINAL;
+
+	virtual			void						setFlag(PxShapeFlag::Enum flag, bool value)	PX_OVERRIDE PX_FINAL;
+	virtual			void						setFlags(PxShapeFlags inFlags)	PX_OVERRIDE PX_FINAL;
+	virtual			PxShapeFlags				getFlags() const	PX_OVERRIDE PX_FINAL;
+	virtual			bool						isExclusive() const	PX_OVERRIDE PX_FINAL;
+	virtual			void						setName(const char* debugName)	PX_OVERRIDE PX_FINAL;
+	virtual			const char*					getName() const	PX_OVERRIDE PX_FINAL;
 	//~PxShape
 
 	// Ref counting for shapes works like this: 
@@ -115,10 +118,10 @@ public:
 	virtual			void						onRefCountZero()	PX_OVERRIDE;
 	//~PxBase
 
-	PX_FORCE_INLINE	PxShapeFlags				getFlagsFast()			const	{ return mCore.getFlags();									}
-	PX_FORCE_INLINE const PxTransform&			getLocalPoseFast()		const	{ return mCore.getShape2Actor();							}
-	PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryTypeFast()	const	{ return mCore.getGeometryType();							}
-	PX_FORCE_INLINE	const PxFilterData&			getQueryFilterDataFast() const	{ return mQueryFilterData;									}
+	PX_FORCE_INLINE	PxShapeFlags				getFlagsFast()			const	{ return mCore.getFlags();			}
+	PX_FORCE_INLINE const PxTransform&			getLocalPoseFast()		const	{ return mCore.getShape2Actor();	}
+	PX_FORCE_INLINE	PxGeometryType::Enum		getGeometryTypeFast()	const	{ return mCore.getGeometryType();	}
+	PX_FORCE_INLINE	const PxFilterData&			getQueryFilterDataFast() const	{ return mQueryFilterData;			}
 
 	PX_FORCE_INLINE PxU32						getActorCount()			const	{ return mFreeSlot;																	}
 	PX_FORCE_INLINE bool						isExclusiveFast()		const	{ return mCore.getCore().mShapeCoreFlags.isSet(PxShapeCoreFlag::eIS_EXCLUSIVE);		}
@@ -126,7 +129,6 @@ public:
 	PX_FORCE_INLINE	const Sc::ShapeCore&		getCore()				const	{ return mCore;	}
 	PX_FORCE_INLINE	Sc::ShapeCore&				getCore()						{ return mCore;	}
 	static PX_FORCE_INLINE size_t				getCoreOffset()					{ return PX_OFFSET_OF_RT(NpShape, mCore); }
-
 
 	// PT: TODO: this one only used internally and by NpFactory
 	template <typename PxMaterialType, typename NpMaterialType>
@@ -183,7 +185,6 @@ private:
 					Sc::ShapeCore				mCore;
 					PxFilterData				mQueryFilterData;	// Query filter data PT: TODO: consider moving this to SQ structures
 
-private:
 					void						notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlags notifyFlags);
 					void						notifyActorAndUpdatePVD(const PxShapeFlags oldShapeFlags);	// PT: for shape flags change
 					void						incMeshRefCount();
@@ -191,7 +192,7 @@ private:
 					PxRefCounted*				getMeshRefCountable();
 					bool						isWritable();
 					void						updateSQ(const char* errorMessage);
-					template <typename PxMaterialType, typename NpMaterialType>
+	template <typename PxMaterialType, typename NpMaterialType>
 					bool						setMaterialsHelper(PxMaterialType* const* materials, PxU16 materialCount);
 					void						setFlagsInternal(PxShapeFlags inFlags);
 					Sc::RigidCore&				getScRigidObjectExclusive() const;
@@ -216,29 +217,8 @@ private:
 													return matManager.getMaterial(matTableIndex);
 												}
 
-	// PT: TODO: this one only used internally
-	template <typename PxMaterialType, typename NpMaterialType>
-	PX_INLINE		PxU32						scGetMaterials(PxMaterialType** buffer, PxU32 bufferSize, PxU32 startIndex=0) const
-												{
-													const PxU16* materialIndices;
-													PxU32 matCount;
-													NpMaterialManager<NpMaterialType>& matManager = NpMaterialAccessor<NpMaterialType>::getMaterialManager(NpPhysics::getInstance());
-													materialIndices = mCore.getMaterialIndices();
-													matCount = mCore.getNbMaterialIndices();
-
-													// PT: this is copied from Cm::getArrayOfPointers(). We cannot use the Cm function here
-													// because of the extra indirection needed to access the materials.
-													PxU32 size = matCount;
-													const PxU32 remainder = PxU32(PxMax<PxI32>(PxI32(size - startIndex), 0));
-													const PxU32 writeCount = PxMin(remainder, bufferSize);
-													materialIndices += startIndex;
-													for(PxU32 i=0;i<writeCount;i++)
-														buffer[i] = matManager.getMaterial(materialIndices[i]);
-
-													return writeCount;
-												}
-
-	template<typename PxMaterialType, typename NpMaterialType> void setMaterialsInternal(PxMaterialType* const * materials, PxU16 materialCount);
+	template<typename PxMaterialType, typename NpMaterialType>
+					void						setMaterialsInternal(PxMaterialType* const * materials, PxU16 materialCount);
 };
 
 #if PX_CHECKED

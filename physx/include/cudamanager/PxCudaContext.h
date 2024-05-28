@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_CUDA_CONTEX_H
 #define PX_CUDA_CONTEX_H
@@ -103,6 +103,8 @@ namespace physx
 
 		virtual PxCUresult streamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags) = 0;
 
+		virtual PxCUresult streamWaitEvent(CUstream hStream, CUevent hEvent) = 0;
+
 		virtual PxCUresult streamDestroy(CUstream hStream) = 0;
 
 		virtual PxCUresult streamSynchronize(CUstream hStream) = 0;
@@ -175,6 +177,10 @@ namespace physx
 		virtual PxCUresult getLastError() = 0;
 
 		PxDeviceAllocatorCallback* getAllocatorCallback() { return mAllocatorCallback; }
+
+		virtual void setAbortMode(bool abort) = 0;
+
+		virtual bool isInAbortMode() = 0;
 	};
 
 #if !PX_DOXYGEN

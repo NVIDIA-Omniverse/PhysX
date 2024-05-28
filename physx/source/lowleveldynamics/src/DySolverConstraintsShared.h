@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -46,9 +46,9 @@ namespace physx
 
 namespace Dy
 {
-	PX_FORCE_INLINE static FloatV solveDynamicContacts(SolverContactPoint* contacts, const PxU32 nbContactPoints, const Vec3VArg contactNormal,
+	PX_FORCE_INLINE static FloatV solveDynamicContacts(const SolverContactPoint* PX_RESTRICT contacts, PxU32 nbContactPoints, const Vec3VArg contactNormal,
 	const FloatVArg invMassA, const FloatVArg invMassB, const FloatVArg angDom0, const FloatVArg angDom1, Vec3V& linVel0_, Vec3V& angState0_, 
-	Vec3V& linVel1_, Vec3V& angState1_, PxF32* PX_RESTRICT forceBuffer)
+	Vec3V& linVel1_, Vec3V& angState1_, PxF32* PX_RESTRICT forceBuffer, Dy::ErrorAccumulator* PX_RESTRICT error)
 {
 	Vec3V linVel0 = linVel0_;
 	Vec3V angState0 = angState0_;
@@ -61,7 +61,7 @@ namespace Dy
 
 	for(PxU32 i=0;i<nbContactPoints;i++)
 	{
-		SolverContactPoint& c = contacts[i];
+		const SolverContactPoint& c = contacts[i];
 		PxPrefetchLine(&contacts[i], 128);
 
 		const Vec3V raXn = Vec3V_From_Vec4V(c.raXn_velMultiplierW);
@@ -88,6 +88,8 @@ namespace Dy
 		const FloatV _newForce = FAdd(FMul(impulseMultiplier, appliedForce), _deltaF);
 		const FloatV newForce = FMin(_newForce, maxImpulse);
 		const FloatV deltaF = FSub(newForce, appliedForce);
+		if (error)
+			error->accumulateErrorLocal(deltaF, velMultiplier);
 
 		linVel0 = V3ScaleAdd(delLinVel0, deltaF, linVel0);
 		linVel1 = V3NegScaleSub(delLinVel1, deltaF, linVel1);
@@ -106,18 +108,20 @@ namespace Dy
 	return accumulatedNormalImpulse;
 }
 
-PX_FORCE_INLINE static FloatV solveStaticContacts(SolverContactPoint* contacts, const PxU32 nbContactPoints, const Vec3VArg contactNormal,
-	const FloatVArg invMassA, const FloatVArg angDom0, Vec3V& linVel0_, Vec3V& angState0_, PxF32* PX_RESTRICT forceBuffer)
+PX_FORCE_INLINE static FloatV solveStaticContacts(const SolverContactPoint* PX_RESTRICT contacts, PxU32 nbContactPoints, const Vec3VArg contactNormal,
+	const FloatVArg invMassA, const FloatVArg angDom0, Vec3V& linVel0_, Vec3V& angState0_, PxF32* PX_RESTRICT forceBuffer, Dy::ErrorAccumulator* PX_RESTRICT globalError)
 {
 	Vec3V linVel0 = linVel0_;
 	Vec3V angState0 = angState0_;
 	FloatV accumulatedNormalImpulse = FZero();
 
 	const Vec3V delLinVel0 = V3Scale(contactNormal, invMassA);
+	
+	Dy::ErrorAccumulator error;
 
 	for(PxU32 i=0;i<nbContactPoints;i++)
 	{
-		SolverContactPoint& c = contacts[i];
+		const SolverContactPoint& c = contacts[i];
 		PxPrefetchLine(&contacts[i],128);
 
 		const Vec3V raXn = Vec3V_From_Vec4V(c.raXn_velMultiplierW);
@@ -143,6 +147,9 @@ PX_FORCE_INLINE static FloatV solveStaticContacts(SolverContactPoint* contacts, 
 		const FloatV newForce = FMin(_newForce, maxImpulse);
 		const FloatV deltaF = FSub(newForce, appliedForce);
 
+		if (globalError)
+			error.accumulateErrorLocal(deltaF, velMultiplier);
+
 		linVel0 = V3ScaleAdd(delLinVel0, deltaF, linVel0);
 		angState0 = V3ScaleAdd(raXn, FMul(deltaF, angDom0), angState0);
 
@@ -153,15 +160,20 @@ PX_FORCE_INLINE static FloatV solveStaticContacts(SolverContactPoint* contacts, 
 
 	linVel0_ = linVel0;
 	angState0_ = angState0;
+
+	if (globalError)
+		globalError->combine(error);
+
 	return accumulatedNormalImpulse;
 }
 
-FloatV solveExtContacts(SolverContactPointExt* contacts, const PxU32 nbContactPoints, const Vec3VArg contactNormal,
+FloatV solveExtContacts(const SolverContactPointExt* PX_RESTRICT contacts, PxU32 nbContactPoints, const Vec3VArg contactNormal,
 	Vec3V& linVel0, Vec3V& angVel0,
 	Vec3V& linVel1, Vec3V& angVel1,
 	Vec3V& li0, Vec3V& ai0,
 	Vec3V& li1, Vec3V& ai1,
-	PxF32* PX_RESTRICT appliedForceBuffer);
+	PxF32* PX_RESTRICT appliedForceBuffer,
+	Dy::ErrorAccumulator* PX_RESTRICT error);
 
 }
 

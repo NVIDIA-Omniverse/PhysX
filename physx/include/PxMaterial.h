@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_MATERIAL_H
 #define PX_MATERIAL_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxBaseMaterial.h"
 
@@ -44,7 +41,7 @@ class PxScene;
 /**
 \brief Flags which control the behavior of a material.
 
-@see PxMaterial 
+\see PxMaterial 
 */
 struct PxMaterialFlag
 {
@@ -80,6 +77,11 @@ struct PxMaterialFlag
 		\brief Whether to correct the friction force applied by the patch friction model to better match analytical models.
 		This flag only has an effect if the PxFrictionType::ePATCH friction model is used.
 
+		\note At a future point, the PhysX SDK will always behave as if this flag was set and no longer
+		support the legacy behavior mentioned further below. At that point this flag will be removed.
+		Until then, it is highly recommended to always set this flag to adapt to the corresponding friction
+		behavior (note that this flag is currently raised by default when creating a PxMaterial).
+
 		When using the patch friction model, up to two friction anchors are generated per patch. The normal force of all contacts
 		in the patch is accumulated and equally distributed among the anchors in order to compute friction forces. If this flag
 		is disabled, the legacy behavior is active which produces double the expected friction force in the case of two anchors,
@@ -88,17 +90,27 @@ struct PxMaterialFlag
 		eIMPROVED_PATCH_FRICTION = 1 << 2,
 
 		/**
-		\brief This flag has the effect of enabling an implicit spring model for the normal force computation.
-		@see PxMaterial.setRestitution, PxMaterial.setDamping
+		\deprecated This flag has no longer any effect, and will be removed in a future version. Do not use.
+		Compliant contact behavior is now active whenever a negative restitution value is set.
 		*/
-		eCOMPLIANT_CONTACT = 1 << 3
+		eCOMPLIANT_CONTACT PX_DEPRECATED = 1 << 3,
+
+		/**
+		\brief If this flag is raised in combination with negative restitution, the computed spring-damper output will be interpreted as
+		acceleration instead of force targets, analog to acceleration spring constraints.
+		The flag has no effect for non-compliant contacts (i.e., if restitution is nonnegative).
+		In an interaction between a compliant-force and a compliant-acceleration body the latter will dominate.
+		\see PxMaterial.setRestitution, PxMaterial.setDamping
+		\see Px1DConstraintFlag.eACCELERATION_SPRING
+		*/
+		eCOMPLIANT_ACCELERATION_SPRING = 1 << 4
 	};
 };
 
 /**
 \brief collection of set bits defined in PxMaterialFlag.
 
-@see PxMaterialFlag
+\see PxMaterialFlag
 */
 typedef PxFlags<PxMaterialFlag::Enum,PxU16> PxMaterialFlags;
 PX_FLAGS_OPERATORS(PxMaterialFlag::Enum,PxU16)
@@ -121,7 +133,14 @@ eMAX
 
 The effective combine mode for the pair is maximum(material0.combineMode, material1.combineMode).
 
-@see PxMaterial.setFrictionCombineMode() PxMaterial.getFrictionCombineMode() PxMaterial.setRestitutionCombineMode() PxMaterial.getFrictionCombineMode()
+Notes that the restitution coefficient is overloaded if it is negative and represents a spring stiffness for compliant contacts. In the compliant contact case, the following rules apply:
+	* If a compliant (restitution < 0) material interacts with a rigid (restitution >= 0) material, the compliant behavior will be chosen independent
+	of combine mode. In all other cases (i.e., also for compliant-compliant interactions) the combine mode is used.
+	* For a compliant-compliant interaction with eMULTIPLY combine mode, we multiply the values but keep the sign negative.
+	* The material damping follows the same logic, i.e., for the compliant vs non-compliant case, we take the damping value of the compliant material. Otherwise the combine mode is respected.
+	* In an interaction between a compliant-force and a compliant-acceleration body the latter will dominate and exclusively determine the collision behavior with its parameters.
+
+\see PxMaterial.setFrictionCombineMode() PxMaterial.getFrictionCombineMode() PxMaterial.setRestitutionCombineMode() PxMaterial.getFrictionCombineMode()
 */
 struct PxCombineMode
 {
@@ -139,7 +158,7 @@ struct PxCombineMode
 /**
 \brief Material class to represent a set of surface properties. 
 
-@see PxPhysics.createMaterial
+\see PxPhysics.createMaterial
 */
 class PxMaterial : public PxBaseMaterial
 {
@@ -154,7 +173,7 @@ public:
 
 	\param[in] coef Coefficient of dynamic friction. <b>Range:</b> [0, PX_MAX_F32)
 
-	@see getDynamicFriction()
+	\see getDynamicFriction()
 	*/
 	virtual		void	setDynamicFriction(PxReal coef) = 0;
 
@@ -163,7 +182,7 @@ public:
 
 	\return The coefficient of dynamic friction.
 
-	@see setDynamicFriction
+	\see setDynamicFriction
 	*/
 	virtual		PxReal	getDynamicFriction() const = 0;
 
@@ -176,7 +195,7 @@ public:
 
 	\param[in] coef Coefficient of static friction. <b>Range:</b> [0, PX_MAX_F32)
 
-	@see getStaticFriction() 
+	\see getStaticFriction() 
 	*/
 	virtual		void	setStaticFriction(PxReal coef) = 0;
 
@@ -184,24 +203,23 @@ public:
 	\brief Retrieves the coefficient of static friction.
 	\return The coefficient of static friction.
 
-	@see setStaticFriction 
+	\see setStaticFriction 
 	*/
 	virtual		PxReal	getStaticFriction() const = 0;
 
 	/**
-	\brief Sets the coefficient of restitution 
+	\brief Sets the coefficient of restitution or the spring stiffness for compliant contact
 	
 	A coefficient of 0 makes the object bounce as little as possible, higher values up to 1.0 result in more bounce.
-
-	This property is overloaded when PxMaterialFlag::eCOMPLIANT_CONTACT flag is enabled. This permits negative values for restitution to be provided.
-	The negative values are converted into spring stiffness terms for an implicit spring simulated at the contact site, with the spring positional error defined by
+	If a negative value is provided it is interpreted as stiffness term for an implicit spring
+	simulated at the contact site, with the spring positional error defined by
 	the contact separation value. Higher stiffness terms produce stiffer springs that behave more like a rigid contact.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake any actors which may be affected.
 
-	\param[in] rest Coefficient of restitution. <b>Range:</b> [-INF,1]
+	\param[in] rest Coefficient of restitution / negative spring stiffness <b>Range:</b> (-INF,1]
 
-	@see getRestitution() 
+	\see getRestitution()  setDamping()
 	*/
 	virtual		void	setRestitution(PxReal rest) = 0;
 
@@ -212,22 +230,22 @@ public:
 
 	\return The coefficient of restitution.
 
-	@see setRestitution() 
+	\see setRestitution() 
 	*/
 	virtual		PxReal	getRestitution() const = 0;
 
 	/**
 	\brief Sets the coefficient of damping
 
-	This property only affects the simulation if PxMaterialFlag::eCOMPLIANT_CONTACT is raised.
-	Damping works together with spring stiffness (set through a negative restitution value). Spring stiffness corrects positional error while
+	This property only affects the simulation if compliant contact mode is enabled, i.e., a negative restitution value is set.
+	Damping works together with spring stiffness. Spring stiffness corrects positional error while
 	damping resists relative velocity. Setting a high damping coefficient can produce spongy contacts.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake any actors which may be affected.
 
-	\param[in] damping Coefficient of damping. <b>Range:</b> [0,INF]
+	\param[in] damping Coefficient of damping. <b>Range:</b> [0,INF)
 
-	@see getDamping()
+	\see getDamping()
 	*/
 	virtual		void	setDamping(PxReal damping) = 0;
 
@@ -238,7 +256,7 @@ public:
 
 	\return The coefficient of damping.
 
-	@see setDamping()
+	\see setDamping()
 	*/
 	virtual		PxReal	getDamping() const = 0;
 
@@ -254,7 +272,7 @@ public:
 	\param[in]	flag	The PxMaterial flag to raise(set) or clear.
 	\param[in]	b		New state of the flag
 
-	@see getFlags() setFlags() PxMaterialFlag
+	\see getFlags() setFlags() PxMaterialFlag
 	*/
 	virtual		void	setFlag(PxMaterialFlag::Enum flag, bool b) = 0;
 
@@ -269,7 +287,7 @@ public:
 
 	\param[in]	flags	All PxMaterial flags
 
-	@see getFlags() setFlag() PxMaterialFlag
+	\see getFlags() setFlag() PxMaterialFlag
 	*/
 	virtual		void 	setFlags(PxMaterialFlags flags) = 0;
 
@@ -278,7 +296,7 @@ public:
 
 	\return The material flags.
 
-	@see PxMaterialFlag setFlags()
+	\see PxMaterialFlag setFlags()
 	*/
 	virtual		PxMaterialFlags	getFlags() const = 0;
 
@@ -293,7 +311,7 @@ public:
 
 	\param[in] combMode Friction combine mode to set for this material. See #PxCombineMode.
 
-	@see PxCombineMode getFrictionCombineMode setStaticFriction() setDynamicFriction()
+	\see PxCombineMode getFrictionCombineMode setStaticFriction() setDynamicFriction()
 	*/
 	virtual		void	setFrictionCombineMode(PxCombineMode::Enum combMode) = 0;
 
@@ -304,7 +322,7 @@ public:
 
 	\return The friction combine mode for this material.
 
-	@see PxCombineMode setFrictionCombineMode() 
+	\see PxCombineMode setFrictionCombineMode() 
 	*/
 	virtual		PxCombineMode::Enum	getFrictionCombineMode() const = 0;
 
@@ -319,7 +337,7 @@ public:
 
 	\param[in] combMode Restitution combine mode for this material. See #PxCombineMode.
 
-	@see PxCombineMode getRestitutionCombineMode() setRestitution()
+	\see PxCombineMode getRestitutionCombineMode() setRestitution()
 	*/
 	virtual		void	setRestitutionCombineMode(PxCombineMode::Enum combMode) = 0;
 
@@ -330,9 +348,33 @@ public:
 
 	\return The coefficient of restitution combine mode for this material.
 
-	@see PxCombineMode setRestitutionCombineMode getRestitution()
+	\see PxCombineMode setRestitutionCombineMode getRestitution()
 	*/
 	virtual		PxCombineMode::Enum	getRestitutionCombineMode() const = 0;
+
+	/**
+	\brief Sets the damping combine mode.
+	
+	See the enum ::PxCombineMode .
+
+	<b>Default:</b> PxCombineMode::eAVERAGE
+
+	<b>Sleeping:</b> Does <b>NOT</b> wake any actors which may be affected.
+
+	\param[in] combMode Damping combine mode for this material. See #PxCombineMode.
+
+	\see PxCombineMode getDampingCombineMode() setDamping()
+	*/
+	virtual		void	setDampingCombineMode(PxCombineMode::Enum combMode) = 0;
+
+	/**
+	\brief Retrieves the damping combine mode.
+	
+	\return The damping combine mode for this material.
+
+	\see PxCombineMode setDampingCombineMode() getDamping()
+	*/
+	virtual		PxCombineMode::Enum	getDampingCombineMode() const = 0;
 
 	// PxBase
 	virtual		const char*	getConcreteTypeName() const	PX_OVERRIDE	{ return "PxMaterial"; }
@@ -349,5 +391,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

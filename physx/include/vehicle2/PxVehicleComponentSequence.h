@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
-/** \addtogroup vehicle2
-  @{
-*/
 #include "foundation/PxAssert.h"
 #include "foundation/PxErrors.h"
 #include "foundation/PxFoundation.h"
@@ -82,16 +79,16 @@ struct PxVehicleComponentSequence
 	\note Each group opened by #beginSubstepGroup() must be closed with a complementary #endSubstepGroup() prior to calling #update().
 	\param[in] nbSubSteps is the number of substeps for the group's sequence. This can be changed with a call to #setSubsteps().
 	\return Handle for the substepping group on success, else eINVALID_SUBSTEP_GROUP
-	@see setSubsteps()
-	@see endSubstepGroup()
+	\see setSubsteps()
+	\see endSubstepGroup()
 	*/
 	PX_FORCE_INLINE PxU8 beginSubstepGroup(const PxU8 nbSubSteps = 1);
 
 	/**
 	\brief End a substepping group
 	\note The group most recently opened with #beginSubstepGroup() will be closed by this call.
-	@see setSubsteps()
-	@see beginSubstepGroup()
+	\see setSubsteps()
+	\see beginSubstepGroup()
 	*/
 	PX_FORCE_INLINE void endSubstepGroup()
 	{
@@ -102,8 +99,8 @@ struct PxVehicleComponentSequence
 	\brief Set the number of substeps to perform  for a specific substepping group.
 	\param[in] subGroupHandle specifies the substepping group
 	\param[in] nbSteps is the  number of times to invoke the sequence of components and groups in the specified substepping group.
-	@see beginSubstepGroup()
-	@see endSubstepGroup()
+	\see beginSubstepGroup()
+	\see endSubstepGroup()
 	*/
 	void setSubsteps(const PxU8 subGroupHandle, const PxU8 nbSteps)
 	{
@@ -323,4 +320,3 @@ PxU8 PxVehicleComponentSequence::beginSubstepGroup(const PxU8 nbSubSteps)
 } // namespace physx
 #endif
 
-/** @} */

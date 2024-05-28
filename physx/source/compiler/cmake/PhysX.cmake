@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysX (PROJECT not SOLUTION) common
@@ -51,6 +51,7 @@ SET(PHYSX_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxArticulationReducedCoordinate.h
 	${PHYSX_ROOT_DIR}/include/PxArticulationTendon.h
 	${PHYSX_ROOT_DIR}/include/PxArticulationTendonData.h
+	${PHYSX_ROOT_DIR}/include/PxArticulationMimicJoint.h
 	${PHYSX_ROOT_DIR}/include/PxAttachment.h
 	${PHYSX_ROOT_DIR}/include/PxBroadPhase.h
 	${PHYSX_ROOT_DIR}/include/PxClient.h
@@ -104,14 +105,13 @@ SET(PHYSX_HEADERS
     ${PHYSX_ROOT_DIR}/include/PxArrayConverter.h
     ${PHYSX_ROOT_DIR}/include/PxLineStripSkinning.h
 	${PHYSX_ROOT_DIR}/include/PxSDFBuilder.h
+	${PHYSX_ROOT_DIR}/include/PxResidual.h
+	${PHYSX_ROOT_DIR}/include/PxDirectGPUAPI.h
 )
 IF(NOT PX_GENERATE_SOURCE_DISTRO AND NOT PUBLIC_RELEASE)
 	LIST(APPEND PHYSX_HEADERS
 		${PHYSX_ROOT_DIR}/include/PxFEMCloth.h
-		${PHYSX_ROOT_DIR}/include/PxFLIPParticleSystem.h
-		${PHYSX_ROOT_DIR}/include/PxGridParticleSystem.h
 		${PHYSX_ROOT_DIR}/include/PxHairSystem.h
-		${PHYSX_ROOT_DIR}/include/PxMPMParticleSystem.h
 	)
 ENDIF()
 SOURCE_GROUP(include FILES ${PHYSX_HEADERS})
@@ -123,8 +123,6 @@ SET(PHYSX_MATERIAL_HEADERS
 	${PHYSX_ROOT_DIR}/include/PxFEMClothMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxParticleMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxPBDMaterial.h
-	${PHYSX_ROOT_DIR}/include/PxFLIPMaterial.h
-	${PHYSX_ROOT_DIR}/include/PxMPMMaterial.h
 	${PHYSX_ROOT_DIR}/include/PxMaterial.h
 )
 SOURCE_GROUP(include\\materials FILES ${PHYSX_MATERIAL_HEADERS})
@@ -195,6 +193,8 @@ SET(PHYSX_OMNIPVD_SOURCE
     ${PX_SOURCE_DIR}/omnipvd/NpOmniPvdRegistrationData.h
 	${PX_SOURCE_DIR}/omnipvd/NpOmniPvdRegistrationData.cpp
     ${PX_SOURCE_DIR}/omnipvd/NpOmniPvdSetData.h
+	${PX_SOURCE_DIR}/omnipvd/NpOmniPvdMetaData.h
+	${PX_SOURCE_DIR}/omnipvd/NpOmniPvdMetaData.cpp
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdPxSampler.cpp
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdPxSampler.h
 	${PX_SOURCE_DIR}/omnipvd/OmniPvdChunkAlloc.cpp
@@ -227,11 +227,7 @@ SET(PHYSX_MATERIALS_SOURCE
 	${PX_SOURCE_DIR}/NpFEMSoftBodyMaterial.cpp
 	${PX_SOURCE_DIR}/NpFEMClothMaterial.cpp
 	${PX_SOURCE_DIR}/NpPBDMaterial.cpp
-	${PX_SOURCE_DIR}/NpFLIPMaterial.cpp
-	${PX_SOURCE_DIR}/NpMPMMaterial.cpp
 	${PX_SOURCE_DIR}/NpPBDMaterial.h
-	${PX_SOURCE_DIR}/NpFLIPMaterial.h
-	${PX_SOURCE_DIR}/NpMPMMaterial.h
 	${PX_SOURCE_DIR}/NpFEMSoftBodyMaterial.h
 	${PX_SOURCE_DIR}/NpFEMClothMaterial.h
 	${PX_SOURCE_DIR}/NpMaterial.h
@@ -243,12 +239,12 @@ SET(PHYSX_ARTICULATIONS_SOURCE
 	${PX_SOURCE_DIR}/NpArticulationJointReducedCoordinate.cpp
 	${PX_SOURCE_DIR}/NpArticulationLink.cpp
 	${PX_SOURCE_DIR}/NpArticulationTendon.cpp
-	${PX_SOURCE_DIR}/NpArticulationSensor.cpp
+	${PX_SOURCE_DIR}/NpArticulationMimicJoint.cpp
 	${PX_SOURCE_DIR}/NpArticulationReducedCoordinate.h
 	${PX_SOURCE_DIR}/NpArticulationJointReducedCoordinate.h
 	${PX_SOURCE_DIR}/NpArticulationLink.h
 	${PX_SOURCE_DIR}/NpArticulationTendon.h
-	${PX_SOURCE_DIR}/NpArticulationSensor.h
+	${PX_SOURCE_DIR}/NpArticulationMimicJoint.h
 )
 SOURCE_GROUP(src\\articulations FILES ${PHYSX_ARTICULATIONS_SOURCE})
 
@@ -257,8 +253,9 @@ SET(PHYSX_CORE_SOURCE
 	${PX_SOURCE_DIR}/NpAggregate.cpp
 	${PX_SOURCE_DIR}/NpSoftBody.cpp
 	${PX_SOURCE_DIR}/NpFEMCloth.cpp
-	${PX_SOURCE_DIR}/NpParticleSystem.cpp
-    ${PX_SOURCE_DIR}/NpHairSystem.cpp
+	${PX_SOURCE_DIR}/NpPBDParticleSystem.cpp
+	${PX_SOURCE_DIR}/NpParticleBuffer.cpp
+	${PX_SOURCE_DIR}/NpHairSystem.cpp
 	${PX_SOURCE_DIR}/NpConstraint.cpp
 	${PX_SOURCE_DIR}/NpFactory.cpp
 	${PX_SOURCE_DIR}/NpMetaData.cpp
@@ -282,8 +279,9 @@ SET(PHYSX_CORE_SOURCE
 	${PX_SOURCE_DIR}/NpAggregate.h
 	${PX_SOURCE_DIR}/NpSoftBody.h
 	${PX_SOURCE_DIR}/NpFEMCloth.h
-	${PX_SOURCE_DIR}/NpParticleSystem.h
-    ${PX_SOURCE_DIR}/NpHairSystem.h
+	${PX_SOURCE_DIR}/NpPBDParticleSystem.h
+	${PX_SOURCE_DIR}/NpParticleBuffer.h
+	${PX_SOURCE_DIR}/NpHairSystem.h
 	${PX_SOURCE_DIR}/NpConnector.h
 	${PX_SOURCE_DIR}/NpConstraint.h
 	${PX_SOURCE_DIR}/NpFactory.h
@@ -304,6 +302,8 @@ SET(PHYSX_CORE_SOURCE
 	${PX_SOURCE_DIR}/NpShapeManager.h
 	${PX_SOURCE_DIR}/NpDebugViz.h
 	${PX_SOURCE_DIR}/NpDebugViz.cpp
+	${PX_SOURCE_DIR}/NpDirectGPUAPI.h
+	${PX_SOURCE_DIR}/NpDirectGPUAPI.cpp
 )
 SOURCE_GROUP(src FILES ${PHYSX_CORE_SOURCE})
 
@@ -376,6 +376,7 @@ TARGET_INCLUDE_DIRECTORIES(PhysX
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevelaabb/include
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/include
+	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/shared
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/simulationcontroller/include
 	PRIVATE ${PHYSX_SOURCE_DIR}/simulationcontroller/src

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_GEOMETRY_HELPERS_H
 #define PX_GEOMETRY_HELPERS_H
-/** \addtogroup geomutils
-@{
-*/
 
 #include "foundation/PxPlane.h"
 #include "foundation/PxTransform.h"
@@ -61,7 +58,7 @@ This class contains enough space to hold a value of any PxGeometry subtype.
 Its principal use is as a convenience class to allow geometries to be returned polymorphically from functions.
 */
 
-PX_ALIGN_PREFIX(4)
+PX_ALIGN_PREFIX(8)
 class PxGeometryHolder
 {
 	class PxInvalidGeometry : public PxGeometry 
@@ -86,7 +83,7 @@ public:
 		return *PxUnionCast<const PxGeometry*>(&bytes.geometry);
 	}
 
-//! @cond
+//! \cond
 	PX_FORCE_INLINE PxSphereGeometry&					sphere()				{ return get<PxSphereGeometry, PxGeometryType::eSPHERE>();							}
 	PX_FORCE_INLINE const PxSphereGeometry&				sphere()		const	{ return get<const PxSphereGeometry, PxGeometryType::eSPHERE>();					}
 
@@ -119,7 +116,7 @@ public:
 
 	PX_FORCE_INLINE PxCustomGeometry&					custom()				{ return get<PxCustomGeometry, PxGeometryType::eCUSTOM>();							}
 	PX_FORCE_INLINE const PxCustomGeometry&				custom()		const	{ return get<const PxCustomGeometry, PxGeometryType::eCUSTOM>();					}
-//! @endcond
+//! \endcond
 
 	PX_FORCE_INLINE void storeAny(const PxGeometry& geometry)
 	{
@@ -181,11 +178,10 @@ public:
 		PxU8	custom[sizeof(PxCustomGeometry)];
 	} bytes;
 }
-PX_ALIGN_SUFFIX(4);
+PX_ALIGN_SUFFIX(8);
 
 #if !PX_DOXYGEN
 } // namespace physx
 #endif
 
-/** @} */
 #endif

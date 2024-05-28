@@ -22,12 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "ScRigidCore.h"
-#include "ScStaticCore.h"
 #include "ScRigidSim.h"
 #include "ScShapeSim.h"
 #include "ScScene.h"
@@ -35,11 +34,13 @@
 using namespace physx;
 using namespace Sc;
 
-static ShapeSim& getSimForShape(const ShapeCore& core, const ActorSim& actorSim)
+PX_IMPLEMENT_OUTPUT_ERROR
+
+static ShapeSim* getSimForShape(const ShapeCore& core, const ActorSim& actorSim)
 {
 	if(core.getExclusiveSim())
 	{
-		return *core.getExclusiveSim();
+		return core.getExclusiveSim();
 	}
 
 	//Must be a shared shape.
@@ -50,11 +51,19 @@ static ShapeSim& getSimForShape(const ShapeCore& core, const ActorSim& actorSim)
 	{
 		ShapeSim* sim = static_cast<ShapeSim*>(*elems--);
 		if (&sim->getCore() == &core)
-			return *sim;
+			return sim;
 	}
 
+	// Defensive coding added for OM-118444.
+	// Switched this function to return a pointer rather than a reference.
+	// This allows callers to avoid a crash in case the ShapeSim is not found.
+	// The original use of a reference implies that this should never happen yet the crash in this ticket suggests that it's possible.
+	// We could/should revert this eventually and remove the checks for NULL pointers in all callers in this file.
+	// ### DEFENSIVE
+	outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "ScRigidCore::getSimForShape: ShapeSim not found!");
+
 	PX_ASSERT(0); // should never fail
-	return *reinterpret_cast<ShapeSim*>(1);
+	return NULL;
 }
 
 RigidCore::RigidCore(const PxActorType::Enum type) : ActorCore(type, PxActorFlag::eVISUALIZATION, PX_DEFAULT_CLIENT, 0)
@@ -79,8 +88,10 @@ void RigidCore::removeShapeFromScene(ShapeCore& shapeCore, bool wakeOnLostTouch)
 	RigidSim* sim = getSim();
 	if(!sim)
 		return;
-	ShapeSim& s = getSimForShape(shapeCore, *sim);
-	sim->getScene().removeShape_(s, wakeOnLostTouch);
+
+	ShapeSim* s = getSimForShape(shapeCore, *sim);
+	if(s)
+		sim->getScene().removeShape_(*s, wakeOnLostTouch);
 }
 
 void RigidCore::unregisterShapeFromNphase(Sc::ShapeCore& shapeCore)
@@ -88,8 +99,10 @@ void RigidCore::unregisterShapeFromNphase(Sc::ShapeCore& shapeCore)
 	RigidSim* sim = getSim();
 	if (!sim)
 		return;
-	ShapeSim& s = getSimForShape(shapeCore, *sim);
-	s.getScene().unregisterShapeFromNphase(shapeCore, s.getElementID());
+
+	ShapeSim* s = getSimForShape(shapeCore, *sim);
+	if(s)
+		s->getScene().unregisterShapeFromNphase(shapeCore, s->getElementID());
 }
 
 void RigidCore::registerShapeInNphase(Sc::ShapeCore& shapeCore)
@@ -97,8 +110,10 @@ void RigidCore::registerShapeInNphase(Sc::ShapeCore& shapeCore)
 	RigidSim* sim = getSim();
 	if (!sim)
 		return;
-	ShapeSim& s = getSimForShape(shapeCore, *sim);
-	s.getScene().registerShapeInNphase(this, shapeCore, s.getElementID());
+
+	ShapeSim* s = getSimForShape(shapeCore, *sim);
+	if(s)
+		s->getScene().registerShapeInNphase(this, shapeCore, s->getElementID());
 }
 
 void RigidCore::onShapeChange(ShapeCore& shape, ShapeChangeNotifyFlags notifyFlags)
@@ -106,22 +121,25 @@ void RigidCore::onShapeChange(ShapeCore& shape, ShapeChangeNotifyFlags notifyFla
 	RigidSim* sim = getSim();
 	if(!sim)
 		return;
-	ShapeSim& s = getSimForShape(shape, *sim);
+
+	ShapeSim* s = getSimForShape(shape, *sim);
+	if(!s)
+		return;
 
 	if(notifyFlags & ShapeChangeNotifyFlag::eGEOMETRY)
-		s.onVolumeOrTransformChange();
+		s->onVolumeOrTransformChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eMATERIAL)
-		s.onMaterialChange();
+		s->onMaterialChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eRESET_FILTERING)
-		s.onResetFiltering();
+		s->onResetFiltering();
 	if(notifyFlags & ShapeChangeNotifyFlag::eSHAPE2BODY)
-		s.onVolumeOrTransformChange();
+		s->onVolumeOrTransformChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eFILTERDATA)
-		s.onFilterDataChange();
+		s->onFilterDataChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eCONTACTOFFSET)
-		s.onContactOffsetChange();
+		s->onContactOffsetChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eRESTOFFSET)
-		s.onRestOffsetChange();
+		s->onRestOffsetChange();
 }
 
 void RigidCore::onShapeFlagsChange(ShapeCore& shape, PxShapeFlags oldShapeFlags)
@@ -133,8 +151,10 @@ void RigidCore::onShapeFlagsChange(ShapeCore& shape, PxShapeFlags oldShapeFlags)
 	RigidSim* sim = getSim();
 	if(!sim)
 		return;
-	ShapeSim& s = getSimForShape(shape, *sim);
-	s.onFlagChange(oldShapeFlags);
+
+	ShapeSim* s = getSimForShape(shape, *sim);
+	if(s)
+		s->onFlagChange(oldShapeFlags);
 }
 
 RigidSim* RigidCore::getSim() const

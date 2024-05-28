@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -154,9 +154,9 @@ PX_FORCE_INLINE void mfTireComputeVolatileSharedParams(const typename TConfig::F
 template<typename TFloat>
 struct MFTireLongitudinalForcePureParams
 {
-	/** @name magic formula: B (through longitudinal slip stiffness K)
+	/** \name magic formula: B (through longitudinal slip stiffness K)
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pK1; /// longitudinal slip stiffness (per load unit) Guidance: for many tires
 	            /// (almost) linearly dependent on the vertical force. Typically, in the
 	            /// range of 14 to 18. May be much higher for racing tires.
@@ -169,19 +169,19 @@ struct MFTireLongitudinalForcePureParams
 	TFloat lambdaK; /// user scaling factor for slip stiffness
 	TFloat epsilon; /// small value to avoid division by 0 if load is 0. The scale of the values
 	                /// the epsilon gets added to is similar to the scale of the longitudinal force.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pC1; /// shape factor. Guidance: value has to be larger or equal to 1, for example, 1.6
 	            /// is a fair starting point.
 	TFloat lambdaC; /// user scaling factor for shape factor
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: D
+	/** \name magic formula: D
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pD1; /// friction mu term (per load unit). Guidance: for highly loaded tires
 	            /// the value is below 1, for example around 0.8 on a dry surface. High
 	            /// performance tires on racing cars may reach 1.5 or even 2.0 in extreme
@@ -199,11 +199,11 @@ struct MFTireLongitudinalForcePureParams
 	                   // (see MFTireVolatileSharedParams::lambdaMu_longitudinal)
 	TFloat zeta1; /// scaling factor for friction mu term to take turn slip into account.
 	              /// If path radius is large and camber small, it can be set to 1.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: E
+	/** \name magic formula: E
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pE1; /// curvature factor. Guidance: value has to be smaller or equal to 1. An
 	            /// increasing negative value will make the curve more peaky. 0 is a
 	            /// fair starting point.
@@ -213,67 +213,67 @@ struct MFTireLongitudinalForcePureParams
 	            /// of shifted longitudinal slip ratio (to create asymmetry under drive/brake
 	            /// torque: 1.0 - pE4*sgn(slipRatioShifted). No effect when no slip)
 	TFloat lambdaE; /// user scaling factor for curvature factor
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sh
+	/** \name magic formula: Sh
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pH1; /// horizontal shift at nominal load
 	TFloat pH2; /// variation of horizontal shift with load change
 	TFloat lambdaH; /// user scaling factor for horizontal shift
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sv
+	/** \name magic formula: Sv
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pV1; /// vertical shift (per load unit)
 	TFloat pV2; /// variation of vertical shift (per load unit) with load change
 	TFloat lambdaV; /// user scaling factor for vertical shift
 	//TFloat lambdaMu; // user scaling factor for vertical shift (peak friction coefficient). See magic formula: D
 	//TFloat zeta1; // scaling factor for vertical shift to take turn slip into account. See magic formula: D
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>
 struct MFTireLongitudinalForceCombinedParams
 {
-	/** @name magic formula: B
+	/** \name magic formula: B
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rB1; /// curvature factor at force reduction peak. Guidance: 8.3 may be used as a starting point.
 	TFloat rB2; /// variation of curvature factor at force reduction peak with longitudinal slip ratio.
 	            /// Guidance: 5.0 may be used as a starting point.
 	TFloat rB3; /// variation of curvature factor at force reduction peak with squared sine of camber angle
 	            /// (set to 0 to ignore effect)
 	TFloat lambdaAlpha; /// user scaling factor for influence of lateral slip angle alpha on longitudinal force
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rC1; /// shape factor. Guidance: 0.9 may be used as a starting point.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: E
+	/** \name magic formula: E
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rE1; /// long range falloff at nominal load
 	TFloat rE2; /// variation of long range falloff with load change
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sh
+	/** \name magic formula: Sh
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rH1; /// horizontal shift at nominal load. Set to 0 for a symmetric tire.
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>
 struct MFTireLateralForcePureParams
 {
-	/** @name magic formula: B (through cornering stiffness K_alpha)
+	/** \name magic formula: B (through cornering stiffness K_alpha)
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pK1; /// maximum cornering stiffness (per load unit) Guidance: values between
 	            /// 10 and 20 can be expected (or higher for racing tires). Note: beware of
 	            /// the sign when copying values from data sources. If the ISO sign
@@ -297,19 +297,19 @@ struct MFTireLateralForcePureParams
 	                /// the epsilon gets added to is similar to the scale of the lareral force.
 	TFloat zeta3; /// scaling factor for cornering stiffness to take turn slip into account.
 	              /// If path radius is large and camber small, it can be set to 1.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pC1; /// shape factor. Guidance: value has to be larger or equal to 1, for example, 1.3
 	            /// is a fair starting point.
 	TFloat lambdaC; /// user scaling factor for shape factor
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: D
+	/** \name magic formula: D
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pD1; /// friction mu term (per load unit). Guidance: for highly loaded tires
 	            /// the value is below 1, for example around 0.8 on a dry surface. High
 	            /// performance tires on racing cars may reach 1.5 or even 2.0 in extreme
@@ -327,11 +327,11 @@ struct MFTireLateralForcePureParams
 	                   // (see MFTireVolatileSharedParams::lambdaMu_lateral)
 	//TFloat zeta2; // scaling factor for friction mu term to take turn slip into account.
 	                // See MFTireSharedParams::zeta2.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: E
+	/** \name magic formula: E
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pE1; /// curvature factor. Guidance: value has to be smaller or equal to 1. An
 	            /// increasing negative value will make the curve more peaky. 0 is a
 	            /// fair starting point.
@@ -346,11 +346,11 @@ struct MFTireLateralForcePureParams
 	TFloat pE5; /// variation of curvature factor with squared sine of camber angle
 	            /// (set to 0 to ignore effect)
 	TFloat lambdaE; /// user scaling factor for curvature factor
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sh (with a camber stiffness term K_gamma)
+	/** \name magic formula: Sh (with a camber stiffness term K_gamma)
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pH1; /// horizontal shift at nominal load. Set to 0 for a symmetric tire.
 	TFloat pH2; /// variation of horizontal shift with load change. Set to 0 for a symmetric tire.
 	TFloat pK6; /// camber stiffness (per load unit)
@@ -372,11 +372,11 @@ struct MFTireLateralForcePureParams
 	TFloat zeta4; /// horizontal shift term to take turn slip and camber into account.
 	              /// If path radius is large and camber small, it can be set to 1 (since 1 gets
 	              /// subtracted this will result in a 0 term).
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sv
+	/** \name magic formula: Sv
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat pV1; /// vertical shift (per load unit). Set to 0 for a symmetric tire.
 	TFloat pV2; /// variation of vertical shift (per load unit) with load change. Set to 0 for a symmetric tire.
 	TFloat pV3; /// vertical shift (per load unit) depending on sine of camber angle
@@ -388,15 +388,15 @@ struct MFTireLateralForcePureParams
 	//TFloat lambdaMu; // user scaling factor for vertical shift (peak friction coefficient). See magic formula: D
 	//TFloat zeta2; // scaling factor for vertical shift to take turn slip into account.
 	                // See MFTireSharedParams::zeta2.
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>
 struct MFTireLateralForceCombinedParams
 {
-	/** @name magic formula: B
+	/** \name magic formula: B
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rB1; /// curvature factor at force reduction peak. Guidance: 4.9 may be used as a starting point.
 	TFloat rB2; /// variation of curvature factor at force reduction peak with lateral slip
 	            /// Guidance: 2.2 may be used as a starting point.
@@ -404,31 +404,31 @@ struct MFTireLateralForceCombinedParams
 	TFloat rB4; /// variation of curvature factor at force reduction peak with squared sine of camber angle
 	            /// (set to 0 to ignore effect)
 	TFloat lambdaKappa; /// user scaling factor for influence of longitudinal slip ratio kappa on lateral force
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rC1; /// shape factor. Guidance: 1.0 may be used as a starting point.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: E
+	/** \name magic formula: E
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rE1; /// long range falloff at nominal load
 	TFloat rE2; /// variation of long range falloff with load change
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sh
+	/** \name magic formula: Sh
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rH1; /// horizontal shift at nominal load
 	TFloat rH2; /// variation of horizontal shift with load change
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sv
+	/** \name magic formula: Sv
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat rV1; /// vertical shift (per load unit). Set to 0 for a symmetric tire.
 	TFloat rV2; /// variation of vertical shift (per load unit) with load change. Set to 0 for a symmetric tire.
 	TFloat rV3; /// variation of vertical shift (per load unit) with sine of camber angle
@@ -439,7 +439,7 @@ struct MFTireLateralForceCombinedParams
 	TFloat lambdaV; /// user scaling factor for vertical shift
 	//TFloat zeta2; // scaling factor for vertical shift to take turn slip into account.
 	                // See MFTireSharedParams::zeta2.
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>
@@ -464,9 +464,9 @@ PX_FORCE_INLINE void mfTireComputeAligningTorqueVolatileSharedParams(const TFloa
 template<typename TFloat>
 struct MFTireAligningTorquePurePneumaticTrailParams
 {
-	/** @name magic formula: B
+	/** \name magic formula: B
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qB1; /// curvature factor at pneumatic trail peak (at nominal load)
 	TFloat qB2; /// variation of curvature factor at pneumatic trail peak with load change
 	TFloat qB3; /// variation of curvature factor at pneumatic trail peak with load change squared
@@ -478,17 +478,17 @@ struct MFTireAligningTorquePurePneumaticTrailParams
 	                        // (see MFTireSharedParams::lambdaK_alpha)
 	//TFloat lambdaMu; // inverse user scaling factor for curvature factor at pneumatic trail peak
 	                   // (see MFTireVolatileSharedParams::lambdaMu_lateral)
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qC1; /// shape factor (has to be greater than 0)
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: D
+	/** \name magic formula: D
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qD1; /// pneumatic trail peak (per normalized load-torque unit)
 	TFloat qD2; /// variation of pneumatic trail peak (per normalized load-torque unit) with load change
 	TFloat qD3; /// variation of pneumatic trail peak with sine of camber angle
@@ -500,11 +500,11 @@ struct MFTireAligningTorquePurePneumaticTrailParams
 	TFloat lambdaT; /// user scaling factor for pneumatic trail peak
 	TFloat zeta5; /// scaling factor for pneumatic trail peak to take turn slip into account.
 	              /// If path radius is large and camber small, it can be set to 1.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: E
+	/** \name magic formula: E
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qE1; /// long range falloff at nominal load
 	TFloat qE2; /// variation of long range falloff with load change
 	TFloat qE3; /// variation of long range falloff with load change squared
@@ -516,26 +516,26 @@ struct MFTireAligningTorquePurePneumaticTrailParams
 	            /// angle and sign of shifted slip angle (to create asymmetry 
 	            /// under positive/negative slip. No effect when no slip.
 	            /// Set to 0 to ignore effect)
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: Sh
+	/** \name magic formula: Sh
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qH1; /// horizontal shift at nominal load. Set to 0 for a symmetric tire.
 	TFloat qH2; /// variation of horizontal shift with load change. Set to 0 for a symmetric tire.
 	TFloat qH3; /// horizontal shift at nominal load depending on sine of camber angle
 	            /// (set to 0 to ignore effect)
 	TFloat qH4; /// variation of horizontal shift with load change depending on sine of camber angle 
 	            /// (set to 0 to ignore effect)
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>
 struct MFTireAligningTorquePureResidualTorqueParams
 {
-	/** @name magic formula: B
+	/** \name magic formula: B
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qB9; /// curvature factor at residual torque peak
 	TFloat qB10; /// curvature factor at residual torque peak (multiplier for B*C term of lateral force under pure slip)
 	//TFloat lambdaK_alpha; // user scaling factor for curvature factor at residual torque peak
@@ -545,18 +545,18 @@ struct MFTireAligningTorquePureResidualTorqueParams
 	TFloat zeta6; /// scaling factor for curvature factor at residual torque peak to take turn slip
 	              /// into account.
 	              /// If path radius is large and camber small, it can be set to 1.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: C
+	/** \name magic formula: C
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat zeta7; /// shape factor to take turn slip into account.
 	              /// If path radius is large and camber small, it can be set to 1.
-	/**@}*/
+	/**\}*/
 
-	/** @name magic formula: D
+	/** \name magic formula: D
 	*/
-	/**@{*/
+	/**\{*/
 	TFloat qD6; /// residual torque peak (per load-torque unit). Set to 0 for a symmetric tire.
 	TFloat qD7; /// variation of residual torque peak (per load-torque unit) with load change.
 	            /// Set to 0 for a symmetric tire.
@@ -583,7 +583,7 @@ struct MFTireAligningTorquePureResidualTorqueParams
 	TFloat zeta8; /// additional term for residual torque peak to take turn slip into account.
 	              /// If path radius is large and camber small, it can be set to 1 (since 1 gets
 	              /// subtracted this will result in a 0 term).
-	/**@}*/
+	/**\}*/
 };
 
 template<typename TFloat>

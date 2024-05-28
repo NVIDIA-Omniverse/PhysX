@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -71,7 +71,7 @@ struct PCMConvexVsHeightfieldContactGenerationCallback
 		PxRenderOutput* renderOutput = NULL
 	) :
 		PCMHeightfieldContactGenerationCallback< PCMConvexVsHeightfieldContactGenerationCallback >(hfUtil, heightfieldTransform1),
-		mGeneration(contactDistance, replaceBreakingThreshold, convexTransform, heightfieldTransform,  multiManifold,
+		mGeneration(contactDistance, replaceBreakingThreshold, convexTransform, heightfieldTransform, multiManifold,
 			contactBuffer, polyData, polyMap, delayedContacts, convexScaling, idtConvexScale, silhouetteEdgesAreActive, renderOutput)
 	{
 	}

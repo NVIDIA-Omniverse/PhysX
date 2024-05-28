@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -76,7 +76,7 @@ class BroadPhaseBase : public PxBroadPhaseRegions, public PxUserAllocated
 \brief Structure used to report created and deleted broadphase pairs
 \note The indices mVolA and mVolB correspond to the bounds indices 
 BroadPhaseUpdateData::mCreated used by BroadPhase::update
-@see BroadPhase::getCreatedPairs, BroadPhase::getDeletedPairs
+\see BroadPhase::getCreatedPairs, BroadPhase::getDeletedPairs
 */
 struct BroadPhasePair
 {
@@ -135,7 +135,7 @@ public:
 	\param[in] updateData a description of changes to the collection of aabbs since the last broadphase update.
 	The changes detail the indices of the bounds that have been added/updated/removed as well as an array of all
 	bound coordinates and an array of group ids used to filter pairs with the same id.
-	@see BroadPhaseUpdateData
+	\see BroadPhaseUpdateData
 
 	\param[in] continuation the task that is in the queue to be executed immediately after the broadphase has completed its update. NULL is not supported.
 

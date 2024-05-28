@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,13 +46,13 @@ using namespace meshgenerator;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation		= NULL;
-static PxPhysics*				gPhysics		= NULL;
-static PxCudaContextManager*	gCudaContextManager = NULL;
-static PxDefaultCpuDispatcher*	gDispatcher		= NULL;
-static PxScene*					gScene			= NULL;
-static PxMaterial*				gMaterial		= NULL;
-static PxPvd*					gPvd			= NULL;
+static PxFoundation*			gFoundation			= NULL;
+static PxPhysics*				gPhysics			= NULL;
+static PxCudaContextManager*	gCudaContextManager	= NULL;
+static PxDefaultCpuDispatcher*	gDispatcher			= NULL;
+static PxScene*					gScene				= NULL;
+static PxMaterial*				gMaterial			= NULL;
+static PxPvd*					gPvd				= NULL;
 std::vector<SoftBody>			gSoftBodies;
 
 static PxFilterFlags softBodyRigidBodyFilter(PxFilterObjectAttributes attributes0, PxFilterData filterData0,
@@ -96,10 +96,10 @@ void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, PxFEMSo
 
 	gSoftBodies.push_back(sBody);
 
-	PX_PINNED_HOST_FREE(gCudaContextManager, simPositionInvMassPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, simVelocityPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, collPositionInvMassPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, restPositionPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, simPositionInvMassPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, simVelocityPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, collPositionInvMassPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, restPositionPinned);
 }
 
 static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
@@ -197,6 +197,12 @@ static void connectCubeToSoftBody(PxRigidDynamic* cube, PxReal cubeHalfExtent, c
 
 static void createSoftbodies(const PxCookingParams& params)
 {
+	if (gCudaContextManager == NULL)
+	{
+		printf("The Softbody feature is currently only supported on GPU\n");
+		return;
+	}
+
 	PxArray<PxVec3> triVerts;
 	PxArray<PxU32> triIndices;
 	
@@ -238,8 +244,7 @@ void initPhysics(bool /*interactive*/)
 	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
 	if (gCudaContextManager && !gCudaContextManager->contextIsValid())
 	{
-		gCudaContextManager->release();
-		gCudaContextManager = NULL;
+		PX_RELEASE(gCudaContextManager);
 		printf("Failed to initialize cuda context.\n");
 	}
 
@@ -266,9 +271,7 @@ void initPhysics(bool /*interactive*/)
 	gDispatcher = PxDefaultCpuDispatcherCreate(numCores == 0 ? 0 : numCores - 1);
 	sceneDesc.cpuDispatcher	= gDispatcher;
 	sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
-	sceneDesc.sceneQueryUpdateMode = PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED;
 	sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
 	sceneDesc.gpuMaxNumPartitions = 8;
 
@@ -314,14 +317,17 @@ void cleanupPhysics(bool /*interactive*/)
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
-	PxPvdTransport* transport = gPvd->getTransport();
-	gPvd->release();
-	transport->release();
-	PxCloseExtensions();  
-	gCudaContextManager->release();
+	if (gPvd)
+	{
+		PxPvdTransport* transport = gPvd->getTransport();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
+	}
+	PxCloseExtensions();
+	PX_RELEASE(gCudaContextManager);
 	PX_RELEASE(gFoundation);
 
-	printf("Snippet Softbody-Rigid-Attachments done.\n");
+	printf("SnippetSoftBodyAttachment done.\n");
 }
 
 int snippetMain(int, const char*const*)

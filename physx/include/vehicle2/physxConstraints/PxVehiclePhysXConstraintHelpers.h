@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -30,9 +30,6 @@
 
 #include "foundation/PxPreprocessor.h"
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #if !PX_DOXYGEN
 namespace physx
@@ -69,7 +66,7 @@ void PxVehicleConstraintsCreate
 
 \param[in] vehicleConstraints is a wrapper class that holds pointers to PhysX objects required to implement the custom constraint.
 
-@see PxVehicleConstraintsCreate
+\see PxVehicleConstraintsCreate
 */
 void PxVehicleConstraintsDirtyStateUpdate
 (PxVehiclePhysXConstraints& vehicleConstraints);
@@ -79,7 +76,7 @@ void PxVehicleConstraintsDirtyStateUpdate
 
 \param[in,out] vehicleConstraints describes the PhysX custom constraints to be released.
 
-@see PxVehicleConstraintsCreate
+\see PxVehicleConstraintsCreate
 */
 void PxVehicleConstraintsDestroy
 (PxVehiclePhysXConstraints& vehicleConstraints);
@@ -89,4 +86,3 @@ void PxVehicleConstraintsDestroy
 } // namespace physx
 #endif
 
-/** @} */

@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PVD_DATA_STREAM_HELPERS_H
 #define PX_PVD_DATA_STREAM_HELPERS_H
 
-/** \addtogroup pvd
-@{
-*/
 #include "PxPvdObjectModelBaseTypes.h"
 
 #if !PX_DOXYGEN
@@ -116,6 +113,5 @@ class PvdPropertyDefinitionHelper
 } // physx
 #endif
 
-/** @} */
 #endif
 

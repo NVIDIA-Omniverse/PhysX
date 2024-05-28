@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.  
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.  
 
 #include "foundation/PxPreprocessor.h"
 
@@ -82,26 +82,15 @@ ParticleSystemShapeCore::ParticleSystemShapeCore()
 	mLLCore.gridSizeZ = 128;
 
 	mLLCore.mFlags = PxParticleFlags(0);
+	mLLCore.mLockFlags = PxParticleLockFlags(0);
 
 	mLLCore.solverIterationCounts = (1 << 8) | 4;
 
 	mLLCore.mWind = PxVec3(0.f);
 
-	//mLLCore.mNumUpdateSprings = 0;
-
-	mLLCore.solverType = PxParticleSolverType::ePBD;
-
 	// Sparse grid specific
 	mLLCore.sparseGridParams.setToDefault();
 	mLLCore.sparseGridParams.gridSpacing = 2.0f * mLLCore.particleContactOffset;
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	// FLIP specific
-	mLLCore.flipParams.setToDefault();
-
-	// MPM specific
-	mLLCore.mpmParams.setToDefault();
-#endif
 }
 
 
@@ -115,21 +104,12 @@ ParticleSystemShapeCore::~ParticleSystemShapeCore()
 {
 }
 
-void ParticleSystemShapeCore::addParticleBuffer(PxParticleBuffer* particleBuffer)
-{
-	mLLCore.addParticleBuffer(particleBuffer);
-}
-
-void ParticleSystemShapeCore::removeParticleBuffer(PxParticleBuffer* particleBuffer)
-{
-	mLLCore.removeParticleBuffer(particleBuffer);
-}
-
-void ParticleSystemShapeCore::initializeLLCoreData(PxU32 maxNeighborhood)
+void ParticleSystemShapeCore::initializeLLCoreData(PxU32 maxNeighborhood, PxReal neighborhoodScale)
 {
 	const PxTolerancesScale& scale = Sc::Physics::getInstance().getTolerancesScale();
 
 	mLLCore.mMaxNeighborhood = maxNeighborhood;
+	mLLCore.mNeighborhoodScale = neighborhoodScale;
 	
 	mLLCore.maxDepenetrationVelocity = 50.f * scale.length;
 	mLLCore.maxVelocity = 1e+6f;

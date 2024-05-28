@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -333,11 +333,9 @@ void TriangleMeshBuilder::createSharedEdgeData(bool buildAdjacencies, bool build
 		}
 	}
 
-#if PX_DEBUG
+#if PX_ENABLE_ASSERTS
 	for(PxU32 i=0;i<mMeshData.mNbTriangles;i++)
 	{
-		const IndexedTriangle32& T = trigs[i];
-		PX_UNUSED(T);
 		const EdgeTriangleData& ET = mEdgeList->getEdgeTriangle(i);
 		PX_ASSERT((EdgeTriangleAC::HasActiveEdge01(ET) && (mMeshData.mExtraTrigData[i] & ETD_CONVEX_EDGE_01)) || (!EdgeTriangleAC::HasActiveEdge01(ET) && !(mMeshData.mExtraTrigData[i] & ETD_CONVEX_EDGE_01)));
 		PX_ASSERT((EdgeTriangleAC::HasActiveEdge12(ET) && (mMeshData.mExtraTrigData[i] & ETD_CONVEX_EDGE_12)) || (!EdgeTriangleAC::HasActiveEdge12(ET) && !(mMeshData.mExtraTrigData[i] & ETD_CONVEX_EDGE_12)));
@@ -904,7 +902,8 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 		}
 	}
 
-	if (mParams.meshPreprocessParams & PxMeshPreprocessingFlag::eENABLE_INERTIA)
+	const bool computeInertia = mParams.meshPreprocessParams & PxMeshPreprocessingFlag::eENABLE_INERTIA;
+	if (computeInertia)
 	{
 		buildInertiaTensor();
 	}
@@ -912,6 +911,9 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 	// Copy sdf data if enabled
 	if (desc.sdfDesc)
 	{
+		if(computeInertia && mMeshData.mMass <= 0.0f)
+			outputError<PxErrorCode::eDEBUG_WARNING>(__LINE__, "Requesting SDF for mesh without volume may have unexpected collision behavior.");
+
 		PxArray<PxReal> sdfData;
 		PxArray<PxU8> sdfDataSubgrids;
 		PxArray<PxU32> sdfSubgridsStartSlots;
@@ -926,7 +928,9 @@ bool TriangleMeshBuilder::importMesh(const PxTriangleMeshDesc& desc, PxTriangleM
 		newDesc.flags &= (~PxMeshFlag::e16_BIT_INDICES);
 		newDesc.sdfDesc = desc.sdfDesc;
 
-		buildSDF(newDesc, sdfData, sdfDataSubgrids, sdfSubgridsStartSlots);
+		// do we need to deallocate anything here?
+		if (!buildSDF(newDesc, sdfData, sdfDataSubgrids, sdfSubgridsStartSlots))
+			return false;
 
 		PxSDFDesc& sdfDesc = *desc.sdfDesc;
 

@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_H
 #define PX_H
 
-/** \addtogroup foundation
-@{
-*/
 
 #include "foundation/PxSimpleTypes.h"
 
@@ -44,8 +41,6 @@ namespace physx
 {
 #endif
 
-typedef uint32_t PxU32;
-
 class PxAllocatorCallback;
 class PxErrorCallback;
 struct PxErrorCode;
@@ -54,6 +49,7 @@ class PxInputStream;
 class PxInputData;
 class PxOutputStream;
 
+#if !PX_DOXYGEN  // need to exclude, confuses api doc build about duplicate declaration
 template<class Type>	class PxVec2T;
 typedef PxVec2T<float>	PxVec2;
 
@@ -77,6 +73,7 @@ typedef PxMat44T<float>	PxMat44;
 
 template<class Type>	class PxTransformT;
 typedef PxTransformT<float>	PxTransform;
+#endif
 
 class PxPlane;
 class PxBounds3;
@@ -103,6 +100,5 @@ enum PxIDENTITY
 } // namespace physx
 #endif
 
-/** @} */
 #endif
 

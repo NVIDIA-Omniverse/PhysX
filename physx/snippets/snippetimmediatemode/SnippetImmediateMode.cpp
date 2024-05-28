@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.  
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.  
 
 // ****************************************************************************
 // This snippet illustrates the use of PhysX immediate mode.
@@ -193,13 +193,13 @@ public:
 		for (PxU32 c = 0; c < nbContacts; ++c)
 		{
 			//Fill in solver-specific data that our contact gen does not produce...
-
 			PxContactPoint point = contactPoints[c];
 			point.maxImpulse		= PX_MAX_F32;
 			point.targetVel			= PxVec3(0.0f);
 			point.staticFriction	= 0.5f;
 			point.dynamicFriction	= 0.5f;
 			point.restitution		= 0.0f;
+			point.damping			= 0.0f;
 			point.materialFlags		= 0;
 			mContactPoints.pushBack(point);
 		}
@@ -557,7 +557,7 @@ void stepPhysics(bool /*interactive*/)
 	{
 		PxBroadPhaseResults results;
 	#if WITH_PERSISTENCY
-		gAABBManager->update(results);
+		gAABBManager->updateAndFetchResults(results);
 
 		const PxU32 nbCreatedPairs = results.mNbCreatedPairs;
 		for(PxU32 i=0;i<nbCreatedPairs;i++)
@@ -786,10 +786,11 @@ void stepPhysics(bool /*interactive*/)
 		desc.linkIndexB = PxSolverConstraintDesc::RIGID_BODY;
 
 		//Cache pointer to our contact data structure and identify which type of constraint this is. We'll need this later after batching.
+		//We store our pointer in the desc.constraint field as this field is ignored by PxBatchConstraints. It will later be overwritten by PxCreateContactConstraints.
 		//If we choose not to perform batching and instead just create a single header per-pair, then this would not be necessary because
 		//the constraintDescs would not have been reordered
 		desc.constraint = reinterpret_cast<PxU8*>(&pair);
-		desc.constraintLengthOver16 = PxSolverConstraintDesc::eCONTACT_CONSTRAINT;
+		desc.constraintType = PxSolverConstraintDesc::eCONTACT_CONSTRAINT;
 	}
 
 	for (PxU32 a = 0; a < gConstraints->size(); ++a)
@@ -818,7 +819,7 @@ void stepPhysics(bool /*interactive*/)
 		desc.linkIndexB = PxSolverConstraintDesc::RIGID_BODY;
 
 		desc.constraint = reinterpret_cast<PxU8*>(constraint);
-		desc.constraintLengthOver16 = PxSolverConstraintDesc::eJOINT_CONSTRAINT;
+		desc.constraintType = PxSolverConstraintDesc::eJOINT_CONSTRAINT;
 	}
 
 	PxArray<PxConstraintBatchHeader> headers(descs.size());
@@ -1114,7 +1115,7 @@ void cleanupPhysics(bool /*interactive*/)
 	if(gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();	gPvd = NULL;
+		PX_RELEASE(gPvd);
 		PX_RELEASE(transport);
 	}
 

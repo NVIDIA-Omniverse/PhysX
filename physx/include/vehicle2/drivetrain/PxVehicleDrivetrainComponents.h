@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "vehicle2/PxVehicleFunctions.h"
 #include "vehicle2/PxVehicleParams.h"
@@ -64,12 +61,12 @@ struct PxVehicleDirectDriveThrottleCommandResponseParams;
 \brief Forward the applicable set of control values for a direct drive vehicle to a command response state for each 
 applicable control value.  
 \note The applicable control values are brake, handbrake, throttle and steer.
-@see PxVehicleDirectDriveActuationStateComponent
-@see PxVehicleDirectDrivetrainComponent
-@see PxVehicleBrakeCommandLinearUpdate
-@see PxVehicleDirectDriveThrottleLinearCommandUpdate
-@see PxVehicleSteerCommandLinearUpdate
-@see PxVehicleAckermannSteerUpdate
+\see PxVehicleDirectDriveActuationStateComponent
+\see PxVehicleDirectDrivetrainComponent
+\see PxVehicleBrakeCommandLinearUpdate
+\see PxVehicleDirectDriveThrottleLinearCommandUpdate
+\see PxVehicleSteerCommandLinearUpdate
+\see PxVehicleAckermannSteerUpdate
 */
 class PxVehicleDirectDriveCommandResponseComponent : public PxVehicleComponent
 {
@@ -129,7 +126,7 @@ public:
 		PxVehicleArrayData<PxReal> steerResponseStates;
 
 		getDataForDirectDriveCommandResponseComponent(axleDescription,
-			brakeResponseParams,  throttleResponseParams, steerResponseParams, ackermannParams,
+			brakeResponseParams, throttleResponseParams, steerResponseParams, ackermannParams,
 			commands, transmissionCommands,
 			rigidBodyState,
 			brakeResponseStates, throttleResponseStates, steerResponseStates);
@@ -169,9 +166,9 @@ public:
 /**
 \brief Determine the actuation state for each wheel of a direct drive vehicle. 
 \note The actuation state for each wheel contains a binary record of whether brake and drive torque are to be applied to the wheel.
-@see PxVehicleDirectDriveCommandResponseComponent
-@see PxVehicleDirectDrivetrainComponent
-@see PxVehicleDirectDriveActuationStateUpdate
+\see PxVehicleDirectDriveCommandResponseComponent
+\see PxVehicleDirectDrivetrainComponent
+\see PxVehicleDirectDriveActuationStateUpdate
 */
 class PxVehicleDirectDriveActuationStateComponent : public PxVehicleComponent
 {
@@ -231,7 +228,7 @@ public:
 \brief Forward integrate the angular speed of each wheel on a vehicle by integrating the 
 brake and drive torque applied to each wheel and the torque that develops on the tire as a response 
 to the longitudinal tire force.
-@see PxVehicleDirectDriveUpdate
+\see PxVehicleDirectDriveUpdate
 */
 class PxVehicleDirectDrivetrainComponent : public PxVehicleComponent
 {
@@ -291,13 +288,13 @@ applicable control value.
 If parameters for an autobox are provided, the autobox will determine if a gear change should begin in order to 
 maintain a desired engine revs.
 
-@see PxVehicleBrakeCommandLinearUpdate
-@see PxVehicleClutchCommandResponseLinearUpdate
-@see PxVehicleEngineDriveThrottleCommandResponseUpdate
-@see PxVehicleSteerCommandLinearUpdate
-@see PxVehicleAckermannSteerUpdate
-@see PxVehicleAutoBoxUpdate
-@see PxVehicleGearCommandResponseUpdate
+\see PxVehicleBrakeCommandLinearUpdate
+\see PxVehicleClutchCommandResponseLinearUpdate
+\see PxVehicleEngineDriveThrottleCommandResponseUpdate
+\see PxVehicleSteerCommandLinearUpdate
+\see PxVehicleAckermannSteerUpdate
+\see PxVehicleAutoBoxUpdate
+\see PxVehicleGearCommandResponseUpdate
 */
 class PxVehicleEngineDriveCommandResponseComponent : public PxVehicleComponent
 {
@@ -455,7 +452,7 @@ public:
 
 /**
 \brief Compute the per wheel drive torque split of a multi-wheel drive differential.
-@see PxVehicleDifferentialStateUpdate
+\see PxVehicleDifferentialStateUpdate
 */
 class PxVehicleMultiWheelDriveDifferentialStateComponent : public PxVehicleComponent
 {
@@ -495,7 +492,7 @@ public:
 /**
 \brief Compute the per wheel drive torque split of a differential delivering torque to multiple wheels 
 with limited slip applied to specified wheel pairs.
-@see PxVehicleDifferentialStateUpdate
+\see PxVehicleDifferentialStateUpdate
 */
 class PxVehicleFourWheelDriveDifferentialStateComponent : public PxVehicleComponent
 {
@@ -539,7 +536,7 @@ public:
 
 /**
 \brief Compute the per wheel drive torque split of a tank drive differential.
-@see PxVehicleDifferentialStateUpdate
+\see PxVehicleDifferentialStateUpdate
 */
 class PxVehicleTankDriveDifferentialStateComponent : public PxVehicleComponent
 {
@@ -600,10 +597,10 @@ public:
 };
 
 /**
-@deprecated
+\deprecated This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.
 
 \brief Compute the per wheel drive torque split of a four wheel drive differential.
-@see PxVehicleDifferentialStateUpdate
+\see PxVehicleDifferentialStateUpdate
 */
 class PX_DEPRECATED PxVehicleLegacyFourWheelDriveDifferentialStateComponent : public PxVehicleComponent
 {
@@ -645,7 +642,7 @@ public:
 /**
 \brief Determine the actuation state for each wheel for a vehicle propelled by engine torque.
 \note The actuation state for each wheel contains a binary record of whether brake and drive torque are to be applied to the wheel.
-@see PxVehicleEngineDriveActuationStateUpdate
+\see PxVehicleEngineDriveActuationStateUpdate
 */
 class PxVehicleEngineDriveActuationStateComponent : public PxVehicleComponent
 {
@@ -700,8 +697,8 @@ public:
 /**
 \brief Forward integrate the angular speed of each wheel and of the engine, accounting for the 
 state of the clutch, gearbox and differential.
-@see PxVehicleGearboxUpdate
-@see PxVehicleEngineDrivetrainUpdate
+\see PxVehicleGearboxUpdate
+\see PxVehicleEngineDrivetrainUpdate
 */
 class PxVehicleEngineDrivetrainComponent : public PxVehicleComponent
 {
@@ -783,9 +780,9 @@ public:
 		PxVehicleEngineDrivetrainUpdate(
 			*axleDescription, 
 			wheelParams, 
-			*engineParams, *clutchParams, *gearboxParams,  
+			*engineParams, *clutchParams, *gearboxParams,
 			brakeResponseStates, actuationStates, 
-			tireForces,  
+			tireForces,
 			*gearboxState, *throttleResponseState, *clutchResponseState, *differentialState, constraintGroupState,
 			dt, 
 			wheelRigidBody1dStates, *engineState, *clutchState);
@@ -799,4 +796,3 @@ public:
 } // namespace physx
 #endif
 
-/** @} */

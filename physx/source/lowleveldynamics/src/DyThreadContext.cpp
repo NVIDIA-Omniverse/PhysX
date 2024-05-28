@@ -22,10 +22,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
-
 
 #include "DyThreadContext.h"
 #include "foundation/PxBitUtils.h"
@@ -35,32 +34,53 @@ namespace physx
 namespace Dy
 {
 
-ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool):
-	mFrictionPatchStreamPair(*memBlockPool),
-	mConstraintBlockManager	(*memBlockPool),
-	mConstraintBlockStream	(*memBlockPool),
-	mNumDifferentBodyConstraints(0),
-	mNumSelfConstraints(0),
-	mNumStaticConstraints(0),
-	mConstraintsPerPartition("ThreadContext::mConstraintsPerPartition"),
-	mFrictionConstraintsPerPartition("ThreadContext::frictionsConstraintsPerPartition"),
-	mPartitionNormalizationBitmap("ThreadContext::mPartitionNormalizationBitmap"),
-	frictionConstraintDescArray("ThreadContext::solverFrictionConstraintArray"),
-	frictionConstraintBatchHeaders("ThreadContext::frictionConstraintBatchHeaders"),
-	compoundConstraints("ThreadContext::compoundConstraints"),
-	orderedContactList("ThreadContext::orderedContactList"),
-	tempContactList("ThreadContext::tempContactList"),
-	sortIndexArray("ThreadContext::sortIndexArray"),
-	mConstraintSize			(0),
-	mAxisConstraintCount(0),
-	mSelfConstraintBlocks(NULL),
-	mMaxPartitions(0),
-	mMaxSolverPositionIterations(0),
-	mMaxSolverVelocityIterations(0),
-	mContactDescPtr(NULL),
-	mFrictionDescPtr(NULL),
-	mArticulations("ThreadContext::articulations")
-	
+ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool) :
+	mFrictionPatchStreamPair				(*memBlockPool),
+	mConstraintBlockManager					(*memBlockPool),
+	mConstraintBlockStream					(*memBlockPool),
+	mNumDifferentBodyConstraints			(0),
+	mNumDifferentBodyFrictionConstraints	(0),
+	mNumSelfConstraints						(0),
+	mNumStaticConstraints					(0),
+	mNumSelfFrictionConstraints				(0),
+	mNumSelfConstraintFrictionBlocks		(0),
+	mHasOverflowPartitions					(false),
+	mConstraintsPerPartition				("ThreadContext::mConstraintsPerPartition"),
+	mFrictionConstraintsPerPartition		("ThreadContext::frictionsConstraintsPerPartition"),
+	//mPartitionNormalizationBitmap			("ThreadContext::mPartitionNormalizationBitmap"),
+	mBodyCoreArray							(NULL),
+	mRigidBodyArray							(NULL),
+	mArticulationArray						(NULL),
+	motionVelocityArray						(NULL),
+	bodyRemapTable							(NULL),
+	mNodeIndexArray							(NULL),
+	contactConstraintDescArray				(NULL),
+	contactDescArraySize					(0),
+	orderedContactConstraints				(NULL),
+	contactConstraintBatchHeaders			(NULL),
+	numContactConstraintBatches				(0),
+	tempConstraintDescArray					(NULL),
+	frictionConstraintDescArray				("ThreadContext::solverFrictionConstraintArray"),
+	frictionConstraintBatchHeaders			("ThreadContext::frictionConstraintBatchHeaders"),
+	compoundConstraints						("ThreadContext::compoundConstraints"),
+	orderedContactList						("ThreadContext::orderedContactList"),
+	tempContactList							("ThreadContext::tempContactList"),
+	sortIndexArray							("ThreadContext::sortIndexArray"),
+	numDifferentBodyBatchHeaders			(0),
+	numSelfConstraintBatchHeaders			(0),
+	mOrderedContactDescCount				(0),
+	mOrderedFrictionDescCount				(0),
+	mConstraintSize							(0),
+	mAxisConstraintCount					(0),
+	mMaxPartitions							(0),
+	mMaxFrictionPartitions					(0),
+	mMaxSolverPositionIterations			(0),
+	mMaxSolverVelocityIterations			(0),
+	mMaxArticulationLinks					(0),
+	mContactDescPtr							(NULL),
+	mStartContactDescPtr					(NULL),
+	mFrictionDescPtr						(NULL),
+	mArticulations							("ThreadContext::articulations")
 {
 #if PX_ENABLE_SIM_STATS
 	mThreadSimStats.clear();
@@ -68,7 +88,7 @@ ThreadContext::ThreadContext(PxcNpMemBlockPool* memBlockPool):
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
 	//Defaulted to have space for 16384 bodies
-	mPartitionNormalizationBitmap.reserve(512); 
+	//mPartitionNormalizationBitmap.reserve(512); 
 	//Defaulted to have space for 128 partitions (should be more-than-enough)
 	mConstraintsPerPartition.reserve(128);
 }
@@ -102,7 +122,6 @@ void ThreadContext::reset()
 	mNumDifferentBodyConstraints = 0;
 	mNumSelfConstraints = 0;
 	mNumStaticConstraints = 0;
-	mSelfConstraintBlocks = NULL;
 	mConstraintSize = 0;
 }
 

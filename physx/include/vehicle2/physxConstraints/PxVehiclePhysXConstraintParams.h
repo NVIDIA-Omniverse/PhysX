@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxFoundation.h"
 
@@ -46,7 +43,7 @@ struct PxVehicleScale;
 
 /**
 \brief A description of the PhysX models employed to resolve suspension limit constraints.
-@see PxVehiclePhysXConstraintState
+\see PxVehiclePhysXConstraintState
 */
 struct PxVehiclePhysXSuspensionLimitConstraintParams
 {
@@ -55,8 +52,8 @@ struct PxVehiclePhysXSuspensionLimitConstraintParams
 	constraints.
 	\note A value of 0.0 means that the restitution model is not employed.
 	\note Restitution has no effect if directionForSuspensionLimitConstraint has value Enum::eNONE.
-	@see Px1DConstraintFlag::eRESTITUTION	
-	@see Px1DConstraint::RestitutionModifiers::restitution
+	\see Px1DConstraintFlag::eRESTITUTION	
+	\see Px1DConstraint::RestitutionModifiers::restitution
 	*/
 	PxReal restitution;
 
@@ -107,4 +104,3 @@ struct PxVehiclePhysXSuspensionLimitConstraintParams
 } // namespace physx
 #endif
 
-/** @} */

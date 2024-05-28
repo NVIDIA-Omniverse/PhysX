@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -36,7 +36,6 @@ PxcNpThreadContext::PxcNpThreadContext(PxcNpContext* params) :
 	mContactBlockStream					(params->mNpMemBlockPool),
 	mNpCacheStreamPair					(params->mNpMemBlockPool),
 	mNarrowPhaseParams					(0.0f, params->mMeshContactMargin, params->mToleranceLength),
-	mBodySimPool						("BodySimPool"),
 	mPCM								(false),
 	mContactCache						(false),
 	mCreateAveragePoint					(false),
@@ -48,10 +47,10 @@ PxcNpThreadContext::PxcNpThreadContext(PxcNpContext* params) :
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
 	mMaxPatches							(0),
-	mTotalCompressedCacheSize			(0),
 	mContactStreamPool					(params->mContactStreamPool),
 	mPatchStreamPool					(params->mPatchStreamPool),
 	mForceAndIndiceStreamPool			(params->mForceAndIndiceStreamPool),
+	mFrictionPatchStreamPool			(params->mFrictionPatchStreamPool),
 	mMaterialManager					(params->mMaterialManager),
 	mLocalNewTouchCount					(0), 
 	mLocalLostTouchCount				(0)

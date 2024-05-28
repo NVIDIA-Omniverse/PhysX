@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,9 +48,9 @@ namespace Gu
 	\param ignoreCoplanar	[in] True to filter out coplanar triangles
 	\return	true if triangles intersect
 	*/
-	PX_PHYSX_COMMON_API bool trianglesIntersect(const PxVec3& a1, const PxVec3& b1, const PxVec3& c1,
-												const PxVec3& a2, const PxVec3& b2, const PxVec3& c2,
-												bool ignoreCoplanar = false);
+	PX_PHYSX_COMMON_API bool intersectTriangleTriangle(	const PxVec3& a1, const PxVec3& b1, const PxVec3& c1,
+														const PxVec3& a2, const PxVec3& b2, const PxVec3& c2,
+														bool ignoreCoplanar = false);
 } // namespace Gu
 }
 

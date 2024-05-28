@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -811,7 +811,7 @@ static PxU32 doBoxBoxGenerateContacts(const Vec3VArg box0Extent, const Vec3VArg 
 			const Vec3V localNormal = newTransformV.rotateInv(mtd);
 			getIncidentPolygon(pts, incidentFaceNormalInNew, localNormal, transform1ToNew, box0Extent);
 		
-			calculateContacts(eb0, eb1, pts,  incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
+			calculateContacts(eb0, eb1, pts, incidentFaceNormalInNew, localNormal, manifoldContacts, numContacts, contactDist);
 			break;
 		};
 	default:

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PARTICLESYSTEM_GEOMETRY_H
 #define PX_PARTICLESYSTEM_GEOMETRY_H
-/** \addtogroup geomutils
-@{
-*/
 #include "geometry/PxGeometry.h"
 #include "common/PxCoreUtilityTypes.h"
 #include "foundation/PxBounds3.h"
@@ -78,7 +75,7 @@ namespace physx
 
 		\return  True if the current settings are valid for shape creation.
 
-		@see PxRigidActor::createShape, PxPhysics::createShape
+		\see PxRigidActor::createShape, PxPhysics::createShape
 		*/
 		PX_FORCE_INLINE bool isValid() const
 		{
@@ -88,12 +85,11 @@ namespace physx
 			return true;
 		}
 
-		PxParticleSolverType::Enum mSolverType;
+		PX_DEPRECATED PxParticleSolverType::Enum mSolverType;
 	};
 
 #if !PX_DOXYGEN
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

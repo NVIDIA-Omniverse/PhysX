@@ -22,12 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef DY_SOLVER_CONTEXT_H
 #define DY_SOLVER_CONTEXT_H
+
+#include "DyResidualAccumulator.h"
 
 namespace physx
 {
@@ -37,11 +39,11 @@ namespace Dy
 {
 	struct ThresholdStreamElement;
 	
-
 struct SolverContext
 {
 	bool									doFriction;
 	bool									writeBackIteration;
+	bool									isPositionIteration;
 
 	// for threshold stream output
 	ThresholdStreamElement*					mThresholdStream;
@@ -52,9 +54,11 @@ struct SolverContext
 	ThresholdStreamElement* PX_RESTRICT		mSharedThresholdStream;
 	PxU32									mSharedThresholdStreamLength;
 	PxI32*									mSharedOutThresholdPairs;
-	Cm::SpatialVectorF*						Z;
-	Cm::SpatialVectorF*						deltaV;
+	Cm::SpatialVectorF*						deltaV; // used temporarily in PxcFsFlushVelocities
 
+	Dy::ErrorAccumulator*					contactErrorAccumulator;
+
+	SolverContext() : contactErrorAccumulator(NULL) { }
 };
 
 }

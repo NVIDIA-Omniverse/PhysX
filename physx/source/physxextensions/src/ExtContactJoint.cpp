@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -192,7 +192,6 @@ static PxU32 ContactJointSolverPrep(Px1DConstraint* constraints,
 	con.maxImpulse = PX_MAX_F32;
 
 	con.velocityTarget = 0.f;
-	con.forInternalUse = 0.f;
 	con.solveHint = 0;
 	con.flags = Px1DConstraintFlag::eOUTPUT_FORCE;
 	con.mods.bounce.restitution = data.restitution;

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_FILTERING_H
 #define PX_FILTERING_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "foundation/PxFlags.h"
@@ -46,7 +43,7 @@ class PxShape;
 /**
 \brief Collection of flags describing the actions to take for a collision pair.
 
-@see PxPairFlags PxSimulationFilterShader.filter() PxSimulationFilterCallback
+\see PxPairFlags PxSimulationFilterShader.filter() PxSimulationFilterCallback
 */
 struct PxPairFlag
 {
@@ -64,7 +61,7 @@ struct PxPairFlag
 
 		\note Only takes effect if the colliding actors are rigid bodies.
 
-		@see PxContactModifyCallback
+		\see PxContactModifyCallback
 		*/
 		eMODIFY_CONTACTS					= (1<<1),
 
@@ -80,7 +77,7 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
+		\see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
 		*/
 		eNOTIFY_TOUCH_FOUND					= (1<<2),
 
@@ -100,7 +97,7 @@ struct PxPairFlag
 
 		\note If this flag gets enabled while a pair is in touch already, there will be no eNOTIFY_TOUCH_PERSISTS events until the pair loses and regains touch.
 
-		@see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
+		\see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
 		*/
 		eNOTIFY_TOUCH_PERSISTS				= (1<<3),
 
@@ -118,7 +115,7 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
+		\see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
 		*/
 		eNOTIFY_TOUCH_LOST					= (1<<4),
 
@@ -138,7 +135,7 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
+		\see PxSimulationEventCallback.onContact() PxSimulationEventCallback.onTrigger()
 		*/
 		eNOTIFY_TOUCH_CCD					= (1<<5),
 
@@ -149,7 +146,9 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact()
+		\note Only works with PGS solver, and only on CPU.
+
+		\see PxSimulationEventCallback.onContact()
 		*/
 		eNOTIFY_THRESHOLD_FORCE_FOUND		= (1<<6),
 
@@ -163,7 +162,9 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact()
+		\note Only works with PGS solver, and only on CPU.
+
+		\see PxSimulationEventCallback.onContact()
 		*/
 		eNOTIFY_THRESHOLD_FORCE_PERSISTS	= (1<<7),
 
@@ -177,7 +178,9 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact()
+		\note Only works with PGS solver, and only on CPU.
+
+		\see PxSimulationEventCallback.onContact()
 		*/
 		eNOTIFY_THRESHOLD_FORCE_LOST		= (1<<8),
 
@@ -188,7 +191,7 @@ struct PxPairFlag
 
 		\note Only takes effect if eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT is raised
 
-		@see PxSimulationEventCallback.onContact() PxContactPair PxContactPair.extractContacts()
+		\see PxSimulationEventCallback.onContact() PxContactPair PxContactPair.extractContacts()
 		*/
 		eNOTIFY_CONTACT_POINTS				= (1<<9),
 
@@ -208,8 +211,8 @@ struct PxPairFlag
 		\note This flag is not supported with trigger shapes. However, CCD trigger events can be emulated using non-trigger shapes 
 		and requesting eNOTIFY_TOUCH_FOUND and eNOTIFY_TOUCH_LOST and not raising eSOLVE_CONTACT on the pair.
 
-		@see PxRigidBodyFlag::eENABLE_CCD
-		@see PxSceneFlag::eENABLE_CCD
+		\see PxRigidBodyFlag::eENABLE_CCD
+		\see PxSceneFlag::eENABLE_CCD
 		*/
 		eDETECT_CCD_CONTACT					= (1<<11),
 
@@ -223,7 +226,7 @@ struct PxPairFlag
 		PxRigidActor object directly. However, it might be the case that the velocity of a rigid body gets set while the simulation is running
 		in which case the PxRigidActor would return this new velocity in the contact report callback and not the velocity the simulation used.
 		
-		@see PxSimulationEventCallback.onContact(), PxContactPairVelocity, PxContactPairHeader.extraDataStream
+		\see PxSimulationEventCallback.onContact(), PxContactPairVelocity, PxContactPairHeader.extraDataStream
 		*/
 		ePRE_SOLVER_VELOCITY				= (1<<12),
 		
@@ -233,7 +236,7 @@ struct PxPairFlag
 		If the collision pair has contact reports enabled, the velocities of the rigid bodies after contacts have been solved
 		will be provided in the contact report callback unless the pair lost touch in which case no data will be provided.
 		
-		@see PxSimulationEventCallback.onContact(), PxContactPairVelocity, PxContactPairHeader.extraDataStream
+		\see PxSimulationEventCallback.onContact(), PxContactPairVelocity, PxContactPairHeader.extraDataStream
 		*/
 		ePOST_SOLVER_VELOCITY				= (1<<13),
 		
@@ -249,7 +252,7 @@ struct PxPairFlag
 		Another use case is related to CCD with multiple passes enabled, A fast moving object might bounce on and off the same 
 		object multiple times. This flag can be used to request the rigid body poses at the time of impact for each such collision event.
 		
-		@see PxSimulationEventCallback.onContact(), PxContactPairPose, PxContactPairHeader.extraDataStream
+		\see PxSimulationEventCallback.onContact(), PxContactPairPose, PxContactPairHeader.extraDataStream
 		*/
 		eCONTACT_EVENT_POSE					= (1<<14),
 
@@ -270,7 +273,7 @@ struct PxPairFlag
 /**
 \brief Bitfield that contains a set of raised flags defined in PxPairFlag.
 
-@see PxPairFlag
+\see PxPairFlag
 */
 typedef PxFlags<PxPairFlag::Enum, PxU16> PxPairFlags;
 PX_FLAGS_OPERATORS(PxPairFlag::Enum, PxU16)
@@ -280,7 +283,7 @@ PX_FLAGS_OPERATORS(PxPairFlag::Enum, PxU16)
 /**
 \brief Collection of flags describing the filter actions to take for a collision pair.
 
-@see PxFilterFlags PxSimulationFilterShader PxSimulationFilterCallback
+\see PxFilterFlags PxSimulationFilterShader PxSimulationFilterCallback
 */
 struct PxFilterFlag
 {
@@ -295,7 +298,7 @@ struct PxFilterFlag
 		\li The bounding volumes of the two objects overlap again (after being separated)
 		\li The user enforces a re-filtering (see #PxScene::resetFiltering())
 
-		@see PxScene::resetFiltering()
+		\see PxScene::resetFiltering()
 		*/
 		eKILL				= (1<<0),
 
@@ -308,14 +311,14 @@ struct PxFilterFlag
 		\li Same conditions as for killed pairs (see #eKILL)
 		\li The filter data or the filter object attributes change for one of the collision objects
 
-		@see PxFilterData PxFilterObjectAttributes
+		\see PxFilterData PxFilterObjectAttributes
 		*/
 		eSUPPRESS			= (1<<1),
 
 		/**
 		\brief Invoke the filter callback (#PxSimulationFilterCallback::pairFound()) for this collision pair.
 
-		@see PxSimulationFilterCallback
+		\see PxSimulationFilterCallback
 		*/
 		eCALLBACK			= (1<<2),
 
@@ -326,7 +329,7 @@ struct PxFilterFlag
 		will be invoked. Furthermore, the filter status of the collision pair can be adjusted through #PxSimulationFilterCallback::statusChange()
 		once per frame (until a pairLost() notification occurs).
 
-		@see PxSimulationFilterCallback
+		\see PxSimulationFilterCallback
 		*/
 		eNOTIFY				= (1<<3) | eCALLBACK,
 
@@ -348,7 +351,7 @@ struct PxFilterFlag
 /**
 \brief Bitfield that contains a set of raised flags defined in PxFilterFlag.
 
-@see PxFilterFlag
+\see PxFilterFlag
 */
 typedef PxFlags<PxFilterFlag::Enum, PxU16> PxFilterFlags;
 PX_FLAGS_OPERATORS(PxFilterFlag::Enum, PxU16)
@@ -357,7 +360,7 @@ PX_FLAGS_OPERATORS(PxFilterFlag::Enum, PxU16)
 /**
 \brief PxFilterData is user-definable data which gets passed into the collision filtering shader and/or callback.
 
-@see PxShape.setSimulationFilterData() PxShape.getSimulationFilterData()  PxSimulationFilterShader PxSimulationFilterCallback
+\see PxShape.setSimulationFilterData() PxShape.getSimulationFilterData()  PxSimulationFilterShader PxSimulationFilterCallback
 */
 struct PxFilterData
 {
@@ -428,7 +431,7 @@ struct PxFilterData
 /**
 \brief Identifies each type of filter object.
 
-@see PxGetFilterObjectType()
+\see PxGetFilterObjectType()
 */
 struct PxFilterObjectType
 {
@@ -436,45 +439,45 @@ struct PxFilterObjectType
 	{
 		/**
 		\brief A static rigid body
-		@see PxRigidStatic
+		\see PxRigidStatic
 		*/
 		eRIGID_STATIC,
 
 		/**
 		\brief A dynamic rigid body
-		@see PxRigidDynamic
+		\see PxRigidDynamic
 		*/
 		eRIGID_DYNAMIC,
 
 		/**
 		\brief An articulation
-		@see PxArticulationReducedCoordinate
+		\see PxArticulationReducedCoordinate
 		*/
 		eARTICULATION,
 
 		/**
 		\brief A particle system
-		@see PxParticleSystem
+		\see PxParticleSystem
 		*/
 		ePARTICLESYSTEM,
 
 		/**
 		\brief A FEM-based soft body
-		@see PxSoftBody
+		\see PxSoftBody
 		*/
 		eSOFTBODY,
 
 		/**
 		\brief A FEM-based cloth
 		\note In development
-		@see PxFEMCloth
+		\see PxFEMCloth
 		*/
 		eFEMCLOTH,
 
 		/**
 		\brief A hair system
 		\note In development
-		@see PxHairSystem
+		\see PxHairSystem
 		*/
 		eHAIRSYSTEM,
 
@@ -503,7 +506,7 @@ struct PxFilterObjectFlag
 /**
 \brief Structure which gets passed into the collision filtering shader and/or callback providing additional information on objects of a collision pair
 
-@see PxSimulationFilterShader PxSimulationFilterCallback getActorType() PxFilterObjectIsKinematic() PxFilterObjectIsTrigger()
+\see PxSimulationFilterShader PxSimulationFilterCallback getActorType() PxFilterObjectIsKinematic() PxFilterObjectIsTrigger()
 */
 typedef PxU32 PxFilterObjectAttributes;
 
@@ -514,7 +517,7 @@ typedef PxU32 PxFilterObjectAttributes;
 \param[in] attr The filter attribute of a collision pair object
 \return The type of the collision pair object.
 
-@see PxFilterObjectType
+\see PxFilterObjectType
 */
 PX_INLINE PxFilterObjectType::Enum PxGetFilterObjectType(PxFilterObjectAttributes attr)
 {
@@ -528,7 +531,7 @@ PX_INLINE PxFilterObjectType::Enum PxGetFilterObjectType(PxFilterObjectAttribute
 \param[in] attr The filter attribute of a collision pair object
 \return True if the object belongs to a kinematic rigid body, else false
 
-@see PxRigidBodyFlag::eKINEMATIC
+\see PxRigidBodyFlag::eKINEMATIC
 */
 PX_INLINE bool PxFilterObjectIsKinematic(PxFilterObjectAttributes attr)
 {
@@ -542,7 +545,7 @@ PX_INLINE bool PxFilterObjectIsKinematic(PxFilterObjectAttributes attr)
 \param[in] attr The filter attribute of a collision pair object
 \return True if the object is a trigger shape, else false
 
-@see PxShapeFlag::eTRIGGER_SHAPE
+\see PxShapeFlag::eTRIGGER_SHAPE
 */
 PX_INLINE bool PxFilterObjectIsTrigger(PxFilterObjectAttributes attr)
 {
@@ -591,7 +594,7 @@ logic to filter a collision pair then use the filter callback mechanism for this
 \return Filter flags defining whether the pair should be discarded, temporarily ignored, processed and whether the
 filter callback should get invoked for this pair.
 
-@see PxSimulationFilterCallback PxFilterData PxFilterObjectAttributes PxFilterFlag PxFilterFlags PxPairFlag PxPairFlags PxSceneDesc.filterShader
+\see PxSimulationFilterCallback PxFilterData PxFilterObjectAttributes PxFilterFlag PxFilterFlags PxPairFlag PxPairFlags PxSceneDesc.filterShader
 */
 typedef PxFilterFlags (*PxSimulationFilterShader)
 	(PxFilterObjectAttributes attributes0, PxFilterData filterData0, 
@@ -620,7 +623,7 @@ arising from using the SDK API in the callback while an application thread is ma
 the callbacks are thread-safe. Return values which depend on when the callback is called during the frame will introduce nondeterminism 
 into the simulation.
 
-@see PxSceneDesc.filterCallback PxSimulationFilterShader
+\see PxSceneDesc.filterCallback PxSimulationFilterShader
 */
 class PxSimulationFilterCallback
 {
@@ -647,7 +650,7 @@ public:
 	\return Filter flags defining whether the pair should be discarded, temporarily ignored or processed and whether the pair
 	should be tracked and send a report on pair deletion through the filter callback
 
-	@see PxSimulationFilterShader PxFilterData PxFilterObjectAttributes PxFilterFlag PxPairFlag
+	\see PxSimulationFilterShader PxFilterData PxFilterObjectAttributes PxFilterFlag PxPairFlag
 	*/
 	virtual		PxFilterFlags	pairFound(	PxU64 pairID,
 											PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0,
@@ -667,7 +670,7 @@ public:
 	\param[in] filterData1		The custom filter data of the second object
 	\param[in] objectRemoved	True if the pair was lost because one of the objects got removed from the scene
 
-	@see pairFound() PxSimulationFilterShader PxFilterData PxFilterObjectAttributes
+	\see pairFound() PxSimulationFilterShader PxFilterData PxFilterObjectAttributes
 	*/
 	virtual		void			pairLost(	PxU64 pairID,
 											PxFilterObjectAttributes attributes0, PxFilterData filterData0,
@@ -694,7 +697,7 @@ public:
 	\return True if the changes should be applied. In this case the method will get called again. False if
 	no more status changes should be done in the current simulation step. In that case the provided flags will be discarded.
 
-	@see pairFound() pairLost() PxFilterFlag PxPairFlag
+	\see pairFound() pairLost() PxFilterFlag PxPairFlag
 	*/
 	virtual		bool			statusChange(PxU64& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags) = 0;
 
@@ -737,8 +740,9 @@ struct PxPairFilteringMode
 
 /**
 \brief Struct for storing a particle/vertex - rigid filter pair with comparison operators
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-struct PxParticleRigidFilterPair
+struct PX_DEPRECATED PxParticleRigidFilterPair
 {
 	PX_CUDA_CALLABLE PxParticleRigidFilterPair() {}
 
@@ -776,5 +780,4 @@ struct PxParticleRigidFilterPair
 } // namespace physx
 #endif
 
-/** @} */
 #endif

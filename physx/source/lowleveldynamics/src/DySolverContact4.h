@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -112,7 +112,7 @@ PX_COMPILE_TIME_ASSERT(sizeof(SolverContactBatchPointBase4) == 112);
 
 /**
 \brief Contains the additional data required to represent 4 contacts between 2 dynamic bodies
-@see SolverContactBatchPointBase4
+\see SolverContactBatchPointBase4
 */
 struct SolverContactBatchPointDynamic4 : public SolverContactBatchPointBase4
 {	
@@ -153,7 +153,7 @@ PX_COMPILE_TIME_ASSERT(sizeof(SolverContactFrictionBase4) == 96);
 
 /**
 \brief Contains the additional data required to represent 4 friction constraints between 2 dynamic bodies
-@see SolverContactFrictionBase4
+\see SolverContactFrictionBase4
 */
 struct SolverContactFrictionDynamic4 : public SolverContactFrictionBase4
 {

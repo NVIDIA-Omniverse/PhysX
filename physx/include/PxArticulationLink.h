@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_ARTICULATION_LINK_H
 #define PX_ARTICULATION_LINK_H
-/** \addtogroup physics 
-@{ */
 
 #include "PxPhysXConfig.h"
 #include "PxRigidBody.h"
@@ -47,7 +45,7 @@ Articulation links have a restricted subset of the functionality of a PxRigidDyn
 - Their velocity or global pose cannot be set directly, but must be set via the articulation-root and joint positions/velocities.
 - Sleep state and solver iteration counts are properties of the entire articulation rather than the individual links.
 
-@see PxArticulationReducedCoordinate, PxArticulationReducedCoordinate::createLink, PxArticulationJointReducedCoordinate, PxRigidBody
+\see PxArticulationReducedCoordinate, PxArticulationReducedCoordinate::createLink, PxArticulationJointReducedCoordinate, PxRigidBody
 */
 
 class PxArticulationLink : public PxRigidBody
@@ -60,7 +58,7 @@ public:
 	\note Releasing a link is not allowed while the articulation link is in a scene. In order to release a link,
 	remove and then re-add the corresponding articulation to the scene.
 
-	@see PxArticulationReducedCoordinate::createLink()
+	\see PxArticulationReducedCoordinate::createLink()
 	*/
 	virtual		void						release() = 0;
 
@@ -69,7 +67,7 @@ public:
 
 	\return The articulation.
 
-	@see PxArticulationReducedCoordinate
+	\see PxArticulationReducedCoordinate
 	*/
 	virtual		PxArticulationReducedCoordinate&			getArticulation() const = 0;
 
@@ -78,7 +76,7 @@ public:
 	
 	\return The joint connecting the link to the parent. NULL for the root link.
 
-	@see PxArticulationJointReducedCoordinate
+	\see PxArticulationJointReducedCoordinate
 	*/
 	virtual		PxArticulationJointReducedCoordinate*	getInboundJoint() const = 0;
 
@@ -90,7 +88,7 @@ public:
 
 	\return The number of degrees of freedom, or 0xFFFFFFFF if the articulation is not in a scene.
 
-	@see PxArticulationJointReducedCoordinate
+	\see PxArticulationJointReducedCoordinate
 	*/
 	virtual		PxU32						getInboundJointDof() const = 0;
 
@@ -99,18 +97,23 @@ public:
 
 	\return The number of child links.
 
-	@see getChildren
+	\see getChildren
 	*/
 	virtual		PxU32						getNbChildren() const = 0;
 
 	/**
 	\brief Gets the low-level link index that may be used to index into members of PxArticulationCache.
 
+	The low-level indices are built after an articulation is added to the scene following a breadth-first approach,
+	where all the links at the current depth are indexed sequentially before moving to the links at the next depth level.
+	The root of the articulation has therefore the index 0.
+	Note that the low-level indices may be different from the order in which the links were originally added to the articulation.
+
 	The return value is only valid for articulations that are in a scene.
 
 	\return The low-level index, or 0xFFFFFFFF if the articulation is not in a scene.
 
-	@see PxArticulationCache
+	\see PxArticulationCache
 	*/
 	virtual		PxU32						getLinkIndex() const = 0;
 
@@ -123,7 +126,7 @@ public:
 
 	\return The number of articulation links written to the buffer.
 
-	@see getNbChildren
+	\see getNbChildren
 	*/
 	virtual		PxU32						getChildren(PxArticulationLink** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
@@ -142,7 +145,7 @@ public:
 
 	\note This call is not allowed while the simulation is running.
 
-	@see getCfmScale
+	\see getCfmScale
 	*/
 	virtual		void						setCfmScale(const PxReal cfm) = 0;
 
@@ -150,7 +153,7 @@ public:
 	\brief Get the constraint-force-mixing scale term.
 	\return The constraint-force-mixing scale term.
 
-	@see setCfmScale
+	\see setCfmScale
 	*/
 	virtual		PxReal						getCfmScale() const = 0;
 
@@ -167,7 +170,7 @@ public:
 
 	\note The linear velocity is reported with respect to the link's center of mass and not the actor frame origin.
 
-	@see PxRigidBody::getCMassLocalPose
+	\see PxRigidBody::getCMassLocalPose
 	*/
 	virtual		PxVec3						getLinearVelocity() const = 0;
 
@@ -202,5 +205,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

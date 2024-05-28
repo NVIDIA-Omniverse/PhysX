@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PROFILE_ZONE_MANAGER_H
 #define PX_PROFILE_ZONE_MANAGER_H
@@ -79,7 +79,7 @@ namespace physx {
 	Flushing the manager implies that you want to loop through all the profile zones and flush
 	each one.
 
-	@see PxProfileEventFlusher
+	\see PxProfileEventFlusher
 	*/
 	class PxProfileZoneManager 
 		: public PxProfileEventFlusher //Tell all SDK's to flush their queue of profile events.

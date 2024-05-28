@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,7 +33,7 @@
 #include "OmniPvdWriteStream.h"
 
 /**
- * @brief Used to abstract a memory read/write stream
+ * \brief Used to abstract a memory read/write stream
  *
  * Used to get the read and write streams. 
  */
@@ -44,23 +44,23 @@ public:
 	{
 	}		
 	/**
-	 * @brief Used to get the read stream
+	 * \brief Used to get the read stream
 	 *
-	 * @return The read stream
+	 * \return The read stream
 	 */
 	virtual OmniPvdReadStream* OMNI_PVD_CALL getReadStream() = 0;
 
 	/**
-	 * @brief Used to get the write stream
+	 * \brief Used to get the write stream
 	 *
-	 * @return The write stream
+	 * \return The write stream
 	 */
 	virtual OmniPvdWriteStream* OMNI_PVD_CALL getWriteStream() = 0;
 
 	/**
-	 * @brief Sets the buffer size in bytes of the memory streams
+	 * \brief Sets the buffer size in bytes of the memory streams
 	 *
-	 * @return The actually allocated length of the memory stream
+	 * \return The actually allocated length of the memory stream
 	 */
 	virtual uint64_t OMNI_PVD_CALL setBufferSize(uint64_t bufferLength) = 0;
 };

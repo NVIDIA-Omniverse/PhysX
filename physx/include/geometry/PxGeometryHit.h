@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_GEOMETRY_HIT_H
 #define PX_GEOMETRY_HIT_H
-/** \addtogroup scenequery
-@{
-*/
 #include "foundation/PxVec3.h"
 #include "foundation/PxFlags.h"
 #include "common/PxPhysXCommonConfig.h"
@@ -51,7 +48,7 @@ PxHitFlags are used for 3 different purposes:
 
 All these flags apply to both scene queries and geometry queries (PxGeometryQuery).
 
-@see PxRaycastHit PxSweepHit PxOverlapHit PxScene.raycast PxScene.sweep PxScene.overlap PxGeometryQuery PxFindFaceIndex
+\see PxRaycastHit PxSweepHit PxOverlapHit PxScene.raycast PxScene.sweep PxScene.overlap PxGeometryQuery PxFindFaceIndex
 */
 struct PxHitFlag
 {
@@ -65,7 +62,7 @@ struct PxHitFlag
 		eANY_HIT					= (1<<5),	//!< Report any first hit. Used for geometries that contain more than one primitive. For meshes,
 												//!< if neither eMESH_MULTIPLE nor eANY_HIT is specified, a single closest hit will be reported.
 		eMESH_MULTIPLE				= (1<<6),	//!< Report all hits for meshes rather than just the first. Not applicable to sweep queries.
-		eMESH_ANY					= eANY_HIT,	//!< @deprecated Deprecated, please use eANY_HIT instead.
+		eMESH_ANY					= eANY_HIT,	//!< \deprecated Deprecated, please use eANY_HIT instead.
 		eMESH_BOTH_SIDES			= (1<<7),	//!< Report hits with back faces of mesh triangles. Also report hits for raycast
 												//!< originating on mesh surface and facing away from the surface normal. Not applicable to sweep queries.
 												//!< Please refer to the user guide for heightfield-specific differences.
@@ -84,7 +81,7 @@ struct PxHitFlag
 /**
 \brief collection of set bits defined in PxHitFlag.
 
-@see PxHitFlag
+\see PxHitFlag
 */
 PX_FLAGS_TYPEDEF(PxHitFlag, PxU16)
 
@@ -120,7 +117,7 @@ struct PxLocationHit : PxQueryHit
 	\note For raycast hits: true for shapes overlapping with raycast origin.
 	\note For sweep hits: true for shapes overlapping at zero sweep distance.
 
-	@see PxRaycastHit PxSweepHit
+	\see PxRaycastHit PxSweepHit
 	*/
 	PX_INLINE bool		hadInitialOverlap() const { return (distance <= 0.0f); }
 
@@ -145,7 +142,7 @@ structure.
 Some members like barycentric coordinates are currently only computed for triangle meshes and height fields, but next versions
 might provide them in other cases. The client code should check #flags to make sure returned values are valid.
 
-@see PxScene.raycast 
+\see PxScene.raycast 
 */
 struct PxGeomRaycastHit : PxLocationHit
 {
@@ -159,7 +156,7 @@ struct PxGeomRaycastHit : PxLocationHit
 /**
 \brief Stores results of overlap queries.
 
-@see PxScene.overlap 
+\see PxScene.overlap 
 */
 struct PxGeomOverlapHit : PxQueryHit
 {
@@ -169,7 +166,7 @@ struct PxGeomOverlapHit : PxQueryHit
 /**
 \brief Stores results of sweep queries.
 
-@see PxScene.sweep
+\see PxScene.sweep
 */
 struct PxGeomSweepHit : PxLocationHit
 {
@@ -191,5 +188,4 @@ struct PxGeomIndexPair
 } // namespace physx
 #endif
 
-/** @} */
 #endif

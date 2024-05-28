@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "PxFiltering.h"
 #include "PxShape.h"
@@ -146,7 +143,7 @@ public:
 \note This is an alternative to PxVehiclePhysXArticulationLinkCreate.
 \note PxVehiclePhysXActorCreate primarily serves as an illustration of the instantiation of the PhysX class instances
 required to simulate a vehicle with a PxRigidDynamic.
-@see PxVehiclePhysXActorDestroy
+\see PxVehiclePhysXActorDestroy
 */
 void PxVehiclePhysXActorCreate
 (const PxVehicleFrame& vehicleFrame,
@@ -182,7 +179,7 @@ instantiate the PxArticulationLink with desired properties and populate it with 
 \note This is an alternative to PxVehiclePhysXActorCreate.  
 \note PxVehiclePhysXArticulationLinkCreate primarily serves as an illustration of the instantiation of the PhysX class instances 
 required to simulate a vehicle as part of an articulated ensemble.
-@see PxVehiclePhysXActorDestroy
+\see PxVehiclePhysXActorDestroy
 */
 void PxVehiclePhysXArticulationLinkCreate
 (const PxVehicleFrame& vehicleFrame,
@@ -206,4 +203,3 @@ void PxVehiclePhysXActorDestroy(PxVehiclePhysXActor& vehiclePhysXActor);
 } // namespace physx
 #endif
 
-/** @} */

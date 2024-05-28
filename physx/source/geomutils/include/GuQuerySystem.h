@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -231,7 +231,7 @@ namespace Gu
 			return true;
 		}
 
-		virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)
+		virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)	PX_OVERRIDE PX_FINAL
 		{
 			PX_ASSERT(payloads && transforms);
 
@@ -303,7 +303,7 @@ namespace Gu
 			return true;
 		}
 
-		virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)
+		virtual bool	invoke(PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)	PX_OVERRIDE PX_FINAL
 		{
 			PX_ASSERT(payloads && transforms);
 
@@ -417,7 +417,7 @@ namespace Gu
 			mClosestHit.distance = distance;
 		}
 
-		virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)
+		virtual bool	invoke(PxReal& aDist, PxU32 primIndex, const PrunerPayload* payloads, const PxTransform* transforms)	PX_OVERRIDE PX_FINAL
 		{
 			PX_ASSERT(payloads && transforms);
 

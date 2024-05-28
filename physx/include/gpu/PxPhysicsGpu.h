@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PHYSICS_GPU_H
 #define PX_PHYSICS_GPU_H
-/** \addtogroup extensions
-  @{
-*/
 
 
 #include "cudamanager/PxCudaContext.h"
@@ -158,6 +155,9 @@ namespace physx
 		/**
 		\brief Estimates the amount of GPU memory needed to create a scene for the given descriptor.
 
+		\deprecated This function is deprecated, creating a PxPhyics::createScene will return a null pointer if scene creation fails
+		due to low GPU memory availability.
+
 		\param[in] sceneDesc a valid scene desriptor
 
 		\note While this is a conservative estimate, scene allocation may still fail even though there is
@@ -167,7 +167,7 @@ namespace physx
 
 		\return A conservative estimate for the amount of GPU memory needed to create a scene for the given descriptor.
 	 	*/
-		virtual PxU64 estimateSceneCreationGpuMemoryRequirements(const PxSceneDesc& sceneDesc) = 0;
+		PX_DEPRECATED virtual PxU64 estimateSceneCreationGpuMemoryRequirements(const PxSceneDesc& sceneDesc) = 0;
 
 		virtual void release() = 0;
 
@@ -180,5 +180,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

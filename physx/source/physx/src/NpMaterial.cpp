@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -138,11 +138,11 @@ PxReal NpMaterial::getStaticFriction() const
 void NpMaterial::setRestitution(PxReal x)
 {
 	PX_CHECK_AND_RETURN(PxIsFinite(x), "PxMaterial::setRestitution: invalid float");
-	PX_CHECK_MSG(((mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT || x >= 0.0f) && (x <= 1.0f)), "PxMaterial::setRestitution: Restitution value has to be in [0,1]!");
-	if ((!(mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT) && x < 0.0f) || (x > 1.0f))
+	PX_CHECK_AND_RETURN(x <= 1.0f, "PxMaterial::setRestitution: Restitution value has to be smaller or equal 1.0!");
+	if (x > 1.0f)
 	{
-		PxClamp(x, 0.0f, 1.0f);
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxMaterial::setRestitution: Invalid value %f was clamped to [0,1]!", PxF64(x));
+		x = PxMin(1.0f, x);
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxMaterial::setRestitution: Invalid value %f was clamped to 1.0!", PxF64(x));
 	}
 	mMaterial.restitution = x;
 	updateMaterial();
@@ -159,12 +159,7 @@ PxReal NpMaterial::getRestitution() const
 void NpMaterial::setDamping(PxReal x)
 {
 	PX_CHECK_AND_RETURN(PxIsFinite(x) && x >= 0.f, "PxMaterial::setDamping: invalid float. Must be >= 0");
-	PX_CHECK_MSG((((mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT) && x >= 0.f) || x == 0.f), "PxMaterial::setDamping: Damping value has to be in [0,INF] and PxMaterialFlag::eCOMPLIANT_CONTACT should be raised!");
-	if ((!(mMaterial.flags & PxMaterialFlag::eCOMPLIANT_CONTACT) && x != 0.0f))
-	{
-		x = 0.f;
-		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "PxMaterial::setDamping: Attempting to set a non-zero damping coefficient without raising PxMaterialFlag::eCOMPLIANT_CONTACT first!");
-	}
+
 	mMaterial.damping = x;
 	updateMaterial();
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, damping, static_cast<PxMaterial &>(*this), x)
@@ -182,7 +177,17 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 	if (value)
 		mMaterial.flags |= flag;
 	else
+	{
 		mMaterial.flags &= ~PxMaterialFlags(flag);
+
+#if PX_CHECKED
+		if (flag == PxMaterialFlag::eIMPROVED_PATCH_FRICTION)
+		{
+			PxGetFoundation().error(PX_WARN, "PxMaterial::setFlag(): the friction behavior with the flag "
+				"PxMaterialFlag::eIMPROVED_PATCH_FRICTION cleared is deprecated and support will end soon.");
+		}
+#endif
+	}
 	updateMaterial();
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
@@ -190,6 +195,13 @@ void NpMaterial::setFlag(PxMaterialFlag::Enum flag, bool value)
 void NpMaterial::setFlags(PxMaterialFlags inFlags)
 {
 	mMaterial.flags = inFlags;
+#if PX_CHECKED
+	if (!(inFlags & PxMaterialFlag::eIMPROVED_PATCH_FRICTION))
+	{
+		PxGetFoundation().error(PX_WARN, "PxMaterial::setFlags(): the friction behavior with the flag "
+			"PxMaterialFlag::eIMPROVED_PATCH_FRICTION cleared is deprecated and support will end soon.");
+	}
+#endif
 	updateMaterial();
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, flags, static_cast<PxMaterial &>(*this), mMaterial.flags)
 }
@@ -228,3 +240,15 @@ PxCombineMode::Enum NpMaterial::getRestitutionCombineMode() const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void NpMaterial::setDampingCombineMode(PxCombineMode::Enum combMode)
+{
+	mMaterial.setDampingCombineMode(combMode);
+	updateMaterial();
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxMaterial, dampingCombineMode, static_cast<PxMaterial &>(*this), combMode)
+}
+
+PxCombineMode::Enum NpMaterial::getDampingCombineMode() const
+{
+	return mMaterial.getDampingCombineMode();
+}
+

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -79,36 +79,36 @@ public:
 											PxsContactManager(PxsContext* context, PxU32 index);
 											~PxsContactManager();
 
-	PX_FORCE_INLINE	void					setDisableStrongFriction(PxU32 d)	{ (!d)	? mNpUnit.flags &= ~PxcNpWorkUnitFlag::eDISABLE_STRONG_FRICTION 
-																								: mNpUnit.flags |= PxcNpWorkUnitFlag::eDISABLE_STRONG_FRICTION; }
+	PX_FORCE_INLINE	void					setDisableStrongFriction(PxU32 d)	{ (!d)	? mNpUnit.mFlags &= ~PxcNpWorkUnitFlag::eDISABLE_STRONG_FRICTION 
+																						: mNpUnit.mFlags |= PxcNpWorkUnitFlag::eDISABLE_STRONG_FRICTION; }
 
-	PX_FORCE_INLINE	PxReal					getRestDistance()			const	{ return mNpUnit.restDistance;				}
-	PX_FORCE_INLINE	void					setRestDistance(PxReal v)			{ mNpUnit.restDistance = v;					}
+	PX_FORCE_INLINE	PxReal					getRestDistance()			const	{ return mNpUnit.mRestDistance;	}
+	PX_FORCE_INLINE	void					setRestDistance(PxReal v)			{ mNpUnit.mRestDistance = v;	}
 
-	PX_FORCE_INLINE	PxU8					getDominance0()				const	{ return mNpUnit.dominance0;				}
-	PX_FORCE_INLINE	void					setDominance0(PxU8 v)				{ mNpUnit.dominance0 = v;					}
+	PX_FORCE_INLINE	PxU8					getDominance0()				const	{ return mNpUnit.mDominance0;	}
+	PX_FORCE_INLINE	void					setDominance0(PxU8 v)				{ mNpUnit.mDominance0 = v;		}
 
-	PX_FORCE_INLINE	PxU8					getDominance1()				const	{ return mNpUnit.dominance1;				}
-	PX_FORCE_INLINE	void					setDominance1(PxU8 v)				{ mNpUnit.dominance1 = v;					}
+	PX_FORCE_INLINE	PxU8					getDominance1()				const	{ return mNpUnit.mDominance1;	}
+	PX_FORCE_INLINE	void					setDominance1(PxU8 v)				{ mNpUnit.mDominance1 = v;		}
 
-	PX_FORCE_INLINE	PxU16					getTouchStatus()			const	{ return PxU16(mNpUnit.statusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH); }
-	PX_FORCE_INLINE	PxU16					touchStatusKnown()			const	{ return PxU16(mNpUnit.statusFlags & PxcNpWorkUnitStatusFlag::eTOUCH_KNOWN); }
-	PX_FORCE_INLINE	PxI32					getTouchIdx()				const	{ return (mNpUnit.statusFlags& PxcNpWorkUnitStatusFlag::eHAS_TOUCH) ? 1 : (mNpUnit.statusFlags& PxcNpWorkUnitStatusFlag::eHAS_NO_TOUCH ? -1 : 0); }
+	PX_FORCE_INLINE	PxU16					getTouchStatus()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH); }
+	PX_FORCE_INLINE	PxU16					touchStatusKnown()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eTOUCH_KNOWN); }
+	PX_FORCE_INLINE	PxI32					getTouchIdx()				const	{ return (mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH) ? 1 : (mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_NO_TOUCH ? -1 : 0); }
 
-	PX_FORCE_INLINE	PxU32					getIndex()					const	{ return mNpUnit.index;						}
+	PX_FORCE_INLINE	PxU32					getIndex()					const	{ return mNpUnit.mIndex;	}
 
-	PX_FORCE_INLINE	PxU16					getHasCCDRetouch()			const	{ return PxU16(mNpUnit.statusFlags & PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH); }
-	PX_FORCE_INLINE	void					clearCCDRetouch()					{ mNpUnit.statusFlags &= ~PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH; }
-	PX_FORCE_INLINE	void					raiseCCDRetouch()					{ mNpUnit.statusFlags |= PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH; }
+	PX_FORCE_INLINE	PxU16					getHasCCDRetouch()			const	{ return PxU16(mNpUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH); }
+	PX_FORCE_INLINE	void					clearCCDRetouch()					{ mNpUnit.mStatusFlags &= ~PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH; }
+	PX_FORCE_INLINE	void					raiseCCDRetouch()					{ mNpUnit.mStatusFlags |= PxcNpWorkUnitStatusFlag::eHAS_CCD_RETOUCH; }
 
 	// flags stuff - needs to be refactored
 
 	PX_FORCE_INLINE	PxIntBool				isChangeable()				const	{ return PxIntBool(mFlags & PXS_CM_CHANGEABLE);		}
-	PX_FORCE_INLINE	PxIntBool				getCCD()					const	{ return PxIntBool((mFlags & PXS_CM_CCD_LINEAR) && (mNpUnit.flags & PxcNpWorkUnitFlag::eDETECT_CCD_CONTACTS)); }
+	PX_FORCE_INLINE	PxIntBool				getCCD()					const	{ return PxIntBool((mFlags & PXS_CM_CCD_LINEAR) && (mNpUnit.mFlags & PxcNpWorkUnitFlag::eDETECT_CCD_CONTACTS)); }
 	PX_FORCE_INLINE	PxIntBool				getHadCCDContact()			const	{ return PxIntBool(mFlags & PXS_CM_CCD_CONTACT); }
 	PX_FORCE_INLINE	void					setHadCCDContact()					{ mFlags |= PXS_CM_CCD_CONTACT; }
 					void					setCCD(bool enable);
-	PX_FORCE_INLINE	void					clearCCDContactInfo()				{ mFlags &= ~PXS_CM_CCD_CONTACT; mNpUnit.ccdContacts = NULL; }
+	PX_FORCE_INLINE	void					clearCCDContactInfo()				{ mFlags &= ~PXS_CM_CCD_CONTACT; mNpUnit.mCCDContacts = NULL; }
 
 	PX_FORCE_INLINE	PxcNpWorkUnit&			getWorkUnit()						{ return mNpUnit;	}
 	PX_FORCE_INLINE	const PxcNpWorkUnit&	getWorkUnit()				const	{ return mNpUnit;	}

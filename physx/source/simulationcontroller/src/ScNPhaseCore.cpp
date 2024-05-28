@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -261,6 +261,7 @@ ShapeInteraction* NPhaseCore::createShapeInteraction(ShapeSimBase& s0, ShapeSimB
 	if(shouldSwapBodies(s0, s1))
 		PxSwap(_s0, _s1);
 
+	PX_ASSERT(_s0->getActor().getNodeIndex().isValid()); // after the swap the first shape must not be part of a static body
 	ShapeInteraction* si = shapeInteraction ? shapeInteraction : mShapeInteractionPool.allocate();
 	PX_PLACEMENT_NEW(si, ShapeInteraction)(*_s0, *_s1, pairFlags, contactManager);
 
@@ -353,12 +354,20 @@ ActorPair* NPhaseCore::findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBo
 	return actorPair;
 }
 
-PX_FORCE_INLINE void NPhaseCore::destroyActorPairReport(ActorPairReport& aPair)
+// PT: this is called from various places. In some of them like Sc::Scene::lostTouchReports() there is an explicit lock (mNPhaseCore->lockReports())
+// so there is no need to lock like in createActorPairContactReportData(). In some others however it is quite unclear and perhaps a lock is missing.
+static PX_FORCE_INLINE void destroyActorPairReport(	ActorPairReport& aPair, PxPool<ActorPairContactReportData>& actorPairContactReportDataPool,
+													PxPool<ActorPairReport>& actorPairReportPool)
 {
 	PX_ASSERT(aPair.isReportPair());
 	
-	aPair.releaseContactReportData(*this);
-	mActorPairReportPool.destroy(&aPair);
+	if(aPair.mReportData)
+	{
+		actorPairContactReportDataPool.destroy(aPair.mReportData);
+		aPair.mReportData = NULL;
+	}
+
+	actorPairReportPool.destroy(&aPair);
 }
 
 ElementSimInteraction* NPhaseCore::convert(ElementSimInteraction* pair, InteractionType::Enum newType, FilterInfo& filterInfo, bool removeFromDirtyList,
@@ -1011,15 +1020,17 @@ void NPhaseCore::releaseElementPair(ElementSimInteraction* pair, PxU32 flags, El
 
 void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, PxsContactManagerOutputIterator& outputs)
 {
+	ActorPair* aPair = si->getActorPair();
+
 	if(si->hasTouch())
 	{
 		if(si->isReportPair())
 			si->sendLostTouchReport((removedElement != NULL), ccdPass, outputs);
 
-		si->adjustCountersOnLostTouch();
+		if(aPair)
+			si->adjustCountersOnLostTouch();
 	}
 
-	ActorPair* aPair = si->getActorPair();
 	if(aPair && aPair->decRefCount() == 0)
 	{
 		RigidSim* sim0 = static_cast<RigidSim*>(&si->getActorSim0());
@@ -1039,7 +1050,7 @@ void NPhaseCore::lostTouchReports(ShapeInteraction* si, PxU32 flags, ElementSim*
 		else
 		{
 			ActorPairReport& apr = ActorPairReport::cast(*aPair);
-			destroyActorPairReport(apr);
+			destroyActorPairReport(apr, mActorPairContactReportDataPool, mActorPairReportPool);
 		}
 	}
 	si->clearActorPair();
@@ -1109,7 +1120,7 @@ void NPhaseCore::clearContactReportActorPairs(bool shrinkToZero)
 			const BodyPairKey pair(PxMin(actorAID, actorBID), PxMax(actorAID, actorBID));
 
 			mActorPairMap.erase(pair);
-			destroyActorPairReport(*aPair);
+			destroyActorPairReport(*aPair, mActorPairContactReportDataPool, mActorPairReportPool);
 		}
 	}
 
@@ -1224,8 +1235,7 @@ void NPhaseCore::removeFromForceThresholdContactEventPairs(ShapeInteraction* si)
 		mForceThresholdContactEventPairList[index]->mReportPairIndex = index;
 }
 
-PxU8* NPhaseCore::reserveContactReportPairData(PxU32 pairCount, PxU32 extraDataSize, PxU32& bufferIndex,
-	ContactReportAllocationManager* alloc)
+PxU8* NPhaseCore::reserveContactReportPairData(PxU32 pairCount, PxU32 extraDataSize, PxU32& bufferIndex, ContactReportAllocationManager* alloc)
 {
 	extraDataSize = ContactStreamManager::computeExtraDataBlockSize(extraDataSize);
 	return alloc ? alloc->allocate(extraDataSize + (pairCount * sizeof(ContactShapePair)), bufferIndex) : mContactReportBuffer.allocateNotThreadSafe(extraDataSize + (pairCount * sizeof(ContactShapePair)), bufferIndex);
@@ -1261,7 +1271,7 @@ PxU8* NPhaseCore::resizeContactReportPairData(PxU32 pairCount, PxU32 extraDataSi
 			PxMemMove(stream + extraDataSize, oldStream + maxExtraDataSize, csm.currentPairCount * sizeof(ContactShapePair));
 
 		if(pairCount > csm.maxPairCount)
-			csm.maxPairCount = PxTo16(pairCount);
+			csm.maxPairCount = pairCount;
 		if(extraDataSize > maxExtraDataSize)
 			csm.setMaxExtraDataSize(extraDataSize);
 	}
@@ -1274,8 +1284,4 @@ ActorPairContactReportData* NPhaseCore::createActorPairContactReportData()
 	return mActorPairContactReportDataPool.construct();
 }
 
-void NPhaseCore::releaseActorPairContactReportData(ActorPairContactReportData* data)
-{
-	mActorPairContactReportDataPool.destroy(data);
-}
 

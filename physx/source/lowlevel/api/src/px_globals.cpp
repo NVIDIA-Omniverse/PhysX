@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -99,8 +99,6 @@ namespace physx
 #include "common/PxMetaData.h"
 #include "PxsFEMClothMaterialCore.h"
 #include "PxsFEMSoftBodyMaterialCore.h"
-#include "PxsFLIPMaterialCore.h"
-#include "PxsMPMMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
 #include "PxsMaterialCore.h"
 
@@ -123,6 +121,7 @@ template<> void PxsMaterialCore::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxsMaterialCore, PxMaterialFlags,	flags,				0)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxsMaterialCore, PxU8,				fricCombineMode,	0)
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxsMaterialCore, PxU8,				restCombineMode,	0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	PxsMaterialCore, PxU8,				dampingCombineMode,	0)
 
 	// MaterialCore
 	PX_DEF_BIN_METADATA_ITEM(stream,	PxsMaterialCore, PxMaterial,		mMaterial,			PxMetaDataFlag::ePTR)
@@ -189,53 +188,6 @@ template<> void PxsPBDMaterialCore::getBinaryMetaData(PxOutputStream& stream)
 	// MaterialCore
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsPBDMaterialCore, PxPBDMaterial, mMaterial, PxMetaDataFlag::ePTR)
 	PX_DEF_BIN_METADATA_ITEM(stream, PxsPBDMaterialCore, PxU16, mMaterialIndex, PxMetaDataFlag::eHANDLE)
-}
-
-template<> void PxsFLIPMaterialCore::getBinaryMetaData(PxOutputStream& stream)
-{
-	PX_DEF_BIN_METADATA_CLASS(stream, PxsFLIPMaterialCore)
-
-	// MaterialData
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, friction, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, damping, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, adhesion, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, gravityScale, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, adhesionRadiusScale, 0)
-
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, viscosity, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxReal, surfaceTension, 0)
-	
-	// MaterialCore
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxFLIPMaterial, mMaterial, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsFLIPMaterialCore, PxU16, mMaterialIndex, PxMetaDataFlag::eHANDLE)
-}
-
-template<> void PxsMPMMaterialCore::getBinaryMetaData(PxOutputStream& stream)
-{
-	PX_DEF_BIN_METADATA_CLASS(stream, PxsMPMMaterialCore)
-
-	PX_DEF_BIN_METADATA_TYPEDEF(stream,	PxIntBool, PxU32)
-
-	// MaterialData
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, friction, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, damping, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, adhesion, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, gravityScale, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, adhesionRadiusScale, 0)
-
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxIntBool, isPlastic, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, youngsModulus, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, poissonsRatio, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, hardening, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, criticalCompression, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, criticalStretch, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, tensileDamageSensitivity, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, compressiveDamageSensitivity, 0)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxReal, attractiveForceResidual, 0)
-	
-	// MaterialCore
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxMPMMaterial, mMaterial, PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream, PxsMPMMaterialCore, PxU16, mMaterialIndex, PxMetaDataFlag::eHANDLE)
 }
 
 }

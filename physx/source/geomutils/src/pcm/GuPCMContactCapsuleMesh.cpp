@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -599,7 +599,7 @@ static FloatV pcmDistanceSegmentTriangleSquared(const Vec3VArg p, const Vec3VArg
 		const FloatV sqDistPE = FSel(con2, sqDist0, FSel(con3, sqDist1, sqDist2));
 		const FloatV uEdge = FSel(con2, u01, FSel(con3, u11, u21));
 		const FloatV vEdge = FSel(con2, v01, FSel(con3, v11, v21));
-		const FloatV tSeg = FSel(con2,  t00, FSel(con3, t10, t20));
+		const FloatV tSeg = FSel(con2, t00, FSel(con3, t10, t20));
 
 		if(BAllEqTTTT(con0))
 		{

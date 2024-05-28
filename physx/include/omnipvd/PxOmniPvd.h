@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,6 +33,18 @@
 
 class OmniPvdWriter;
 class OmniPvdFileWriteStream;
+
+// The OVD integration version:
+// 
+//   Major version indicates breaking changes in how PhysX SDK objects
+//   are streamed using the OmniPVD API, or if certain attributes changed
+//   name/type or set size, or was removed, hence subtractive changes.
+// 
+//   Minor version version indicates non-breaking changes such as the
+//   addition of a class or attribute on top of those already existing,
+//   hence additive changes.
+#define PX_PHYSICS_OVD_INTEGRATION_VERSION_MAJOR 1
+#define PX_PHYSICS_OVD_INTEGRATION_VERSION_MINOR 4
 
 #if !PX_DOXYGEN
 namespace physx

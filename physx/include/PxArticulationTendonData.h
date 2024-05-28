@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved. 
 
@@ -43,7 +43,7 @@ namespace physx
 
 This data structure is to be used by the direct GPU API for spatial tendon data updates.
 
-@see PxArticulationSpatialTendon PxScene::copyArticulationData PxScene::applyArticulationData
+\see PxArticulationSpatialTendon PxDirectGPUAPI::getArticulationData PxDirectGPUAPI::setArticulationData
 */
 PX_ALIGN_PREFIX(16)
 class PxGpuSpatialTendonData
@@ -61,7 +61,7 @@ PX_ALIGN_SUFFIX(16);
 
 This data structure is to be used by the direct GPU API for fixed tendon data updates.
 
-@see PxArticulationFixedTendon PxScene::copyArticulationData PxScene::applyArticulationData
+\see PxArticulationFixedTendon PxDirectGPUAPI::getArticulationData PxDirectGPUAPI::setArticulationData
 */
 PX_ALIGN_PREFIX(16)
 class PxGpuFixedTendonData : public PxGpuSpatialTendonData
@@ -79,7 +79,7 @@ PX_ALIGN_SUFFIX(16);
 
 This data structure is to be used by the direct GPU API for fixed tendon joint data updates.
 
-@see PxArticulationTendonJoint PxScene::copyArticulationData PxScene::applyArticulationData
+\see PxArticulationTendonJoint PxDirectGPUAPI::getArticulationData PxDirectGPUAPI::setArticulationData
 */
 PX_ALIGN_PREFIX(16)
 class PxGpuTendonJointCoefficientData
@@ -97,7 +97,7 @@ PX_ALIGN_SUFFIX(16);
 
 This data structure is to be used by the direct GPU API for spatial tendon attachment data updates.
 
-@see PxArticulationAttachment PxScene::copyArticulationData PxScene::applyArticulationData
+\see PxArticulationAttachment PxDirectGPUAPI::getArticulationData PxDirectGPUAPI::setArticulationData
 */
 PX_ALIGN_PREFIX(16)
 class PxGpuTendonAttachmentData

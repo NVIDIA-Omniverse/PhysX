@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -49,9 +49,6 @@
 #include "OmniPvdWriter.h"
 #endif
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #if PX_SUPPORT_OMNI_PVD
 
@@ -550,7 +547,7 @@ DirectDrivetrain registerDirectDrivetrain(OmniPvdWriter& omniWriter);
 void writeDirectDriveThrottleResponseParams
 (const PxVehicleAxleDescription& axleDesc,
  const PxVehicleDirectDriveThrottleCommandResponseParams& directDriveThrottleResponseParams,
- const OmniPvdObjectHandle oh,  const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
+ const OmniPvdObjectHandle oh, const WheelResponseParams& ah, OmniPvdWriter& omniWriter, OmniPvdContextHandle ch);
 
 void writeDirectDriveCommandState
 (const PxVehicleCommandState& commands,
@@ -1035,4 +1032,3 @@ Vehicle registerVehicle(OmniPvdWriter& omniWriter);
 
 #endif //PX_SUPPORT_OMNI_PVD
 
-/** @} */

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -417,7 +417,7 @@ const PxObstacle* ObstacleContext::getObstacleByHandle(PxObstacleHandle handle) 
 #include "geometry/PxBoxGeometry.h"
 #include "geometry/PxCapsuleGeometry.h"
 using namespace Gu;
-const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance, PxObstacleHandle& obstacleHandle) const
+const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const PxVec3& origin, const PxVec3& unitDir, PxReal distance, PxObstacleHandle& obstacleHandle) const
 {
 	PxGeomRaycastHit localHit;
 	PxF32 t = FLT_MAX;
@@ -476,7 +476,7 @@ const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const Px
 }
 
 
-const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const PxObstacleHandle& obstacleHandle, const PxVec3& origin, const PxVec3& unitDir, const PxReal distance) const
+const PxObstacle* ObstacleContext::raycastSingle(PxGeomRaycastHit& hit, const PxObstacleHandle& obstacleHandle, const PxVec3& origin, const PxVec3& unitDir, PxReal distance) const
 {	
 	const PxHitFlags hitFlags = PxHitFlags(0);
 

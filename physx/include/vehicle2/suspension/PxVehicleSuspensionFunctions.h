@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxSimpleTypes.h"
@@ -116,6 +113,8 @@ void PxVehicleSuspensionForceUpdate
 
 
 /**
+\deprecated This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.
+
 \brief Compute the suspension force and torque arising from suspension compression and speed.
 \param[in] suspensionParams is a description of the suspension and wheel frames.
 \param[in] suspensionForceParams describes the conversion of suspension state to suspension force.
@@ -126,7 +125,6 @@ void PxVehicleSuspensionForceUpdate
 \param[in] gravity is the gravitational acceleration.
 \param[out] suspensionForce is the force and torque to apply to the rigid body arising from the suspension state.
 \note PxVehicleSuspensionLegacyForceUpdate implements the legacy force computation of PhysX 5.0 and earlier. 
-@deprecated
 */
 PX_DEPRECATED void PxVehicleSuspensionLegacyForceUpdate
 (const PxVehicleSuspensionParams& suspensionParams,
@@ -163,4 +161,3 @@ void PxVehicleAntiRollForceUpdate
 } // namespace physx
 #endif
 
-/** @} */

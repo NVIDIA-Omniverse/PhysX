@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_CONVEX_MESH_H
 #define PX_CONVEX_MESH_H
-/** \addtogroup geomutils
-  @{
-*/
 
 #include "foundation/Px.h"
 #include "common/PxBase.h"
@@ -77,7 +74,7 @@ once you have released all of its #PxShape instances.
 \li #PxVisualizationParameter::eCOLLISION_FNORMALS
 \li #PxVisualizationParameter::eCOLLISION_EDGES
 
-@see PxConvexMeshDesc PxPhysics.createConvexMesh()
+\see PxConvexMeshDesc PxPhysics.createConvexMesh()
 */
 class PxConvexMesh : public PxRefCounted
 {
@@ -86,28 +83,28 @@ public:
 	/**
 	\brief Returns the number of vertices.
 	\return	Number of vertices.
-	@see getVertices()
+	\see getVertices()
 	*/
 	virtual	PxU32	getNbVertices()	const	= 0;
 
 	/**
 	\brief Returns the vertices.
 	\return	Array of vertices.
-	@see getNbVertices()
+	\see getNbVertices()
 	*/
 	virtual	const PxVec3*	getVertices()	const	= 0;
 
 	/**
 	\brief Returns the index buffer.
 	\return	Index buffer.
-	@see getNbPolygons() getPolygonData()
+	\see getNbPolygons() getPolygonData()
 	*/
 	virtual	const PxU8*		getIndexBuffer()	const	= 0;
 
 	/**
 	\brief Returns the number of polygons.
 	\return	Number of polygons.
-	@see getIndexBuffer() getPolygonData()
+	\see getIndexBuffer() getPolygonData()
 	*/
 	virtual	PxU32	getNbPolygons()	const	= 0;
 
@@ -116,14 +113,14 @@ public:
 	\param[in] index	Polygon index in [0 ; getNbPolygons()[.
 	\param[out] data	Polygon data.
 	\return	True if success.
-	@see getIndexBuffer() getNbPolygons()
+	\see getIndexBuffer() getNbPolygons()
 	*/
 	virtual	bool	getPolygonData(PxU32 index, PxHullPolygon& data)	const	= 0;
 
 	/**
 	\brief Decrements the reference count of a convex mesh and releases it if the new reference count is zero.	
 	
-	@see PxPhysics.createConvexMesh() PxConvexMeshGeometry PxShape
+	\see PxPhysics.createConvexMesh() PxConvexMeshGeometry PxShape
 	*/
 	virtual	void	release()	= 0;
 
@@ -182,5 +179,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,7 +39,9 @@ namespace physx
 	class PxContactJoint;
 
 	/**
-	\brief Create a contact Joint.
+	\deprecated Will be removed in a future version when a replacement for loop-closure articulation inverse dynamics is made available.
+
+	\brief Create a contact joint for articulation inverse dynamics computations.
 
 	\param[in] physics		The physics SDK
 	\param[in] actor0		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
@@ -47,10 +49,13 @@ namespace physx
 	\param[in] actor1		An actor to which the joint is attached. NULL may be used to attach the joint to a specific point in the world frame
 	\param[in] localFrame1	The position and orientation of the joint relative to actor1
 
-	@see PxContactJoint
+	\see PxContactJoint
 	*/
 	PX_DEPRECATED PxContactJoint*	PxContactJointCreate(PxPhysics& physics, PxRigidActor* actor0, const PxTransform& localFrame0, PxRigidActor* actor1, const PxTransform& localFrame1);
 
+	/**
+	\deprecated Will be removed in a future version once a suitable replacement for loop-closure articulation inverse dynamics is made available.
+	*/
 	struct PX_DEPRECATED PxJacobianRow
 	{
 		PxVec3 linear0;
@@ -81,10 +86,12 @@ namespace physx
 	};
 
 	/**
+	\deprecated Will be removed in a future version when a replacement for loop-closure articulation inverse dynamics is made available.
+
 	\brief PxContactJoint is best viewed as a helper function for the inverse dynamics of articulations. The expected use case 
 	is to use PxContactJoint::getConstraint() in conjunction with PxArticulationReducedCoordinate::addLoopJoint().
 
-	@see PxContactJointCreate PxJoint
+	\see PxContactJointCreate PxArticulationReducedCoordinate::addLoopJoint
 	*/
 	PX_DEPRECATED class PxContactJoint : public PxJoint
 	{

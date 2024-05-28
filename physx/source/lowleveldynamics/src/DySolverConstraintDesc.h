@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -46,15 +46,6 @@ class FeatherstoneArticulation;
 
 // dsequeira: moved this articulation stuff here to sever a build dep on Articulation.h through DyThreadContext.h and onward
 
-struct SelfConstraintBlock
-{
-	PxU32	startId;				
-	PxU32	numSelfConstraints;	
-	PxU16	fsDataLength;		
-	PxU16	requiredSolverProgress;
-	uintptr_t eaFsData;
-};
-
 //This class rolls together multiple contact managers into a single contact manager.
 struct CompoundContactManager
 {
@@ -72,6 +63,8 @@ struct CompoundContactManager
 	
 	PxReal* originalForceBuffer;	//This is the original force buffer that we replaced with a combined force buffer
 	PxU16* forceBufferList;			//This is a list of indices from the reduced force buffer to the original force buffers - we need this to fix up the write-backs from the solver	
+
+	PxU8* originalFrictionPatches;	//This is the original friction patches buffer that we replaced with a combined buffer	
 };
 
 struct SolverConstraintPrepState
@@ -89,7 +82,6 @@ PX_FORCE_INLINE bool	isArticulationConstraint(const PxSolverConstraintDesc& desc
 	return desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY
 		|| desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY;
 }
-
 
 PX_FORCE_INLINE void setConstraintLength(PxSolverConstraintDesc& desc, const PxU32 constraintLength)
 {

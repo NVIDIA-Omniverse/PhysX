@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -206,8 +206,8 @@ void cleanupPhysX()
 	if (gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();
-		transport->release();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
 }
@@ -296,7 +296,7 @@ bool initVehicles()
 	}
 
 	//Apply a start pose to the physx actor of tractor and trailer and add them to the physx scene.
-	const PxTransform tractorPose(PxVec3(0.000000000f,  -0.0500000119f, -1.59399998f), PxQuat(PxIdentity));
+	const PxTransform tractorPose(PxVec3(0.000000000f, -0.0500000119f, -1.59399998f), PxQuat(PxIdentity));
 	gTractor.setUpActor(*gScene, tractorPose, gTractorName);
 	const PxTransform  trailerPose = tractorPose*anchorTractorFrame*anchorTrailerFrame.getInverse();
 	gTrailer.setUpActor(*gScene, trailerPose, gTrailerName);
@@ -360,6 +360,7 @@ void cleanupPhysics()
 	cleanupVehicles();
 	cleanupGroundPlane();
 	cleanupPhysX();
+	printf("SnippetVehicle2Truck done.\n");
 }
 
 void stepPhysics()
@@ -441,8 +442,8 @@ int snippetMain(int argc, const char*const* argv)
 		return 1;
 
 #ifdef RENDER_SNIPPET
-	extern void renderLoop();
-	renderLoop();
+	extern void renderLoop(const char*);
+	renderLoop("PhysX Snippet Vehicle2 Truck");
 #else
 	if (initPhysics())
 	{

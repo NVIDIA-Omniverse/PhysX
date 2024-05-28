@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -78,18 +78,18 @@ namespace Gu
 // TEST_INTERNAL_OBJECTS
 	struct InternalObjectsData
 	{
-		PxReal	mRadius;
-		PxReal	mExtents[3];
+		PxVec3	mInternalExtents;
+		PxReal	mInternalRadius;
 
 		PX_FORCE_INLINE	void reset()
 		{
-			mRadius = 0.0f;
-			mExtents[0] = 0.0f;
-			mExtents[1] = 0.0f;
-			mExtents[2] = 0.0f;
+			mInternalExtents = PxVec3(0.0f);
+			mInternalRadius = 0.0f;
 		}
 	};
 	PX_COMPILE_TIME_ASSERT(sizeof(Gu::InternalObjectsData) == 16);
+	// PT: ensure that mInternalExtents is not the last member of InternalObjectsData, i.e. it is safe to load 4 bytes after mInternalExtents
+	PX_COMPILE_TIME_ASSERT(PX_OFFSET_OF(InternalObjectsData, mInternalExtents)+sizeof(InternalObjectsData::mInternalExtents) + 4 <= sizeof(InternalObjectsData));
 //~TEST_INTERNAL_OBJECTS
 
 	struct ConvexHullData
@@ -182,8 +182,8 @@ namespace Gu
 
 		PX_FORCE_INLINE bool checkExtentRadiusRatio()	const
 		{
-			const PxReal maxR = PxMax(mInternal.mExtents[0], PxMax(mInternal.mExtents[1], mInternal.mExtents[2]));
-			const PxReal minR = mInternal.mRadius;
+			const PxReal maxR = mInternal.mInternalExtents.maxElement();
+			const PxReal minR = mInternal.mInternalRadius;
 			const PxReal ratio = maxR/minR;
 
 			return ratio < 100.f;

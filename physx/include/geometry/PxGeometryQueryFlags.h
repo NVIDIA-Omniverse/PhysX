@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,9 +40,9 @@ namespace physx
 	/**
 	\brief Geometry-level query flags.
 
-	@see PxScene::raycast PxScene::overlap PxScene::sweep PxBVH::raycast PxBVH::overlap PxBVH::sweep PxGeometryQuery::raycast PxGeometryQuery::overlap PxGeometryQuery::sweep
-	@see PxGeometryQuery::computePenetration PxGeometryQuery::pointDistance PxGeometryQuery::computeGeomBounds
-	@see PxMeshQuery::findOverlapTriangleMesh PxMeshQuery::findOverlapHeightField PxMeshQuery::sweep
+	\see PxScene::raycast PxScene::overlap PxScene::sweep PxBVH::raycast PxBVH::overlap PxBVH::sweep PxGeometryQuery::raycast PxGeometryQuery::overlap PxGeometryQuery::sweep
+	\see PxGeometryQuery::computePenetration PxGeometryQuery::pointDistance PxGeometryQuery::computeGeomBounds
+	\see PxMeshQuery::findOverlapTriangleMesh PxMeshQuery::findOverlapHeightField PxMeshQuery::sweep
 	*/
 	struct PxGeometryQueryFlag
 	{
@@ -57,7 +57,7 @@ namespace physx
 	/**
 	\brief collection of set bits defined in PxGeometryQueryFlag.
 
-	@see PxGeometryQueryFlag
+	\see PxGeometryQueryFlag
 	*/
 	PX_FLAGS_TYPEDEF(PxGeometryQueryFlag, PxU32)
 

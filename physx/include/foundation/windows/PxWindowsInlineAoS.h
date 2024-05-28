@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -282,7 +282,7 @@ PX_FORCE_INLINE bool isFiniteFloatV(const FloatV a)
 	/*
 	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
 	const FloatV vBadNum = FloatV_From_F32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(vBadNum,  a);
+	const BoolV vMask = BAnd(vBadNum, a);
 	return FiniteTestEq(vMask, BFFFF()) == 1;
 	*/
 }
@@ -296,7 +296,7 @@ PX_FORCE_INLINE bool isFiniteVec3V(const Vec3V a)
 	/*
 	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
 	const Vec3V vBadNum = Vec3V_From_F32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(BAnd(vBadNum,  a), BTTTF());
+	const BoolV vMask = BAnd(BAnd(vBadNum, a), BTTTF());
 	return FiniteTestEq(vMask, BFFFF()) == 1;
 	*/
 }
@@ -310,7 +310,7 @@ PX_FORCE_INLINE bool isFiniteVec4V(const Vec4V a)
 	/*
 	const PxU32 badNumber = (_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF);
 	const Vec4V vBadNum = Vec4V_From_U32((PxF32&)badNumber);
-	const BoolV vMask = BAnd(vBadNum,  a);
+	const BoolV vMask = BAnd(vBadNum, a);
 
 	return FiniteTestEq(vMask, BFFFF()) == 1;
 	*/
@@ -2859,7 +2859,7 @@ PX_FORCE_INLINE VecU32V V4U32Andc(VecU32V a, VecU32V b)
 	    _mm_andnot_si128(internalWindowsSimd::m128_F2I(b), internalWindowsSimd::m128_F2I(a)));
 }
 
-PX_FORCE_INLINE VecI32V U4Load(const PxU32 i)
+PX_FORCE_INLINE VecU32V U4Load(const PxU32 i)
 {
 	return _mm_load1_ps((PxF32*)&i);
 }

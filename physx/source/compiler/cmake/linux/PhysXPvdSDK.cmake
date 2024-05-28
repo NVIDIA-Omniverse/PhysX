@@ -22,13 +22,20 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build PhysXPvdSDK
 #
 
 SET(PHYSXPVDSDK_LIBTYPE STATIC)
+
+# this is only needed for NVTX
+IF (PX_GENERATE_GPU_PROJECTS AND PX_USE_NVTX)
+	SET(PHYSXPVDSDK_PLATFORM_INCLUDES
+		${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+	)
+ENDIF()
 
 # Use generator expressions to set config specific preprocessor definitions
 SET(PHYSXPVDSDK_COMPILE_DEFS 

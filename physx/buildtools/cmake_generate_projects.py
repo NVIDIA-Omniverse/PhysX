@@ -29,15 +29,17 @@ def filterPreset(presetName):
             return True
     return False
 
-def noPresetProvided():
+def noPresetProvided(physx_root_dir):
     global input
     print('Preset parameter required, available presets:')
+    internal_presets = os.path.join(physx_root_dir, "buildtools", "presets", "*.xml")
+    public_presets = os.path.join(physx_root_dir, "buildtools", "presets", "public", "*.xml")
     presetfiles = []
-    for file in glob.glob("buildtools/presets/*.xml"):
+    for file in glob.glob(internal_presets):
         presetfiles.append(file)
 
     if len(presetfiles) == 0:
-        for file in glob.glob("buildtools/presets/public/*.xml"):
+        for file in glob.glob(public_presets):
             presetfiles.append(file)
 
     counter = 0
@@ -70,12 +72,12 @@ class CMakePreset:
     cmakeSwitches = []
     cmakeParams = []
 
-    def __init__(self, presetName):
-        xmlPath = "buildtools/presets/"+presetName+'.xml'
+    def __init__(self, presetName, physx_root_dir):
+        xmlPath = os.path.join(physx_root_dir, "buildtools", "presets", f"{presetName}.xml")
         if os.path.isfile(xmlPath):
             print('Using preset xml: '+xmlPath)
         else:
-            xmlPath = "buildtools/presets/public/"+presetName+'.xml'
+            xmlPath = os.path.join(physx_root_dir, "buildtools", "presets", "public", f"{presetName}.xml")
             if os.path.isfile(xmlPath):
                 print('Using preset xml: '+xmlPath)
             else:
@@ -242,8 +244,8 @@ def cleanupCompilerDir(compilerDirName):
     if os.path.exists(compilerDirName) == False:
         os.makedirs(compilerDirName)
 
-def presetProvided(pName):
-    parsedPreset = CMakePreset(pName)
+def presetProvided(pName, physx_root_dir):
+    parsedPreset = CMakePreset(pName, physx_root_dir)
 
     print('PM_PATHS: ' + os.environ['PM_PATHS'])
 
@@ -296,26 +298,28 @@ def main():
     if (sys.version_info[0] < 3) or (sys.version_info[0] == 3 and sys.version_info[1] < 5):
         print("You are using Python {}. You must use Python 3.5 and up. Please read README.md for requirements.").format(sys.version)
         exit()
+
     physx_root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     os.environ['PHYSX_ROOT_DIR'] = physx_root_dir.replace("\\", "/")
+
     if len(sys.argv) != 2:
-        presetName = noPresetProvided()
+        presetName = noPresetProvided(physx_root_dir)  # Ensure this function returns the preset name
         if sys.platform == 'win32':
             print('Running generate_projects.bat ' + presetName)
-            cmd = 'generate_projects.bat {}'.format(presetName)
-            result = subprocess.run(cmd, cwd=os.environ['PHYSX_ROOT_DIR'], check=True, universal_newlines=True)
+            cmd_path = os.path.join(physx_root_dir, 'generate_projects.bat')
+            cmd = f'"{cmd_path}" {presetName}'
+            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, shell=True, universal_newlines=True)
             # TODO: catch exception and add capture errors
         else:
             print('Running generate_projects.sh ' + presetName)
-            # TODO: once we have Python 3.7.2 for linux, add the text=True instead of universal_newlines
-            cmd = './generate_projects.sh {}'.format(presetName)
-            result = subprocess.run(['bash', './generate_projects.sh', presetName], cwd=os.environ['PHYSX_ROOT_DIR'], check=True, universal_newlines=True)
+            cmd_path = os.path.join(physx_root_dir, 'generate_projects.sh')
+            cmd = [cmd_path, presetName]
+            result = subprocess.run(cmd, cwd=physx_root_dir, check=True, universal_newlines=True)
             # TODO: catch exception and add capture errors
     else:
         presetName = sys.argv[1]
         if filterPreset(presetName):
-            presetProvided(presetName)
+            presetProvided(presetName, physx_root_dir)
         else:
             print('Preset not supported on this build platform.')
-
 main()

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_BROAD_PHASE_H
 #define PX_BROAD_PHASE_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "foundation/PxBounds3.h"
@@ -104,7 +101,7 @@ namespace physx
 	around the whole world, and subdivide these bounds into 4*4 regions. The PxBroadPhaseExt::createRegionsFromWorldBounds
 	function can do that for you.
 
-	@see PxBroadPhaseCallback PxBroadPhaseExt.createRegionsFromWorldBounds
+	\see PxBroadPhaseCallback PxBroadPhaseExt.createRegionsFromWorldBounds
 	*/
 	struct PxBroadPhaseRegion
 	{
@@ -679,7 +676,21 @@ namespace physx
 		\param	results		[out] The broadphase results
 		\see	PxBroadPhaseResults
 		*/
-		PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results)
+		PX_FORCE_INLINE	void	updateAndFetchResults(PxBroadPhaseResults& results)
+		{
+			update();
+			fetchResults(results);
+		}
+
+		/**
+		\brief Helper for single-threaded updates.
+
+		This short helper function performs a single-theaded update and reports the results in a single call.
+
+		\param	results		[out] The broadphase results
+		\see	PxBroadPhaseResults
+		*/
+		PX_DEPRECATED	PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results)
 		{
 			update();
 			fetchResults(results);
@@ -701,5 +712,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

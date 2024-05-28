@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_PROFILE_EVENT_BUFFER_CLIENT_MANAGER_H
 #define PX_PROFILE_EVENT_BUFFER_CLIENT_MANAGER_H
@@ -34,7 +34,7 @@ namespace physx { namespace profile {
 	/**
 	\brief	Manager keep collections of PxProfileEventBufferClient clients. 
 
-	@see PxProfileEventBufferClient
+	\see PxProfileEventBufferClient
 	*/
 	class PxProfileEventBufferClientManager
 	{
@@ -63,7 +63,7 @@ namespace physx { namespace profile {
 	/**
 	\brief	Manager keep collections of PxProfileZoneClient clients. 
 
-	@see PxProfileZoneClient
+	\see PxProfileZoneClient
 	*/
 	class PxProfileZoneClientManager
 	{

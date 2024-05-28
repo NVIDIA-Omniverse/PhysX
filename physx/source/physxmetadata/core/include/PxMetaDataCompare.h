@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -51,6 +51,10 @@ inline bool areEqual( const PxParticleSystemGeometry&, const PxParticleSystemGeo
 inline bool areEqual( const PxBVH33TriangleMesh&, const PxBVH33TriangleMesh& ) { return true; }
 inline bool areEqual( const PxBVH34TriangleMesh&, const PxBVH34TriangleMesh& ) { return true; }
 inline bool areEqual( const PxHeightField&, const PxHeightField& ) { return true; }
+inline bool areEqual( const PxArticulationSpatialTendon&, const PxArticulationSpatialTendon& )	{ return false;	}
+inline bool areEqual( const PxArticulationFixedTendon&, const PxArticulationFixedTendon& )	{ return false;	}
+inline bool areEqual( const PxArticulationMimicJoint&, const PxArticulationMimicJoint& )	{ return false;	}
+
 inline bool areEqual( const void* inLhs, const void* inRhs ) { return inLhs == inRhs; }
 inline bool areEqual( void* inLhs, void* inRhs ) { return inLhs == inRhs; }
 
@@ -336,8 +340,6 @@ inline bool areEqual( const TBaseObjType& lhs, const TBaseObjType& rhs, const ch
 {
 	const char* theFailureName = NULL;
 	bool result = true;
-	static int i = 0;
-	++i;
 	visitAllProperties<TBaseObjType>( EqualityOp<TBaseObjType>( result, lhs, rhs, theFailureName ) );
 	if ( outFailurePropName != NULL && theFailureName )
 		*outFailurePropName = theFailureName;

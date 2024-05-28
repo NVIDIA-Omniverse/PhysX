@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -168,17 +168,16 @@ bool ConvexMeshBuilder::save(PxOutputStream& stream, bool platformMismatch) cons
 		writeFloat(-1.0f, platformMismatch, stream);	//sdf flag false
 
 // TEST_INTERNAL_OBJECTS
-	writeFloat(mHullData.mInternal.mRadius, platformMismatch, stream);
-	writeFloat(mHullData.mInternal.mExtents[0], platformMismatch, stream);
-	writeFloat(mHullData.mInternal.mExtents[1], platformMismatch, stream);
-	writeFloat(mHullData.mInternal.mExtents[2], platformMismatch, stream);
+	writeFloat(mHullData.mInternal.mInternalRadius, platformMismatch, stream);
+	writeFloat(mHullData.mInternal.mInternalExtents.x, platformMismatch, stream);
+	writeFloat(mHullData.mInternal.mInternalExtents.y, platformMismatch, stream);
+	writeFloat(mHullData.mInternal.mInternalExtents.z, platformMismatch, stream);
 //~TEST_INTERNAL_OBJECTS
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
-// instead of saving the data into stream, we copy the mesh data
-// into internal Gu::ConvexMesh. 
+// instead of saving the data into stream, we copy the mesh data into internal Gu::ConvexMesh. 
 bool ConvexMeshBuilder::copy(Gu::ConvexHullInitData& hullData)
 {
 	// hull builder data copy
@@ -219,10 +218,8 @@ bool ConvexMeshBuilder::copy(Gu::ConvexHullInitData& hullData)
 	}
 
 	// internal data
-	hullData.mHullData.mInternal.mRadius = mHullData.mInternal.mRadius;
-	hullData.mHullData.mInternal.mExtents[0] = mHullData.mInternal.mExtents[0];
-	hullData.mHullData.mInternal.mExtents[1] = mHullData.mInternal.mExtents[1];
-	hullData.mHullData.mInternal.mExtents[2] = mHullData.mInternal.mExtents[2];
+	hullData.mHullData.mInternal.mInternalExtents = mHullData.mInternal.mInternalExtents;
+	hullData.mHullData.mInternal.mInternalRadius = mHullData.mInternal.mInternalRadius;
 
 	return true;
 }
@@ -426,7 +423,7 @@ static void ComputeInternalExtent(Gu::ConvexHullData& data, const Gu::HullPolygo
 	const PxVec3 e = data.mAABB.getMax() - data.mAABB.getMin();
 
 	// PT: For that formula, see %SDKRoot%\InternalDocumentation\Cooking\InternalExtents.png
-	const float r = data.mInternal.mRadius / sqrtf(3.0f);	
+	const float r = data.mInternal.mInternalRadius / sqrtf(3.0f);	
 
 	const float epsilon = 1E-7f;
 
@@ -436,9 +433,7 @@ static void ComputeInternalExtent(Gu::ConvexHullData& data, const Gu::HullPolygo
 	if(e[e0] < e[e1])
 		PxSwap<PxU32>(e0,e1);
 
-	data.mInternal.mExtents[0] = FLT_MAX;
-	data.mInternal.mExtents[1] = FLT_MAX;
-	data.mInternal.mExtents[2] = FLT_MAX;
+	PxVec3 internalExtents(FLT_MAX);
 
 	// PT: the following code does ray-vs-plane raycasts.
 
@@ -457,23 +452,23 @@ static void ComputeInternalExtent(Gu::ConvexHullData& data, const Gu::HullPolygo
 
 		float num = numBase - numn0 - numn1;
 		float ext = PxMax(fabsf(num*denBase), r);
-		if(ext < data.mInternal.mExtents[largestExtent])
-			data.mInternal.mExtents[largestExtent] = ext;
+		if(ext < internalExtents[largestExtent])
+			internalExtents[largestExtent] = ext;
 
 		num = numBase - numn0 + numn1;
 		ext = PxMax(fabsf(num *denBase), r);
-		if(ext < data.mInternal.mExtents[largestExtent])
-			data.mInternal.mExtents[largestExtent] = ext;
+		if(ext < internalExtents[largestExtent])
+			internalExtents[largestExtent] = ext;
 
 		num = numBase + numn0 + numn1;
 		ext = PxMax(fabsf(num *denBase), r);
-		if(ext < data.mInternal.mExtents[largestExtent])
-			data.mInternal.mExtents[largestExtent] = ext;
+		if(ext < internalExtents[largestExtent])
+			internalExtents[largestExtent] = ext;
 
 		num = numBase + numn0 - numn1;
 		ext = PxMax(fabsf(num *denBase), r);
-		if(ext < data.mInternal.mExtents[largestExtent])
-			data.mInternal.mExtents[largestExtent] = ext;
+		if(ext < internalExtents[largestExtent])
+			internalExtents[largestExtent] = ext;
 	}
 
 	// Refine the box along e0,e1
@@ -483,35 +478,36 @@ static void ComputeInternalExtent(Gu::ConvexHullData& data, const Gu::HullPolygo
 		const float denumSub = hullPolys[i].mPlane.n[e0] - hullPolys[i].mPlane.n[e1];
 
 		const float numBase = -hullPolys[i].mPlane.d - hullPolys[i].mPlane.n.dot(data.mCenterOfMass);		
-		const float numn0 = data.mInternal.mExtents[largestExtent] * hullPolys[i].mPlane.n[largestExtent];		
+		const float numn0 = internalExtents[largestExtent] * hullPolys[i].mPlane.n[largestExtent];		
 
 		if(!(-epsilon < denumAdd && denumAdd < epsilon))
 		{
 			float num = numBase - numn0;
 			float ext = PxMax(fabsf(num/ denumAdd), r);
-			if(ext < data.mInternal.mExtents[e0])
-				data.mInternal.mExtents[e0] = ext;
+			if(ext < internalExtents[e0])
+				internalExtents[e0] = ext;
 
 			num = numBase + numn0;
 			ext = PxMax(fabsf(num / denumAdd), r);
-			if(ext < data.mInternal.mExtents[e0])
-				data.mInternal.mExtents[e0] = ext;
+			if(ext < internalExtents[e0])
+				internalExtents[e0] = ext;
 		}
 
 		if(!(-epsilon < denumSub && denumSub < epsilon))		
 		{
 			float num = numBase - numn0;
 			float ext = PxMax(fabsf(num / denumSub), r);
-			if(ext < data.mInternal.mExtents[e0])
-				data.mInternal.mExtents[e0] = ext;
+			if(ext < internalExtents[e0])
+				internalExtents[e0] = ext;
 
 			num = numBase + numn0;
 			ext = PxMax(fabsf(num / denumSub), r);
-			if(ext < data.mInternal.mExtents[e0])
-				data.mInternal.mExtents[e0] = ext;
+			if(ext < internalExtents[e0])
+				internalExtents[e0] = ext;
 		}
 	}
-	data.mInternal.mExtents[e1] = data.mInternal.mExtents[e0];	
+	internalExtents[e1] = internalExtents[e0];	
+	data.mInternal.mInternalExtents = internalExtents;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -522,20 +518,21 @@ void ConvexMeshBuilder::computeInternalObjects()
 	Gu::ConvexHullData& data = mHullData;
 
 	// compute the internal radius
-	data.mInternal.mRadius = FLT_MAX;
+	float internalRadius = FLT_MAX;
 	for(PxU32 i=0;i<data.mNbPolygons;i++)
 	{
 		const float dist = fabsf(hullPolys[i].mPlane.distance(data.mCenterOfMass));
-		if(dist<data.mInternal.mRadius)
-			data.mInternal.mRadius = dist;
+		if(dist<internalRadius)
+			internalRadius = dist;
 	}
+	data.mInternal.mInternalRadius = internalRadius;
 
 	ComputeInternalExtent(data, hullPolys);
 
-	PX_ASSERT(PxVec3(mHullData.mInternal.mExtents[0], mHullData.mInternal.mExtents[1], mHullData.mInternal.mExtents[2]).isFinite());
-	PX_ASSERT(mHullData.mInternal.mExtents[0] != 0.0f);
-	PX_ASSERT(mHullData.mInternal.mExtents[1] != 0.0f);
-	PX_ASSERT(mHullData.mInternal.mExtents[2] != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.isFinite());
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.x != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.y != 0.0f);
+	PX_ASSERT(mHullData.mInternal.mInternalExtents.z != 0.0f);
 }
 
 bool ConvexMeshBuilder::checkExtentRadiusRatio()

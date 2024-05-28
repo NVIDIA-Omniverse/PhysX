@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -134,19 +134,19 @@ namespace Bp
 		virtual											~AABBManager() {}
 
 		// AABBManagerBase
-		virtual			void							destroy()	PX_OVERRIDE;
-		virtual			AggregateHandle					createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE;
-		virtual			bool							destroyAggregate(BoundsIndex& index, Bp::FilterGroup::Enum& group, AggregateHandle aggregateHandle)	PX_OVERRIDE;
-		virtual			bool							addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userdata, AggregateHandle aggregateHandle, ElementType::Enum volumeType)	PX_OVERRIDE;
-		virtual			bool							removeBounds(BoundsIndex index)	PX_OVERRIDE;
-		virtual			void							updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool, bool hasContactDistanceUpdated, PxBaseTask* continuation)	PX_OVERRIDE;
-		virtual			void							updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)	PX_OVERRIDE;
-		virtual			void							postBroadPhase(PxBaseTask*, Cm::FlushPool& flushPool)	PX_OVERRIDE;
-		virtual			void							reallocateChangedAABBMgActorHandleMap(const PxU32 size)	PX_OVERRIDE;
-		virtual			bool							getOutOfBoundsObjects(OutOfBoundsData& data)			PX_OVERRIDE;
-		virtual			void							clearOutOfBoundsObjects()								PX_OVERRIDE;
-		virtual			void							visualize(PxRenderOutput& out)	PX_OVERRIDE;
-		virtual			void							releaseDeferredAggregateIds()	PX_OVERRIDE{}
+		virtual			void							destroy()	PX_OVERRIDE	PX_FINAL;
+		virtual			AggregateHandle					createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE	PX_FINAL;
+		virtual			bool							destroyAggregate(BoundsIndex& index, Bp::FilterGroup::Enum& group, AggregateHandle aggregateHandle)	PX_OVERRIDE	PX_FINAL;
+		virtual			bool							addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userdata, AggregateHandle aggregateHandle, ElementType::Enum volumeType)	PX_OVERRIDE	PX_FINAL;
+		virtual			bool							removeBounds(BoundsIndex index)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool, bool hasContactDistanceUpdated, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							postBroadPhase(PxBaseTask*, Cm::FlushPool& flushPool)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							reallocateChangedAABBMgActorHandleMap(const PxU32 size)	PX_OVERRIDE	PX_FINAL;
+		virtual			bool							getOutOfBoundsObjects(OutOfBoundsData& data)			PX_OVERRIDE	PX_FINAL;
+		virtual			void							clearOutOfBoundsObjects()								PX_OVERRIDE	PX_FINAL;
+		virtual			void							visualize(PxRenderOutput& out)	PX_OVERRIDE	PX_FINAL;
+		virtual			void							releaseDeferredAggregateIds()	PX_OVERRIDE	PX_FINAL	{}
 		//~AABBManagerBase
 
 						void							preBpUpdate_CPU(PxU32 numCpuTasks);

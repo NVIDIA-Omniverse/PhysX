@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -630,22 +630,23 @@ namespace Dy
 
 	};
 
-	struct SpatialImpulseResponseMatrix
+	struct TestImpulseResponse
 	{
-		Cm::SpatialVectorF rows[6];
+		//Link deltaV responses to 6 test link impulses { [(1,0,0),(0,0,0)], [(0,1,0),(0,0,0)] ......[(0,0,0),(0,1,0)], [(0,0,0),(0,0,1)] }
+		Cm::SpatialVectorF linkDeltaVTestImpulseResponses[6];
 
-		Cm::SpatialVectorF getResponse(const Cm::SpatialVectorF& impulse) const
+		Cm::SpatialVectorF getLinkDeltaVImpulseResponse(const Cm::SpatialVectorF& impulse) const
 		{
 			/*return rows[0] * impulse.top.x + rows[1] * impulse.top.y + rows[2] * impulse.top.z
 			+ rows[3] * impulse.bottom.x + rows[4] * impulse.bottom.y + rows[5] * impulse.bottom.z;*/
 
 			using namespace aos;
-			const Cm::SpatialVectorV row0(V3LoadA(&rows[0].top.x), V3LoadA(&rows[0].bottom.x));
-			const Cm::SpatialVectorV row1(V3LoadA(&rows[1].top.x), V3LoadA(&rows[1].bottom.x));
-			const Cm::SpatialVectorV row2(V3LoadA(&rows[2].top.x), V3LoadA(&rows[2].bottom.x));
-			const Cm::SpatialVectorV row3(V3LoadA(&rows[3].top.x), V3LoadA(&rows[3].bottom.x));
-			const Cm::SpatialVectorV row4(V3LoadA(&rows[4].top.x), V3LoadA(&rows[4].bottom.x));
-			const Cm::SpatialVectorV row5(V3LoadA(&rows[5].top.x), V3LoadA(&rows[5].bottom.x));
+			const Cm::SpatialVectorV row0(V3LoadA(&linkDeltaVTestImpulseResponses[0].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[0].bottom.x));
+			const Cm::SpatialVectorV row1(V3LoadA(&linkDeltaVTestImpulseResponses[1].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[1].bottom.x));
+			const Cm::SpatialVectorV row2(V3LoadA(&linkDeltaVTestImpulseResponses[2].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[2].bottom.x));
+			const Cm::SpatialVectorV row3(V3LoadA(&linkDeltaVTestImpulseResponses[3].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[3].bottom.x));
+			const Cm::SpatialVectorV row4(V3LoadA(&linkDeltaVTestImpulseResponses[4].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[4].bottom.x));
+			const Cm::SpatialVectorV row5(V3LoadA(&linkDeltaVTestImpulseResponses[5].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[5].bottom.x));
 
 			const Vec4V top = V4LoadA(&impulse.top.x);
 			const Vec4V bottom = V4LoadA(&impulse.bottom.x);
@@ -664,18 +665,17 @@ namespace Dy
 			V4StoreA(Vec4V_From_Vec3V(res.angular), &returnVal.bottom.x);
 
 			return returnVal;
-
 		}
 
-		Cm::SpatialVectorV getResponse(const Cm::SpatialVectorV& impulse) const
+		Cm::SpatialVectorV getLinkDeltaVImpulseResponse(const Cm::SpatialVectorV& impulse) const
 		{
 			using namespace aos;
-			const Cm::SpatialVectorV row0(V3LoadA(&rows[0].top.x), V3LoadA(&rows[0].bottom.x));
-			const Cm::SpatialVectorV row1(V3LoadA(&rows[1].top.x), V3LoadA(&rows[1].bottom.x));
-			const Cm::SpatialVectorV row2(V3LoadA(&rows[2].top.x), V3LoadA(&rows[2].bottom.x));
-			const Cm::SpatialVectorV row3(V3LoadA(&rows[3].top.x), V3LoadA(&rows[3].bottom.x));
-			const Cm::SpatialVectorV row4(V3LoadA(&rows[4].top.x), V3LoadA(&rows[4].bottom.x));
-			const Cm::SpatialVectorV row5(V3LoadA(&rows[5].top.x), V3LoadA(&rows[5].bottom.x));
+			const Cm::SpatialVectorV row0(V3LoadA(&linkDeltaVTestImpulseResponses[0].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[0].bottom.x));
+			const Cm::SpatialVectorV row1(V3LoadA(&linkDeltaVTestImpulseResponses[1].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[1].bottom.x));
+			const Cm::SpatialVectorV row2(V3LoadA(&linkDeltaVTestImpulseResponses[2].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[2].bottom.x));
+			const Cm::SpatialVectorV row3(V3LoadA(&linkDeltaVTestImpulseResponses[3].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[3].bottom.x));
+			const Cm::SpatialVectorV row4(V3LoadA(&linkDeltaVTestImpulseResponses[4].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[4].bottom.x));
+			const Cm::SpatialVectorV row5(V3LoadA(&linkDeltaVTestImpulseResponses[5].top.x), V3LoadA(&linkDeltaVTestImpulseResponses[5].bottom.x));
 
 			const Vec3V top = impulse.linear;
 			const Vec3V bottom = impulse.angular;

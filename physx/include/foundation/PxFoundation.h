@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_FOUNDATION_H
 #define PX_FOUNDATION_H
 
-/** \addtogroup foundation
-  @{
-*/
 
 #include "foundation/Px.h"
 #include "foundation/PxErrors.h"
@@ -62,7 +59,7 @@ class PX_FOUNDATION_API PxFoundation
 	The operation will fail, if there are still modules referencing the foundation object. Release all dependent modules
 	prior to calling this method.
 
-	@see PxCreateFoundation()
+	\see PxCreateFoundation()
 	*/
 	virtual void release() = 0;
 
@@ -140,7 +137,7 @@ returned.
 \param errorCallback User supplied interface for reporting errors and displaying messages(see #PxErrorCallback)
 \return Foundation instance on success, NULL if operation failed
 
-@see PxFoundation
+\see PxFoundation
 */
 PX_C_EXPORT PX_FOUNDATION_API physx::PxFoundation* PX_CALL_CONV PxCreateFoundation(physx::PxU32 version, physx::PxAllocatorCallback& allocator, physx::PxErrorCallback& errorCallback);
 
@@ -153,7 +150,7 @@ PX_C_EXPORT PX_FOUNDATION_API void PX_CALL_CONV PxSetFoundationInstance(physx::P
 
 \note The behavior of this method is undefined if the foundation instance has not been created already.
 
-@see PxCreateFoundation(), PxIsFoundationValid()
+\see PxCreateFoundation(), PxIsFoundationValid()
 */
 #if PX_CLANG
 #if PX_LINUX
@@ -172,7 +169,7 @@ PX_C_EXPORT PX_FOUNDATION_API physx::PxFoundation& PX_CALL_CONV PxGetFoundation(
 \brief Similar to PxGetFoundation() except it handles the case if the foundation was not created already.
 \return Pointer to the foundation if an instance is currently available, otherwise null.
 
-@see PxCreateFoundation(), PxGetFoundation()
+\see PxCreateFoundation(), PxGetFoundation()
 */
 PX_C_EXPORT PX_FOUNDATION_API physx::PxFoundation* PX_CALL_CONV PxIsFoundationValid();
 
@@ -232,6 +229,5 @@ PX_C_EXPORT PX_FOUNDATION_API void PX_CALL_CONV PxDecFoundationRefCount();
 */
 PX_C_EXPORT PX_FOUNDATION_API void PX_CALL_CONV PxIncFoundationRefCount();
 
-/** @} */
 #endif
 

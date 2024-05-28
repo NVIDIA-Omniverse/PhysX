@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxFoundation.h"
 
@@ -74,8 +71,8 @@ struct PxVehiclePhysXRoadGeometryQueryParams
 	If per wheel filter data is provided in #filterDataEntries, then this member
 	will be ignored.
 
-	@see PxSceneQuerySystemBase::raycast
-	@see PxSceneQuerySystemBase::sweep
+	\see PxSceneQuerySystemBase::raycast
+	\see PxSceneQuerySystemBase::sweep
 	*/
 	PxQueryFilterData defaultFilterData;
 
@@ -84,23 +81,23 @@ struct PxVehiclePhysXRoadGeometryQueryParams
 
 	A null pointer is allowed in which case #defaultFilterData will be used for all wheels.
 
-	@see PxSceneQuerySystemBase::raycast
-	@see PxSceneQuerySystemBase::sweep
+	\see PxSceneQuerySystemBase::raycast
+	\see PxSceneQuerySystemBase::sweep
 	*/
 	PxQueryFilterData* filterDataEntries;
 
 	/**
 	\brief A filter callback to be used by the physx scene query
 	\note A null pointer is allowed.
-	@see PxSceneQuerySystemBase::raycast
-	@see PxSceneQuerySystemBase::sweep
+	\see PxSceneQuerySystemBase::raycast
+	\see PxSceneQuerySystemBase::sweep
 	*/
 	PxQueryFilterCallback* filterCallback;
 
 	/**
 	\brief A description of the type of physx scene query to employ.
-	@see PxSceneQuerySystemBase::raycast
-	@see PxSceneQuerySystemBase::sweep
+	\see PxSceneQuerySystemBase::raycast
+	\see PxSceneQuerySystemBase::sweep
 	*/
 	PxVehiclePhysXRoadGeometryQueryType::Enum roadGeometryQueryType;
 
@@ -123,7 +120,7 @@ struct PxVehiclePhysXRoadGeometryQueryParams
 
 /**
 A mapping between PxMaterial and a friction value to be used by the tire model.
-@see PxVehiclePhysXMaterialFrictionParams
+\see PxVehiclePhysXMaterialFrictionParams
 */
 struct PxVehiclePhysXMaterialFriction
 {
@@ -138,7 +135,7 @@ struct PxVehiclePhysXMaterialFriction
 
 	<b>Range:</b> [0, inf)<br>
 
-	@see PxVehicleTireGripState::friction
+	\see PxVehicleTireGripState::friction
 	*/
 	PxReal friction;
 
@@ -175,4 +172,3 @@ struct PxVehiclePhysXMaterialFrictionParams
 } // namespace physx
 #endif
 
-/** @} */

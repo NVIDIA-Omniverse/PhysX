@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -134,40 +134,40 @@ namespace Gu
 	class EdgeList : public PxUserAllocated
 	{
 		public:
-		PX_PHYSX_COMMON_API							EdgeList();
-		PX_PHYSX_COMMON_API							~EdgeList();
+												EdgeList();
+												~EdgeList();
 
-		PX_PHYSX_COMMON_API	bool					init(const EDGELISTCREATE& create);
+						bool					init(const EDGELISTCREATE& create);
 
-				bool								load(PxInputStream& stream);
+						bool					load(PxInputStream& stream);
 
-		PX_FORCE_INLINE		PxU32					getNbEdges()							const	{ return mNbEdges;						}
-		PX_FORCE_INLINE		const EdgeData*			getEdges()								const	{ return mEdges;						}
-		PX_FORCE_INLINE		const EdgeData&			getEdge(PxU32 edge_index)				const	{ return mEdges[edge_index];			}
+		PX_FORCE_INLINE	PxU32					getNbEdges()							const	{ return mNbEdges;						}
+		PX_FORCE_INLINE	const EdgeData*			getEdges()								const	{ return mEdges;						}
+		PX_FORCE_INLINE	const EdgeData&			getEdge(PxU32 edge_index)				const	{ return mEdges[edge_index];			}
 
-		PX_FORCE_INLINE		PxU32					getNbFaces()							const	{ return mNbFaces;						}
-		PX_FORCE_INLINE		const EdgeTriangleData* getEdgeTriangles()						const	{ return mEdgeFaces;					}
-		PX_FORCE_INLINE		const EdgeTriangleData& getEdgeTriangle(PxU32 face_index)		const	{ return mEdgeFaces[face_index];		}
+		PX_FORCE_INLINE	PxU32					getNbFaces()							const	{ return mNbFaces;						}
+		PX_FORCE_INLINE	const EdgeTriangleData* getEdgeTriangles()						const	{ return mEdgeFaces;					}
+		PX_FORCE_INLINE	const EdgeTriangleData& getEdgeTriangle(PxU32 face_index)		const	{ return mEdgeFaces[face_index];		}
 
-		PX_FORCE_INLINE		const EdgeDescData*		getEdgeToTriangles()					const	{ return mEdgeToTriangles;				}
-		PX_FORCE_INLINE		const EdgeDescData&		getEdgeToTriangles(PxU32 edge_index)	const	{ return mEdgeToTriangles[edge_index];	}
-		PX_FORCE_INLINE		const PxU32*			getFacesByEdges()						const	{ return mFacesByEdges;					}
-		PX_FORCE_INLINE		PxU32					getFacesByEdges(PxU32 face_index)		const	{ return mFacesByEdges[face_index];		}
+		PX_FORCE_INLINE	const EdgeDescData*		getEdgeToTriangles()					const	{ return mEdgeToTriangles;				}
+		PX_FORCE_INLINE	const EdgeDescData&		getEdgeToTriangles(PxU32 edge_index)	const	{ return mEdgeToTriangles[edge_index];	}
+		PX_FORCE_INLINE	const PxU32*			getFacesByEdges()						const	{ return mFacesByEdges;					}
+		PX_FORCE_INLINE	PxU32					getFacesByEdges(PxU32 face_index)		const	{ return mFacesByEdges[face_index];		}
 
 		private:
-							// The edge list
-							PxU32					mNbEdges;			//!< Number of edges in the list
-							EdgeData*				mEdges;				//!< List of edges
-							// Faces to edges
-							PxU32					mNbFaces;			//!< Number of faces for which we have data
-							EdgeTriangleData*		mEdgeFaces;			//!< Array of edge-triangles referencing mEdges
-							// Edges to faces
-							EdgeDescData*			mEdgeToTriangles;	//!< An EdgeDesc structure for each edge
-							PxU32*					mFacesByEdges;		//!< A pool of face indices
+						// The edge list
+						PxU32					mNbEdges;			//!< Number of edges in the list
+						EdgeData*				mEdges;				//!< List of edges
+						// Faces to edges
+						PxU32					mNbFaces;			//!< Number of faces for which we have data
+						EdgeTriangleData*		mEdgeFaces;			//!< Array of edge-triangles referencing mEdges
+						// Edges to faces
+						EdgeDescData*			mEdgeToTriangles;	//!< An EdgeDesc structure for each edge
+						PxU32*					mFacesByEdges;		//!< A pool of face indices
 
-							bool					createFacesToEdges(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces);
-							bool					createEdgesToFaces(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces);
-							bool					computeActiveEdges(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces, const PxVec3* verts, float epsilon);
+						bool					createFacesToEdges(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces);
+						bool					createEdgesToFaces(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces);
+						bool					computeActiveEdges(PxU32 nb_faces, const PxU32* dfaces, const PxU16* wfaces, const PxVec3* verts, float epsilon);
 	};
 
 } // namespace Gu

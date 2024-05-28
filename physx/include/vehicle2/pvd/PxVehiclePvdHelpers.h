@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxSimpleTypes.h"
 
@@ -56,9 +53,9 @@ namespace vehicle2
 \brief Create the attribute handles necessary to reflect vehicles in omnipvd.
 \param[in] allocator is used to allocate the memory used to store the attribute handles.
 \param[in] omniWriter is used to register the attribute handles with omnipvd.
-@see PxVehicleSimulationContext
-@see PxVehiclePVDComponent
-@see PxVehiclePvdAttributesRelease
+\see PxVehicleSimulationContext
+\see PxVehiclePVDComponent
+\see PxVehiclePvdAttributesRelease
 */
 PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate
 (PxAllocatorCallback& allocator, OmniPvdWriter& omniWriter);
@@ -67,7 +64,7 @@ PxVehiclePvdAttributeHandles* PxVehiclePvdAttributesCreate
 \brief Destory the attribute handles created by PxVehiclePvdAttributesCreate().
 \param[in] allocator must be the instance used by PxVehiclePvdObjectCreate().
 \param[in] attributeHandles is the PxVehiclePvdAttributeHandles created by PxVehiclePvdAttributesCreate().
-@see PxVehiclePvdAttributesCreate
+\see PxVehiclePvdAttributesCreate
 */
 void PxVehiclePvdAttributesRelease
 (PxAllocatorCallback& allocator, PxVehiclePvdAttributeHandles& attributeHandles);
@@ -80,11 +77,11 @@ void PxVehiclePvdAttributesRelease
 \param[in] contextHandle is typically used to associated vehicles with a particular scene or group.
 \param[in] allocator is used to allocate the memory used to store handles to the created omnipvd objects.
 \note PxVehiclePvdObjectCreate() must be called after PxVehiclePvdAttributesCreate().
-@see PxVehicleAxleDescription
-@see PxVehicleAntiRollForceParams
-@see PxVehiclePhysXMaterialFrictionParams
-@see PxVehiclePVDComponent
-@see PxVehiclePvdAttributesCreate
+\see PxVehicleAxleDescription
+\see PxVehicleAntiRollForceParams
+\see PxVehiclePhysXMaterialFrictionParams
+\see PxVehiclePVDComponent
+\see PxVehiclePvdAttributesCreate
 */
 PxVehiclePvdObjectHandles* PxVehiclePvdObjectCreate
 (const PxU32 nbWheels, const PxU32 nbAntirolls, const PxU32 maxNbPhysxMaterialFrictions,
@@ -104,4 +101,3 @@ void PxVehiclePvdObjectRelease
 } // namespace physx
 #endif
 
-/** @} */

@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_REPX_SIMPLE_TYPE_H
 #define PX_REPX_SIMPLE_TYPE_H
 
-/** \addtogroup extensions
-  @{
-*/
 
 #include "foundation/PxSimpleTypes.h"
 #include "cooking/PxCooking.h"
@@ -52,7 +49,7 @@ namespace physx
 	{
 		/**
 		\brief Identifies the extension meant to handle this object.
-		@see PxTypeInfo, PX_DEFINE_TYPEINFO, PxRepXSerializer
+		\see PxTypeInfo, PX_DEFINE_TYPEINFO, PxRepXSerializer
 		*/
 		const char*			typeName;
 
@@ -81,7 +78,7 @@ namespace physx
 
 	Extra arguments can be added to the object map under special ids.
 
-	@see PxRepXSerializer::objectToFile, PxRepXSerializer::fileToObject
+	\see PxRepXSerializer::objectToFile, PxRepXSerializer::fileToObject
 	*/
 	struct PX_DEPRECATED PxRepXInstantiationArgs
 	{
@@ -103,5 +100,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

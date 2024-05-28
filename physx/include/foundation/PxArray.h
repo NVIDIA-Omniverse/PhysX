@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -556,20 +556,20 @@ class PxArray : protected Alloc
 	template <class A>
 	PX_NOINLINE void copy(const PxArray<T, A>& other);
 
-	PX_INLINE T* allocate(uint32_t size)
+	PX_INLINE T* allocate(uint32_t size, uint32_t* cookie=NULL)
 	{
 		if(size > 0)
 		{
-			T* p = reinterpret_cast<T*>(Alloc::allocate(sizeof(T) * size, PX_FL));
+			T* p = reinterpret_cast<T*>(Alloc::allocate(sizeof(T) * size, PX_FL, cookie));
 			PxMarkSerializedMemory(p, sizeof(T) * size);
 			return p;
 		}
-		return 0;
+		return NULL;
 	}
 
-	PX_INLINE void deallocate(void* mem)
+	PX_INLINE void deallocate(void* mem, uint32_t* cookie=NULL)
 	{
-		Alloc::deallocate(mem);
+		Alloc::deallocate(mem, cookie);
 	}
 
 	static PX_INLINE void create(T* first, T* last, const T& a)
@@ -674,9 +674,10 @@ PX_NOINLINE void PxArray<T, Alloc>::resizeUninitialized(const uint32_t size)
 template <class T, class Alloc>
 PX_NOINLINE T& PxArray<T, Alloc>::growAndPushBack(const T& a)
 {
-	uint32_t capacity = capacityIncrement();
+	const uint32_t capacity = capacityIncrement();
 
-	T* newData = allocate(capacity);
+	uint32_t cookie;
+	T* newData = allocate(capacity, &cookie);
 	PX_ASSERT((!capacity) || (newData && (newData != mData)));
 	copy(newData, newData + mSize, mData);
 
@@ -686,7 +687,7 @@ PX_NOINLINE T& PxArray<T, Alloc>::growAndPushBack(const T& a)
 
 	destroy(mData, mData + mSize);
 	if(!isInUserMemory())
-		deallocate(mData);
+		deallocate(mData, &cookie);
 
 	mData = newData;
 	mCapacity = capacity;
@@ -697,13 +698,14 @@ PX_NOINLINE T& PxArray<T, Alloc>::growAndPushBack(const T& a)
 template <class T, class Alloc>
 PX_NOINLINE void PxArray<T, Alloc>::recreate(uint32_t capacity)
 {
-	T* newData = allocate(capacity);
+	uint32_t cookie;
+	T* newData = allocate(capacity, &cookie);
 	PX_ASSERT((!capacity) || (newData && (newData != mData)));
 
 	copy(newData, newData + mSize, mData);
 	destroy(mData, mData + mSize);
 	if(!isInUserMemory())
-		deallocate(mData);
+		deallocate(mData, &cookie);
 
 	mData = newData;
 	mCapacity = capacity;

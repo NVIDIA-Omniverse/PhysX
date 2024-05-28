@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -33,6 +33,9 @@
 #include "foundation/PxArray.h"
 #include "foundation/PxThread.h"
 #include "foundation/PxUserAllocated.h"
+#include "CmSpatialVector.h"
+#include "DySolverConstraintDesc.h"
+#include "DyResidualAccumulator.h"
 // PT: it is not wrong to include DyPGS.h here because the SolverCore class is actually only used by PGS.
 // (for patch / point friction). TGS doesn't use the same architecture / class hierarchy.
 #include "DyPGS.h"
@@ -43,6 +46,8 @@ struct PxSolverBody;
 struct PxSolverBodyData;
 struct PxSolverConstraintDesc;
 struct PxConstraintBatchHeader;
+class PxsRigidBody;
+struct PxsBodyCore;
 
 namespace Dy
 {
@@ -144,21 +149,20 @@ struct SolverIslandParams
 	//Default friction model params
 	PxU32 positionIterations;
 	PxU32 velocityIterations;
-	PxSolverBody* PX_RESTRICT bodyListStart;
-	PxSolverBodyData* PX_RESTRICT bodyDataList;
+	const PxSolverBody* bodyListStart;
+	PxSolverBodyData* bodyDataList;
 	PxU32 bodyListSize;
-	PxU32 solverBodyOffset;
-	ArticulationSolverDesc* PX_RESTRICT articulationListStart; 
+	PxU32 solverBodyOffset;	// PT: not really needed by the solvers themselves, only by the integration code
+	ArticulationSolverDesc* articulationListStart;
 	PxU32 articulationListSize;
-	PxSolverConstraintDesc* PX_RESTRICT constraintList;
-	PxConstraintBatchHeader* constraintBatchHeaders;
+	const PxSolverConstraintDesc* constraintList;
+	const PxConstraintBatchHeader* constraintBatchHeaders;
 	PxU32 numConstraintHeaders;
-	PxU32* headersPerPartition;
-	PxU32 nbPartitions;
-	Cm::SpatialVector* PX_RESTRICT motionVelocityArray;
-	PxU32 batchSize;
-	PxsBodyCore*const* bodyArray;
-	PxsRigidBody** PX_RESTRICT rigidBodies;
+	const PxU32* headersPerPartition;	// PT: only used by the multi-threaded solver
+	PxU32 nbPartitions;	// PT: only used by the multi-threaded solver
+	Cm::SpatialVector* motionVelocityArray;
+	PxU32 batchSize;	// PT: only used by the multi-threaded solver
+	PxsRigidBody** rigidBodies;	// PT: not really needed by the solvers themselves
 
 	//Shared state progress counters
 	PxI32 constraintIndex;
@@ -174,25 +178,25 @@ struct SolverIslandParams
 	PxReal invDt;
 
 	//Additional 1d/2d friction model params
-	PxSolverConstraintDesc* PX_RESTRICT frictionConstraintList;
+	PxSolverConstraintDesc* frictionConstraintList;	// PT: only needed by the PF solver
 	
-	PxConstraintBatchHeader* frictionConstraintBatches;
-	PxU32 numFrictionConstraintHeaders;
-	PxU32* frictionHeadersPerPartition;
-	PxU32 nbFrictionPartitions;
+	PxConstraintBatchHeader* frictionConstraintBatches;	// PT: only needed by the PF solver
+	PxU32 numFrictionConstraintHeaders;	// PT: only needed by the PF solver
+	PxU32* frictionHeadersPerPartition;	// PT: only needed by the PF solver
+	PxU32 nbFrictionPartitions;	// PT: only needed by the PF solver
 
 	//Additional Shared state progress counters
-	PxI32 frictionConstraintIndex;
+	PxI32 frictionConstraintIndex;	// PT: only needed by the PF solver
 
 	//Write-back threshold information
-	ThresholdStreamElement* PX_RESTRICT thresholdStream;
+	ThresholdStreamElement* thresholdStream;
 	PxU32 thresholdStreamLength;
 
 	PxI32* outThresholdPairs;
 
-	PxU32 mMaxArticulationLinks;
-	Cm::SpatialVectorF* Z;
-	Cm::SpatialVectorF* deltaV;
+	PxU32 mMaxArticulationLinks;	// PT: not really needed by the solvers themselves
+	Cm::SpatialVectorF* deltaV;		// PT: only used by the single-threaded solver for temporarily storing velocities during propagation
+	Dy::ErrorAccumulatorEx* errorAccumulator; //only used by the single-threaded solver
 };
 
 /*!
@@ -210,12 +214,73 @@ public:
 
 	state should not be stored, this function is safe to call from multiple threads.
 	*/
-	virtual void solveVParallelAndWriteBack
-		(SolverIslandParams& params, Cm::SpatialVectorF* Z, Cm::SpatialVectorF* deltaV) const = 0;
+	virtual void solveVParallelAndWriteBack(SolverIslandParams& params, Cm::SpatialVectorF* deltaV, Dy::ErrorAccumulatorEx* errorAccumulator) const = 0;
 
-	virtual void solveV_Blocks
-		(SolverIslandParams& params) const = 0;
+	virtual void solveV_Blocks(SolverIslandParams& params) const = 0;
 };
+
+// PT: code shared between patch & point friction solvers.
+void solveNoContactsCase(	PxU32 bodyListSize, const PxSolverBody* PX_RESTRICT bodyListStart, Cm::SpatialVector* PX_RESTRICT motionVelocityArray,
+							PxU32 articulationListSize, ArticulationSolverDesc* PX_RESTRICT articulationListStart, Cm::SpatialVectorF* PX_RESTRICT deltaV,
+							PxU32 positionIterations, PxU32 velocityIterations, PxF32 dt, PxF32 invDt, bool residualReportingActive);
+
+void saveMotionVelocities(PxU32 nbBodies, const PxSolverBody* PX_RESTRICT solverBodies, Cm::SpatialVector* PX_RESTRICT motionVelocityArray);
+
+class BatchIterator
+{
+	PX_NOCOPY(BatchIterator)
+public:
+	const PxConstraintBatchHeader* mConstraintBatchHeaders;
+	const PxU32 mSize;
+	PxU32 mCurrentIndex;
+
+	BatchIterator(const PxConstraintBatchHeader* constraintBatchHeaders, PxU32 size) : mConstraintBatchHeaders(constraintBatchHeaders),
+		mSize(size), mCurrentIndex(0)
+	{
+	}
+
+	PX_FORCE_INLINE const PxConstraintBatchHeader& GetCurrentHeader(const PxU32 constraintIndex)
+	{
+		PxU32 currentIndex = mCurrentIndex;
+		while((constraintIndex - mConstraintBatchHeaders[currentIndex].startIndex) >= mConstraintBatchHeaders[currentIndex].stride)
+			currentIndex = (currentIndex + 1)%mSize;
+		PxPrefetchLine(&mConstraintBatchHeaders[currentIndex], 128);
+		mCurrentIndex = currentIndex;
+		return mConstraintBatchHeaders[currentIndex];
+	}
+};
+
+inline void SolveBlockParallel(	const PxSolverConstraintDesc* PX_RESTRICT constraintList, PxI32 batchCount, PxI32 index,
+								const PxI32 headerCount, SolverContext& cache, BatchIterator& iterator,
+								SolveBlockMethod solveTable[],
+								PxI32 iteration)
+{
+	const PxI32 indA = index - (iteration * headerCount);
+
+	const PxConstraintBatchHeader* PX_RESTRICT headers = iterator.mConstraintBatchHeaders;
+
+	const PxI32 endIndex = indA + batchCount;
+	for(PxI32 i = indA; i < endIndex; ++i)
+	{
+		PX_ASSERT(i < PxI32(iterator.mSize));
+		const PxConstraintBatchHeader& header = headers[i];
+
+		const PxI32 numToGrab = header.stride;
+		const PxSolverConstraintDesc* PX_RESTRICT block = &constraintList[header.startIndex];
+
+		// PT: TODO: revisit this one
+		PxPrefetch(block[0].constraint, 384);
+
+		for(PxI32 b = 0; b < numToGrab; ++b)
+		{
+			PxPrefetchLine(block[b].bodyA);
+			PxPrefetchLine(block[b].bodyB);
+		}
+
+		//OK. We have a number of constraints to run...
+		solveTable[header.constraintType](block, PxU32(numToGrab), cache);
+	}
+}
 
 }
 

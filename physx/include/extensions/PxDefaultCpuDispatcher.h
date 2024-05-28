@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_DEFAULT_CPU_DISPATCHER_H
 #define PX_DEFAULT_CPU_DISPATCHER_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "common/PxPhysXCommonConfig.h"
 #include "task/PxCpuDispatcher.h"
@@ -43,7 +40,7 @@ namespace physx
 /**
 \brief A default implementation for a CPU task dispatcher.
 
-@see PxDefaultCpuDispatcherCreate() PxCpuDispatcher
+\see PxDefaultCpuDispatcherCreate() PxCpuDispatcher
 */
 class PxDefaultCpuDispatcher : public PxCpuDispatcher
 {
@@ -53,7 +50,7 @@ public:
 	
 	Do not keep a reference to the deleted instance.
 
-	@see PxDefaultCpuDispatcherCreate()
+	\see PxDefaultCpuDispatcherCreate()
 	*/
 	virtual void release() = 0;
 
@@ -111,7 +108,7 @@ simulation tasks will be executed on the thread that calls PxScene::simulate()
 \note eYIELD_THREAD and eYIELD_PROCESSOR modes will use compute resources even if the simulation is not running.
 It is left to users to keep threads inactive, if so desired, when no simulation is running.
 
-@see PxDefaultCpuDispatcher
+\see PxDefaultCpuDispatcher
 */
 PxDefaultCpuDispatcher* PxDefaultCpuDispatcherCreate(PxU32 numThreads, PxU32* affinityMasks = NULL, PxDefaultCpuDispatcherWaitForWorkMode::Enum mode = PxDefaultCpuDispatcherWaitForWorkMode::eWAIT_FOR_WORK, PxU32 yieldProcessorCount = 0);
 
@@ -119,5 +116,4 @@ PxDefaultCpuDispatcher* PxDefaultCpuDispatcherCreate(PxU32 numThreads, PxU32* af
 } // namespace physx
 #endif
 
-/** @} */
 #endif

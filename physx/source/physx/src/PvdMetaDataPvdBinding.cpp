@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -669,7 +669,7 @@ void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxScen
 
 		theDesc.gpuDynamicsConfig				= inScene.getGpuDynamicsConfig();
 //		PxBounds3 SanityBounds;
-//		PxgDynamicsMemoryConfig GpuDynamicsConfig;
+//		PxGpuDynamicsMemoryConfig GpuDynamicsConfig;
 //		PxU32 GpuMaxNumPartitions;
 //		PxU32 GpuComputeVersion;
 //		PxReal BroadPhaseInflation;
@@ -1488,51 +1488,6 @@ void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxPBDP
 }
 
 void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxPBDParticleSystem& inObj, const PxScene& ownerScene)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-}
-
-
-void PvdMetaDataBinding::createInstance(PvdDataStream& inStream, const PxFLIPParticleSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-	PX_UNUSED(ownerPhysics);
-	PX_UNUSED(pvd);
-}
-
-void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxFLIPParticleSystem& inObj)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-}
-
-void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxFLIPParticleSystem& inObj, const PxScene& ownerScene)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-}
-
-void PvdMetaDataBinding::createInstance(PvdDataStream& inStream, const PxMPMParticleSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-	PX_UNUSED(ownerScene);
-	PX_UNUSED(ownerPhysics);
-	PX_UNUSED(pvd);
-}
-
-void PvdMetaDataBinding::sendAllProperties(PvdDataStream& inStream, const PxMPMParticleSystem& inObj)
-{
-	PX_UNUSED(inStream);
-	PX_UNUSED(inObj);
-}
-
-void PvdMetaDataBinding::destroyInstance(PvdDataStream& inStream, const PxMPMParticleSystem& inObj, const PxScene& ownerScene)
 {
 	PX_UNUSED(inStream);
 	PX_UNUSED(inObj);

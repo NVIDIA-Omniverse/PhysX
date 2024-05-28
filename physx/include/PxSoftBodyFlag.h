@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -40,7 +40,7 @@ namespace physx
 /**
 \brief Identifies the buffers of a PxSoftBody.
 
-@see PxSoftBody::markDirty()
+\see PxSoftBody::markDirty()
 */
 struct PxSoftBodyDataFlag
 {
@@ -63,9 +63,12 @@ typedef PxFlags<PxSoftBodyDataFlag::Enum, PxU32> PxSoftBodyDataFlags;
 \brief These flags determine what data is read or written when using PxScene::copySoftBodyData()
 or PxScene::applySoftBodyData.
 
-@see PxScene::copySoftBodyData, PxScene::applySoftBodyData
+\see PxScene::copySoftBodyData, PxScene::applySoftBodyData
+
+\deprecated There is no direct replacement. The data is exposed in the PxSoftBody interface, accessible directly from GPU.
+There is no replacement for eTET_REST_POSES, as the data is constant and can be derived from the input collision mesh.
 */
-class PxSoftBodyGpuDataFlag
+PX_DEPRECATED class PxSoftBodyGpuDataFlag
 {
 public:
 	enum Enum

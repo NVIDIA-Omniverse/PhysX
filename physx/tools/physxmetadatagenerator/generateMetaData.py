@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 import argparse
 import os
@@ -196,6 +196,9 @@ print(cmd, file=debugFile)
 (stdout, stderr) = utils.run_cmd(cmd)
 if (stderr != "" or stdout != ""):
 	print(stderr, "\n", stdout)
+if (stderr != ""):
+	print("failed to compile metadata!")
+	sys.exit(1)
 print("wrote meta data files in", targetDir)
 
 test_targetdir(targetDir, metaDataDir, args.test)
@@ -220,6 +223,9 @@ print(cmd, file=debugFile)
 (stdout, stderr) = utils.run_cmd(cmd)
 if (stderr != "" or stdout != ""):
 	print(stderr, "\n", stdout)
+if (stderr != ""):
+	print("failed to compile metadata!")
+	sys.exit(1)
 print("wrote meta data files in", targetDir)
 
 test_targetdir(targetDir, metaDataDir, args.test)

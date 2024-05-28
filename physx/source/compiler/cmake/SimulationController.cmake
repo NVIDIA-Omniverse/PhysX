@@ -22,7 +22,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
-## Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #
 # Build SimulationController common
@@ -40,7 +40,7 @@ SET(SIMULATIONCONTROLLER_HEADERS
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScActorCore.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScArticulationCore.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScArticulationJointCore.h
-	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScArticulationSensor.h
+	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScArticulationMimicJointCore.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScBodyCore.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScBroadphase.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/include/ScConstraintCore.h
@@ -76,8 +76,8 @@ SET(SIMULATIONCONTROLLER_SOURCE
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationTendonJointCore.cpp
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationTendonSim.cpp
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationTendonSim.h
-	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationSensorSim.cpp
-	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationSensorSim.h
+	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationMimicJointSim.cpp
+	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScArticulationMimicJointSim.h
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScBroadphase.cpp
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScSoftBodyCore.cpp
 	${SIMULATIONCONTROLLER_BASE_DIR}/src/ScSoftBodySim.cpp
@@ -205,6 +205,7 @@ TARGET_INCLUDE_DIRECTORIES(SimulationController
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevel/software/include
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/include
+	PRIVATE ${PHYSX_SOURCE_DIR}/lowleveldynamics/shared
 
 	PRIVATE ${PHYSX_SOURCE_DIR}/lowlevelaabb/include
 	

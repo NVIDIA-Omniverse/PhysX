@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -137,7 +137,7 @@ bool Gu::pcmContactCapsuleBox(GU_CONTACT_METHOD_ARGS)
 		}
 		else if(status == GJK_DEGENERATE)
 		{
-			return fullContactsGenerationCapsuleBox(capsule, box, shapeBox.halfExtents,  aToB, transf0, transf1, manifoldContacts, numContacts, contactBuffer,
+			return fullContactsGenerationCapsuleBox(capsule, box, shapeBox.halfExtents, aToB, transf0, transf1, manifoldContacts, numContacts, contactBuffer,
 				manifold, output.normal, output.closestB, box.getMarginF(), contactDist, true, params.mToleranceLength, renderOutput);
 		}
 		else 
@@ -155,7 +155,7 @@ bool Gu::pcmContactCapsuleBox(GU_CONTACT_METHOD_ARGS)
 			{
 				PX_ASSERT(status == EPA_CONTACT);
 	
-				status = epaPenetration(convexA, convexB,  manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, 
+				status = epaPenetration(convexA, convexB, manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints, 
 					 true, FLoad(toleranceLength), output);
 				if(status == EPA_CONTACT)
 				{
@@ -174,7 +174,7 @@ bool Gu::pcmContactCapsuleBox(GU_CONTACT_METHOD_ARGS)
 			
 			if(initialContacts == 0 || bLostContacts || doOverlapTest)
 			{
-				return fullContactsGenerationCapsuleBox(capsule, box, shapeBox.halfExtents,  aToB, transf0, transf1, manifoldContacts, numContacts, contactBuffer, manifold, output.normal, 
+				return fullContactsGenerationCapsuleBox(capsule, box, shapeBox.halfExtents, aToB, transf0, transf1, manifoldContacts, numContacts, contactBuffer, manifold, output.normal, 
 					output.closestB, box.getMarginF(), contactDist, doOverlapTest, params.mToleranceLength, renderOutput);
 			}
 			else

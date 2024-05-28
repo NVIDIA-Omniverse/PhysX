@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -1294,6 +1294,7 @@ void ImmediateScene::narrowPhase()
 				point.staticFriction	= gStaticFriction;
 				point.dynamicFriction	= gDynamicFriction;
 				point.restitution		= gRestitution;
+				point.damping			= 0.0f;
 				point.materialFlags		= PxMaterialFlag::eIMPROVED_PATCH_FRICTION;
 				mScene->mContactPoints.pushBack(point);
 			}
@@ -1449,10 +1450,11 @@ void ImmediateScene::buildSolverConstraintDesc()
 		setupDesc(desc, mActors.begin(), mSolverBodies.begin(), pair.mID1, true);
 
 		//Cache pointer to our contact data structure and identify which type of constraint this is. We'll need this later after batching.
+		//We store our pointer in the desc.constraint field as this field is ignored by PxBatchConstraints. It will later be overwritten by PxCreateContactConstraints.
 		//If we choose not to perform batching and instead just create a single header per-pair, then this would not be necessary because
 		//the constraintDescs would not have been reordered
 		desc.constraint				= reinterpret_cast<PxU8*>(const_cast<ContactPair*>(&pair));
-		desc.constraintLengthOver16	= PxSolverConstraintDesc::eCONTACT_CONSTRAINT;
+		desc.constraintType = PxSolverConstraintDesc::eCONTACT_CONSTRAINT;
 	}
 
 #ifdef TEST_IMMEDIATE_JOINTS
@@ -1468,7 +1470,7 @@ void ImmediateScene::buildSolverConstraintDesc()
 		setupDesc(desc, mActors.begin(), mSolverBodies.begin(), id1, true);
 
 		desc.constraint	= reinterpret_cast<PxU8*>(const_cast<MyJointData*>(&jointData));
-		desc.constraintLengthOver16 = PxSolverConstraintDesc::eJOINT_CONSTRAINT;
+		desc.constraintType = PxSolverConstraintDesc::eJOINT_CONSTRAINT;
 	}
 #endif
 }

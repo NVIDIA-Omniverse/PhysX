@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef PX_CPU_DISPATCHER_H
 #define PX_CPU_DISPATCHER_H
@@ -42,9 +42,9 @@ class PxBaseTask;
  A typical implementation would for example use a thread pool with the dispatcher
  pushing tasks onto worker thread queues or a global queue.
 
- @see PxBaseTask
- @see PxTask
- @see PxTaskManager
+ \see PxBaseTask
+ \see PxTask
+ \see PxTaskManager
 */
 class PxCpuDispatcher
 {
@@ -58,7 +58,7 @@ public:
 
 	\param[in] task The task to be run.
 
-	@see PxBaseTask
+	\see PxBaseTask
 	*/
     virtual void submitTask(PxBaseTask& task) = 0;
 

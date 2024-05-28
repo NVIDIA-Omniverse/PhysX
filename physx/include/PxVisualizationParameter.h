@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,9 +31,6 @@
 
 #include "foundation/PxPreprocessor.h"
 
-/** \addtogroup physics
-@{
-*/
 
 #if !PX_DOXYGEN
 namespace physx
@@ -55,7 +52,7 @@ eNUM_VALUES, which should be one higher than the maximum value in the enum.
 #PxVisualizationParameter::eSCALE is the master switch for enabling visualization, please read the corresponding documentation
 for further details.
 
-@see PxScene.setVisualizationParameter() PxScene.getVisualizationParameter() PxScene.getRenderBuffer()
+\see PxScene.setVisualizationParameter() PxScene.getVisualizationParameter() PxScene.getRenderBuffer()
 */
 struct PxVisualizationParameter
 {
@@ -99,7 +96,7 @@ struct PxVisualizationParameter
 		/**
 		\brief Visualize a bodies axes.
 
-		@see PxActor.globalPose PxActor
+		\see PxActor.globalPose PxActor
 		*/
 		eBODY_AXES,
 		
@@ -110,21 +107,21 @@ struct PxVisualizationParameter
 		black, while awake bodies are drawn in white. If the body is sleeping and part of a sleeping group, it is
 		drawn in red.
 
-		@see PxBodyDesc.massLocalPose PxActor
+		\see PxBodyDesc.massLocalPose PxActor
 		*/
 		eBODY_MASS_AXES,
 		
 		/**
 		\brief Visualize the bodies linear velocity.
 
-		@see PxBodyDesc.linearVelocity PxActor
+		\see PxBodyDesc.linearVelocity PxActor
 		*/
 		eBODY_LIN_VELOCITY,
 		
 		/**
 		\brief Visualize the bodies angular velocity.
 
-		@see PxBodyDesc.angularVelocity PxActor
+		\see PxBodyDesc.angularVelocity PxActor
 		*/
 		eBODY_ANG_VELOCITY,
 
@@ -153,7 +150,7 @@ struct PxVisualizationParameter
 		/**
 		\brief Visualize actor axes.
 
-		@see PxRigidStatic PxRigidDynamic PxArticulationLink
+		\see PxRigidStatic PxRigidDynamic PxArticulationLink
 		*/
 		eACTOR_AXES,
 
@@ -165,14 +162,14 @@ struct PxVisualizationParameter
 		/**
 		\brief Shape visualization
 
-		@see PxShape
+		\see PxShape
 		*/
 		eCOLLISION_SHAPES,
 		
 		/**
 		\brief Shape axis visualization
 
-		@see PxShape
+		\see PxShape
 		*/
 		eCOLLISION_AXES,
 
@@ -184,14 +181,14 @@ struct PxVisualizationParameter
 		/**
 		\brief Mesh & convex face normals
 
-		@see PxTriangleMesh PxConvexMesh
+		\see PxTriangleMesh PxConvexMesh
 		*/
 		eCOLLISION_FNORMALS,
 		
 		/**
 		\brief Active edges for meshes
 
-		@see PxTriangleMesh
+		\see PxTriangleMesh
 		*/
 		eCOLLISION_EDGES,
 
@@ -248,5 +245,4 @@ struct PxVisualizationParameter
 } // namespace physx
 #endif
 
-/** @} */
 #endif

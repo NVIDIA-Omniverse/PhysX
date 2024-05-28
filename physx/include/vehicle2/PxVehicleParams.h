@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
-/** \addtogroup vehicle2
-  @{
-*/
 #include "foundation/PxFoundation.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxMemory.h"
@@ -78,7 +75,7 @@ struct PxVehicleAxleDescription
 	/**
 	\brief Return the number of axles on the vehicle.
 	\return The number of axles.
-	@see getNbWheelsOnAxle()
+	\see getNbWheelsOnAxle()
 	*/
 	PX_FORCE_INLINE PxU32 getNbAxles() const 
 	{
@@ -89,7 +86,7 @@ struct PxVehicleAxleDescription
 	\brief Return the number of wheels on the ith axle.
 	\param[in] i specifies the axle to be queried for its wheel count.
 	\return The number of wheels on the specified axle.
-	@see getWheelOnAxle()
+	\see getWheelOnAxle()
 	*/
 	PX_FORCE_INLINE PxU32 getNbWheelsOnAxle(const PxU32 i) const 
 	{
@@ -101,7 +98,7 @@ struct PxVehicleAxleDescription
 	\param[in] j specifies that the wheel id to be returned is the jth wheel in the list of wheels on the specified axle. 
 	\param[in] i specifies the axle to be queried.
 	\return The wheel id of the jth wheel on the ith axle.
-	@see getNbWheelsOnAxle()
+	\see getNbWheelsOnAxle()
 	*/
 	PX_FORCE_INLINE PxU32 getWheelOnAxle(const PxU32 j, const PxU32 i) const
 	{
@@ -418,8 +415,8 @@ struct PxVehicleSizedArrayData : public PxVehicleArrayData<T>
 A velocity change will be immediately reflected in linear and angular velocity queries against the vehicle.  An acceleration change, on the other hand,
 will leave the linear and angular velocities unchanged until the next PhysX scene update has applied the acceleration update to the actor's linear and
 angular velocities.
-@see PxVehiclePhysXActorEndComponent
-@see PxVehicleWriteRigidBodyStateToPhysXActor
+\see PxVehiclePhysXActorEndComponent
+\see PxVehicleWriteRigidBodyStateToPhysXActor
 */
 struct PxVehiclePhysXActorUpdateMode
 {
@@ -651,9 +648,9 @@ public:
 	\brief The attribute handles used to reflect vehicle parameter and state data in omnipvd.
 	\note A null value will result in no values being reflected in omnipvd.
 	\note #attributeHandles and #writer both need to be non-NULL to reflect vehicle values in omnipvd. 
-	@see PxVehiclePvdAttributesCreate
-	@see PxVehiclePvdAttributesRelease
-	@see PxVehiclePVDComponent
+	\see PxVehiclePvdAttributesCreate
+	\see PxVehiclePvdAttributesRelease
+	\see PxVehiclePVDComponent
 	*/
 	const struct PxVehiclePvdAttributeHandles* attributeHandles;
 
@@ -661,9 +658,9 @@ public:
 	\brief An instance of OmniPvdWriter used to write vehicle prameter and state data to omnipvd.
 	\note A null value will result in no values being reflected in omnipvd.
 	\note #attributeHandles and #writer both need to be non-NULL to reflect vehicle values in omnipvd. 
-	@see PxVehiclePvdAttributesCreate
-	@see PxVehiclePvdAttributesRelease
-	@see PxVehiclePVDComponent
+	\see PxVehiclePvdAttributesCreate
+	\see PxVehiclePvdAttributesRelease
+	\see PxVehiclePVDComponent
 	*/
 	OmniPvdWriter* writer;
 };
@@ -763,7 +760,7 @@ struct PxVehiclePhysXSimulationContext : public PxVehicleSimulationContext
 
 	<b>Unit:</b> time
 	
-	@see physxActorWakeCounterThreshold PxVehiclePhysxActorKeepAwakeCheck
+	\see physxActorWakeCounterThreshold PxVehiclePhysxActorKeepAwakeCheck
 	*/
 	PxReal physxActorWakeCounterResetValue;
 
@@ -773,7 +770,7 @@ struct PxVehiclePhysXSimulationContext : public PxVehicleSimulationContext
 
 	<b>Unit:</b> time
 	
-	@see physxActorWakeCounterResetValue PxVehiclePhysxActorKeepAwakeCheck
+	\see physxActorWakeCounterResetValue PxVehiclePhysxActorKeepAwakeCheck
 	*/
 	PxReal physxActorWakeCounterThreshold;
 
@@ -911,4 +908,3 @@ public:
 
 
 
-/** @} */

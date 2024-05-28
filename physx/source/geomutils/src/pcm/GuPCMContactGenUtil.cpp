@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -80,8 +80,8 @@ bool Gu::contains(Vec3V* verts, PxU32 numVerts, const Vec3VArg p, const Vec3VArg
 			//const FloatV jtx = FSub(tx, jy);
 			const FloatV jty = FSub(ty, jy);
 			const FloatV part1 = FMul(jty, jix);
-			//const FloatV part2 = FMul(jx,  jiy);
-			//const FloatV part3 = FMul(V3Sub(tx, eps),  jiy);
+			//const FloatV part2 = FMul(jx, jiy);
+			//const FloatV part3 = FMul(V3Sub(tx, eps), jiy);
 			const FloatV part2 = FMul(FAdd(jx, eps), jiy);
 			const FloatV part3 = FMul(tx, jiy);
 
@@ -296,9 +296,9 @@ PxU32 Gu::getWitnessPolygonIndex(const PolygonalData& polyData, const SupportLoc
 			// => similar to backface culling, check each one of the 4 triangles are consistent, in which case
 			// the point is within the parallelogram.
 			const FloatV v00 = FSub(CurrentX, PreviousX);
-			const FloatV v01 = FSub(y,  PreviousY);
+			const FloatV v01 = FSub(y, PreviousY);
 			const FloatV v10 = FSub(CurrentY, PreviousY);
-			const FloatV v11 = FSub(x,  PreviousX);
+			const FloatV v11 = FSub(x, PreviousX);
 			const FloatV temp0 = FMul(v00, v01);
 			const FloatV temp1 = FMul(v10, v11);
 			if(FAllGrtrOrEq(FSub(temp0, temp1), zero))

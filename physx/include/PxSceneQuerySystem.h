@@ -22,14 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SCENE_QUERY_SYSTEM_H
 #define PX_SCENE_QUERY_SYSTEM_H
-/** \addtogroup physics
-@{ */
 
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxBitMap.h"
@@ -57,8 +55,8 @@ namespace physx
 
 	This is passed as a pruner index to various functions in the following APIs.
 
-	@see PxSceneQuerySystemBase::forceRebuildDynamicTree PxSceneQuerySystem::preallocate
-	@see PxSceneQuerySystem::visualize PxSceneQuerySystem::sync PxSceneQuerySystem::prepareSceneQueryBuildStep
+	\see PxSceneQuerySystemBase::forceRebuildDynamicTree PxSceneQuerySystem::preallocate
+	\see PxSceneQuerySystem::visualize PxSceneQuerySystem::sync PxSceneQuerySystem::prepareSceneQueryBuildStep
 	*/
 	enum PxScenePrunerIndex
 	{
@@ -72,7 +70,7 @@ namespace physx
 
 	Methods defined here are common to both the traditional PxScene API and the PxSceneQuerySystem API.
 
-	@see PxScene PxSceneQuerySystem
+	\see PxScene PxSceneQuerySystem
 	*/
 	class PxSceneQuerySystemBase
 	{
@@ -82,16 +80,16 @@ namespace physx
 
 		public:
 
-		/** @name Scene Query
+		/** \name Scene Query
 		*/
-		//@{
+		//\{
 
 		/**
 		\brief Sets the rebuild rate of the dynamic tree pruning structures.
 
 		\param[in] dynamicTreeRebuildRateHint Rebuild rate of the dynamic tree pruning structures.
 
-		@see PxSceneQueryDesc.dynamicTreeRebuildRateHint getDynamicTreeRebuildRateHint() forceRebuildDynamicTree()
+		\see PxSceneQueryDesc.dynamicTreeRebuildRateHint getDynamicTreeRebuildRateHint() forceRebuildDynamicTree()
 		*/
 		virtual	void	setDynamicTreeRebuildRateHint(PxU32 dynamicTreeRebuildRateHint) = 0;
 
@@ -100,7 +98,7 @@ namespace physx
 
 		\return The rebuild rate of the dynamic tree pruning structures.
 
-		@see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() forceRebuildDynamicTree()
+		\see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() forceRebuildDynamicTree()
 		*/
 		virtual PxU32	getDynamicTreeRebuildRateHint() const = 0;
 
@@ -111,7 +109,7 @@ namespace physx
 
 		\note PxScene will call this function with the PX_SCENE_PRUNER_STATIC or PX_SCENE_PRUNER_DYNAMIC value.
 
-		@see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() getDynamicTreeRebuildRateHint()
+		\see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() getDynamicTreeRebuildRateHint()
 		*/
 		virtual void	forceRebuildDynamicTree(PxU32 prunerIndex)	= 0;
 
@@ -120,7 +118,7 @@ namespace physx
 
 		\param[in] updateMode	Scene query update mode.
 
-		@see PxSceneQueryUpdateMode::Enum
+		\see PxSceneQueryUpdateMode::Enum
 		*/
 		virtual	void	setUpdateMode(PxSceneQueryUpdateMode::Enum updateMode)	= 0;
 
@@ -129,7 +127,7 @@ namespace physx
 
 		\return Current scene query update mode.
 
-		@see PxSceneQueryUpdateMode::Enum
+		\see PxSceneQueryUpdateMode::Enum
 		*/
 		virtual	PxSceneQueryUpdateMode::Enum	getUpdateMode()	const	= 0;
 
@@ -177,7 +175,7 @@ namespace physx
 
 		\return True if any touching or blocking hits were found or any hit was found in case PxQueryFlag::eANY_HIT was specified.
 
-		@see PxRaycastCallback PxRaycastBuffer PxQueryFilterData PxQueryFilterCallback PxQueryCache PxRaycastHit PxQueryFlag PxQueryFlag::eANY_HIT PxGeometryQueryFlag
+		\see PxRaycastCallback PxRaycastBuffer PxQueryFilterData PxQueryFilterCallback PxQueryCache PxRaycastHit PxQueryFlag PxQueryFlag::eANY_HIT PxGeometryQueryFlag
 		*/
 		virtual bool	raycast(const PxVec3& origin, const PxVec3& unitDir, const PxReal distance,
 								PxRaycastCallback& hitCall, PxHitFlags hitFlags = PxHitFlag::eDEFAULT,
@@ -209,7 +207,7 @@ namespace physx
 	
 		\return True if any touching or blocking hits were found or any hit was found in case PxQueryFlag::eANY_HIT was specified.
 
-		@see PxSweepCallback PxSweepBuffer PxQueryFilterData PxQueryFilterCallback PxSweepHit PxQueryCache PxGeometryQueryFlag
+		\see PxSweepCallback PxSweepBuffer PxQueryFilterData PxQueryFilterCallback PxSweepHit PxQueryCache PxGeometryQueryFlag
 		*/
 		virtual bool	sweep(	const PxGeometry& geometry, const PxTransform& pose, const PxVec3& unitDir, const PxReal distance,
 								PxSweepCallback& hitCall, PxHitFlags hitFlags = PxHitFlag::eDEFAULT,
@@ -237,12 +235,12 @@ namespace physx
 		\note eBLOCK should not be returned from user filters for overlap(). Doing so will result in undefined behavior, and a warning will be issued.
 		\note If the PxQueryFlag::eNO_BLOCK flag is set, the eBLOCK will instead be automatically converted to an eTOUCH and the warning suppressed.
 
-		@see PxOverlapCallback PxOverlapBuffer PxHitFlags PxQueryFilterData PxQueryFilterCallback PxGeometryQueryFlag
+		\see PxOverlapCallback PxOverlapBuffer PxHitFlags PxQueryFilterData PxQueryFilterCallback PxGeometryQueryFlag
 		*/
 		virtual bool	overlap(const PxGeometry& geometry, const PxTransform& pose, PxOverlapCallback& hitCall,
 								const PxQueryFilterData& filterData = PxQueryFilterData(), PxQueryFilterCallback* filterCall = NULL,
 								const PxQueryCache* cache = NULL, PxGeometryQueryFlags queryFlags = PxGeometryQueryFlag::eDEFAULT) const = 0;
-		//@}
+		//\}
 	};
 
 	/**
@@ -251,7 +249,7 @@ namespace physx
 	Methods defined here are only available through the traditional PxScene API.
 	Thus PxSceneSQSystem effectively captures the scene-query related part of the PxScene API.
 
-	@see PxScene PxSceneQuerySystemBase
+	\see PxScene PxSceneQuerySystemBase
 	*/
 	class PxSceneSQSystem : public PxSceneQuerySystemBase
 	{
@@ -261,16 +259,16 @@ namespace physx
 
 		public:
 
-		/** @name Scene Query
+		/** \name Scene Query
 		*/
-		//@{
+		//\{
 
 		/**
 		\brief Sets scene query update mode	
 
 		\param[in] updateMode	Scene query update mode.
 
-		@see PxSceneQueryUpdateMode::Enum
+		\see PxSceneQueryUpdateMode::Enum
 		*/
 		PX_FORCE_INLINE	void	setSceneQueryUpdateMode(PxSceneQueryUpdateMode::Enum updateMode)	{ setUpdateMode(updateMode);	}
 
@@ -279,7 +277,7 @@ namespace physx
 
 		\return Current scene query update mode.
 
-		@see PxSceneQueryUpdateMode::Enum
+		\see PxSceneQueryUpdateMode::Enum
 		*/
 		PX_FORCE_INLINE	PxSceneQueryUpdateMode::Enum	getSceneQueryUpdateMode()	const	{ return getUpdateMode();	}
 
@@ -294,7 +292,7 @@ namespace physx
 		/**
 		\brief Flushes any changes to the scene query representation.
 
-		@see flushUpdates
+		\see flushUpdates
 		*/
 		PX_FORCE_INLINE	void	flushQueryUpdates()	{ flushUpdates();	}
 
@@ -304,7 +302,7 @@ namespace physx
 		\param[in] rebuildStaticStructure	True to rebuild the dynamic tree containing static objects
 		\param[in] rebuildDynamicStructure	True to rebuild the dynamic tree containing dynamic objects
 
-		@see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() getDynamicTreeRebuildRateHint()
+		\see PxSceneQueryDesc.dynamicTreeRebuildRateHint setDynamicTreeRebuildRateHint() getDynamicTreeRebuildRateHint()
 		*/
 		PX_FORCE_INLINE void	forceDynamicTreeRebuild(bool rebuildStaticStructure, bool rebuildDynamicStructure)
 		{
@@ -317,14 +315,14 @@ namespace physx
 		/**
 		\brief Return the value of PxSceneQueryDesc::staticStructure that was set when creating the scene with PxPhysics::createScene
 
-		@see PxSceneQueryDesc::staticStructure, PxPhysics::createScene
+		\see PxSceneQueryDesc::staticStructure, PxPhysics::createScene
 		*/
 		virtual	PxPruningStructureType::Enum getStaticStructure() const = 0;
 
 		/**
 		\brief Return the value of PxSceneQueryDesc::dynamicStructure that was set when creating the scene with PxPhysics::createScene
 
-		@see PxSceneQueryDesc::dynamicStructure, PxPhysics::createScene
+		\see PxSceneQueryDesc::dynamicStructure, PxPhysics::createScene
 		*/
 		virtual PxPruningStructureType::Enum getDynamicStructure() const = 0;
 
@@ -357,7 +355,7 @@ namespace physx
 		\param[in] controlSimulation if true, the scene controls its PxTaskManager simulation state. Leave
 		true unless the application is calling the PxTaskManager start/stopSimulation() methods itself.
 
-		@see PxSceneQueryUpdateMode::eBUILD_DISABLED_COMMIT_DISABLED
+		\see PxSceneQueryUpdateMode::eBUILD_DISABLED_COMMIT_DISABLED
 		*/
 		virtual void	sceneQueriesUpdate(PxBaseTask* completionTask = NULL, bool controlSimulation = true)	= 0;
 
@@ -370,7 +368,7 @@ namespace physx
 		\param[in] block When set to true will block until the condition is met.
 		\return True if the results are available.
 
-		@see sceneQueriesUpdate() fetchResults()
+		\see sceneQueriesUpdate() fetchResults()
 		*/
 		virtual	bool	checkQueries(bool block = false) = 0;
 
@@ -383,7 +381,7 @@ namespace physx
 		\param[in] block When set to true will block until the condition is met, which is tree built task must finish running.
 		*/
 		virtual	bool	fetchQueries(bool block = false)	= 0;	
-		//@}
+		//\}
 	};
 
 	typedef PxU32	PxSQCompoundHandle;
@@ -415,7 +413,7 @@ namespace physx
 	A compound shape has an invalid compound ID, since it does not belong to an SQ compound.
 	An SQ compound shape has a valid compound ID, that identifies its SQ compound owner.
 
-	@see PxScene PxSceneQuerySystemBase
+	\see PxScene PxSceneQuerySystemBase
 	*/
 	class PxSceneQuerySystem : public PxSceneQuerySystemBase
 	{
@@ -468,7 +466,7 @@ namespace physx
 		\param[in] compoundHandle		Handle of SQ compound owner, or NULL for regular shapes.
 		\param[in] hasPruningStructure	True if the shape is part of a pruning structure. The structure will be merged later, adding the objects will not invalidate the pruner.
 
-		@see merge() PxPruningStructure
+		\see merge() PxPruningStructure
 		*/
 		virtual	void	addSQShape(	const PxRigidActor& actor, const PxShape& shape, const PxBounds3& bounds,
 									const PxTransform& transform, const PxSQCompoundHandle* compoundHandle=NULL, bool hasPruningStructure=false)	= 0;
@@ -508,7 +506,7 @@ namespace physx
 
 		\return	SQ compound handle
 
-		@see PxBVH PxCooking::createBVH
+		\see PxBVH PxCooking::createBVH
 		*/
 		virtual	PxSQCompoundHandle	addSQCompound(const PxRigidActor& actor, const PxShape** shapes, const PxBVH& bvh, const PxTransform* transforms)	= 0;
 
@@ -545,7 +543,7 @@ namespace physx
 
 		\param[out] out			Filled with render output data
 
-		@see PxRenderOutput
+		\see PxRenderOutput
 		*/
 		virtual	void	visualize(PxU32 prunerIndex, PxRenderOutput& out)	const	= 0;
 
@@ -554,7 +552,7 @@ namespace physx
 
 		\param[in] pruningStructure		The pruning structure to merge
 
-		@see PxPruningStructure
+		\see PxPruningStructure
 		*/
 		virtual	void	merge(const PxPruningStructure& pruningStructure)	= 0;
 
@@ -589,7 +587,7 @@ namespace physx
 		\param[in] count			Number of updated objects
 		\param[in] ignoredIndices	Optional bitmap of ignored indices, i.e. update is skipped if ignoredIndices[indices[i]] is set.
 
-		@see PxBounds3 PxTransform32 PxBitMap
+		\see PxBounds3 PxTransform32 PxBitMap
 		*/
 		virtual	void	sync(PxU32 prunerIndex, const PxSQPrunerHandle* handles, const PxU32* indices, const PxBounds3* bounds, const PxTransform32* transforms, PxU32 count, const PxBitMap& ignoredIndices)	= 0;
 
@@ -608,7 +606,7 @@ namespace physx
 
 		The amount of work performed in this function depends on PxSceneQueryUpdateMode.
 
-		@see PxSceneQueryUpdateMode updateSQShape() sync()
+		\see PxSceneQueryUpdateMode updateSQShape() sync()
 		*/
 		virtual	void	finalizeUpdates()	= 0;
 
@@ -629,7 +627,7 @@ namespace physx
 
 		\return	Null if there is no work to do, otherwise a pruner-specific handle.
 
-		@see PxSceneSQSystem::sceneQueriesUpdate sceneQueryBuildStep
+		\see PxSceneSQSystem::sceneQueriesUpdate sceneQueryBuildStep
 		*/
 		virtual	PxSQBuildStepHandle	prepareSceneQueryBuildStep(PxU32 prunerIndex)	= 0;
 
@@ -643,7 +641,7 @@ namespace physx
 		
 		\param[in] handle	Pruner-specific handle previously returned by the prepareSceneQueryBuildStep function.
 
-		@see PxSceneSQSystem::sceneQueriesUpdate prepareSceneQueryBuildStep
+		\see PxSceneSQSystem::sceneQueriesUpdate prepareSceneQueryBuildStep
 		*/
 		virtual	void	sceneQueryBuildStep(PxSQBuildStepHandle handle)	= 0;
 	};
@@ -652,5 +650,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

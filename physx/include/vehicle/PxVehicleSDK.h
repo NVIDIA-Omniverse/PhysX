@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -42,6 +42,7 @@ class PxPhysics;
 class PxSerializationRegistry;
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Initialize the PhysXVehicle library. 
 
 Call this before using any of the vehicle functions.
@@ -52,12 +53,13 @@ Call this before using any of the vehicle functions.
 \note This function must be called after PxFoundation and PxPhysics instances have been created.
 \note If a PxSerializationRegistry instance is specified then PhysXVehicle is also dependent on PhysXExtensions.
 
-@see PxCloseVehicleSDK
+\see PxCloseVehicleSDK
 */
 PX_DEPRECATED PX_C_EXPORT bool PX_CALL_CONV PxInitVehicleSDK(PxPhysics& physics, PxSerializationRegistry* serializationRegistry = NULL);
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Shut down the PhysXVehicle library. 
 
 Call this function as part of the physx shutdown process.
@@ -67,7 +69,7 @@ Call this function as part of the physx shutdown process.
 \note This function must be called prior to shutdown of PxFoundation and PxPhysics.
 \note If the PxSerializationRegistry instance is specified this function must additionally be called prior to shutdown of PhysXExtensions.
 
-@see PxInitVehicleSDK
+\see PxInitVehicleSDK
 */
 PX_DEPRECATED PX_C_EXPORT void PX_CALL_CONV PxCloseVehicleSDK(PxSerializationRegistry* serializationRegistry = NULL);
 
@@ -81,13 +83,13 @@ PX_DEPRECATED PX_C_EXPORT void PX_CALL_CONV PxCloseVehicleSDK(PxSerializationReg
 /**
 \brief Compiler setting to enable recording of telemetry data
 
-@see PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehicleTelemetryData
+\see PxVehicleUpdateSingleVehicleAndStoreTelemetryData, PxVehicleTelemetryData
 */
 #define PX_DEBUG_VEHICLE_ON (1)
 
 
 /**
-@see PxVehicleDrive4W, PxVehicleDriveTank, PxVehicleDriveNW, PxVehicleNoDrive, PxVehicleWheels::getVehicleType
+\see PxVehicleDrive4W, PxVehicleDriveTank, PxVehicleDriveNW, PxVehicleNoDrive, PxVehicleWheels::getVehicleType
 */
 struct PX_DEPRECATED PxVehicleTypes
 {
@@ -106,9 +108,10 @@ struct PX_DEPRECATED PxVehicleTypes
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief An enumeration of concrete vehicle classes inheriting from PxBase.
 \note This enum can be used to identify a vehicle object stored in a PxCollection.
-@see PxBase, PxTypeInfo, PxBase::getConcreteType
+\see PxBase, PxTypeInfo, PxBase::getConcreteType
 */
 struct PX_DEPRECATED PxVehicleConcreteType
 {
@@ -123,6 +126,7 @@ struct PX_DEPRECATED PxVehicleConcreteType
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Set the basis vectors of the vehicle simulation 
 
 See PxVehicleContext for the default values.
@@ -130,13 +134,13 @@ See PxVehicleContext for the default values.
 Call this function before using PxVehicleUpdates unless the default values are correct
 or the settings structure is explicitly provided.
 
-@see PxVehicleContext
+\see PxVehicleContext
 */
 PX_DEPRECATED void PxVehicleSetBasisVectors(const PxVec3& up, const PxVec3& forward);
 
 
 /**
-@see PxVehicleSetUpdateMode
+\see PxVehicleSetUpdateMode
 */
 struct PX_DEPRECATED PxVehicleUpdateMode
 {
@@ -149,6 +153,7 @@ struct PX_DEPRECATED PxVehicleUpdateMode
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Set the effect of PxVehicleUpdates to be either to modify each vehicle's rigid body actor
 
 with an acceleration to be applied in the next PhysX SDK update or as an immediate velocity modification.
@@ -158,12 +163,12 @@ See PxVehicleContext for the default value.
 Call this function before using PxVehicleUpdates for the first time if the default is not the desired behavior
 or if the settings structure is not explicitly provided.
 
-@see PxVehicleUpdates, PxVehicleContext
+\see PxVehicleUpdates, PxVehicleContext
 */
 PX_DEPRECATED void PxVehicleSetUpdateMode(PxVehicleUpdateMode::Enum vehicleUpdateMode);
 
 /** 
-
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Set threshold angles that are used to determine if a wheel hit is to be resolved by vehicle suspension or by rigid body collision.
 
 
@@ -212,12 +217,13 @@ by the contact modification callback PxVehicleModifyWheelContacts.
 
 \note Both angles have default values of Pi/4.
 
-@see PxVehicleSuspensionSweeps, PxVehicleModifyWheelContacts, PxVehicleContext
+\see PxVehicleSuspensionSweeps, PxVehicleModifyWheelContacts, PxVehicleContext
 */
 PX_DEPRECATED void PxVehicleSetSweepHitRejectionAngles(const PxF32 pointRejectAngle, const PxF32 normalRejectAngle);
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Determine the maximum acceleration experienced by PxRigidDynamic instances that are found to be in contact 
 with a wheel.
 
@@ -228,17 +234,18 @@ generates an acceleration greater than the specified value.
 
 See PxVehicleContext for the default value.
 
-@see PxVehicleContext
+\see PxVehicleContext
 */
 PX_DEPRECATED void PxVehicleSetMaxHitActorAcceleration(const PxF32 maxHitActorAcceleration);
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Common parameters and settings used for the vehicle simulation.
 
 To be passed into PxVehicleUpdates(), for example.
 
-@see PxVehicleUpdates()
+\see PxVehicleUpdates()
 */
 class PX_DEPRECATED PxVehicleContext
 {
@@ -250,7 +257,7 @@ public:
 	<b>Range:</b> unit length vector<br>
 	<b>Default:</b> PxVec3(0,1,0)
 
-	@see PxVehicleSetBasisVectors()
+	\see PxVehicleSetBasisVectors()
 	*/
 	PxVec3 upAxis;
 
@@ -260,7 +267,7 @@ public:
 	<b>Range:</b> unit length vector<br>
 	<b>Default:</b> PxVec3(0,0,1)
 
-	@see PxVehicleSetBasisVectors()
+	\see PxVehicleSetBasisVectors()
 	*/
 	PxVec3 forwardAxis;
 
@@ -273,7 +280,7 @@ public:
 	<b>Range:</b> unit length vector<br>
 	<b>Default:</b> PxVec3(1,0,0)
 
-	@see PxVehicleSetBasisVectors(), computeSideAxis()
+	\see PxVehicleSetBasisVectors(), computeSideAxis()
 	*/
 	PxVec3 sideAxis;
 
@@ -284,7 +291,7 @@ public:
 
 	<b>Default:</b> eVELOCITY_CHANGE
 
-	@see PxVehicleSetUpdateMode()
+	\see PxVehicleSetUpdateMode()
 	*/
 	PxVehicleUpdateMode::Enum updateMode;
 
@@ -296,7 +303,7 @@ public:
 	<b>Range:</b> (1, -1)<br>
 	<b>Default:</b> 0.707f (cosine of 45 degrees)
 
-	@see PxVehicleSetSweepHitRejectionAngles()
+	\see PxVehicleSetSweepHitRejectionAngles()
 	*/
 	PxF32 pointRejectAngleThresholdCosine;
 
@@ -308,7 +315,7 @@ public:
 	<b>Range:</b> (1, -1)<br>
 	<b>Default:</b> 0.707f (cosine of 45 degrees)
 
-	@see PxVehicleSetSweepHitRejectionAngles()
+	\see PxVehicleSetSweepHitRejectionAngles()
 	*/
 	PxF32 normalRejectAngleThresholdCosine;
 
@@ -320,7 +327,7 @@ public:
 	<b>Range:</b> [0, PX_MAX_REAL]<br>
 	<b>Default:</b> PX_MAX_REAL
 
-	@see PxVehicleSetMaxHitActorAcceleration()
+	\see PxVehicleSetMaxHitActorAcceleration()
 	*/
 	PxF32 maxHitActorAcceleration;
 
@@ -398,6 +405,7 @@ PX_INLINE void PxVehicleContext::computeSideAxis()
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Get the default vehicle context.
 
 Will be used if the corresponding parameters are not specified in methods like
@@ -408,7 +416,7 @@ PxVehicleSetUpdateMode() etc.
 
 \return The default vehicle context.
 
-@see PxVehicleSetBasisVectors() PxVehicleSetUpdateMode()
+\see PxVehicleSetBasisVectors() PxVehicleSetUpdateMode()
 */
 PX_DEPRECATED const PxVehicleContext& PxVehicleGetDefaultContext();
 

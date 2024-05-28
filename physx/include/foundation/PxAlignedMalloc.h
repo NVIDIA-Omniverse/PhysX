@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -57,8 +57,10 @@ namespace physx
 		{
 		}
 
-		void* allocate(size_t size, const char* file, int line)
+		void* allocate(size_t size, const char* file, int line, uint32_t* cookie=NULL)
 		{
+			PX_UNUSED(cookie);
+
 			size_t pad = N - 1 + sizeof(size_t); // store offset for delete.
 			uint8_t* base = reinterpret_cast<uint8_t*>(BaseAllocator::allocate(size + pad, file, line));
 			if (!base)
@@ -71,8 +73,11 @@ namespace physx
 
 			return ptr;
 		}
-		void deallocate(void* ptr)
+
+		void deallocate(void* ptr, uint32_t* cookie=NULL)
 		{
+			PX_UNUSED(cookie);
+
 			if (ptr == NULL)
 				return;
 

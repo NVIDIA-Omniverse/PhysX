@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,6 +44,7 @@ class PxVehicleWheels;
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Reconfigure a PxVehicle4W instance as a three-wheeled car with tadpole config (2 front wheels, 1 rear wheel)
 
 \note The rear-left wheel is removed and the rear-right wheel is positioned at the centre of the rear axle.
@@ -58,6 +59,7 @@ PX_DEPRECATED void PxVehicle4WEnable3WTadpoleMode(PxVehicleWheelsSimData& wheels
 	const PxVehicleContext& context = PxVehicleGetDefaultContext());
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Reconfigure a PxVehicle4W instance as a three-wheeled car with delta config (1 front wheel, 2 rear wheels)
 
 \note The front-left wheel is removed and the front-right wheel is positioned at the centre of the front axle.
@@ -72,6 +74,7 @@ PX_DEPRECATED void PxVehicle4WEnable3WDeltaMode(PxVehicleWheelsSimData& wheelsSi
 	const PxVehicleContext& context = PxVehicleGetDefaultContext());
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Compute the sprung masses of the suspension springs given (i) the number of sprung masses, 
 (ii) coordinates of the sprung masses, (iii) the center of mass offset of the rigid body, (iv) the 
 total mass of the rigid body, and (v) the direction of gravity (0 for x-axis, 1 for y-axis, 2 for z-axis).
@@ -92,6 +95,7 @@ PX_DEPRECATED void PxVehicleComputeSprungMasses(const PxU32 nbSprungMasses, cons
 
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Reconfigure the vehicle to reflect a new center of mass local pose that has been applied to the actor.  The function requires
 (i) the center of mass local pose that was last used to configure the vehicle and the vehicle's actor, (ii) the new center of mass local pose that 
 has been applied to the vehicle's actor and will now be applied to the vehicle, and (iii) the direction of gravity (0 for x-axis, 1 for y-axis, 2 for z-axis)
@@ -110,8 +114,9 @@ stiffness and damping rate of the suspension springs.
 PX_DEPRECATED void PxVehicleUpdateCMassLocalPose(const PxTransform& oldCMassLocalPose, const PxTransform& newCMassLocalPose, const PxU32 gravityDirection, PxVehicleWheels* vehicle);
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Used by PxVehicleCopyDynamicsData
-@see PxVehicleCopyDynamicsData
+\see PxVehicleCopyDynamicsData
 */
 class PX_DEPRECATED PxVehicleCopyDynamicsMap
 {
@@ -131,6 +136,8 @@ public:
 };
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+
 \brief Copy dynamics data from src to trg, including wheel rotation speed, wheel rotation angle, engine rotation speed etc.
 
 \param[in] wheelMap -  describes the mapping between the wheels in src and the wheels in trg.  

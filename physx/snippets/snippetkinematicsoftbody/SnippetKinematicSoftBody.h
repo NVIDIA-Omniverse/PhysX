@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,7 @@
 #include "PxPhysicsAPI.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "cudamanager/PxCudaContext.h"
+#include "extensions/PxCudaHelpersExt.h"
 #include <vector>
 
 class SoftBody
@@ -41,7 +42,7 @@ public:
 		mSoftBody(softBody),
 		mCudaContextManager(cudaContextManager)
 	{
-		mPositionsInvMass = PX_PINNED_HOST_ALLOC_T(physx::PxVec4, cudaContextManager, softBody->getCollisionMesh()->getNbVertices());
+		mPositionsInvMass = PX_EXT_PINNED_MEMORY_ALLOC(physx::PxVec4, *cudaContextManager, softBody->getCollisionMesh()->getNbVertices());
 	}
 
 	~SoftBody()
@@ -52,13 +53,10 @@ public:
 	{
 		if (mSoftBody)
 			mSoftBody->release();
-		if (mPositionsInvMass)
-			PX_PINNED_HOST_FREE(mCudaContextManager, mPositionsInvMass);
 
-		if (mTargetPositionsH)
-			PX_PINNED_HOST_FREE(mCudaContextManager, mTargetPositionsH);
-		if (mTargetPositionsD)
-			PX_DEVICE_FREE(mCudaContextManager, mTargetPositionsD);
+		PX_EXT_PINNED_MEMORY_FREE(*mCudaContextManager, mPositionsInvMass);
+		PX_EXT_PINNED_MEMORY_FREE(*mCudaContextManager, mTargetPositionsH);
+		PX_EXT_DEVICE_MEMORY_FREE(*mCudaContextManager, mTargetPositionsD);
 	}
 
 	void copyDeformedVerticesFromGPUAsync(CUstream stream)

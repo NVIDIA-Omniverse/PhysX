@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -31,9 +31,6 @@
 
 #include "common/PxPhysXCommonConfig.h"
 
-/** \addtogroup extensions
-  @{
-*/
 
 #if !PX_DOXYGEN
 namespace physx
@@ -60,7 +57,7 @@ class PxJoint;
 
 	\return	The created joint.
 
-	@see PxD6Joint PxFixedJoint
+	\see PxD6Joint PxFixedJoint
 */
 PxJoint* PxD6JointCreate_Fixed(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, bool useD6);
 
@@ -83,7 +80,7 @@ PxJoint* PxD6JointCreate_Fixed(PxPhysics& physics, PxRigidActor* actor0, const P
 
 	\return	The created joint.
 
-	@see PxD6Joint PxDistanceJoint
+	\see PxD6Joint PxDistanceJoint
 */
 PxJoint* PxD6JointCreate_Distance(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, float maxDist, bool useD6);
 
@@ -110,7 +107,7 @@ PxJoint* PxD6JointCreate_Distance(PxPhysics& physics, PxRigidActor* actor0, cons
 
 	\return	The created joint.
 
-	@see PxD6Joint PxPrismaticJoint
+	\see PxD6Joint PxPrismaticJoint
 */
 PxJoint* PxD6JointCreate_Prismatic(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, const PxVec3& axis, float minLimit, float maxLimit, bool useD6);
 
@@ -139,7 +136,7 @@ PxJoint* PxD6JointCreate_Prismatic(PxPhysics& physics, PxRigidActor* actor0, con
 
 	\return	The created joint.
 
-	@see PxD6Joint PxRevoluteJoint
+	\see PxD6Joint PxRevoluteJoint
 */
 PxJoint* PxD6JointCreate_Revolute(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, const PxVec3& axis, float minLimit, float maxLimit, bool useD6);
 
@@ -172,7 +169,7 @@ PxJoint* PxD6JointCreate_Revolute(PxPhysics& physics, PxRigidActor* actor0, cons
 
 	\return	The created joint.
 
-	@see PxD6Joint PxSphericalJoint
+	\see PxD6Joint PxSphericalJoint
 */
 PxJoint* PxD6JointCreate_Spherical(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, const PxVec3& axis, float limit1, float limit2, bool useD6);
 
@@ -209,7 +206,7 @@ PxJoint* PxD6JointCreate_Spherical(PxPhysics& physics, PxRigidActor* actor0, con
 
 	\return	The created joint.
 
-	@see PxD6Joint PxSphericalJoint
+	\see PxD6Joint PxSphericalJoint
 */
 PxJoint* PxD6JointCreate_GenericCone(float& apiroty, float& apirotz, PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, float minLimit1, float maxLimit1, float minLimit2, float maxLimit2, bool useD6);
 
@@ -240,7 +237,7 @@ PxJoint* PxD6JointCreate_GenericCone(float& apiroty, float& apirotz, PxPhysics& 
 
 	\return	The created joint.
 
-	@see PxD6Joint
+	\see PxD6Joint
 */
 PxJoint* PxD6JointCreate_Pyramid(PxPhysics& physics, PxRigidActor* actor0, const PxVec3& localPos0, PxRigidActor* actor1, const PxVec3& localPos1, const PxVec3& axis,
 										float minLimit1, float maxLimit1, float minLimit2, float maxLimit2);
@@ -250,5 +247,4 @@ PxJoint* PxD6JointCreate_Pyramid(PxPhysics& physics, PxRigidActor* actor0, const
 } // namespace physx
 #endif
 
-/** @} */
 #endif

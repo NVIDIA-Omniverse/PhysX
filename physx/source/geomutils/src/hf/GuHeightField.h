@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -226,15 +226,6 @@ public:
 						PX_FORCE_INLINE	const Gu::HeightFieldData&	getData()						const	{ return mData; }
 	
 	PX_CUDA_CALLABLE	PX_FORCE_INLINE	void						getTriangleVertices(PxU32 triangleIndex, PxU32 row, PxU32 column, PxVec3& v0, PxVec3& v1, PxVec3& v2) const;
-
-																	// checks if current vertex is solid or not
-										bool						isSolidVertex(PxU32 vertexIndex, PxU32 row, PxU32 coloumn, PxU16 holeMaterialIndex, bool& nbSolid) const;	
-
-																	// PT: TODO: I think we could drop that whole precomputation thing now
-																	// if precomputed bitmap define is used, the collision vertex information
-																	// is precomputed during create height field and stored as a bit in materialIndex1
-	PX_PHYSX_COMMON_API					bool						isCollisionVertexPreca(PxU32 vertexIndex, PxU32 row, PxU32 column, PxU16 holeMaterialIndex) const;
-										void						parseTrianglesForCollisionVertices(PxU16 holeMaterialIndex);					
 
 	PX_CUDA_CALLABLE	PX_FORCE_INLINE	const PxHeightFieldSample&	getSample(PxU32 vertexIndex) const
 																	{

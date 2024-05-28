@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_AGGREGATE_H
 #define PX_AGGREGATE_H
 
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxBase.h"
@@ -92,7 +89,7 @@ large number of attached shapes).
    filtering once and for all, for the aggregate containing the ragdoll, rather than filtering
    out each bone-bone collision in the filter shader.
 
-@see PxActor, PxPhysics.createAggregate
+\see PxActor, PxPhysics.createAggregate
 */
 class PxAggregate : public PxBase
 {
@@ -179,7 +176,7 @@ public:
 
 	\return Number of actors contained in the aggregate.
 
-	@see PxActor getActors()
+	\see PxActor getActors()
 	*/
 	virtual PxU32	getNbActors() const = 0;
 
@@ -188,7 +185,7 @@ public:
 
 	\return Max actor size. 
 
-	@see PxPhysics::createAggregate()
+	\see PxPhysics::createAggregate()
 	*/
 	virtual	PxU32	getMaxNbActors() const = 0;
 
@@ -197,7 +194,7 @@ public:
 
 	\return Max shape size.
 
-	@see PxPhysics::createAggregate()
+	\see PxPhysics::createAggregate()
 	*/
 	virtual	PxU32	getMaxNbShapes() const = 0;
 
@@ -211,7 +208,7 @@ public:
 	\param[in] startIndex Index of first actor pointer to be retrieved
 	\return Number of actor pointers written to the buffer.
 
-	@see PxShape getNbShapes()
+	\see PxShape getNbShapes()
 	*/
 	virtual PxU32	getActors(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const = 0;
 
@@ -220,7 +217,7 @@ public:
 
 	\return Owner Scene. NULL if not part of a scene.
 
-	@see PxScene
+	\see PxScene
 	*/
 	virtual	PxScene*	getScene()	= 0;
 
@@ -246,5 +243,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

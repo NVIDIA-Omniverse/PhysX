@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef PX_HAIRSYSTEM_GEOMETRY_H
 #define PX_HAIRSYSTEM_GEOMETRY_H
-/** \addtogroup geomutils
-@{
-*/
 #include "geometry/PxGeometry.h"
 
 #if !PX_DOXYGEN
@@ -54,7 +51,7 @@ namespace physx
 
 		\return  True if the current settings are valid for shape creation.
 
-		@see PxRigidActor::createShape, PxPhysics::createShape
+		\see PxRigidActor::createShape, PxPhysics::createShape
 		*/
 		PX_FORCE_INLINE bool isValid() const
 		{
@@ -69,5 +66,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

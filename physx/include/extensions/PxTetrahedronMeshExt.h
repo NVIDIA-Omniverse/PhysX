@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TETRAHEDRON_MESH_EXT_H
 #define PX_TETRAHEDRON_MESH_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxArray.h"
@@ -67,7 +64,8 @@ namespace physx
 		*/
 		static PxI32 findTetrahedronClosestToPoint(const PxTetrahedronMesh* mesh, const PxVec3& point, PxVec4& bary);
 
-		/** Associates points with closest tetrahedra from input tetrahedral mesh
+		/** Associates points with closest tetrahedra from input tetrahedral mesh. If the tetmesh does not have any tetrahedra
+		or points, a warning will be generated and the result arrays will be empty, even if there are query points passed into the method.
 
 		\param[in] tetMeshVertices The tetrahedral mesh vertices
 		\param[in] tetMeshIndices The tetraheral mesh indices
@@ -106,5 +104,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

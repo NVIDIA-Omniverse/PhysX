@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -34,9 +34,6 @@
 #include "PxNodeIndex.h"
 #include "foundation/PxVec4.h"
 
-/** \addtogroup physics
-@{
-*/
 
 #if !PX_DOXYGEN
 namespace physx
@@ -45,8 +42,9 @@ namespace physx
 
 /**
 \brief Struct to specify attachment between a particle/vertex and a rigid
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-struct PxParticleRigidAttachment : public PxParticleRigidFilterPair
+struct PX_DEPRECATED PxParticleRigidAttachment : public PxParticleRigidFilterPair
 {
 	PxParticleRigidAttachment() {}
 
@@ -65,5 +63,4 @@ struct PxParticleRigidAttachment : public PxParticleRigidFilterPair
 } // namespace physx
 #endif
 
-/** @} */
 #endif

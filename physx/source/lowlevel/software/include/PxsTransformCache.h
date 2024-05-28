@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -121,7 +121,7 @@ namespace physx
 			return mTransformCache.begin();
 		}
 
-		PX_FORCE_INLINE PxPinnedArray<PxsCachedTransform>* getCachedTransformArray()
+		PX_FORCE_INLINE PxCachedTransformArrayPinned* getCachedTransformArray()
 		{
 			return &mTransformCache;
 		}
@@ -131,9 +131,9 @@ namespace physx
 		PX_FORCE_INLINE	bool hasChanged()	const	{ return mHasAnythingChanged;	}
 
 	private:
-		PxPinnedArray<PxsCachedTransform>	mTransformCache;
-		PxU32								mUsedSize;
-		bool								mHasAnythingChanged;
+		PxCachedTransformArrayPinned	mTransformCache;
+		PxU32							mUsedSize;
+		bool							mHasAnythingChanged;
 	};
 }
 

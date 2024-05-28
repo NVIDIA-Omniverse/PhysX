@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,6 +47,7 @@ class PxMaterial;
 class PxRigidDynamic;
 
 /**
+\deprecated This API is deprecated and is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Data structure with instanced dynamics data and configuration data of a vehicle with no drive model.
 */
 class PX_DEPRECATED PxVehicleNoDrive : public PxVehicleWheels
@@ -62,13 +63,13 @@ public:
 
 	\return The instantiated vehicle.
 
-	@see free, setup
+	\see free, setup
 	*/
 	static PxVehicleNoDrive* allocate(const PxU32 nbWheels);
 
 	/**
 	\brief Deallocate a PxVehicleNoDrive instance.
-	@see allocate
+	\see allocate
 	*/
 	void free();
 
@@ -78,7 +79,7 @@ public:
 	\param[in] vehActor is a PxRigidDynamic instance that is used to represent the vehicle in the PhysX SDK.
 	\param[in] wheelsData describes the configuration of all suspension/tires/wheels of the vehicle. The vehicle instance takes a copy of this data.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheels::setWheelShapeMapping.
-	@see allocate, free, setToRestState, PxVehicleWheels::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheels::setWheelShapeMapping
 	*/
 	void setup
 		(PxPhysics* physics, PxRigidDynamic* vehActor, const PxVehicleWheelsSimData& wheelsData);
@@ -90,7 +91,7 @@ public:
 	\param[in] wheelsData describes the configuration of all suspension/tires/wheels of the vehicle. The vehicle instance takes a copy of this data.
 	\note It is assumed that the first shapes of the actor are the wheel shapes, followed by the chassis shapes.  To break this assumption use PxVehicleWheels::setWheelShapeMapping.
 	\return The instantiated vehicle.
-	@see allocate, free, setToRestState, PxVehicleWheels::setWheelShapeMapping
+	\see allocate, free, setToRestState, PxVehicleWheels::setWheelShapeMapping
 	*/
 	static PxVehicleNoDrive* create
 		(PxPhysics* physics, PxRigidDynamic* vehActor, const PxVehicleWheelsSimData& wheelsData);
@@ -100,7 +101,7 @@ public:
 	to the state they were in immediately after setup or create.
 	\note Calling setToRestState invalidates the cached raycast hit planes under each wheel meaning that suspension line
 	raycasts need to be performed at least once with PxVehicleSuspensionRaycasts before calling PxVehicleUpdates. 
-	@see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
+	\see setup, create, PxVehicleSuspensionRaycasts, PxVehicleUpdates
 	*/
 	void setToRestState();
 

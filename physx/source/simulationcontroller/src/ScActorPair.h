@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,6 +32,10 @@
 #include "ScRigidSim.h"
 #include "ScContactStream.h"
 #include "ScNPhaseCore.h"
+#include "foundation/PxErrors.h"
+#include "foundation/PxFoundation.h"
+#include "foundation/PxPreprocessor.h"
+#include "foundation/PxSimpleTypes.h"
 #if PX_SUPPORT_GPU_PHYSX
 #include "ScSoftBodySim.h"
 #endif
@@ -72,17 +76,18 @@ namespace Sc
 		enum ActorPairFlags
 		{
 			eIS_REPORT_PAIR	= (1<<0),
-			eNEXT_FREE		= (1<<1)
+			eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET = (1<<1), // PT: whether the pair is already stored in the 'ContactReportActorPairSet' or not
+			eMAX		= (1<<2)
 		};
 
-		PX_FORCE_INLINE					ActorPair() : mInternalFlags(0), mTouchCount(0), mRefCount(0) {}
+		PX_FORCE_INLINE					ActorPair() : mRefCount(0), mTouchCount_internalFlags(0) {}
 		PX_FORCE_INLINE					~ActorPair() {}
 
-		PX_FORCE_INLINE	PxIntBool		isReportPair() const { return (mInternalFlags & eIS_REPORT_PAIR); }
+		PX_FORCE_INLINE	PxIntBool		isReportPair() const { return (getFlags() & eIS_REPORT_PAIR); }
 
-		PX_FORCE_INLINE	void			incTouchCount() { mTouchCount++; PX_ASSERT(mTouchCount); }
-		PX_FORCE_INLINE	void			decTouchCount() { PX_ASSERT(mTouchCount); mTouchCount--; }
-		PX_FORCE_INLINE	PxU32			getTouchCount() const { return mTouchCount; }
+		PX_FORCE_INLINE	void			incTouchCount() { setTouchCount(getTouchCount() + 1); PX_ASSERT(getTouchCount()); }
+		PX_FORCE_INLINE	void			decTouchCount() { PX_ASSERT(getTouchCount()); setTouchCount(getTouchCount() -1); }
+		PX_FORCE_INLINE	PxU32			getTouchCount() const { return mTouchCount_internalFlags >> sTouchCountShift; }
 
 		PX_FORCE_INLINE	void			incRefCount() { ++mRefCount; PX_ASSERT(mRefCount>0); }
 		PX_FORCE_INLINE	PxU32			decRefCount() { PX_ASSERT(mRefCount>0); return --mRefCount; }
@@ -92,10 +97,19 @@ namespace Sc
 		ActorPair& operator=(const ActorPair&);
 
 	protected:
-						PxU16			mInternalFlags;
-						PxU16			mTouchCount;
-						PxU16			mRefCount;
-						PxU16			mPad;  // instances of this class are stored in a pool which needs an item size of at least size_t
+						PxU32			mRefCount;
+						PxU32			mTouchCount_internalFlags;
+
+		PX_FORCE_INLINE PxU32			getFlags() const { return mTouchCount_internalFlags & sFlagMask; }
+		PX_FORCE_INLINE void 			raiseFlags(PxU32 flags) { PX_ASSERT(flags < ActorPairFlags::eMAX); mTouchCount_internalFlags |= flags; }
+		PX_FORCE_INLINE void 			clearFlags(PxU32 flags);
+		PX_FORCE_INLINE void			setTouchCount(PxU32 count);
+
+	public:
+		static const PxU32	sFlagMask = (ActorPairFlags::eMAX - 1);
+		static const PxU32	sTouchCountShift = 2;  // shift necessary to extract the touch count
+
+		PX_COMPILE_TIME_ASSERT(ActorPairFlags::eMAX == (1 << sTouchCountShift)); // if this breaks please adjust the sTouchCountShift above.
 	};
 
 	/**
@@ -108,12 +122,8 @@ namespace Sc
 	*/
 	class ActorPairReport : public ActorPair
 	{
+		PX_NOCOPY(ActorPairReport)
 	public:
-
-		enum ActorPairReportFlags
-		{
-			eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET = ActorPair::eNEXT_FREE	// PT: whether the pair is already stored in the 'ContactReportActorPairSet' or not
-		};
 
 		PX_FORCE_INLINE					ActorPairReport(ActorSim&, ActorSim&);
 		PX_FORCE_INLINE					~ActorPairReport();
@@ -128,35 +138,56 @@ namespace Sc
 		PX_INLINE		PxActor*		getPxActorB() const { PX_ASSERT(mReportData); return mReportData->mPxActorB; }
 		PX_INLINE		bool			streamResetStamp(PxU32 cmpStamp);
 
-		PX_FORCE_INLINE	PxU16			isInContactReportActorPairSet() const { return PxU16(mInternalFlags & eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET); }
-		PX_FORCE_INLINE	void			setInContactReportActorPairSet() { mInternalFlags |= eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET; }
-		PX_FORCE_INLINE	void			clearInContactReportActorPairSet() { mInternalFlags &= ~eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET; }
+		PX_FORCE_INLINE	PxIntBool		isInContactReportActorPairSet() const { return (getFlags() & eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET); }
+		PX_FORCE_INLINE	void			setInContactReportActorPairSet()	{ raiseFlags(eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET); }
+		PX_FORCE_INLINE	void			clearInContactReportActorPairSet()	{ clearFlags(eIS_IN_CONTACT_REPORT_ACTOR_PAIR_SET); }
 
 		PX_FORCE_INLINE void			createContactReportData(NPhaseCore&);
-		PX_FORCE_INLINE void			releaseContactReportData(NPhaseCore&);
 
-		PX_FORCE_INLINE	void			convert(ActorPair& aPair) { PX_ASSERT(!aPair.isReportPair()); mTouchCount = PxU16(aPair.getTouchCount()); mRefCount = PxU16(aPair.getRefCount()); }
+		PX_FORCE_INLINE	void			convert(ActorPair& aPair) { PX_ASSERT(!aPair.isReportPair()); setTouchCount(aPair.getTouchCount()); mRefCount = aPair.getRefCount(); }
 
 		PX_FORCE_INLINE static ActorPairReport& cast(ActorPair& aPair) { PX_ASSERT(aPair.isReportPair()); return static_cast<ActorPairReport&>(aPair); }
 
-	private:
-		ActorPairReport& operator=(const ActorPairReport&);
-
+		private:
 						ActorSim&		mActorA;
 						ActorSim&		mActorB;
-
+		public:
 			ActorPairContactReportData* mReportData;
 	};
-
 } // namespace Sc
+
+//// Sc::ActorPair implementations
+
+PX_FORCE_INLINE void Sc::ActorPair::setTouchCount(PxU32 count)
+{
+	PX_ASSERT(count <= (PX_MAX_U32 >> sTouchCountShift));
+	if (count == (PX_MAX_U32 >> sTouchCountShift)) // we rely on inc/dec behaviour here which means we'll always pass the max value before overflowing.
+	{
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Sc::ActorPair: maximum count of touching shapes per pair reached, any additional touch will introduce undefined behavior.");
+	}
+
+	mTouchCount_internalFlags = (mTouchCount_internalFlags & sFlagMask) | (count << sTouchCountShift);
+}
+
+PX_FORCE_INLINE void Sc::ActorPair::clearFlags(PxU32 flags)
+{
+	PX_ASSERT(flags < ActorPairFlags::eMAX);
+
+	PxU32 tmpFlags = getFlags();
+	tmpFlags &= ~flags;
+	mTouchCount_internalFlags &= ~sFlagMask;
+	raiseFlags(tmpFlags);
+}
+
+//// Sc::ActorPairReport implementations
 
 PX_FORCE_INLINE Sc::ActorPairReport::ActorPairReport(ActorSim& actor0, ActorSim& actor1) : ActorPair(),
 mActorA			(actor0),
 mActorB			(actor1),
 mReportData		(NULL)
 {
-	PX_ASSERT(mInternalFlags == 0);
-	mInternalFlags = ActorPair::eIS_REPORT_PAIR;
+	PX_ASSERT(getFlags() == 0);
+	raiseFlags(ActorPair::eIS_REPORT_PAIR);
 }
 
 PX_FORCE_INLINE Sc::ActorPairReport::~ActorPairReport()
@@ -208,17 +239,6 @@ PX_FORCE_INLINE void Sc::ActorPairReport::createContactReportData(NPhaseCore& np
 		else
 #endif
 			reportData->mPxActorB = static_cast<const RigidCore&>(actorCoreB).getPxActor();
-	}
-}
-
-PX_FORCE_INLINE void Sc::ActorPairReport::releaseContactReportData(NPhaseCore& npCore)
-{
-	// Can't take the NPhaseCore (scene) reference from the actors since they're already gone on scene release
-
-	if(mReportData)
-	{
-		npCore.releaseActorPairContactReportData(mReportData);
-		mReportData = NULL;
 	}
 }
 

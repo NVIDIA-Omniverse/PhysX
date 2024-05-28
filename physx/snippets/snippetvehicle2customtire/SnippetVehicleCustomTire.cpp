@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -216,8 +216,8 @@ void cleanupPhysX()
 	if (gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();
-		transport->release();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
 }
@@ -338,6 +338,7 @@ void cleanupPhysics()
 	cleanupVehicles();
 	cleanupGroundPlane();
 	cleanupPhysX();
+	printf("SnippetVehicle2CustomTire done.\n");
 }
 
 void stepPhysics()
@@ -385,8 +386,8 @@ int snippetMain(int argc, const char *const* argv)
 		return 1;
 
 #ifdef RENDER_SNIPPET
-	extern void renderLoop();
-	renderLoop();
+	extern void renderLoop(const char*);
+	renderLoop("PhysX Snippet Vehicle2 Custom Tire");
 #else
 	if(initPhysics())
 	{

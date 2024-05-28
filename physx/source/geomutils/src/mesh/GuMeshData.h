@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -65,7 +65,7 @@ namespace Gu {
 
 #define PX_MESH_VERSION 16
 #define PX_TET_MESH_VERSION 1
-#define PX_SOFTBODY_MESH_VERSION 2
+#define PX_SOFTBODY_MESH_VERSION 3 // 3: parallel GS + new linear corotated model.
 
 // these flags are used to indicate/validate the contents of a cooked mesh file
 enum InternalMeshSerialFlag
@@ -557,9 +557,14 @@ enum InternalMeshSerialFlag
 				mGridModelTetraRestPoses = reinterpret_cast<PxMat33*>(PX_ALLOC(nbGridTetrahedrons * sizeof(PxMat33), "mGridModelTetraRestPoses"));
 
 				mGridModelOrderedTetrahedrons = reinterpret_cast<PxU32*>(PX_ALLOC(numElements * sizeof(PxU32), "mGridModelOrderedTetrahedrons"));
-				mGMRemapOutputCP = reinterpret_cast<PxU32*>(PX_ALLOC(remapOutputSize * sizeof(PxU32), "mGMRemapOutputCP"));
+
+				if (remapOutputSize) // tet mesh only (or old hex mesh)
+				{
+					mGMRemapOutputCP = reinterpret_cast<PxU32*>(PX_ALLOC(numElements * numVertsPerElement * sizeof(PxU32), "mGMRemapOutputCP"));
+					mGMAccumulatedCopiesCP = reinterpret_cast<PxU32*>(PX_ALLOC(nbGridVerts * sizeof(PxU32), "mGMAccumulatedCopiesCP"));
+				}
+
 				mGMAccumulatedPartitionsCP = reinterpret_cast<PxU32*>(PX_ALLOC(nbPartitions * sizeof(PxU32), "mGMAccumulatedPartitionsCP"));
-				mGMAccumulatedCopiesCP = reinterpret_cast<PxU32*>(PX_ALLOC(nbGridVerts * sizeof(PxU32), "mGMAccumulatedCopiesCP"));			
 				mGMPullIndices = reinterpret_cast<PxU32*>(PX_ALLOC(numElements * numVertsPerElement * sizeof(PxU32) , "mGMPullIndices"));
 			}
 			

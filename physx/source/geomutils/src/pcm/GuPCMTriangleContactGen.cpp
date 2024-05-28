@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -917,7 +917,7 @@ static void generatedPolyContacts(const PolygonalData& polyData0, const HullPoly
 
 			FloatV u, w;
 			barycentricCoordinates(projPoint, triangle.verts[0], triangle.verts[1], triangle.verts[2], u, w);
-			const BoolV con = BAnd(FIsGrtrOrEq(u, zero), BAnd(FIsGrtrOrEq(w, zero),  FIsGrtrOrEq(one, FAdd(u, w))));
+			const BoolV con = BAnd(FIsGrtrOrEq(u, zero), BAnd(FIsGrtrOrEq(w, zero), FIsGrtrOrEq(one, FAdd(u, w))));
 			
 			if(BAllEqTTTT(con))
 			{

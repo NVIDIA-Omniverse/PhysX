@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -44,10 +44,9 @@
 #include "NpArticulationTendon.h"
 #include "NpAggregate.h"
 
-#include "PxvGlobals.h"
-
 #if PX_SUPPORT_GPU_PHYSX
-#include "NpParticleSystem.h"
+#include "NpPBDParticleSystem.h"
+#include "NpParticleBuffer.h"
 #include "NpSoftBody.h"
 #include "NpFEMCloth.h"
 #include "NpHairSystem.h"
@@ -70,7 +69,6 @@ NpFactory::NpFactory() :
 	, mConnectorArrayPool("connectorArrayPool")
 	, mPtrTableStorageManager(PX_NEW(NpPtrTableStorageManager))
 	, mMaterialPool("MaterialPool")
-	, mGpuMemStat(0)
 #if PX_SUPPORT_PVD
 	, mNpFactoryListener(NULL)
 #endif	
@@ -190,19 +188,6 @@ void NpFactory::addArticulation(PxArticulationReducedCoordinate* npArticulation,
 	OMNI_PVD_NOTIFY_ADD(npArticulation);
 }
 
-#if PX_SUPPORT_GPU_PHYSX
-void NpFactory::addParticleBuffer(PxParticleBuffer* buffer, bool lock)
-{
-	addToTracking(mParticleBufferTracking, buffer, mTrackingMutex, lock);
-}
-
-void NpFactory::onParticleBufferReleaseInternal(PxParticleBuffer* buffer)
-{
-	PxMutex::ScopedLock lock(mTrackingMutex);
-	mParticleBufferTracking.erase(buffer);
-}
-#endif
-
 void NpFactory::releaseArticulationToPool(PxArticulationReducedCoordinate& articulation)
 {
 	PX_ASSERT(articulation.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
@@ -263,7 +248,7 @@ PxArticulationLink* NpFactory::createArticulationLink(NpArticulationReducedCoord
 	NpArticulationLink* npArticulationLink = NpFactory::getInstance().createNpArticulationLink(root, parent, pose);
 	if (!npArticulationLink)
 	{
-		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL,  "Articulation link initialization failed: returned NULL.");
+		PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Articulation link initialization failed: returned NULL.");
 		return NULL;
 	}
 	OMNI_PVD_NOTIFY_ADD(npArticulationLink);
@@ -306,6 +291,29 @@ void NpFactory::releaseArticulationJointRCToPool(NpArticulationJointReducedCoord
 	mArticulationRCJointPool.destroy(&articulationJoint);
 }
 
+NpArticulationMimicJoint* NpFactory::createNpArticulationMimicJoint
+(const PxArticulationJointReducedCoordinate& jointA, const PxArticulationAxis::Enum axisA, 
+ const PxArticulationJointReducedCoordinate& jointB, const PxArticulationAxis::Enum axisB, 
+ const PxReal gearRatio, const PxReal offset)
+{
+	NpArticulationMimicJoint* npArticulationMimicJoint;
+	{
+		PxMutex::ScopedLock lock(mArticulationMimicJointPoolLock);
+		npArticulationMimicJoint = mArticulationMimicJointPool.construct(jointA, axisA, jointB, axisB, gearRatio, offset);
+	}
+	OMNI_PVD_NOTIFY_ADD(npArticulationMimicJoint);
+	return npArticulationMimicJoint;
+}
+
+void NpFactory::releaseArticulationMimicJointToPool(NpArticulationMimicJoint& articulationMimicJoint)
+{
+	PX_ASSERT(articulationMimicJoint.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	OMNI_PVD_NOTIFY_REMOVE(&articulationMimicJoint);
+	PxMutex::ScopedLock lock(mArticulationMimicJointPoolLock);
+	mArticulationMimicJointPool.destroy(&articulationMimicJoint);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////// soft body
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -345,114 +353,97 @@ void NpFactory::releaseFEMClothToPool(PxFEMCloth& femCloth)
 
 //////////////////////////////////////////////////////////////////////////////// particle system
 
-PxPBDParticleSystem* NpFactory::createPBDParticleSystem(PxU32 maxNeighborhood, PxCudaContextManager& cudaContextManager)
+PxPBDParticleSystem* NpFactory::createPBDParticleSystem(PxU32 maxNeighborhood, PxReal neighborhoodScale, PxCudaContextManager& cudaContextManager)
 {
 	PxMutex::ScopedLock lock(mPBDParticleSystemPoolLock);
-
-	//PX_CHECK_MSG(NpPBDParticleSystem::getNumAvailableSystems() > 0, "Max. number of concurrent PxParticleSystem is 256.");
-
-	return mPBDParticleSystemPool.construct(maxNeighborhood, cudaContextManager);
+	PxPBDParticleSystem* ps = mPBDParticleSystemPool.construct(maxNeighborhood, neighborhoodScale, cudaContextManager);
+	OMNI_PVD_NOTIFY_ADD(ps);
+	return ps;
 }
 
 void NpFactory::releasePBDParticleSystemToPool(PxPBDParticleSystem& particleSystem)
 {
 	PX_ASSERT(particleSystem.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	OMNI_PVD_NOTIFY_REMOVE(&particleSystem);
 	PxMutex::ScopedLock lock(mPBDParticleSystemPoolLock);
 	mPBDParticleSystemPool.destroy(static_cast<NpPBDParticleSystem*>(&particleSystem));
 }
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-PxFLIPParticleSystem* NpFactory::createFLIPParticleSystem(PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mFLIPParticleSystemPoolLock);
-
-	//PX_CHECK_MSG(NpFLIPParticleSystem::getNumAvailableSystems() > 0, "Max. number of concurrent PxParticleSystem is 256.");
-
-	return mFLIPParticleSystemPool.construct(cudaContextManager);
-}
-
-void NpFactory::releaseFLIPParticleSystemToPool(PxFLIPParticleSystem& particleSystem)
-{
-	PX_ASSERT(particleSystem.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mFLIPParticleSystemPoolLock);
-	mFLIPParticleSystemPool.destroy(static_cast<NpFLIPParticleSystem*>(&particleSystem));
-}
-
-PxMPMParticleSystem* NpFactory::createMPMParticleSystem(PxCudaContextManager& cudaContextManager)
-{
-	PxMutex::ScopedLock lock(mMPMParticleSystemPoolLock);
-
-	//PX_CHECK_MSG(NpMPMParticleSystem::getNumAvailableSystems() > 0, "Max. number of concurrent PxParticleSystem is 256.");
-
-	return mMPMParticleSystemPool.construct(cudaContextManager);
-}
-
-void NpFactory::releaseMPMParticleSystemToPool(PxMPMParticleSystem& particleSystem)
-{
-	PX_ASSERT(particleSystem.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mMPMParticleSystemPoolLock);
-	mMPMParticleSystemPool.destroy(static_cast<NpMPMParticleSystem*>(&particleSystem));
-}
-#endif
-
 /////////////////////////////////////////////////////////////////////////////// Particle Buffers
 
-PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager* cudaContextManager)
+PxParticleBuffer* NpFactory::createParticleBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxCudaContextManager& cudaContextManager)
 {
-	if(!cudaContextManager)
-		return NULL;
-
-	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-	PX_ASSERT(physxGpu);
-
-	PxParticleBuffer* buffer = physxGpu->createParticleBuffer(maxParticles, maxVolumes, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
+	PxMutex::ScopedLock lock(mParticleBufferPoolLock);
+	PxParticleBuffer* buffer = mParticleBufferPool.construct(maxParticles, maxVolumes, cudaContextManager);
 	addParticleBuffer(buffer);
 	return buffer;
 }
 
-PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager* cudaContextManager)
+PxParticleAndDiffuseBuffer* NpFactory::createParticleAndDiffuseBuffer(PxU32 maxParticles, PxU32 maxVolumes, PxU32 maxDiffuseParticles, PxCudaContextManager& cudaContextManager)
 {
-	if(!cudaContextManager)
-		return NULL;
-
-	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-	PX_ASSERT(physxGpu);
-
-	PxParticleAndDiffuseBuffer* diffuseBuffer = physxGpu->createParticleAndDiffuseBuffer(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
-	addParticleBuffer(diffuseBuffer);
-	return diffuseBuffer;
+	PxMutex::ScopedLock lock(mParticleAndDiffuseBufferPoolLock);
+	PxParticleAndDiffuseBuffer* buffer = mParticleAndDiffuseBufferPool.construct(maxParticles, maxVolumes, maxDiffuseParticles, cudaContextManager);
+	addParticleBuffer(buffer);
+	return buffer;
 }
 
-PxParticleClothBuffer* NpFactory::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager* cudaContextManager)
+PxParticleClothBuffer* NpFactory::createParticleClothBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumCloths, PxU32 maxNumTriangles, PxU32 maxNumSprings, PxCudaContextManager& cudaContextManager)
 {
-	if(!cudaContextManager)
-		return NULL;
-
-	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-	PX_ASSERT(physxGpu);
-
-	PxParticleClothBuffer* clothBuffer = physxGpu->createParticleClothBuffer(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
-	addParticleBuffer(clothBuffer);
-	return clothBuffer;
+	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
+	PxParticleClothBuffer* buffer = mParticleClothBufferPool.construct(maxParticles, maxNumVolumes, maxNumCloths, maxNumTriangles, maxNumSprings, cudaContextManager);
+	addParticleBuffer(buffer);
+	return buffer;
 }
 
-PxParticleRigidBuffer* NpFactory::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager* cudaContextManager)
+PxParticleRigidBuffer* NpFactory::createParticleRigidBuffer(PxU32 maxParticles, PxU32 maxNumVolumes, PxU32 maxNumRigids, PxCudaContextManager& cudaContextManager)
 {
-	if(!cudaContextManager)
-		return NULL;
+	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
+	PxParticleRigidBuffer* buffer = mParticleRigidBufferPool.construct(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager);
+	addParticleBuffer(buffer);
+	return buffer;
+}
 
-	PxPhysXGpu* physxGpu = PxvGetPhysXGpu(true);
-	PX_ASSERT(physxGpu);
+void NpFactory::addParticleBuffer(PxParticleBuffer* buffer, bool lock)
+{
+	addToTracking(mParticleBufferTracking, buffer, mTrackingMutex, lock);
+	OMNI_PVD_NOTIFY_ADD(buffer);
+}
 
-	PxParticleRigidBuffer* rigidBuffer = physxGpu->createParticleRigidBuffer(maxParticles, maxNumVolumes, maxNumRigids, cudaContextManager, &mGpuMemStat, NpFactory::onParticleBufferRelease);
-	addParticleBuffer(rigidBuffer);
-	return rigidBuffer;
+void NpFactory::releaseParticleBufferToPool(PxParticleBuffer& particleBuffer)
+{
+	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	PxMutex::ScopedLock lock(mParticleBufferPoolLock);
+	mParticleBufferPool.destroy(static_cast<NpParticleBuffer*>(&particleBuffer));
+}
+
+void NpFactory::releaseParticleAndDiffuseBufferToPool(PxParticleAndDiffuseBuffer& particleBuffer)
+{
+	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	PxMutex::ScopedLock lock(mParticleAndDiffuseBufferPoolLock);
+	mParticleAndDiffuseBufferPool.destroy(static_cast<NpParticleAndDiffuseBuffer*>(&particleBuffer));
+}
+
+void NpFactory::releaseParticleClothBufferToPool(PxParticleClothBuffer& particleBuffer)
+{
+	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	PxMutex::ScopedLock lock(mParticleClothBufferPoolLock);
+	mParticleClothBufferPool.destroy(static_cast<NpParticleClothBuffer*>(&particleBuffer));
+}
+
+void NpFactory::releaseParticleRigidBufferToPool(PxParticleRigidBuffer& particleBuffer)
+{
+	PX_ASSERT(particleBuffer.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
+	PxMutex::ScopedLock lock(mParticleRigidBufferPoolLock);
+	mParticleRigidBufferPool.destroy(static_cast<NpParticleRigidBuffer*>(&particleBuffer));
 }
 
 void NpFactory::onParticleBufferRelease(PxParticleBuffer* buffer)
 {
-	NpFactory::getInstance().onParticleBufferReleaseInternal(buffer);
+	OMNI_PVD_NOTIFY_REMOVE(buffer);
+	PxMutex::ScopedLock lock(mTrackingMutex);
+	mParticleBufferTracking.erase(buffer);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////// HairSystem
 
@@ -720,123 +711,6 @@ void NpFactory::releasePBDMaterialToPool(PxPBDMaterial& material_)
 #endif
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-PxFLIPMaterial* NpFactory::createFLIPMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal gravityScale)
-{
-#if PX_SUPPORT_GPU_PHYSX
-
-	PxsFLIPMaterialData materialData;
-	materialData.friction = friction;
-	materialData.damping = damping;
-	materialData.adhesion = adhesion;
-	materialData.viscosity = viscosity;
-	materialData.gravityScale = gravityScale;
-	materialData.adhesionRadiusScale = 0.f;
-
-	NpFLIPMaterial* npMaterial;
-	{
-		PxMutex::ScopedLock lock(mFLIPMaterialPoolLock);
-		npMaterial = mFLIPMaterialPool.construct(materialData);
-	}
-	return npMaterial;
-
-#else
-	PX_UNUSED(friction);
-	PX_UNUSED(damping);
-	PX_UNUSED(adhesion);
-	PX_UNUSED(viscosity);
-	PX_UNUSED(gravityScale);
-	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxFLIPMaterial is not supported on this platform.");
-	return NULL;
-#endif
-}
-
-void NpFactory::releaseFLIPMaterialToPool(PxFLIPMaterial& material_)
-{
-#if PX_SUPPORT_GPU_PHYSX
-	NpFLIPMaterial& material = static_cast<NpFLIPMaterial&>(material_);
-	PX_ASSERT(material.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mFLIPMaterialPoolLock);
-	mFLIPMaterialPool.destroy(&material);
-#else
-	PX_UNUSED(material_);
-#endif
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-PxMPMMaterial* NpFactory::createMPMMaterial(
-	PxReal friction, PxReal damping, PxReal adhesion, 
-	bool isPlastic, PxReal youngsModulus, PxReal poissons, PxReal hardening, 
-	PxReal criticalCompression, PxReal criticalStretch, 
-	PxReal tensileDamageSensitivity, PxReal compressiveDamageSensitivity, 
-	PxReal attractiveForceResidual, PxReal gravityScale)
-{
-#if PX_SUPPORT_GPU_PHYSX
-	PxsMPMMaterialData materialData;
-	materialData.friction = friction;
-	materialData.damping = damping;
-	materialData.adhesion = adhesion;
-	materialData.adhesionRadiusScale = 0.f;
-	materialData.isPlastic = isPlastic;
-	materialData.youngsModulus = youngsModulus;
-	materialData.poissonsRatio = poissons;
-	materialData.hardening = hardening;
-	materialData.criticalCompression = criticalCompression;
-	materialData.criticalStretch = criticalStretch;
-	materialData.tensileDamageSensitivity = tensileDamageSensitivity;
-	materialData.compressiveDamageSensitivity = compressiveDamageSensitivity;
-	materialData.attractiveForceResidual = attractiveForceResidual;
-	materialData.gravityScale = gravityScale;
-	materialData.materialModel = PxMPMMaterialModel::eNEO_HOOKEAN;
-	materialData.cuttingFlags = PxMPMCuttingFlag::eNONE;
-	materialData.yieldStress = 30000;
-	materialData.sandFrictionAngle = 3.1415926535898f * 0.25f;
-	materialData.density = 500.0f;
-	materialData.stretchAndShearDamping = 0.0f;
-	materialData.rotationalDamping = 0.0f;
-
-	NpMPMMaterial* npMaterial;
-	{
-		PxMutex::ScopedLock lock(mMPMMaterialPoolLock);
-		npMaterial = mMPMMaterialPool.construct(materialData);
-	}
-	return npMaterial;
-
-#else
-	PX_UNUSED(friction);
-	PX_UNUSED(damping);
-	PX_UNUSED(adhesion);
-	PX_UNUSED(isPlastic);
-	PX_UNUSED(youngsModulus);
-	PX_UNUSED(poissons);
-	PX_UNUSED(hardening);
-	PX_UNUSED(criticalCompression);
-	PX_UNUSED(criticalStretch);
-	PX_UNUSED(tensileDamageSensitivity);
-	PX_UNUSED(compressiveDamageSensitivity);
-	PX_UNUSED(attractiveForceResidual);
-	PX_UNUSED(gravityScale);
-	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxMPMMaterial is not supported on this platform.");
-	return NULL;
-#endif
-}
-
-void NpFactory::releaseMPMMaterialToPool(PxMPMMaterial& material_)
-{
-#if PX_SUPPORT_GPU_PHYSX
-	NpMPMMaterial& material = static_cast<NpMPMMaterial&>(material_);
-	PX_ASSERT(material.getBaseFlags() & PxBaseFlag::eOWNS_MEMORY);
-	PxMutex::ScopedLock lock(mMPMMaterialPoolLock);
-	mMPMMaterialPool.destroy(&material);
-#else
-	PX_UNUSED(material_);
-#endif
-}
-
-#endif // PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 #endif // PX_SUPPORT_GPU_PHYSX
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1136,6 +1010,13 @@ static PX_FORCE_INLINE void releaseToPool(PxArticulationJointReducedCoordinate* 
 	NpFactory::getInstance().releaseArticulationJointRCToPool(*static_cast<NpArticulationJointReducedCoordinate*>(np));
 }
 
+static PX_FORCE_INLINE void releaseToPool(PxArticulationMimicJoint* np)
+{
+	PX_ASSERT(np->getConcreteType() == PxConcreteType::eARTICULATION_MIMIC_JOINT);
+	NpFactory::getInstance().releaseArticulationMimicJointToPool(*static_cast<NpArticulationMimicJoint*>(np));
+}
+
+
 static PX_FORCE_INLINE void releaseToPool(PxArticulationReducedCoordinate* np)
 {
 	NpFactory::getInstance().releaseArticulationToPool(*np);
@@ -1174,19 +1055,25 @@ static PX_FORCE_INLINE void releaseToPool(NpPBDParticleSystem* np)
 	NpFactory::getInstance().releasePBDParticleSystemToPool(*np);
 }
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-static PX_FORCE_INLINE void releaseToPool(NpFLIPParticleSystem* np)
+static PX_FORCE_INLINE void releaseToPool(NpParticleBuffer* np)
 {
-	NpFactory::getInstance().releaseFLIPParticleSystemToPool(*np);
+	NpFactory::getInstance().releaseParticleBufferToPool(*np);
 }
-#endif
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-static PX_FORCE_INLINE void releaseToPool(NpMPMParticleSystem* np)
+static PX_FORCE_INLINE void releaseToPool(NpParticleAndDiffuseBuffer* np)
 {
-	NpFactory::getInstance().releaseMPMParticleSystemToPool(*np);
+	NpFactory::getInstance().releaseParticleAndDiffuseBufferToPool(*np);
 }
-#endif
+
+static PX_FORCE_INLINE void releaseToPool(NpParticleClothBuffer* np)
+{
+	NpFactory::getInstance().releaseParticleClothBufferToPool(*np);
+}
+
+static PX_FORCE_INLINE void releaseToPool(NpParticleRigidBuffer* np)
+{
+	NpFactory::getInstance().releaseParticleRigidBufferToPool(*np);
+}
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 static PX_FORCE_INLINE void releaseToPool(NpHairSystem* np)
@@ -1216,6 +1103,7 @@ void physx::NpDestroyShape(NpShape* np)												{ NpDestroy(np);	}
 void physx::NpDestroyConstraint(NpConstraint* np)									{ NpDestroy(np);	}
 void physx::NpDestroyArticulationLink(NpArticulationLink* np)						{ NpDestroy(np);	}
 void physx::NpDestroyArticulationJoint(PxArticulationJointReducedCoordinate* np)	{ NpDestroy(np);	}
+void physx::NpDestroyArticulationMimicJoint(PxArticulationMimicJoint* np)			{ NpDestroy(np);	}
 void physx::NpDestroyArticulation(PxArticulationReducedCoordinate* np)				{ NpDestroy(np);	}
 #if PX_SUPPORT_GPU_PHYSX
 void physx::NpDestroySoftBody(NpSoftBody* np)										{ NpDestroy(np);	}
@@ -1223,9 +1111,11 @@ void physx::NpDestroySoftBody(NpSoftBody* np)										{ NpDestroy(np);	}
 void physx::NpDestroyFEMCloth(NpFEMCloth* np)										{ NpDestroy(np);	}
 #endif
 void physx::NpDestroyParticleSystem(NpPBDParticleSystem* np)						{ NpDestroy(np);	}
+void physx::NpDestroyParticleBuffer(NpParticleBuffer* np)							{ NpDestroy(np);	}
+void physx::NpDestroyParticleBuffer(NpParticleAndDiffuseBuffer* np)					{ NpDestroy(np); }
+void physx::NpDestroyParticleBuffer(NpParticleClothBuffer* np)						{ NpDestroy(np); }
+void physx::NpDestroyParticleBuffer(NpParticleRigidBuffer* np)						{ NpDestroy(np); }
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-void physx::NpDestroyParticleSystem(NpFLIPParticleSystem* np)						{ NpDestroy(np);	}
-void physx::NpDestroyParticleSystem(NpMPMParticleSystem* np)						{ NpDestroy(np);	}
 void physx::NpDestroyHairSystem(NpHairSystem* np)									{ NpDestroy(np);	}
 #endif
 #endif

@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_BASE_MATERIAL_H
 #define PX_BASE_MATERIAL_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxBase.h"
@@ -43,7 +40,7 @@ namespace physx
 	/**
 	\brief Base material class.
 
-	@see PxPhysics.createMaterial PxPhysics.createFEMClothMaterial PxPhysics.createFEMSoftBodyMaterial PxPhysics.createFLIPMaterial PxPhysics.createMPMMaterial PxPhysics.createPBDMaterial
+	\see PxPhysics.createMaterial PxPhysics.createFEMClothMaterial PxPhysics.createFEMSoftBodyMaterial PxPhysics.createPBDMaterial
 	*/
 	class PxBaseMaterial : public PxRefCounted
 	{
@@ -60,5 +57,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

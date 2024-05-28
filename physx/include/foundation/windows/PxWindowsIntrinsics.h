@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -81,6 +81,18 @@ PX_FORCE_INLINE void PxMemoryBarrier()
 /*!
 Returns the index of the highest set bit. Not valid for zero arg.
 */
+PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint64_t v)
+{
+	unsigned long retval;
+#ifndef PX_GENERATE_META_DATA
+	_BitScanReverse64(&retval, v);
+#endif
+	return retval;
+}
+
+/*!
+Returns the index of the highest set bit. Not valid for zero arg.
+*/
 PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint32_t v)
 {
 	unsigned long retval;
@@ -89,7 +101,19 @@ PX_FORCE_INLINE uint32_t PxHighestSetBitUnsafe(uint32_t v)
 }
 
 /*!
-Returns the index of the highest set bit. Undefined for zero arg.
+Returns the index of the lowest set bit. Undefined for zero arg.
+*/
+PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint64_t v)
+{
+	unsigned long retval;
+#ifndef PX_GENERATE_META_DATA
+	_BitScanForward64(&retval, v);
+#endif
+	return retval;
+}
+
+/*!
+Returns the index of the lowest set bit. Undefined for zero arg.
 */
 PX_FORCE_INLINE uint32_t PxLowestSetBitUnsafe(uint32_t v)
 {

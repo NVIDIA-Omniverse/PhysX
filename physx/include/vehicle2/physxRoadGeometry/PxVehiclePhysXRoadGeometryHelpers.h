@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
 
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxPreprocessor.h"
 
@@ -54,14 +51,14 @@ struct PxVehicleFrame;
 \param[in] physics is a PxPhysics instance.
 \param[in] params is a PxCookingParams instance
 \return Return a PxConvexMesh instance that represents a convex hull with unit radius and half-width.
-@see PxVehicleUnitCylinderSweepMeshDestroy
+\see PxVehicleUnitCylinderSweepMeshDestroy
 */
 PxConvexMesh* PxVehicleUnitCylinderSweepMeshCreate(const PxVehicleFrame& vehicleFrame, PxPhysics& physics, const PxCookingParams& params);
 
 /**
 \brief Release the mesh created with PxVehicleUnitCylinderSweepMeshCreate.
 \param[in] mesh is a PxConvexMesh instance.
-@see PxVehicleUnitCylinderSweepMeshCreate
+\see PxVehicleUnitCylinderSweepMeshCreate
 */
 void PxVehicleUnitCylinderSweepMeshDestroy(PxConvexMesh* mesh);
 
@@ -70,4 +67,3 @@ void PxVehicleUnitCylinderSweepMeshDestroy(PxConvexMesh* mesh);
 } // namespace physx
 #endif
 
-/** @} */

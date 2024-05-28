@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,6 +40,9 @@ namespace physx
 {
 #endif
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleChassisData
 {
 public:
@@ -82,6 +85,9 @@ private:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleChassisData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleEngineData
 {
 public:
@@ -235,6 +241,9 @@ public:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleEngineData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleGearsData
 {
 public:
@@ -340,6 +349,9 @@ public:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleGearsData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleAutoBoxData
 {
 public:
@@ -388,7 +400,7 @@ public:
 	
 	\note Specified in seconds (s).
 
-	@see getLatency
+	\see getLatency
 	*/
 	void setLatency(const PxReal latency) 
 	{ 
@@ -400,7 +412,7 @@ public:
 	
 	\note Specified in seconds (s).
 
-	@see setLatency
+	\see setLatency
 	*/
 	PxReal getLatency() const 
 	{ 
@@ -423,6 +435,9 @@ public:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleAutoBoxData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleDifferential4WData
 {
 public:
@@ -528,6 +543,9 @@ public:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleDifferential4WData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleDifferentialNWData
 {
 public:
@@ -575,6 +593,9 @@ public:
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleDifferentialNWData)& 0x0f));
 
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleAckermannGeometryData
 {
 public:
@@ -645,8 +666,9 @@ public:
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleAckermannGeometryData)& 0x0f));
 
 /**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
 \brief Choose between a potentially more expensive but more accurate solution to the clutch model or a potentially cheaper but less accurate solution.
-@see PxVehicleClutchData
+\see PxVehicleClutchData
 */
 struct PX_DEPRECATED PxVehicleClutchAccuracyMode
 {
@@ -657,6 +679,9 @@ struct PX_DEPRECATED PxVehicleClutchAccuracyMode
 	};
 };
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleClutchData
 {
 public:
@@ -734,6 +759,8 @@ PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleClutchData)& 0x0f));
 
 
 /**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+
 \brief Tire load variation can be strongly dependent on the time-step so it is a good idea to filter it 
 to give less jerky handling behavior. 
 
@@ -811,6 +838,9 @@ public:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleTireLoadFilterData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleWheelData
 {
 public:
@@ -916,14 +946,14 @@ public:
 	/**
 	\brief Return value equal to 1.0f/mRadius
 	
-	@see PxVehicleWheelsSimData::setWheelData
+	\see PxVehicleWheelsSimData::setWheelData
 	*/
 	PX_FORCE_INLINE PxReal getRecipRadius() const {return mRecipRadius;}
 
 	/**
 	\brief Return value equal to 1.0f/mRecipMOI
 	
-	@see PxVehicleWheelsSimData::setWheelData
+	\see PxVehicleWheelsSimData::setWheelData
 	*/
 	PX_FORCE_INLINE PxReal getRecipMOI() const {return mRecipMOI;}
 
@@ -953,6 +983,9 @@ private:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleWheelData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleSuspensionData
 {
 public:
@@ -1037,7 +1070,7 @@ public:
 	To help decouple vehicle handling from visual wheel positioning this condition is not enforced.  
 	In practice, the value of |gravity|*mSprungMass + deltaX*mSpringStrength is clamped at zero to ensure it never falls negative.
 
-	@see PxVehicleComputeSprungMasses, PxVehicleWheelsSimData::setWheelCentreOffset, PxVehicleSuspensionData::mSpringStrength, PxVehicleSuspensionData::mSpringDamperRate, PxVehicleSuspensionData::mMaxDroop
+	\see PxVehicleComputeSprungMasses, PxVehicleWheelsSimData::setWheelCentreOffset, PxVehicleSuspensionData::mSpringStrength, PxVehicleSuspensionData::mSpringDamperRate, PxVehicleSuspensionData::mMaxDroop
 
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	*/
@@ -1132,6 +1165,9 @@ private:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleSuspensionData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleAntiRollBarData
 {
 public:
@@ -1172,6 +1208,9 @@ private:
 };
 PX_COMPILE_TIME_ASSERT(0==(sizeof(PxVehicleAntiRollBarData)& 0x0f));
 
+/**
+\deprecated This API is replaced by a new API, see the Vehicles section in the 4.0 to 5.1 migration guide.
+*/
 class PX_DEPRECATED PxVehicleTireData
 {
 public:
@@ -1278,7 +1317,7 @@ public:
 	\note The final friction value used by the tire model is the value returned by PxVehicleDrivableSurfaceToTireFrictionPairs 
 	multiplied by the value computed from mFrictionVsSlipGraph.
 
-	@see PxVehicleDrivableSurfaceToTireFrictionPairs, PxVehicleComputeTireForce
+	\see PxVehicleDrivableSurfaceToTireFrictionPairs, PxVehicleComputeTireForce
 	
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	*/
@@ -1287,7 +1326,7 @@ public:
 	/**
 	\brief Tire type denoting slicks, wets, snow, winter, summer, all-terrain, mud etc.
 	
-	@see PxVehicleDrivableSurfaceToTireFrictionPairs
+	\see PxVehicleDrivableSurfaceToTireFrictionPairs
 	
 	<b>Range:</b> [0, PX_MAX_F32)<br>
 	*/
@@ -1296,21 +1335,21 @@ public:
 	/**
 	\brief Return Cached value of 1.0/mLongitudinalStiffnessPerUnitGravity
 	
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PX_FORCE_INLINE PxReal getRecipLongitudinalStiffnessPerUnitGravity() const {return mRecipLongitudinalStiffnessPerUnitGravity;}
 
 	/**
 	\brief Return Cached value of 1.0f/(mFrictionVsSlipGraph[1][0]-mFrictionVsSlipGraph[0][0])
 	
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PX_FORCE_INLINE PxReal getFrictionVsSlipGraphRecipx1Minusx0() const {return mFrictionVsSlipGraphRecipx1Minusx0;}
 
 	/**
 	\brief Return Cached value of 1.0f/(mFrictionVsSlipGraph[2][0]-mFrictionVsSlipGraph[1][0])
 	
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PX_FORCE_INLINE PxReal getFrictionVsSlipGraphRecipx2Minusx1() const {return mFrictionVsSlipGraphRecipx2Minusx1;}
 
@@ -1321,7 +1360,7 @@ private:
 	
 	\note Not necessary to set this value because it is set by PxVehicleWheelsSimData::setTireData
 
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PxReal mRecipLongitudinalStiffnessPerUnitGravity;
 
@@ -1330,7 +1369,7 @@ private:
 	
 	\note Not necessary to set this value because it is set by PxVehicleWheelsSimData::setTireData
 	
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PxReal mFrictionVsSlipGraphRecipx1Minusx0;
 
@@ -1339,7 +1378,7 @@ private:
 	
 	\note Not necessary to set this value because it is set by PxVehicleWheelsSimData::setTireData
 
-	@see PxVehicleWheelsSimData::setTireData
+	\see PxVehicleWheelsSimData::setTireData
 	*/
 	PxReal mFrictionVsSlipGraphRecipx2Minusx1;
 

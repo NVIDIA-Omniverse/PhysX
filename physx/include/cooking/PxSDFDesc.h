@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_SDF_DESC_H
 #define PX_SDF_DESC_H
-/** \addtogroup cooking
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "geometry/PxSimpleTriangleMesh.h"
@@ -134,7 +131,7 @@ namespace physx
 
 		/**
 		\brief Narrow band thickness as a fraction of the bounds diagonal length. Every subgrid block that 
-		overlaps with the narrow band around the mesh surface will be kept providing high resultion around the mesh surface. 
+		overlaps with the narrow band around the mesh surface will be kept providing high resolution around the mesh surface. 
 		The valid range of this parameter is (0, 1). The higher the value, the more subgrids will get created, the more memory will be required.
 		*/
 		PxReal narrowBandThicknessRelativeToSdfBoundsDiagonal;
@@ -151,8 +148,8 @@ namespace physx
 		PxSimpleTriangleMesh baseMesh;
 
 		/**
-		\brief Optional pointer to an instance of a SDF builder. This siginificantly speeds up the construction of the SDF since the default sdf builer will do almost all computations directly on the GPU.
-		The user must release the instance of the sdfBuilder once cooking completed.
+		\brief Optional pointer to an instance of a SDF builder. This significantly speeds up the construction of the SDF since the default SDF builder will do almost all computations directly on the GPU.
+		The user must release the instance of the SDF builder once cooking completed.
 		*/
 		PxSDFBuilder* sdfBuilder;
 
@@ -206,5 +203,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

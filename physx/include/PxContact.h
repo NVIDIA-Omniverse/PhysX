@@ -22,21 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_CONTACT_H
 #define PX_CONTACT_H
 
-/** \addtogroup physics
-  @{
-*/
 
 #include "foundation/PxVec3.h"
 #include "foundation/PxAssert.h"
 #include "PxConstraintDesc.h"
 #include "PxNodeIndex.h"
+#include "PxMaterial.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -112,7 +110,7 @@ struct PxContactPatch
 
 	/**
 	\brief The combined material flag of two actors that come in contact
-	@see PxMaterialFlag, PxCombineMode
+	\see PxMaterialFlag, PxCombineMode
 	*/
 	PxU8	materialFlags;
 
@@ -291,7 +289,7 @@ struct PxContactStreamIterator
 
 	/**
 	\brief Specifies if this contactPatch has face indices (handled as bool)
-	@see faceIndice
+	\see faceIndice
 	*/
 	PxU32 hasFaceIndices;
 
@@ -632,6 +630,179 @@ private:
 };
 
 /**
+\brief Contact patch friction information.
+*/
+struct PxFrictionPatch
+{
+	/**
+	\brief Max anchors per patch
+	*/
+	static const PxU32 MAX_ANCHOR_COUNT = 2;
+
+	/**
+	\brief Friction anchors' positions
+	*/
+	PxVec3 anchorPositions[MAX_ANCHOR_COUNT];
+
+	/**
+	\brief Friction anchors' impulses
+	*/
+	PxVec3 anchorImpulses[MAX_ANCHOR_COUNT];
+
+	/**
+	\brief Friction anchor count
+	*/
+	PxU32 anchorCount;
+};
+
+/**
+\brief A class to iterate over a friction anchor stream.
+*/
+class PxFrictionAnchorStreamIterator
+{
+public:
+	/**
+	\brief Constructor
+	\param contactPatches Pointer to first patch header in contact stream containing contact patch data
+	\param frictionPatches Buffer containing contact patches friction information.
+	\param patchCount Number of contact patches stored in the contact stream
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxFrictionAnchorStreamIterator(const PxU8* contactPatches, const PxU8* frictionPatches, PxU32 patchCount)
+		:
+		mContactPatches(reinterpret_cast<const PxContactPatch*>(contactPatches)),
+		mFrictionPatches(reinterpret_cast<const PxFrictionPatch*>(frictionPatches)),
+		mPatchCount(patchCount),
+		mFrictionAnchorIndex(-1),
+		mPatchIndex(-1)
+	{}
+
+	/**
+	\brief Check if there are more patches.
+	\return true if there are more patches.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool hasNextPatch() const
+	{
+		return isValid() && mPatchIndex < PxI32(mPatchCount) - 1;
+	}
+
+	/**
+	\brief Advance to the next patch.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void nextPatch()
+	{
+		PX_ASSERT(hasNextPatch());
+		++mPatchIndex;
+		mFrictionAnchorIndex = -1;
+	}
+
+	/**
+	\brief Check if current patch has more friction anchors.
+	\return true if there are more friction anchors in current patch.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool hasNextFrictionAnchor() const
+	{
+		return patchIsValid() && mFrictionAnchorIndex < PxI32(mFrictionPatches[mPatchIndex].anchorCount) - 1;
+	}
+
+	/**
+	\brief Advance to the next friction anchor in the patch.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void nextFrictionAnchor()
+	{
+		PX_ASSERT(hasNextFrictionAnchor());
+		mFrictionAnchorIndex++;
+	}
+
+	/**
+	\brief Get the friction anchor's position.
+	\return The friction anchor's position.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE const PxVec3& getPosition() const
+	{
+		PX_ASSERT(frictionAnchorIsValid());
+		return mFrictionPatches[mPatchIndex].anchorPositions[mFrictionAnchorIndex];
+	}
+
+	/**
+	\brief Get the friction anchor's impulse.
+	\return The friction anchor's impulse.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE const PxVec3& getImpulse() const
+	{
+		PX_ASSERT(frictionAnchorIsValid());
+		return mFrictionPatches[mPatchIndex].anchorImpulses[mFrictionAnchorIndex];
+	}
+
+	/**
+	\brief Get current patch's static friction coefficient.
+	\return The patch's static friction coefficient.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getStaticFriction() const
+	{
+		PX_ASSERT(patchIsValid());
+		return mContactPatches[mPatchIndex].staticFriction;
+	}
+
+	/**
+	\brief Get current patch's dynamic friction coefficient.
+	\return The patch's dynamic friction coefficient.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal getDynamicFriction() const
+	{
+		PX_ASSERT(patchIsValid());
+		return mContactPatches[mPatchIndex].dynamicFriction;
+	}
+
+	/**
+	\brief Get current patch's combined material flags.
+	\return The patch's combined material flags.
+	\see PxMaterialFlag, PxCombineMode
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxMaterialFlags getMaterialFlags() const
+	{
+		PX_ASSERT(patchIsValid());
+		return PxMaterialFlags(mContactPatches[mPatchIndex].materialFlags);
+	}
+
+private:
+
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxFrictionAnchorStreamIterator();
+
+	/**
+	\brief Check if valid.
+	\return true if valid.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool isValid() const
+	{
+		return mContactPatches && mFrictionPatches;
+	}
+
+	/**
+	\brief Check if current patch is valid.
+	\return true if current patch is valid.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool patchIsValid() const
+	{
+		return isValid() && mPatchIndex >= 0 && mPatchIndex < PxI32(mPatchCount);
+	}
+
+	/**
+	\brief Check if current friction anchor is valid.
+	\return true if current friction anchor is valid.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE bool frictionAnchorIsValid() const
+	{
+		return patchIsValid() && mFrictionAnchorIndex >= 0 && mFrictionAnchorIndex < PxI32(mFrictionPatches[mPatchIndex].anchorCount);
+	}
+
+	const PxContactPatch* mContactPatches;
+	const PxFrictionPatch* mFrictionPatches;
+	const PxU32 mPatchCount;
+	PxI32 mFrictionAnchorIndex;
+	PxI32 mPatchIndex;
+};
+
+/**
 \brief Contains contact information for a contact reported by the direct-GPU contact report API. See PxScene::copyContactData().
 */
 struct PxGpuContactPair
@@ -639,6 +810,7 @@ struct PxGpuContactPair
 	PxU8* contactPatches;				//!< Ptr to contact patches. Type: PxContactPatch*, size: nbPatches.
 	PxU8* contactPoints;				//!< Ptr to contact points. Type: PxContact*, size: nbContacts.
 	PxReal* contactForces;				//!< Ptr to contact forces. Size: nbContacts.
+	PxU8* frictionPatches;				//!< Ptr to friction patch information. Type: PxFrictionPatch*, size: nbPatches.
 	PxU32 transformCacheRef0;			//!< Ref to shape0's transform in transform cache.
 	PxU32 transformCacheRef1;			//!< Ref to shape1's transform in transform cache.
 	PxNodeIndex nodeIndex0;				//!< Unique Id for actor0 if the actor is dynamic.
@@ -659,5 +831,4 @@ struct PxGpuContactPair
 } // namespace physx
 #endif
 
-/** @} */
 #endif

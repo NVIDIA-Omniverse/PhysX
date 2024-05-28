@@ -22,17 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PARTICLE_EXT_H
 #define PX_PARTICLE_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
-#include "PxParticleSystem.h"
+#include "PxPBDParticleSystem.h"
 #include "PxParticleBuffer.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxHashMap.h"
@@ -98,8 +95,10 @@ struct PxParticleRigidDesc
 
 /**
 \brief Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to PxParticleClothBuffer.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-class PxParticleClothBufferHelper
+class PX_DEPRECATED PxParticleClothBufferHelper
 {
 public:
 	virtual void release() = 0;
@@ -124,7 +123,7 @@ public:
 	\param[in] restPositions A pointer to the particle rest positions
 	\param[in] numParticles The number of particles in this cloth
 	
-	@see PxParticleCloth PxParticleSpring
+	\see PxParticleCloth PxParticleSpring
 	*/
 	virtual void addCloth(const PxParticleCloth& particleCloth, 
 		const PxU32* triangles, const PxU32 numTriangles,
@@ -146,7 +145,7 @@ public:
 	\param[in] restPositions A pointer to the particle rest positions
 	\param[in] numParticles The number of particles in this cloth
 
-	@see PxParticleSpring
+	\see PxParticleSpring
 	*/
 	virtual void addCloth(const PxReal blendScale, const PxReal restVolume, const PxReal pressure, 
 		const PxU32* triangles, const PxU32 numTriangles,
@@ -158,7 +157,7 @@ public:
 
 	\return the PxParticleClothDesc.
 
-	@see PxCreateAndPopulateParticleClothBuffer, PxParticleClothPreProcessor::partitionSprings
+	\see PxCreateAndPopulateParticleClothBuffer, PxParticleClothPreProcessor::partitionSprings
 	*/
 	virtual PxParticleClothDesc& getParticleClothDesc() = 0;
 
@@ -169,8 +168,10 @@ protected:
 
 /**
 \brief Helper struct that holds information about a specific mesh in a PxParticleVolumeBufferHelper.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-struct PxParticleVolumeMesh
+struct PX_DEPRECATED PxParticleVolumeMesh
 {
 	PxU32 startIndex;	//!< The index of the first triangle of this mesh in the triangle array of the PxParticleVolumeBufferHelper instance.
 	PxU32 count;		//!< The number of triangles of this mesh.
@@ -178,8 +179,10 @@ struct PxParticleVolumeMesh
 
 /**
 \brief Helper class to manage communicating PxParticleVolumes data to PxParticleBuffer.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-class PxParticleVolumeBufferHelper
+class PX_DEPRECATED PxParticleVolumeBufferHelper
 {
 public:
 	virtual void release() = 0;
@@ -220,8 +223,10 @@ protected:
 
 /**
 \brief Helper class to manage PxParticleRigidDesc buffers used for communicating particle based rigids to PxPaticleSystem.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-class PxParticleRigidBufferHelper
+class PX_DEPRECATED PxParticleRigidBufferHelper
 {
 public:
 	virtual void release() = 0;
@@ -259,8 +264,10 @@ protected:
 
 /**
 \brief Holds user-defined attachment data to attach particles to other bodies
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 */
-class PxParticleAttachmentBuffer : public PxUserAllocated
+class PX_DEPRECATED PxParticleAttachmentBuffer : public PxUserAllocated
 {		
 	PxArray<PxParticleRigidAttachment> mAttachments;
 	PxArray<PxParticleRigidFilterPair> mFilters;
@@ -285,7 +292,7 @@ class PxParticleAttachmentBuffer : public PxUserAllocated
 
 public:
 
-	PxParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
+	PxParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxPBDParticleSystem& particleSystem);
 
 	~PxParticleAttachmentBuffer();
 
@@ -301,16 +308,20 @@ public:
 /**
 \brief Creates a PxParticleRigidBufferHelper.
 
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
+
 \param[in] maxRigids The maximum number of rigids this PxParticleRigidsBuffers instance should hold.
 \param[in] maxParticles The maximum number of particles this PxParticleRigidBufferHelper instance should hold.
 \param[in] cudaContextManager A pointer to a PxCudaContextManager.
 
 \return A pointer to the new PxParticleRigidBufferHelper.
 */
-PxParticleRigidBufferHelper* 			PxCreateParticleRigidBufferHelper(PxU32 maxRigids, PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
+PX_DEPRECATED PxParticleRigidBufferHelper* PxCreateParticleRigidBufferHelper(PxU32 maxRigids, PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
 
 /**
 \brief Creates a PxParticleClothBufferHelper helper.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 
 \param[in] maxCloths The maximum number of cloths this PxParticleClothBufferHelper should hold.
 \param[in] maxTriangles The maximum number of triangles this PxParticleClothBufferHelper should hold. 
@@ -320,7 +331,7 @@ PxParticleRigidBufferHelper* 			PxCreateParticleRigidBufferHelper(PxU32 maxRigid
 
 \return A pointer to the PxParticleClothBufferHelper that was created.
 */
-PxParticleClothBufferHelper* 			PxCreateParticleClothBufferHelper(const PxU32 maxCloths, const PxU32 maxTriangles, const PxU32 maxSprings, const PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
+PX_DEPRECATED PxParticleClothBufferHelper* PxCreateParticleClothBufferHelper(const PxU32 maxCloths, const PxU32 maxTriangles, const PxU32 maxSprings, const PxU32 maxParticles, PxCudaContextManager* cudaContextManager);
 
 /**
 \brief Creates a PxParticleVolumeBufferHelper.
@@ -331,16 +342,18 @@ PxParticleClothBufferHelper* 			PxCreateParticleClothBufferHelper(const PxU32 ma
 
 \return A pointer to the new PxParticleVolumeBufferHelper.
 */
-PxParticleVolumeBufferHelper* 			PxCreateParticleVolumeBufferHelper(PxU32 maxVolumes, PxU32 maxTriangles, PxCudaContextManager* cudaContextManager);
+PX_DEPRECATED PxParticleVolumeBufferHelper* PxCreateParticleVolumeBufferHelper(PxU32 maxVolumes, PxU32 maxTriangles, PxCudaContextManager* cudaContextManager);
 
 /**
 \brief Creates a particle attachment buffer
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 
 \param[in] particleBuffer The particle buffer that contains particles that should get attached to something
 \param[in] particleSystem The particle system that is used to simulate the userBuffer
 \return An attachment buffer ready to use
 */
-PxParticleAttachmentBuffer*				PxCreateParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
+PX_DEPRECATED PxParticleAttachmentBuffer* PxCreateParticleAttachmentBuffer(PxParticleBuffer& particleBuffer, PxParticleSystem& particleSystem);
 
 /**
 \brief Creates and populates a particle buffer
@@ -363,24 +376,28 @@ PxParticleAndDiffuseBuffer*				PxCreateAndPopulateParticleAndDiffuseBuffer(const
 /**
 \brief Creates and populates a particle cloth buffer
 
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
+
 \param[in] desc The particle buffer descriptor
 \param[in] clothDesc The cloth descriptor
 \param[out] output A cloth output object to further configure the behavior of the cloth
 \param[in] cudaContextManager A cuda context manager
 \return A fully populated particle cloth buffer ready to use
 */
-PxParticleClothBuffer*					PxCreateAndPopulateParticleClothBuffer(const ExtGpu::PxParticleBufferDesc& desc, const PxParticleClothDesc& clothDesc,
+PX_DEPRECATED PxParticleClothBuffer* PxCreateAndPopulateParticleClothBuffer(const ExtGpu::PxParticleBufferDesc& desc, const PxParticleClothDesc& clothDesc,
 											PxPartitionedParticleCloth& output, PxCudaContextManager* cudaContextManager);
 
 /**
 \brief Creates and populates a particle rigid buffer. Particle rigids are particles that try to keep their relative positions. They are a bit commpressible similar to softbodies.
+
+\deprecated Particle-cloth, -rigids, -attachments and -volumes have been deprecated.
 
 \param[in] desc The particle buffer descriptor
 \param[in] rigidDesc The rigid descriptor
 \param[in] cudaContextManager A cuda context manager
 \return A fully populated particle rigid buffer ready to use
 */
-PxParticleRigidBuffer*					PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::PxParticleBufferDesc& desc, const ExtGpu::PxParticleRigidDesc& rigidDesc,
+PX_DEPRECATED PxParticleRigidBuffer* PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::PxParticleBufferDesc& desc, const ExtGpu::PxParticleRigidDesc& rigidDesc,
 											PxCudaContextManager* cudaContextManager);
 
 } // namespace ExtGpu
@@ -389,6 +406,5 @@ PxParticleRigidBuffer*					PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::
 } // namespace physx
 #endif
 
-/** @} */
 #endif
 

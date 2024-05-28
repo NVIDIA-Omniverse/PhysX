@@ -22,20 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "NpShape.h"
-#include "NpCheck.h"
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
 #include "NpArticulationLink.h"
-#include "GuConvexMesh.h"
-#include "GuTriangleMesh.h"
-#include "GuTetrahedronMesh.h"
-#include "GuBounds.h"
-#include "NpFEMCloth.h"
 #include "NpSoftBody.h"
 
 #include "omnipvd/NpOmniPvdSetData.h"
@@ -348,8 +342,7 @@ void NpShape::setLocalPose(const PxTransform& newShape2Actor)
 	notifyActorAndUpdatePVD(Sc::ShapeChangeNotifyFlag::eSHAPE2BODY);
 
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxShape, translation, static_cast<PxShape &>(*this), normalizedTransform.p)
-	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxShape, rotation, static_cast<PxShape &>(*this), normalizedTransform.q)
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxShape, localPose, static_cast<PxShape &>(*this), normalizedTransform)
 	OMNI_PVD_WRITE_SCOPE_END
 
 	updateSQ("PxShape::setLocalPose: Shape is a part of pruning structure, pruning structure is now invalid!");
@@ -406,6 +399,24 @@ PxFilterData NpShape::getQueryFilterData() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+template <typename PxMaterialType, typename NpMaterialType>
+static PX_INLINE PxU32 scGetMaterials(const Sc::ShapeCore& mCore, PxMaterialType** buffer, PxU32 bufferSize, PxU32 startIndex=0)
+{
+	NpMaterialManager<NpMaterialType>& matManager = NpMaterialAccessor<NpMaterialType>::getMaterialManager(NpPhysics::getInstance());
+	const PxU16* materialIndices = mCore.getMaterialIndices();
+
+	// PT: this is copied from Cm::getArrayOfPointers(). We cannot use the Cm function here
+	// because of the extra indirection needed to access the materials.
+	PxU32 size = mCore.getNbMaterialIndices();
+	const PxU32 remainder = PxU32(PxMax<PxI32>(PxI32(size - startIndex), 0));
+	const PxU32 writeCount = PxMin(remainder, bufferSize);
+	materialIndices += startIndex;
+	for(PxU32 i=0;i<writeCount;i++)
+		buffer[i] = matManager.getMaterial(materialIndices[i]);
+
+	return writeCount;
+}
+
 template<typename PxMaterialType, typename NpMaterialType> 
 void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 materialCount)
 {
@@ -422,7 +433,7 @@ void NpShape::setMaterialsInternal(PxMaterialType* const * materials, PxU16 mate
 
 	const PxU32 oldMaterialCount = scGetNbMaterials();
 	PX_ALLOCA(oldMaterials, PxMaterialType*, oldMaterialCount);
-	PxU32 tmp = scGetMaterials<PxMaterialType, NpMaterialType>(oldMaterials, oldMaterialCount);
+	PxU32 tmp = scGetMaterials<PxMaterialType, NpMaterialType>(mCore, oldMaterials, oldMaterialCount);
 	PX_ASSERT(tmp == oldMaterialCount);
 	PX_UNUSED(tmp);
 
@@ -490,14 +501,14 @@ PxU16 NpShape::getNbMaterials() const
 PxU32 NpShape::getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	NP_READ_CHECK(getNpScene());
-	return scGetMaterials<PxMaterial, NpMaterial>(userBuffer, bufferSize, startIndex);
+	return scGetMaterials<PxMaterial, NpMaterial>(mCore, userBuffer, bufferSize, startIndex);
 }
 
 #if PX_SUPPORT_GPU_PHYSX
 PxU32 NpShape::getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	NP_READ_CHECK(getNpScene());
-	return scGetMaterials<PxFEMSoftBodyMaterial, NpFEMSoftBodyMaterial>(userBuffer, bufferSize, startIndex);
+	return scGetMaterials<PxFEMSoftBodyMaterial, NpFEMSoftBodyMaterial>(mCore, userBuffer, bufferSize, startIndex);
 }
 #else
 PxU32 NpShape::getSoftBodyMaterials(PxFEMSoftBodyMaterial**, PxU32, PxU32) const
@@ -510,7 +521,7 @@ PxU32 NpShape::getSoftBodyMaterials(PxFEMSoftBodyMaterial**, PxU32, PxU32) const
 PxU32 NpShape::getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex) const
 {
 	NP_READ_CHECK(getNpScene());
-	return scGetMaterials<PxFEMClothMaterial, NpFEMClothMaterial>(userBuffer, bufferSize, startIndex);
+	return scGetMaterials<PxFEMClothMaterial, NpFEMClothMaterial>(mCore, userBuffer, bufferSize, startIndex);
 }
 #else
 PxU32 NpShape::getClothMaterials(PxFEMClothMaterial**, PxU32, PxU32) const
@@ -690,12 +701,17 @@ PxReal NpShape::getMinTorsionalPatchRadius() const
 
 PxU32 NpShape::getInternalShapeIndex() const
 {
+	return getGPUIndex();
+}
+
+PxShapeGPUIndex NpShape::getGPUIndex() const
+{
 	NP_READ_CHECK(getNpScene());
-	if (getNpScene())
+	if(getNpScene())
 	{
 		PxsSimulationController* simulationController = getNpScene()->getSimulationController();
-		if (simulationController)
-			return mCore.getInternalShapeIndex(*simulationController);
+		if(simulationController)
+			return simulationController->getInternalShapeIndex(mCore.getCore());
 	}
 	return PX_INVALID_NODE;
 }
@@ -923,16 +939,10 @@ bool NpShape::setMaterialsHelper(PxMaterialType* const* materials, PxU16 materia
 	else
 	{
 		PX_ASSERT(materialCount > 1);
-
 		PX_ALLOCA(materialIndices, PxU16, materialCount);
 
-		if(materialIndices)
-		{
-			NpMaterialType::getMaterialIndices(materials, materialIndices, materialCount);
-			mCore.setMaterialIndices(materialIndices, materialCount);
-		}
-		else
-			return outputError<PxErrorCode::eOUT_OF_MEMORY>(__LINE__, "PxShape::setMaterials() failed. Out of memory. Call will be ignored.");
+		NpMaterialType::getMaterialIndices(materials, materialIndices, materialCount);
+		mCore.setMaterialIndices(materialIndices, materialCount);
 	}
 
 	NpScene* npScene = getNpScene();

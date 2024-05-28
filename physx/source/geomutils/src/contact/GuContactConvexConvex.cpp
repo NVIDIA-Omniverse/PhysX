@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -153,15 +153,15 @@ static PX_FORCE_INLINE bool testInternalObjects(	const PxVec3& delta_c, const Px
 	const float dp = delta_c.dot(axis);
 
 	float p0[3];
-	BoxSupport(polyData0.mInternal.mExtents, localAxis0, p0);
+	BoxSupport(&polyData0.mInternal.mInternalExtents.x, localAxis0, p0);
 	float p1[3];
-	BoxSupport(polyData1.mInternal.mExtents, localAxis1, p1);
+	BoxSupport(&polyData1.mInternal.mInternalExtents.x, localAxis1, p1);
 
 	const float Radius0 = p0[0]*localAxis0.x + p0[1]*localAxis0.y + p0[2]*localAxis0.z;
 	const float Radius1 = p1[0]*localAxis1.x + p1[1]*localAxis1.y + p1[2]*localAxis1.z;
 
-	const float MinRadius = selectMax(Radius0, polyData0.mInternal.mRadius);
-	const float MaxRadius = selectMax(Radius1, polyData1.mInternal.mRadius);
+	const float MinRadius = selectMax(Radius0, polyData0.mInternal.mInternalRadius);
+	const float MaxRadius = selectMax(Radius1, polyData1.mInternal.mInternalRadius);
 #else
 	const float dp = delta_c.dot(axis);
 	const float MinRadius = polyData0.mInternal.mRadius;

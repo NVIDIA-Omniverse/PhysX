@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -74,7 +74,7 @@ static void createArticulation()
 		parent = gArticulation->createLink(parent, pose);
 		PxRigidActorExt::createExclusiveShape(*parent, linkGeom, *gMaterial);
 		PxRigidBodyExt::updateMassAndInertia(*parent, density);
-		PxArticulationJointReducedCoordinate *joint = static_cast<PxArticulationJointReducedCoordinate*>(parent->getInboundJoint());
+		PxArticulationJointReducedCoordinate* joint = parent->getInboundJoint();
 		if(joint)
 		{
 			PxVec3 parentOffset(halfLengths.x, 0.0f, 0.0f);

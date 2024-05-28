@@ -22,13 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PXS_SIMULATION_CONTROLLER_H
 #define PXS_SIMULATION_CONTROLLER_H
 
+#include "PxDirectGPUAPI.h"
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxTransform.h"
@@ -37,20 +38,6 @@
 #include "foundation/PxUserAllocated.h"
 #include "PxScene.h"
 #include "PxParticleSystem.h"
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	#include "PxFLIPParticleSystem.h"
-	#include "PxMPMParticleSystem.h"
-
-	// if these assert fail adjust the type here and in the forward declaration of the #else section just below
-	PX_COMPILE_TIME_ASSERT(sizeof(physx::PxMPMParticleDataFlag::Enum) == sizeof(physx::PxU32));
-	PX_COMPILE_TIME_ASSERT(sizeof(physx::PxSparseGridDataFlag::Enum) == sizeof(physx::PxU32));
-#else
-	namespace PxMPMParticleDataFlag { enum Enum : physx::PxU32; }
-	namespace PxSparseGridDataFlag { enum Enum : physx::PxU32; }
-#endif
-
-#include "PxParticleSolverType.h"
 
 namespace physx
 {
@@ -106,6 +93,7 @@ namespace physx
 	class PxPhysXGpu;
 
 	struct PxgSolverConstraintManagerConstants;
+	struct PxsExternalAccelerationProvider;
 	
 	class PxsSimulationControllerCallback : public PxUserAllocated
 	{
@@ -242,8 +230,8 @@ namespace physx
 
 		virtual void removeTriClothAttachment(Dy::FEMCloth* /*cloth*/, PxU32 /*handle*/) 	{}
 
-		virtual void addParticleSystem(Dy::ParticleSystem* /*particleSystem*/, const PxNodeIndex& /*nodeIndex*/, PxParticleSolverType::Enum /*type*/) 	{}
-		virtual void releaseParticleSystem(Dy::ParticleSystem* /*particleSystem*/, PxParticleSolverType::Enum /*type*/) 	{}
+		virtual void addParticleSystem(Dy::ParticleSystem* /*particleSystem*/, const PxNodeIndex& /*nodeIndex*/) 	{}
+		virtual void releaseParticleSystem(Dy::ParticleSystem* /*particleSystem*/) 	{}
 		virtual void releaseDeferredParticleSystemIds() 	{}
 
 		virtual void addHairSystem(Dy::HairSystem* /*hairSystem*/, const PxNodeIndex& /*nodeIndex*/) 	{}
@@ -252,13 +240,16 @@ namespace physx
 		virtual void activateHairSystem(Dy::HairSystem*) 	{}
 		virtual void deactivateHairSystem(Dy::HairSystem*) 	{}
 		virtual void setHairSystemWakeCounter(Dy::HairSystem*) 	{}
-#endif
+		virtual void setEnableOVDReadback(bool) {}
+		virtual bool getEnableOVDReadback() { return false; }
+		virtual void setEnableOVDCollisionReadback(bool) {}
+		virtual bool getEnableOVDCollisionReadback() { return false; }
 
-		virtual void flush() {}
+#endif
 
 		virtual void updateDynamic(Dy::FeatherstoneArticulation* /*articulation*/, const PxNodeIndex& /*nodeIndex*/) {}
 		virtual void updateJoint(const PxU32 /*edgeIndex*/, Dy::Constraint* /*constraint*/){}
-		virtual void updateBodies(PxsRigidBody** /*rigidBodies*/,  PxU32* /*nodeIndices*/, const PxU32 /*nbBodies*/) {}
+		virtual void updateBodies(PxsRigidBody** /*rigidBodies*/, PxU32* /*nodeIndices*/, const PxU32 /*nbBodies*/, PxsExternalAccelerationProvider* /*externalAccelerations*/) {}
 //		virtual void updateBody(PxsRigidBody* /*rigidBody*/, const PxU32 /*nodeIndex*/) {}
 		virtual void updateBodies(PxBaseTask* /*continuation*/){}
 		virtual void updateShapes(PxBaseTask* /*continuation*/) {}
@@ -293,34 +284,52 @@ namespace physx
 		virtual void	reserve(const PxU32 /*nbBodies*/) {}
 
 		virtual PxU32   getArticulationRemapIndex(const PxU32 /*nodeIndex*/) { return PX_INVALID_U32;}
-		//virtual void	setParticleSystemManager(PxgParticleSystemCore* psCore) = 0;
-
-		virtual void	copyArticulationData(void* /*jointData*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*copyEvent*/) {}
-		virtual void	applyArticulationData(void* /*data*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
-		virtual void	updateArticulationsKinematic(CUevent /*signalEvent*/) {}
 
 		//KS - the methods below here should probably be wrapped in if PX_SUPPORT_GPU_PHYSX
 		// PT: isn't the whole class only needed for GPU anyway?
+		// AD: Yes.
 
-		virtual void	copySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, CUevent /*copyEvent*/) {}
-		virtual void	applySoftBodyData(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, CUevent /*applyEvent*/, CUevent /*signalEvent*/) {}
-		virtual	void	copyContactData(Dy::Context* /*dyContext*/, void* /*data*/, const PxU32 /*maxContactPairs*/, void* /*numContactPairs*/, CUevent /*copyEvent*/) {}
-		virtual	void	copyBodyData(PxGpuBodyData* /*data*/, PxGpuActorPair* /*index*/, const PxU32 /*nbCopyActors*/, CUevent /*copyEvent*/){}
-		virtual	void	applyActorData(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
+		// NEW DIRECT-GPU API
 
-		virtual	void	evaluateSDFDistances(const PxU32* /*sdfShapeIds*/, const PxU32 /*nbShapes*/, const PxVec4* /*samplePointsConcatenated*/,
-			const PxU32* /*samplePointCountPerShape*/, const PxU32 /*maxPointCount*/, PxVec4* /*localGradientAndSDFConcatenated*/, CUevent /*event*/)	{}
+		virtual bool	getRigidDynamicData(void* /*data*/, const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxRigidDynamicGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, float /*oneOverDt*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
+		virtual bool 	setRigidDynamicData(const void* /*data*/, const PxRigidDynamicGPUIndex* /*gpuIndices*/, PxRigidDynamicGPUAPIWriteType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) { return false; }
+
+		virtual bool 	getArticulationData(void* /*data*/, const PxArticulationGPUIndex* /*gpuIndices*/, PxArticulationGPUAPIReadType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) const { return false; }
+		virtual bool 	setArticulationData(const void* /*data*/, const PxArticulationGPUIndex* /*gpuIndices*/, PxArticulationGPUAPIWriteType::Enum /*dataType*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) { return false; }
+		virtual	bool	computeArticulationData(void* /*data*/, const PxArticulationGPUIndex* /*gpuIndices*/, PxArticulationGPUAPIComputeType::Enum /*operation*/, PxU32 /*nbElements*/, CUevent /*startEvent*/, CUevent /*finishEvent*/) { return false; }
+
+		virtual bool 	evaluateSDFDistances(PxVec4* /*localGradientAndSDFConcatenated*/, const PxShapeGPUIndex* /*shapeIndices*/, const PxVec4* /*localSamplePointsConcatenated*/, const PxU32* /*samplePointCountPerShape*/, PxU32 /*nbElements*/, PxU32 /*maxPointCount*/, CUevent /*startEvent = NULL*/, CUevent /*finishEvent = NULL*/) { return false; }
+		virtual	bool	copyContactData(void* /*data*/, PxU32* /*numContactPairs*/, const PxU32 /*maxContactPairs*/, CUevent /*startEvent*/, CUevent /*copyEvent*/) { return false; }
+
+		virtual PxArticulationGPUAPIMaxCounts getArticulationGPUAPIMaxCounts()	const	{ return PxArticulationGPUAPIMaxCounts(); }
+
+		// END NEW DIRECT-GPU API
+
+		// DEPRECATED DIRECT-GPU API
+
+		PX_DEPRECATED virtual	void	copyArticulationDataDEPRECATED(void* /*jointData*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*copyEvent*/) {}
+		PX_DEPRECATED virtual	void	applyArticulationDataDEPRECATED(void* /*data*/, void* /*index*/, PxArticulationGpuDataType::Enum /*dataType*/, const PxU32 /*nbUpdatedArticulations*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
+		PX_DEPRECATED virtual	void	applyActorDataDEPRECATED(void* /*data*/, PxGpuActorPair* /*index*/, PxActorCacheFlag::Enum /*flag*/, const PxU32 /*nbUpdatedActors*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
+		PX_DEPRECATED virtual	void	evaluateSDFDistancesDEPRECATED(const PxU32* /*sdfShapeIds*/, const PxU32 /*nbShapes*/, const PxVec4* /*samplePointsConcatenated*/,
+															const PxU32* /*samplePointCountPerShape*/, const PxU32 /*maxPointCount*/, PxVec4* /*localGradientAndSDFConcatenated*/, CUevent /*event*/)	{}
+		PX_DEPRECATED virtual	void 	copyBodyDataDEPRECATED(PxGpuBodyData* /*data*/, PxGpuActorPair* /*index*/, const PxU32 /*nbCopyActors*/, CUevent /*copyEvent*/){}
+		PX_DEPRECATED virtual	void	updateArticulationsKinematicDEPRECATED(CUevent /*signalEvent*/) {}
+		PX_DEPRECATED virtual	void	computeDenseJacobiansDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
+		PX_DEPRECATED virtual	void	computeGeneralizedMassMatricesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
+		PX_DEPRECATED virtual	void	computeGeneralizedGravityForcesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, const PxVec3& /*gravity*/, CUevent /*computeEvent*/){}
+		PX_DEPRECATED virtual	void	computeCoriolisAndCentrifugalForcesDEPRECATED(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/) {}
+
+		PX_DEPRECATED virtual	void	copySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbCopySoftBodies*/, const PxU32 /*maxSize*/, CUevent /*copyEvent*/) {}
+		PX_DEPRECATED virtual	void	applySoftBodyDataDEPRECATED(void** /*data*/, void* /*dataSizes*/, void* /*softBodyIndices*/, PxSoftBodyGpuDataFlag::Enum /*flag*/, const PxU32 /*nbUpdatedSoftBodies*/, const PxU32 /*maxSize*/, CUevent /*applyEvent*/, CUevent /*signalEvent*/) {}
+		PX_DEPRECATED virtual 	void	applyParticleBufferDataDEPRECATED(const PxU32* /*indices*/, const PxGpuParticleBufferIndexPair* /*indexPairs*/, const PxParticleBufferFlags* /*flags*/, PxU32 /*nbUpdatedBuffers*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
+
+		// END DEPRECATED DIRECT-GPU API
+
 		virtual	PxU32	getInternalShapeIndex(const PxsShapeCore& /*shapeCore*/)	{ return PX_INVALID_U32;	}
 
 		virtual void	syncParticleData()	{}
 
 		virtual void    updateBoundsAndShapes(Bp::AABBManagerBase& /*aabbManager*/, bool /*useDirectApi*/){}
-
-		virtual	void	computeDenseJacobians(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
-		virtual	void	computeGeneralizedMassMatrices(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/){}
-		virtual	void	computeGeneralizedGravityForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, const PxVec3& /*gravity*/, CUevent /*computeEvent*/){}
-		virtual	void	computeCoriolisAndCentrifugalForces(const PxIndexDataPair* /*indices*/, PxU32 /*nbIndices*/, CUevent /*computeEvent*/) {}
-		virtual void    applyParticleBufferData(const PxU32* /*indices*/, const PxGpuParticleBufferIndexPair* /*indexPairs*/, const PxParticleBufferFlags* /*flags*/, PxU32 /*nbUpdatedBuffers*/, CUevent /*waitEvent*/, CUevent /*signalEvent*/) {}
 
 #if PX_SUPPORT_GPU_PHYSX
 		virtual PxU32				getNbDeactivatedFEMCloth()		const	{ return 0;		}
@@ -347,9 +356,6 @@ namespace physx
 		virtual Dy::HairSystem**	getActivatedHairSystems()		const	{ return NULL;	}
 		virtual bool				hasHairSystems()				const	{ return false;	}
 #endif
-
-		virtual void*	getMPMDataPointer(const Dy::ParticleSystem& /*psLL*/, PxMPMParticleDataFlag::Enum /*flags*/) { return NULL; }
-		virtual void*	getSparseGridDataPointer(const Dy::ParticleSystem& /*psLL*/, PxSparseGridDataFlag::Enum /*flags*/, PxParticleSolverType::Enum /*type*/) { return NULL; }
 
 	protected:
 		PxsSimulationControllerCallback*	mCallback;

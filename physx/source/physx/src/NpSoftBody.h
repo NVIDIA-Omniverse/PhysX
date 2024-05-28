@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -40,6 +40,8 @@ namespace physx
 {
 	class NpScene;
 	class NpShape;
+	class PxsMemoryManager;
+	class PxVirtualAllocatorCallback;
 
 	class NpSoftBody : public NpActorTemplate<PxSoftBody>
 	{
@@ -47,7 +49,7 @@ namespace physx
 										NpSoftBody(PxCudaContextManager& cudaContextManager);
 										NpSoftBody(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager);
 		
-		virtual							~NpSoftBody() {}
+		virtual							~NpSoftBody() { releaseAllocator(); }
 
 		void                            exportData(PxSerializationContext& /*context*/) const{}
 	
@@ -66,6 +68,7 @@ namespace physx
 
 		virtual PxVec4*                 getPositionInvMassBufferD();
 		virtual PxVec4*                 getRestPositionBufferD();
+
 		virtual PxVec4*                 getSimPositionInvMassBufferD();
 		virtual PxVec4*                 getSimVelocityBufferD();
 
@@ -142,19 +145,20 @@ namespace physx
 
 		virtual		void				removeClothAttachment(PxFEMCloth* cloth, PxU32 handle);
 
-		// Debug name
-		void							setName(const char*);
-		const char*						getName() const;
-
 		void		updateMaterials();
 
 	private:
+
+		void 							createAllocator();
+		void 							releaseAllocator();
 
 		NpShape*					mShape; //soft body should just have one shape. The geometry type should be tetrahedron mesh
 		Gu::TetrahedronMesh*		mSimulationMesh;
 		Gu::SoftBodyAuxData*		mSoftBodyAuxData;
 		Sc::SoftBodyCore			mCore;
 		PxCudaContextManager*		mCudaContextManager;
+		PxsMemoryManager*			mMemoryManager;
+		PxVirtualAllocatorCallback*	mDeviceMemoryAllocator;
 	};
 }
 #endif

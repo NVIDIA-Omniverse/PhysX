@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved. 
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved. 
 
 #include "foundation/PxPreprocessor.h"
 
@@ -110,14 +110,15 @@ void Sc::SoftBodyShapeSim::createLowLevelVolume()
 
 	getScene().getBoundsArray().setBounds(getWorldBounds(), index);
 
+	const PxReal contactOffset = getContactOffset();
+
 	{
 		const PxU32 group = Bp::FilterGroup::eDYNAMICS_BASE + getActor().getActorID();
 		const PxU32 type = Bp::FilterType::SOFTBODY;
-		addToAABBMgr(getCore().getContactOffset(), Bp::FilterGroup::Enum((group << BP_FILTERING_TYPE_SHIFT_BIT) | type), Bp::ElementType::eSHAPE);
+		addToAABBMgr(contactOffset, Bp::FilterGroup::Enum((group << BP_FILTERING_TYPE_SHIFT_BIT) | type), Bp::ElementType::eSHAPE);
 	}
 
-	// PT: TODO: what's the difference between "getContactOffset()" and "getCore().getContactOffset()" above?
-	getScene().updateContactDistance(index, getContactOffset());
+	getScene().updateContactDistance(index, contactOffset);
 
 	PxsTransformCache& cache = getScene().getLowLevelContext()->getTransformCache();
 	cache.initEntry(index);

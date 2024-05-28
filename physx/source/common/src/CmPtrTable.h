@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -64,7 +64,7 @@ protected:
 //
 // capacity is implicit: 
 // if the memory is not owned (i.e. came from deserialization) then the capacity is exactly mCount
-// else if mCount==0,  capacity is 0
+// else if mCount==0, capacity is 0
 // else the capacity is the power of 2 >= mCount
 // 
 // one implication of this is that if we want to add or remove a pointer from unowned memory, we always realloc

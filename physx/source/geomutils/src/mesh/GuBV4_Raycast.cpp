@@ -22,13 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "GuBV4.h"
 using namespace physx;
 using namespace Gu;
+
+// PT: this one avoids a divide but doesn't seem to make a difference
+//#define TEST_DISTANCE_INSIDE_RAY_TRI
+
+// PT: works but unclear performance benefits. Needs more testing.
+//#define USE_SIMD_RAY_VS_TRI
 
 #include "PxQueryReport.h"
 #include "GuInternal.h"
@@ -49,104 +55,249 @@ class RaycastHitInternalUV : public RaycastHitInternal
 					float	mU, mV;
 };
 
-// PT: this makes a UT fail - to investigate
-#ifdef TO_SEE
-	PX_FORCE_INLINE __m128 DotV(const __m128 a, const __m128 b)
+#ifdef USE_SIMD_RAY_VS_TRI
+
+//#define DotV	V4Dot
+#define DotV	V4Dot3
+//PX_FORCE_INLINE FloatV V4Dot3_SSE42(const Vec4V a, const Vec4V b)	{ return _mm_dp_ps(a, b, 0x7f);	}
+//#define DotV	V4Dot3_SSE42
+
+template<class T>
+static PX_FORCE_INLINE PxIntBool SimdRayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const PxVec3& vert0, const PxVec3& vert1, const PxVec3& vert2, const T* PX_RESTRICT params)
+{
+	// Find vectors for two edges sharing vert0
+	const Vec4V vert0V = V4LoadU(&vert0.x);
+	
+	const Vec4V edge1V = V4Sub(V4LoadU(&vert1.x), vert0V);	// const PxVec3 edge1 = vert1 - vert0;
+	const Vec4V edge2V = V4Sub(V4LoadU(&vert2.x), vert0V);	// const PxVec3 edge2 = vert2 - vert0;
+
+	// Begin calculating determinant - also used to calculate U parameter
+	const Vec4V localDirV = V4LoadU(&params->mLocalDir_Padded.x);
+	/*const*/ Vec4V pvecV = V4Cross(localDirV, edge2V);		// const PxVec3 pvec = params->mLocalDir_Padded.cross(edge2);
+//pvecV = V4ClearW(pvecV);
+	// If determinant is near zero, ray lies in plane of triangle
+	const FloatV detV = DotV(edge1V, pvecV);	// const float det = edge1.dot(pvec);
+
+// PT: TODO: if we zero W in pvecV and qvecV we can switch to V4Dot	*************
+
+	// PT: because the SIMD version delays the branches we can share more computations between culling & non-culling codepaths
+
+	// Calculate distance from vert0 to ray origin
+	const Vec4V tvecV = V4Sub(V4LoadU(&params->mOrigin_Padded.x), vert0V);	// const PxVec3 tvec = params->mOrigin_Padded - vert0;
+
+	// Prepare to test V parameter
+	/*const*/ Vec4V qvecV = V4Cross(tvecV, edge1V);	// const PxVec3 qvec = tvec.cross(edge1);
+//qvecV = V4ClearW(qvecV);
+
+	const FloatV localEpsilonV = FLoad(GU_CULLING_EPSILON_RAY_TRIANGLE);
+	const FloatV geomEpsilonV = FLoad(params->mGeomEpsilon);
+
+	if(params->mBackfaceCulling)
 	{
-		const __m128 t0 = _mm_mul_ps(a, b);								//	aw*bw | az*bz | ay*by | ax*bx
-		const __m128 t1 = _mm_shuffle_ps(t0, t0, _MM_SHUFFLE(1,0,3,2));	//	ay*by | ax*bx | aw*bw | az*bz
-		const __m128 t2 = _mm_add_ps(t0, t1);							//	ay*by + aw*bw | ax*bx + az*bz | aw*bw + ay*by | az*bz + ax*bx
-		const __m128 t3 = _mm_shuffle_ps(t2, t2, _MM_SHUFFLE(2,3,0,1));	//	ax*bx + az*bz | ay*by + aw*bw | az*bz + ax*bx | aw*bw + ay*by
-		return _mm_add_ps(t3, t2);										//	ax*bx + az*bz + ay*by + aw*bw 
-																		//	ay*by + aw*bw + ax*bx + az*bz
-																		//	az*bz + ax*bx + aw*bw + ay*by
-																		//	aw*bw + ay*by + az*bz + ax*bx
+		// Calculate U parameter and test bounds
+		const FloatV uV = DotV(tvecV, pvecV);	// const float u = tvec.dot(pvec);
+
+		// Calculate V parameter and test bounds
+		const FloatV vV = DotV(localDirV, qvecV);	// const float v = params->mLocalDir_Padded.dot(qvec);
+
+		// Calculate t, scale parameters, ray intersects triangle
+		const FloatV dV = DotV(edge2V, qvecV);	// const float d = edge2.dot(qvec);
+
+		/////
+
+		// if(det<GU_CULLING_EPSILON_RAY_TRIANGLE)
+		//	return 0;
+		BoolV res = FIsGrtr(localEpsilonV, detV);
+
+		/////
+
+		// const PxReal enlargeCoeff = params->mGeomEpsilon*det;
+		const FloatV enlargeCoeffV = FMul(detV, geomEpsilonV);
+/*
+		const PxReal uvlimit = -enlargeCoeff;
+		const PxReal uvlimit2 = det + enlargeCoeff;
+
+		if(u < uvlimit || u > uvlimit2)
+			return 0;
+
+		if(v < uvlimit || (u + v) > uvlimit2)
+			return 0;
+
+		// Det > 0 so we can early exit here
+		// Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
+		if(d<0.0f)
+			return 0;
+*/
+		res = BOr(res, FIsGrtr(FZero(), FMin(dV, FMin(FAdd(uV, enlargeCoeffV), FAdd(vV, enlargeCoeffV)))));
+		res = BOr(res, FIsGrtr(FMax(uV, FAdd(uV, vV)), FAdd(detV, enlargeCoeffV)));
+//		if(!BAllEqFFFF(res))
+//			return 0;
+		if(BGetBitMask(res))
+			return 0;
+
+		// Else go on
+		// const float OneOverDet = 1.0f / det;
+		const FloatV oneOverDetV = FDiv(FLoad(1.0f), detV);
+		FStore(FMul(dV, oneOverDetV), &mStabbedFace.distance);	// mStabbedFace.distance = d * OneOverDet;
+		FStore(FMul(uV, oneOverDetV), &mStabbedFace.u);			// mStabbedFace.u = u * OneOverDet;
+		FStore(FMul(vV, oneOverDetV), &mStabbedFace.v);			// mStabbedFace.v = v * OneOverDet;
+		return 1;
 	}
+	else
+	{
+		//if(PxAbs(det)<GU_CULLING_EPSILON_RAY_TRIANGLE)
+		//	return 0;
+		BoolV res = FIsGrtr(localEpsilonV, FAbs(detV));
+
+		const FloatV oneV = FLoad(1.0f);
+		const FloatV oneOverDetV = FDiv(oneV, detV);		// const float OneOverDet = 1.0f / det;
+
+		const FloatV uV = FMul(DotV(tvecV, pvecV), oneOverDetV);	// const float u = tvec.dot(pvec) * OneOverDet;
+
+		// Calculate V parameter and test bounds
+		const FloatV vV = FMul(DotV(localDirV, qvecV), oneOverDetV);	// const float v = params->mLocalDir_Padded.dot(qvec) * OneOverDet;
+
+		// Calculate t, ray intersects triangle
+		const FloatV dV = FMul(DotV(edge2V, qvecV), oneOverDetV);	// const float d = edge2.dot(qvec) * OneOverDet;
+/*
+		if(u<-params->mGeomEpsilon || u>1.0f+params->mGeomEpsilon)
+			return 0;
+
+		if(v < -params->mGeomEpsilon || (u + v) > 1.0f + params->mGeomEpsilon)
+			return 0;
+
+		// Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
+		if(d<0.0f)
+			return 0;
+*/
+		res = BOr(res, FIsGrtr(FZero(), FMin(dV, FMin(FAdd(uV, geomEpsilonV), FAdd(vV, geomEpsilonV)))));
+		res = BOr(res, FIsGrtr(FMax(uV, FAdd(uV, vV)), FAdd(oneV, geomEpsilonV)));
+		//if(!BAllEqFFFF(res))
+		//	return 0;
+		if(BGetBitMask(res))
+			return 0;
+
+		FStore(dV, &mStabbedFace.distance);	// mStabbedFace.distance = d;
+		FStore(uV, &mStabbedFace.u);		// mStabbedFace.u = u;
+		FStore(vV, &mStabbedFace.v);		// mStabbedFace.v = v;
+		return 1;
+	}
+}
+
+template<class T>
+static PX_FORCE_INLINE PxIntBool SimdRayTriOverlapT2(PxGeomRaycastHit& mStabbedFace, const PxVec3& vert0, const PxVec3& vert1, const PxVec3& vert2, const T* PX_RESTRICT params)
+{
+	// Find vectors for two edges sharing vert0
+	const Vec4V vert0V = V4LoadU(&vert0.x);
+	
+	const Vec4V edge1V = V4Sub(V4LoadU(&vert1.x), vert0V);	// const PxVec3 edge1 = vert1 - vert0;
+	const Vec4V edge2V = V4Sub(V4LoadU(&vert2.x), vert0V);	// const PxVec3 edge2 = vert2 - vert0;
+
+	// Begin calculating determinant - also used to calculate U parameter
+	const Vec4V localDirV = V4LoadU(&params->mLocalDir_Padded.x);
+	const Vec4V pvecV = V4Cross(localDirV, edge2V);		// const PxVec3 pvec = params->mLocalDir_Padded.cross(edge2);
+	// If determinant is near zero, ray lies in plane of triangle
+	const FloatV detV = DotV(edge1V, pvecV);	// const float det = edge1.dot(pvec);
+
+	const FloatV localEpsilonV = FLoad(GU_CULLING_EPSILON_RAY_TRIANGLE);
+
+	if(params->mBackfaceCulling)
+	{
+		// if(det<GU_CULLING_EPSILON_RAY_TRIANGLE)
+		//	return 0;
+		BoolV res = FIsGrtr(localEpsilonV, detV);
+		if(BGetBitMask(res))
+			return 0;
+
+		// Calculate distance from vert0 to ray origin
+		const Vec4V tvecV = V4Sub(V4LoadU(&params->mOrigin_Padded.x), vert0V);	// const PxVec3 tvec = params->mOrigin_Padded - vert0;
+
+		// Prepare to test V parameter
+		const Vec4V qvecV = V4Cross(tvecV, edge1V);	// const PxVec3 qvec = tvec.cross(edge1);
+
+		const FloatV geomEpsilonV = FLoad(params->mGeomEpsilon);
+
+		// Calculate U parameter and test bounds
+		const FloatV uV = DotV(tvecV, pvecV);	// const float u = tvec.dot(pvec);
+
+		// Calculate V parameter and test bounds
+		const FloatV vV = DotV(localDirV, qvecV);	// const float v = params->mLocalDir_Padded.dot(qvec);
+
+		// Calculate t, scale parameters, ray intersects triangle
+		const FloatV dV = DotV(edge2V, qvecV);	// const float d = edge2.dot(qvec);
+
+		/////
+
+		// const PxReal enlargeCoeff = params->mGeomEpsilon*det;
+		const FloatV enlargeCoeffV = FMul(detV, geomEpsilonV);
+
+		res = BOr(res, FIsGrtr(FZero(), FMin(dV, FMin(FAdd(uV, enlargeCoeffV), FAdd(vV, enlargeCoeffV)))));
+		res = BOr(res, FIsGrtr(FMax(uV, FAdd(uV, vV)), FAdd(detV, enlargeCoeffV)));
+//		if(!BAllEqFFFF(res))
+//			return 0;
+		if(BGetBitMask(res))
+			return 0;
+
+		// Else go on
+		// const float OneOverDet = 1.0f / det;
+		const FloatV oneOverDetV = FDiv(FLoad(1.0f), detV);
+		FStore(FMul(dV, oneOverDetV), &mStabbedFace.distance);	// mStabbedFace.distance = d * OneOverDet;
+		FStore(FMul(uV, oneOverDetV), &mStabbedFace.u);			// mStabbedFace.u = u * OneOverDet;
+		FStore(FMul(vV, oneOverDetV), &mStabbedFace.v);			// mStabbedFace.v = v * OneOverDet;
+		return 1;
+	}
+	else
+	{
+		//if(PxAbs(det)<GU_CULLING_EPSILON_RAY_TRIANGLE)
+		//	return 0;
+		BoolV res = FIsGrtr(localEpsilonV, FAbs(detV));
+		if(BGetBitMask(res))
+			return 0;
+
+		// Calculate distance from vert0 to ray origin
+		const Vec4V tvecV = V4Sub(V4LoadU(&params->mOrigin_Padded.x), vert0V);	// const PxVec3 tvec = params->mOrigin_Padded - vert0;
+
+		// Prepare to test V parameter
+		const Vec4V qvecV = V4Cross(tvecV, edge1V);	// const PxVec3 qvec = tvec.cross(edge1);
+
+		const FloatV geomEpsilonV = FLoad(params->mGeomEpsilon);
+
+
+		const FloatV oneV = FLoad(1.0f);
+		const FloatV oneOverDetV = FDiv(oneV, detV);		// const float OneOverDet = 1.0f / det;
+
+		const FloatV uV = FMul(DotV(tvecV, pvecV), oneOverDetV);	// const float u = tvec.dot(pvec) * OneOverDet;
+
+		// Calculate V parameter and test bounds
+		const FloatV vV = FMul(DotV(localDirV, qvecV), oneOverDetV);	// const float v = params->mLocalDir_Padded.dot(qvec) * OneOverDet;
+
+		// Calculate t, ray intersects triangle
+		const FloatV dV = FMul(DotV(edge2V, qvecV), oneOverDetV);	// const float d = edge2.dot(qvec) * OneOverDet;
+
+		res = BOr(res, FIsGrtr(FZero(), FMin(dV, FMin(FAdd(uV, geomEpsilonV), FAdd(vV, geomEpsilonV)))));
+		res = BOr(res, FIsGrtr(FMax(uV, FAdd(uV, vV)), FAdd(oneV, geomEpsilonV)));
+
+		if(BGetBitMask(res))
+			return 0;
+
+		FStore(dV, &mStabbedFace.distance);	// mStabbedFace.distance = d;
+		FStore(uV, &mStabbedFace.u);		// mStabbedFace.u = u;
+		FStore(vV, &mStabbedFace.v);		// mStabbedFace.v = v;
+		return 1;
+	}
+}
+
 #endif
 
 template<class T>
-PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const PxVec3& vert0, const PxVec3& vert1, const PxVec3& vert2, const T* PX_RESTRICT params)
+static PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const PxVec3& vert0, const PxVec3& vert1, const PxVec3& vert2, const T* PX_RESTRICT params)
 {
-#ifdef TO_SEE
+#ifdef USE_SIMD_RAY_VS_TRI
 	if(0)
-	{
-		const Vec4V vert0V = V4LoadU(&vert0.x);
-		const Vec4V edge1V = V4Sub(V4LoadU(&vert1.x), vert0V);
-		const Vec4V edge2V = V4Sub(V4LoadU(&vert2.x), vert0V);
-
-		const Vec4V localDirV = V4LoadU(&params->mLocalDir_Padded.x);
-		const Vec4V pvecV = V4Cross(localDirV, edge2V);
-		const __m128 detV = DotV(edge1V, pvecV);
-
-		if(params->mBackfaceCulling)
-		{
-			const Vec4V tvecV = V4Sub(V4LoadU(&params->mOrigin_Padded.x), vert0V);
-			const Vec4V qvecV = V4Cross(tvecV, edge1V);
-			const __m128 uV = DotV(tvecV, pvecV);
-			const __m128 vV = DotV(localDirV, qvecV);
-			const __m128 dV = DotV(edge2V, qvecV);
-
-			if(1)	// best so far, alt impl, looks like it's exactly the same speed, might be better for platforms that don't have good movemask
-			{
-				const float localEpsilon = GU_CULLING_EPSILON_RAY_TRIANGLE;
-				const __m128 localEpsilonV = _mm_load1_ps(&localEpsilon);
-				__m128 res = (_mm_cmpgt_ps(localEpsilonV, detV));
-				const __m128 geomEpsilonV = _mm_load1_ps(&params->mGeomEpsilon);
-					// PT: strange. PhysX version not the same as usual. One more mul needed here :(
-					const __m128 enlargeCoeffV = _mm_mul_ps(detV, geomEpsilonV);
-//				res = _mm_or_ps(res, _mm_min_ps(dV, _mm_min_ps(_mm_add_ps(uV, geomEpsilonV), _mm_add_ps(vV, geomEpsilonV))));
-//				res = _mm_or_ps(res, _mm_cmpgt_ps(_mm_max_ps(uV, _mm_add_ps(uV, vV)), _mm_add_ps(detV, geomEpsilonV)));
-					res = _mm_or_ps(res, _mm_min_ps(dV, _mm_min_ps(_mm_add_ps(uV, enlargeCoeffV), _mm_add_ps(vV, enlargeCoeffV))));
-					res = _mm_or_ps(res, _mm_cmpgt_ps(_mm_max_ps(uV, _mm_add_ps(uV, vV)), _mm_add_ps(detV, enlargeCoeffV)));
-				const int cndt = _mm_movemask_ps(res);
-				if(cndt)
-					return 0;
-			}
-
-			const float one = 1.0f;
-			const __m128 oneV = _mm_load1_ps(&one);
-			const __m128 OneOverDetV = _mm_div_ps(oneV, detV);
-			_mm_store_ss(&mStabbedFace.distance, _mm_mul_ps(dV, OneOverDetV));
-			_mm_store_ss(&mStabbedFace.u, _mm_mul_ps(uV, OneOverDetV));
-			_mm_store_ss(&mStabbedFace.v, _mm_mul_ps(vV, OneOverDetV));
-			return 1;
-		}
-		else
-		{
-			const __m128 tvecV = V4Sub(V4LoadU(&params->mOrigin_Padded.x), vert0V);	// const Point tvec = params->mOrigin - vert0;
-			const __m128 qvecV = V4Cross(tvecV, edge1V);	// const Point qvec = tvec^edge1;
-
-			const float localEpsilon = GU_CULLING_EPSILON_RAY_TRIANGLE;
-			const __m128 localEpsilonV = _mm_load1_ps(&localEpsilon);
-			const __m128 absDet = _mm_max_ps(detV, V4Sub(_mm_setzero_ps(), detV));
-			const int cndt = _mm_movemask_ps(_mm_cmpgt_ps(localEpsilonV, absDet));
-
-			const float one = 1.0f;
-			const __m128 oneV = _mm_load1_ps(&one);
-			const __m128 OneOverDetV = _mm_div_ps(oneV, detV);
-
-			const __m128 uV = _mm_mul_ps(DotV(tvecV, pvecV), OneOverDetV);
-			const __m128 vV = _mm_mul_ps(DotV(localDirV, qvecV), OneOverDetV);
-			const __m128 dV = _mm_mul_ps(DotV(edge2V, qvecV), OneOverDetV);
-
-			const __m128 geomEpsilonV = _mm_load1_ps(&params->mGeomEpsilon);
-
-			const int cndt2 = _mm_movemask_ps(_mm_min_ps(dV, _mm_min_ps(_mm_add_ps(uV, geomEpsilonV), _mm_add_ps(vV, geomEpsilonV))));
-
-			const int cndt3 = _mm_movemask_ps(_mm_cmpgt_ps(_mm_max_ps(uV, _mm_add_ps(uV, vV)), _mm_add_ps(oneV, geomEpsilonV)));
-
-			if(cndt|cndt3|cndt2)
-				return 0;
-
-			_mm_store_ss(&mStabbedFace.distance, dV);
-			_mm_store_ss(&mStabbedFace.u, uV);
-			_mm_store_ss(&mStabbedFace.v, vV);
-			return 1;
-		}
-	}
-	else
-#endif
-	{
+		return SimdRayTriOverlapT(mStabbedFace, vert0, vert1, vert2, params);
+	if(0)
+		return SimdRayTriOverlapT2(mStabbedFace, vert0, vert1, vert2, params);
+#endif	
 
 	// Find vectors for two edges sharing vert0
 	const PxVec3 edge1 = vert1 - vert0;
@@ -191,6 +342,10 @@ PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const P
 		if(d<0.0f)
 			return 0;
 
+#ifdef TEST_DISTANCE_INSIDE_RAY_TRI
+		if(d>=det*params->mStabbedFace.mDistance)	//### just for a corner case UT in PhysX :(
+			return 0;
+#endif
 		// Else go on
 		const float OneOverDet = 1.0f / det;
 		mStabbedFace.distance = d * OneOverDet;
@@ -223,12 +378,17 @@ PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const P
 		// Intersection point is valid if distance is positive (else it can just be a face behind the orig point)
 		if(d<0.0f)
 			return 0;
+
+#ifdef TEST_DISTANCE_INSIDE_RAY_TRI
+		if(d>=params->mStabbedFace.mDistance)	//### just for a corner case UT in PhysX :(
+			return 0;
+#endif
+
 		mStabbedFace.distance = d;
 		mStabbedFace.u = u;
 		mStabbedFace.v = v;
 	}
 	return 1;
-	}
 }
 
 #if PX_VC
@@ -237,7 +397,7 @@ PX_FORCE_INLINE PxIntBool RayTriOverlapT(PxGeomRaycastHit& mStabbedFace, const P
 
 namespace
 {
-struct RayParams
+struct RayParams_Raycast	// PT: compiler gets confused otherwise
 {
 	BV4_ALIGN16(PxVec3p			mCenterOrMinCoeff_PaddedAligned);
 	BV4_ALIGN16(PxVec3p			mExtentsOrMaxCoeff_PaddedAligned);
@@ -269,7 +429,7 @@ struct RayParams
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PX_FORCE_INLINE void updateParamsAfterImpact(RayParams* PX_RESTRICT params, PxU32 primIndex, PxU32 VRef0, PxU32 VRef1, PxU32 VRef2, const PxGeomRaycastHit& StabbedFace)
+static PX_FORCE_INLINE void updateParamsAfterImpact(RayParams_Raycast* PX_RESTRICT params, PxU32 primIndex, PxU32 VRef0, PxU32 VRef1, PxU32 VRef2, const PxGeomRaycastHit& StabbedFace)
 {
 	V4StoreA_Safe(V4LoadU_Safe(&params->mVerts[VRef0].x), &params->mP0_PaddedAligned.x);
 	V4StoreA_Safe(V4LoadU_Safe(&params->mVerts[VRef1].x), &params->mP1_PaddedAligned.x);
@@ -286,7 +446,7 @@ namespace
 class LeafFunction_RaycastClosest
 {
 public:
-	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams* PX_RESTRICT params, PxU32 primIndex)
+	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams_Raycast* PX_RESTRICT params, PxU32 primIndex)
 	{
 		PX_ALIGN_PREFIX(16)	char buffer[sizeof(PxGeomRaycastHit)] PX_ALIGN_SUFFIX(16);
 		PxGeomRaycastHit& StabbedFace = reinterpret_cast<PxGeomRaycastHit&>(buffer);
@@ -297,9 +457,11 @@ public:
 			PxU32 VRef0, VRef1, VRef2;
 			getVertexReferences(VRef0, VRef1, VRef2, primIndex, params->mTris32, params->mTris16);
 
-			if(RayTriOverlapT<RayParams>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
+			if(RayTriOverlapT<RayParams_Raycast>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
 			{
+#ifndef TEST_DISTANCE_INSIDE_RAY_TRI
 				if(StabbedFace.distance<params->mStabbedFace.mDistance)	//### just for a corner case UT in PhysX :(
+#endif
 				{
 					updateParamsAfterImpact(params, primIndex, VRef0, VRef1, VRef2, StabbedFace);
 
@@ -319,7 +481,7 @@ public:
 class LeafFunction_RaycastAny
 {
 public:
-	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams* PX_RESTRICT params, PxU32 primIndex)
+	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams_Raycast* PX_RESTRICT params, PxU32 primIndex)
 	{
 		PxU32 nbToGo = getNbPrimitives(primIndex);
 		do
@@ -329,9 +491,11 @@ public:
 
 			PX_ALIGN_PREFIX(16)	char buffer[sizeof(PxGeomRaycastHit)] PX_ALIGN_SUFFIX(16);
 			PxGeomRaycastHit& StabbedFace = reinterpret_cast<PxGeomRaycastHit&>(buffer);
-			if(RayTriOverlapT<RayParams>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
+			if(RayTriOverlapT<RayParams_Raycast>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
 			{
+#ifndef TEST_DISTANCE_INSIDE_RAY_TRI
 				if(StabbedFace.distance<params->mStabbedFace.mDistance)	//### just for a corner case UT in PhysX :(
+#endif
 				{
 					updateParamsAfterImpact(params, primIndex, VRef0, VRef1, VRef2, StabbedFace);
 					return 1;
@@ -358,7 +522,7 @@ static PX_FORCE_INLINE Vec4V multiply3x3V_Aligned(const Vec4V p, const PxMat44* 
 	return ResV;
 }
 
-static PX_FORCE_INLINE PxIntBool computeImpactData(PxGeomRaycastHit* PX_RESTRICT hit, const RayParams* PX_RESTRICT params, const PxMat44* PX_RESTRICT worldm_Aligned, PxHitFlags /*hitFlags*/)
+static PX_FORCE_INLINE PxIntBool computeImpactData(PxGeomRaycastHit* PX_RESTRICT hit, const RayParams_Raycast* PX_RESTRICT params, const PxMat44* PX_RESTRICT worldm_Aligned, PxHitFlags /*hitFlags*/)
 {
 	if(params->mStabbedFace.mTriangleID!=PX_INVALID_U32 /*&& !params->mEarlyExit*/)	//### PhysX needs the raycast data even for "any hit" :(
 	{
@@ -566,7 +730,7 @@ PxIntBool BV4_RaycastSingle(const PxVec3& origin, const PxVec3& dir, const BV4Tr
 {
 	const SourceMesh* PX_RESTRICT mesh = static_cast<SourceMesh*>(tree.mMeshInterface);
 
-	RayParams Params;
+	RayParams_Raycast Params;
 	setupRayParams(&Params, origin, dir, &tree, worldm_Aligned, mesh, maxDist, geomEpsilon, flags);
 
 	if(tree.mNodes)
@@ -588,7 +752,7 @@ PxIntBool BV4_RaycastSingle(const PxVec3& origin, const PxVec3& dir, const BV4Tr
 
 namespace
 {
-struct RayParamsCB : RayParams
+struct RayParamsCB : RayParams_Raycast
 {
 	MeshRayCallback	mCallback;
 	void*			mUserData;
@@ -611,9 +775,11 @@ public:
 
 			PX_ALIGN_PREFIX(16)	char buffer[sizeof(PxGeomRaycastHit)] PX_ALIGN_SUFFIX(16);
 			PxGeomRaycastHit& StabbedFace = reinterpret_cast<PxGeomRaycastHit&>(buffer);
-			if(RayTriOverlapT<RayParams>(StabbedFace, p0, p1, p2, params))
+			if(RayTriOverlapT<RayParams_Raycast>(StabbedFace, p0, p1, p2, params))
 			{
+#ifndef TEST_DISTANCE_INSIDE_RAY_TRI
 				if(StabbedFace.distance<params->mStabbedFace.mDistance)
+#endif
 				{
 					HitCode Code = (params->mCallback)(params->mUserData, p0, p1, p2, primIndex, StabbedFace.distance, StabbedFace.u, StabbedFace.v);
 					if(Code==HIT_EXIT)
@@ -661,7 +827,7 @@ void BV4_RaycastCB(const PxVec3& origin, const PxVec3& dir, const BV4Tree& tree,
 
 namespace
 {
-struct RayParamsAll : RayParams
+struct RayParamsAll : RayParams_Raycast
 {
 	PX_FORCE_INLINE RayParamsAll(PxGeomRaycastHit* hits, PxU32 maxNbHits, PxU32 stride, const PxMat44* mat, PxHitFlags hitFlags) :
 		mHits			(reinterpret_cast<PxU8*>(hits)),
@@ -686,7 +852,7 @@ struct RayParamsAll : RayParams
 class LeafFunction_RaycastAll
 {
 public:
-	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams* PX_RESTRICT p, PxU32 primIndex)
+	static /*PX_FORCE_INLINE*/ PxIntBool doLeafTest(RayParams_Raycast* PX_RESTRICT p, PxU32 primIndex)
 	{
 		RayParamsAll* params = static_cast<RayParamsAll*>(p);
 
@@ -697,9 +863,11 @@ public:
 			getVertexReferences(VRef0, VRef1, VRef2, primIndex, params->mTris32, params->mTris16);
 
 			PxGeomRaycastHit& StabbedFace = *reinterpret_cast<PxGeomRaycastHit*>(params->mHits);
-			if(RayTriOverlapT<RayParams>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
+			if(RayTriOverlapT<RayParams_Raycast>(StabbedFace, params->mVerts[VRef0], params->mVerts[VRef1], params->mVerts[VRef2], params))
 			{
+#ifndef TEST_DISTANCE_INSIDE_RAY_TRI
 				if(StabbedFace.distance<params->mStabbedFace.mDistance)
+#endif
 				{
 					updateParamsAfterImpact(params, primIndex, VRef0, VRef1, VRef2, StabbedFace);
 

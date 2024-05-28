@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -56,17 +56,17 @@ namespace Bp
 		virtual								~BroadPhaseABP();
 
 	// BroadPhase
-		virtual	PxBroadPhaseType::Enum		getType()					const	PX_OVERRIDE	{ return mEnableMT ? PxBroadPhaseType::ePABP : PxBroadPhaseType::eABP;	}
-		virtual	void						release()							PX_OVERRIDE	{ PX_DELETE_THIS;														}
+		virtual	PxBroadPhaseType::Enum		getType()					const	PX_OVERRIDE	PX_FINAL	{ return mEnableMT ? PxBroadPhaseType::ePABP : PxBroadPhaseType::eABP;	}
+		virtual	void						release()							PX_OVERRIDE	PX_FINAL	{ PX_DELETE_THIS;														}
 		virtual	void						update(PxcScratchAllocator* scratchAllocator, const BroadPhaseUpdateData& updateData, physx::PxBaseTask* continuation)	PX_OVERRIDE;
-		virtual	void						preBroadPhase(const Bp::BroadPhaseUpdateData&) PX_OVERRIDE	{}
-		virtual void						fetchBroadPhaseResults()		PX_OVERRIDE	{}
-		virtual const BroadPhasePair*		getCreatedPairs(PxU32&)	const	PX_OVERRIDE;
-		virtual const BroadPhasePair*		getDeletedPairs(PxU32&)	const	PX_OVERRIDE;
-		virtual void						freeBuffers()					PX_OVERRIDE;
-		virtual void						shiftOrigin(const PxVec3& shift, const PxBounds3* boundsArray, const PxReal* contactDistances)	PX_OVERRIDE;
+		virtual	void						preBroadPhase(const Bp::BroadPhaseUpdateData&) PX_OVERRIDE	PX_FINAL	{}
+		virtual void						fetchBroadPhaseResults()		PX_OVERRIDE	PX_FINAL	{}
+		virtual const BroadPhasePair*		getCreatedPairs(PxU32&)	const	PX_OVERRIDE	PX_FINAL;
+		virtual const BroadPhasePair*		getDeletedPairs(PxU32&)	const	PX_OVERRIDE	PX_FINAL;
+		virtual void						freeBuffers()					PX_OVERRIDE	PX_FINAL;
+		virtual void						shiftOrigin(const PxVec3& shift, const PxBounds3* boundsArray, const PxReal* contactDistances)	PX_OVERRIDE	PX_FINAL;
 #if PX_CHECKED
-		virtual bool						isValid(const BroadPhaseUpdateData& updateData)	const	PX_OVERRIDE;
+		virtual bool						isValid(const BroadPhaseUpdateData& updateData)	const	PX_OVERRIDE	PX_FINAL;
 #endif
 	//~BroadPhase
 

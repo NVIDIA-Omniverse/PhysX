@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -730,7 +730,7 @@ public:
 	static void drawLine(PxRenderOutput& out, const aos::Vec3VArg p0, const aos::Vec3VArg p1, PxU32 color = 0xff00ffff);
 	static void drawLine(PxRenderOutput& out, const PxVec3 p0, const PxVec3 p1, PxU32 color = 0xff00ffff);
 	static void drawPoint(PxRenderOutput& out, const aos::Vec3VArg p, const PxF32 size, PxU32 color = 0x00ff0000);
-	static void drawPolygon(PxRenderOutput& out, const aos::PxTransformV& transform,  aos::Vec3V* points, PxU32 numVerts, PxU32 color = 0xff00ffff);
+	static void drawPolygon(PxRenderOutput& out, const aos::PxTransformV& transform, aos::Vec3V* points, PxU32 numVerts, PxU32 color = 0xff00ffff);
 
 	aos::PxTransformV mRelativeTransform;//aToB
 	PxF32 mMaxPen[GU_MAX_MANIFOLD_SIZE];

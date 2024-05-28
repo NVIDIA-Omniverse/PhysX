@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -195,13 +195,13 @@ bool Gu::pcmContactConvexMesh(GU_CONTACT_METHOD_ARGS)
 	if(idtScaleConvex)
 	{
 		SupportLocalImpl<ConvexHullNoScaleV> convexMap(static_cast<const ConvexHullNoScaleV&>(convexHull), convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, true);
-		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 	else
 	{
 		SupportLocalImpl<ConvexHullV> convexMap(convexHull, convexTransform, convexHull.vertex2Shape, convexHull.shape2Vertex, false);
-		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,  
+		return PCMContactConvexMesh(polyData, &convexMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, convexScaling,
 			meshScaling, idtScaleConvex, idtScaleMesh, multiManifold, renderOutput);
 	}
 }
@@ -240,6 +240,6 @@ bool Gu::pcmContactBoxMesh(GU_CONTACT_METHOD_ARGS)
 	const Mat33V identity = M33Identity();
 	SupportLocalImpl<BoxV> boxMap(boxV, boxTransform, identity, identity, true);
 
-	return PCMContactConvexMesh(polyData, &boxMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, idtScaling,  meshScaling, 
+	return PCMContactConvexMesh(polyData, &boxMap, minMargin, hullAABB, shapeMesh, transform0, transform1, params.mContactDistance, contactBuffer, idtScaling, meshScaling, 
 		true, idtMeshScale, multiManifold, renderOutput);
 }

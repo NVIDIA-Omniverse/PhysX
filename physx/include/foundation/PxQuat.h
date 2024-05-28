@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_QUAT_H
 #define PX_QUAT_H
 
-/** \addtogroup foundation
-@{
-*/
 
 #include "foundation/PxVec3.h"
 #if !PX_DOXYGEN
@@ -289,7 +286,7 @@ class PxQuatT
 		const Type vx = Type(2.0) * v.x;
 		const Type vy = Type(2.0) * v.y;
 		const Type vz = Type(2.0) * v.z;
-		const Type w2 = w * w - 0.5f;
+		const Type w2 = w * w - Type(0.5);
 		const Type dot2 = (x * vx + y * vy + z * vz);
 		return PxVec3T<Type>((vx * w2 + (y * vz - z * vy) * w + x * dot2), (vy * w2 + (z * vx - x * vz) * w + y * dot2),
 						     (vz * w2 + (x * vy - y * vx) * w + z * dot2));
@@ -303,7 +300,7 @@ class PxQuatT
 		const Type vx = Type(2.0) * v.x;
 		const Type vy = Type(2.0) * v.y;
 		const Type vz = Type(2.0) * v.z;
-		const Type w2 = w * w - 0.5f;
+		const Type w2 = w * w - Type(0.5);
 		const Type dot2 = (x * vx + y * vy + z * vz);
 		return PxVec3T<Type>((vx * w2 - (y * vz - z * vy) * w + x * dot2), (vy * w2 - (z * vx - x * vz) * w + y * dot2),
 						    (vz * w2 - (x * vy - y * vx) * w + z * dot2));
@@ -401,6 +398,5 @@ typedef PxQuatT<double>	PxQuatd;
 } // namespace physx
 #endif
 
-/** @} */
 #endif
 

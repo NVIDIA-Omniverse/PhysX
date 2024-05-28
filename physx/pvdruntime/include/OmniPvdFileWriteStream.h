@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -32,7 +32,7 @@
 #include "OmniPvdWriteStream.h"
 
 /**
- * @brief Used to abstract a file write stream
+ * \brief Used to abstract a file write stream
  *
  * Used to set the filename, opening and closing it.
  */
@@ -44,23 +44,23 @@ public:
 	}
 
 	/**
-	 * @brief Sets the file name of the file to write to
+	 * \brief Sets the file name of the file to write to
 	 *
-	 * @param fileName The file name of the file to open
+	 * \param fileName The file name of the file to open
 	 */
 	virtual void OMNI_PVD_CALL setFileName(const char* fileName) = 0;
 
 	/**
-	 * @brief Opens the file
+	 * \brief Opens the file
 	 *
-	 * @return True if the file opening was successfull
+	 * \return True if the file opening was successfull
 	 */
 	virtual bool OMNI_PVD_CALL openFile() = 0;
 
 	/**
-	 * @brief Closes the file
+	 * \brief Closes the file
 	 *
-	 * @return True if the file closing was successfull
+	 * \return True if the file closing was successfull
 	 */
 	virtual bool OMNI_PVD_CALL closeFile() = 0;
 };

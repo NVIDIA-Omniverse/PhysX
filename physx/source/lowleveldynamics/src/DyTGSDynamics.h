@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -61,6 +61,7 @@ namespace physx
 	class PxsIslandIndices;
 	struct PxsIndexedInteraction;
 	struct PxsIndexedContactManager;
+	struct PxsExternalAccelerationProvider;
 
 	namespace Dy
 	{
@@ -86,10 +87,11 @@ namespace physx
 			PxsBodyCore**				bodyCoreArray;
 
 			PxU32						solverBodyOffset;
+			PxsExternalAccelerationProvider* externalAccelerations;
 
 			SolverIslandObjectsStep() : bodies(NULL), articulations(NULL), articulationOwners(NULL),
 				contactManagers(NULL), islandIds(NULL), numIslands(0), nodeIndexArray(NULL), constraintDescs(NULL), motionVelocities(NULL), bodyCoreArray(NULL),
-				solverBodyOffset(0)
+				solverBodyOffset(0), externalAccelerations(NULL)
 			{
 			}
 		};
@@ -112,6 +114,8 @@ namespace physx
 			PxI32				mRigidBodyIntegratedCount;
 			PxI32				mSharedArticulationIndex;
 			PxI32				mArticulationIntegratedCount;
+			PxI32				mSharedGravityIndex;
+			PxI32				mGravityIntegratedCount;
 		};
 
 		struct SolverIslandObjectsStep;
@@ -164,7 +168,9 @@ public:
 										PxU64 contextID,
 										bool enableStabilization,
 										bool useEnhancedDeterminism,
-										PxReal lengthScale
+										PxReal lengthScale,
+										bool isExternalForcesEveryTgsIterationEnabled,
+										bool isResidualReportingEnabled
 										);
 
 	virtual								~DynamicsTGSContext();
@@ -176,6 +182,7 @@ public:
 	virtual void						mergeResults()	PX_OVERRIDE;
 	virtual void						setSimulationController(PxsSimulationController* simulationController)	PX_OVERRIDE	{ mSimulationController = simulationController; }
 	virtual PxSolverType::Enum			getSolverType()	const	PX_OVERRIDE	{ return PxSolverType::eTGS;	}
+		
 	//~Context
 
 	/**
@@ -263,14 +270,29 @@ protected:
 			void parallelSolveConstraints(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, PxTGSSolverBodyTxInertia* solverTxInertia,
 				PxReal elapsedTime, PxReal minPenetration, SolverContext& cache, PxU32 iterCount);
 
-			void writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders);
+			void writebackConstraintsIteration(const PxConstraintBatchHeader* const hdrs, const PxSolverConstraintDesc* const contactDescPtr, PxU32 nbHeaders, SolverContext& cache);
 
-			void parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders);
+			void parallelWritebackConstraintsIteration(const PxSolverConstraintDesc* const contactDescPtr, const PxConstraintBatchHeader* const batchHeaders, PxU32 nbHeaders, SolverContext& cache);
+
+			void applySubstepGravity(PxsRigidBody** bodies, PxsExternalAccelerationProvider& externalAccelerations,
+				PxU32 count, PxTGSSolverBodyVel* vels, PxReal dt, PxTGSSolverBodyTxInertia* PX_RESTRICT txInertias, PxU32* nodeIndexArray);
+
+			void applySubstepGravityParallel(const SolverIslandObjectsStep& objects, PxTGSSolverBodyVel* solverVels, const PxU32 bodyOffset, PxReal stepDt,
+				const PxU32 nbBodies, PxU32& startGravityIdx, PxU32& nbGravityRemaining, PxU32& targetGravityProgressCount,
+				PxI32* gravityProgressCount, PxI32* gravityCounts, PxU32 unrollSize);
+
+			void applyArticulationSubstepGravityParallel(PxU32& startArticulationIdx, PxU32& targetArticulationProgressCount, PxI32* articulationProgressCount,
+				PxI32* articulationIntegrationCounts, ArticulationSolverDesc* articulationDescs, PxU32 nbArticulations, PxReal stepDt, ThreadContext& threadContext);
 
 			void integrateBodies(const SolverIslandObjectsStep& objects,
 				PxU32 count, PxTGSSolverBodyVel* vels,
 				PxTGSSolverBodyTxInertia* txInertias, const PxTGSSolverBodyData*const bodyDatas, PxReal dt, PxReal invTotalDt, bool averageBodies,
 				PxReal ratio);
+
+			void integrateBodiesAndApplyGravity(const SolverIslandObjectsStep& objects,
+				PxU32 count, PxTGSSolverBodyVel* vels,
+				PxTGSSolverBodyTxInertia* txInertias, const PxTGSSolverBodyData*const bodyDatas, PxReal dt, PxReal invTotalDt, bool averageBodies,
+				PxReal ratio, PxU32 posIters);
 
 			void parallelIntegrateBodies(PxTGSSolverBodyVel* vels, PxTGSSolverBodyTxInertia* txInertias,
 				const PxTGSSolverBodyData* const bodyDatas, PxU32 count, PxReal dt, PxU32 iteration, PxReal invTotalDt, bool average,
@@ -285,13 +307,15 @@ protected:
 
 			void stepArticulations(Dy::ThreadContext& threadContext, const PxsIslandIndices& counts, PxReal dt, PxReal stepInvDt);
 
+			void applyArticulationTgsSubstepForces(Dy::ThreadContext& threadContext, PxU32 numArticulations, PxReal stepDt);
+
 			void iterativeSolveIsland(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
 				PxReal stepDt, PxReal invStepDt, PxU32 posIters, PxU32 velIters, SolverContext& cache, PxReal ratio,
 				PxReal biasCoefficient);
 
 			void iterativeSolveIslandParallel(const SolverIslandObjectsStep& objects, const PxsIslandIndices& counts, ThreadContext& mThreadContext,
-				PxReal stepDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts,
-				PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize,
+				PxReal stepDt, PxU32 posIters, PxU32 velIters, PxI32* solverCounts, PxI32* integrationCounts, PxI32* articulationIntegrationCounts, PxI32* gravityCounts,
+				PxI32* solverProgressCount, PxI32* integrationProgressCount, PxI32* articulationProgressCount, PxI32* gravityProgressCount, PxU32 solverUnrollSize, PxU32 integrationUnrollSize,
 				PxReal ratio, PxReal biasCoefficient);
 
 			void endIsland(ThreadContext& mThreadContext);
@@ -388,6 +412,7 @@ protected:
 			Cm::FlushPool&								mTaskPool;
 			PxTaskManager*								mTaskManager;
 			PxU32										mCurrentIndex; // this is the index point to the current exceeded force threshold stream
+			bool										mIsExternalForcesEveryTgsIterationEnabled;
 
 			friend class SetupDescsTask;
 			friend class PreIntegrateTask;

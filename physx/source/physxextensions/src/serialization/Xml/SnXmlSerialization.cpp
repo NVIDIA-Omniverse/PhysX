@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 #include "SnXmlImpl.h"
@@ -280,7 +280,7 @@ namespace physx { namespace Sn {
 
 		virtual XmlReader* getParentReader()
 		{
-			XmlReader* retval = PX_PLACEMENT_NEW((mWrapper.getAllocator().allocate(sizeof(XmlNodeReader), "createNodeEditor",  PX_FL)), XmlNodeReader) 
+			XmlReader* retval = PX_PLACEMENT_NEW((mWrapper.getAllocator().allocate(sizeof(XmlNodeReader), "createNodeEditor", PX_FL)), XmlNodeReader) 
 				( mTopNode, mWrapper.getAllocator(), mManager );
 			return retval;
 		}
@@ -677,7 +677,7 @@ namespace physx { namespace Sn {
 		virtual RepXCollection& createCollection( const char* inVersionStr )
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
-			RepXCollectionImpl* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(RepXCollectionImpl), "createCollection",  PX_FL)), RepXCollectionImpl) ( mSerializationRegistry, *this, inVersionStr );
+			RepXCollectionImpl* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(RepXCollectionImpl), "createCollection", PX_FL)), RepXCollectionImpl) ( mSerializationRegistry, *this, inVersionStr );
 		
 			return *retval;
 		}
@@ -705,7 +705,7 @@ namespace physx { namespace Sn {
 		virtual XmlReaderWriter& createNodeEditor()
 		{
 			PxAllocatorCallback& allocator = mSharedData->mWrapper.getAllocator(); 
-			XmlReaderWriter* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(XmlNodeReader), "createNodeEditor",  PX_FL)), XmlNodeReader) ( NULL, allocator, mAllocator.mManager );
+			XmlReaderWriter* retval = PX_PLACEMENT_NEW((allocator.allocate(sizeof(XmlNodeReader), "createNodeEditor", PX_FL)), XmlNodeReader) ( NULL, allocator, mAllocator.mManager );
 			return *retval;
 		}
 	};
@@ -722,7 +722,7 @@ namespace physx { namespace Sn {
 
 	static RepXCollection* create(SerializationRegistry& s, PxAllocatorCallback& inAllocator, PxCollection& inCollection )
 	{
-		return PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(RepXCollectionImpl), "RepXCollection::create",  PX_FL)), RepXCollectionImpl) ( s, inAllocator, inCollection );
+		return PX_PLACEMENT_NEW((inAllocator.allocate(sizeof(RepXCollectionImpl), "RepXCollection::create", PX_FL)), RepXCollectionImpl) ( s, inAllocator, inCollection );
 	}
 
 	static RepXCollection* create(SerializationRegistry& s, PxInputData &data, PxAllocatorCallback& inAllocator, PxCollection& inCollection )

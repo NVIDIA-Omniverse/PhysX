@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TRIANGLE_MESH_EXT_H
 #define PX_TRIANGLE_MESH_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "PxPhysXConfig.h"
 #include "common/PxPhysXCommonConfig.h"
@@ -72,7 +69,7 @@ class PxHeightFieldGeometry;
 	\param[in] meshPose Pose of the triangle mesh
 	\return Number of overlaps found. Triangle indices can then be accessed through the #getResults() function.
 
-	@see PxGeometry PxTransform PxTriangleMeshGeometry PxMeshQuery::findOverlapTriangleMesh
+	\see PxGeometry PxTransform PxTriangleMeshGeometry PxMeshQuery::findOverlapTriangleMesh
 	*/
 						PxU32			findOverlap(const PxGeometry& geom, const PxTransform& geomPose, const PxTriangleMeshGeometry& meshGeom, const PxTransform& meshPose);
 
@@ -85,7 +82,7 @@ class PxHeightFieldGeometry;
 	\param[in] hfPose Pose of the height field
 	\return Number of overlaps found. Triangle indices can then be accessed through the #getResults() function.
 
-	@see PxGeometry PxTransform PxHeightFieldGeometry PxMeshQuery::findOverlapHeightField
+	\see PxGeometry PxTransform PxHeightFieldGeometry PxMeshQuery::findOverlapHeightField
 	*/
 						PxU32			findOverlap(const PxGeometry& geom, const PxTransform& geomPose, const PxHeightFieldGeometry& hfGeom, const PxTransform& hfPose);
 
@@ -133,7 +130,7 @@ class PxHeightFieldGeometry;
 
 	\return True if the MTD has successfully been computed, i.e. if objects do overlap.
 
-	@see PxGeometry PxTransform PxTriangleMeshGeometry
+	\see PxGeometry PxTransform PxTriangleMeshGeometry
 	*/
 	bool PxComputeTriangleMeshPenetration(PxVec3& direction, 
 										  PxReal& depth,
@@ -169,7 +166,7 @@ class PxHeightFieldGeometry;
 
 	\return True if the MTD has successfully been computed, i.e. if objects do overlap.
 
-	@see PxGeometry PxTransform PxHeightFieldGeometry
+	\see PxGeometry PxTransform PxHeightFieldGeometry
 	*/
 	bool PxComputeHeightFieldPenetration(PxVec3& direction, 
 										 PxReal& depth,
@@ -193,5 +190,4 @@ class PxHeightFieldGeometry;
 } // namespace physx
 #endif
 
-/** @} */
 #endif

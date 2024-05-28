@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_BOX_CONTROLLER_H
 #define PX_BOX_CONTROLLER_H
-/** \addtogroup character
-  @{
-*/
 
 #include "characterkinematic/PxController.h"
 
@@ -42,7 +39,7 @@ namespace physx
 /**
 \brief Descriptor for a box character controller.
 
-@see PxBoxController PxControllerDesc
+\see PxBoxController PxControllerDesc
 */
 class PxBoxControllerDesc : public PxControllerDesc
 {
@@ -145,7 +142,7 @@ PX_INLINE bool PxBoxControllerDesc::isValid() const
 /**
 \brief Box character controller.
 
-@see PxBoxControllerDesc PxController
+\see PxBoxControllerDesc PxController
 */
 class PxBoxController : public PxController
 {
@@ -156,7 +153,7 @@ public:
 
 	\return The half height of the controller.
 
-	@see PxBoxControllerDesc.halfHeight setHalfHeight()
+	\see PxBoxControllerDesc.halfHeight setHalfHeight()
 	*/
 	virtual		PxF32			getHalfHeight()			const	= 0;
 
@@ -165,7 +162,7 @@ public:
 
 	\return The half side extent of the controller.
 
-	@see PxBoxControllerDesc.halfSideExtent setHalfSideExtent()
+	\see PxBoxControllerDesc.halfSideExtent setHalfSideExtent()
 	*/
 	virtual		PxF32			getHalfSideExtent()		const	= 0;
 
@@ -174,7 +171,7 @@ public:
 
 	\return The half forward extent of the controller.
 
-	@see PxBoxControllerDesc.halfForwardExtent setHalfForwardExtent()
+	\see PxBoxControllerDesc.halfForwardExtent setHalfForwardExtent()
 	*/
 	virtual		PxF32			getHalfForwardExtent()	const	= 0;
 
@@ -186,7 +183,7 @@ public:
 	\param[in] halfHeight The new half height for the controller.
 	\return Currently always true.
 
-	@see PxBoxControllerDesc.halfHeight getHalfHeight()
+	\see PxBoxControllerDesc.halfHeight getHalfHeight()
 	*/
 	virtual		bool			setHalfHeight(PxF32 halfHeight)					= 0;
 
@@ -198,7 +195,7 @@ public:
 	\param[in] halfSideExtent The new half side extent for the controller.
 	\return Currently always true.
 
-	@see PxBoxControllerDesc.halfSideExtent getHalfSideExtent()
+	\see PxBoxControllerDesc.halfSideExtent getHalfSideExtent()
 	*/
 	virtual		bool			setHalfSideExtent(PxF32 halfSideExtent)			= 0;
 
@@ -210,7 +207,7 @@ public:
 	\param[in] halfForwardExtent The new half forward extent for the controller.
 	\return Currently always true.
 
-	@see PxBoxControllerDesc.halfForwardExtent getHalfForwardExtent()
+	\see PxBoxControllerDesc.halfForwardExtent getHalfForwardExtent()
 	*/
 	virtual		bool			setHalfForwardExtent(PxF32 halfForwardExtent)	= 0;
 
@@ -223,5 +220,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

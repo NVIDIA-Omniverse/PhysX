@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_FEM_MATERIAL_H
 #define PX_FEM_MATERIAL_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxBaseMaterial.h"
@@ -45,7 +42,7 @@ namespace physx
 	/**
 	\brief Material class to represent a set of FEM material properties.
 
-	@see PxPhysics.createFEMSoftBodyMaterial
+	\see PxPhysics.createFEMSoftBodyMaterial
 	*/
 	class PxFEMMaterial : public PxBaseMaterial
 	{
@@ -56,7 +53,7 @@ namespace physx
 	
 		\param[in] young Young's modulus. <b>Range:</b> [0, PX_MAX_F32)
 
-		@see getYoungsModulus()
+		\see getYoungsModulus()
 		*/
 		virtual		void	setYoungsModulus(PxReal young) = 0;
 
@@ -65,16 +62,16 @@ namespace physx
 
 		\return The young's modulus value.
 
-		@see setYoungsModulus()
+		\see setYoungsModulus()
 		*/
 		virtual		PxReal	getYoungsModulus() const = 0;
 
 		/**
-		\brief Sets the Poisson's ratio which defines the body's volume preservation. Completely incompressible materials have a poisson ratio of 0.5. Its value should not be set to exactly 0.5 because this leads to numerical problems.
+		\brief Sets the Poisson's ratio which defines the body's volume preservation.
 
-		\param[in] poisson Poisson's ratio. <b>Range:</b> [0, 0.5)
+		\param[in] poisson Poisson's ratio. <b>Range:</b> [0, 0.5]
 
-		@see getPoissons()
+		\see getPoissons()
 		*/
 		virtual		void	setPoissons(PxReal poisson) = 0;
 
@@ -82,7 +79,7 @@ namespace physx
 		\brief Retrieves the Poisson's ratio.
 		\return The Poisson's ratio.
 
-		@see setPoissons()
+		\see setPoissons()
 		*/
 		virtual		PxReal	getPoissons() const = 0;
 
@@ -91,7 +88,7 @@ namespace physx
 
 		\param[in] dynamicFriction The dynamic friction value. <b>Range:</b> [0, PX_MAX_F32)
 
-		@see getDynamicFriction()
+		\see getDynamicFriction()
 		*/
 		virtual		void	setDynamicFriction(PxReal dynamicFriction) = 0;
 
@@ -99,7 +96,7 @@ namespace physx
 		\brief Retrieves the dynamic friction value
 		\return The dynamic friction value
 
-		@see setDynamicFriction()
+		\see setDynamicFriction()
 		*/
 		virtual		PxReal	getDynamicFriction() const = 0;
 
@@ -114,5 +111,4 @@ namespace physx
 } // namespace physx
 #endif
 
-/** @} */
 #endif

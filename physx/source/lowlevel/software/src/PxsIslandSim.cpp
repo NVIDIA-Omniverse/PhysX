@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -426,7 +426,7 @@ void IslandSim::activateNode(PxNodeIndex nodeIndex)
 		if(!(node.isActive() || node.isActivating()))
 		{
 			//If the node is kinematic and already in the active node list, then we need to remove it
-			//from the active kinematic node list, then re-add it after the wake-up. It's a bit stupid
+			//from the active kinematic node list, then re-add it after the wake-up. It's a bit dumb
 			//but it means that we don't need another index
 
 			if(node.isKinematic() && mActiveNodeIndex[nodeIndex.index()] != PX_INVALID_NODE)

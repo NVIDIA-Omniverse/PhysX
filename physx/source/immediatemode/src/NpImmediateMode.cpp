@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,12 +38,11 @@
 #include "../../lowleveldynamics/src/DyTGSContactPrep.h"
 #include "../../lowleveldynamics/src/DyTGS.h"
 #include "../../lowleveldynamics/src/DyConstraintPartition.h"
-#include "../../lowleveldynamics/src/DyArticulationCpuGpu.h"
+#include "../../lowleveldynamics/shared/DyCpuGpuArticulation.h"
 #include "GuPersistentContactManifold.h"
 #include "NpConstraint.h"
 #include "common/PxProfileZone.h"
 
-// PT: just for Dy::DY_ARTICULATION_MAX_SIZE
 #include "../../lowleveldynamics/include/DyFeatherstoneArticulation.h"
 
 #include "../../lowlevel/common/include/utils/PxcScratchAllocator.h"
@@ -75,17 +74,13 @@ void immediate::PxConstructStaticSolverBody(const PxTransform& globalPose, PxSol
 	Dy::copyToSolverBodyData(zero, zero, 0.0f, zero, globalPose, -PX_MAX_F32, PX_MAX_F32, PX_INVALID_NODE, PX_MAX_F32, solverBodyData, 0, 0.0f, false);
 }
 
-void immediate::PxIntegrateSolverBodies(PxSolverBodyData* solverBodyData, PxSolverBody* solverBody, const PxVec3* linearMotionVelocity, const PxVec3* angularMotionState, PxU32 nbBodiesToIntegrate, PxReal dt)
+void immediate::PxIntegrateSolverBodies(PxSolverBodyData* solverBodyData, PxSolverBody* solverBody, PxVec3* linearMotionVelocity, PxVec3* angularMotionState, PxU32 nbBodiesToIntegrate, PxReal dt)
 {
 	PX_ASSERT((size_t(solverBodyData) & 0xf) == 0);
 	PX_ASSERT((size_t(solverBody) & 0xf) == 0);
 
 	for(PxU32 i=0; i<nbBodiesToIntegrate; ++i)
-	{
-		PxVec3 lmv = linearMotionVelocity[i];
-		PxVec3 amv = angularMotionState[i];
-		Dy::integrateCore(lmv, amv, solverBody[i], solverBodyData[i], dt, 0);
-	}
+		Dy::integrateCore(linearMotionVelocity[i], angularMotionState[i], solverBody[i], solverBodyData[i], dt, 0);
 }
 
 namespace
@@ -105,35 +100,30 @@ namespace
 														immArticulation(const PxArticulationDataRC& data);
 														~immArticulation();
 
-		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, Cm::SpatialVectorF* impulses, Cm::SpatialVectorF* DeltaV, PxReal elapsedTime, bool velocityIteration, bool isTGS)
+		PX_FORCE_INLINE	void							immSolveInternalConstraints(PxReal dt, PxReal invDt, PxReal elapsedTime, bool velocityIteration, bool isTGS)
 														{
 															// PT: TODO: revisit the TGS coeff (PX-4516)
-															FeatherstoneArticulation::solveInternalConstraints(dt, invDt, impulses, DeltaV, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT);
+															FeatherstoneArticulation::solveInternalConstraints(dt, invDt, velocityIteration, isTGS, elapsedTime, isTGS ? 0.7f : DY_ARTICULATION_PGS_BIAS_COEFFICIENT, false);
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocitiesTGS(PxReal dt, PxReal totalDt, PxReal invDt, PxReal /*invTotalDt*/, const PxVec3& gravity, PxReal invLengthScale)
 														{
 															mArticulationData.setDt(totalDt);
 
-															Cm::SpatialVectorF* Z = mTempZ.begin();
-															Cm::SpatialVectorF* deltaV = mTempDeltaV.begin();
-
-															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, Z, deltaV, invLengthScale);
+															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, invLengthScale); // pass perIterationGravity flag here? ->  PX-4744
 
 															setupInternalConstraints(mArticulationData.getLinks(), mArticulationData.getLinkCount(), 
-																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, totalDt, invDt, true);
+																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, dt, totalDt, invDt, true);
 														}
 
 		PX_FORCE_INLINE	void							immComputeUnconstrainedVelocities(PxReal dt, const PxVec3& gravity, PxReal invLengthScale)
 														{
 															mArticulationData.setDt(dt);
 
-															Cm::SpatialVectorF* Z = mTempZ.begin();
-															Cm::SpatialVectorF* deltaV = mTempDeltaV.begin();
-															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, Z, deltaV, invLengthScale);
+															FeatherstoneArticulation::computeUnconstrainedVelocitiesInternal(gravity, invLengthScale);
 															const PxReal invDt = 1.0f/dt;
 															setupInternalConstraints(mArticulationData.getLinks(), mArticulationData.getLinkCount(),
-																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, Z, dt, dt, invDt, false);
+																mArticulationData.getArticulationFlags() & PxArticulationFlag::eFIX_BASE, mArticulationData, dt, dt, invDt, false);
 														}
 
 						void							allocate(const PxU32 nbLinks);
@@ -154,7 +144,6 @@ namespace
 						};
 						PxArray<immArticulationLinkDataRC>	mTemp;
 						PxArray<Cm::SpatialVectorF>			mTempDeltaV;
-						PxArray<Cm::SpatialVectorF>			mTempZ;
 
 						bool							mImmDirty;
 						bool							mJCalcDirty;
@@ -162,388 +151,15 @@ namespace
 						void							initJointCore(Dy::ArticulationJointCore& core, const PxArticulationJointDataRC& inboundJoint);
 	};
 
-	class RigidBodyClassification : public RigidBodyClassificationBase
+	PxU32 createHeaders(PxU32 nbConstraints, const PxU32* PX_RESTRICT constraintsPerPartition, PxU32 maxBatchPartition,
+						PxConstraintBatchHeader* PX_RESTRICT outBatchHeaders, const PxSolverConstraintDesc* PX_RESTRICT outOrderedConstraintDescs)
 	{
-	public:
-		RigidBodyClassification(PxU8* bodies, PxU32 bodyCount, PxU32 bodyStride) : RigidBodyClassificationBase(bodies, bodyCount, bodyStride)
-		{
-		}
-
-		PX_FORCE_INLINE void reserveSpaceForStaticConstraints(PxU32* numConstraintsPerPartition)
-		{
-			for (PxU32 a = 0; a < mBodySize; a += mBodyStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-
-				for (PxU32 b = 0; b < body.maxSolverFrictionProgress; ++b)
-				{
-					PxU32 partId = PxMin(PxU32(body.maxSolverNormalProgress + b), MAX_NUM_PARTITIONS);
-					numConstraintsPerPartition[partId]++;
-				}
-			}
-		}
-
-		PX_FORCE_INLINE void zeroBodies()
-		{
-			for(PxU32 a=0; a<mBodySize; a += mBodyStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-				body.maxSolverFrictionProgress = 0;
-				body.maxSolverNormalProgress = 0;
-			}
-		}
-
-		PX_FORCE_INLINE void afterClassification()	const
-		{
-			for(PxU32 a=0; a<mBodySize; a += mBodyStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-				//Keep the dynamic constraint count but bump the static constraint count back to 0.
-				//This allows us to place the static constraints in the appropriate place when we see them
-				//because we know the maximum index for the dynamic constraints...
-				body.maxSolverFrictionProgress = 0;
-			}
-		}
-	};
-
-	class ExtendedRigidBodyClassification : public ExtendedRigidBodyClassificationBase
-	{
-	public:
-
-		ExtendedRigidBodyClassification(PxU8* bodies, PxU32 numBodies, PxU32 stride, Dy::FeatherstoneArticulation** articulations, PxU32 numArticulations)
-			: ExtendedRigidBodyClassificationBase(bodies, numBodies, stride, articulations, numArticulations)
-		{
-		}
-
-		// PT: this version is slightly different from the SDK version, no mArticulationIndex!
-		//Returns true if it is a dynamic-dynamic constraint; false if it is a dynamic-static or dynamic-kinematic constraint
-		PX_FORCE_INLINE bool classifyConstraint(const PxSolverConstraintDesc& desc, uintptr_t& indexA, uintptr_t& indexB,
-			bool& activeA, bool& activeB, PxU32& bodyAProgress, PxU32& bodyBProgress) const
-		{
-			bool hasStatic = false;
-			if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexA)
-			{
-				indexA = uintptr_t(reinterpret_cast<PxU8*>(desc.bodyA) - mBodies) / mStride;
-				activeA = indexA < mBodyCount;
-				hasStatic = !activeA;//desc.bodyADataIndex == 0;
-				bodyAProgress = activeA ? desc.bodyA->solverProgress : 0;
-			}
-			else
-			{
-				Dy::FeatherstoneArticulation* articulationA = getArticulationA(desc);
-				indexA = mBodyCount;
-				//bodyAProgress = articulationA->getFsDataPtr()->solverProgress;
-				bodyAProgress = articulationA->solverProgress;
-				activeA = true;
-			}
-
-			if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexB)
-			{
-				indexB = uintptr_t(reinterpret_cast<PxU8*>(desc.bodyB) - mBodies) / mStride;
-				activeB = indexB < mBodyCount;
-				hasStatic = hasStatic || !activeB;
-				bodyBProgress = activeB ? desc.bodyB->solverProgress : 0;
-			}
-			else
-			{
-				Dy::FeatherstoneArticulation* articulationB = getArticulationB(desc);
-				indexB = mBodyCount;
-				activeB = true;
-				bodyBProgress = articulationB->solverProgress;
-			}
-			return !hasStatic;
-		}
-
-		PX_FORCE_INLINE void recordStaticConstraint(const PxSolverConstraintDesc& desc, bool& activeA, bool& activeB)
-		{
-			if (activeA)
-			{
-				if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexA)
-					desc.bodyA->maxSolverFrictionProgress++;
-				else
-				{
-					Dy::FeatherstoneArticulation* articulationA = getArticulationA(desc);
-					articulationA->maxSolverFrictionProgress++;
-				}
-			}
-
-			if (activeB)
-			{
-				if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexB)
-					desc.bodyB->maxSolverFrictionProgress++;
-				else
-				{
-					Dy::FeatherstoneArticulation* articulationB = getArticulationB(desc);
-					articulationB->maxSolverFrictionProgress++;
-				}
-			}
-		}
-
-		PX_FORCE_INLINE PxU32 getStaticContactWriteIndex(const PxSolverConstraintDesc& desc, bool activeA, bool activeB)	const
-		{
-			if (activeA)
-			{
-				if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexA)
-				{
-					return PxU32(desc.bodyA->maxSolverNormalProgress + desc.bodyA->maxSolverFrictionProgress++);
-				}
-				else
-				{
-					Dy::FeatherstoneArticulation* articulationA = getArticulationA(desc);
-					return PxU32(articulationA->maxSolverNormalProgress + articulationA->maxSolverFrictionProgress++);
-				}
-			}
-			else if (activeB)
-			{
-				if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexB)
-				{
-					return PxU32(desc.bodyB->maxSolverNormalProgress + desc.bodyB->maxSolverFrictionProgress++);
-				}
-				else
-				{
-					Dy::FeatherstoneArticulation* articulationB = getArticulationB(desc);
-					return PxU32(articulationB->maxSolverNormalProgress + articulationB->maxSolverFrictionProgress++);
-				}
-			}
-
-			return 0xffffffff;
-		}
-
-		PX_FORCE_INLINE void storeProgress(const PxSolverConstraintDesc& desc, PxU32 bodyAProgress, PxU32 bodyBProgress, PxU16 availablePartition)
-		{
-			if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexA)
-			{
-				desc.bodyA->solverProgress = bodyAProgress;
-				desc.bodyA->maxSolverNormalProgress = PxMax(desc.bodyA->maxSolverNormalProgress, availablePartition);
-			}
-			else
-			{
-				Dy::FeatherstoneArticulation* articulationA = getArticulationA(desc);
-				articulationA->solverProgress = bodyAProgress;
-				articulationA->maxSolverNormalProgress = PxMax(articulationA->maxSolverNormalProgress, availablePartition);
-			}
-
-			if (PxSolverConstraintDesc::RIGID_BODY == desc.linkIndexB)
-			{
-				desc.bodyB->solverProgress = bodyBProgress;
-				desc.bodyB->maxSolverNormalProgress = PxMax(desc.bodyB->maxSolverNormalProgress, availablePartition);
-			}
-			else
-			{
-				Dy::FeatherstoneArticulation* articulationB = getArticulationB(desc);
-				articulationB->solverProgress = bodyBProgress;
-				articulationB->maxSolverNormalProgress = PxMax(articulationB->maxSolverNormalProgress, availablePartition);
-			}
-		}
-
-		PX_FORCE_INLINE void reserveSpaceForStaticConstraints(PxU32* numConstraintsPerPartition)
-		{
-			for (PxU32 a = 0; a < mBodySize; a += mStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-
-				for (PxU32 b = 0; b < body.maxSolverFrictionProgress; ++b)
-				{
-					PxU32 partId = PxMin(PxU32(body.maxSolverNormalProgress + b), MAX_NUM_PARTITIONS);
-					numConstraintsPerPartition[partId]++;
-				}
-			}
-
-			for (PxU32 a = 0; a < mNumArticulations; ++a)
-			{
-				Dy::FeatherstoneArticulation* articulation = mArticulations[a];
-				articulation->solverProgress = 0;
-
-				for (PxU32 b = 0; b < articulation->maxSolverFrictionProgress; ++b)
-				{
-					PxU32 partId = PxMin(PxU32(articulation->maxSolverNormalProgress + b), MAX_NUM_PARTITIONS);
-					numConstraintsPerPartition[partId]++;
-				}
-			}
-		}
-
-		PX_FORCE_INLINE void zeroBodies()
-		{
-			for(PxU32 a=0; a<mBodySize; a += mStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-				body.maxSolverFrictionProgress = 0;
-				body.maxSolverNormalProgress = 0;
-			}
-
-			for(PxU32 a=0; a<mNumArticulations; ++a)
-			{
-				Dy::FeatherstoneArticulation* articulation = mArticulations[a];
-				articulation->solverProgress = 0;
-				articulation->maxSolverFrictionProgress = 0;
-				articulation->maxSolverNormalProgress = 0;
-			}
-		}
-
-		PX_FORCE_INLINE void afterClassification()	const
-		{
-			for(PxU32 a=0; a<mBodySize; a += mStride)
-			{
-				PxSolverBody& body = *reinterpret_cast<PxSolverBody*>(mBodies + a);
-				body.solverProgress = 0;
-				//Keep the dynamic constraint count but bump the static constraint count back to 0.
-				//This allows us to place the static constraints in the appropriate place when we see them
-				//because we know the maximum index for the dynamic constraints...
-				body.maxSolverFrictionProgress = 0;
-			}
-
-			for(PxU32 a=0; a<mNumArticulations; ++a)
-			{
-				Dy::FeatherstoneArticulation* articulation = mArticulations[a];
-				articulation->solverProgress = 0;
-				articulation->maxSolverFrictionProgress = 0;
-			}
-		}
-	};
-
-	template <typename Classification>
-	void classifyConstraintDesc(const PxSolverConstraintDesc* PX_RESTRICT descs, PxU32 numConstraints, Classification& classification,
-		PxU32* numConstraintsPerPartition)
-	{
-		const PxSolverConstraintDesc* _desc = descs;
-		const PxU32 numConstraintsMin1 = numConstraints - 1;
-
-		PxMemZero(numConstraintsPerPartition, sizeof(PxU32) * (MAX_NUM_PARTITIONS+1));
-
-		for(PxU32 i=0; i<numConstraints; ++i, _desc++)
-		{
-			const PxU32 prefetchOffset = PxMin(numConstraintsMin1 - i, 4u);
-			PxPrefetchLine(_desc[prefetchOffset].constraint);
-			PxPrefetchLine(_desc[prefetchOffset].bodyA);
-			PxPrefetchLine(_desc[prefetchOffset].bodyB);
-			PxPrefetchLine(_desc + 8);
-
-			uintptr_t indexA, indexB;
-			bool activeA, activeB;
-
-			PxU32 partitionsA, partitionsB;
-			const bool notContainsStatic = classification.classifyConstraint(*_desc, indexA, indexB, activeA, activeB, partitionsA, partitionsB);
-
-			if(notContainsStatic)
-			{
-				PxU32 availablePartition;
-				{
-					const PxU32 combinedMask = (~partitionsA & ~partitionsB);
-					availablePartition = combinedMask == 0 ? MAX_NUM_PARTITIONS : PxLowestSetBit(combinedMask);
-					if (availablePartition == MAX_NUM_PARTITIONS)
-					{
-						//Write to overflow partition...
-						numConstraintsPerPartition[availablePartition]++;
-						classification.storeProgress(*_desc, partitionsA, partitionsB, PxU16(MAX_NUM_PARTITIONS));
-						continue;
-					}
-
-					const PxU32 partitionBit = (1u << availablePartition);
-					partitionsA |= partitionBit;
-					partitionsB |= partitionBit;
-				}
-
-				numConstraintsPerPartition[availablePartition]++;
-				availablePartition++;
-				classification.storeProgress(*_desc, partitionsA, partitionsB, PxU16(availablePartition));
-			}
-			else
-			{
-				//Just count the number of static constraints and store in maxSolverFrictionProgress...
-				classification.recordStaticConstraint(*_desc, activeA, activeB);
-			}
-		}
-
-		classification.reserveSpaceForStaticConstraints(numConstraintsPerPartition);
-	}
-
-	template <typename Classification>
-	void writeConstraintDesc(	const PxSolverConstraintDesc* PX_RESTRICT descs, PxU32 numConstraints, Classification& classification,
-								PxU32* accumulatedConstraintsPerPartition, PxSolverConstraintDesc* PX_RESTRICT eaOrderedConstraintDesc)
-	{
-		const PxSolverConstraintDesc* _desc = descs;
-		const PxU32 numConstraintsMin1 = numConstraints - 1;
-		for(PxU32 i=0; i<numConstraints; ++i, _desc++)
-		{
-			const PxU32 prefetchOffset = PxMin(numConstraintsMin1 - i, 4u);
-			PxPrefetchLine(_desc[prefetchOffset].constraint);
-			PxPrefetchLine(_desc[prefetchOffset].bodyA);
-			PxPrefetchLine(_desc[prefetchOffset].bodyB);
-			PxPrefetchLine(_desc + 8);
-
-			uintptr_t indexA, indexB;
-			bool activeA, activeB;
-			PxU32 partitionsA, partitionsB;
-			const bool notContainsStatic = classification.classifyConstraint(*_desc, indexA, indexB, activeA, activeB,
-				partitionsA, partitionsB);
-
-			if (notContainsStatic)
-			{
-				PxU32 availablePartition;
-				{
-					const PxU32 combinedMask = (~partitionsA & ~partitionsB);
-					availablePartition = combinedMask == 0 ? MAX_NUM_PARTITIONS : PxLowestSetBit(combinedMask);
-					if (availablePartition == MAX_NUM_PARTITIONS)
-					{
-						eaOrderedConstraintDesc[accumulatedConstraintsPerPartition[availablePartition]++] = *_desc;
-						continue;
-					}
-
-					const PxU32 partitionBit = (1u << availablePartition);
-
-					partitionsA |= partitionBit;
-					partitionsB |= partitionBit;
-				}
-
-				classification.storeProgress(*_desc, partitionsA, partitionsB, PxU16(availablePartition+1));
-
-				eaOrderedConstraintDesc[accumulatedConstraintsPerPartition[availablePartition]++] = *_desc;
-			}
-			else
-			{
-				//Just count the number of static constraints and store in maxSolverFrictionProgress...
-				//KS - TODO - handle registration of static contacts with articulations here!
-				PxU32 index = classification.getStaticContactWriteIndex(*_desc, activeA, activeB);
-				eaOrderedConstraintDesc[accumulatedConstraintsPerPartition[index]++] = *_desc;
-			}
-		}
-	}
-
-	template <typename Classification>
-	PxU32 BatchConstraints(const PxSolverConstraintDesc* solverConstraintDescs, PxU32 nbConstraints, PxConstraintBatchHeader* outBatchHeaders, 
-		PxSolverConstraintDesc* outOrderedConstraintDescs, Classification& classification)
-	{
-		if(!nbConstraints)
-			return 0;
-
-		PxU32 constraintsPerPartition[MAX_NUM_PARTITIONS + 1];
-
-		classification.zeroBodies();
-
-		classifyConstraintDesc(solverConstraintDescs, nbConstraints, classification, constraintsPerPartition);
-
-		PxU32 accumulation = 0;
-		for (PxU32 a = 0; a < MAX_NUM_PARTITIONS + 1; ++a)
-		{
-			PxU32 count = constraintsPerPartition[a];
-			constraintsPerPartition[a] = accumulation;
-			accumulation += count;
-		}
-
-		classification.afterClassification();
-
-		writeConstraintDesc(solverConstraintDescs, nbConstraints, classification, constraintsPerPartition, outOrderedConstraintDescs);
-
 		PxU32 numHeaders = 0;
 		PxU32 currentPartition = 0;
 		PxU32 maxJ = nbConstraints == 0 ? 0 : constraintsPerPartition[0];
 
-		const PxU32 maxBatchPartition = MAX_NUM_PARTITIONS;
+		//printf("\nnbConstraints: %d\n", nbConstraints);
+
 		for (PxU32 a = 0; a < nbConstraints;)
 		{
 			PxConstraintBatchHeader& header = outBatchHeaders[numHeaders++];
@@ -554,18 +170,18 @@ namespace
 			if (loopMax > 0)
 			{
 				j = 1;
-				PxSolverConstraintDesc& desc = outOrderedConstraintDescs[a];
+				const PxSolverConstraintDesc& desc = outOrderedConstraintDescs[a];
 
 				if(isArticulationConstraint(desc))
 					loopMax = 1;
 
 				if (currentPartition < maxBatchPartition)
 				{
-					for (; j < loopMax && desc.constraintLengthOver16 == outOrderedConstraintDescs[a + j].constraintLengthOver16
+					for (; j < loopMax && desc.constraintType == outOrderedConstraintDescs[a + j].constraintType
 						&& !isArticulationConstraint(outOrderedConstraintDescs[a + j]); ++j);
 				}
 				header.stride = j;
-				header.constraintType = desc.constraintLengthOver16;
+				header.constraintType = desc.constraintType;
 			}
 			if (maxJ == (a + j) && maxJ != nbConstraints)
 			{
@@ -578,26 +194,98 @@ namespace
 	}
 }
 
+static PxU32 batchConstraints(	const PxSolverConstraintDesc* solverConstraintDescs, PxU32 nbConstraints, PxU8* solverBodies, PxU32 nbBodies,
+								PxConstraintBatchHeader* outBatchHeaders, PxSolverConstraintDesc* outOrderedConstraintDescs,
+								PxArticulationHandle* articulations, PxU32 nbArticulations, PxU32 stride, PxU32 maxPartitions, bool)
+{
+	PX_ASSERT((size_t(solverBodies) & 0xf) == 0);
+
+	if(!nbConstraints)
+		return 0;
+
+	// PT: used to dump data for UTs. Please keep that code around.
+/*	if(0)
+	{
+		FILE* fp = fopen("d:\\tmp\\dump.txt", "w");
+		if(fp)
+		{
+			for(PxU32 i=0;i<nbConstraints;i++)
+			{
+				const PxU32 indexA = PxU32(PxU64(reinterpret_cast<PxU8*>(solverConstraintDescs[i].bodyA) - solverBodies)/stride);
+				const PxU32 indexB = PxU32(PxU64(reinterpret_cast<PxU8*>(solverConstraintDescs[i].bodyB) - solverBodies)/stride);
+				fprintf(fp, "%d, %d,\n", indexA, indexB);
+			}
+			fclose(fp);
+		}
+	}*/
+
+	const ConstraintPartitionIn in(	solverBodies, nbBodies, stride,
+									reinterpret_cast<Dy::FeatherstoneArticulation**>(articulations), nbArticulations,
+									solverConstraintDescs, nbConstraints, maxPartitions, true);	// PT: crashes with false!
+
+	// PT: this is really a waste of space for what we use it for. It should be allocated on-the-fly or maybe use indices
+	// within the source buffer, which would also be cheaper to copy/reshuffle.
+	PxSolverConstraintDesc* overflowConstraintDescriptors = PX_ALLOCATE(PxSolverConstraintDesc, nbConstraints, "overflowConstraintDescriptors");
+
+	PxArray<PxU32> constraintsPerPartition;
+	constraintsPerPartition.reserve(128);
+
+	ConstraintPartitionOut out(outOrderedConstraintDescs, overflowConstraintDescriptors, &constraintsPerPartition);
+
+	// PT: maxPartition usually well below 32 but some scenes go far beyond (I've seen a 60....)
+	const PxU32 maxPartition = partitionContactConstraints(out, in);
+	PX_UNUSED(maxPartition);
+	//printf("maxPartition: %d\n", maxPartition);
+
+	//printf("mNumOverflowConstraints: %d\n", out.mNumOverflowConstraints);
+
+	PX_FREE(overflowConstraintDescriptors);
+
+	// PT: we probably cannot reuse the code from the SDK here because it's hardcoded for Dy types in constraintLengthOver16,
+	// while imm mode used e.g. PxSolverConstraintDesc::eCONTACT_CONSTRAINT there.
+	const PxU32 nbHeaders = createHeaders(nbConstraints, constraintsPerPartition.begin(), maxPartition, outBatchHeaders, outOrderedConstraintDescs);
+
+#ifdef MISSING_CALL
+	if(tgs)
+	{
+		::processOverflowConstraints(reinterpret_cast<PxU8*>(solverBodies), sizeof(PxTGSSolverBodyVel), nbBodies,
+			//Dy::ArticulationSolverDesc* articulationDescs, PxU32 numArticulations,
+			NULL, 0,
+			outOrderedConstraintDescs, out.mNumOverflowConstraints/* ? nbConstraints : 0*/);
+
+//		processOverflowConstraints(reinterpret_cast<PxU8*>(mContext.mSolverBodyVelPool.begin() + mObjects.solverBodyOffset+1), sizeof(PxTGSSolverBodyVel),
+//			mCounts.bodies, mThreadContext.getArticulations().begin(), mThreadContext.getArticulations().size(), contactDescBegin,
+//			mThreadContext.mHasOverflowPartitions ? mThreadContext.mConstraintsPerPartition[0] : 0);
+	}
+#endif
+	return nbHeaders;
+}
+
 PxU32 immediate::PxBatchConstraints(const PxSolverConstraintDesc* solverConstraintDescs, PxU32 nbConstraints, PxSolverBody* solverBodies, PxU32 nbBodies,
 									PxConstraintBatchHeader* outBatchHeaders, PxSolverConstraintDesc* outOrderedConstraintDescs,
 									PxArticulationHandle* articulations, PxU32 nbArticulations)
 {
-	PX_ASSERT((size_t(solverBodies) & 0xf) == 0);
+	return batchConstraints(solverConstraintDescs, nbConstraints, reinterpret_cast<PxU8*>(solverBodies), nbBodies,
+							outBatchHeaders, outOrderedConstraintDescs, articulations, nbArticulations,
+							sizeof(PxSolverBody), PX_MAX_U32, false);
+}
 
-	if(!nbArticulations)
-	{
-		RigidBodyClassification classification(reinterpret_cast<PxU8*>(solverBodies), nbBodies, sizeof(PxSolverBody));
-		return BatchConstraints(solverConstraintDescs, nbConstraints, outBatchHeaders, outOrderedConstraintDescs, classification);
-	}
-	else
-	{
-		ExtendedRigidBodyClassification classification(reinterpret_cast<PxU8*>(solverBodies), nbBodies, sizeof(PxSolverBody), reinterpret_cast<Dy::FeatherstoneArticulation**>(articulations), nbArticulations);
-		return BatchConstraints(solverConstraintDescs, nbConstraints, outBatchHeaders, outOrderedConstraintDescs, classification);
-	}
+PxU32 immediate::PxBatchConstraintsTGS(const PxSolverConstraintDesc* solverConstraintDescs, PxU32 nbConstraints, PxTGSSolverBodyVel* solverBodies, PxU32 nbBodies,
+	PxConstraintBatchHeader* outBatchHeaders, PxSolverConstraintDesc* outOrderedConstraintDescs,
+	PxArticulationHandle* articulations, PxU32 nbArticulations)
+{
+	// PT: SDK code uses 64 for TGS but in immediate mode it makes the caterpillar track scene explode, most likely because mNumOverflowConstraints = 1024.
+	// I think the missing bit is the call to processOverflowConstraints, that we do for TGS in the SDK but not here in immediate mode. Using PX_MAX_U32
+	// instead, in immediate mode, fixes the explosion.
+	//const PxU32 maxPartitions = 64;
+	const PxU32 maxPartitions = PX_MAX_U32;
+	return batchConstraints(solverConstraintDescs, nbConstraints, reinterpret_cast<PxU8*>(solverBodies), nbBodies,
+							outBatchHeaders, outOrderedConstraintDescs, articulations, nbArticulations,
+							sizeof(PxTGSSolverBodyVel), maxPartitions, true);
 }
 
 bool immediate::PxCreateContactConstraints(PxConstraintBatchHeader* batchHeaders, PxU32 nbHeaders, PxSolverContactDesc* contactDescs,
-	PxConstraintAllocator& allocator,  PxReal invDt, PxReal bounceThreshold, PxReal frictionOffsetThreshold, 
+	PxConstraintAllocator& allocator, PxReal invDt, PxReal bounceThreshold, PxReal frictionOffsetThreshold, 
 	PxReal correlationDistance, PxSpatialVector* ZV)
 {
 	PX_ASSERT(invDt > 0.0f && PxIsFinite(invDt));
@@ -618,8 +306,11 @@ bool immediate::PxCreateContactConstraints(PxConstraintBatchHeader* batchHeaders
 		PxConstraintBatchHeader& batchHeader = batchHeaders[i];
 		if (batchHeader.stride == 4)
 		{
-			PxU32 totalContacts = contactDescs[currentContactDescIdx].numContacts + contactDescs[currentContactDescIdx + 1].numContacts + 
-				contactDescs[currentContactDescIdx + 2].numContacts + contactDescs[currentContactDescIdx + 3].numContacts;
+			const PxSolverContactDesc* ctc = contactDescs + currentContactDescIdx;
+			const PxU32 totalContacts =	  ctc[0].numContacts
+										+ ctc[1].numContacts
+										+ ctc[2].numContacts
+										+ ctc[3].numContacts;
 
 			if (totalContacts <= 64)
 			{
@@ -672,7 +363,7 @@ bool immediate::PxCreateContactConstraints(PxConstraintBatchHeader* batchHeaders
 }
 
 bool immediate::PxCreateJointConstraints(PxConstraintBatchHeader* batchHeaders, PxU32 nbHeaders, PxSolverConstraintPrepDesc* jointDescs, 
-	PxConstraintAllocator& allocator, PxSpatialVector* ZV, PxReal dt, PxReal invDt)
+	PxConstraintAllocator& allocator, PxSpatialVector* /* ZV */, PxReal dt, PxReal invDt)
 {
 	PX_ASSERT(dt > 0.0f);
 	PX_ASSERT(invDt > 0.0f && PxIsFinite(invDt));
@@ -707,14 +398,13 @@ bool immediate::PxCreateJointConstraints(PxConstraintBatchHeader* batchHeaders, 
 				state = Dy::setupSolverConstraint4
 					(jointDescs + currentDescIdx,
 					dt, invDt, totalRows,
-					allocator, maxRows);
+					allocator, maxRows, false);
 			}
 		}
 
 		if (state == Dy::SolverConstraintPrepState::eUNBATCHABLE)
 		{
 			type = DY_SC_TYPE_RB_1D;
-			Cm::SpatialVectorF* Z = reinterpret_cast<Cm::SpatialVectorF*>(ZV);
 			for(PxU32 a=0; a<batchHeader.stride; ++a)
 			{
 				// PT: TODO: And "isExtended" is already computed in Dy::ConstraintHelper::setupSolverConstraint
@@ -723,7 +413,7 @@ bool immediate::PxCreateJointConstraints(PxConstraintBatchHeader* batchHeaders, 
 				if(isExtended)
 					type = DY_SC_TYPE_EXT_1D;
 
-				Dy::ConstraintHelper::setupSolverConstraint(jointDescs[currentDescIdx + a], allocator, dt, invDt, Z);
+				Dy::ConstraintHelper::setupSolverConstraint(jointDescs[currentDescIdx + a], allocator, dt, invDt);
 			}
 		}
 
@@ -856,8 +546,82 @@ bool immediate::PxCreateJointConstraintsWithImmediateShaders(PxConstraintBatchHe
 
 void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, PxU32 nbBatchHeaders, const PxSolverConstraintDesc* solverConstraintDescs,
 	const PxSolverBody* solverBodies, PxVec3* linearMotionVelocity, PxVec3* angularMotionVelocity, PxU32 nbSolverBodies, PxU32 nbPositionIterations, PxU32 nbVelocityIterations,
-	float dt, float invDt, PxU32 nbSolverArticulations, PxArticulationHandle* solverArticulations, PxSpatialVector* pxZ, PxSpatialVector* pxDeltaV)
+	float dt, float invDt, PxU32 nbSolverArticulations, PxArticulationHandle* solverArticulations, PxSpatialVector* /* pxZ */, PxSpatialVector* pxDeltaV)
 {
+#ifdef TO_REVISIT
+	if(0)
+	{
+		// PT:
+		// - problem 1: why do we need bodyDataList? => this is actually the same solverBodyArray from the SolverContext so we already encountered that one.
+		// Can be null because we don't do "writeBacks" here.
+		// - problem 2: the articulation descs
+		// - problem 3: spatial vector (same problem as for reusing saveMotionVelocities)
+		// Honestly I don't understand:
+		// - PxSpatialVector / SpatialVector / SpatialVectorF / UnAlignedSpatialVector / SpatialVectorV
+		SolverIslandParams params;
+		params.positionIterations		= nbPositionIterations;
+		params.velocityIterations		= nbVelocityIterations;
+		params.bodyListStart			= solverBodies;
+		params.bodyDataList				= NULL;
+		params.bodyListSize				= nbSolverBodies;
+		params.articulationListStart	= NULL;
+		params.articulationListSize		= 0;
+		params.constraintList			= solverConstraintDescs;
+		params.constraintBatchHeaders	= batchHeaders;
+		params.numConstraintHeaders		= nbBatchHeaders;
+		params.dt						= dt;
+		params.invDt					= invDt;
+		params.thresholdStream			= NULL;
+		params.thresholdStreamLength	= 0;
+		params.outThresholdPairs		= NULL;
+		params.Z						= NULL;//pxZ;
+		params.deltaV					= NULL;//pxDeltaV;
+
+		Cm::SpatialVector* spatialVectors = PX_ALLOCATE(Cm::SpatialVector, nbSolverBodies, "");
+		params.motionVelocityArray	= spatialVectors;
+		for(PxU32 i=0;i<nbSolverBodies;i++)
+		{
+			spatialVectors[i].linear = linearMotionVelocity[i];
+			spatialVectors[i].angular = angularMotionVelocity[i];
+		}
+
+		SolverCoreGeneral solver(false);
+		//solver.solveV_Blocks(params);
+
+/*				params.headersPerPartition = mThreadContext.mConstraintsPerPartition.begin();
+				params.nbPartitions = mThreadContext.mConstraintsPerPartition.size();
+				const PxU32 unrollSize = 8;
+				const PxU32 denom = PxMax(1u, (mThreadContext.mMaxPartitions*unrollSize));
+				const PxU32 MaxTasks = getTaskManager()->getCpuDispatcher()->getWorkerCount();
+				// PT: small improvement: if there's no contacts, use the number of bodies instead.
+				// That way the integration work still benefits from multiple tasks.
+				const PxU32 numWorkItems = mThreadContext.numContactConstraintBatches ? mThreadContext.numContactConstraintBatches : mIslandContext.mCounts.bodies;
+				const PxU32 idealThreads = (numWorkItems+denom-1)/denom;
+				const PxU32 numTasks = PxMax(1u, PxMin(idealThreads, MaxTasks));
+				
+				if(numTasks > 1)
+				{
+					const PxU32 idealBatchSize = PxMax(unrollSize, idealThreads*unrollSize/(numTasks*2));
+					params.batchSize = idealBatchSize; //assigning ideal batch size for the solver to grab work at. Only needed by the multi-threaded island solver.
+*/
+
+		params.headersPerPartition;
+		params.nbPartitions;
+		params.batchSize;
+		solver.solveVParallelAndWriteBack(params, NULL, NULL);
+
+		for(PxU32 i=0;i<nbSolverBodies;i++)
+		{
+			linearMotionVelocity[i] = spatialVectors[i].linear;
+			angularMotionVelocity[i] = spatialVectors[i].angular;
+		}
+
+		PX_FREE(spatialVectors);
+
+		return;
+	}
+#endif
+
 	PX_ASSERT(nbPositionIterations > 0);
 	PX_ASSERT(nbVelocityIterations > 0);
 	PX_ASSERT(PxIsZero(solverBodies, nbSolverBodies)); //Ensure that solver body velocities have been zeroed before solving
@@ -868,33 +632,31 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 	const Dy::SolveWriteBackBlockMethod* solveWritebackTable = Dy::getSolveWritebackBlockTable();
 
 	Dy::SolverContext cache;
+	cache.solverBodyArray = NULL;
 	cache.mThresholdStreamIndex = 0;
 	cache.mThresholdStreamLength = 0xFFFFFFF;
 		
 	PX_ASSERT(nbPositionIterations > 0);
 	PX_ASSERT(nbVelocityIterations > 0);
 
-	Cm::SpatialVectorF* Z = reinterpret_cast<Cm::SpatialVectorF*>(pxZ);
 	Cm::SpatialVectorF* deltaV = reinterpret_cast<Cm::SpatialVectorF*>(pxDeltaV);
-
-	cache.Z = Z;
 	cache.deltaV = deltaV;
 
 	Dy::FeatherstoneArticulation** articulations = reinterpret_cast<Dy::FeatherstoneArticulation**>(solverArticulations);
 
 	struct PGS
 	{
-		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_, bool velIter_)
+		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_, bool velIter_)
 		{
 			while(nbSolverArticulations_--)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
-				immArt->immSolveInternalConstraints(dt_, invDt_, Z_, deltaV_, 0.0f, velIter_, false);
+				immArt->immSolveInternalConstraints(dt_, invDt_, 0.0f, velIter_, false);
 			}
 		}
 
 		static PX_FORCE_INLINE void runIter(const PxConstraintBatchHeader* batchHeaders_, PxU32 nbBatchHeaders_, const PxSolverConstraintDesc* solverConstraintDescs_,
-											PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** articulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_,
+											PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** articulations_,
 											const Dy::SolveBlockMethod* solveTable_, Dy::SolverContext& solverCache_, float dt_, float invDt_, bool doFriction, bool velIter_)
 		{
 			solverCache_.doFriction = doFriction;
@@ -904,13 +666,14 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 				solveTable_[batch.constraintType](solverConstraintDescs_ + batch.startIndex, batch.stride, solverCache_);
 			}
 
-			solveArticulationInternalConstraints(dt_, invDt_, nbSolverArticulations_, articulations_, Z_, deltaV_, velIter_);
+			solveArticulationInternalConstraints(dt_, invDt_, nbSolverArticulations_, articulations_, velIter_);
 		}
 	};
 
+	cache.isPositionIteration = true;
 	for(PxU32 i=nbPositionIterations; i>1; --i)
-		PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, Z, deltaV, solveTable, cache, dt, invDt, i <= 3, false);
-	PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, Z, deltaV, solveConcludeTable, cache, dt, invDt, true, false);
+		PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, solveTable, cache, dt, invDt, i <= 3, false);
+	PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, solveConcludeTable, cache, dt, invDt, true, false);
 
 	//Save motion velocities...
 	for(PxU32 a=0; a<nbSolverBodies; a++)
@@ -922,9 +685,10 @@ void immediate::PxSolveConstraints(const PxConstraintBatchHeader* batchHeaders, 
 	for(PxU32 a=0; a<nbSolverArticulations; a++)
 		FeatherstoneArticulation::saveVelocity(reinterpret_cast<Dy::FeatherstoneArticulation*>(solverArticulations[a]), deltaV);
 
+	cache.isPositionIteration = false;
 	for(PxU32 i=nbVelocityIterations; i>1; --i)
-		PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, Z, deltaV, solveTable, cache, dt, invDt, true, true);
-	PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, Z, deltaV, solveWritebackTable, cache, dt, invDt, true, true);
+		PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, solveTable, cache, dt, invDt, true, true);
+	PGS::runIter(batchHeaders, nbBatchHeaders, solverConstraintDescs, nbSolverArticulations, articulations, solveWritebackTable, cache, dt, invDt, true, true);
 }
 
 static void createCache(Gu::Cache& cache, PxGeometryType::Enum geomType0, PxGeometryType::Enum geomType1, PxCacheAllocator& allocator)
@@ -968,28 +732,35 @@ bool immediate::PxGenerateContacts(	const PxGeometry* const * geom0, const PxGeo
 	PX_ASSERT(contactDistance > 0.0f);
 	PxContactBuffer contactBuffer;
 
+	const Gu::NarrowPhaseParams params(contactDistance, meshContactMargin, toleranceLength);
+
 	PxTransform32 transform0;
 	PxTransform32 transform1;
-	for (PxU32 i = 0; i < nbPairs; ++i)
+	for(PxU32 i=0; i<nbPairs; i++)
 	{
 		contactBuffer.count = 0;
 		PxGeometryType::Enum type0 = geom0[i]->getType();
 		PxGeometryType::Enum type1 = geom1[i]->getType();
 
-		const PxGeometry* tempGeom0 = geom0[i];
-		const PxGeometry* tempGeom1 = geom1[i];
+		const PxGeometry* tempGeom0;
+		const PxGeometry* tempGeom1;
 
 		const bool bSwap = type0 > type1;
-		if (bSwap)
+		if(bSwap)
 		{
-			PxSwap(tempGeom0, tempGeom1);
 			PxSwap(type0, type1);
+
+			tempGeom1 = geom0[i];
+			tempGeom0 = geom1[i];
 
 			transform1 = pose0[i];
 			transform0 = pose1[i];
 		}
 		else
 		{
+			tempGeom0 = geom0[i];
+			tempGeom1 = geom1[i];
+
 			transform0 = pose0[i];
 			transform1 = pose1[i];
 		}
@@ -998,15 +769,13 @@ bool immediate::PxGenerateContacts(	const PxGeometry* const * geom0, const PxGeo
 
 		Gu::Cache& cache = static_cast<Gu::Cache&>(contactCache[i]);
 
-		bool needsMultiManifold = type1 > PxGeometryType::eCONVEXMESH;
+		const bool needsMultiManifold = type1 > PxGeometryType::eCONVEXMESH;
 
-		Gu::NarrowPhaseParams params(contactDistance, meshContactMargin, toleranceLength);
-
-		if (needsMultiManifold)
+		if(needsMultiManifold)
 		{
 			Gu::MultiplePersistentContactManifold multiManifold;
 
-			if (cache.isMultiManifold())
+			if(cache.isMultiManifold())
 			{
 				multiManifold.fromBuffer(reinterpret_cast<PxU8*>(&cache.getMultipleManifold()));
 			}
@@ -1034,14 +803,14 @@ bool immediate::PxGenerateContacts(	const PxGeometry* const * geom0, const PxGeo
 			//Allocate the type of manifold we need again...
 			Gu::PersistentContactManifold* oldManifold = NULL;
 
-			if (cache.isManifold())
+			if(cache.isManifold())
 				oldManifold = &cache.getManifold();
 
 			//Allocates and creates the PCM...
 			createCache(cache, type0, type1, allocator);
 
 			//Copy PCM from old to new manifold...
-			if (oldManifold)
+			if(oldManifold)
 			{
 				Gu::PersistentContactManifold& manifold = cache.getManifold();
 				manifold.mRelativeTransform = oldManifold->mRelativeTransform;
@@ -1059,16 +828,14 @@ bool immediate::PxGenerateContacts(	const PxGeometry* const * geom0, const PxGeo
 			g_PCMContactMethodTable[type0][type1](*tempGeom0, *tempGeom1, transform0, transform1, params, cache, contactBuffer, NULL);
 		}
 
-		if (bSwap)
+		if(contactBuffer.count)
 		{
-			for (PxU32 a = 0; a < contactBuffer.count; ++a)
+			if(bSwap)
 			{
-				contactBuffer.contacts[a].normal = -contactBuffer.contacts[a].normal;
+				for(PxU32 a=0; a<contactBuffer.count; a++)
+					contactBuffer.contacts[a].normal = -contactBuffer.contacts[a].normal;
 			}
-		}
 
-		if (contactBuffer.count != 0)
-		{
 			//Record this contact pair...
 			contactRecorder.recordContacts(contactBuffer.contacts, contactBuffer.count, i);
 		}
@@ -1221,7 +988,6 @@ void immArticulation::complete()
 	initPathToRoot();
 
 	mTempDeltaV.resize(linkSize);
-	mTempZ.resize(linkSize);
 }
 
 PxArticulationCookie immediate::PxBeginCreateArticulationRC(const PxArticulationDataRC& data)
@@ -1317,7 +1083,7 @@ PxArticulationCache* immediate::PxCreateArticulationCache(PxArticulationHandle a
 	immArticulation* immArt = static_cast<immArticulation*>(articulation);
 	immArt->complete();
 
-	return FeatherstoneArticulation::createCache(immArt->getDofs(), immArt->getBodyCount(), 0);
+	return FeatherstoneArticulation::createCache(immArt->getDofs(), immArt->getBodyCount());
 }
 
 void immediate::PxCopyInternalStateToArticulationCache(PxArticulationHandle articulation, PxArticulationCache& cache, PxArticulationCacheFlags flag)
@@ -1598,20 +1364,6 @@ bool immediate::PxSetJointData(const PxArticulationLinkHandle& link, const PxArt
 	return true;
 }
 
-namespace physx
-{
-namespace Dy
-{
-	void copyToSolverBodyDataStep(const PxVec3& linearVelocity, const PxVec3& angularVelocity, PxReal invMass, const PxVec3& invInertia, const PxTransform& globalPose,
-		PxReal maxDepenetrationVelocity, PxReal maxContactImpulse, PxU32 nodeIndex, PxReal reportThreshold,
-		PxReal maxAngVelSq, PxU32 lockFlags, bool isKinematic,
-		PxTGSSolverBodyVel& solverVel, PxTGSSolverBodyTxInertia& solverBodyTxInertia, PxTGSSolverBodyData& solverBodyData,
-		PxReal dt, bool gyroscopicForces);
-
-	void integrateCoreStep(PxTGSSolverBodyVel& vel, PxTGSSolverBodyTxInertia& txInertia, PxF32 dt);
-}
-}
-
 void immediate::PxConstructSolverBodiesTGS(const PxRigidBodyData* inRigidData, PxTGSSolverBodyVel* outSolverBodyVel, 
 	PxTGSSolverBodyTxInertia* outSolverBodyTxInertia, PxTGSSolverBodyData* outSolverBodyData, PxU32 nbBodies, const PxVec3& gravity, 
 	PxReal dt, bool gyroscopicForces)
@@ -1633,22 +1385,6 @@ void immediate::PxConstructStaticSolverBodyTGS(const PxTransform& globalPose, Px
 	Dy::copyToSolverBodyDataStep(zero, zero, 0.0f, zero, globalPose, -PX_MAX_F32, PX_MAX_F32, PX_INVALID_NODE, PX_MAX_F32, PX_MAX_F32, 0, true, solverBodyVel, solverBodyTxInertia, solverBodyData, 0.0f, false);
 }
 
-PxU32 immediate::PxBatchConstraintsTGS(const PxSolverConstraintDesc* solverConstraintDescs, PxU32 nbConstraints, PxTGSSolverBodyVel* solverBodies, PxU32 nbBodies,
-	PxConstraintBatchHeader* outBatchHeaders, PxSolverConstraintDesc* outOrderedConstraintDescs,
-	PxArticulationHandle* articulations, PxU32 nbArticulations)
-{
-	if (!nbArticulations)
-	{
-		RigidBodyClassification classification(reinterpret_cast<PxU8*>(solverBodies), nbBodies, sizeof(PxTGSSolverBodyVel));
-		return BatchConstraints(solverConstraintDescs, nbConstraints, outBatchHeaders, outOrderedConstraintDescs, classification);
-	}
-	else
-	{
-		ExtendedRigidBodyClassification classification(reinterpret_cast<PxU8*>(solverBodies), nbBodies, sizeof(PxTGSSolverBodyVel), reinterpret_cast<Dy::FeatherstoneArticulation**>(articulations), nbArticulations);
-		return BatchConstraints(solverConstraintDescs, nbConstraints, outBatchHeaders, outOrderedConstraintDescs, classification);
-	}
-}
-
 bool immediate::PxCreateContactConstraintsTGS(PxConstraintBatchHeader* batchHeaders, PxU32 nbHeaders, PxTGSSolverContactDesc* contactDescs,
 	PxConstraintAllocator& allocator, PxReal invDt, PxReal invTotalDt, PxReal bounceThreshold, PxReal frictionOffsetThreshold, PxReal correlationDistance)
 {
@@ -1660,6 +1396,22 @@ bool immediate::PxCreateContactConstraintsTGS(PxConstraintBatchHeader* batchHead
 	Dy::CorrelationBuffer cb;
 
 	PxU32 currentContactDescIdx = 0;
+
+	// PT: we call it this way in the snippet:
+	// PxCreateContactConstraintsTGS(..., invStepDt, invDt, ...);
+	// with:
+	// const PxReal dt = 1.f / 60.f;
+	// const PxReal invDt = 60.f;
+	// const PxReal stepDt = dt/PxReal(nbPositionIterations);
+	// const PxReal invStepDt = invDt * PxReal(nbPositionIterations);
+	//
+	// So this is a bit confusing here because "invDt" is not the same for the calling code and now:
+	// invStepDt => invDt
+	// invDt => invTotalDt
+	//
+	// Thus:
+	// bias = invTotalDt/invDt (in function) = invDt/invStepDt (calling code) = invDt/(invDt * PxReal(nbPositionIterations)) = 1/nbPositionIterations
+	// Which is the same as what we used for bias inside the SDK (non immediate mode)
 
 	const PxReal biasCoefficient = 2.f*PxSqrt(invTotalDt/invDt);
 	const PxReal totalDt = 1.f/invTotalDt;
@@ -1765,7 +1517,7 @@ bool immediate::PxCreateJointConstraintsTGS(PxConstraintBatchHeader* batchHeader
 				state = Dy::setupSolverConstraintStep4
 				(jointDescs + currentDescIdx,
 					dt, totalDt, invDt, invTotalDt, totalRows,
-					allocator, maxRows, lengthScale, biasCoefficient);
+					allocator, maxRows, lengthScale, biasCoefficient, false);
 			}
 		}
 
@@ -1879,7 +1631,7 @@ bool immediate::PxCreateJointConstraintsWithImmediateShadersTGS(PxConstraintBatc
 
 void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeaders, PxU32 nbBatchHeaders, const PxSolverConstraintDesc* solverConstraintDescs,
 	PxTGSSolverBodyVel* solverBodies, PxTGSSolverBodyTxInertia* txInertias, PxU32 nbSolverBodies, PxU32 nbPositionIterations, PxU32 nbVelocityIterations,
-	float dt, float invDt, PxU32 nbSolverArticulations, PxArticulationHandle* solverArticulations, PxSpatialVector* pxZ, PxSpatialVector* pxDeltaV)
+	float dt, float invDt, PxU32 nbSolverArticulations, PxArticulationHandle* solverArticulations, PxSpatialVector* /* pxZ */, PxSpatialVector* pxDeltaV)
 {
 	PX_ASSERT(nbPositionIterations > 0);
 	PX_ASSERT(nbVelocityIterations > 0);
@@ -1889,13 +1641,12 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 	const Dy::TGSWriteBackMethod* writebackTable = Dy::g_WritebackTGSMethods;
 
 	Dy::SolverContext cache;
+	cache.solverBodyArray = NULL;
 	cache.mThresholdStreamIndex = 0;
 	cache.mThresholdStreamLength = 0xFFFFFFF;
 
-	Cm::SpatialVectorF* Z = reinterpret_cast<Cm::SpatialVectorF*>(pxZ);
 	Cm::SpatialVectorF* deltaV = reinterpret_cast<Cm::SpatialVectorF*>(pxDeltaV);
 
-	cache.Z = Z;
 	cache.deltaV = deltaV;
 	cache.doFriction = true;
 
@@ -1903,13 +1654,13 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	struct TGS
 	{
-		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_, Cm::SpatialVectorF* Z_, Cm::SpatialVectorF* deltaV_,
+		static PX_FORCE_INLINE void solveArticulationInternalConstraints(float dt_, float invDt_, PxU32 nbSolverArticulations_, Dy::FeatherstoneArticulation** solverArticulations_,
 			PxReal elapsedTime, bool velIter_)
 		{
 			while(nbSolverArticulations_--)
 			{
 				immArticulation* immArt = static_cast<immArticulation*>(*solverArticulations_++);
-				immArt->immSolveInternalConstraints(dt_, invDt_, Z_, deltaV_, elapsedTime, velIter_, true);
+				immArt->immSolveInternalConstraints(dt_, invDt_, elapsedTime, velIter_, true);
 			}
 		}
 	};
@@ -1918,9 +1669,10 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 
 	PxReal elapsedTime = 0.0f;
 
+	cache.isPositionIteration = true;
 	while(nbPositionIterations--)
 	{
-		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, Z, deltaV, elapsedTime, false);
+		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, elapsedTime, false);
 
 		for(PxU32 a=0; a<nbBatchHeaders; ++a)
 		{
@@ -1951,9 +1703,10 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 		immArt->saveVelocityTGS(immArt, invTotalDt);
 	}
 
+	cache.isPositionIteration = false;
 	while(nbVelocityIterations--)
 	{
-		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, Z, deltaV, elapsedTime, true);
+		TGS::solveArticulationInternalConstraints(dt, invDt, nbSolverArticulations, articulations, elapsedTime, true);
 
 		for(PxU32 a=0; a<nbBatchHeaders; ++a)
 		{
@@ -1965,13 +1718,13 @@ void immediate::PxSolveConstraintsTGS(const PxConstraintBatchHeader* batchHeader
 	}
 }
 
-void immediate::PxIntegrateSolverBodiesTGS(PxTGSSolverBodyVel* solverBody, PxTGSSolverBodyTxInertia* txInertia, PxTransform* poses, PxU32 nbBodiesToIntegrate, PxReal /*dt*/)
+void immediate::PxIntegrateSolverBodiesTGS(PxTGSSolverBodyVel* solverBody, const PxTGSSolverBodyTxInertia* txInertia, PxTransform* poses, PxU32 nbBodiesToIntegrate, PxReal /*dt*/)
 {
 	for(PxU32 i = 0; i < nbBodiesToIntegrate; ++i)
 	{
 		solverBody[i].angularVelocity = txInertia[i].sqrtInvInertia * solverBody[i].angularVelocity;
-		poses[i].p = txInertia[i].deltaBody2World.p;
-		poses[i].q = (txInertia[i].deltaBody2World.q * poses[i].q).getNormalized();
+		poses[i].p = txInertia[i].body2WorldP;
+		poses[i].q = (txInertia[i].deltaBody2WorldQ * poses[i].q).getNormalized();
 	}
 }
 
@@ -2015,24 +1768,24 @@ namespace
 		virtual	bool						init(const PxBroadPhaseDesc& desc);
 
 		// PxBroadPhase
-		virtual	void						release()																	PX_OVERRIDE;
-		virtual	PxBroadPhaseType::Enum		getType()															const	PX_OVERRIDE;
-		virtual	void						getCaps(PxBroadPhaseCaps& caps)										const	PX_OVERRIDE;
-		virtual	PxBroadPhaseRegions*		getRegions()																PX_OVERRIDE;
+		virtual	void						release()																	PX_OVERRIDE	PX_FINAL;
+		virtual	PxBroadPhaseType::Enum		getType()															const	PX_OVERRIDE	PX_FINAL;
+		virtual	void						getCaps(PxBroadPhaseCaps& caps)										const	PX_OVERRIDE	PX_FINAL;
+		virtual	PxBroadPhaseRegions*		getRegions()																PX_OVERRIDE	PX_FINAL;
 		virtual	PxAllocatorCallback*		getAllocator()																PX_OVERRIDE;
-		virtual	PxU64						getContextID()														const	PX_OVERRIDE;
-		virtual	void						setScratchBlock(void* scratchBlock, PxU32 size)								PX_OVERRIDE;
-		virtual	void						update(const PxBroadPhaseUpdateData& updateData, PxBaseTask* continuation)	PX_OVERRIDE;
-		virtual	void						fetchResults(PxBroadPhaseResults& results)									PX_OVERRIDE;
+		virtual	PxU64						getContextID()														const	PX_OVERRIDE	PX_FINAL;
+		virtual	void						setScratchBlock(void* scratchBlock, PxU32 size)								PX_OVERRIDE	PX_FINAL;
+		virtual	void						update(const PxBroadPhaseUpdateData& updateData, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;
+		virtual	void						fetchResults(PxBroadPhaseResults& results)									PX_OVERRIDE	PX_FINAL;
 		//~PxBroadPhase
 
 		// PxBroadPhaseRegions
-		virtual	PxU32						getNbRegions()																											const	PX_OVERRIDE;
-		virtual	PxU32						getRegions(PxBroadPhaseRegionInfo* userBuffer, PxU32 bufferSize, PxU32 startIndex)										const	PX_OVERRIDE;
-		virtual	PxU32						addRegion(const PxBroadPhaseRegion& region, bool populateRegion, const PxBounds3* boundsArray, const float* contactDistance)	PX_OVERRIDE;
-		virtual	bool						removeRegion(PxU32 handle)																										PX_OVERRIDE;
-		virtual	PxU32						getNbOutOfBoundsObjects()																								const	PX_OVERRIDE;
-		virtual	const PxU32*				getOutOfBoundsObjects()																									const	PX_OVERRIDE;
+		virtual	PxU32						getNbRegions()																											const	PX_OVERRIDE	PX_FINAL;
+		virtual	PxU32						getRegions(PxBroadPhaseRegionInfo* userBuffer, PxU32 bufferSize, PxU32 startIndex)										const	PX_OVERRIDE	PX_FINAL;
+		virtual	PxU32						addRegion(const PxBroadPhaseRegion& region, bool populateRegion, const PxBounds3* boundsArray, const float* contactDistance)	PX_OVERRIDE	PX_FINAL;
+		virtual	bool						removeRegion(PxU32 handle)																										PX_OVERRIDE	PX_FINAL;
+		virtual	PxU32						getNbOutOfBoundsObjects()																								const	PX_OVERRIDE	PX_FINAL;
+		virtual	const PxU32*				getOutOfBoundsObjects()																									const	PX_OVERRIDE	PX_FINAL;
 		//~PxBroadPhaseRegions
 
 				Bp::BroadPhase*				mBroadPhase;
@@ -2268,16 +2021,16 @@ namespace
 		virtual									~ImmGPUBP();
 
 		// PxAllocatorCallback
-		virtual void*							allocate(size_t size, const char* /*typeName*/, const char* filename, int line)	PX_OVERRIDE;
-		virtual void							deallocate(void* ptr)															PX_OVERRIDE;
+		virtual void*							allocate(size_t size, const char* /*typeName*/, const char* filename, int line)	PX_OVERRIDE	PX_FINAL;
+		virtual void							deallocate(void* ptr)															PX_OVERRIDE	PX_FINAL;
 		//~PxAllocatorCallback
 
 		// PxBroadPhase
-		virtual	PxAllocatorCallback*			getAllocator()	PX_OVERRIDE;
+		virtual	PxAllocatorCallback*			getAllocator()	PX_OVERRIDE	PX_FINAL;
 		//~PxBroadPhase
 
 		// ImmCPUBP
-		virtual	bool							init(const PxBroadPhaseDesc& desc)	PX_OVERRIDE;
+		virtual	bool							init(const PxBroadPhaseDesc& desc)	PX_OVERRIDE	PX_FINAL;
 		//~ImmCPUBP
 
 				PxPhysXGpu*						mPxGpu;
@@ -2357,7 +2110,7 @@ bool ImmGPUBP::init(const PxBroadPhaseDesc& desc)
 	if(!mGpuWranglerManagers)
 		return false;
 
-	PxgDynamicsMemoryConfig gpuDynamicsConfig;
+	PxGpuDynamicsMemoryConfig gpuDynamicsConfig;
 	gpuDynamicsConfig.foundLostPairsCapacity = desc.mFoundLostPairsCapacity;
 
 	mHeapMemoryAllocationManager = mPxGpu->createGpuHeapMemoryAllocatorManager(gpuDynamicsConfig.heapCapacity, mMemoryManager, gpuComputeVersion);
@@ -2410,19 +2163,19 @@ namespace
 		virtual							~HighLevelBroadPhaseAPI();
 
 		// PxAABBManager
-		virtual	void					release()				PX_OVERRIDE		{ PX_DELETE_THIS;		}
+		virtual	void					release()				PX_OVERRIDE	PX_FINAL	{ PX_DELETE_THIS;		}
 
-		virtual	void					addObject(PxU32 index, const PxBounds3& bounds, PxBpFilterGroup group, float distance)	PX_OVERRIDE;
-		virtual	void					removeObject(PxU32 index)																PX_OVERRIDE;
-		virtual	void					updateObject(PxU32 index, const PxBounds3* bounds, const float* distance)				PX_OVERRIDE;
-		virtual	void					update(PxBaseTask* continuation)														PX_OVERRIDE;
-		virtual	void					fetchResults(PxBroadPhaseResults& results)												PX_OVERRIDE;
+		virtual	void					addObject(PxU32 index, const PxBounds3& bounds, PxBpFilterGroup group, float distance)	PX_OVERRIDE	PX_FINAL;
+		virtual	void					removeObject(PxU32 index)																PX_OVERRIDE	PX_FINAL;
+		virtual	void					updateObject(PxU32 index, const PxBounds3* bounds, const float* distance)				PX_OVERRIDE	PX_FINAL;
+		virtual	void					update(PxBaseTask* continuation)														PX_OVERRIDE	PX_FINAL;
+		virtual	void					fetchResults(PxBroadPhaseResults& results)												PX_OVERRIDE	PX_FINAL;
 
-		virtual	PxBroadPhase&			getBroadPhase()			PX_OVERRIDE		{ return mBroadPhase;	}
-		virtual	const PxBounds3*		getBounds()		const	PX_OVERRIDE		{ return mBounds;		}
-		virtual	const float*			getDistances()	const	PX_OVERRIDE		{ return mDistances;	}
-		virtual	const PxBpFilterGroup*	getGroups()		const	PX_OVERRIDE		{ return mGroups;		}
-		virtual	PxU32					getCapacity()	const	PX_OVERRIDE		{ return mCapacity;		}
+		virtual	PxBroadPhase&			getBroadPhase()			PX_OVERRIDE	PX_FINAL	{ return mBroadPhase;	}
+		virtual	const PxBounds3*		getBounds()		const	PX_OVERRIDE	PX_FINAL	{ return mBounds;		}
+		virtual	const float*			getDistances()	const	PX_OVERRIDE	PX_FINAL	{ return mDistances;	}
+		virtual	const PxBpFilterGroup*	getGroups()		const	PX_OVERRIDE	PX_FINAL	{ return mGroups;		}
+		virtual	PxU32					getCapacity()	const	PX_OVERRIDE	PX_FINAL	{ return mCapacity;		}
 		//~PxAABBManager
 
 				void					reserveSpace(PxU32 nbTotalBounds);

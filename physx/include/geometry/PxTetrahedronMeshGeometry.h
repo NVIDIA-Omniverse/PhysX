@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_TETRAHEDRON_GEOMETRY_H
 #define PX_TETRAHEDRON_GEOMETRY_H
-/** \addtogroup geomutils
-@{
-*/
 #include "geometry/PxGeometry.h"
 #include "geometry/PxMeshScale.h"
 #include "common/PxCoreUtilityTypes.h"
@@ -84,7 +81,7 @@ namespace physx
 		\note A valid tetrahedron mesh has a positive scale value in each direction (scale.scale.x > 0, scale.scale.y > 0, scale.scale.z > 0).
 		It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a tetrahedron mesh that has zero extents in any direction.
 
-		@see PxRigidActor::createShape, PxPhysics::createShape
+		\see PxRigidActor::createShape, PxPhysics::createShape
 		*/
 		PX_INLINE bool isValid() const;
 
@@ -107,5 +104,4 @@ namespace physx
 } // namespace physx
 #endif
 
-  /** @} */
 #endif

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -134,6 +134,10 @@ void physx::Ext::omniPvdSetBaseJointParams(PxJoint& joint, PxJointConcreteType::
 	PxRigidActor* actors[2]; j.getActors(actors[0], actors[1]);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor0, j, actors[0])
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor1, j, actors[1])
+
+	PxConstraint* constraint = j.getConstraint();
+	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, constraint, j, constraint)
+
 	PxTransform actor0LocalPose = j.getLocalPose(PxJointActorIndex::eACTOR0);
 	OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxJoint, actor0LocalPose, j, actor0LocalPose)
 	PxTransform actor1LocalPose = j.getLocalPose(PxJointActorIndex::eACTOR1);

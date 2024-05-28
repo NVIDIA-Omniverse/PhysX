@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -467,7 +467,6 @@ static bool GeomOverlapCallback_CapsuleConvex(GU_OVERLAP_FUNC_PARAMS)
 
 	ConvexMesh* cm = static_cast<ConvexMesh*>(convexGeom.convexMesh);
 
-	
 	PxVec3 cachedSepAxis;
 	PxVec3* tmp = getCachedAxis(cache);
 	if(tmp)
@@ -573,7 +572,7 @@ static bool GeomOverlapCallback_ConvexConvex(GU_OVERLAP_FUNC_PARAMS)
 		const RelativeConvex<ConvexHullV> convexA(convexHull0, aToB);
 		const LocalConvex<ConvexHullV> convexB(convexHull1);
 		
-		GjkStatus status = gjk(convexA, convexB, aToB.p,  FZero(), contactA, contactB, normal, dist);
+		GjkStatus status = gjk(convexA, convexB, aToB.p, FZero(), contactA, contactB, normal, dist);
 		overlap = (status == GJK_CONTACT);
 	}
 

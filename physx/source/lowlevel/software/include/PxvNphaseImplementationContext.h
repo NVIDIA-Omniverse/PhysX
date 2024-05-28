@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -38,8 +38,6 @@
 #include "PxsMaterialCore.h"
 #include "PxsFEMClothMaterialCore.h"
 #include "PxsFEMSoftBodyMaterialCore.h"
-#include "PxsFLIPMaterialCore.h"
-#include "PxsMPMMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
 
 namespace physx
@@ -109,10 +107,10 @@ public:
 
 class PxvNphaseImplementationContext
 {
-	private:
 										PX_NOCOPY(PxvNphaseImplementationContext)
+
+			PxsContext&					mContext;
 public:
-	
 										PxvNphaseImplementationContext(PxsContext& context): mContext(context) {}
 	virtual								~PxvNphaseImplementationContext() {}
 
@@ -122,7 +120,7 @@ public:
 	virtual void						secondPassUpdateContactManager(PxReal dt, PxBaseTask* continuation) = 0;
 	virtual void						fetchUpdateContactManager() = 0;
 	
-	virtual void						registerContactManager(PxsContactManager* cm, Sc::ShapeInteraction* interaction, PxI32 touching, PxU32 patchCount) = 0;
+	virtual void						registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* interaction, PxI32 touching, PxU32 patchCount) = 0;
 //	virtual void						registerContactManagers(PxsContactManager** cm, Sc::ShapeInteraction** shapeInteractions, PxU32 nbContactManagers, PxU32 maxContactManagerId) = 0;
 	virtual void						unregisterContactManager(PxsContactManager* cm) = 0;
 	virtual void						refreshContactManager(PxsContactManager* cm) = 0;
@@ -147,14 +145,6 @@ public:
 	virtual void						registerMaterial(const PxsPBDMaterialCore& materialCore) = 0;
 	virtual void						updateMaterial(const PxsPBDMaterialCore& materialCore) = 0;
 	virtual void						unregisterMaterial(const PxsPBDMaterialCore& materialCore) = 0;
-
-	virtual void						registerMaterial(const PxsFLIPMaterialCore& materialCore) = 0;
-	virtual void						updateMaterial(const PxsFLIPMaterialCore& materialCore) = 0;
-	virtual void						unregisterMaterial(const PxsFLIPMaterialCore& materialCore) = 0;
-
-	virtual void						registerMaterial(const PxsMPMMaterialCore& materialCore) = 0;
-	virtual void						updateMaterial(const PxsMPMMaterialCore& materialCore) = 0;
-	virtual void						unregisterMaterial(const PxsMPMMaterialCore& materialCore) = 0;
 
 	virtual void						updateShapeMaterial(const PxsShapeCore& shapeCore) = 0;
 	
@@ -185,18 +175,12 @@ public:
 	virtual PxReal*						getGPURestDistances() = 0;
 	virtual Sc::ShapeInteraction**		getGPUShapeInteractions() = 0;
 	virtual PxsTorsionalFrictionData*	getGPUTorsionalData() = 0;
-
-protected:
-
-			PxsContext&					mContext;
 };
 
 class PxvNphaseImplementationFallback
 {
-	private:
 											PX_NOCOPY(PxvNphaseImplementationFallback)
 public:
-	
 											PxvNphaseImplementationFallback()	{}
 	virtual									~PxvNphaseImplementationFallback()	{}
 
@@ -204,7 +188,7 @@ public:
 	virtual void							processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation) = 0;
 
 	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?! Should be "registerContactManagerFallback"...
-	virtual void							registerContactManager(PxsContactManager* cm, Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches) = 0;
+	virtual void							registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches) = 0;
 	virtual void							unregisterContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
 
 	virtual void							refreshContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
@@ -228,14 +212,13 @@ public:
 	virtual PxsContactManager**				getFoundPatchManagers() = 0;
 	virtual PxU32							getNbFoundPatchManagers() = 0;
 
-	virtual Sc::ShapeInteraction**			getShapeInteractions() = 0;
-	virtual PxReal*							getRestDistances() = 0;
-	virtual PxsTorsionalFrictionData*		getTorsionalData() = 0;
+	virtual const Sc::ShapeInteraction*const*	getShapeInteractionsGPU()	const	= 0;
+	virtual const PxReal*						getRestDistancesGPU()		const	= 0;
+	virtual const PxsTorsionalFrictionData*		getTorsionalDataGPU()		const	= 0;
 };
 
 class PxvNphaseImplementationContextUsableAsFallback: public PxvNphaseImplementationContext, public PxvNphaseImplementationFallback
 {
-	private:
 												PX_NOCOPY(PxvNphaseImplementationContextUsableAsFallback)
 public:
 	PxvNphaseImplementationContextUsableAsFallback(PxsContext& context) : PxvNphaseImplementationContext(context)	{}

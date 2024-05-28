@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
 #ifndef PX_HEIGHTFIELD_DESC_H
 #define PX_HEIGHTFIELD_DESC_H
-/** \addtogroup geomutils
-@{
-*/
 
 #include "common/PxPhysXCommonConfig.h"
 #include "geometry/PxHeightFieldFlag.h"
@@ -47,7 +44,7 @@ namespace physx
 \note The heightfield data is *copied* when a PxHeightField object is created from this descriptor. After the call the
 user may discard the height data.
 
-@see PxHeightField PxHeightFieldGeometry PxShape PxPhysics.createHeightField() PxCooking.createHeightField()
+\see PxHeightField PxHeightFieldGeometry PxShape PxPhysics.createHeightField() PxCooking.createHeightField()
 */
 class PxHeightFieldDesc
 {
@@ -80,7 +77,7 @@ public:
 
 	<b>Default:</b> PxHeightFieldFormat::eS16_TM
 
-	@see PxHeightFormat PxHeightFieldDesc.samples
+	\see PxHeightFormat PxHeightFieldDesc.samples
 	*/
 	PxHeightFieldFormat::Enum		format;
 
@@ -100,7 +97,7 @@ public:
 
 	<b>Default:</b> NULL
 
-	@see PxHeightFormat
+	\see PxHeightFormat
 	*/
 	PxStridedData					samples;
 
@@ -125,7 +122,7 @@ public:
 
 	<b>Default:</b> 0
 
-	@see PxHeightFieldFlag PxHeightFieldFlags
+	\see PxHeightFieldFlag PxHeightFieldFlags
 	*/
 	PxHeightFieldFlags		flags;
 
@@ -181,5 +178,4 @@ PX_INLINE bool PxHeightFieldDesc::isValid() const
 } // namespace physx
 #endif
 
-/** @} */
 #endif

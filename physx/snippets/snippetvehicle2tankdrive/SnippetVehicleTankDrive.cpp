@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -197,8 +197,8 @@ void cleanupPhysX()
 	if (gPvd)
 	{
 		PxPvdTransport* transport = gPvd->getTransport();
-		gPvd->release();
-		transport->release();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
 }
@@ -252,7 +252,7 @@ bool initVehicles()
 	}
 
 	//Apply a start pose to the physx actor and add it to the physx scene.
-	PxTransform pose(PxVec3(0.000000000f,  -0.0500000119f, -1.59399998f), PxQuat(PxIdentity));
+	PxTransform pose(PxVec3(0.000000000f, -0.0500000119f, -1.59399998f), PxQuat(PxIdentity));
 	gVehicle.setUpActor(*gScene, pose, gVehicleName);
 
 	//Set the vehicle in 1st gear.
@@ -299,6 +299,7 @@ void cleanupPhysics()
 	cleanupVehicles();
 	cleanupGroundPlane();
 	cleanupPhysX();
+	printf("SnippetVehicle2TankDrive done.\n");
 }
 
 void stepPhysics()
@@ -359,8 +360,8 @@ int snippetMain(int argc, const char*const* argv)
 		return 1;
 
 #ifdef RENDER_SNIPPET
-	extern void renderLoop();
-	renderLoop();
+	extern void renderLoop(const char*);
+	renderLoop("PhysX Snippet Vehicle2 Tank Drive");
 #else
 	if (initPhysics())
 	{

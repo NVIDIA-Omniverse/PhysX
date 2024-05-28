@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -131,8 +131,7 @@ namespace local
 
 //////////////////////////////////////////////////////////////////////////
 // construct the base cube from given min/max
-ConvexHull::ConvexHull(const PxVec3& bmin, const PxVec3& bmax, const PxArray<PxPlane>& inPlanes)
-: mInputPlanes(inPlanes)
+ConvexHull::ConvexHull(const PxVec3& bmin, const PxVec3& bmax, const PxArray<PxPlane>& inPlanes) : mInputPlanes(inPlanes)
 {
 	// min max verts of the cube - 8 verts
 	mVertices.pushBack(PxVec3(bmin.x, bmin.y, bmin.z)); // ---
@@ -186,8 +185,7 @@ ConvexHull::ConvexHull(const PxVec3& bmin, const PxVec3& bmax, const PxArray<PxP
 
 //////////////////////////////////////////////////////////////////////////
 // create the initial convex hull from given OBB
-ConvexHull::ConvexHull(const PxVec3& extent, const PxTransform& transform, const PxArray<PxPlane>& inPlanes)
-	: mInputPlanes(inPlanes)
+ConvexHull::ConvexHull(const PxVec3& extent, const PxTransform& transform, const PxArray<PxPlane>& inPlanes) : mInputPlanes(inPlanes)
 {
 	// get the OBB corner points
 	PxVec3 extentPoints[8];
@@ -204,22 +202,22 @@ ConvexHull::ConvexHull(const PxVec3& extent, const PxTransform& transform, const
 	mVertices.pushBack(PxVec3(extentPoints[6].x, extentPoints[6].y, extentPoints[6].z)); // +++
 
 	// cube planes - 6 planes
-	PxPlane plane0(extentPoints[0], extentPoints[4], extentPoints[7]);	// 0,1,3,2
+	const PxPlane plane0(extentPoints[0], extentPoints[4], extentPoints[7]);	// 0,1,3,2
 	mFacets.pushBack(PxPlane(plane0.n, plane0.d));
 
-	PxPlane plane1(extentPoints[2], extentPoints[6], extentPoints[5]);	// 6,7,5,4
+	const PxPlane plane1(extentPoints[2], extentPoints[6], extentPoints[5]);	// 6,7,5,4
 	mFacets.pushBack(PxPlane(plane1.n, plane1.d));
 
-	PxPlane plane2(extentPoints[0], extentPoints[1], extentPoints[5]);	// 0,4,5,1
+	const PxPlane plane2(extentPoints[0], extentPoints[1], extentPoints[5]);	// 0,4,5,1
 	mFacets.pushBack(PxPlane(plane2.n, plane2.d));
 
-	PxPlane plane3(extentPoints[7], extentPoints[6], extentPoints[2]);	// 3,7,6,2
+	const PxPlane plane3(extentPoints[7], extentPoints[6], extentPoints[2]);	// 3,7,6,2
 	mFacets.pushBack(PxPlane(plane3.n, plane3.d));
 
-	PxPlane plane4(extentPoints[0], extentPoints[3], extentPoints[2]);	// 0,2,6,4
+	const PxPlane plane4(extentPoints[0], extentPoints[3], extentPoints[2]);	// 0,2,6,4
 	mFacets.pushBack(PxPlane(plane4.n, plane4.d));
 
-	PxPlane plane5(extentPoints[4], extentPoints[5], extentPoints[6]);	// 1,5,7,3
+	const PxPlane plane5(extentPoints[4], extentPoints[5], extentPoints[6]);	// 1,5,7,3
 	mFacets.pushBack(PxPlane(plane5.n, plane5.d));
 
 	// cube edges - 24 edges

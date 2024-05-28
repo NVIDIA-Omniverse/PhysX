@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -496,20 +496,18 @@ PolygonalBox::PolygonalBox(const PxVec3& halfSide) : mHalfSide(halfSide)
 
 void PolygonalBox::getPolygonalData(PolygonalData* PX_RESTRICT dst) const
 {
-	dst->mCenter				= PxVec3(0.0f, 0.0f, 0.0f);
-	dst->mNbVerts				= 8;
-	dst->mNbPolygons			= 6;
-	dst->mPolygons				= mPolygons;
-	dst->mNbEdges				= 0;
-	dst->mVerts					= mVertices;
-	dst->mPolygonVertexRefs		= gPxcBoxPolygonData;
-	dst->mFacesByEdges			= NULL;
-	dst->mInternal.mRadius		= 0.0f;
-	dst->mInternal.mExtents[0]	= 0.0f;
-	dst->mInternal.mExtents[1]	= 0.0f;
-	dst->mInternal.mExtents[2]	= 0.0f;
-//	dst->mBigData				= NULL;
-	dst->mHalfSide				= &mHalfSide;
-	dst->mProjectHull			= HullProjectionCB_Box;
-	dst->mSelectClosestEdgeCB	= SelectClosestEdgeCB_Box;
+	dst->mCenter					= PxVec3(0.0f, 0.0f, 0.0f);
+	dst->mNbVerts					= 8;
+	dst->mNbPolygons				= 6;
+	dst->mPolygons					= mPolygons;
+	dst->mNbEdges					= 0;
+	dst->mVerts						= mVertices;
+	dst->mPolygonVertexRefs			= gPxcBoxPolygonData;
+	dst->mFacesByEdges				= NULL;
+	dst->mInternal.mInternalRadius	= 0.0f;
+	dst->mInternal.mInternalExtents	= PxVec3(0.0f);
+//	dst->mBigData					= NULL;
+	dst->mHalfSide					= &mHalfSide;
+	dst->mProjectHull				= HullProjectionCB_Box;
+	dst->mSelectClosestEdgeCB		= SelectClosestEdgeCB_Box;
 }

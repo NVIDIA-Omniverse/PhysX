@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_RIGID_BODY_EXT_H
 #define PX_RIGID_BODY_EXT_H
-/** \addtogroup extensions
-  @{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxRigidBody.h"
@@ -50,7 +47,7 @@ class PxShape;
 /**
 \brief utility functions for use with PxRigidBody and subclasses
 
-@see PxRigidBody PxRigidDynamic PxArticulationLink
+\see PxRigidBody PxRigidDynamic PxArticulationLink
 */
 
 class PxRigidBodyExt
@@ -87,7 +84,7 @@ public:
 	\param[in] includeNonSimShapes True if all kind of shapes (PxShapeFlag::eSCENE_QUERY_SHAPE, PxShapeFlag::eTRIGGER_SHAPE) should be taken into account.
 	\return Boolean. True on success else false.
 
-	@see PxRigidBody::setMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
+	\see PxRigidBody::setMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
 	*/
 	static		bool			updateMassAndInertia(PxRigidBody& body, const PxReal* shapeDensities, PxU32 shapeDensityCount, const PxVec3* massLocalPose = NULL, bool includeNonSimShapes = false);
 
@@ -102,7 +99,7 @@ public:
 	\param[in] includeNonSimShapes True if all kind of shapes (PxShapeFlag::eSCENE_QUERY_SHAPE, PxShapeFlag::eTRIGGER_SHAPE) should be taken into account.
 	\return Boolean. True on success else false.
 
-	@see PxRigidBody::setMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
+	\see PxRigidBody::setMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
 	*/
 	static		bool			updateMassAndInertia(PxRigidBody& body, PxReal density, const PxVec3* massLocalPose = NULL, bool includeNonSimShapes = false);
 	
@@ -116,7 +113,7 @@ public:
 
 	\note If a single mass value should be used for the actor as a whole then the overloaded method setMassAndUpdateInertia() with a single mass parameter can be used instead.
 
-	@see updateMassAndInertia for more details.
+	\see updateMassAndInertia for more details.
 
 	\param[in,out] body The rigid body for which to set the mass and centre of mass local pose properties.
 	\param[in] shapeMasses The per shape mass values. There must be one entry for each shape which has the PxShapeFlag::eSIMULATION_SHAPE set. Other shapes are ignored. The mass values must be greater than 0.
@@ -125,7 +122,7 @@ public:
 	\param[in] includeNonSimShapes True if all kind of shapes (PxShapeFlag::eSCENE_QUERY_SHAPE, PxShapeFlag::eTRIGGER_SHAPE) should be taken into account.
 	\return Boolean. True on success else false.
 
-	@see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
+	\see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
 	*/
 	static		bool			setMassAndUpdateInertia(PxRigidBody& body, const PxReal* shapeMasses, PxU32 shapeMassCount, const PxVec3* massLocalPose = NULL, bool includeNonSimShapes = false);
 
@@ -137,7 +134,7 @@ public:
 
 	If no collision shapes are found, the inertia tensor is set to (1,1,1)
 
-	@see updateMassAndInertia for more details.
+	\see updateMassAndInertia for more details.
 
 	\param[in,out] body The rigid body for which to set the mass and centre of mass local pose properties.
 	\param[in] mass The mass of the body. Must be greater than 0.
@@ -145,7 +142,7 @@ public:
 	\param[in] includeNonSimShapes True if all kind of shapes (PxShapeFlag::eSCENE_QUERY_SHAPE, PxShapeFlag::eTRIGGER_SHAPE) should be taken into account.
 	\return Boolean. True on success else false.
 
-	@see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
+	\see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
 	*/
 	static		bool			setMassAndUpdateInertia(PxRigidBody& body, PxReal mass, const PxVec3* massLocalPose = NULL, bool includeNonSimShapes = false);
 
@@ -156,7 +153,7 @@ public:
 	\param[in] shapeCount The number of provided shapes.
 	\return The mass properties from the combined shapes.
 
-	@see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
+	\see PxRigidBody::setCMassLocalPose PxRigidBody::setMassSpaceInertiaTensor PxRigidBody::setMass
 	*/
 	static		PxMassProperties	computeMassPropertiesFromShapes(const PxShape* const* shapes, PxU32 shapeCount);
 	
@@ -183,8 +180,8 @@ public:
 	\param[in] mode The mode to use when applying the force/impulse(see #PxForceMode). 
 	\param[in] wakeup Specify if the call should wake up the actor.
 
-	@see PxForceMode 
-	@see addForceAtLocalPos() addLocalForceAtPos() addLocalForceAtLocalPos()
+	\see PxForceMode 
+	\see addForceAtLocalPos() addLocalForceAtPos() addLocalForceAtLocalPos()
 	*/
 	static		void			addForceAtPos(PxRigidBody& body, const PxVec3& force, const PxVec3& pos, PxForceMode::Enum mode = PxForceMode::eFORCE, bool wakeup = true);
 
@@ -211,8 +208,8 @@ public:
 	\param[in] mode The mode to use when applying the force/impulse(see #PxForceMode). 
 	\param[in] wakeup Specify if the call should wake up the actor.
 
-	@see PxForceMode 
-	@see addForceAtPos() addLocalForceAtPos() addLocalForceAtLocalPos()
+	\see PxForceMode 
+	\see addForceAtPos() addLocalForceAtPos() addLocalForceAtLocalPos()
 	*/
 	static		void			addForceAtLocalPos(PxRigidBody& body, const PxVec3& force, const PxVec3& pos, PxForceMode::Enum mode = PxForceMode::eFORCE, bool wakeup = true);
 
@@ -239,8 +236,8 @@ public:
 	\param[in] mode The mode to use when applying the force/impulse(see #PxForceMode). 
 	\param[in] wakeup Specify if the call should wake up the actor.
 
-	@see PxForceMode 
-	@see addForceAtPos() addForceAtLocalPos() addLocalForceAtLocalPos()
+	\see PxForceMode 
+	\see addForceAtPos() addForceAtLocalPos() addLocalForceAtLocalPos()
 	*/
 	static		void			addLocalForceAtPos(PxRigidBody& body, const PxVec3& force, const PxVec3& pos, PxForceMode::Enum mode = PxForceMode::eFORCE, bool wakeup = true);
 
@@ -267,8 +264,8 @@ public:
 	\param[in] mode The mode to use when applying the force/impulse(see #PxForceMode). 
 	\param[in] wakeup Specify if the call should wake up the actor.
 
-	@see PxForceMode 
-	@see addForceAtPos() addForceAtLocalPos() addLocalForceAtPos()
+	\see PxForceMode 
+	\see addForceAtPos() addForceAtLocalPos() addLocalForceAtPos()
 	*/
 	static		void			addLocalForceAtLocalPos(PxRigidBody& body, const PxVec3& force, const PxVec3& pos, PxForceMode::Enum mode = PxForceMode::eFORCE, bool wakeup = true);
 
@@ -280,7 +277,7 @@ public:
 	\param[in] pos Position we wish to determine the velocity for, defined in the global frame. <b>Range:</b> position vector
 	\return The velocity of point in the global frame.
 
-	@see getLocalPointVelocity()
+	\see getLocalPointVelocity()
 	*/
 	static		PxVec3			getVelocityAtPos(const PxRigidBody& body, const PxVec3& pos);
 
@@ -292,7 +289,7 @@ public:
 	\param[in] pos Position we wish to determine the velocity for, defined in the local frame. <b>Range:</b> position vector
 	\return The velocity of point in the local frame.
 
-	@see getLocalPointVelocity()
+	\see getLocalPointVelocity()
 	*/
 	static		PxVec3			getLocalVelocityAtLocalPos(const PxRigidBody& body, const PxVec3& pos);
 
@@ -304,7 +301,7 @@ public:
 	\param[in] pos Position (offset from the origin of the body) we wish to determine the velocity for, defined in the global frame. <b>Range:</b> position vector
 	\return The velocity of point (offset from the origin of the body) in the global frame.
 
-	@see getLocalPointVelocity()
+	\see getLocalPointVelocity()
 	*/
 	static		PxVec3			getVelocityAtOffset(const PxRigidBody& body, const PxVec3& pos);
 
@@ -315,7 +312,7 @@ public:
 
 	\note if this call is used to determine the velocity delta for an articulation link, only the mass properties of the link are taken into account.
 
-	@see PxRigidBody::getLinearVelocity, PxRigidBody::setLinearVelocity,  PxRigidBody::getAngularVelocity, PxRigidBody::setAngularVelocity 
+	\see PxRigidBody::getLinearVelocity, PxRigidBody::setLinearVelocity, PxRigidBody::getAngularVelocity, PxRigidBody::setAngularVelocity 
 
 	\param[in] body The body under consideration.
 	\param[in] impulsiveForce The impulsive force that would be applied to the specified rigid body.
@@ -387,7 +384,7 @@ public:
 
 	\return True if a blocking hit was found.
 
-	@see PxScene PxQueryFlags PxFilterData PxSweepHit
+	\see PxScene PxQueryFlags PxFilterData PxSweepHit
 	*/
 	static		bool			linearSweepSingle(
 									PxRigidBody& body, PxScene& scene, const PxVec3& unitDir, const PxReal distance,
@@ -428,7 +425,7 @@ public:
 
 	\return the number of touching hits. If overflow is set to true, the results are incomplete. In case of overflow there are also no guarantees that all touching hits returned are closer than the blocking hit.
 
-	@see PxScene PxQueryFlags PxFilterData PxSweepHit
+	\see PxScene PxQueryFlags PxFilterData PxSweepHit
 	*/
 	static		PxU32			linearSweepMultiple(
 									PxRigidBody& body, PxScene& scene, const PxVec3& unitDir, const PxReal distance,
@@ -444,5 +441,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

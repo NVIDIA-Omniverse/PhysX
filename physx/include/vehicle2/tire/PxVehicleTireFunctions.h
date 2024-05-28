@@ -22,14 +22,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #pragma once
-/** \addtogroup vehicle2
-  @{
-*/
 
 #include "foundation/PxSimpleTypes.h"
 #include "vehicle2/PxVehicleParams.h"
@@ -60,6 +57,8 @@ struct PxVehicleTireForce;
 struct PxVehicleTireStickyState;
 
 /**
+\deprecated This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.
+
 \brief Compute the longitudinal and lateral tire directions in the ground plane.
 \param[in] suspensionParams describes the frame of the suspension and wheel. 
 \param[in] steerAngle is the steer angle in radians to be applied to the wheel.
@@ -68,7 +67,6 @@ struct PxVehicleTireStickyState;
 \param[in] frame is a description of the vehicle's lateral and longitudinal axes.
 \param[out] tireDirectionState is the computed tire longitudinal and lateral directions in the world frame. 
 \note PxVehicleTireDirsLegacyUpdate replicates the tire direction calculation of PhysX 5.0 and earlier.
-@deprecated
 */
 PX_DEPRECATED void PxVehicleTireDirsLegacyUpdate
 (const PxVehicleSuspensionParams& suspensionParams,
@@ -109,8 +107,8 @@ void PxVehicleTireDirsUpdate
 \param[in] frame is a description of the vehicle's lateral and longitudinal axes.
 \param[out] tireSpeedState is the components of rigid body velocity at the tire contact point along the 
 tire's longitudinal and lateral axes.
-@see PxVehicleTireDirsUpdate
-@see PxVehicleTireDirsLegacyUpdate
+\see PxVehicleTireDirsUpdate
+\see PxVehicleTireDirsLegacyUpdate
 */
 void PxVehicleTireSlipSpeedsUpdate
 (const PxVehicleWheelParams& wheelParams, const PxVehicleSuspensionParams& suspensionParams,
@@ -141,7 +139,7 @@ void PxVehicleTireSlipsUpdate
  PxVehicleTireSlipState& tireSlipState);
 
 /**
-@deprecated
+\deprecated This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.
 
 \brief Compute a tire's longitudinal and lateral slip angles.
 \param[in] wheelParams describes the radius of the wheel.
@@ -218,8 +216,8 @@ tire's longitudinal and lateral axes.
 \param[out] tireStickyState is a description of the sticky state of the tire in the longitudinal and lateral directions.
 \note The velocity constraints are maintained through integration with the PhysX scene using the function 
 PxVehiclePhysXConstraintStatesUpdate. Alternative implementations independent of PhysX are possible. 
-@see PxVehiclePhysXConstraintStatesUpdate
-@see PxVehicleTireSlipsAccountingForStickyStatesUpdate
+\see PxVehiclePhysXConstraintStatesUpdate
+\see PxVehicleTireSlipsAccountingForStickyStatesUpdate
 */
 void PxVehicleTireStickyStateUpdate
 (const PxVehicleAxleDescription& axleDescription, const PxVehicleWheelParams& wheelParams,
@@ -270,4 +268,3 @@ void PxVehicleTireForcesUpdate
 } // namespace physx
 #endif
 
-/** @} */

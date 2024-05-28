@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_RIGID_STATIC_H
 #define PX_RIGID_STATIC_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxRigidActor.h"
@@ -51,7 +48,7 @@ Instances of this class are created by calling #PxPhysics::createRigidStatic() a
 <h3>Visualizations</h3>
 \li #PxVisualizationParameter::eACTOR_AXES
 
-@see PxRigidActor  PxPhysics.createRigidStatic()  release()
+\see PxRigidActor  PxPhysics.createRigidStatic()  release()
 */
 
 class PxRigidStatic : public PxRigidActor
@@ -71,5 +68,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

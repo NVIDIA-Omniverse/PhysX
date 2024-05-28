@@ -22,31 +22,29 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
 #include "foundation/PxFPU.h"
-#include "DySolverBody.h"
+#include "foundation/PxAtomic.h"
 #include "DySolverContactPF4.h"
 #include "DySolverConstraint1D.h"
-#include "DySolverConstraintDesc.h"
 #include "DyThresholdTable.h"
 #include "DySolverContext.h"
-#include "foundation/PxUtilities.h"
-#include "DyConstraint.h"
-#include "foundation/PxAtomic.h"
 #include "DySolverContact.h"
 #include "DyPGS.h"
+
+#include "DyResidualAccumulator.h"
 
 namespace physx
 {
 namespace Dy
 {
 
-static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
+static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b01 = *desc[0].bodyB;
@@ -98,6 +96,9 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 	const PxU8* PX_RESTRICT last = desc[0].constraint + firstHeader->frictionOffset;
 
 	//const PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
+
+	Dy::ErrorAccumulator error;
+	const bool residualReportingActive = cache.contactErrorAccumulator;
 
 	//TODO - can I avoid this many tests???
 	while(currPtr < last)
@@ -182,6 +183,8 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 			const Vec4V _newAppliedForce(V4Add(appliedForce, _deltaF2));
 			const Vec4V newAppliedForce = V4Min(_newAppliedForce, maxImpulse);
 			const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
+			if (residualReportingActive)
+				error.accumulateErrorLocalV4(deltaF, velMultiplier);
 
 			normalVel1 = V4MulAdd(invMass0D0, deltaF, normalVel1);
 			normalVel3 = V4NegMulSub(invMass1D1, deltaF, normalVel3);
@@ -245,9 +248,12 @@ static void solveContactCoulomb4_Block(const PxSolverConstraintDesc* PX_RESTRICT
 	V4StoreA(angState11, &b11.angularState.x);
 	V4StoreA(angState21, &b21.angularState.x);
 	V4StoreA(angState31, &b31.angularState.x);
+
+	if (residualReportingActive)
+		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
-static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
+static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b10 = *desc[1].bodyA;
@@ -281,6 +287,9 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 	SolverContactCoulombHeader4* PX_RESTRICT firstHeader = reinterpret_cast<SolverContactCoulombHeader4*>(currPtr);
 
 	const PxU8* PX_RESTRICT last = desc[0].constraint + firstHeader->frictionOffset;
+
+	Dy::ErrorAccumulator error;
+	const bool residualReportingActive = cache.contactErrorAccumulator;
 
 	//TODO - can I avoid this many tests???
 	while(currPtr < last)
@@ -349,6 +358,8 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 			const Vec4V _newAppliedForce(V4Add(appliedForce, _deltaF2));
 			const Vec4V newAppliedForce = V4Min(_newAppliedForce, maxImpulse);
 			const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
+			if (residualReportingActive)
+				error.accumulateErrorLocalV4(deltaF, velMultiplier);
 			const Vec4V deltaAngF = V4Mul(deltaF, angD0);
 
 			normalVel1 = V4MulAdd(invMass0D0, deltaF, normalVel1);
@@ -387,9 +398,12 @@ static void solveContactCoulomb4_StaticBlock(const PxSolverConstraintDesc* PX_RE
 	V4StoreA(angState10, &b10.angularState.x);
 	V4StoreA(angState20, &b20.angularState.x);
 	V4StoreA(angState30, &b30.angularState.x);
+
+	if (residualReportingActive)
+		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
-static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
+static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b01 = *desc[0].bodyB;
@@ -433,6 +447,9 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
 	PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
 	
+	Dy::ErrorAccumulator error;
+	const bool residualReportingActive = cache.contactErrorAccumulator;
+
 	while(currPtr < endPtr)
 	{
 		SolverFrictionHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverFrictionHeader4*>(currPtr);
@@ -517,8 +534,10 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 
 			const Vec4V tmp = V4NegMulSub(targetVel, velMultiplier, appliedForce);
 			Vec4V newAppliedForce = V4MulAdd(normalVel, velMultiplier, tmp);
-			newAppliedForce = V4Clamp(newAppliedForce,nMaxFriction,  maxFriction);
+			newAppliedForce = V4Clamp(newAppliedForce,nMaxFriction, maxFriction);
 			const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
+			if (residualReportingActive)
+				error.accumulateErrorLocalV4(deltaF, velMultiplier);
 
 			const Vec4V deltaLinF0 = V4Mul(invMass0D0, deltaF);
 			const Vec4V deltaLinF1 = V4Mul(invMass1D1, deltaF);
@@ -576,9 +595,12 @@ static void solveFriction4_Block(const PxSolverConstraintDesc* PX_RESTRICT desc,
 	V4StoreA(angState11, &b11.angularState.x);
 	V4StoreA(angState21, &b21.angularState.x);
 	V4StoreA(angState31, &b31.angularState.x);
+
+	if (residualReportingActive)
+		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
-static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& /*cache*/)
+static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT desc, SolverContext& cache)
 {
 	PxSolverBody& b00 = *desc[0].bodyA;
 	PxSolverBody& b10 = *desc[1].bodyA;
@@ -606,6 +628,9 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 	PxU8* PX_RESTRICT currPtr = desc[0].constraint;
 	PxU8* PX_RESTRICT endPtr = desc[0].constraint + getConstraintLength(desc[0]);
 	
+	Dy::ErrorAccumulator error;
+	const bool residualReportingActive = cache.contactErrorAccumulator;
+
 	while(currPtr < endPtr)
 	{
 		SolverFrictionHeader4* PX_RESTRICT hdr = reinterpret_cast<SolverFrictionHeader4*>(currPtr);
@@ -680,8 +705,10 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 			const Vec4V tmp = V4NegMulSub(targetVel, velMultiplier, appliedForce);
 
 			Vec4V newAppliedForce = V4MulAdd(normalVel, velMultiplier, tmp);
-			newAppliedForce = V4Clamp(newAppliedForce,nMaxFriction,  maxFriction);
+			newAppliedForce = V4Clamp(newAppliedForce,nMaxFriction, maxFriction);
 			const Vec4V deltaF = V4Sub(newAppliedForce, appliedForce);
+			if (residualReportingActive)
+				error.accumulateErrorLocalV4(deltaF, velMultiplier);
 
 			const Vec4V deltaAngF0 = V4Mul(angD0, deltaF);
 
@@ -717,6 +744,9 @@ static void solveFriction4_StaticBlock(const PxSolverConstraintDesc* PX_RESTRICT
 	V4StoreA(angState10, &b10.angularState.x);
 	V4StoreA(angState20, &b20.angularState.x);
 	V4StoreA(angState30, &b30.angularState.x);
+
+	if (residualReportingActive)
+		error.accumulateErrorGlobal(*cache.contactErrorAccumulator);
 }
 
 static void concludeContactCoulomb4(const PxSolverConstraintDesc* desc, SolverContext& /*cache*/)

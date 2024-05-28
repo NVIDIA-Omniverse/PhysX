@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -133,10 +133,8 @@ void PCMPolygonalBox::getPolygonalData(PolygonalData* PX_RESTRICT dst) const
 
 	dst->mBigData				= NULL;
 
-	dst->mInternal.mRadius		= 0.0f;
-	dst->mInternal.mExtents[0]	= mHalfSide.x;
-	dst->mInternal.mExtents[1]	= mHalfSide.y;
-	dst->mInternal.mExtents[2]	= mHalfSide.z;
+	dst->mInternal.mInternalRadius	= 0.0f;
+	dst->mInternal.mInternalExtents	= mHalfSide;
 
 	dst->mScale = PxMeshScale();
 }

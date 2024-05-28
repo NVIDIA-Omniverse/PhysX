@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -47,7 +47,7 @@ namespace vehicle2
 {
 
 PX_FORCE_INLINE PxF32 computeFilteredNormalisedTireLoad
-(const PxF32 xmin, const PxF32 ymin, const PxF32 xmax,  const PxF32 ymax, const PxF32 x)
+(const PxF32 xmin, const PxF32 ymin, const PxF32 xmax, const PxF32 ymax, const PxF32 x)
 {
 	if (x <= xmin)
 	{

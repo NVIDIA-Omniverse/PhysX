@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.
 
@@ -35,15 +35,6 @@
 namespace physx
 {
 #endif
-union PxTempAllocatorChunk
-{
-	PxTempAllocatorChunk() : mNext(0)
-	{
-	}
-	PxTempAllocatorChunk* mNext; // while chunk is free
-	PxU32 mIndex;           // while chunk is allocated
-	PxU8 mPad[16];          // 16 byte aligned allocations
-};
 
 class PxTempAllocator
 {

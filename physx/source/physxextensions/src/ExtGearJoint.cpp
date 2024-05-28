@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -51,43 +51,34 @@ GearJoint::GearJoint(const PxTolerancesScale& /*scale*/, PxRigidActor* actor0, c
 	resetError();
 }
 
+static bool checkJoint(const PxBase* hinge)
+{
+	if(hinge)
+	{
+		bool invalidType;
+		const PxType type = hinge->getConcreteType();
+		if(type == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
+		{
+			const PxArticulationJointReducedCoordinate* joint = static_cast<const PxArticulationJointReducedCoordinate*>(hinge);
+			const PxArticulationJointType::Enum artiJointType = joint->getJointType();
+			invalidType = artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED;
+		}
+		else
+		{
+			invalidType = type != PxJointConcreteType::eREVOLUTE && type != PxJointConcreteType::eD6;
+		}
+		if(invalidType)
+			return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
+	}
+	return true;
+}
+
 bool GearJoint::setHinges(const PxBase* hinge0, const PxBase* hinge1)
 {
 	GearJointData* data = static_cast<GearJointData*>(mData);
 
-	if(hinge0)
-	{
-		const PxType type0 = hinge0->getConcreteType();
-		if(type0 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
-		{
-			const PxArticulationJointReducedCoordinate* joint0 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge0);
-			const PxArticulationJointType::Enum artiJointType = joint0->getJointType();
-			if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
-		}
-		else
-		{
-			if(type0 != PxJointConcreteType::eREVOLUTE && type0 != PxJointConcreteType::eD6)
-				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
-		}
-	}
-
-	if(hinge1)
-	{
-		const PxType type1 = hinge1->getConcreteType();
-		if(type1 == PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
-		{
-			const PxArticulationJointReducedCoordinate* joint1 = static_cast<const PxArticulationJointReducedCoordinate*>(hinge1);
-			const PxArticulationJointType::Enum artiJointType = joint1->getJointType();
-			if(artiJointType != PxArticulationJointType::eREVOLUTE && artiJointType != PxArticulationJointType::eREVOLUTE_UNWRAPPED)
-				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint.");
-		}
-		else
-		{
-			if(type1 != PxJointConcreteType::eREVOLUTE && type1 != PxJointConcreteType::eD6)
-				return outputError<PxErrorCode::eINVALID_PARAMETER>(__LINE__, "PxGearJoint::setHinges: passed joint must be either a revolute joint or a D6 joint.");
-		}
-	}
+	if(!checkJoint(hinge0) || !checkJoint(hinge1))
+		return false;
 
 	data->hingeJoint0 = hinge0;
 	data->hingeJoint1 = hinge1;
@@ -275,7 +266,6 @@ static PxU32 GearJointSolverPrep(Px1DConstraint* constraints,
 	con.minImpulse = -PX_MAX_F32;
 	con.maxImpulse = PX_MAX_F32;
 	con.velocityTarget = 0.f;
-	con.forInternalUse = 0.f;
 	con.solveHint = 0;
 	con.flags = Px1DConstraintFlag::eOUTPUT_FORCE|Px1DConstraintFlag::eANGULAR_CONSTRAINT;
 	con.mods.bounce.restitution = 0.0f;

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -96,14 +96,15 @@ void allocParticleBuffers()
 	PxScene* scene;
 	PxGetPhysics().getScenes(&scene, 1);
 	PxCudaContextManager* cudaContextManager = scene->getCudaContextManager();
+	if (cudaContextManager != NULL)
+	{
+		PxParticleClothBuffer* userBuffer = getUserClothBuffer();
 
-	PxParticleClothBuffer* userBuffer = getUserClothBuffer();
+		PxU32 maxParticles = userBuffer->getMaxParticles();
 
-	PxU32 maxParticles = userBuffer->getMaxParticles();
-
-	sPosBuffer.initialize(cudaContextManager);
-	sPosBuffer.allocate(maxParticles * sizeof(PxVec4));
-
+		sPosBuffer.initialize(cudaContextManager);
+		sPosBuffer.allocate(maxParticles * sizeof(PxVec4));
+	}
 }
 
 void clearupParticleBuffers()

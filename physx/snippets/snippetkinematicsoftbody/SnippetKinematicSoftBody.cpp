@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -39,19 +39,20 @@
 #include "../snippetkinematicsoftbody/MeshGenerator.h"
 #include "extensions/PxTetMakerExt.h"
 #include "extensions/PxSoftBodyExt.h"
+#include "extensions/PxCudaHelpersExt.h"
 
 using namespace physx;
 using namespace meshgenerator;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation		= NULL;
-static PxPhysics*				gPhysics		= NULL;
-static PxCudaContextManager*	gCudaContextManager = NULL;
-static PxDefaultCpuDispatcher*	gDispatcher		= NULL;
-static PxScene*					gScene			= NULL;
-static PxMaterial*				gMaterial		= NULL;
-static PxPvd*					gPvd			= NULL;
+static PxFoundation*			gFoundation			= NULL;
+static PxPhysics*				gPhysics			= NULL;
+static PxCudaContextManager*	gCudaContextManager	= NULL;
+static PxDefaultCpuDispatcher*	gDispatcher			= NULL;
+static PxScene*					gScene				= NULL;
+static PxMaterial*				gMaterial			= NULL;
+static PxPvd*					gPvd				= NULL;
 std::vector<SoftBody>			gSoftBodies;
 
 void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const PxFEMMaterial& /*femMaterial*/,
@@ -78,10 +79,10 @@ void addSoftBody(PxSoftBody* softBody, const PxFEMParameters& femParams, const P
 
 	gSoftBodies.push_back(sBody);
 
-	PX_PINNED_HOST_FREE(gCudaContextManager, simPositionInvMassPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, simVelocityPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, collPositionInvMassPinned);
-	PX_PINNED_HOST_FREE(gCudaContextManager, restPositionPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, simPositionInvMassPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, simVelocityPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, collPositionInvMassPinned);
+	PX_EXT_PINNED_MEMORY_FREE(*gCudaContextManager, restPositionPinned);
 }
 
 static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<PxVec3>& triVerts, const PxArray<PxU32>& triIndices, bool useCollisionMeshForSimulation = false)
@@ -141,6 +142,13 @@ static PxSoftBody* createSoftBody(const PxCookingParams& params, const PxArray<P
 
 static void createSoftbodies(const PxCookingParams& params)
 {
+	PxCudaContextManager* cudaContextManager = gScene->getCudaContextManager();
+	if (!cudaContextManager)
+	{
+		printf("The Softbody feature currently only runs on GPU.\n");
+		return;
+	}
+
 	PxArray<PxVec3> triVerts;
 	PxArray<PxU32> triIndices;
 	
@@ -170,11 +178,9 @@ static void createSoftbodies(const PxCookingParams& params)
 	SoftBody* sb = &gSoftBodies[0];
 	sb->copyDeformedVerticesFromGPU();
 
-	PxCudaContextManager* cudaContextManager = gScene->getCudaContextManager();
 	PxU32 vertexCount = sb->mSoftBody->getSimulationMesh()->getNbVertices();
 
-
-	PxVec4* kinematicTargets = PX_PINNED_HOST_ALLOC_T(PxVec4, cudaContextManager, vertexCount);	
+	PxVec4* kinematicTargets = PX_EXT_PINNED_MEMORY_ALLOC(PxVec4, *cudaContextManager, vertexCount);	
 	PxVec4* positionInvMass = sb->mPositionsInvMass;
 	for (PxU32 i = 0; i < vertexCount; ++i)
 	{
@@ -195,7 +201,7 @@ static void createSoftbodies(const PxCookingParams& params)
 		kinematicTargets[i] = PxConfigureSoftBodyKinematicTarget(p, kinematic);
 	}
 
-	PxVec4* kinematicTargetsD = PX_DEVICE_ALLOC_T(PxVec4, cudaContextManager, vertexCount);
+	PxVec4* kinematicTargetsD = PX_EXT_DEVICE_MEMORY_ALLOC(PxVec4, *cudaContextManager, vertexCount);
 	cudaContextManager->getCudaContext()->memcpyHtoD(reinterpret_cast<CUdeviceptr>(softBody->getSimPositionInvMassBufferD()), positionInvMass, vertexCount * sizeof(PxVec4));
 	cudaContextManager->getCudaContext()->memcpyHtoD(reinterpret_cast<CUdeviceptr>(kinematicTargetsD), kinematicTargets, vertexCount * sizeof(PxVec4));
 	softBody->setKinematicTargetBufferD(kinematicTargetsD, PxSoftBodyFlag::ePARTIALLY_KINEMATIC);
@@ -217,8 +223,7 @@ void initPhysics(bool /*interactive*/)
 	gCudaContextManager = PxCreateCudaContextManager(*gFoundation, cudaContextManagerDesc, PxGetProfilerCallback());
 	if (gCudaContextManager && !gCudaContextManager->contextIsValid())
 	{
-		gCudaContextManager->release();
-		gCudaContextManager = NULL;
+		PX_RELEASE(gCudaContextManager);
 		printf("Failed to initialize cuda context.\n");
 	}
 
@@ -245,9 +250,7 @@ void initPhysics(bool /*interactive*/)
 	gDispatcher = PxDefaultCpuDispatcherCreate(numCores == 0 ? 0 : numCores - 1);
 	sceneDesc.cpuDispatcher	= gDispatcher;
 	sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
-	sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 
-	sceneDesc.sceneQueryUpdateMode = PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED;
 	sceneDesc.broadPhaseType = PxBroadPhaseType::eGPU;
 	sceneDesc.gpuMaxNumPartitions = 8;
 
@@ -385,15 +388,17 @@ void cleanupPhysics(bool /*interactive*/)
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);
-	PxPvdTransport* transport = gPvd->getTransport();
-	gPvd->release();
-	transport->release();
+	if (gPvd)
+	{
+		PxPvdTransport* transport = gPvd->getTransport();
+		PX_RELEASE(gPvd);
+		PX_RELEASE(transport);
+	}
 	PxCloseExtensions();
-
-	gCudaContextManager->release();
+	PX_RELEASE(gCudaContextManager);
 	PX_RELEASE(gFoundation);
 
-	printf("Snippet Kinematic Softbody done.\n");
+	printf("SnippetKinematicSoftBody done.\n");
 }
 
 int snippetMain(int, const char*const*)

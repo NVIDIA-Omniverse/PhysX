@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -372,7 +372,7 @@ static void generatedContactsEEContacts(const CapsuleV& capsule, const Polygonal
 
 	for (PxU32 rStart = 0, rEnd = PxU32(referencePolygon.mNbVerts - 1); rStart < referencePolygon.mNbVerts; rEnd = rStart++) 
 	{
-		generateEE(capsule.p0, capsule.p1, contactNormal,points0In0[rStart], points0In0[rEnd], aToB,  manifoldContacts, numContacts, inflatedRadius);
+		generateEE(capsule.p0, capsule.p1, contactNormal,points0In0[rStart], points0In0[rEnd], aToB, manifoldContacts, numContacts, inflatedRadius);
 	}
 }
 
@@ -441,7 +441,7 @@ bool Gu::generateFullContactManifold(const CapsuleV& capsule, const PolygonalDat
 		if(faceContacts < 2)
 		{
 			const HullPolygonData& referencePolygon = polyData.mPolygons[getPolygonIndex(polyData, map, V3Neg(tNormal))];
-			generatedContactsEEContacts(capsule, polyData,referencePolygon, map, aToB,  manifoldContacts, numContacts, contactDist, tNormal);
+			generatedContactsEEContacts(capsule, polyData,referencePolygon, map, aToB, manifoldContacts, numContacts, contactDist, tNormal);
 		}
 	}
 	else
@@ -457,7 +457,7 @@ bool Gu::generateFullContactManifold(const CapsuleV& capsule, const PolygonalDat
 
 			const PxU32 featureIndex = getWitnessPolygonIndex(polyData, map, V3Neg(tNormal), closest, tolerance);
 			const HullPolygonData& referencePolygon = polyData.mPolygons[featureIndex];
-			generatedContactsEEContacts(capsule, polyData,referencePolygon, map, aToB,  manifoldContacts, numContacts, contactDist, tNormal);
+			generatedContactsEEContacts(capsule, polyData,referencePolygon, map, aToB, manifoldContacts, numContacts, contactDist, tNormal);
 		}
 	}
 

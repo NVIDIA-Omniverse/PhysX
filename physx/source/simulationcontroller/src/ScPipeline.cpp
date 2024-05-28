@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -65,6 +65,11 @@
 	#include "ScHairSystemSim.h"
 	#include "DyHairSystem.h"
 #endif
+
+#include "ScArticulationCore.h"
+#include "ScArticulationSim.h"
+#include "ScConstraintCore.h"
+#include "ScConstraintSim.h"
 
 using namespace physx;
 using namespace physx::Cm;
@@ -556,6 +561,14 @@ void Sc::Scene::finishBroadPhase(PxBaseTask* continuation)
 		}
 
 		mPreallocateContactManagers.removeReference();
+
+#if PX_ENABLE_SIM_STATS
+		mLLContext->getSimStats().mGpuDynamicsFoundLostPairs = mAABBManager->getGpuDynamicsLostFoundPairsStats();
+		mLLContext->getSimStats().mGpuDynamicsTotalAggregatePairs = mAABBManager->getGpuDynamicsTotalAggregatePairsStats();
+		mLLContext->getSimStats().mGpuDynamicsFoundLostAggregatePairs = mAABBManager->getGpuDynamicsLostFoundAggregatePairsStats();
+#else
+	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
+#endif
 	}	
 }
 
@@ -912,7 +925,7 @@ void Sc::Scene::islandInsertion(PxBaseTask* /*continuation*/)
 				type = IG::Edge::eSOFT_BODY_CONTACT;
 			else if (actorTypeLargest == PxActorType::eFEMCLOTH)
 				type = IG::Edge::eFEM_CLOTH_CONTACT;
-			else if(isParticleSystem(actorTypeLargest))
+			else if(actorTypeLargest == PxActorType::ePBD_PARTICLESYSTEM)
 				type = IG::Edge::ePARTICLE_SYSTEM_CONTACT;
 			else if (actorTypeLargest == PxActorType::eHAIRSYSTEM)
 				type = IG::Edge::eHAIR_SYSTEM_CONTACT;
@@ -1527,14 +1540,16 @@ namespace
 		const PxReal				mDt;
 		IG::SimpleIslandManager*	mIslandManager;
 		PxsSimulationController*	mSimulationController;
-
+		PxsExternalAccelerationProvider* mAccelerationProvider;
 	public:
 
-		ScBeforeSolverTask(PxReal dt, IG::SimpleIslandManager* islandManager, PxsSimulationController* simulationController, PxU64 contextID) : 
+		ScBeforeSolverTask(PxReal dt, IG::SimpleIslandManager* islandManager, PxsSimulationController* simulationController, PxU64 contextID,
+			PxsExternalAccelerationProvider* accelerationProvider) :
 			Cm::Task				(contextID),
 			mDt						(dt),
 			mIslandManager			(islandManager),
-			mSimulationController	(simulationController)
+			mSimulationController	(simulationController),
+			mAccelerationProvider	(accelerationProvider)
 		{
 		}
 
@@ -1544,6 +1559,8 @@ namespace
 
 			const IG::IslandSim& islandSim = mIslandManager->getAccurateIslandSim();
 			const PxU32 rigidBodyOffset = BodySim::getRigidBodyOffset();
+
+			PxU32 maxNumBodies = islandSim.getNbNodes();
 
 			PxsRigidBody* updatedBodySims[MaxBodiesPerTask];
 			PxU32 updatedBodyNodeIndices[MaxBodiesPerTask];
@@ -1561,13 +1578,13 @@ namespace
 					{
 						PxsRigidBody* body = islandSim.getRigidBody(index);
 						BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(body) - rigidBodyOffset);
-						bodySim->updateForces(mDt, updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, NULL);
+						bodySim->updateForces(mDt, updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, NULL, mAccelerationProvider, maxNumBodies);
 					}
 				}
 			}
 
 			if(nbUpdatedBodySims)
-				mSimulationController->updateBodies(updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims);
+				mSimulationController->updateBodies(updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, mAccelerationProvider);
 		}
 
 		virtual const char* getName() const
@@ -1585,23 +1602,20 @@ namespace
 		ArticulationSim* const*		mArticSims;
 		const PxU32					mNumArticulations;
 		const PxReal				mDt;
-		IG::SimpleIslandManager*	mIslandManager;
 
 	public:
 
-		ScArticBeforeSolverTask(ArticulationSim* const* articSims, PxU32 nbArtics, PxReal dt, IG::SimpleIslandManager* islandManager, PxU64 contextID) :
+		ScArticBeforeSolverTask(ArticulationSim* const* articSims, PxU32 nbArtics, PxReal dt, PxU64 contextID) :
 			Cm::Task(contextID),
 			mArticSims(articSims),
 			mNumArticulations(nbArtics),
-			mDt(dt),
-			mIslandManager(islandManager)
+			mDt(dt)
 		{
 		}
 
 		virtual void runInternal()
 		{
 			PX_PROFILE_ZONE("Sim.ScArticBeforeSolverTask", mContextID);
-			//const IG::IslandSim& islandSim = mIslandManager->getAccurateIslandSim();
 
 			for(PxU32 a = 0; a < mNumArticulations; ++a)
 			{
@@ -1699,7 +1713,8 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 		// PT: TASK-CREATION TAG
 		for (PxU32 i = iter.getNext(); i != PxBitMap::Iterator::DONE; /*i = iter.getNext()*/)
 		{
-			ScBeforeSolverTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(ScBeforeSolverTask)), ScBeforeSolverTask(mDt, mSimpleIslandManager, mSimulationController, mContextId));
+			ScBeforeSolverTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(ScBeforeSolverTask)), ScBeforeSolverTask(mDt, mSimpleIslandManager, mSimulationController, mContextId, 
+				&mDynamicsContext->getExternalRigidAccelerations()));
 			PxU32 count = 0;
 			for(; count < MaxBodiesPerTask && i != PxBitMap::Iterator::DONE; i = iter.getNext())
 			{
@@ -1729,7 +1744,7 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 		const PxU32 nbToProcess = PxMin(PxU32(nbDirtyArticulations - a), nbArticsPerTask);
 
 		ScArticBeforeSolverTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(ScArticBeforeSolverTask)), ScArticBeforeSolverTask(artiSim + a, nbToProcess,
-			mDt, mSimpleIslandManager, mContextId));
+			mDt, mContextId));
 
 		startTask(task, continuation);
 	}
@@ -1751,8 +1766,16 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 			startTask(task, continuation);
 		}
 	}
+	
+}
 
+///////////////////////////////////////////////////////////////////////////////
+
+void Sc::Scene::updateBodies(PxBaseTask* continuation)
+{
 	// AD: need to raise dirty flags serially because the PxgBodySimManager::updateArticulation() is not thread-safe.
+	const PxU32 nbDirtyArticulations = mDirtyArticulationSims.size();
+	ArticulationSim* const* artiSim = mDirtyArticulationSims.getEntries();
 	for (PxU32 a = 0; a < nbDirtyArticulations; ++a)
 	{
 		if (artiSim[a]->getLowLevelArticulation()->mGPUDirtyFlags & (Dy::ArticulationDirtyFlag::eDIRTY_EXT_ACCEL))
@@ -1760,12 +1783,7 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 			mSimulationController->updateArticulationExtAccel(artiSim[a]->getLowLevelArticulation(), artiSim[a]->getIslandNodeIndex());
 		}
 	}
-}
 
-///////////////////////////////////////////////////////////////////////////////
-
-void Sc::Scene::updateBodies(PxBaseTask* continuation)
-{
 	//dma bodies and articulation data to gpu
 	mSimulationController->updateBodies(continuation);
 }
@@ -2151,6 +2169,8 @@ void Sc::Scene::postSolver(PxBaseTask* /*continuation*/)
 		mDirtyArticulationSims.clear();
 	}
 
+	mDynamicsContext->getExternalRigidAccelerations().clearAll();
+
 	//afterIntegration(continuation);
 }
 
@@ -2399,6 +2419,9 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 	fireOnAdvanceCallback();  // placed here because it needs to be done after sleep check and after potential CCD passes
 
 	checkConstraintBreakage(); // Performs breakage tests on breakable constraints
+	
+	if (getFlags() & PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING)
+		collectSolverResidual();
 
 	PX_PROFILE_STOP_CROSSTHREAD("Basic.rigidBodySolver", mContextId);
 
@@ -2410,6 +2433,94 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 	// AD: WIP, will be gone once we removed the warm-start with sim step.
 	if (mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 		setDirectGPUAPIInitialized();
+}
+
+void Sc::Scene::collectSolverResidual()
+{
+	PX_PROFILE_ZONE("Sim.collectSolverResidual", mContextId);
+
+	PxU32 counter = mDynamicsContext->getContactErrorCounter();
+	PxReal rmsGlobalResidual = mDynamicsContext->getContactError();
+	PxReal maxGlobalResidual = mDynamicsContext->getMaxContactError();
+
+
+	PxU32 counterPosIter = mDynamicsContext->getContactErrorCounterPosIter();
+	PxReal rmsGlobalResidualPosIter = mDynamicsContext->getContactErrorPosIter();
+	PxReal maxGlobalResidualPosIter = mDynamicsContext->getMaxContactErrorPosIter();
+
+	PX_ASSERT(PxIsFinite(rmsGlobalResidual) && PxIsFinite(maxGlobalResidual));
+
+	const PxPinnedArray<Dy::ConstraintWriteback>& pool = mDynamicsContext->getConstraintWriteBackPool();
+	const PxPinnedArray<PxReal>& poolPosIterResidualGpu = mDynamicsContext->getConstraintPositionIterResidualPoolGpu();
+
+	ConstraintCore* const* constraints = mConstraints.getEntries();
+	PxU32 count = mConstraints.size();
+	while (count--)
+	{
+		ConstraintCore* core = constraints[count];
+		ConstraintSim* sim = core->getSim();
+		const Dy::ConstraintWriteback& solverOutput = pool[sim->getLowLevelConstraint().index];
+		PxReal positionIterationResidual = solverOutput.getPositionIterationResidual();
+		if (poolPosIterResidualGpu.size() > 0)
+			positionIterationResidual += poolPosIterResidualGpu[sim->getLowLevelConstraint().index];
+
+		PxConstraintResidual residual;
+		residual.positionIterationResidual = positionIterationResidual;
+		residual.velocityIterationResidual = solverOutput.residual;
+		core->setSolverResidual(residual);
+
+
+		rmsGlobalResidual += solverOutput.residual * solverOutput.residual;
+		maxGlobalResidual = PxMax(PxAbs(solverOutput.residual), maxGlobalResidual);
+
+		PX_ASSERT(PxIsFinite(rmsGlobalResidual) && PxIsFinite(maxGlobalResidual));
+
+
+		rmsGlobalResidualPosIter += positionIterationResidual * positionIterationResidual;
+		maxGlobalResidualPosIter = PxMax(PxAbs(positionIterationResidual), maxGlobalResidualPosIter);
+
+		PX_ASSERT(PxIsFinite(rmsGlobalResidualPosIter) && PxIsFinite(maxGlobalResidualPosIter));
+	}
+	counter += mConstraints.size();
+	counterPosIter += mConstraints.size();
+
+	ArticulationCore* const* articulations = mArticulations.getEntries();
+	count = mArticulations.size();
+	while (count--)
+	{
+		ArticulationCore* core = articulations[count];
+		ArticulationSim* sim = core->getSim();
+		const Dy::ErrorAccumulator& internalErrVelIter = sim->getLowLevelArticulation()->mInternalErrorAccumulatorVelIter;
+		rmsGlobalResidual += internalErrVelIter.mErrorSumOfSquares;
+		counter += internalErrVelIter.mCounter;
+		maxGlobalResidual = PxMax(maxGlobalResidual, internalErrVelIter.mMaxError);
+
+		const Dy::ErrorAccumulator& contactErrVelIter = sim->getLowLevelArticulation()->mContactErrorAccumulatorVelIter;
+		rmsGlobalResidual += contactErrVelIter.mErrorSumOfSquares;
+		counter += contactErrVelIter.mCounter;
+		maxGlobalResidual = PxMax(maxGlobalResidual, contactErrVelIter.mMaxError);
+
+		PX_ASSERT(PxIsFinite(rmsGlobalResidual) && PxIsFinite(maxGlobalResidual));
+
+
+		const Dy::ErrorAccumulator& internalErrPosIter = sim->getLowLevelArticulation()->mInternalErrorAccumulatorPosIter;
+		rmsGlobalResidualPosIter += internalErrPosIter.mErrorSumOfSquares;
+		counterPosIter += internalErrPosIter.mCounter;
+		maxGlobalResidualPosIter = PxMax(maxGlobalResidualPosIter, internalErrPosIter.mMaxError);
+
+		const Dy::ErrorAccumulator& contactErrPosIter = sim->getLowLevelArticulation()->mContactErrorAccumulatorPosIter;
+		rmsGlobalResidualPosIter += contactErrPosIter.mErrorSumOfSquares;
+		counterPosIter += contactErrPosIter.mCounter;
+		maxGlobalResidualPosIter = PxMax(maxGlobalResidualPosIter, contactErrPosIter.mMaxError);
+
+		PX_ASSERT(PxIsFinite(rmsGlobalResidualPosIter) && PxIsFinite(maxGlobalResidualPosIter));
+	}
+
+	mResidual.velocityIterationResidual.rmsResidual = PxSqrt(1.0f / PxMax(1u, counter) * rmsGlobalResidual);
+	mResidual.velocityIterationResidual.maxResidual = maxGlobalResidual;
+
+	mResidual.positionIterationResidual.rmsResidual = PxSqrt(1.0f / PxMax(1u, counterPosIter) * rmsGlobalResidualPosIter);
+	mResidual.positionIterationResidual.maxResidual = maxGlobalResidualPosIter;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

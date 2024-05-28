@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -49,12 +49,10 @@ namespace physx
 namespace Bp
 {
 	struct AABBOverlap;
-	struct BroadPhasePair;
 }
 
 namespace Sc
 {
-	class ActorSim;
 	class ElementSim;
 	class ShapeSimBase;
 
@@ -68,15 +66,8 @@ namespace Sc
 	class ActorPairReport;
 
 	class ActorPairContactReportData;
-	struct ContactShapePair;
 
-	class NPhaseContext;
 	class ContactStreamManager;
-
-	struct FilterPair;
-	class FilterPairManager;
-
-	class ActorSim;
 
 	class TriggerContactTask;
 
@@ -241,7 +232,7 @@ namespace Sc
 		void onOverlapRemoved(ElementSim* volume0, ElementSim* volume1, PxU32 ccdPass, void* elemSim, PxsContactManagerOutputIterator& outputs);
 		void onVolumeRemoved(ElementSim* volume, PxU32 flags, PxsContactManagerOutputIterator& outputs);
 
-		void managerNewTouch(Sc::ShapeInteraction& interaction);
+		void managerNewTouch(ShapeInteraction& interaction);
 
 		PxU32 getDefaultContactReportStreamBufferSize() const;
 
@@ -280,11 +271,15 @@ namespace Sc
 		void addToPersistentContactEventPairsDelayed(ShapeInteraction*);
 		void removeFromPersistentContactEventPairs(ShapeInteraction*);
 
-		PX_FORCE_INLINE PxU32 getCurrentPersistentContactEventPairCount() const { return mNextFramePersistentContactEventPairIndex; }
-		PX_FORCE_INLINE ShapeInteraction* const* getCurrentPersistentContactEventPairs() const { return mPersistentContactEventPairList.begin(); }
-		PX_FORCE_INLINE PxU32 getAllPersistentContactEventPairCount() const { return mPersistentContactEventPairList.size(); }
-		PX_FORCE_INLINE ShapeInteraction* const* getAllPersistentContactEventPairs() const { return mPersistentContactEventPairList.begin(); }
-		PX_FORCE_INLINE void preparePersistentContactEventListForNextFrame();
+		PX_FORCE_INLINE	PxU32						getCurrentPersistentContactEventPairCount()	const { return mNextFramePersistentContactEventPairIndex;	}
+		PX_FORCE_INLINE	ShapeInteraction* const*	getCurrentPersistentContactEventPairs()		const { return mPersistentContactEventPairList.begin();		}
+		PX_FORCE_INLINE	PxU32						getAllPersistentContactEventPairCount()		const { return mPersistentContactEventPairList.size();		}
+		PX_FORCE_INLINE	ShapeInteraction* const*	getAllPersistentContactEventPairs()			const { return mPersistentContactEventPairList.begin();		}
+		PX_FORCE_INLINE	void						preparePersistentContactEventListForNextFrame()
+													{
+														// reports have been processed -> "activate" next frame candidates for persistent contact events
+														mNextFramePersistentContactEventPairIndex = mPersistentContactEventPairList.size();
+													}
 
 		void addToForceThresholdContactEventPairs(ShapeInteraction*);
 		void removeFromForceThresholdContactEventPairs(ShapeInteraction*);
@@ -294,21 +289,20 @@ namespace Sc
 
 		PX_FORCE_INLINE PxU8* getContactReportPairData(const PxU32& bufferIndex) const { return mContactReportBuffer.getData(bufferIndex); }
 		PxU8* reserveContactReportPairData(PxU32 pairCount, PxU32 extraDataSize, PxU32& bufferIndex, ContactReportAllocationManager* alloc = NULL);
-		PxU8* resizeContactReportPairData(PxU32 pairCount, PxU32 extraDataSize, Sc::ContactStreamManager& csm);
+		PxU8* resizeContactReportPairData(PxU32 pairCount, PxU32 extraDataSize, ContactStreamManager& csm);
 		PX_FORCE_INLINE void clearContactReportStream() { mContactReportBuffer.reset(); }  // Do not free memory at all
 		PX_FORCE_INLINE void freeContactReportStreamMemory() { mContactReportBuffer.flush(); }
 
 		ActorPairContactReportData* createActorPairContactReportData();
-		void releaseActorPairContactReportData(ActorPairContactReportData* data);
 
 		void registerInteraction(ElementSimInteraction* interaction);
 		void unregisterInteraction(ElementSimInteraction* interaction);
 		
-		ElementSimInteraction* createRbElementInteraction(const FilterInfo& fInfo, ShapeSimBase& s0, ShapeSimBase& s1, PxsContactManager* contactManager, Sc::ShapeInteraction* shapeInteraction, 
-			Sc::ElementInteractionMarker* interactionMarker, bool isTriggerPair);
+		ElementSimInteraction* createRbElementInteraction(const FilterInfo& fInfo, ShapeSimBase& s0, ShapeSimBase& s1, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction, 
+			ElementInteractionMarker* interactionMarker, bool isTriggerPair);
 
-		void lockReports() { mReportAllocLock.lock(); }
-		void unlockReports() { mReportAllocLock.unlock(); }
+		PX_FORCE_INLINE	void lockReports()		{ mReportAllocLock.lock();		}
+		PX_FORCE_INLINE	void unlockReports()	{ mReportAllocLock.unlock();	}
 
 	private:
 		void callPairLost(const ShapeSimBase& s0, const ShapeSimBase& s1, bool objVolumeRemoved);
@@ -321,7 +315,7 @@ namespace Sc
 		void releaseElementPair(ElementSimInteraction* pair, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, bool removeFromDirtyList, PxsContactManagerOutputIterator& outputs);
 		void lostTouchReports(ShapeInteraction* pair, PxU32 flags, ElementSim* removedElement, PxU32 ccdPass, PxsContactManagerOutputIterator& outputs);
 
-		ShapeInteraction* createShapeInteraction(ShapeSimBase& s0, ShapeSimBase& s1, PxPairFlags pairFlags, PxsContactManager* contactManager, Sc::ShapeInteraction* shapeInteraction);
+		ShapeInteraction* createShapeInteraction(ShapeSimBase& s0, ShapeSimBase& s1, PxPairFlags pairFlags, PxsContactManager* contactManager, ShapeInteraction* shapeInteraction);
 		TriggerInteraction* createTriggerInteraction(ShapeSimBase& s0, ShapeSimBase& s1, PxPairFlags triggerFlags);
 		ElementInteractionMarker* createElementInteractionMarker(ElementSim& e0, ElementSim& e1, ElementInteractionMarker* marker);
 
@@ -333,7 +327,6 @@ namespace Sc
 		ElementSimInteraction* convert(ElementSimInteraction* pair, InteractionType::Enum type, FilterInfo& filterInfo, bool removeFromDirtyList, PxsContactManagerOutputIterator& outputs);
 
 		ActorPair* findActorPair(ShapeSimBase* s0, ShapeSimBase* s1, PxIntBool isReportPair);
-		PX_FORCE_INLINE void destroyActorPairReport(ActorPairReport&);
 
 		// Pooling
 		Scene&										mOwnerScene;
@@ -344,13 +337,11 @@ namespace Sc
 																						// This list is split in two, the elements in front are for the current frame, the elements at the
 																						// back will get added next frame.
 
-
 		PxU32										mNextFramePersistentContactEventPairIndex;  // start index of the pairs which need to get added to the persistent list for next frame
 
 		PxArray<ShapeInteraction*>					mForceThresholdContactEventPairList;	// Pairs which request force threshold contact events. A pair is only in this list if it does have contact.
 																							// Note: If a pair additionally requests PxPairFlag::eNOTIFY_TOUCH_PERSISTS events, then it
 																							// goes into mPersistentContactEventPairList instead. This allows to share the list index.
-
 
 		//  data layout:
 		//  ContactActorPair0_ExtraData, ContactShapePair0_0, ContactShapePair0_1, ... ContactShapePair0_N, 
@@ -367,7 +358,7 @@ namespace Sc
 		PxPool<ActorPairContactReportData>			mActorPairContactReportDataPool;
 		PxPool<ElementInteractionMarker>			mInteractionMarkerPool;
 
-		Cm::DelegateTask<Sc::NPhaseCore, &Sc::NPhaseCore::concludeTriggerInteractionProcessing> mConcludeTriggerInteractionProcessingTask;
+		Cm::DelegateTask<NPhaseCore, &NPhaseCore::concludeTriggerInteractionProcessing> mConcludeTriggerInteractionProcessingTask;
 		TriggerProcessingContext					mTriggerProcessingContext;
 		PxHashMap<BodyPairKey, ActorPair*>			mActorPairMap; 
 
@@ -384,7 +375,7 @@ namespace Sc
 	{
 		PX_NOCOPY(FilteringContext)
 	public:
-		FilteringContext(const Sc::Scene& scene) :
+		FilteringContext(const Scene& scene) :
 			mFilterShader			(scene.getFilterShaderFast()),
 			mFilterShaderData		(scene.getFilterShaderDataFast()),
 			mFilterShaderDataSize	(scene.getFilterShaderDataSizeFast()),
@@ -403,12 +394,6 @@ namespace Sc
 	};
 
 } // namespace Sc
-
-PX_FORCE_INLINE void Sc::NPhaseCore::preparePersistentContactEventListForNextFrame()
-{
-	// reports have been processed -> "activate" next frame candidates for persistent contact events
-	mNextFramePersistentContactEventPairIndex = mPersistentContactEventPairList.size();
-}
 
 }
 

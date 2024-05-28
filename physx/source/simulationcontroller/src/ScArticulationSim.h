@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -48,7 +48,7 @@ namespace Sc
 	class ArticulationJointSim;
 	class ArticulationSpatialTendonSim;
 	class ArticulationFixedTendonSim;
-	class ArticulationSensorSim;
+	class ArticulationMimicJointSim;
 	class ArticulationCore;
 	class Scene;
 	class ConstraintSim;
@@ -84,18 +84,17 @@ namespace Sc
 													ArticulationJointSim* joint);
 
 								void		removeBody(BodySim& body);
-					
-								//we don't need removeTendon method anymore because when the articulation is removed from the scene, the articulation sim will
-								//get completely distroy and when we re-add the articulation to the scene, all the data will get recomputed
-								void		addTendon(ArticulationSpatialTendonSim*);
+
+								//we don't need complementary removeTendon/removeMimicJoint functions because 
+								//the articulation sim will be completely destroyed when the articulation is removed from the scene. 
+								//When we re-add the articulation to the scene all the data will be recomputed.
+	
+								void		addTendon(ArticulationSpatialTendonSim* const);
 								
-								//we don't need removeTendon method anymore because when the articulation is removed from the scene, the articulation sim will
-								//get completely distroy and when we re-add the articulation to the scene, all the data will get recomputed
-								void		addTendon(ArticulationFixedTendonSim*);
+								void		addTendon(ArticulationFixedTendonSim* const);
 							
-								//we don't need removeSensor method anymore because when the articulation is removed from the scene, the articulation sim will
-								//get completely distroy and when we re-add the articulation to the scene, all the data will get recomputed
-								void		addSensor(ArticulationSensorSim* sensor, const PxU32 linkID);
+								void		addMimicJoint(ArticulationMimicJointSim* const mimicJoint, const PxU32 linkA, const PxU32 linkB);
+
 								
 								void		createLLStructure();						// resize LL memory if necessary
 								void		initializeConfiguration();
@@ -192,7 +191,6 @@ namespace Sc
 	PX_FORCE_INLINE	const Dy::ArticulationLink&	getLink(const PxU32 linkId) const { return mLinks[linkId]; }
 
 					PxU32					getRootActorIndex() const;
-					const PxSpatialForce& getSensorForce(const PxU32 lowLevelIndex) const;
 					
 					void					updateKinematic(PxArticulationKinematicFlags flags);
 
@@ -209,8 +207,7 @@ namespace Sc
 					PxArray<ArticulationJointSim*>					mJoints;
 					PxArray<Dy::ArticulationSpatialTendon*>			mSpatialTendons;
 					PxArray<Dy::ArticulationFixedTendon*>			mFixedTendons;
-					PxArray<Dy::ArticulationSensor*>				mSensors;
-					PxArray<PxSpatialForce>							mSensorForces;
+					PxArray<Dy::ArticulationMimicJointCore*>		mMimicJoints;
 					
 					PxNodeIndex										mIslandNodeIndex;
 					PxArray <Dy::ArticulationLoopConstraint>		mLoopConstraints;

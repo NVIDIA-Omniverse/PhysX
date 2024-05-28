@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -50,64 +50,112 @@ namespace physx
 		}   
 	}
 
-	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal PxsCombineRestitution(const PxsMaterialData& mat0, const PxsMaterialData& mat1)
+	PX_CUDA_CALLABLE PX_FORCE_INLINE void PxsCombineMaterials(const PxsMaterialData& mat0Data, const PxsMaterialData& mat1Data,
+		PxReal& combinedStaticFriction, PxReal& combinedDynamicFriction, 
+		PxReal& combinedRestitution, PxU32& combinedMaterialFlags, PxReal& combinedDamping)
 	{
-		return combineScalars(mat0.restitution, mat1.restitution, ((mat0.flags | mat1.flags) & PxMaterialFlag::eCOMPLIANT_CONTACT) ? 
-			PxCombineMode::eMIN : PxMax(mat0.getRestitutionCombineMode(), mat1.getRestitutionCombineMode()));
-	}
+		const PxReal r0 = mat0Data.restitution;
+		const PxReal r1 = mat1Data.restitution;
+		const bool compliant0 = r0 < 0.0f;
+		const bool compliant1 = r1 < 0.0f;
+		const bool exactlyOneCompliant = compliant0 ^ compliant1;
+		const bool bothCompliant = compliant0 & compliant1;
+		const bool compliantAcc0 = !!(mat0Data.flags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING);
+		const bool compliantAcc1 = !!(mat1Data.flags & PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING);
+		const bool exactlyOneAccCompliant = compliantAcc0 ^ compliantAcc1;
 
-	//ML:: move this function to header file to avoid LHS in Xbox
-	//PT: also called by CUDA code now
-	PX_CUDA_CALLABLE PX_FORCE_INLINE void PxsCombineIsotropicFriction(const PxsMaterialData& mat0, const PxsMaterialData& mat1, PxReal& dynamicFriction, PxReal& staticFriction, PxU32& flags)
-	{
-		const PxU32 combineFlags = (mat0.flags | mat1.flags); //& (PxMaterialFlag::eDISABLE_STRONG_FRICTION|PxMaterialFlag::eDISABLE_FRICTION);	//eventually set DisStrongFric flag, lower all others.
-
-		if (!(combineFlags & PxMaterialFlag::eDISABLE_FRICTION))
+		// combine restitution
 		{
-			const PxI32 fictionCombineMode = PxMax(mat0.getFrictionCombineMode(), mat1.getFrictionCombineMode());
-			PxReal dynFriction = 0.0f;
-			PxReal staFriction = 0.0f;
+			// For rigid-rigid or compliant-compliant interactions, follow the user's choice of combine mode but make sure it stays negative for multiply.
+			// For rigid-compliant interactions, we go with the compliant behavior.
+			// For forceCompliant-accelerationCompliant, we go with the accelerationCompliant behavior
 
-			switch (fictionCombineMode)
+			if (bothCompliant && exactlyOneAccCompliant)
 			{
-			case PxCombineMode::eAVERAGE:
-				dynFriction = 0.5f * (mat0.dynamicFriction + mat1.dynamicFriction);
-				staFriction = 0.5f * (mat0.staticFriction + mat1.staticFriction);
-				break;
-			case PxCombineMode::eMIN:
-				dynFriction = PxMin(mat0.dynamicFriction, mat1.dynamicFriction);
-				staFriction = PxMin(mat0.staticFriction, mat1.staticFriction);
-				break;
-			case PxCombineMode::eMULTIPLY:
-				dynFriction = (mat0.dynamicFriction * mat1.dynamicFriction);
-				staFriction = (mat0.staticFriction * mat1.staticFriction);
-				break;
-			case PxCombineMode::eMAX:
-				dynFriction = PxMax(mat0.dynamicFriction, mat1.dynamicFriction);
-				staFriction = PxMax(mat0.staticFriction, mat1.staticFriction);
-				break;
-			}   
+				combinedRestitution = compliantAcc0 ? r0 : r1;
+			}
+			else
+			{
+				const PxCombineMode::Enum combineMode =
+					exactlyOneCompliant ? PxCombineMode::eMIN
+										: PxMax(mat0Data.getRestitutionCombineMode(), mat1Data.getRestitutionCombineMode());
+				const PxReal flipSign = (bothCompliant && (combineMode == PxCombineMode::eMULTIPLY)) ? -1.0f : 1.0f;
+				combinedRestitution = flipSign * combineScalars(r0, r1, combineMode);
+			 }
 
-			//isotropic case
-			const PxReal fDynFriction = PxMax(dynFriction, 0.0f);
-
-			// PT: TODO: the two branches aren't actually doing the same thing:
-			// - one is ">", the other is ">="
-			// - one uses a clamped dynFriction, the other not
-#ifdef __CUDACC__
-			const PxReal fStaFriction = (staFriction - fDynFriction) > 0 ? staFriction : dynFriction;
-#else
-			const PxReal fStaFriction = physx::intrinsics::fsel(staFriction - fDynFriction, staFriction, fDynFriction);
-#endif
-			dynamicFriction = fDynFriction;
-			staticFriction = fStaFriction;
-			flags = combineFlags;
 		}
-		else
+
+		// combine damping
 		{
-			flags = combineFlags | PxMaterialFlag::eDISABLE_STRONG_FRICTION;
-			dynamicFriction = 0.0f;
-			staticFriction = 0.0f;
+			// For rigid-rigid or compliant-compliant interactions, follow the user's choice of combine mode.
+			// For rigid-compliant interactions, we go with the compliant behavior.
+			// For forceCompliant-accelerationCompliant, we go with the accelerationCompliant behavior
+
+			const PxReal d0 = mat0Data.damping;
+			const PxReal d1 = mat1Data.damping;
+
+			if (bothCompliant && exactlyOneAccCompliant)
+			{
+				combinedDamping = compliantAcc0 ? d0 : d1;
+			}
+			else
+			{
+				const PxCombineMode::Enum combineMode =
+					exactlyOneCompliant ? PxCombineMode::eMAX
+										: PxMax(mat0Data.getDampingCombineMode(), mat1Data.getDampingCombineMode());
+				combinedDamping = combineScalars(d0, d1, combineMode);
+			}
+		}
+
+		// combine isotropic friction
+		{
+			const PxU32 combineFlags = (mat0Data.flags | mat1Data.flags); //& (PxMaterialFlag::eDISABLE_STRONG_FRICTION|PxMaterialFlag::eDISABLE_FRICTION);	//eventually set DisStrongFric flag, lower all others.
+
+			if (!(combineFlags & PxMaterialFlag::eDISABLE_FRICTION))
+			{
+				const PxI32 fictionCombineMode = PxMax(mat0Data.getFrictionCombineMode(), mat1Data.getFrictionCombineMode());
+				PxReal dynFriction = 0.0f;
+				PxReal staFriction = 0.0f;
+
+				switch (fictionCombineMode)
+				{
+				case PxCombineMode::eAVERAGE:
+					dynFriction = 0.5f * (mat0Data.dynamicFriction + mat1Data.dynamicFriction);
+					staFriction = 0.5f * (mat0Data.staticFriction + mat1Data.staticFriction);
+					break;
+				case PxCombineMode::eMIN:
+					dynFriction = PxMin(mat0Data.dynamicFriction, mat1Data.dynamicFriction);
+					staFriction = PxMin(mat0Data.staticFriction, mat1Data.staticFriction);
+					break;
+				case PxCombineMode::eMULTIPLY:
+					dynFriction = (mat0Data.dynamicFriction * mat1Data.dynamicFriction);
+					staFriction = (mat0Data.staticFriction * mat1Data.staticFriction);
+					break;
+				case PxCombineMode::eMAX:
+					dynFriction = PxMax(mat0Data.dynamicFriction, mat1Data.dynamicFriction);
+					staFriction = PxMax(mat0Data.staticFriction, mat1Data.staticFriction);
+					break;
+				}   
+
+				//isotropic case
+				const PxReal fDynFriction = PxMax(dynFriction, 0.0f);
+
+#ifdef __CUDACC__
+				const PxReal fStaFriction = (staFriction - fDynFriction) >= 0 ? staFriction : fDynFriction;
+#else
+				const PxReal fStaFriction = physx::intrinsics::fsel(staFriction - fDynFriction, staFriction, fDynFriction);
+#endif
+				combinedDynamicFriction = fDynFriction;
+				combinedStaticFriction = fStaFriction;
+				combinedMaterialFlags = combineFlags;
+			}
+			else
+			{
+				combinedMaterialFlags = combineFlags | PxMaterialFlag::eDISABLE_STRONG_FRICTION;
+				combinedDynamicFriction = 0.0f;
+				combinedStaticFriction = 0.0f;
+			}
+
 		}
 	}
 }

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #include "extensions/PxSamplingExt.h"
 #include "GuSDF.h"
@@ -1264,7 +1264,7 @@ namespace physx
 
 		if (localActiveSamples.size() == 0)
 		{
-			PxVec3 center = poissonSamplerShared.min + 0.5f * poissonSamplerShared.size;;
+			PxVec3 center = poissonSamplerShared.min + 0.5f * poissonSamplerShared.size;
 			PointWithNormal sample;
 			PxVec3 arbitrarySeedPointOnSurface;
 			

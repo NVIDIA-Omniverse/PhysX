@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -43,8 +43,6 @@ static const PxFilterObjectType::Enum gFilterType[PxActorType::eACTOR_COUNT] =
 	PxFilterObjectType::eSOFTBODY,			// PxActorType::eSOFTBODY
 	PxFilterObjectType::eFEMCLOTH,			// PxActorType::eFEMCLOTH
 	PxFilterObjectType::ePARTICLESYSTEM,	// PxActorType::ePBD_PARTICLESYSTEM
-	PxFilterObjectType::ePARTICLESYSTEM,	// PxActorType::eFLIP_PARTICLESYSTEM
-	PxFilterObjectType::ePARTICLESYSTEM,	// PxActorType::eMPM_PARTICLESYSTEM
 	PxFilterObjectType::eHAIRSYSTEM,		// PxActorType::eHAIRSYSTEM
 };
 
@@ -56,13 +54,11 @@ static const PxU32 gFilterFlagEx[PxActorType::eACTOR_COUNT] =
 	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eSOFTBODY,		// PxActorType::eSOFTBODY
 	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eFEMCLOTH,		// PxActorType::eFEMCLOTH
 	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::ePARTICLESYSTEM,	// PxActorType::ePBD_PARTICLESYSTEM
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::ePARTICLESYSTEM,	// PxActorType::eFLIP_PARTICLESYSTEM
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::ePARTICLESYSTEM,	// PxActorType::eMPM_PARTICLESYSTEM
 	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eHAIRSYSTEM,		// PxActorType::eHAIRSYSTEM
 };
 
 // PT: if this breaks, you need to update the above table
-PX_COMPILE_TIME_ASSERT(PxActorType::eACTOR_COUNT==9);
+PX_COMPILE_TIME_ASSERT(PxActorType::eACTOR_COUNT==7);
 
 // PT: make sure that the highest flag fits into 16bit
 PX_COMPILE_TIME_ASSERT(PxFilterObjectFlagEx::eLAST<=0xffff);
@@ -85,8 +81,6 @@ Sc::ActorSim::ActorSim(Scene& scene, ActorCore& core) :
 		PX_ASSERT(gFilterType[PxActorType::eSOFTBODY] == PxFilterObjectType::eSOFTBODY);
 		PX_ASSERT(gFilterType[PxActorType::eFEMCLOTH] == PxFilterObjectType::eFEMCLOTH);
 		PX_ASSERT(gFilterType[PxActorType::ePBD_PARTICLESYSTEM] == PxFilterObjectType::ePARTICLESYSTEM);
-		PX_ASSERT(gFilterType[PxActorType::eFLIP_PARTICLESYSTEM] == PxFilterObjectType::ePARTICLESYSTEM);
-		PX_ASSERT(gFilterType[PxActorType::eMPM_PARTICLESYSTEM] == PxFilterObjectType::ePARTICLESYSTEM);
 		PX_ASSERT(gFilterType[PxActorType::eHAIRSYSTEM] == PxFilterObjectType::eHAIRSYSTEM);
 
 		const PxActorType::Enum actorType = getActorType();
@@ -119,8 +113,13 @@ void Sc::ActorSim::unregisterInteractionFromActor(Interaction* interaction)
 	const PxU32 i = interaction->getActorId(this);
 	PX_ASSERT(i < mInteractions.size());
 	mInteractions.replaceWithLast(i); 
-	if (i<mInteractions.size())
-		mInteractions[i]->setActorId(this, i);
+	if(i<mInteractions.size())
+	{
+		if(mInteractions[i])	// ### DEFENSIVE  PT: for OM-122969
+			mInteractions[i]->setActorId(this, i);
+		else
+			PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Sc::ActorSim::unregisterInteractionFromActor: found null interaction!");
+	}
 }
 
 void Sc::ActorSim::reallocInteractions(Sc::Interaction**& mem, PxU32& capacity, PxU32 size, PxU32 requiredMinCapacity)

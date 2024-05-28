@@ -22,15 +22,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_CONTACT_MODIFY_CALLBACK_H
 #define PX_CONTACT_MODIFY_CALLBACK_H
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "PxShape.h"
@@ -54,7 +51,7 @@ set before being passed to the solver.
 You can use the accessors to read and write contact properties.  The number of 
 contacts is immutable, other than being able to disable contacts using ignore().
 
-@see PxContactModifyCallback, PxModifiableContact
+\see PxContactModifyCallback, PxModifiableContact
 */
 class PxContactSet
 {
@@ -64,7 +61,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return Position to the requested point in world space
 
-	@see PxModifiableContact.point
+	\see PxModifiableContact.point
 	*/
 	PX_FORCE_INLINE		const PxVec3& getPoint(PxU32 i) const			{ return mContacts[i].contact;		}
 
@@ -73,7 +70,7 @@ public:
 	\param[in] i Index of the point in the set
 	\param[in] p The new position in world space
 
-	@see PxModifiableContact.point
+	\see PxModifiableContact.point
 	*/
 	PX_FORCE_INLINE		void setPoint(PxU32 i, const PxVec3& p)			{ mContacts[i].contact = p; }
 
@@ -82,7 +79,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The requested normal in world space
 
-	@see PxModifiableContact.normal
+	\see PxModifiableContact.normal
 	*/
 	PX_FORCE_INLINE		const PxVec3& getNormal(PxU32 i) const			{ return mContacts[i].normal;	}
 
@@ -93,7 +90,7 @@ public:
 
 	\note Changing the normal can cause contact points to be ignored.
 
-	@see PxModifiableContact.normal
+	\see PxModifiableContact.normal
 	*/
 	PX_FORCE_INLINE		void setNormal(PxU32 i, const PxVec3& n)		
 	{ 
@@ -107,7 +104,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The separation. Negative implies penetration.
 
-	@see PxModifiableContact.separation
+	\see PxModifiableContact.separation
 	*/
 	PX_FORCE_INLINE		PxReal getSeparation(PxU32 i) const				{ return mContacts[i].separation;	}
 
@@ -116,7 +113,7 @@ public:
 	\param[in] i Index of the point in the set
 	\param[in] s The new separation
 
-	@see PxModifiableContact.separation
+	\see PxModifiableContact.separation
 	*/
 	PX_FORCE_INLINE		void setSeparation(PxU32 i, PxReal s)			{ mContacts[i].separation = s; }
 
@@ -125,7 +122,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The target velocity in world frame
 
-	@see PxModifiableContact.targetVelocity
+	\see PxModifiableContact.targetVelocity
 
 	*/
 	PX_FORCE_INLINE		const PxVec3& getTargetVelocity(PxU32 i) const	{ return mContacts[i].targetVelocity;	}
@@ -136,7 +133,7 @@ public:
 	\param[in] v The new velocity in world frame as seen from the second actor in the contact pair, i.e., the solver will try to achieve targetVel == (vel1 - vel2)
 	\note The sign of the velocity needs to be flipped depending on the order of the actors in the pair. There is no guarantee about the consistency of the order from frame to frame.
 
-	@see PxModifiableContact.targetVelocity
+	\see PxModifiableContact.targetVelocity
 	*/
 	PX_FORCE_INLINE		void setTargetVelocity(PxU32 i, const PxVec3& v)
 	{ 
@@ -151,7 +148,7 @@ public:
 	\return The face index of the first shape
 	\note At the moment, the first shape is never a tri-mesh, therefore this function always returns PXC_CONTACT_NO_FACE_INDEX
 
-	@see PxModifiableContact.internalFaceIndex0
+	\see PxModifiableContact.internalFaceIndex0
 	*/
 	PX_FORCE_INLINE		PxU32 getInternalFaceIndex0(PxU32 i)	const		{ PX_UNUSED(i); return PXC_CONTACT_NO_FACE_INDEX; }
 
@@ -160,7 +157,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The face index of the second shape
 
-	@see PxModifiableContact.internalFaceIndex1
+	\see PxModifiableContact.internalFaceIndex1
 	*/
 	PX_FORCE_INLINE		PxU32 getInternalFaceIndex1(PxU32 i)	const
 	{
@@ -177,7 +174,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The maximum impulse
 
-	@see PxModifiableContact.maxImpulse
+	\see PxModifiableContact.maxImpulse
 	*/
 	PX_FORCE_INLINE		PxReal getMaxImpulse(PxU32 i) const				{ return mContacts[i].maxImpulse;	}
 
@@ -188,7 +185,7 @@ public:
 
 	\note Must be nonnegative. If set to zero, the contact point will be ignored
 
-	@see PxModifiableContact.maxImpulse, ignore()
+	\see PxModifiableContact.maxImpulse, ignore()
 	*/
 	PX_FORCE_INLINE		void setMaxImpulse(PxU32 i, PxReal s)
 	{
@@ -202,7 +199,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The restitution coefficient
 
-	@see PxModifiableContact.restitution
+	\see PxModifiableContact.restitution
 	*/
 	PX_FORCE_INLINE		PxReal getRestitution(PxU32 i) const			{ return mContacts[i].restitution; }
 
@@ -213,7 +210,7 @@ public:
 
 	\note Valid ranges [0,1]
 
-	@see PxModifiableContact.restitution
+	\see PxModifiableContact.restitution
 	*/
 	PX_FORCE_INLINE		void setRestitution(PxU32 i, PxReal r)
 	{
@@ -227,7 +224,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The friction coefficient (dimensionless)
 
-	@see PxModifiableContact.staticFriction
+	\see PxModifiableContact.staticFriction
 	*/
 	PX_FORCE_INLINE		PxReal getStaticFriction(PxU32 i) const { return mContacts[i].staticFriction; }
 
@@ -236,7 +233,7 @@ public:
 	\param[in] i Index of the point in the set
 	\param[in] f The new friction coefficient (dimensionless), range [0, inf]
 
-	@see PxModifiableContact.staticFriction
+	\see PxModifiableContact.staticFriction
 	*/
 	PX_FORCE_INLINE		void setStaticFriction(PxU32 i, PxReal f) 
 	{ 
@@ -250,7 +247,7 @@ public:
 	\param[in] i Index of the point in the set
 	\return The friction coefficient
 
-	@see PxModifiableContact.dynamicFriction
+	\see PxModifiableContact.dynamicFriction
 	*/
 	PX_FORCE_INLINE		PxReal getDynamicFriction(PxU32 i) const { return mContacts[i].dynamicFriction; }
 
@@ -259,7 +256,7 @@ public:
 	\param[in] i Index of the point in the set
 	\param[in] f The new friction coefficient
 
-	@see PxModifiableContact.dynamicFriction
+	\see PxModifiableContact.dynamicFriction
 	*/
 	PX_FORCE_INLINE		void setDynamicFriction(PxU32 i, PxReal f) 
 	{
@@ -402,7 +399,7 @@ protected:
 /**
 \brief An array of instances of this class is passed to PxContactModifyCallback::onContactModify().
 
-@see PxContactModifyCallback
+\see PxContactModifyCallback
 */
 
 class PxContactModifyPair
@@ -454,7 +451,7 @@ Please note:
   filter shader/callback has to be used to clear the contact modification flag.
 + The contacts will only be reported as long as the actors are awake. There will be no callbacks while the actors are sleeping.
 
-@see PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
+\see PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
 */
 class PxContactModifyCallback
 {
@@ -471,7 +468,7 @@ public:
 	\param[in,out] pairs The contact pairs that may be modified
 	\param[in] count Number of contact pairs
 
-	@see PxContactModifyPair
+	\see PxContactModifyPair
 	*/
 	virtual void onContactModify(PxContactModifyPair* const pairs, PxU32 count) = 0;
 
@@ -495,7 +492,7 @@ Please note:
   filter shader/callback has to be used to clear the contact modification flag.
 + The contacts will only be reported as long as the actors are awake. There will be no callbacks while the actors are sleeping.
 
-@see PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
+\see PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
 */
 class PxCCDContactModifyCallback
 {
@@ -523,5 +520,4 @@ protected:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

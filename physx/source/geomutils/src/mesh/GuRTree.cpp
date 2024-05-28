@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -276,9 +276,6 @@ PX_FORCE_INLINE void RTreeNodeQ::grow(const RTreeNodeQ& node)
 void RTree::validateRecursive(PxU32 level, RTreeNodeQ parentBounds, RTreePage* page, CallbackRefit* cbLeaf)
 {
 	PX_UNUSED(parentBounds);
-
-	static PxU32 validateCounter = 0; // this is to suppress a warning that recursive call has no side effects
-	validateCounter++;
 
 	RTreeNodeQ n;
 	PxU32 pageNodeCount = page->nodeCount();

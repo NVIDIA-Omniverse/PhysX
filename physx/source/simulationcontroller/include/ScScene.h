@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -119,7 +119,7 @@ namespace Sc
 	class ArticulationJointCore;
 	class ArticulationSpatialTendonCore;
 	class ArticulationFixedTendonCore;
-	class ArticulationSensorCore;
+	class ArticulationMimicJointCore;
 	class LLArticulationPool;
 	class LLArticulationRCPool;
 	class LLSoftBodyPool;
@@ -356,16 +356,16 @@ namespace Sc
 					void						removeArticulation(ArticulationCore&);
 
 					void						addArticulationJoint(ArticulationJointCore&, BodyCore& parent, BodyCore& child);
-					void						removeArticulationJoint(ArticulationJointCore&);
+	static			void						removeArticulationJoint(ArticulationJointCore&);
 
 					void						addArticulationTendon(ArticulationSpatialTendonCore&);
-					void						removeArticulationTendon(ArticulationSpatialTendonCore&);
+	static			void						removeArticulationTendon(ArticulationSpatialTendonCore&);
 
 					void						addArticulationTendon(ArticulationFixedTendonCore&);
-					void						removeArticulationTendon(ArticulationFixedTendonCore&);
+	static			void						removeArticulationTendon(ArticulationFixedTendonCore&);
 
-					void						addArticulationSensor(ArticulationSensorCore&);
-					void						removeArticulationSensor(ArticulationSensorCore&);
+					void						addArticulationMimicJoint(ArticulationMimicJointCore&);
+	static			void						removeArticulationMimicJoint(ArticulationMimicJointCore&);
 
 					void						addArticulationSimControl(ArticulationCore& core);
 					void						removeArticulationSimControl(ArticulationCore& core);
@@ -557,6 +557,8 @@ namespace Sc
 		PX_FORCE_INLINE	NPhaseCore*					getNPhaseCore()							const	{ return mNPhaseCore;					}
 
 						void						checkConstraintBreakage();
+						void						collectSolverResidual();
+						PxSceneResidual				getSolverResidual()						const;
 
 		PX_FORCE_INLINE	PxArray<TriggerPairExtraData>&		
 													getTriggerBufferExtraData()						{ return *mTriggerBufferExtraData;		}
@@ -982,6 +984,7 @@ namespace Sc
 				public:
 					// For OmniPVD. To notify NpScene that actor's sleeping state has changed.
 					typedef void(*SleepingStateChangedCallback)(PxRigidDynamic&, bool);
+					PxSceneResidual				 mResidual;
 					SleepingStateChangedCallback mOnSleepingStateChanged;
 
 // PT: moved all the GPU-related code & data here in an attempt to clearly separate the CPU/GPU bits
@@ -1049,12 +1052,6 @@ namespace Sc
 	PX_FORCE_INLINE	const PxsPBDMaterialManager&		getPBDMaterialManager()				const	{ return mPBDMaterialManager;		}
 	PX_FORCE_INLINE	PxsPBDMaterialManager&				getPBDMaterialManager()						{ return mPBDMaterialManager;		}
 
-	PX_FORCE_INLINE	const PxsFLIPMaterialManager&		getFLIPMaterialManager()			const	{ return mFLIPMaterialManager;		}
-	PX_FORCE_INLINE	PxsFLIPMaterialManager&				getFLIPMaterialManager()					{ return mFLIPMaterialManager;		}
-
-	PX_FORCE_INLINE	const PxsMPMMaterialManager&		getMPMMaterialManager()				const	{ return mMPMMaterialManager;		}
-	PX_FORCE_INLINE	PxsMPMMaterialManager&				getMPMMaterialManager()						{ return mMPMMaterialManager;		}
-
 					Dy::SoftBody*						createLLSoftBody(SoftBodySim* sim);
 					void								destroyLLSoftBody(Dy::SoftBody& softBody);
 
@@ -1102,7 +1099,7 @@ namespace Sc
 
 					PxU32								addTetRigidAttachment(BodyCore* core, SoftBodySim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
 						
-					void								addSoftBodyFilter(SoftBodyCore& core, PxU32 tetIdx0,  SoftBodySim& sim, PxU32 tetIdx1);
+					void								addSoftBodyFilter(SoftBodyCore& core, PxU32 tetIdx0, SoftBodySim& sim, PxU32 tetIdx1);
 					void								removeSoftBodyFilter(SoftBodyCore& core, PxU32 tetIdx0, SoftBodySim& sim, PxU32 tetIdx1);
 					void								addSoftBodyFilters(SoftBodyCore& core, SoftBodySim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 					void								removeSoftBodyFilters(SoftBodyCore& core, SoftBodySim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
@@ -1154,8 +1151,6 @@ namespace Sc
 					PX_ALIGN(16, PxsFEMMaterialManager	mFEMMaterialManager);
 					PX_ALIGN(16, PxsFEMClothMaterialManager	mFEMClothMaterialManager);
 					PX_ALIGN(16, PxsPBDMaterialManager	mPBDMaterialManager);
-					PX_ALIGN(16, PxsFLIPMaterialManager	mFLIPMaterialManager);
-					PX_ALIGN(16, PxsMPMMaterialManager	mMPMMaterialManager);
 
 					PxArray<SoftBodyCore*>				mActiveSoftBodies;
 					PxArray<FEMClothCore*>				mActiveFEMCloths;

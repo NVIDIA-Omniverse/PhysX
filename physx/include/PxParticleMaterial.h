@@ -22,131 +22,26 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PARTICLE_MATERIAL_H
 #define PX_PARTICLE_MATERIAL_H
-/** \addtogroup physics
-@{
-*/
 
-#include "foundation/PxSimpleTypes.h"
-
-#include "PxBaseMaterial.h"
+#include "foundation/PxPreprocessor.h"
+#include "PxPBDMaterial.h"
 
 #if !PX_DOXYGEN
 namespace physx
 {
-#endif
 
 /**
-\brief Material class to represent a set of particle material properties.
+ \deprecated This typedef only serves for deprecation and will be removed in a future version.
+ */
+typedef PX_DEPRECATED PxPBDMaterial PxParticleMaterial;
 
-@see #PxPhysics.createPBDMaterial, #PxPhysics.createFLIPMaterial, #PxPhysics.createMPMMaterial
-*/
-class PxParticleMaterial : public PxBaseMaterial
-{
-public:
-
-	/**
-	\brief Sets friction
-	
-	\param[in] friction Friction. <b>Range:</b> [0, PX_MAX_F32)
-
-	@see #getFriction()
-	*/
-	virtual		void	setFriction(PxReal friction) = 0;
-
-	/**
-	\brief Retrieves the friction value.
-
-	\return The friction value.
-
-	@see #setFriction()
-	*/
-	virtual		PxReal	getFriction() const = 0;
-
-	/**
-	\brief Sets velocity damping term
-
-	\param[in] damping Velocity damping term. <b>Range:</b> [0, PX_MAX_F32)
-
-	@see #getDamping
-	*/
-	virtual		void	setDamping(PxReal damping) = 0;
-
-	/**
-	\brief Retrieves the velocity damping term
-	\return The velocity damping term.
-
-	@see #setDamping()
-	*/
-	virtual		PxReal	getDamping() const = 0;
-
-	/**
-	\brief Sets adhesion term
-
-	\param[in] adhesion adhesion coefficient. <b>Range:</b> [0, PX_MAX_F32)
-
-	@see #getAdhesion
-	*/
-	virtual		void	setAdhesion(PxReal adhesion) = 0;
-
-	/**
-	\brief Retrieves the adhesion term
-	\return The adhesion term.
-
-	@see #setAdhesion()
-	*/
-	virtual		PxReal	getAdhesion() const = 0;
-
-	/**
-	\brief Sets gravity scale term
-
-	\param[in] scale gravity scale coefficient. <b>Range:</b> (-PX_MAX_F32, PX_MAX_F32)
-
-	@see #getAdhesion
-	*/
-	virtual		void	setGravityScale(PxReal scale) = 0;
-
-	/**
-	\brief Retrieves the gravity scale term
-	\return The gravity scale term.
-
-	@see #setAdhesion()
-	*/
-	virtual		PxReal	getGravityScale() const = 0;
-
-	/**
-	\brief Sets material adhesion radius scale. This is multiplied by the particle rest offset to compute the fall-off distance
-	at which point adhesion ceases to operate.
-
-	\param[in] scale Material adhesion radius scale. <b>Range:</b> [0, PX_MAX_F32)
-
-	@see #getAdhesionRadiusScale
-	*/
-	virtual		void	setAdhesionRadiusScale(PxReal scale) = 0;
-
-	/**
-	\brief Retrieves the adhesion radius scale.
-	\return The adhesion radius scale.
-
-	@see #setAdhesionRadiusScale()
-	*/
-	virtual		PxReal	getAdhesionRadiusScale() const = 0;
-
-protected:
-	PX_INLINE			PxParticleMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags)	{}
-	PX_INLINE			PxParticleMaterial(PxBaseFlags baseFlags) : PxBaseMaterial(baseFlags) {}
-	virtual				~PxParticleMaterial() {}
-	virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxParticleMaterial", PxBaseMaterial); }
-};
-
-#if !PX_DOXYGEN
 } // namespace physx
 #endif
 
-/** @} */
 #endif

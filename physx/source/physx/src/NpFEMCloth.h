@@ -22,13 +22,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_PHYSICS_NP_FEMCLOTH
 #define PX_PHYSICS_NP_FEMCLOTH
 
+#include "foundation/PxAllocator.h"
 #include "foundation/PxPreprocessor.h"
 #if PX_SUPPORT_GPU_PHYSX
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
@@ -40,6 +41,8 @@
 namespace physx
 {
 	class NpShape;
+	class PxsMemoryManager;
+	class PxVirtualAllocatorCallback;
 
 #if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	class NpFEMCloth : public NpActorTemplate<PxFEMCloth>
@@ -48,7 +51,7 @@ namespace physx
 		NpFEMCloth(PxCudaContextManager& cudaContextManager);
 		NpFEMCloth(PxBaseFlags baseFlags, PxCudaContextManager& cudaContextManager);
 
-		virtual				 			~NpFEMCloth() {}
+		virtual				 			~NpFEMCloth() { releaseAllocator(); }
 
 		void exportData(PxSerializationContext& /*context*/) const {}
 
@@ -143,19 +146,19 @@ namespace physx
 
 		virtual	bool					isSleeping() const;
 
-
-		// Debug name
-		void							setName(const char*);
-		const char*						getName() const;
-
-
 		void							updateMaterials();
 
 	private:
 
+		void 							createAllocator();
+		void 							releaseAllocator();
+
 		NpShape*						mShape;
 		Sc::FEMClothCore				mCore;
 		PxCudaContextManager*			mCudaContextManager;
+
+		PxsMemoryManager*				mMemoryManager;
+		PxVirtualAllocatorCallback*		mDeviceMemoryAllocator;
 	};
 #endif
 }

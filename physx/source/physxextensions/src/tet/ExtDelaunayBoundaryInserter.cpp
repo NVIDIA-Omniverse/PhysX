@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #include "ExtDelaunayBoundaryInserter.h"
 #include "ExtTetSplitting.h"
@@ -1423,6 +1423,11 @@ namespace Ext
 			}
 		}
 
+		void createSingleCluster()
+		{
+			mClusters.pushBack(mTets);
+		}
+
 		void computeClusters(const PxBoundedData& tetrahedra)
 		{
 			PxArray<PxI32> adj;
@@ -1468,14 +1473,6 @@ namespace Ext
 					}
 				}
 			}
-
-#if PX_DEBUG
-			if (mClusters.size() > 1)
-			{
-				PxI32 abc = 0;
-				++abc;
-			}
-#endif
 
 			for (PxU32 i = 0; i < mClusters.size(); ++i)			
 				PxSort(mClusters[i].begin(), mClusters[i].size());			
@@ -1778,8 +1775,14 @@ namespace Ext
 		return false;
 	}
 
-	void connect(const Vox& voxelA, const PxI32* faceVoxelA, const Vox& voxelB, const PxI32* faceVoxelB, UnionFind& uf)
+	void connect(const Vox& voxelA, const PxI32* faceVoxelA, const Vox& voxelB, const PxI32* faceVoxelB, UnionFind& uf, bool avoidVoxelDuplication = false)
 	{
+		if (avoidVoxelDuplication)
+		{
+			connect(voxelA.mNodes[0], faceVoxelA, voxelB.mNodes[0], faceVoxelB, uf);
+			return;
+		}
+
 		for (PxU32 i = 0; i < voxelA.mClusters.size(); ++i)
 		{
 			const PxArray<PxI32>& clusterA = voxelA.mClusters[i];
@@ -1787,7 +1790,7 @@ namespace Ext
 			{
 				const PxArray<PxI32>& clusterB = voxelB.mClusters[j];
 				if (intersectionOfSortedListsNotEmpty(clusterA, clusterB))
-					connect(voxelA.mNodes[i], faceVoxelA, voxelB.mNodes[j], faceVoxelB, uf);				
+					connect(voxelA.mNodes[i], faceVoxelA, voxelB.mNodes[j], faceVoxelB, uf);
 			}
 		}
 	}
@@ -1902,7 +1905,8 @@ namespace Ext
 	}
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPointsOrig, const PxBoundedData& inputTets, PxU32 numVoxelsX, PxU32 numVoxelsY, PxU32 numVoxelsZ,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel,
+		bool avoidVoxelDuplication)
 	{
 		if (inputTets.count == 0)
 			return; //No input, so there is no basis for creating an output
@@ -1978,9 +1982,12 @@ namespace Ext
 		}
 
 		PxI32 nodeIndexer = 0;
-		for(PxU32 i=0;i<voxels.size();++i)
+		for (PxU32 i = 0; i < voxels.size(); ++i)
 		{
-			voxels[i].computeClusters(inputTets);
+			if (avoidVoxelDuplication)
+				voxels[i].createSingleCluster();
+			else
+				voxels[i].computeClusters(inputTets);
 		}
 
 		for (PxU32 i = 0; i < voxels.size(); ++i)
@@ -1993,19 +2000,19 @@ namespace Ext
 		{
 			Vox& v = voxels[i];
 			if (v.mLocationX > 0 && voxelIds[cell(v.mLocationX - 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)] >= 0)
-				connect(voxels[voxelIds[cell(v.mLocationX - 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)]], xPosFace, v, xNegFace, uf);
+				connect(voxels[voxelIds[cell(v.mLocationX - 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)]], xPosFace, v, xNegFace, uf, avoidVoxelDuplication);
 			if (v.mLocationX < numVoxelsX - 1 && voxelIds[cell(v.mLocationX + 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)] >= 0)
-				connect(v, xPosFace, voxels[voxelIds[cell(v.mLocationX + 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)]], xNegFace, uf);
+				connect(v, xPosFace, voxels[voxelIds[cell(v.mLocationX + 1, v.mLocationY, v.mLocationZ, numVoxelsX, xy)]], xNegFace, uf, avoidVoxelDuplication);
 
 			if (v.mLocationY > 0 && voxelIds[cell(v.mLocationX, v.mLocationY - 1, v.mLocationZ, numVoxelsX, xy)] >= 0)
-				connect(voxels[voxelIds[cell(v.mLocationX, v.mLocationY - 1, v.mLocationZ, numVoxelsX, xy)]], yPosFace, v, yNegFace, uf);
+				connect(voxels[voxelIds[cell(v.mLocationX, v.mLocationY - 1, v.mLocationZ, numVoxelsX, xy)]], yPosFace, v, yNegFace, uf, avoidVoxelDuplication);
 			if (v.mLocationY < numVoxelsY - 1 && voxelIds[cell(v.mLocationX, v.mLocationY + 1, v.mLocationZ, numVoxelsX, xy)] >= 0)
-				connect(v, yPosFace, voxels[voxelIds[cell(v.mLocationX, v.mLocationY + 1, v.mLocationZ, numVoxelsX, xy)]], yNegFace, uf);
+				connect(v, yPosFace, voxels[voxelIds[cell(v.mLocationX, v.mLocationY + 1, v.mLocationZ, numVoxelsX, xy)]], yNegFace, uf, avoidVoxelDuplication);
 
 			if (v.mLocationZ > 0 && voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ - 1, numVoxelsX, xy)] >= 0)
-				connect(voxels[voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ - 1, numVoxelsX, xy)]], zPosFace, v, zNegFace, uf);
+				connect(voxels[voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ - 1, numVoxelsX, xy)]], zPosFace, v, zNegFace, uf, avoidVoxelDuplication);
 			if (v.mLocationZ < numVoxelsZ - 1 && voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ + 1, numVoxelsX, xy)] >= 0)
-				connect(v, zPosFace, voxels[voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ + 1, numVoxelsX, xy)]], zNegFace, uf);
+				connect(v, zPosFace, voxels[voxelIds[cell(v.mLocationX, v.mLocationY, v.mLocationZ + 1, numVoxelsX, xy)]], zNegFace, uf, avoidVoxelDuplication);
 		}
 
 		PxI32 numVertices = uf.computeSetNrs();
@@ -2074,10 +2081,11 @@ namespace Ext
 		scaling = 1.0f / scaling;
 		for(PxU32 i=0;i<voxelPoints.size();++i)
 			voxelPoints[i] = voxelPoints[i] * scaling + origMin;
-	}	
+	}
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxReal voxelEdgeLength,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel,
+		bool avoidVoxelDuplication)
 	{
 		PxVec3 min, max;
 		minMax(inputPoints, min, max);
@@ -2086,20 +2094,19 @@ namespace Ext
 		PxU32 numCellsY = PxMax(1u, PxU32(blockSize.y / voxelEdgeLength + 0.5f));
 		PxU32 numCellsZ = PxMax(1u, PxU32(blockSize.z / voxelEdgeLength + 0.5f));
 
-		generateVoxelTetmesh(inputPoints, inputTets, numCellsX, numCellsY, numCellsZ, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
+		generateVoxelTetmesh(inputPoints, inputTets, numCellsX, numCellsY, numCellsZ, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel, avoidVoxelDuplication);
 	}
 
 	void generateVoxelTetmesh(const PxBoundedData& inputPoints, const PxBoundedData& inputTets, PxU32 numVoxelsAlongLongestBoundingBoxAxis,
-		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel)
+		PxArray<PxVec3>& voxelPoints, PxArray<PxU32>& voxelTets, PxI32* intputPointToOutputTetIndex, const PxU32* anchorNodeIndices, PxU32 numTetsPerVoxel,
+		bool avoidVoxelDuplication)
 	{
 		PxVec3 min, max;
 		minMax(inputPoints, min, max);	
 		PxVec3 size = max - min;
 		PxReal voxelEdgeLength = PxMax(size.x, PxMax(size.y, size.z)) / numVoxelsAlongLongestBoundingBoxAxis;
-		generateVoxelTetmesh(inputPoints, inputTets, voxelEdgeLength, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel);
+		generateVoxelTetmesh(inputPoints, inputTets, voxelEdgeLength, voxelPoints, voxelTets, intputPointToOutputTetIndex, anchorNodeIndices, numTetsPerVoxel, avoidVoxelDuplication);
 	}
-
-
 	
 	static PxReal computeMeshVolume(const PxArray<PxVec3>& points, const PxArray<Triangle>& triangles)
 	{
@@ -2158,7 +2165,7 @@ namespace Ext
 		if (counter > 0)
 			return false; //Triangles share at leat one point
 
-		return Gu::trianglesIntersect(points[tri1[0]], points[tri1[1]], points[tri1[2]], points[tri2[0]], points[tri2[1]], points[tri2[2]]);
+		return Gu::intersectTriangleTriangle(points[tri1[0]], points[tri1[1]], points[tri1[2]], points[tri2[0]], points[tri2[1]], points[tri2[2]]);
 	}
 
 	static PxBounds3 triBounds(const PxArray<PxVec3>& points, const Triangle& tri, PxReal enlargement)

@@ -22,16 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #ifndef PX_CONSTRAINT_DESC_H
 #define PX_CONSTRAINT_DESC_H
 
-/** \addtogroup physics
-@{
-*/
 
 #include "PxPhysXConfig.h"
 #include "foundation/PxFlags.h"
@@ -69,7 +66,7 @@ struct Px1DConstraintFlag
 		eOUTPUT_FORCE			= 1<<4,	//!< whether to accumulate the force value from this constraint in the force total that is reported for the constraint and tested for breakage
 		eHAS_DRIVE_LIMIT		= 1<<5,	//!< whether the constraint has a drive force limit (which will be scaled by dt unless PxConstraintFlag::eLIMITS_ARE_FORCES is set)
 		eANGULAR_CONSTRAINT		= 1<<6,	//!< whether this is an angular or linear constraint
-		eDEPRECATED_DRIVE_ROW	= 1<<7	//!< whether the constraint's geometric error should drive the target velocity
+		eDEPRECATED_DRIVE_ROW	= 1<<7	//!< whether the constraint's geometric error should drive the target velocity \deprecated this member will be removed in a future version with no substitute
 	};
 };
 
@@ -88,43 +85,107 @@ struct PxConstraintSolveHint
 		eSLERP_SPRING			= 258,		//!< temporary special value to identify SLERP drive rows
 		eACCELERATION2			= 512,		//!< a group of acceleration drive constraints with the same stiffness and drive parameters
 		eACCELERATION3			= 768,		//!< a group of acceleration drive constraints with the same stiffness and drive parameters
-		eROTATIONAL_EQUALITY	= 1024,		//!< rotational equality constraints with no force limit and no velocity target
-		eROTATIONAL_INEQUALITY	= 1025,		//!< rotational inequality constraints with (0, PX_MAX_FLT) force limits	
-		eEQUALITY				= 2048,		//!< equality constraints with no force limit and no velocity target
-		eINEQUALITY				= 2049		//!< inequality constraints with (0, PX_MAX_FLT) force limits	
+		eROTATIONAL_EQUALITY	= 1024,		//!< for internal purpose only, please do not use.
+		eROTATIONAL_INEQUALITY	= 1025,		//!< for internal purpose only, please do not use.
+
+		/**
+		\brief Mark as equality constraint.
+
+		If a 1D constraint is an equality constraint with [-PX_MAX_FLT, PX_MAX_FLT] force limits and a velocity target equal zero, then this
+		flag can be raised to allow the solver to internally change the jacobian of this constraint and have it being orthogonalized relative
+		to other equality constraints in the same PxConstraint (unless PxConstraintFlag::eDISABLE_PREPROCESSING is set). This can improve
+		the convergence when solving the constraints.
+		*/
+		eEQUALITY				= 2048,
+
+		/**
+		\brief Mark as inequality constraint.
+
+		If a 1D constraint is an inequality constraint with [0, PX_MAX_FLT] force limits, then this flag can be raised to allow the solver
+		to internally change the jacobian of this constraint and have it being orthogonalized relative to the equality constraints in the
+		same PxConstraint (unless PxConstraintFlag::eDISABLE_PREPROCESSING is set). This can improve the convergence when solving the
+		constraints.
+		*/
+		eINEQUALITY				= 2049
 	};
 };
 
-/**
-\brief A one-dimensional constraint
+/*** 
+\brief A one-dimensional constraint that constrains the relative motion of two rigid bodies.
 
 A constraint is expressed as a set of 1-dimensional constraint rows which define the required constraint
 on the objects' velocities. 
 
-Each constraint is either a hard constraint or a spring. We define the velocity at the constraint to be
-the quantity 
+The constraint Jacobian J is specified by the parameters linear0, angular0, linear1, angular1 as follows
 
- v = body0vel.dot(lin0,ang0) - body1vel.dot(lin1, ang1)
+	J = {linear0, angular0, -linear1, -angular1}
 
-For a hard constraint, the solver attempts to generate 
+The velocity target of the constraint is specified by Px1DConstraint::velocityTarget and the geometric error of the constraint 
+is specified by Px1DConstraint::geometricError.
 
-1. a set of velocities for the objects which, when integrated, respect the constraint errors:
+The output of the constraint is a velocity state (sdot = ds/dt with s denoting the constraint state) expressed in the world frame:
 
-  v + (geometricError / timestep) = velocityTarget
+	sdot = {linearVelocity0, angularVelocity0, linearVelocity1, angularVelocity1}
 
-2. a set of velocities for the objects which respect the constraints:
+with linearVelocity0 and angularVelocity0 denoting the linear and angular velocity of body0 of the constraint; 
+and linearVelocity1 and angularVelocity1 denoting the linear and angular velocity of body1 of the constraint.
 
-  v = velocityTarget
+The constraint seeks an updated sdot that obeys a simple constraint rule:
 
-Hard constraints support restitution: if the impact velocity exceeds the bounce threshold, then the target velocity
-of the constraint will be set to restitution * -v
+	J*sdot + BaumgarteTerm*geometricError/dt - velocityTarget = 0
 
-Alternatively, the solver can attempt to resolve the velocity constraint as an implicit spring:
+where BaumgarteTerm is a multiplier in range (0, 1). The Baumgarte term is not exposed but is instead internally 
+set according to a simple metric chosen to enhance numerical stability. If the PGS solver is employed then dt is 
+taken from the scene timestep.
 
-  F = stiffness * -geometricError + damping * (velocityTarget - v)
+Another way of expressing the constraint rule is as follows:
 
-where F is the constraint force or acceleration. Springs are fully implicit: that is, the force or acceleration 
-is a function of the position and velocity after the solve.
+	linear0.dot(linearVelocity0) + angular0.dot(angularVelocity0) 
+	- linear1.dot(linearVelocity1) - angular1.dot(angularVelocity1)
+	+ BaumgarteTerm*geometricError/dt - velocityTarget = 0
+
+The PhysX solver runs two phases: position iterations followed by velocity iterations. Position iterations derive
+the velocity that is used to integrate the transform of a rigid body. Velocity iterations on the other hand derive
+the final velocity of a rigid body. The constraint rule presented above only gets applied during position iterations,
+during velocity iterations the geometricError term is usually ignored and the applied constraint rule is:
+
+	J*sdot - velocityTarget = 0
+
+The flag Px1DConstraintFlag::eKEEPBIAS can be used to have velocity iterations apply the same constraint rule as
+position iterations.
+
+A 1d constraint may be either a restitution constraint or a hard constraint or a spring constraint.
+
+Restitution constraints have two modes of operation, depending on the speed of the constraint. These two modes are: 
+a) a bounce mode that employs a restitution value specified by RestitutionModifiers::restitution
+b) a non-bounce mode that employs zero restitution and ignores RestitutionModifiers::restitution.
+The constraint speed immediately before the solver begins is computed as follows:
+    constraintPreSolverSpeed = J * sdotPreSolver 
+with sdotPreSolver denoting the rigid body velocities recorded after applying external forces and torques to the rigid bodies 
+but before the solver begins.
+If the bounce mode is active, the pre solver velocity is expected to flip direction and have restitution applied:
+     bounceSpeed = -restitution * constraintPreSolverSpeed
+Restitution will kick in if the following conditions are met:
+\li -constraintPreSolverSpeed exceeds the bounce threshold (RestitutionModifiers::velocityThreshold)
+\li (bounceSpeed * Px1DConstraint::geometricError) <= 0 (bounceSpeed points in the
+opposite direction of the geometric error)
+If these hold, then the provided Px1DConstraint::geometricError and Px1DConstraint::velocityTarget parameter will get overriden
+internally. The former will get set to zero, the latter will get set to bounceSpeed. If restitution does not activate because
+the listed conditions are not met, then the target velocity will be taken from the value stored in velocityTarget and the
+geometric error will be taken from the value stored in geometricError.
+RestitutionModifiers::restitution may be greater than 1 and may be less than 0 ie it is not limited to 0 <= restitution <= 1.
+
+Hard constraints attempt to find sdot that satisfies the constraint equation:
+
+	J*sdot + BaumgarteTerm*geometricError/dt - velocityTarget = 0
+
+Spring constraints are quite different from restitution and hard constraints in that they attempt to compute and apply a spring force as follows:
+
+    F = stiffness * -geometricError + damping * (velocityTarget - J*sdot)
+
+where F is the constraint force or acceleration and J*sdot is the instantaneous constraint speed. Springs are
+implemented with a fully implicit time-stepping scheme: that is, the force or acceleration is a function of the position
+and velocity after the solve. Note that F gets applied to the first rigid body and -F to the second rigid body.
 
 All constraints support limits on the minimum or maximum impulse applied.
 */
@@ -156,16 +217,17 @@ struct Px1DConstraint
 		} bounce;
 	} mods;
 
-	PxReal			forInternalUse;		//!< for internal use only
 	PxU16			flags;				//!< a set of Px1DConstraintFlags
 	PxU16			solveHint;			//!< constraint optimization hint, should be an element of PxConstraintSolveHint
+
+	PxU32			pad;  // for padding only
 }
 PX_ALIGN_SUFFIX(16);
 
 /** 
 \brief Flags for determining which components of the constraint should be visualized.
 
-@see PxConstraintVisualize
+\see PxConstraintVisualize
 */
 struct PxConstraintVisualizationFlag
 {
@@ -289,7 +351,7 @@ This function is called by the constraint post-solver framework to visualize the
 \param[in] body1Transform	The center of mass frame of the second constrained body (the identity if the actor is static, or a NULL pointer was provided for it)
 \param[in] flags			The visualization flags (PxConstraintVisualizationFlag)
 
-@see PxRenderBuffer 
+\see PxRenderBuffer 
 */
 typedef void (*PxConstraintVisualize)(PxConstraintVisualizer& visualizer,
 									  const void* constantBlock,
@@ -300,7 +362,7 @@ typedef void (*PxConstraintVisualize)(PxConstraintVisualizer& visualizer,
 /**
 \brief Flags for determining how PVD should serialize a constraint update
 
-@see PxConstraintConnector::updatePvdProperties, PvdSceneClient::updateConstraint
+\see PxConstraintConnector::updatePvdProperties, PvdSceneClient::updateConstraint
 */
 struct PxPvdUpdateType
 {
@@ -376,7 +438,7 @@ public:
 
 	\param[in] shift Translation vector the origin is shifted by.
 
-	@see PxScene.shiftOrigin()
+	\see PxScene.shiftOrigin()
 	*/
 	virtual void	onOriginShift(const PxVec3& shift)	= 0;
 
@@ -390,7 +452,7 @@ public:
 	\param[out] typeID Unique type identifier of the external object. The value 0xffffffff is reserved and should not be used. Furthermore, if the PhysX extensions library is used, some other IDs are reserved already (see PxConstraintExtIDs)
 	\return Reference to the external object which owns the constraint.
 
-	@see PxConstraintInfo PxSimulationEventCallback.onConstraintBreak()
+	\see PxConstraintInfo PxSimulationEventCallback.onConstraintBreak()
 	*/
 	virtual void*	getExternalReference(PxU32& typeID)	= 0;
 
@@ -426,5 +488,4 @@ public:
 } // namespace physx
 #endif
 
-/** @} */
 #endif

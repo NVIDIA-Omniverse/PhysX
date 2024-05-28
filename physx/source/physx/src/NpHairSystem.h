@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NP_HAIR_SYSTEM_H
 #define NP_HAIR_SYSTEM_H
@@ -245,10 +245,6 @@ namespace physx
 		PX_FORCE_INLINE	const	Sc::HairSystemCore&		getCore() const	{ return mCore; }
 		PX_FORCE_INLINE			Sc::HairSystemCore&		getCore()		{ return mCore; }
 		static PX_FORCE_INLINE size_t					getCoreOffset()	{ return PX_OFFSET_OF_RT(NpHairSystem, mCore); }
-
-		// Debug name
-		void						setName(const char*);
-		const char*					getName() const;
 
 	private:
 		void init();

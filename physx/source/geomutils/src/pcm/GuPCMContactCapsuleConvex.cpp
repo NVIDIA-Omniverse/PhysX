@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
@@ -113,7 +113,7 @@ bool Gu::pcmContactCapsuleConvex(GU_CONTACT_METHOD_ARGS)
 	const FloatV projectBreakingThreshold = FMul(minMargin, FLoad(1.25f));
 	const FloatV refreshDist = FAdd(contactDist, capsuleRadius);
 
-	manifold.refreshContactPoints(aToB,  projectBreakingThreshold, refreshDist);
+	manifold.refreshContactPoints(aToB, projectBreakingThreshold, refreshDist);
 
 	//ML: after refreshContactPoints, we might lose some contacts
 	const bool bLostContacts = (manifold.mNumContacts != initialContacts);
@@ -187,7 +187,7 @@ bool Gu::pcmContactCapsuleConvex(GU_CONTACT_METHOD_ARGS)
 				else
 				{
 					const LocalConvex<ConvexHullV> convexB(convexHull);
-					status = epaPenetration(convexA, convexB,  manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints,
+					status = epaPenetration(convexA, convexB, manifold.mAIndice, manifold.mBIndice, manifold.mNumWarmStartPoints,
 					true, FLoad(toleranceLength), output);
 				}
 				
