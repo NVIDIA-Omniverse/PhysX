@@ -22,17 +22,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
-#include "NvFlowTypes.h"
 #include "NvFlowArray.h"
 
 struct NvFlowLocationHashTableRange
 {
 	NvFlowUint64 beginIdx;
 	NvFlowUint64 endIdx;
+};
+
+struct NvFlowLocationHashTableLayerInfo
+{
+    NvFlowFloat3 blockSizeWorld;
+    int layerAndLevel;
 };
 
 struct NvFlowLocationHashTable
@@ -50,8 +55,11 @@ struct NvFlowLocationHashTable
 	NvFlowInt4 locationMin = { 0, 0, 0, 0 };
 	NvFlowInt4 locationMax = { 0, 0, 0, 0 };
 
+    NvFlowArray<NvFlowLocationHashTableLayerInfo> layerInfos;
+
 	NvFlowArray<NvFlowInt4> tmpLocations;
 	NvFlowArray<NvFlowUint> tmpMasks;
+    NvFlowArray<NvFlowFloat3> tmpLayerScales;
 
 	void reset()
 	{
@@ -66,6 +74,8 @@ struct NvFlowLocationHashTable
 
 		locations.size = 0u;
 		masks.size = 0u;
+
+        layerInfos.size = 0u;
 	}
 
 	NvFlowLocationHashTable()
@@ -356,4 +366,127 @@ struct NvFlowLocationHashTable
 			}
 		}
 	}
+
+    NvFlowBool32 needsRescale(const NvFlowLocationHashTableLayerInfo* targetLayerInfos, NvFlowUint64 targetLayerInfoCount)
+    {
+        NvFlowBool32 needsRescale = NV_FLOW_FALSE;
+        for (NvFlowUint64 targetLayerInfoIdx = 0u; targetLayerInfoIdx < targetLayerInfoCount; targetLayerInfoIdx++)
+        {
+            NvFlowLocationHashTableLayerInfo targetInfo = targetLayerInfos[targetLayerInfoIdx];
+            NvFlowFloat3 blockSizeWorldOld = targetInfo.blockSizeWorld;
+            for (NvFlowUint64 currentLayerInfoIdx = 0u; currentLayerInfoIdx < layerInfos.size; currentLayerInfoIdx++)
+            {
+                NvFlowLocationHashTableLayerInfo historyInfo = layerInfos[currentLayerInfoIdx];
+                if (targetInfo.layerAndLevel == historyInfo.layerAndLevel)
+                {
+                    blockSizeWorldOld = historyInfo.blockSizeWorld;
+                    break;
+                }
+            }
+            if (targetInfo.blockSizeWorld.x != blockSizeWorldOld.x ||
+                targetInfo.blockSizeWorld.y != blockSizeWorldOld.y ||
+                targetInfo.blockSizeWorld.z != blockSizeWorldOld.z)
+            {
+                needsRescale = NV_FLOW_TRUE;
+                break;
+            }
+        }
+        return needsRescale;
+    }
+
+    void resetAndPushRescaled(
+        const NvFlowLocationHashTableLayerInfo* targetLayerInfos,
+        NvFlowUint64 targetLayerInfoCount,
+        const NvFlowInt4* pushLocations,
+        NvFlowUint64 pushLocationCount,
+        NvFlowUint64 maxLocations
+    )
+    {
+        tmpLayerScales.size = 0u;
+        tmpLayerScales.reserve(targetLayerInfoCount);
+        tmpLayerScales.size = targetLayerInfoCount;
+        for (NvFlowUint64 targetLayerInfoIdx = 0u; targetLayerInfoIdx < targetLayerInfoCount; targetLayerInfoIdx++)
+        {
+            NvFlowLocationHashTableLayerInfo targetInfo = targetLayerInfos[targetLayerInfoIdx];
+            NvFlowFloat3 blockSizeWorldOld = targetInfo.blockSizeWorld;
+            for (NvFlowUint64 currentLayerInfoIdx = 0u; currentLayerInfoIdx < layerInfos.size; currentLayerInfoIdx++)
+            {
+                NvFlowLocationHashTableLayerInfo historyInfo = layerInfos[currentLayerInfoIdx];
+                if (targetInfo.layerAndLevel == historyInfo.layerAndLevel)
+                {
+                    blockSizeWorldOld = historyInfo.blockSizeWorld;
+                    break;
+                }
+            }
+            NvFlowFloat3 layerScale = {
+                 blockSizeWorldOld.x / targetInfo.blockSizeWorld.x,
+                 blockSizeWorldOld.y / targetInfo.blockSizeWorld.y,
+                 blockSizeWorldOld.z / targetInfo.blockSizeWorld.z
+            };
+            tmpLayerScales[targetLayerInfoIdx] = layerScale;
+        }
+
+        reset();
+
+        layerInfos.size = 0u;
+        layerInfos.reserve(targetLayerInfoCount);
+        layerInfos.size = targetLayerInfoCount;
+        for (NvFlowUint64 targetLayerInfoIdx = 0u; targetLayerInfoIdx < targetLayerInfoCount; targetLayerInfoIdx++)
+        {
+            layerInfos[targetLayerInfoIdx] = targetLayerInfos[targetLayerInfoIdx];
+        }
+
+        for (NvFlowUint64 idx = 0u; idx < pushLocationCount; idx++)
+        {
+            NvFlowInt4 location = pushLocations[idx];
+            NvFlowFloat3 layerScale = { 1.f, 1.f, 1.f };
+            for (NvFlowUint64 layerInfoIdx = 0u; layerInfoIdx < layerInfos.size; layerInfoIdx++)
+            {
+                auto layerInfo = layerInfos.data + layerInfoIdx;
+                if (layerInfo->layerAndLevel == location.w)
+                {
+                    layerScale = tmpLayerScales[layerInfoIdx];
+                    break;
+                }
+            }
+            // rescale location
+            NvFlowFloat3 locationMinf = {
+                float(location.x) * layerScale.x,
+                float(location.y) * layerScale.y,
+                float(location.z) * layerScale.z
+            };
+            NvFlowFloat3 locationMaxf = {
+                float(location.x + 1) * layerScale.x,
+                float(location.y + 1) * layerScale.y,
+                float(location.z + 1) * layerScale.z
+            };
+            NvFlowInt3 locationMin = {
+                int(floorf(locationMinf.x)),
+                int(floorf(locationMinf.y)),
+                int(floorf(locationMinf.z))
+            };
+            NvFlowInt3 locationMax = {
+                int(-floorf(-locationMaxf.x)),
+                int(-floorf(-locationMaxf.y)),
+                int(-floorf(-locationMaxf.z))
+            };
+            for (int k = locationMin.z; k < locationMax.z; k++)
+            {
+                for (int j = locationMin.y; j < locationMax.y; j++)
+                {
+                    for (int i = locationMin.x; i < locationMax.x; i++)
+                    {
+                        NvFlowInt4 locationTemp = { i, j, k, location.w };
+                        push(locationTemp, 0u);
+                        if (locations.size >= maxLocations)
+                        {
+                            i = locationMax.x;
+                            j = locationMax.y;
+                            k = locationMax.z;
+                        }
+                    }
+                }
+            }
+        }
+    }
 };

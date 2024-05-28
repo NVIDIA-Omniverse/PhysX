@@ -22,14 +22,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_SHADER_HLSLI
 #define NV_FLOW_SHADER_HLSLI
 
 #include "NvFlowShaderTypes.h"
- 
+
+int3 NvFlowFloor_i(float3 v)
+{
+	return int3(floor(v));
+}
+
 int4 NvFlowTableValueToIndexWrite(int3 threadIdx, uint v, int x, int y, int z)
 {
 	int4 ridx = int4(
@@ -218,17 +223,17 @@ float NvFlowGlobalAccessorRead1f(Texture3D<float> textureRead, StructuredBuffer<
 	return bool(readIdx.w) ? textureRead[readIdx.xyz] : float(0.f);
 }
 
-float NvFlowGlobalReadLinear1f(Texture3D<float> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer)
+float NvFlowGlobalReadLinear1f(Texture3D<float> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalVirtualToReal(table, tableParams, vidx);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float(0.f);
 }
 
-float NvFlowGlobalAccessorReadLinear1f(Texture3D<float> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer, inout NvFlowGlobalAccessor accessor)
+float NvFlowGlobalAccessorReadLinear1f(Texture3D<float> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel, inout NvFlowGlobalAccessor accessor)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalAccessorVirtualToReal(table, tableParams, vidx, accessor);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float(0.f);
@@ -246,17 +251,17 @@ float2 NvFlowGlobalAccessorRead2f(Texture3D<float2> textureRead, StructuredBuffe
 	return bool(readIdx.w) ? textureRead[readIdx.xyz] : float2(0.f, 0.f);
 }
 
-float2 NvFlowGlobalReadLinear2f(Texture3D<float2> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer)
+float2 NvFlowGlobalReadLinear2f(Texture3D<float2> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalVirtualToReal(table, tableParams, vidx);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float2(0.f, 0.f);
 }
 
-float2 NvFlowGlobalAccessorReadLinear2f(Texture3D<float2> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer, inout NvFlowGlobalAccessor accessor)
+float2 NvFlowGlobalAccessorReadLinear2f(Texture3D<float2> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel, inout NvFlowGlobalAccessor accessor)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalAccessorVirtualToReal(table, tableParams, vidx, accessor);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float2(0.f, 0.f);
@@ -274,17 +279,17 @@ float4 NvFlowGlobalAccessorRead4f(Texture3D<float4> textureRead, StructuredBuffe
 	return bool(readIdx.w) ? textureRead[readIdx.xyz] : float4(0.f, 0.f, 0.f, 0.f);
 }
 
-float4 NvFlowGlobalReadLinear4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer)
+float4 NvFlowGlobalReadLinear4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalVirtualToReal(table, tableParams, vidx);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float4(0.f, 0.f, 0.f, 0.f);
 }
 
-float4 NvFlowGlobalAccessorReadLinear4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layer, inout NvFlowGlobalAccessor accessor)
+float4 NvFlowGlobalAccessorReadLinear4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, float3 vidxf, int layerAndLevel, inout NvFlowGlobalAccessor accessor)
 {
-	int4 vidx = int4(floor(vidxf), layer);
+	int4 vidx = int4(NvFlowFloor_i(vidxf), layerAndLevel);
 	int4 readIdx = NvFlowGlobalAccessorVirtualToReal(table, tableParams, vidx, accessor);
 	float3 readIdxf = float3(readIdx.xyz) + vidxf - float3(vidx.xyz);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float4(0.f, 0.f, 0.f, 0.f);
@@ -303,7 +308,7 @@ int4 NvFlowSingleVirtualToReal(StructuredBuffer<uint> table, NvFlowSparseLevelPa
 
 float3 NvFlowLocalVirtualToRealf(StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 readIdx = NvFlowLocalVirtualToReal(table, tableParams, blockIdx, threadIdx);
 	float3 readIdxf = float3(readIdx.xyz) + threadIdxf - float3(threadIdx);
 	return readIdxf;
@@ -311,7 +316,7 @@ float3 NvFlowLocalVirtualToRealf(StructuredBuffer<uint> table, NvFlowSparseLevel
 
 float3 NvFlowLocalVirtualToRealSafef(StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 location;
 	NvFlowBlockIdxToLocation(table, tableParams, blockIdx, location);
 	int4 readIdx = NvFlowGlobalVirtualToReal(table, tableParams, int4((location.xyz << int3(tableParams.blockDimBits)) + threadIdx, location.w));
@@ -347,7 +352,7 @@ float NvFlowLocalRead1f(Texture3D<float> textureRead, StructuredBuffer<uint> tab
 
 float4 NvFlowLocalReadLinear4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 readIdx = NvFlowLocalVirtualToReal(table, tableParams, blockIdx, threadIdx);
 	float3 readIdxf = float3(readIdx.xyz) + threadIdxf - float3(threadIdx);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float4(0.f, 0.f, 0.f, 0.f);
@@ -355,7 +360,7 @@ float4 NvFlowLocalReadLinear4f(Texture3D<float4> textureRead, SamplerState textu
 
 float4 NvFlowLocalReadLinearSafe4f(Texture3D<float4> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 location;
 	NvFlowBlockIdxToLocation(table, tableParams, blockIdx, location);
 	int4 readIdx = NvFlowGlobalVirtualToReal(table, tableParams, int4((location.xyz << int3(tableParams.blockDimBits)) + threadIdx, location.w));
@@ -365,7 +370,7 @@ float4 NvFlowLocalReadLinearSafe4f(Texture3D<float4> textureRead, SamplerState t
 
 float2 NvFlowLocalReadLinear2f(Texture3D<float2> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 readIdx = NvFlowLocalVirtualToReal(table, tableParams, blockIdx, threadIdx);
 	float3 readIdxf = float3(readIdx.xyz) + threadIdxf - float3(threadIdx);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : float2(0.f, 0.f);
@@ -373,7 +378,7 @@ float2 NvFlowLocalReadLinear2f(Texture3D<float2> textureRead, SamplerState textu
 
 float NvFlowLocalReadLinear1f(Texture3D<float> textureRead, SamplerState textureSampler, StructuredBuffer<uint> table, NvFlowSparseLevelParams tableParams, uint blockIdx, float3 threadIdxf)
 {
-	int3 threadIdx = int3(floor(threadIdxf));
+	int3 threadIdx = NvFlowFloor_i(threadIdxf);
 	int4 readIdx = NvFlowLocalVirtualToReal(table, tableParams, blockIdx, threadIdx);
 	float3 readIdxf = float3(readIdx.xyz) + threadIdxf - float3(threadIdx);
 	return bool(readIdx.w) ? textureRead.SampleLevel(textureSampler, readIdxf * tableParams.dimInv, 0.0) : 0.f;

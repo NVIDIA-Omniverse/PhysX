@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_RAY_MARCH_PARAMS_H
@@ -69,15 +69,20 @@ struct NvFlowRayMarchLayerShaderParams
 	NvFlowFloat3 velocityCellSizeInv;
 	float deltaTime;
 
-	int layer;
-	float layerColormapV;
+	int layerAndLevel;
+	float layerAndLevelColormapV;
 	float alphaScale;
 	float colorScale;
 
 	float shadowFactor;
-	float pad1;
-	float pad2;
+    NvFlowUint rawModeIsosurface;
+    NvFlowUint rawModeNormalize;
 	float pad3;
+
+    float colormapXOffset;
+    float colormapXScale;
+    float pad4;
+    float pad5;
 
 	NvFlowRayMarchCloudLayerShaderParams cloud;
 };
@@ -102,7 +107,7 @@ struct NvFlowRayMarchIsosurfaceLayerShaderParams
 	NvFlowFloat3 worldMax;
 	NvFlowUint visualizeNormals;
 
-	int layer;
+	int layerAndLevel;
 	float densityThreshold;
 	NvFlowUint refractionMode;
 	NvFlowUint pad2;

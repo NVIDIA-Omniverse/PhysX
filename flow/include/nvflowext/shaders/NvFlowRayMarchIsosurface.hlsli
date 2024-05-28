@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_RAY_MARCH_ISOSURFACE_HLSLI
@@ -231,8 +231,8 @@ float3 NvFlowRayMarchBlocksIsosurfaceComputeNormal(
 )
 {
 	// compute normal
-	int3 vidx = int3(floor(hitVidxf));
-	int4 location = int4(vidx >> int3(paramsTable.blockDimBits), params.layer);
+	int3 vidx = NvFlowFloor_i(hitVidxf);
+	int4 location = int4(vidx >> int3(paramsTable.blockDimBits), params.layerAndLevel);
 	uint blockIdx = NvFlowLocationToBlockIdx(tableIn, paramsTable, location);
 	float3 hitNormal = float3(0.f, 0.f, 0.f);
 	if (blockIdx != ~0u)
@@ -266,8 +266,8 @@ float2 NvFlowRayMarchBlocksIsosurfaceComputeSlope(
 )
 {
 	// compute slope
-	int3 vidx = int3(floor(hitVidxf));
-	int4 location = int4(vidx >> int3(paramsTable.blockDimBits), params.layer);
+	int3 vidx = NvFlowFloor_i(hitVidxf);
+	int4 location = int4(vidx >> int3(paramsTable.blockDimBits), params.layerAndLevel);
 	uint blockIdx = NvFlowLocationToBlockIdx(tableIn, paramsTable, location);
 	float2 slope = float2(0.f, 0.f);
 	if (blockIdx != ~0u)
@@ -317,7 +317,7 @@ void NvFlowRayMarchBlocksIsosurface(
 	if (isHit)
 	{
 		float3 rayLocationWorld = rayDir * boxMinT + rayOrigin;
-		int4 location = int4(floor(rayLocationWorld * params.blockSizeWorldInv), params.layer);
+		int4 location = int4(NvFlowFloor_i(rayLocationWorld * params.blockSizeWorldInv), params.layerAndLevel);
 
 		int3 finalLocation = NvFlowRayMarchComputeFinalLocation(rayDir, location, params.locationMin, params.locationMax);
 

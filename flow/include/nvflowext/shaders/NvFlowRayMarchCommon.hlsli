@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_RAY_MARCH_COMMON_HLSLI
@@ -87,6 +87,44 @@ void NvFlowRayMarchAdvanceRay(
 		hitT = hitTz;
 		location.z += rayDir.z > 0.f ? +1 : -1;
 	}
+}
+
+// source: https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+uint NvFlowRayMarchHash(uint inputValue)
+{
+	uint state = inputValue * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
+}
+
+float NvFlowRayMarchRandNorm(uint inputValue)
+{
+	return float(NvFlowRayMarchHash(inputValue) & 0xFFFF) * float(1.f / 65535.f);
+}
+
+float NvFlowRayMarchNoiseFromDir(float3 rayDir)
+{
+    float2 uv;
+    if (abs(rayDir.x) > abs(rayDir.y) && abs(rayDir.x) > abs(rayDir.z))
+    {
+        uv = rayDir.yz;
+    }
+    else if (abs(rayDir.y) > abs(rayDir.x) && abs(rayDir.y) > abs(rayDir.z))
+    {
+        uv = rayDir.xz;
+    }
+    else //if (abs(rayDir.z) > abs(rayDir.x) && abs(rayDir.z) > abs(rayDir.y))
+    {
+        uv = rayDir.xy;
+    }
+    float maxAxis = max(abs(rayDir.x), max(abs(rayDir.y), abs(rayDir.z)));
+    if (maxAxis > 0.f)
+    {
+        uv *= (1.f / maxAxis);
+    }
+    uv = 0.5f * uv + 0.5f;
+    uint hashInput = uint(65535.f * uv.x) ^ (uint(65535.f * uv.y) << 16u);
+    return NvFlowRayMarchRandNorm(hashInput);
 }
 
 #endif

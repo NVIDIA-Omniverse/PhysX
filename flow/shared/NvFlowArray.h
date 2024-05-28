@@ -22,11 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
 #define NV_FLOW_ARRAY_CACHE_ENABLED 1
+
+#include "NvFlowTypes.h"
 
 #include <new>
 #include <utility>
@@ -163,6 +165,17 @@ struct NvFlowArray
 	{
 		operator[](allocateBack()) = v;
 	}
+
+    void pushBackN(const T* v, NvFlowUint64 count)
+    {
+        NvFlowUint64 baseIdx = size;
+        reserve(size + count);
+        size += count;
+        for (NvFlowUint64 idx = 0u; idx < count; idx++)
+        {
+            operator[](baseIdx + idx) = v[idx];
+        }
+    }
 
 	T& back()
 	{

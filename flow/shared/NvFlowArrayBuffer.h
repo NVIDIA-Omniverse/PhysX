@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #pragma once
@@ -42,6 +42,7 @@ struct NvFlowArrayBufferState
 {
 	NvFlowBool32 isDirty;
 
+    const void* data;
 	NvFlowUint64 elementCount;
 	NvFlowUint64 version;
 	NvFlowUint64 firstElement;
@@ -51,6 +52,7 @@ struct NvFlowArrayBuffer
 {
 	NvFlowUploadBuffer uploadBuffer = {};
 
+    NvFlowUint64 state_luid = 0llu;
 	NvFlowArray<NvFlowArrayBufferState> state;
 	NvFlowArray<NvFlowUploadBufferCopyRange> copyRanges;
 	NvFlowUint64 totalSizeInBytes = 0llu;
@@ -97,7 +99,8 @@ NV_FLOW_INLINE void NvFlowArrayBuffer_destroy(NvFlowContext* context, NvFlowArra
 
 NV_FLOW_INLINE NvFlowBufferTransient* NvFlowArrayBuffer_update(
 	NvFlowContext* context, 
-	NvFlowArrayBuffer* ptr, 
+	NvFlowArrayBuffer* ptr,
+    NvFlowUint64 luid,
 	const NvFlowArrayBufferData* arrayDatas, 
 	NvFlowUint64* outFirstElements, 
 	NvFlowUint64 arrayCount, 
@@ -129,10 +132,12 @@ NV_FLOW_INLINE NvFlowBufferTransient* NvFlowArrayBuffer_update(
 		for (NvFlowUint64 arrayIdx = 0u; arrayIdx < arrayCount; arrayIdx++)
 		{
 			ptr->state[arrayIdx].isDirty = NV_FLOW_TRUE;
+            ptr->state[arrayIdx].data = nullptr;
 			ptr->state[arrayIdx].elementCount = 0llu;
 			ptr->state[arrayIdx].version = 0llu;
 			ptr->state[arrayIdx].firstElement = 0llu;
 		}
+        ptr->state_luid = 0llu;
 	}
 
 	// mark any array dirty if version changes
@@ -144,6 +149,10 @@ NV_FLOW_INLINE NvFlowBufferTransient* NvFlowArrayBuffer_update(
 			{
 				ptr->state[arrayIdx].isDirty = NV_FLOW_TRUE;
 			}
+            if (ptr->state_luid != luid && arrayDatas[arrayIdx].data != ptr->state[arrayIdx].data)
+            {
+                ptr->state[arrayIdx].isDirty = NV_FLOW_TRUE;
+            }
 		}
 	}
 
@@ -172,12 +181,14 @@ NV_FLOW_INLINE NvFlowBufferTransient* NvFlowArrayBuffer_update(
 	NvFlowUint64 globalFirstElement = 0llu;
 	for (NvFlowUint arrayIdx = 0u; arrayIdx < arrayCount; arrayIdx++)
 	{
+        ptr->state[arrayIdx].data = arrayDatas[arrayIdx].data;
 		ptr->state[arrayIdx].elementCount = arrayDatas[arrayIdx].elementCount;
 		ptr->state[arrayIdx].version = arrayDatas[arrayIdx].version;
 		ptr->state[arrayIdx].firstElement = globalFirstElement;
 
 		globalFirstElement += ptr->state[arrayIdx].elementCount;
 	}
+    ptr->state_luid = luid;
 
 	ptr->copyRanges.size = 0u;
 	for (NvFlowUint arrayIdx = 0u; arrayIdx < arrayCount; arrayIdx++)

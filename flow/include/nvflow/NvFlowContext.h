@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_CONTEXT_H
 #define NV_FLOW_CONTEXT_H
@@ -39,9 +39,8 @@ NV_FLOW_REFLECT_STRUCT_OPAQUE_IMPL(NvFlowContext)
 typedef enum NvFlowTextureBindingType
 {
 	eNvFlowTextureBindingType_separateSampler = 0,
-	eNvFlowTextureBindingType_combinedSampler = 1,
 
-	eNvFlowTextureBindingType_count = 2,
+	eNvFlowTextureBindingType_count = 1,
 	eNvFlowTextureBindingType_maxEnum = 0x7FFFFFFF
 }NvFlowTextureBindingType;
 
@@ -358,11 +357,22 @@ typedef struct NvFlowPassCopyTextureParams
 
 typedef void(*NvFlowContextThreadPoolTask_t)(NvFlowUint taskIdx, NvFlowUint threadIdx, void* sharedMem, void* userdata);
 
+typedef enum NvFlowContextFeature
+{
+    eNvFlowContextFeature_unknown = 0,
+    eNvFlowContextFeature_aliasResourceFormats = 1,
+
+    eNvFlowContextFeature_count = 2,
+    eNvFlowContextFeature_maxEnum = 0x7FFFFFFF
+}NvFlowContextFeature;
+
 typedef struct NvFlowContextInterface
 {
 	NV_FLOW_REFLECT_INTERFACE();
 
 	void(NV_FLOW_ABI* getContextConfig)(NvFlowContext* context, NvFlowContextConfig* config);
+
+    NvFlowBool32(NV_FLOW_ABI* isFeatureSupported)(NvFlowContext* context, NvFlowContextFeature feature);
 
 	NvFlowUint64(NV_FLOW_ABI* getCurrentFrame)(NvFlowContext* context);
 
@@ -386,6 +396,8 @@ typedef struct NvFlowContextInterface
 
 	NvFlowBufferTransient*(NV_FLOW_ABI* registerBufferAsTransient)(NvFlowContext* context, NvFlowBuffer* buffer);
 
+    NvFlowBufferTransient* (NV_FLOW_ABI* aliasBufferTransient)(NvFlowContext* context, NvFlowBufferTransient* buffer, NvFlowFormat format, NvFlowUint structureStride);
+
 	NvFlowBufferAcquire*(NV_FLOW_ABI* enqueueAcquireBuffer)(NvFlowContext* context, NvFlowBufferTransient* buffer);
 
 	NvFlowBool32(NV_FLOW_ABI* getAcquiredBuffer)(NvFlowContext* context, NvFlowBufferAcquire* acquire, NvFlowBuffer** outBuffer);
@@ -404,6 +416,8 @@ typedef struct NvFlowContextInterface
 	NvFlowTextureTransient*(NV_FLOW_ABI* getTextureTransient)(NvFlowContext* context, const NvFlowTextureDesc* desc);
 
 	NvFlowTextureTransient*(NV_FLOW_ABI* registerTextureAsTransient)(NvFlowContext* context, NvFlowTexture* texture);
+
+    NvFlowTextureTransient* (NV_FLOW_ABI* aliasTextureTransient)(NvFlowContext* context, NvFlowTextureTransient* texture, NvFlowFormat format);
 
 	NvFlowTextureAcquire*(NV_FLOW_ABI* enqueueAcquireTexture)(NvFlowContext* context, NvFlowTextureTransient* texture);
 
@@ -438,6 +452,7 @@ typedef struct NvFlowContextInterface
 #define NV_FLOW_REFLECT_TYPE NvFlowContextInterface
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_FUNCTION_POINTER(getContextConfig, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(isFeatureSupported, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getCurrentFrame, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getLastFrameCompleted, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getCurrentGlobalFrame, 0, 0)
@@ -448,6 +463,7 @@ NV_FLOW_REFLECT_FUNCTION_POINTER(createBuffer, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(destroyBuffer, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getBufferTransient, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(registerBufferAsTransient, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(aliasBufferTransient, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(enqueueAcquireBuffer, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getAcquiredBuffer, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(mapBuffer, 0, 0)
@@ -457,6 +473,7 @@ NV_FLOW_REFLECT_FUNCTION_POINTER(createTexture, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(destroyTexture, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getTextureTransient, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(registerTextureAsTransient, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(aliasTextureTransient, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(enqueueAcquireTexture, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getAcquiredTexture, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(getTextureTransientById, 0, 0)

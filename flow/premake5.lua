@@ -25,6 +25,7 @@ workspace "nvflow"
 	flags { "FatalCompileWarnings", "NoPCH", "NoIncrementalLink" }
 
 	floatingpoint "Fast"
+	disablewarnings { "4550" }
 
 	includedirs { "shared", "include/nvflow", "include/nvflow/shaders", generatedDir }
 
@@ -44,7 +45,19 @@ workspace "nvflow"
 		defines  { "NDEBUG" }
 
 	filter { "system:windows" }
-		systemversion "10.0.17763.0"
+		local msvc_toolset = os.getenv("MSVS_TOOLSET")
+		local ms_build_dir = os.getenv("MSBUILD_DIR")
+		if msvc_toolset and ms_build_dir then
+			local msvcInclude = msvc_toolset.."/include"
+			local msvcLibs = msvc_toolset.."/lib/onecore/x64"
+
+			externalincludedirs { msvcInclude }
+			syslibdirs { msvcLibs }
+			bindirs {
+				msvc_toolset.."/bin/HostX64/x64",
+				ms_build_dir,
+			}
+		end
 
 	filter { "system:linux", "platforms:x86_64"}
 		buildoptions { "-msse4" }
@@ -60,19 +73,24 @@ function copy_to_targetdir(filePath)
 end
 
 function prebuildShaderTool(shaderProjectFile)
+	local relativeExternalDir = "../../../external"
 	local relativeTargetDir = "../../../" .. targetDir
 	local generatedPath = "../../../" .. generatedDir
 	local shaderProjectPath = "../../../" .. shaderProjectFile
 	filter { "system:windows" }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/windows-x64/release/slang.dll ".. relativeTargetDir }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/windows-x64/release/slang-glslang.dll ".. relativeTargetDir }
+
 		prebuildcommands { "\"" .. relativeTargetDir .. "/nvflowshadertool.exe\" \"" .. generatedPath .. "\" \"" .. shaderProjectPath .. "\"" }
+	filter { "system:linux", "platforms:x86_64" }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/linux-x64/release/libslang.so ".. relativeTargetDir }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/linux-x64/release/libslang-glslang.so ".. relativeTargetDir }
+	filter { "system:linux", "platforms:aarch64" }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/linux-aarch64/release/libslang.so ".. relativeTargetDir }
+		prebuildcommands { "{COPY} " .. relativeExternalDir .. "/slang/bin/linux-aarch64/release/libslang-glslang.so ".. relativeTargetDir }
 	filter { "system:linux" }
 		prebuildcommands { "\"" .. relativeTargetDir .. "/nvflowshadertool\" \"" .. generatedPath .. "\" \"" .. shaderProjectPath .. "\"" }
 	filter{}
-end
-
-function postbuildShaderTool()
-	local generatedPath = "../../../" .. generatedDir .. "/%{prj.name}"
-	postbuildcommands { "{MOVE} \"" .. generatedPath .. "/generated.cpp\" \"" .. generatedPath .. "/generatedOld.cpp\"" }
 end
 
 function addSourceDir(path)
@@ -89,8 +107,6 @@ function addSourceDir(path)
 		path .. "/shaders/*.hlsl",
 		path .. "/shaders/*.hlsli",
 		path .. "/shaders/*.h",
-		generatedDir .. "/%{prj.name}/generated.cpp",
-		generatedDir .. "/%{prj.name}/generated_cpu.cpp",
 		generatedDir .. "/%{prj.name}/*.h",
 	}
 	filter { "files:**.hlsl" }
@@ -102,7 +118,6 @@ project "nvfloweditor"
 	kind "ConsoleApp"
 	--dependson { "nvflowext", "nvflow", "nvflowshadertool" }
 	prebuildShaderTool("source/%{prj.name}/NvFlowEditor.nfproj")
-	postbuildShaderTool()
 	location(workspaceDir .. "/%{prj.name}")
 	language "C++"
 	includedirs { generatedDir .. "/%{prj.name}", "include/nvflowext", "external/glfw/include", "external/imgui" }
@@ -110,9 +125,8 @@ project "nvfloweditor"
 	addSourceDir("external/imgui")
 	filter { "system:windows" }
 		copy_to_targetdir("external/glfw/win64/glfw3.dll")
-	filter { "system:linux" }
-		copy_to_targetdir("external/glfw/linux/libglfw.so")
-		copy_to_targetdir("external/glfw/linux/libglfw.so.3")
+	filter { "system:linux", "platforms:x86_64" }
 		copy_to_targetdir("external/glfw/linux/libglfw.so.3.3")
+	filter { "system:linux", "platforms:aarch64" }
 		copy_to_targetdir("external/glfw/linux/libglfw_aarch64.so.3.3")
 	filter { }

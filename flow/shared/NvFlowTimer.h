@@ -22,11 +22,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
 #include "NvFlowTypes.h"
+
+//#define NV_FLOW_PROFILE_ENABLED
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -65,7 +67,7 @@ NV_FLOW_INLINE float NvFlowTimeStamp_diff(NvFlowUint64 begin, NvFlowUint64 end, 
 	return (float)(((double)(end - begin) / (double)(freq)));
 }
 
-#if 1
+#ifndef NV_FLOW_PROFILE_ENABLED
 #define NV_FLOW_PROFILE_BEGIN(profileInterval, profileOffset)
 #define NV_FLOW_PROFILE_TIMESTAMP(name)
 #define NV_FLOW_PROFILE_FLUSH(name, logPrint)

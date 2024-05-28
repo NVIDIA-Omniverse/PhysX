@@ -22,13 +22,274 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_EXT_H
 #define NV_FLOW_EXT_H
 
 #include "NvFlowContext.h"
 #include "NvFlow.h"
+
+/// ********************************* Points ***************************************
+
+typedef struct NvFlowPointsParams
+{
+    NvFlowUint64 luid;
+
+    NvFlowBool32 isVisible;
+    int layerOffset;
+    int levelOffset;
+
+    NvFlowFloat4x4 localToWorld;
+    NvFlowFloat4x4 localToWorldVelocity;
+
+    NvFlowFloat3* points;
+    NvFlowUint64 pointCount;
+    NvFlowUint64 pointVersion;
+
+    NvFlowFloat3* colors;
+    NvFlowUint64 colorCount;
+    NvFlowUint64 colorVersion;
+
+    float* widths;
+    NvFlowUint64 widthCount;
+    NvFlowUint64 widthVersion;
+
+    NvFlowFloat3* extent;
+    NvFlowUint64 extentCount;
+    NvFlowUint64 extentVersion;
+}NvFlowPointsParams;
+
+#define NvFlowPointsParams_default_init { \
+    0llu,				/*luid*/ \
+    NV_FLOW_FALSE,      /*isVisible*/ \
+    0,                  /*layerOffset*/ \
+    0,                  /*levelOffset*/ \
+	{ \
+		1.f, 0.f, 0.f, 0.f, \
+		0.f, 1.f, 0.f, 0.f, \
+		0.f, 0.f, 1.f, 0.f, \
+		0.f, 0.f, 0.f, 1.f \
+	},					/*localToWorld*/ \
+	{ \
+		1.f, 0.f, 0.f, 0.f, \
+		0.f, 1.f, 0.f, 0.f, \
+		0.f, 0.f, 1.f, 0.f, \
+		0.f, 0.f, 0.f, 1.f \
+	},					/*localToWorldVelocity*/ \
+    0,                  /*points*/ \
+    0,                  /*pointCount*/ \
+    0,                  /*pointVersion*/ \
+    0,                  /*colors*/ \
+    0,                  /*colorCount*/ \
+    0,                  /*colorVersion*/ \
+    0,                  /*widths*/ \
+    0,                  /*widthCount*/ \
+    0,                  /*widthVersion*/ \
+    0,                  /*extent*/ \
+    0,                  /*extentCount*/ \
+    0,                  /*extentVersion*/ \
+}
+static const NvFlowPointsParams NvFlowPointsParams_default = NvFlowPointsParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowPointsParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, isVisible, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(int, layerOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorld, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowFloat3, points, pointCount, pointVersion, eNvFlowReflectHint_asset, "asset(array)")
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowFloat3, colors, colorCount, colorVersion, eNvFlowReflectHint_asset, "asset(array)")
+NV_FLOW_REFLECT_ARRAY_VERSIONED(float, widths, widthCount, widthVersion, eNvFlowReflectHint_asset, "asset(array)")
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowFloat3, extent, extentCount, extentVersion, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowPointsParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+/// ********************************* Volumes ***************************************
+
+typedef struct NvFlowNanoVdbAssetParams
+{
+    NvFlowUint64 luid;
+
+    NvFlowUint* nanoVdbs;
+    NvFlowUint64 nanoVdbCount;
+    NvFlowUint64 nanoVdbVersion;
+    NvFlowUint64 nanoVdbFirstElement;
+    NvFlowUint64 nanoVdbPendingVersion;
+}NvFlowNanoVdbAssetParams;
+
+#define NvFlowNanoVdbAssetParams_default_init { \
+    0llu,				/*luid*/ \
+    0,                  /*nanoVdbs*/ \
+    0,                  /*nanoVdbCount*/ \
+    0,                  /*nanoVdbVersion*/ \
+    0,                  /*nanoVdbFirstElement*/ \
+    0,                  /*nanoVdbPendingVersion*/ \
+}
+static const NvFlowNanoVdbAssetParams NvFlowNanoVdbAssetParams_default = NvFlowNanoVdbAssetParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowNanoVdbAssetParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint, nanoVdbs, nanoVdbCount, nanoVdbVersion, eNvFlowReflectHint_asset, "asset(nanovdb)")
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbFirstElement, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbPendingVersion, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowNanoVdbAssetParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+typedef struct NvFlowVolumeParams
+{
+    NvFlowUint64 luid;
+
+    NvFlowBool32 isVisible;
+    int layerOffset;
+    int levelOffset;
+
+    NvFlowFloat4x4 localToWorld;
+    NvFlowFloat4x4 localToWorldVelocity;
+
+    NvFlowUint64 nanoVdbRedLuid;
+    NvFlowUint64 nanoVdbGreenLuid;
+    NvFlowUint64 nanoVdbBlueLuid;
+    NvFlowUint64 nanoVdbAlphaLuid;
+    NvFlowUint64 nanoVdbRgbaLuid;
+    NvFlowUint64 nanoVdbRgba8Luid;
+}NvFlowVolumeParams;
+
+#define NvFlowVolumeParams_default_init { \
+    0llu,				/*luid*/ \
+    NV_FLOW_FALSE,      /*isVisible*/ \
+    0,                  /*layerOffset*/ \
+    0,                  /*levelOffset*/ \
+	{ \
+		1.f, 0.f, 0.f, 0.f, \
+		0.f, 1.f, 0.f, 0.f, \
+		0.f, 0.f, 1.f, 0.f, \
+		0.f, 0.f, 0.f, 1.f \
+	},					/*localToWorld*/ \
+	{ \
+		1.f, 0.f, 0.f, 0.f, \
+		0.f, 1.f, 0.f, 0.f, \
+		0.f, 0.f, 1.f, 0.f, \
+		0.f, 0.f, 0.f, 1.f \
+	},					/*localToWorldVelocity*/ \
+    0,                  /*nanoVdbRedLuid*/ \
+    0,                  /*nanoVdbGreenLuid*/ \
+    0,                  /*nanoVdbBlueLuid*/ \
+    0,                  /*nanoVdbAlphaLuid*/ \
+    0,                  /*nanoVdbRgbaLuid*/ \
+    0,                  /*nanoVdbRgba8Luid*/ \
+}
+static const NvFlowVolumeParams NvFlowVolumeParams_default = NvFlowVolumeParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowVolumeParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, isVisible, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(int, layerOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorld, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbRedLuid, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbGreenLuid, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbBlueLuid, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbAlphaLuid, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbRgbaLuid, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbRgba8Luid, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowVolumeParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+/// ********************************* PointCloud ***************************************
+
+typedef struct NvFlowPointCloudParams
+{
+    NvFlowUint64 luid;
+
+    NvFlowUint64* childLuids;
+    NvFlowUint64 childLuidCount;
+    NvFlowUint64 childLuidVersion;
+
+    NvFlowBool32 attributeCopyEnabled;
+
+    NvFlowBool32 enabled;
+    NvFlowBool32 autoCellSize;
+    int levelCount;
+    float cellSize;
+    NvFlowBool32 enableLowPrecision;
+    NvFlowBool32 updateWhilePaused;
+    NvFlowBool32 fadeEnabled;
+    float fadeRate;
+    NvFlowBool32 enableSmallBlocks;
+
+    float rayMarchAttenuation;
+    float rayMarchColorScale;
+
+    NvFlowBool32 enableStreaming;
+    NvFlowBool32 streamOnce;
+    NvFlowBool32 streamClearAtStart;
+    NvFlowUint streamingBatchSize;
+    NvFlowBool32 colorIsSrgb;
+    NvFlowBool32 followVisibility;
+    float widthScale;
+    float coupleRate;
+}NvFlowPointCloudParams;
+
+#define NvFlowPointCloudParams_default_init { \
+    0llu,				/*luid*/ \
+    0,                  /*childLuids*/ \
+    0,                  /*childLuidCount*/ \
+    0,                  /*childLuidVersion*/ \
+    NV_FLOW_TRUE,       /*attributeCopyEnabled*/ \
+    NV_FLOW_TRUE,       /*enabled*/ \
+    NV_FLOW_TRUE,       /*autoCellSize*/ \
+    1,                  /*levelCount*/ \
+    0.015625f,          /*cellSize*/ \
+    NV_FLOW_TRUE,       /*enableLowPrecision*/ \
+    NV_FLOW_TRUE,       /*updateWhilePaused*/ \
+    NV_FLOW_FALSE,      /*fadeEnabled*/ \
+    1.f,                /*fadeRate*/ \
+    NV_FLOW_FALSE,      /*enableSmallBlocks*/ \
+    10.f,               /*rayMarchAttenuation*/ \
+    10.f,               /*rayMarchColorScale*/ \
+    NV_FLOW_TRUE,       /*enableStreaming*/ \
+    NV_FLOW_TRUE,       /*streamOnce*/ \
+    NV_FLOW_TRUE,       /*streamClearAtStart*/ \
+    4194304u,           /*streamingBatchSize*/ \
+    NV_FLOW_TRUE,       /*colorIsSrgb*/ \
+    NV_FLOW_TRUE,       /*followVisibility*/ \
+    1.f,                /*widthScale*/ \
+    10000.f,            /*coupleRate*/ \
+}
+static const NvFlowPointCloudParams NvFlowPointCloudParams_default = NvFlowPointCloudParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowPointCloudParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint64, childLuids, childLuidCount, childLuidVersion, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, attributeCopyEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, autoCellSize, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelCount, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, cellSize, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableLowPrecision, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, updateWhilePaused, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, fadeEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, fadeRate, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableSmallBlocks, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, rayMarchAttenuation, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, rayMarchColorScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableStreaming, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, streamOnce, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, streamClearAtStart, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint, streamingBatchSize, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, colorIsSrgb, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, followVisibility, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, widthScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, coupleRate, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowPointCloudParams_default)
+#undef NV_FLOW_REFLECT_TYPE
 
 /// ********************************* EmitterSphere ***************************************
 
@@ -42,6 +303,7 @@ typedef struct NvFlowEmitterSphereParams
 	NvFlowBool32 velocityIsWorldSpace;
 	NvFlowFloat3 position;
 	int layer;
+    int level;
 	float radius;
 	NvFlowBool32 radiusIsWorldSpace;
 	float allocationScale;
@@ -88,6 +350,7 @@ typedef struct NvFlowEmitterSphereParams
 	NV_FLOW_FALSE,		/*velocityIsWorldSpace*/ \
 	{0.f, 0.f, 0.f},	/*position*/ \
 	0,					/*layer*/ \
+    0,					/*level*/ \
 	10.f,				/*radius*/ \
 	NV_FLOW_TRUE,		/*radiusIsWorldSpace*/ \
 	1.f,				/*allocationScale*/ \
@@ -119,6 +382,7 @@ NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_t
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, position, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, radius, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, radiusIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, allocationScale, 0, 0)
@@ -229,6 +493,7 @@ typedef struct NvFlowEmitterBoxParams
 	NvFlowBool32 velocityIsWorldSpace;
 	NvFlowFloat3 position;
 	int layer;
+    int level;
 	NvFlowFloat3 halfSize;
 	float allocationScale;
 
@@ -258,6 +523,9 @@ typedef struct NvFlowEmitterBoxParams
 	NvFlowUint* clippingPlaneCounts;
 	NvFlowUint64 clippingPlaneCountCount;
 
+    NvFlowBool32 isPhysicsCollision;
+    NvFlowBool32 allLayers;
+
 }NvFlowEmitterBoxParams;
 
 #define NvFlowEmitterBoxParams_default_init { \
@@ -278,6 +546,7 @@ typedef struct NvFlowEmitterBoxParams
 	NV_FLOW_FALSE,			/*velocityIsWorldSpace*/ \
 	{0.f, 0.f, 0.f},		/*position*/ \
 	0,						/*layer*/ \
+    0,						/*level*/ \
 	{10.f, 10.f, 10.f},		/*halfSize*/ \
 	1.f,					/*allocationScale*/ \
 	{0.f, 0.f, 400.f},		/*velocity*/ \
@@ -298,7 +567,9 @@ typedef struct NvFlowEmitterBoxParams
 	0,	/*clippingPlanes*/ \
 	0,	/*clippingPlaneCount*/ \
 	0,	/*clippingPlaneCounts*/ \
-	0	/*clippingPlaneCountCount*/ \
+	0,	/*clippingPlaneCountCount*/ \
+    NV_FLOW_FALSE, /*isPhysicsCollision*/ \
+    NV_FLOW_FALSE /*allLayers*/ \
 }
 static const NvFlowEmitterBoxParams NvFlowEmitterBoxParams_default = NvFlowEmitterBoxParams_default_init;
 
@@ -311,6 +582,7 @@ NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_t
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, position, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, halfSize, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, allocationScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, velocity, 0, 0)
@@ -330,6 +602,8 @@ NV_FLOW_REFLECT_VALUE(NvFlowBool32, applyPostPressure, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, multisample, 0, 0)
 NV_FLOW_REFLECT_ARRAY(NvFlowFloat4, clippingPlanes, clippingPlaneCount, 0, 0)
 NV_FLOW_REFLECT_ARRAY(NvFlowUint, clippingPlaneCounts, clippingPlaneCountCount, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPhysicsCollision, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, allLayers, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowEmitterBoxParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -342,6 +616,8 @@ typedef struct NvFlowEmitterBoxPinsIn
 	NvFlowUint64 velocityParamCount;
 	const NvFlowEmitterBoxParams*const* densityParams;
 	NvFlowUint64 densityParamCount;
+    const int* physicsCollisionLayers;
+    NvFlowUint64 physicsCollisionLayerCount;
 	NvFlowSparseTexture value;
 	NvFlowSparseTexture valueTemp;
 	NvFlowBool32 isPostPressure;
@@ -359,6 +635,7 @@ NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlo
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterBoxParams, velocityParams, velocityParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterBoxParams, densityParams, densityParamCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_ARRAY(int, physicsCollisionLayers, physicsCollisionLayerCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, valueTemp, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPostPressure, eNvFlowReflectHint_pinEnabled, 0)
@@ -383,6 +660,8 @@ typedef struct NvFlowEmitterBoxAllocatePinsIn
 	float deltaTime;
 	const NvFlowEmitterBoxParams*const* params;
 	NvFlowUint64 paramCount;
+    const int* physicsCollisionLayers;
+    NvFlowUint64 physicsCollisionLayerCount;
 }NvFlowEmitterBoxAllocatePinsIn;
 
 typedef struct NvFlowEmitterBoxAllocatePinsOut
@@ -398,6 +677,7 @@ NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlo
 NV_FLOW_REFLECT_VALUE(NvFlowSparseParams, sparseParams, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterBoxParams, params, paramCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_ARRAY(int, physicsCollisionLayers, physicsCollisionLayerCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -415,7 +695,12 @@ typedef struct NvFlowEmitterPointParams
 {
 	NvFlowUint64 luid;
 
+    NvFlowUint64* pointsLuids;
+    NvFlowUint64 pointsLuidCount;
+    NvFlowUint64 pointsLuidVersion;
+
 	NvFlowBool32 enabled;
+    NvFlowBool32 followVisibility;
 
 	NvFlowFloat4x4 localToWorld;
 	NvFlowFloat4x4 localToWorldVelocity;
@@ -423,6 +708,8 @@ typedef struct NvFlowEmitterPointParams
 	NvFlowUint numSubSteps;
 
 	int layer;
+    int level;
+    int levelCount;
 
 	NvFlowBool32 allocateMask;
 	NvFlowFloat3 velocity;
@@ -434,6 +721,7 @@ typedef struct NvFlowEmitterPointParams
 
 	NvFlowBool32 colorIsSrgb;
 
+    float widthScale;
 	float velocityScale;
 	float divergenceScale;
 	float temperatureScale;
@@ -451,6 +739,9 @@ typedef struct NvFlowEmitterPointParams
 	NvFlowFloat3* pointPositions;
 	NvFlowUint64 pointPositionCount;
 	NvFlowUint64 pointPositionVersion;
+    float* pointWidths;
+    NvFlowUint64 pointWidthCount;
+    NvFlowUint64 pointWidthVersion;
 	NvFlowBool32* pointAllocateMasks;
 	NvFlowUint64 pointAllocateMaskCount;
 	NvFlowUint64 pointAllocateMaskVersion;
@@ -506,7 +797,11 @@ typedef struct NvFlowEmitterPointParams
 
 #define NvFlowEmitterPointParams_default_init { \
 	0llu,			/*luid*/ \
+    0,			    /*pointsLuids*/ \
+    0,			    /*pointsLuidCount*/ \
+    0,			    /*pointsLuidVersion*/ \
 	NV_FLOW_TRUE,	/*enabled*/ \
+    NV_FLOW_FALSE,	/*followVisibility*/ \
 	{ \
 		1.f, 0.f, 0.f, 0.f, \
 		0.f, 1.f, 0.f, 0.f, \
@@ -522,6 +817,8 @@ typedef struct NvFlowEmitterPointParams
 	NV_FLOW_FALSE,		/*velocityIsWorldSpace*/ \
 	1u,					/*numSubSteps*/ \
 	0,					/*layer*/ \
+    0,					/*level*/ \
+    1,                  /*levelCount*/ \
 	NV_FLOW_TRUE,		/*allocateMask*/ \
 	{0.f, 0.f, 100.f},	/*velocity*/ \
 	0.f,				/*divergence*/ \
@@ -530,6 +827,7 @@ typedef struct NvFlowEmitterPointParams
 	0.f,				/*burn*/ \
 	2.f,				/*smoke*/ \
 	NV_FLOW_FALSE,		/*colorIsSrgb*/ \
+	1.f,		/*widthScale*/ \
 	1.f,		/*velocityScale*/ \
 	1.f,		/*divergenceScale*/ \
 	1.f,		/*temperatureScale*/ \
@@ -545,6 +843,9 @@ typedef struct NvFlowEmitterPointParams
 	0,		/*pointPositions*/ \
 	0,		/*pointPositionCount*/ \
 	0,		/*pointPositionVersion*/ \
+	0,		/*pointWidths*/ \
+	0,		/*pointWidthCount*/ \
+	0,		/*pointWidthVersion*/ \
 	0,		/*pointAllocateMasks*/ \
 	0,		/*pointAllocateMaskCount*/ \
 	0,		/*pointAllocateMaskVersion*/ \
@@ -599,12 +900,16 @@ static const NvFlowEmitterPointParams NvFlowEmitterPointParams_default = NvFlowE
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterPointParams
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint64, pointsLuids, pointsLuidCount, pointsLuidVersion, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, followVisibility, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorld, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, numSubSteps, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelCount, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, allocateMask, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, velocity, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, divergence, 0, 0)
@@ -613,6 +918,7 @@ NV_FLOW_REFLECT_VALUE(float, fuel, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, burn, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, smoke, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, colorIsSrgb, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, widthScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, velocityScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, divergenceScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, temperatureScale, 0, 0)
@@ -626,6 +932,7 @@ NV_FLOW_REFLECT_VALUE(float, coupleRateFuel, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, coupleRateBurn, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, coupleRateSmoke, 0, 0)
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowFloat3, pointPositions, pointPositionCount, pointPositionVersion, eNvFlowReflectHint_asset, "asset(array)")
+NV_FLOW_REFLECT_ARRAY_VERSIONED(float, pointWidths, pointWidthCount, pointWidthVersion, eNvFlowReflectHint_asset, "asset(array)")
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowBool32, pointAllocateMasks, pointAllocateMaskCount, pointAllocateMaskVersion, eNvFlowReflectHint_asset, "asset(array)")
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowFloat3, pointVelocities, pointVelocityCount, pointVelocityVersion, eNvFlowReflectHint_asset, "asset(array)")
 NV_FLOW_REFLECT_ARRAY_VERSIONED(float, pointDivergences, pointDivergenceCount, pointDivergenceVersion, eNvFlowReflectHint_asset, "asset(array)")
@@ -665,16 +972,24 @@ typedef struct NvFlowEmitterPointPinsIn
 	NvFlowUint64 velocityParamCount;
 	const NvFlowEmitterPointParams*const* densityParams;
 	NvFlowUint64 densityParamCount;
+    const NvFlowPointsParams* const* pointsParams;
+    NvFlowUint64 pointsParamCount;
 	NvFlowSparseTexture value;
-	NvFlowSparseTexture valueTemp;
 	NvFlowSparseTexture coarseDensity;
 	NvFlowBool32 isPostPressure;
 	NvFlowEmitterPointFeedback feedback;
+    NvFlowUint64 streamingVersion;
+    NvFlowUint64 streamingFinishedVersion;
+    NvFlowUint64 streamingPointsVersion;
+    NvFlowUint64 streamingNanoVdbVersion;
 }NvFlowEmitterPointPinsIn;
 
 typedef struct NvFlowEmitterPointPinsOut
 {
 	NvFlowSparseTexture value;
+    NvFlowUint64 streamingVersion;
+    NvFlowUint64 streamingFinishedVersion;
+    NvFlowUint64 streamingPointsVersion;
 }NvFlowEmitterPointPinsOut;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterPointPinsIn
@@ -684,17 +999,24 @@ NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlo
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterPointParams, velocityParams, velocityParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterPointParams, densityParams, densityParamCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowPointsParams, pointsParams, pointsParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabledMutable, 0)
-NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, valueTemp, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, coarseDensity, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPostPressure, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowEmitterPointFeedback, feedback, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingFinishedVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingPointsVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingNanoVdbVersion, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterPointPinsOut
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingFinishedVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingPointsVersion, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -706,10 +1028,12 @@ typedef struct NvFlowEmitterPointAllocatePinsIn
 {
 	NvFlowContextInterface* contextInterface;
 	NvFlowContext* context;
-	NvFlowSparseParams sparseParams;
+	NvFlowSparseSimParams sparseSimParams;
 	float deltaTime;
 	const NvFlowEmitterPointParams*const* params;
 	NvFlowUint64 paramCount;
+    const NvFlowPointsParams* const* pointsParams;
+    NvFlowUint64 pointsParamCount;
 	NvFlowUint3 baseBlockDimBits;
 }NvFlowEmitterPointAllocatePinsIn;
 
@@ -718,17 +1042,16 @@ typedef struct NvFlowEmitterPointAllocatePinsOut
 	NvFlowInt4* locations;
 	NvFlowUint64 locationCount;
 	NvFlowEmitterPointFeedback feedback;
-	int* clearLayers;
-	NvFlowUint64 clearLayerCount;
 }NvFlowEmitterPointAllocatePinsOut;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterPointAllocatePinsIn
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_POINTER(NvFlowContextInterface, contextInterface, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlobal, 0)
-NV_FLOW_REFLECT_VALUE(NvFlowSparseParams, sparseParams, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowSparseSimParams, sparseSimParams, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterPointParams, params, paramCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowPointsParams, pointsParams, pointsParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint3, baseBlockDimBits, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
@@ -737,7 +1060,6 @@ NV_FLOW_REFLECT_END(0)
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_ARRAY(NvFlowInt4, locations, locationCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowEmitterPointFeedback, feedback, eNvFlowReflectHint_pinEnabled, 0)
-NV_FLOW_REFLECT_ARRAY(int, clearLayers, clearLayerCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -757,6 +1079,7 @@ typedef struct NvFlowEmitterMeshParams
 	NvFlowUint numSubSteps;
 
 	int layer;
+    int level;
 
 	float minDistance;
 	float maxDistance;
@@ -849,6 +1172,7 @@ typedef struct NvFlowEmitterMeshParams
 
 	float physicsVelocityScale;
 	NvFlowBool32 applyPostPressure;
+    NvFlowBool32 isPhysicsCollision;
 }NvFlowEmitterMeshParams;
 
 #define NvFlowEmitterMeshParams_default_init { \
@@ -869,6 +1193,7 @@ typedef struct NvFlowEmitterMeshParams
 	NV_FLOW_FALSE,		/*velocityIsWorldSpace*/ \
 	1u,					/*numSubSteps*/ \
 	0,					/*layer*/ \
+    0,					/*level*/ \
 	-0.8f,				/*minDistance*/ \
 	0.3f,				/*minDistance*/ \
 	NV_FLOW_TRUE,		/*allocateMask*/ \
@@ -951,6 +1276,7 @@ typedef struct NvFlowEmitterMeshParams
 	0,		/*meshCoupleRateSmokeVersion*/ \
 	0.f,	/*physicsVelocityScale*/ \
 	NV_FLOW_FALSE,	/*applyPostPressure*/ \
+    NV_FLOW_FALSE,  /*isPhysicsCollision*/ \
 }
 static const NvFlowEmitterMeshParams NvFlowEmitterMeshParams_default = NvFlowEmitterMeshParams_default_init;
 
@@ -963,6 +1289,7 @@ NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_t
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, numSubSteps, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, minDistance, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, maxDistance, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, allocateMask, 0, 0)
@@ -1007,6 +1334,7 @@ NV_FLOW_REFLECT_ARRAY_VERSIONED(float, meshCoupleRateBurns, meshCoupleRateBurnCo
 NV_FLOW_REFLECT_ARRAY_VERSIONED(float, meshCoupleRateSmokes, meshCoupleRateSmokeCount, meshCoupleRateSmokeVersion, eNvFlowReflectHint_asset, "asset(array)")
 NV_FLOW_REFLECT_VALUE(float, physicsVelocityScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, applyPostPressure, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPhysicsCollision, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowEmitterMeshParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -1026,6 +1354,8 @@ typedef struct NvFlowEmitterMeshPinsIn
 	NvFlowUint64 velocityParamCount;
 	const NvFlowEmitterMeshParams*const* densityParams;
 	NvFlowUint64 densityParamCount;
+    const int* physicsCollisionLayers;
+    NvFlowUint64 physicsCollisionLayerCount;
 	NvFlowSparseTexture value;
 	NvFlowSparseTexture valueTemp;
 	NvFlowBool32 isPostPressure;
@@ -1044,6 +1374,7 @@ NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlo
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterMeshParams, velocityParams, velocityParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterMeshParams, densityParams, densityParamCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_ARRAY(int, physicsCollisionLayers, physicsCollisionLayerCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, valueTemp, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPostPressure, eNvFlowReflectHint_pinEnabled, 0)
@@ -1069,6 +1400,8 @@ typedef struct NvFlowEmitterMeshAllocatePinsIn
 	float deltaTime;
 	const NvFlowEmitterMeshParams*const* params;
 	NvFlowUint64 paramCount;
+    const int* physicsCollisionLayers;
+    NvFlowUint64 physicsCollisionLayerCount;
 	NvFlowUint3 baseBlockDimBits;
 }NvFlowEmitterMeshAllocatePinsIn;
 
@@ -1086,6 +1419,7 @@ NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlo
 NV_FLOW_REFLECT_VALUE(NvFlowSparseParams, sparseParams, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterMeshParams, params, paramCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_ARRAY(int, physicsCollisionLayers, physicsCollisionLayerCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint3, baseBlockDimBits, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
@@ -1112,6 +1446,7 @@ typedef struct NvFlowEmitterTextureParams
 	NvFlowBool32 velocityIsWorldSpace;
 	NvFlowFloat3 position;
 	int layer;
+    int level;
 	NvFlowFloat3 halfSize;
 	float allocationScale;
 
@@ -1130,7 +1465,7 @@ typedef struct NvFlowEmitterTextureParams
 	float temperatureScale;
 	float fuelScale;
 	float burnScale;
-	float smokeScale;	
+	float smokeScale;
 
 	float coupleRateVelocity;
 	float coupleRateDivergence;
@@ -1204,6 +1539,7 @@ typedef struct NvFlowEmitterTextureParams
 	NV_FLOW_FALSE,		/*velocityIsWorldSpace*/ \
 	{0.f, 0.f, 0.f},	/*position*/ \
 	0,					/*layer*/ \
+    0,					/*level*/ \
 	{10.f, 10.f, 10.f},	/*halfSize*/ \
 	1.f,				/*fallocationScale*/ \
 	{0.f, 0.f, 400.f},	/*velocity*/ \
@@ -1278,6 +1614,7 @@ NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_t
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, position, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, halfSize, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, allocationScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, velocity, 0, 0)
@@ -1401,13 +1738,20 @@ typedef struct NvFlowEmitterNanoVdbParams
 {
 	NvFlowUint64 luid;
 
+    NvFlowUint64* volumeLuids;
+    NvFlowUint64 volumeLuidCount;
+    NvFlowUint64 volumeLuidVersion;
+
 	NvFlowBool32 enabled;
+    NvFlowBool32 followVisibility;
 
 	NvFlowFloat4x4 localToWorld;
 	NvFlowFloat4x4 localToWorldVelocity;
 	NvFlowBool32 velocityIsWorldSpace;
 
 	int layer;
+    int level;
+    int levelCount;
 	float allocationScale;
 
 	NvFlowFloat3 velocity;
@@ -1419,13 +1763,14 @@ typedef struct NvFlowEmitterNanoVdbParams
 	float smoke;
 
 	NvFlowBool32 colorIsSrgb;
+    NvFlowBool32 swapChannels;
 
 	float velocityScale;
 	float divergenceScale;
 	float temperatureScale;
 	float fuelScale;
 	float burnScale;
-	float smokeScale;		
+	float smokeScale;
 
 	float coupleRateVelocity;
 	float coupleRateDivergence;
@@ -1437,6 +1782,8 @@ typedef struct NvFlowEmitterNanoVdbParams
 
 	float minDistance;
 	float maxDistance;
+    float minSmoke;
+    float maxSmoke;
 
 	NvFlowUint* nanoVdbDistances;
 	NvFlowUint64 nanoVdbDistanceCount;
@@ -1509,12 +1856,21 @@ typedef struct NvFlowEmitterNanoVdbParams
 	NvFlowUint64 nanoVdbRgba8FirstElement;
 
 	NvFlowBool32 applyPostPressure;
+    NvFlowBool32 enableStreaming;
+    NvFlowBool32 streamOnce;
+    NvFlowBool32 streamClearAtStart;
+    NvFlowUint streamingBatchSize;
+    NvFlowBool32 updateCoarseDensity;
 	NvFlowBool32 allocateActiveLeaves;
 }NvFlowEmitterNanoVdbParams;
 
 #define NvFlowEmitterNanoVdbParams_default_init { \
 	0llu,				/*luid*/ \
+    0,			        /*volumeLuids*/ \
+    0,			        /*volumeLuidCount*/ \
+    0,			        /*volumeLuidVersion*/ \
 	NV_FLOW_TRUE,		/*enabled*/ \
+    NV_FLOW_FALSE,      /*followVisibility*/ \
 	{ \
 		1.f, 0.f, 0.f, 0.f, \
 		0.f, 1.f, 0.f, 0.f, \
@@ -1529,6 +1885,8 @@ typedef struct NvFlowEmitterNanoVdbParams
 	},					/*localToWorldVelocity*/ \
 	NV_FLOW_FALSE,		/*velocityIsWorldSpace*/ \
 	0,					/*layer*/ \
+    0,					/*level*/ \
+    1,                  /*levelCount*/ \
 	1.f,				/*fallocationScale*/ \
 	{0.f, 0.f, 0.f},	/*velocity*/ \
 	0.f,				/*divergence*/ \
@@ -1537,6 +1895,7 @@ typedef struct NvFlowEmitterNanoVdbParams
 	0.f,	/*burn*/ \
 	10.f,	/*smoke*/ \
 	NV_FLOW_FALSE,		/*colorIsSrgb*/ \
+	NV_FLOW_FALSE,		/*swapChannels*/ \
 	1.f,		/*velocityScale*/ \
 	1.f,		/*divergenceScale*/ \
 	1.f,		/*temperatureScale*/ \
@@ -1551,6 +1910,8 @@ typedef struct NvFlowEmitterNanoVdbParams
 	2.f,	/*coupleRateSmoke*/ \
 	-0.25f,	/*minDistance*/ \
 	0.25f,	/*maxDistance*/ \
+	-NV_FLOW_INFINITY,	/*minSmoke*/ \
+	NV_FLOW_INFINITY,	/*maxSmoke*/ \
 	0, /*nanoVdbDistances*/ \
 	0, /*nanoVdbDistanceCount*/ \
 	0, /*nanoVdbDistanceVersion*/ \
@@ -1608,6 +1969,11 @@ typedef struct NvFlowEmitterNanoVdbParams
 	0, /*nanoVdbRgba8Version*/ \
 	0, /*nanoVdbRgba8FirstElement*/ \
 	NV_FLOW_FALSE,	/*applyPostPressure*/ \
+    NV_FLOW_FALSE, /*enableStreaming*/ \
+    NV_FLOW_FALSE, /*streamOnce*/ \
+    NV_FLOW_FALSE, /*streamClearAtStart*/ \
+    1048576, /*streamingBatchSize*/ \
+    NV_FLOW_FALSE, /*updateCoarseDensity*/ \
 	NV_FLOW_TRUE,	/*allocateActiveLeaves*/ \
 }
 static const NvFlowEmitterNanoVdbParams NvFlowEmitterNanoVdbParams_default = NvFlowEmitterNanoVdbParams_default_init;
@@ -1615,11 +1981,15 @@ static const NvFlowEmitterNanoVdbParams NvFlowEmitterNanoVdbParams_default = NvF
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterNanoVdbParams
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
+NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint64, volumeLuids, volumeLuidCount, volumeLuidVersion, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, followVisibility, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorld, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat4x4, localToWorldVelocity, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, velocityIsWorldSpace, 0, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelCount, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, allocationScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, velocity, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, divergence, 0, 0)
@@ -1628,6 +1998,7 @@ NV_FLOW_REFLECT_VALUE(float, fuel, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, burn, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, smoke, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, colorIsSrgb, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, swapChannels, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, velocityScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, divergenceScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, temperatureScale, 0, 0)
@@ -1642,6 +2013,8 @@ NV_FLOW_REFLECT_VALUE(float, coupleRateBurn, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, coupleRateSmoke, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, minDistance, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, maxDistance, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, minSmoke, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, maxSmoke, 0, 0)
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint, nanoVdbDistances, nanoVdbDistanceCount, nanoVdbDistanceVersion, eNvFlowReflectHint_asset, "asset(nanovdb)")
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbDistanceFirstElement, 0, 0)
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint, nanoVdbVelocities, nanoVdbVelocityCount, nanoVdbVelocityVersion, eNvFlowReflectHint_asset, "asset(nanovdb)")
@@ -1671,9 +2044,21 @@ NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbCoupleRateSmokeFirstElement, 0, 0)
 NV_FLOW_REFLECT_ARRAY_VERSIONED(NvFlowUint, nanoVdbRgba8s, nanoVdbRgba8Count, nanoVdbRgba8Version, eNvFlowReflectHint_asset, "asset(nanovdb)")
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, nanoVdbRgba8FirstElement, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, applyPostPressure, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableStreaming, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, streamOnce, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, streamClearAtStart, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint, streamingBatchSize, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, updateCoarseDensity, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, allocateActiveLeaves, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowEmitterNanoVdbParams_default)
 #undef NV_FLOW_REFLECT_TYPE
+
+typedef struct NvFlowEmitterNanoVdbFeedback
+{
+    void* data;
+}NvFlowEmitterNanoVdbFeedback;
+
+NV_FLOW_REFLECT_STRUCT_OPAQUE_IMPL(NvFlowEmitterNanoVdbFeedback)
 
 typedef struct NvFlowEmitterNanoVdbPinsIn
 {
@@ -1685,13 +2070,21 @@ typedef struct NvFlowEmitterNanoVdbPinsIn
 	const NvFlowEmitterNanoVdbParams*const* densityParams;
 	NvFlowUint64 densityParamCount;
 	NvFlowSparseTexture value;
-	NvFlowSparseTexture valueTemp;
+    NvFlowSparseTexture coarseDensity;
 	NvFlowBool32 isPostPressure;
+    NvFlowEmitterNanoVdbFeedback feedback;
+    NvFlowUint64 streamingVersion;
+    NvFlowUint64 streamingFinishedVersion;
+    NvFlowUint64 streamingPointsVersion;
+    NvFlowUint64 streamingNanoVdbVersion;
 }NvFlowEmitterNanoVdbPinsIn;
 
 typedef struct NvFlowEmitterNanoVdbPinsOut
 {
 	NvFlowSparseTexture value;
+    NvFlowUint64 streamingVersion;
+    NvFlowUint64 streamingFinishedVersion;
+    NvFlowUint64 streamingNanoVdbVersion;
 }NvFlowEmitterNanoVdbPinsOut;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterNanoVdbPinsIn
@@ -1702,14 +2095,22 @@ NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterNanoVdbParams, velocityParams, velocityParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterNanoVdbParams, densityParams, densityParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabledMutable, 0)
-NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, valueTemp, eNvFlowReflectHint_pinEnabledMutable, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, coarseDensity, eNvFlowReflectHint_pinEnabledMutable, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, isPostPressure, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowEmitterNanoVdbFeedback, feedback, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingFinishedVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingPointsVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingNanoVdbVersion, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterNanoVdbPinsOut
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowSparseTexture, value, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingFinishedVersion, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, streamingNanoVdbVersion, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -1721,31 +2122,39 @@ typedef struct NvFlowEmitterNanoVdbAllocatePinsIn
 {
 	NvFlowContextInterface* contextInterface;
 	NvFlowContext* context;
-	NvFlowSparseParams sparseParams;
+	NvFlowSparseSimParams sparseSimParams;
 	float deltaTime;
 	const NvFlowEmitterNanoVdbParams*const* params;
 	NvFlowUint64 paramCount;
+    const NvFlowVolumeParams* const* volumeParams;
+    NvFlowUint64 volumeParamCount;
+    const NvFlowNanoVdbAssetParams* const* nanoVdbAssetParams;
+    NvFlowUint64 nanoVdbAssetParamCount;
 }NvFlowEmitterNanoVdbAllocatePinsIn;
 
 typedef struct NvFlowEmitterNanoVdbAllocatePinsOut
 {
 	NvFlowInt4* locations;
 	NvFlowUint64 locationCount;
+    NvFlowEmitterNanoVdbFeedback feedback;
 }NvFlowEmitterNanoVdbAllocatePinsOut;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterNanoVdbAllocatePinsIn
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_POINTER(NvFlowContextInterface, contextInterface, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER(NvFlowContext, context, eNvFlowReflectHint_pinEnabledGlobal, 0)
-NV_FLOW_REFLECT_VALUE(NvFlowSparseParams, sparseParams, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowSparseSimParams, sparseSimParams, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_VALUE(float, deltaTime, eNvFlowReflectHint_pinEnabledGlobal, 0)
 NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowEmitterNanoVdbParams, params, paramCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowVolumeParams, volumeParams, volumeParamCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_POINTER_ARRAY(NvFlowNanoVdbAssetParams, nanoVdbAssetParams, nanoVdbAssetParamCount, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
 #define NV_FLOW_REFLECT_TYPE NvFlowEmitterNanoVdbAllocatePinsOut
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_ARRAY(NvFlowInt4, locations, locationCount, eNvFlowReflectHint_pinEnabled, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowEmitterNanoVdbFeedback, feedback, eNvFlowReflectHint_pinEnabled, 0)
 NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -1897,6 +2306,11 @@ typedef struct NvFlowShadowParams
 	float minIntensity;
 	NvFlowUint numSteps;
 	NvFlowBool32 coarsePropagate;
+    NvFlowBool32 enableRawMode;
+    NvFlowBool32 rawModeIsosurface;
+    NvFlowBool32 rawModeNormalize;
+    float colormapXMin;
+    float colormapXMax;
 }NvFlowShadowParams;
 
 #define NvFlowShadowParams_default_init { \
@@ -1909,7 +2323,12 @@ typedef struct NvFlowShadowParams
 	1.f,				/*stepOffsetScale*/ \
 	0.125f,				/*minIntensity*/ \
 	16u,				/*numSteps*/ \
-	NV_FLOW_TRUE		/*coarsePropagate*/ \
+	NV_FLOW_TRUE,		/*coarsePropagate*/ \
+	NV_FLOW_FALSE,	    /*enableRawMode*/ \
+    NV_FLOW_TRUE,       /*rawModeIsosurface*/ \
+    NV_FLOW_TRUE,       /*rawModeNormalize*/ \
+    0.f,			    /*colormapXMin*/ \
+    1.f,			    /*colormapXMax*/ \
 }
 static const NvFlowShadowParams NvFlowShadowParams_default = NvFlowShadowParams_default_init;
 
@@ -1925,6 +2344,11 @@ NV_FLOW_REFLECT_VALUE(float, stepOffsetScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, minIntensity, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, numSteps, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, coarsePropagate, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableRawMode, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rawModeIsosurface, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rawModeNormalize, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, colormapXMin, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, colormapXMax, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowShadowParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -1967,23 +2391,62 @@ NV_FLOW_OP_TYPED(NvFlowShadow)
 
 typedef struct NvFlowDebugVolumeParams
 {
+    NvFlowBool32 enabled;
 	NvFlowBool32 enableSpeedAsTemperature;
 	NvFlowBool32 enableVelocityAsDensity;
+    NvFlowBool32 enableDivergenceAsSmoke;
+    NvFlowBool32 outputScaleBySmoke;
 	NvFlowFloat3 velocityScale;
+    float outputTemperatureScale;
+    float outputFuelScale;
+    float outputBurnScale;
+    float outputSmokeScale;
+    float outputTemperatureOffset;
+    float outputFuelOffset;
+    float outputBurnOffset;
+    float outputSmokeOffset;
+    NvFlowFloat4 slicePlane;
+    float slicePlaneThickness;
 }NvFlowDebugVolumeParams;
 
 #define NvFlowDebugVolumeParams_default_init { \
+    NV_FLOW_TRUE,           /*enabled*/ \
 	NV_FLOW_FALSE,			/*enableSpeedAsTemperature*/ \
 	NV_FLOW_FALSE,			/*enableVelocityAsDensity*/ \
-	{0.01f, 0.01f, 0.01f}	/*velocityScale*/ \
+    NV_FLOW_FALSE,			/*enableDivergenceAsSmoke*/ \
+    NV_FLOW_FALSE,			/*outputScaleBySmoke*/ \
+	{0.01f, 0.01f, 0.01f},	/*velocityScale*/ \
+    1.f,			        /*outputTemperatureScale*/ \
+    1.f,			        /*outputFuelScale*/ \
+    1.f,			        /*outputBurnScale*/ \
+    1.f,			        /*outputSmokeScale*/ \
+    0.f,	                /*outputTemperatureOffset*/ \
+    0.f,	                /*outputFuelOffset*/ \
+    0.f,	                /*outputBurnOffset*/ \
+    0.f,	                /*outputSmokeOffset*/ \
+    {1.f, 0.f, 0.f, 0.f},   /*slicePlane*/ \
+    0.f,                    /*slicePlaneThickness*/ \
 }
 static const NvFlowDebugVolumeParams NvFlowDebugVolumeParams_default = NvFlowDebugVolumeParams_default_init;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowDebugVolumeParams
 NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enabled, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableSpeedAsTemperature, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableVelocityAsDensity, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableDivergenceAsSmoke, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, outputScaleBySmoke, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowFloat3, velocityScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputTemperatureScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputFuelScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputBurnScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputSmokeScale, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputTemperatureOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputFuelOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputBurnOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, outputSmokeOffset, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowFloat4, slicePlane, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, slicePlaneThickness, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowDebugVolumeParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -2069,20 +2532,28 @@ typedef struct NvFlowRayMarchParams
 {
 	NvFlowBool32 enableBlockWireframe;
 	NvFlowBool32 enableRawMode;
+    NvFlowBool32 rawModeIsosurface;
+    NvFlowBool32 rawModeNormalize;
 	float colorScale;
 	float attenuation;
 	float stepSizeScale;
 	float shadowFactor;
+    float colormapXMin;
+    float colormapXMax;
 	NvFlowRayMarchCloudParams cloud;
 }NvFlowRayMarchParams;
 
 #define NvFlowRayMarchParams_default_init { \
 	NV_FLOW_FALSE,	/*enableBlockWireframe*/ \
 	NV_FLOW_FALSE,	/*enableRawMode*/ \
+    NV_FLOW_TRUE,   /*rawModeIsosurface*/ \
+    NV_FLOW_TRUE,   /*rawModeNormalize*/ \
 	1.f,			/*colorScale*/ \
 	0.05f,			/*attenuation*/ \
 	0.75f,			/*stepSizeScale*/ \
 	1.f,			/*shadowFactor*/ \
+    0.f,			/*colormapXMin*/ \
+    1.f,			/*colormapXMax*/ \
 	NvFlowRayMarchCloudParams_default_init /*cloud*/ \
 }
 static const NvFlowRayMarchParams NvFlowRayMarchParams_default = NvFlowRayMarchParams_default_init;
@@ -2091,10 +2562,14 @@ static const NvFlowRayMarchParams NvFlowRayMarchParams_default = NvFlowRayMarchP
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableBlockWireframe, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableRawMode, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rawModeIsosurface, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rawModeNormalize, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, colorScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, attenuation, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, stepSizeScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, shadowFactor, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, colormapXMin, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, colormapXMax, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowRayMarchCloudParams, cloud, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowRayMarchParams_default)
 #undef NV_FLOW_REFLECT_TYPE
@@ -2478,18 +2953,26 @@ typedef struct NvFlowGridSimulateLayerParams
 {
 	NvFlowUint64 luid;
 	int layer;
+    int level;
+    int levelCount;
 	float densityCellSize;
+    float levelCellSizeMultiplier;
+	NvFlowBool32 autoCellSize;
 	NvFlowBool32 enableSmallBlocks;
 	NvFlowBool32 enableLowPrecisionVelocity;
 	NvFlowBool32 enableLowPrecisionDensity;
+    NvFlowBool32 enableLowPrecisionRescale;
 	NvFlowBool32 forceClear;
 	NvFlowBool32 forceDisableEmitters;
 	NvFlowBool32 forceDisableCoreSimulation;
+    NvFlowBool32 clearOnRescale;
 	NvFlowBool32 simulateWhenPaused;
 	NvFlowUint blockMinLifetime;
 	float stepsPerSecond;
 	float timeScale;
 	NvFlowUint maxStepsPerSimulate;
+    NvFlowBool32 physicsCollisionEnabled;
+    NvFlowBool32 physicsConvexCollision;
 	NvFlowBool32 enableVariableTimeStep;
 	NvFlowBool32 interpolateTimeSteps;
 	NvFlowUint velocitySubSteps;
@@ -2503,18 +2986,26 @@ typedef struct NvFlowGridSimulateLayerParams
 #define NvFlowGridSimulateLayerParams_default_init { \
 	0llu,			/*luid*/ \
 	0,				/*layer*/ \
+    0,				/*level*/ \
+    1,				/*levelCount*/ \
 	0.5f,			/*densityCellSize*/ \
+    0.5f,			/*levelCellSizeMultiplier*/ \
+	NV_FLOW_FALSE,	/*autoCellSize*/ \
 	NV_FLOW_FALSE,	/*enableSmallBlocks*/ \
 	NV_FLOW_FALSE,	/*enableLowPrecisionVelocity*/ \
 	NV_FLOW_FALSE,	/*enableLowPrecisionDensity*/ \
+    NV_FLOW_FALSE,	/*enableLowPrecisionRescale*/ \
 	NV_FLOW_FALSE,	/*forceClear*/ \
 	NV_FLOW_FALSE,	/*forceDisableEmitters*/ \
 	NV_FLOW_FALSE,	/*forceDisableCoreSimulation*/ \
+    NV_FLOW_FALSE,  /*clearOnRescale*/ \
 	NV_FLOW_FALSE,	/*simulateWhenPaused*/ \
 	4u,				/*blockMinLifetime*/ \
 	60.f,			/*stepsPerSecond*/ \
 	1.f,			/*timeScale*/ \
 	1u,				/*maxStepsPerSimulate*/ \
+    NV_FLOW_FALSE,  /*physicsCollisionEnabled*/ \
+    NV_FLOW_TRUE,   /*physicsConvexCollision*/ \
 	NV_FLOW_FALSE,	/*enableVariableTimeStep*/ \
 	NV_FLOW_FALSE,	/*interpolateTimeSteps*/ \
 	1u,				/*velocitySubSteps*/ \
@@ -2530,18 +3021,26 @@ static const NvFlowGridSimulateLayerParams NvFlowGridSimulateLayerParams_default
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, levelCount, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, densityCellSize, 0, 0)
+NV_FLOW_REFLECT_VALUE(float, levelCellSizeMultiplier, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, autoCellSize, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableSmallBlocks, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableLowPrecisionVelocity, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableLowPrecisionDensity, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableLowPrecisionRescale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, forceClear, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, forceDisableEmitters, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, forceDisableCoreSimulation, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, clearOnRescale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, simulateWhenPaused, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, blockMinLifetime, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, stepsPerSecond, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, timeScale, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, maxStepsPerSimulate, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, physicsCollisionEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, physicsConvexCollision, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableVariableTimeStep, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowBool32, interpolateTimeSteps, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowUint, velocitySubSteps, 0, 0)
@@ -2558,6 +3057,7 @@ typedef struct NvFlowGridOffscreenLayerParams
 {
 	NvFlowUint64 luid;
 	int layer;
+    int level;
 	NvFlowShadowParams shadow;
 	NvFlowRayMarchColormapParams colormap;
 	NvFlowDebugVolumeParams debugVolume;
@@ -2566,6 +3066,7 @@ typedef struct NvFlowGridOffscreenLayerParams
 #define NvFlowGridOffscreenLayerParams_default_init { \
 	0llu,	/*luid*/ \
 	0,	/*layer*/ \
+    0,	/*level*/ \
 	NvFlowShadowParams_default_init,	/*shadow*/ \
 	NvFlowRayMarchColormapParams_default_init, /*colormap*/ \
 	NvFlowDebugVolumeParams_default_init /*debugVolume*/ \
@@ -2576,10 +3077,51 @@ static const NvFlowGridOffscreenLayerParams NvFlowGridOffscreenLayerParams_defau
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowShadowParams, shadow, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowRayMarchColormapParams, colormap, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowDebugVolumeParams, debugVolume, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowGridOffscreenLayerParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+typedef struct NvFlowRenderSettingsParams
+{
+    NvFlowBool32 enableAutoApply;
+    NvFlowBool32 flowEnabled;
+    int maxBlocks;
+    NvFlowBool32 rayTracedShadowsEnabled;
+    NvFlowBool32 rayTracedReflectionsEnabled;
+    NvFlowBool32 rayTracedTranslucencyEnabled;
+    NvFlowBool32 pathTracingEnabled;
+    NvFlowBool32 pathTracingShadowsEnabled;
+    NvFlowBool32 compositeEnabled;
+}NvFlowRenderSettingsParams;
+
+#define NvFlowRenderSettingsParams_default_init { \
+    NV_FLOW_TRUE,  /*enableAutoApply*/ \
+    NV_FLOW_TRUE,  /*flowEnabled*/ \
+    0,             /*maxBlocks*/ \
+    NV_FLOW_FALSE, /*rayTracedShadowsEnabled*/ \
+    NV_FLOW_TRUE,  /*rayTracedReflectionsEnabled*/ \
+    NV_FLOW_TRUE,  /*rayTracedTranslucencyEnabled*/ \
+    NV_FLOW_TRUE,  /*pathTracingEnabled*/ \
+    NV_FLOW_FALSE, /*pathTracingShadowsEnabled*/ \
+    NV_FLOW_TRUE,  /*compositeEnabled*/ \
+}
+static const NvFlowRenderSettingsParams NvFlowRenderSettingsParams_default = NvFlowRenderSettingsParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowRenderSettingsParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, enableAutoApply, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, flowEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, maxBlocks, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rayTracedShadowsEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rayTracedReflectionsEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, rayTracedTranslucencyEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, pathTracingEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, pathTracingShadowsEnabled, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowBool32, compositeEnabled, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowRenderSettingsParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
 typedef struct NvFlowGridRenderLayerParams
@@ -2587,12 +3129,16 @@ typedef struct NvFlowGridRenderLayerParams
 	NvFlowUint64 luid;
 	int layer;
 	NvFlowRayMarchParams rayMarch;
+    int level;
+    NvFlowRenderSettingsParams renderSettings;
 }NvFlowGridRenderLayerParams;
 
 #define NvFlowGridRenderLayerParams_default_init { \
 	0llu, /*luid*/ \
 	0, /*layer*/ \
-	NvFlowRayMarchParams_default_init /*rayMarch*/ \
+	NvFlowRayMarchParams_default_init, /*rayMarch*/ \
+    0, /*level*/ \
+    NvFlowRenderSettingsParams_default_init, /*renderSettings*/ \
 }
 static const NvFlowGridRenderLayerParams NvFlowGridRenderLayerParams_default = NvFlowGridRenderLayerParams_default_init;
 
@@ -2601,6 +3147,8 @@ NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowRayMarchParams, rayMarch, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowRenderSettingsParams, renderSettings, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowGridRenderLayerParams_default)
 #undef NV_FLOW_REFLECT_TYPE
 
@@ -2608,6 +3156,7 @@ typedef struct NvFlowGridIsosurfaceLayerParams
 {
 	NvFlowUint64 luid;
 	int layer;
+    int level;
 	float densityCellSize;
 	NvFlowEllipsoidRasterParams ellipsoidRaster;
 	NvFlowRayMarchIsosurfaceParams rayMarchIsosurface;
@@ -2616,6 +3165,7 @@ typedef struct NvFlowGridIsosurfaceLayerParams
 #define NvFlowGridIsosurfaceLayerParams_default_init { \
 	0llu,	/*luid*/ \
 	0,		/*layer*/ \
+    0,		/*level*/ \
 	2.f,	/*densityCellSize*/ \
 	NvFlowEllipsoidRasterParams_default_init,	/*ellipsoidRaster*/ \
 	NvFlowRayMarchIsosurfaceParams_default_init	/*rayMarchIsosurface*/ \
@@ -2626,10 +3176,46 @@ static const NvFlowGridIsosurfaceLayerParams NvFlowGridIsosurfaceLayerParams_def
 NV_FLOW_REFLECT_BEGIN()
 NV_FLOW_REFLECT_VALUE(NvFlowUint64, luid, eNvFlowReflectHint_transientNoEdit, 0)
 NV_FLOW_REFLECT_VALUE(int, layer, 0, 0)
+NV_FLOW_REFLECT_VALUE(int, level, 0, 0)
 NV_FLOW_REFLECT_VALUE(float, densityCellSize, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowEllipsoidRasterParams, ellipsoidRaster, 0, 0)
 NV_FLOW_REFLECT_VALUE(NvFlowRayMarchIsosurfaceParams, rayMarchIsosurface, 0, 0)
 NV_FLOW_REFLECT_END(&NvFlowGridIsosurfaceLayerParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+typedef struct NvFlowGridReadbackParams
+{
+    const char* gridParamsName;
+    NvFlowBool32 enableGridRenderDataNanoVdb;
+}NvFlowGridReadbackParams;
+
+#define NvFlowGridReadbackParams_default_init { \
+	"flowUsdReadback",	    /*gridParamsName*/ \
+    NV_FLOW_FALSE, /*gridRenderDataNanoVdbNull*/ \
+}
+static const NvFlowGridReadbackParams NvFlowGridReadbackParams_default = NvFlowGridReadbackParams_default_init;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowGridReadbackParams
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_POINTER(char, gridParamsName, 0, 0)
+NV_FLOW_REFLECT_END(&NvFlowGridReadbackParams_default)
+#undef NV_FLOW_REFLECT_TYPE
+
+typedef struct NvFlowGridReadbackData
+{
+    NvFlowUint numLocations;
+    NvFlowUint maxLocations;
+    NvFlowUint64 lastGlobalFrameCompleted;
+    double lastAbsoluteSimTimeCompleted;
+}NvFlowGridReadbackData;
+
+#define NV_FLOW_REFLECT_TYPE NvFlowGridReadbackData
+NV_FLOW_REFLECT_BEGIN()
+NV_FLOW_REFLECT_VALUE(NvFlowUint, numLocations, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint, maxLocations, 0, 0)
+NV_FLOW_REFLECT_VALUE(NvFlowUint64, lastGlobalFrameCompleted, 0, 0)
+NV_FLOW_REFLECT_VALUE(double, lastAbsoluteSimTimeCompleted, 0, 0)
+NV_FLOW_REFLECT_END(0)
 #undef NV_FLOW_REFLECT_TYPE
 
 typedef struct NvFlowGridParamsDescSnapshot
@@ -2648,7 +3234,37 @@ typedef struct NvFlowGridParamsDesc
 	NvFlowUint64 snapshotCount;
 }NvFlowGridParamsDesc;
 
-typedef NvFlowSparseNanoVdbExportPinsOut NvFlowGridRenderDataNanoVdb;
+// This is based on a legacy version of NvFlowSparseNanoVdbExportReadback
+typedef struct NvFlowGridRenderDataNanoVdbReadback
+{
+    NvFlowUint64 globalFrameCompleted;
+    NvFlowUint8* temperatureNanoVdbReadback;
+    NvFlowUint64 temperatureNanoVdbReadbackSize;
+    NvFlowUint8* fuelNanoVdbReadback;
+    NvFlowUint64 fuelNanoVdbReadbackSize;
+    NvFlowUint8* burnNanoVdbReadback;
+    NvFlowUint64 burnNanoVdbReadbackSize;
+    NvFlowUint8* smokeNanoVdbReadback;
+    NvFlowUint64 smokeNanoVdbReadbackSize;
+    NvFlowUint8* velocityNanoVdbReadback;
+    NvFlowUint64 velocityNanoVdbReadbackSize;
+    NvFlowUint8* divergenceNanoVdbReadback;
+    NvFlowUint64 divergenceNanoVdbReadbackSize;
+}NvFlowGridRenderDataNanoVdbReadback;
+
+// This is based on a legacy version of NvFlowGridRenderDataNanoVdb
+typedef struct NvFlowGridRenderDataNanoVdb
+{
+    NvFlowBufferTransient* temperatureNanoVdb;
+    NvFlowBufferTransient* fuelNanoVdb;
+    NvFlowBufferTransient* burnNanoVdb;
+    NvFlowBufferTransient* smokeNanoVdb;
+    NvFlowBufferTransient* velocityNanoVdb;
+    NvFlowBufferTransient* divergenceNanoVdb;
+
+    NvFlowGridRenderDataNanoVdbReadback* readbacks;
+    NvFlowUint64 readbackCount;
+}NvFlowGridRenderDataNanoVdb;
 
 typedef struct NvFlowGridRenderData
 {
@@ -2672,15 +3288,15 @@ typedef struct NvFlowGridInterface
 	NV_FLOW_REFLECT_INTERFACE();
 
 	NvFlowGrid*(NV_FLOW_ABI* createGrid)(
-		NvFlowContextInterface* contextInterface, 
-		NvFlowContext* context, 
-		NvFlowOpList* opList, 
-		NvFlowExtOpList* extOpList, 
+		NvFlowContextInterface* contextInterface,
+		NvFlowContext* context,
+		NvFlowOpList* opList,
+		NvFlowExtOpList* extOpList,
 		const NvFlowGridDesc* desc
 		);
 
 	void(NV_FLOW_ABI* destroyGrid)(
-		NvFlowContext* context, 
+		NvFlowContext* context,
 		NvFlowGrid* grid
 		);
 
@@ -2811,6 +3427,9 @@ typedef struct NvFlowGridParamsSnapshot NvFlowGridParamsSnapshot;
 struct NvFlowGridParamsNamed;
 typedef struct NvFlowGridParamsNamed NvFlowGridParamsNamed;
 
+struct NvFlowGridParamsLayer;
+typedef struct NvFlowGridParamsLayer NvFlowGridParamsLayer;
+
 typedef struct NvFlowGridParamsInterface
 {
 	NV_FLOW_REFLECT_INTERFACE();
@@ -2863,6 +3482,17 @@ typedef struct NvFlowGridParamsInterface
 
 	NvFlowGridParams*(NV_FLOW_ABI* mapGridParamsNamed)(NvFlowGridParamsNamed* gridParamsNamed);
 
+    NvFlowGridParamsLayer* (NV_FLOW_ABI* createGridParamsLayerStandard)();
+
+    void(NV_FLOW_ABI* destroyGridParamsLayer)(NvFlowGridParamsLayer* layer);
+
+    NvFlowGridParamsDescSnapshot(NV_FLOW_ABI* applyGridParamsLayer)(
+        NvFlowGridParamsLayer* layer,
+        const NvFlowGridParamsDescSnapshot* snapshot,
+        NvFlowUint64 stagingVersion,
+        NvFlowUint64 minActiveVersion
+        );
+
 }NvFlowGridParamsInterface;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowGridParamsInterface
@@ -2879,6 +3509,9 @@ NV_FLOW_REFLECT_FUNCTION_POINTER(unmapParamsDesc, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(createGridParamsNamed, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(destroyGridParamsNamed, 0, 0)
 NV_FLOW_REFLECT_FUNCTION_POINTER(mapGridParamsNamed, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(createGridParamsLayerStandard, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(destroyGridParamsLayer, 0, 0)
+NV_FLOW_REFLECT_FUNCTION_POINTER(applyGridParamsLayer, 0, 0)
 NV_FLOW_REFLECT_END(0)
 NV_FLOW_REFLECT_INTERFACE_IMPL()
 #undef NV_FLOW_REFLECT_TYPE
@@ -3097,7 +3730,7 @@ typedef struct NvFlowDeviceInterface
 	void(NV_FLOW_ABI* getBufferExternalHandle)(NvFlowContext* context, NvFlowBuffer* buffer, void* dstHandle, NvFlowUint64 dstHandleSize, NvFlowUint64* pBufferSizeInBytes);
 
 	void(NV_FLOW_ABI* closeBufferExternalHandle)(NvFlowContext* context, NvFlowBuffer* buffer, const void* srcHandle, NvFlowUint64 srcHandleSize);
-	
+
 }NvFlowDeviceInterface;
 
 #define NV_FLOW_REFLECT_TYPE NvFlowDeviceInterface

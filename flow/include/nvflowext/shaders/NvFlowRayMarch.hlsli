@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_RAY_MARCH_HLSLI
@@ -34,7 +34,7 @@
 
 void NvFlowRayMarchWireframe(
 	NvFlowSparseLevelParams paramsTable,
-	NvFlowRayMarchLayerShaderParams params, 
+	NvFlowRayMarchLayerShaderParams params,
 	float3 rayOrigin,
 	float rayMinT,
 	float3 rayDir,
@@ -87,7 +87,7 @@ void NvFlowRayMarchWireframe(
 }
 
 bool NvFlowRayMarchBlock(
-	Texture3D<float4> densityIn, 
+	Texture3D<float4> densityIn,
 	SamplerState densitySampler,
 	Texture2D<float4> colormapIn,
 	SamplerState colormapSampler,
@@ -97,9 +97,10 @@ bool NvFlowRayMarchBlock(
 	float3 rayOrigin,
 	float rayMinT,
 	float3 rayDir,
-	float rayMaxT, 
-	float3 rayDirInv, 
-	uint blockIdx, 
+	float rayMaxT,
+	float3 rayDirInv,
+	float rayNoise,
+	uint blockIdx,
 	int4 location,
 	inout float4 sum,
 	inout float nominalT
@@ -151,8 +152,8 @@ bool NvFlowRayMarchBlock(
 		float cellMinT = params.stepSizeInv * boxMinT;
 		float cellMaxT = params.stepSizeInv * boxMaxT;
 
-		cellMinT = round(cellMinT);
-		cellMaxT = round(cellMaxT);
+		cellMinT = -floor(-(cellMinT + rayNoise)) - rayNoise;
+		cellMaxT = -floor(-(cellMaxT + rayNoise)) - rayNoise;
 
 		int numSteps = int(cellMaxT - cellMinT);
 
@@ -176,55 +177,38 @@ bool NvFlowRayMarchBlock(
 			if (params.enableRawMode == 0u)
 			{
 				// colormap by temperature
-				color = colormapIn.SampleLevel(colormapSampler, float2(value.r, params.layerColormapV), 0.0);
+                float colormapU = params.colormapXScale * value.r + params.colormapXOffset;
+				color = colormapIn.SampleLevel(colormapSampler, float2(colormapU, params.layerAndLevelColormapV), 0.0);
 
 				// scale based on light value
 				color.rgb *= (1.f + params.shadowFactor * (value.z - 1.f));
+
+                // modulate alpha by smoke
+                color.a *= value.a;
 			}
+            else
+            {
+                // isosurface
+                if (params.rawModeIsosurface != 0u)
+                {
+                    color.a = value.a > 0.5f ? 1.f : 0.f;
+                }
+                // normalize color to avoid edge darkening
+                if (params.rawModeNormalize != 0u)
+                {
+                    if (color.a > 0.f)
+                    {
+                        color.rgb *= (1.f / value.a);
+                    }
+                }
+            }
 
 			color.rgb *= params.colorScale;
-
-			// modulate alpha by smoke
-			color.a *= value.a;
 
 			color = max(float4(0.f, 0.f, 0.f, 0.f), color);
 			color.a = min(1.f, color.a);
 
 			color.a *= params.alphaScale;
-
-			nominalT = sum.a * (color.a * currentT) + nominalT;
-
-			sum.rgb = sum.a * (color.a * color.rgb) + sum.rgb;
-			sum.a = (1.f - color.a) * sum.a;
-
-			ridxf += vidxfStep;
-			currentT += params.stepSize;
-		}
-		if (hitMax)
-		{
-			float4 value = densityIn.SampleLevel(densitySampler, ridxf * paramsTable.dimInv, 0.0);
-
-			float4 color = value;
-			if (params.enableRawMode == 0u)
-			{
-				// colormap by temperature
-				color = colormapIn.SampleLevel(colormapSampler, float2(value.r, params.layerColormapV), 0.0);
-
-				// scale based on light value
-				color.rgb *= (1.f + params.shadowFactor * (value.z - 1.f));
-			}
-
-			color.rgb *= params.colorScale;
-
-			// modulate alpha by smoke
-			color.a *= value.a;
-
-			color = max(float4(0.f, 0.f, 0.f, 0.f), color);
-			color.a = min(1.f, color.a);
-
-			color.a *= params.alphaScale;
-
-			color.a *= (params.stepSizeInv * boxMaxT) - cellMaxT + 0.5f;
 
 			nominalT = sum.a * (color.a * currentT) + nominalT;
 
@@ -369,7 +353,7 @@ bool NvFlowRayMarchBlockCloud(
 				for (int shadowStepIdx = 0; shadowStepIdx < numShadowSteps; shadowStepIdx++)
 				{
 					float4 shadowSample = NvFlowGlobalReadLinear4f(densityIn, densitySampler, tableIn,
-						paramsTable, shadowSamplePos, params.layer);
+						paramsTable, shadowSamplePos, params.layerAndLevel);
 					shadowDensity += shadowSample.a;
 					shadowSamplePos += shadowStep;
 				}
@@ -382,7 +366,7 @@ bool NvFlowRayMarchBlockCloud(
 				// sample nearby density to estimate ambient occlusion
 				float3 aoSamplePos = vidxf + ambientSampleOffset;
 				float4 aoSample = NvFlowGlobalReadLinear4f(densityIn, densitySampler, tableIn,
-					paramsTable, aoSamplePos, params.layer);
+					paramsTable, aoSamplePos, params.layerAndLevel);
 				float aoDensity = exp(-aoSample.a);
 				sum.rgb += aoDensity * density * sum.a * params.cloud.ambientColor * params.cloud.ambientMultiplier;
 			}
@@ -412,7 +396,7 @@ bool NvFlowRayMarchBlockCloud(
 					for (int shadowStepIdx = 0; shadowStepIdx < numShadowSteps; shadowStepIdx++)
 					{
 						float4 shadowSample = NvFlowGlobalReadLinear4f(densityIn, densitySampler, tableIn,
-							paramsTable, shadowSamplePos, params.layer);
+							paramsTable, shadowSamplePos, params.layerAndLevel);
 						shadowDensity += shadowSample.a;
 						shadowSamplePos += shadowStep;
 					}
@@ -425,7 +409,7 @@ bool NvFlowRayMarchBlockCloud(
 					// sample nearby density to estimate ambient occlusion
 					float3 aoSamplePos = vidxf + ambientSampleOffset;
 					float4 aoSample = NvFlowGlobalReadLinear4f(densityIn, densitySampler, tableIn,
-						paramsTable, aoSamplePos, params.layer);
+						paramsTable, aoSamplePos, params.layerAndLevel);
 					float aoDensity = exp(-aoSample.a);
 					sum.rgb += aoDensity * density * sum.a * params.cloud.ambientColor * params.cloud.ambientMultiplier;
 				}
@@ -467,8 +451,8 @@ void NvFlowRayMarchBlocks(
 	float3 rayOrigin,
 	float rayMinT,
 	float3 rayDir,
-	float rayMaxT, 
-	float3 rayDirInv, 
+	float rayMaxT,
+	float3 rayDirInv,
 	inout float4 sum,
 	inout float nominalT
 )
@@ -489,9 +473,11 @@ void NvFlowRayMarchBlocks(
 	if (isHit)
 	{
 		float3 rayLocationWorld = rayDir * boxMinT + rayOrigin;
-		int4 location = int4(floor(rayLocationWorld * params.blockSizeWorldInv), params.layer);
+		int4 location = int4(NvFlowFloor_i(rayLocationWorld * params.blockSizeWorldInv), params.layerAndLevel);
 
 		int3 finalLocation = NvFlowRayMarchComputeFinalLocation(rayDir, location, params.locationMin, params.locationMax);
+
+		float rayNoise = NvFlowRayMarchNoiseFromDir(rayDir);
 
 		bool hitMax = false;
 		float blockHitT = boxMinT;
@@ -543,6 +529,7 @@ void NvFlowRayMarchBlocks(
 						rayDir,
 						rayMaxT,
 						rayDirInv,
+						rayNoise,
 						blockIdx,
 						location,
 						sum,
@@ -605,120 +592,13 @@ void NvFlowRayMarchBlocksMotion(
 	{
 		float motionT = localNominalT / (1.f - localSum.a);
 		float3 vidxf = (rayDir * motionT + rayOrigin) * params.velocityCellSizeInv;
-		float4 nominalVelocityLocal = NvFlowGlobalReadLinear4f(velocityIn, velocitySampler, tableIn, paramsTableVelocity, vidxf, params.layer);
+		float4 nominalVelocityLocal = NvFlowGlobalReadLinear4f(velocityIn, velocitySampler, tableIn, paramsTableVelocity, vidxf, params.layerAndLevel);
 		float3 nominalMotionLocal = params.deltaTime * nominalVelocityLocal.xyz;
 		nominalMotion += sum.a * (1.f - localSum.a) * nominalMotionLocal;
 	}
 	nominalT += sum.a * localNominalT;
 	sum.rgb += sum.a * localSum.rgb;
 	sum.a *= localSum.a;
-}
-
-bool NvFlowIntersectNearestBlock(
-	StructuredBuffer<uint> tableIn,
-	NvFlowSparseLevelParams paramsTable,
-	NvFlowRayMarchLayerShaderParams params,
-	float3 rayOrigin,
-	float rayMinT,
-	float3 rayDir,
-	float rayMaxT,
-	float3 rayDirInv,
-	out float out_hitT,
-	out uint out_hitBlockIdx
-)
-{
-	float3 boxWorldMin = params.worldMin;
-	float3 boxWorldMax = params.worldMax;
-
-	float boxMinT;
-	float boxMaxT;
-	bool isHit = NvFlowIntersectBox(rayDir, rayDirInv, boxWorldMin - rayOrigin, boxWorldMax - rayOrigin, boxMinT, boxMaxT);
-
-	boxMinT = max(rayMinT, boxMinT);
-	if (boxMinT > boxMaxT)
-	{
-		isHit = false;
-	}
-
-	float blockHitT = boxMinT;
-
-	out_hitT = blockHitT;
-	out_hitBlockIdx = ~0u;
-
-	if (isHit)
-	{
-		float3 rayLocationWorld = rayDir * boxMinT + rayOrigin;
-		int4 location = int4(floor(rayLocationWorld * params.blockSizeWorldInv), params.layer);
-
-		int3 finalLocation = NvFlowRayMarchComputeFinalLocation(rayDir, location, params.locationMin, params.locationMax);
-
-		while (
-			location.x != finalLocation.x &&
-			location.y != finalLocation.y &&
-			location.z != finalLocation.z)
-		{
-			uint blockIdx = NvFlowLocationToBlockIdx(tableIn, paramsTable, location);
-			if (blockIdx != ~0u)
-			{
-				out_hitT = blockHitT;
-				out_hitBlockIdx = blockIdx;
-				break;
-			}
-			NvFlowRayMarchAdvanceRay(
-				params.blockSizeWorld,
-				rayDir,
-				rayDirInv,
-				rayOrigin,
-				location,
-				blockHitT
-			);
-		}
-	}
-	if (out_hitBlockIdx == ~0u)
-	{
-		out_hitT = rayMaxT;
-	}
-	return out_hitBlockIdx != ~0u;
-}
-
-void NvFlowRayMarchInsert4(inout float4 minT, inout int4 minIdx, float hitT, int idx)
-{
-	if (hitT < minT.x || minIdx.x == -1)
-	{
-		float oldMinT = minT.x;
-		int oldMinIdx = minIdx.x;
-		minT.x = hitT;
-		minIdx.x = idx;
-		hitT = oldMinT;
-		idx = oldMinIdx;
-	}
-	if (hitT < minT.y || minIdx.y == -1)
-	{
-		float oldMinT = minT.y;
-		int oldMinIdx = minIdx.y;
-		minT.y = hitT;
-		minIdx.y = idx;
-		hitT = oldMinT;
-		idx = oldMinIdx;
-	}
-	if (hitT < minT.z || minIdx.z == -1)
-	{
-		float oldMinT = minT.z;
-		int oldMinIdx = minIdx.z;
-		minT.z = hitT;
-		minIdx.z = idx;
-		hitT = oldMinT;
-		idx = oldMinIdx;
-	}
-	if (hitT < minT.w || minIdx.w == -1)
-	{
-		float oldMinT = minT.w;
-		int oldMinIdx = minIdx.w;
-		minT.w = hitT;
-		minIdx.w = idx;
-		hitT = oldMinT;
-		idx = oldMinIdx;
-	}
 }
 
 void NvFlowRayMarchBlocksLayered(
@@ -743,143 +623,55 @@ void NvFlowRayMarchBlocksLayered(
 	inout float3 nominalMotion
 )
 {
-	int pass_minLayerIdx = -1;
-	float pass_minT = -1.f;
-	for (uint passIdx = 0u; passIdx < numLayers; passIdx++)
-	{
-		int4 minLayerIdx = int4(-1, -1, -1, -1);
-		float4 minT = float4(rayMaxT, rayMaxT, rayMaxT, rayMaxT);
-		for (uint layerParamIdx = 0u; layerParamIdx < numLayers; layerParamIdx++)
-		{
-			float hitT;
-			uint hitBlockIdx;
-			if (NvFlowIntersectNearestBlock(
-				tableIn,
-				paramsTableDensity,
-				layerParamsIn[layerParamIdx],
-				rayOrigin,
-				rayMinT,
-				rayDir,
-				rayMaxT,
-				rayDirInv,
-				hitT,
-				hitBlockIdx))
-			{
-				if (hitT > pass_minT || (hitT == pass_minT && int(layerParamIdx) > pass_minLayerIdx))
-				{
-					NvFlowRayMarchInsert4(minT, minLayerIdx, hitT, int(layerParamIdx));
-				}
-			}
-		}
-		if (minLayerIdx.x >= 0)
-		{
-			float hitMinT = max(rayMinT, minT.x - 0.5f * layerParamsIn[minLayerIdx.x].minBlockSizeWorld);
-			NvFlowRayMarchBlocksMotion(
-				velocityIn,
-				velocitySampler,
-				densityIn,
-				densitySampler,
-				colormapIn,
-				colormapSampler,
-				tableIn,
-				paramsTableVelocity,
-				paramsTableDensity,
-				layerParamsIn[minLayerIdx.x],
-				rayOrigin,
-				hitMinT,
-				rayDir,
-				rayMaxT,
-				rayDirInv,
-				sum,
-				nominalT,
-				nominalMotion
-			);
-			pass_minLayerIdx = minLayerIdx.x;
-			pass_minT = minT.x;
-		}
-		if (minLayerIdx.y >= 0)
-		{
-			float hitMinT = max(rayMinT, minT.y - 0.5f * layerParamsIn[minLayerIdx.y].minBlockSizeWorld);
-			NvFlowRayMarchBlocksMotion(
-				velocityIn,
-				velocitySampler,
-				densityIn,
-				densitySampler,
-				colormapIn,
-				colormapSampler,
-				tableIn,
-				paramsTableVelocity,
-				paramsTableDensity,
-				layerParamsIn[minLayerIdx.y],
-				rayOrigin,
-				hitMinT,
-				rayDir,
-				rayMaxT,
-				rayDirInv,
-				sum,
-				nominalT,
-				nominalMotion
-			);
-			pass_minLayerIdx = minLayerIdx.y;
-			pass_minT = minT.y;
-		}
-		if (minLayerIdx.z >= 0)
-		{
-			float hitMinT = max(rayMinT, minT.z - 0.5f * layerParamsIn[minLayerIdx.z].minBlockSizeWorld);
-			NvFlowRayMarchBlocksMotion(
-				velocityIn,
-				velocitySampler,
-				densityIn,
-				densitySampler,
-				colormapIn,
-				colormapSampler,
-				tableIn,
-				paramsTableVelocity,
-				paramsTableDensity,
-				layerParamsIn[minLayerIdx.z],
-				rayOrigin,
-				hitMinT,
-				rayDir,
-				rayMaxT,
-				rayDirInv,
-				sum,
-				nominalT,
-				nominalMotion
-			);
-			pass_minLayerIdx = minLayerIdx.z;
-			pass_minT = minT.z;
-		}
-		if (minLayerIdx.w >= 0)
-		{
-			float hitMinT = max(rayMinT, minT.w - 0.5f * layerParamsIn[minLayerIdx.w].minBlockSizeWorld);
-			NvFlowRayMarchBlocksMotion(
-				velocityIn,
-				velocitySampler,
-				densityIn,
-				densitySampler,
-				colormapIn,
-				colormapSampler,
-				tableIn,
-				paramsTableVelocity,
-				paramsTableDensity,
-				layerParamsIn[minLayerIdx.w],
-				rayOrigin,
-				hitMinT,
-				rayDir,
-				rayMaxT,
-				rayDirInv,
-				sum,
-				nominalT,
-				nominalMotion
-			);
-			pass_minLayerIdx = minLayerIdx.w;
-			pass_minT = minT.w;
-		}
-		if (minLayerIdx.w == -1 || minLayerIdx.z == -1 || minLayerIdx.y == -1 || minLayerIdx.x == -1)
-		{
-			break;
-		}
-	}
+    for (uint layerParamIdx = 0u; layerParamIdx < numLayers; layerParamIdx++)
+    {
+        float4 sum_local = float4(0.f, 0.f, 0.f, 1.f);
+        float nominalT_local = 0.f;
+        float3 nominalMotion_local = float3(0.f, 0.f, 0.f);
+        NvFlowRayMarchBlocksMotion(
+            velocityIn,
+            velocitySampler,
+            densityIn,
+            densitySampler,
+            colormapIn,
+            colormapSampler,
+            tableIn,
+            paramsTableVelocity,
+            paramsTableDensity,
+            layerParamsIn[layerParamIdx],
+            rayOrigin,
+            rayMinT,
+            rayDir,
+            rayMaxT,
+            rayDirInv,
+            sum_local,
+            nominalT_local,
+            nominalMotion_local
+        );
+        if (sum.w == 1.f)
+        {
+            sum = sum_local;
+            nominalT= nominalT_local;
+            nominalMotion = nominalMotion_local;
+        }
+        else if (sum_local.w < 1.f)
+        {
+            float t_local = nominalT_local / (1.f - sum_local.w);
+            float t = nominalT / (1.f - sum.a);
+
+            // to soften sorting transition
+            float thicknessInv = (1.f / 8.f) * layerParamsIn[layerParamIdx].cellSizeInv.x;
+
+            float w = max(0.f, min(1.f, (t - t_local) * thicknessInv + 0.5f));
+            float w_accum = (1.f - w) + w * sum_local.a;
+            float w_local = w + (1.f - w) * sum.a;
+
+            nominalT = w_accum * nominalT + w_local * nominalT_local;
+            sum.rgb = w_accum * sum.rgb  + w_local * sum_local.rgb;
+            nominalMotion = w_accum * nominalMotion + w_local * nominalMotion_local;
+            sum.a *= sum_local.a;
+        }
+    }
 }
 
 float4 NvFlowRayMarchSampleDensity(
@@ -900,7 +692,7 @@ float4 NvFlowRayMarchSampleDensity(
 		worldLocation.z >= boxWorldMin.z && worldLocation.z <= boxWorldMax.z )
 	{
 		float3 vidxf = worldLocation * params.cellSizeInv;
-		density4 = NvFlowGlobalAccessorReadLinear4f(densityIn, densitySampler, tableIn, paramsTable, vidxf, params.layer, accessor);
+		density4 = NvFlowGlobalAccessorReadLinear4f(densityIn, densitySampler, tableIn, paramsTable, vidxf, params.layerAndLevel, accessor);
 	}
 	else
 	{

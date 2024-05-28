@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,7 +154,7 @@ bool flowStandaloneInitInstance(FlowStandaloneInstance* ptr, uint32_t deviceIdx,
 			gridDesc.maxLocations = maxBlocks;
 		}
 
-		ptr->grid = ptr->loader.gridInterface.createGrid(&ptr->contextInterface, context, &ptr->loader.opList, &ptr->loader.extOpList, &gridDesc);
+		ptr->grid = ptr->loader.gridInterface.createGrid(&ptr->contextInterface, context, ptr->loader.opList_orig, ptr->loader.extOpList_orig, &gridDesc);
 		ptr->gridParamsNamed = ptr->loader.gridParamsInterface.createGridParamsNamed("flowUsd");
 	}
 

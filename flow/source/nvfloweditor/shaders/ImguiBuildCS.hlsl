@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include "ImguiParams.h"
 
@@ -81,7 +81,7 @@ void main(uint3 dispatchThreadID : SV_DispatchThreadID)
 		minPos = floor(minPos);
 		maxPos = -floor(-maxPos) + float2(1.f, 1.f);
 
-		minMaxPos = int4(minPos, maxPos);
+		minMaxPos = int4(int2(minPos), int2(maxPos));
 	}
 
 	uint treeBaseIdx = (1u + 4u + 16u + 64u + 256u) * (tidx >> 8u);

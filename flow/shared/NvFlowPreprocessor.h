@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #pragma once
@@ -40,7 +40,7 @@ struct NvFlowPreprocessorRange
 enum NvFlowPreprocessorTokenType
 {
 	eNvFlowPreprocessorTokenType_unknown = 0,	// unclassified
-	eNvFlowPreprocessorTokenType_whitespace,	// 
+	eNvFlowPreprocessorTokenType_whitespace,	//
 	eNvFlowPreprocessorTokenType_newline,		// \n
 	eNvFlowPreprocessorTokenType_comment,		// // comment
 	eNvFlowPreprocessorTokenType_name,			// alpha_1234

@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_RAY_MARCH_UTILS_H
 #define NV_FLOW_RAY_MARCH_UTILS_H
@@ -70,7 +70,7 @@ NV_FLOW_INLINE void NvFlowRayMarchLayerShaderParams_populate(
 
 	// normalize alphaScale based on stepSize
 	float alphaScale = 1.f - expf(-rayMarchParams->attenuation * stepSize);
-	float layerColormapV = (float(layerParamIdx) + 0.5f) / float(sparseParams->layerCount);
+	float layerAndLevelColormapV = (float(layerParamIdx) + 0.5f) / float(sparseParams->layerCount);
 
 	dst->blockSizeWorld = blockSizeWorld;
 	dst->minBlockSizeWorld = minBlockSizeWorld;
@@ -94,15 +94,20 @@ NV_FLOW_INLINE void NvFlowRayMarchLayerShaderParams_populate(
 	dst->velocityCellSizeInv = velocityCellSizeInv;
 	dst->deltaTime = layerParams->deltaTime;
 
-	dst->layer = layerParams->layer;
-	dst->layerColormapV = layerColormapV;
+	dst->layerAndLevel = layerParams->layerAndLevel;
+	dst->layerAndLevelColormapV = layerAndLevelColormapV;
 	dst->alphaScale = alphaScale;
 	dst->colorScale = rayMarchParams->colorScale;
 
 	dst->shadowFactor = rayMarchParams->shadowFactor;
-	dst->pad1 = 0.f;
-	dst->pad2 = 0.f;
+	dst->rawModeIsosurface = rayMarchParams->rawModeIsosurface;
+	dst->rawModeNormalize = rayMarchParams->rawModeNormalize;
 	dst->pad3 = 0.f;
+
+    dst->colormapXOffset = (-rayMarchParams->colormapXMin) / (rayMarchParams->colormapXMax - rayMarchParams->colormapXMin);
+    dst->colormapXScale = 1.f / (rayMarchParams->colormapXMax - rayMarchParams->colormapXMin);
+    dst->pad4 = 0.f;
+    dst->pad5 = 0.f;
 
 	dst->cloud.densityMultiplier = rayMarchParams->cloud.densityMultiplier;
 	dst->cloud.enableCloudMode = rayMarchParams->cloud.enableCloudMode;
@@ -164,7 +169,7 @@ NV_FLOW_INLINE void NvFlowRayMarchIsosurfaceLayerShaderParams_populate(
 	dst->worldMax.z = (layerParams->locationMax.z + 0.5f) * layerParams->blockSizeWorld.z;
 	dst->visualizeNormals = rayMarchParams->visualizeNormals;
 
-	dst->layer = layerParams->layer;
+	dst->layerAndLevel = layerParams->layerAndLevel;
 	dst->densityThreshold = rayMarchParams->densityThreshold;
 	dst->refractionMode = rayMarchParams->refractionMode;
 	dst->pad2 = 0u;
@@ -254,7 +259,7 @@ NV_FLOW_INLINE void NvFlowSelfShadowLayerShaderParams_populate(
 	const NvFlowSparseLevelParams* coarseDensityLevelParams = &sparseParams->levels[coarseLevelIdx];
 	const NvFlowSparseLayerParams* layerParams = &sparseParams->layers[layerParamIdx];
 
-	int layer = layerParams->layer;
+	int layerAndLevel = layerParams->layerAndLevel;
 	NvFlowFloat3 blockSizeWorld = layerParams->blockSizeWorld;
 	NvFlowFloat3 blockSizeWorldInv = layerParams->blockSizeWorldInv;
 	float minBlockSizeWorld = fminf(blockSizeWorld.x, fminf(blockSizeWorld.y, blockSizeWorld.z));
@@ -274,7 +279,7 @@ NV_FLOW_INLINE void NvFlowSelfShadowLayerShaderParams_populate(
 
 	// normalize alphaScale based on stepSize
 	float alphaScale = 1.f - expf(-shadowParams->attenuation * stepSize);
-	float layerColormapV = (float(layerParamIdx) + 0.5f) / float(sparseParams->layerCount);
+	float layerAndLevelColormapV = (float(layerParamIdx) + 0.5f) / float(sparseParams->layerCount);
 
 	dst->base.blockSizeWorld = blockSizeWorld;
 	dst->base.minBlockSizeWorld = minBlockSizeWorld;
@@ -293,20 +298,25 @@ NV_FLOW_INLINE void NvFlowSelfShadowLayerShaderParams_populate(
 	dst->base.worldMax.x = (layerParams->locationMax.x + 0.5f) * layerParams->blockSizeWorld.x;
 	dst->base.worldMax.y = (layerParams->locationMax.y + 0.5f) * layerParams->blockSizeWorld.y;
 	dst->base.worldMax.z = (layerParams->locationMax.z + 0.5f) * layerParams->blockSizeWorld.z;
-	dst->base.enableRawMode = NV_FLOW_FALSE;
+	dst->base.enableRawMode = shadowParams->enableRawMode;
 
 	dst->base.velocityCellSizeInv = cellSizeInv;
 	dst->base.deltaTime = layerParams->deltaTime;
 
-	dst->base.layer = layer;
-	dst->base.layerColormapV = layerColormapV;
+	dst->base.layerAndLevel = layerAndLevel;
+	dst->base.layerAndLevelColormapV = layerAndLevelColormapV;
 	dst->base.alphaScale = alphaScale;
 	dst->base.colorScale = 1.f;
 
 	dst->base.shadowFactor = 0.f;
-	dst->base.pad1 = 0.f;
-	dst->base.pad2 = 0.f;
+    dst->base.rawModeIsosurface = shadowParams->rawModeIsosurface;
+    dst->base.rawModeNormalize = shadowParams->rawModeNormalize;
 	dst->base.pad3 = 0.f;
+
+    dst->base.colormapXOffset = (-shadowParams->colormapXMin) / (shadowParams->colormapXMax - shadowParams->colormapXMin);
+    dst->base.colormapXScale = 1.f / (shadowParams->colormapXMax - shadowParams->colormapXMin);
+    dst->base.pad4 = 0.f;
+    dst->base.pad5 = 0.f;
 
 	// Set cloud mode to default
 	dst->base.cloud.densityMultiplier = 0.5f;

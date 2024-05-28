@@ -1,2 +1,3 @@
+@echo off
 
-external\premake\win64\premake5.exe vs2017
+external\premake\windows-x86_64\premake5.exe --file=premake5.lua %1

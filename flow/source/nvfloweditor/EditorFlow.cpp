@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #include "EditorCommon.h"
 
@@ -276,7 +276,7 @@ void editorFlow_init(EditorCompute* ctx, EditorFlow* ptr)
     ptr->maxLocations = ptr->targetMaxLocations;
     gridDesc.maxLocations = ptr->maxLocations;
 
-    ptr->grid = ctx->loader.gridInterface.createGrid(&ctx->contextInterface, context, &ctx->loader.opList, &ctx->loader.extOpList, &gridDesc);
+    ptr->grid = ctx->loader.gridInterface.createGrid(&ctx->contextInterface, context, ctx->loader.opList_orig, ctx->loader.extOpList_orig, &gridDesc);
     ptr->gridParamsServer = ctx->loader.gridParamsInterface.createGridParamsNamed(nullptr);
     ptr->gridParamsClient = ctx->loader.gridParamsInterface.createGridParamsNamed(nullptr);
 
@@ -524,7 +524,7 @@ void editorFlow_simulate(EditorCompute* ctx, EditorFlow* ptr, float deltaTime, N
             if (renderData.nanoVdb.readbackCount > 0u)
             {
                 NvFlowUint64 lastGlobalFrameCompleted = ctx->contextInterface.getLastGlobalFrameCompleted(context);
-                NvFlowSparseNanoVdbExportReadback* readback = &renderData.nanoVdb.readbacks[0u];
+                NvFlowGridRenderDataNanoVdbReadback* readback = &renderData.nanoVdb.readbacks[0u];
                 if (readback->globalFrameCompleted <= lastGlobalFrameCompleted && readback->smokeNanoVdbReadback)
                 {
                     const char* path = "../../../data/capture0.nvdb.raw";

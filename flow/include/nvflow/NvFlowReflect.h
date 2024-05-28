@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_REFLECT_H
 #define NV_FLOW_REFLECT_H
@@ -190,6 +190,42 @@ typedef struct NvFlowReflectDataType
 
 typedef void(NV_FLOW_ABI* NvFlowReflectProcess_t)(NvFlowUint8* data, const NvFlowReflectDataType* dataType, void* userdata);
 
+NV_FLOW_INLINE NvFlowBool32 NvFlowReflectLayoutCompare(
+    const NvFlowReflectDataType* dstType,
+    const NvFlowReflectDataType* srcType
+)
+{
+    if (dstType == srcType)
+    {
+        return NV_FLOW_TRUE;
+    }
+    if (dstType->dataType != srcType->dataType ||
+        dstType->elementSize != srcType->elementSize ||
+        dstType->childReflectDataCount != srcType->childReflectDataCount ||
+        NvFlowReflectStringCompare(dstType->structTypename, srcType->structTypename) != 0)
+    {
+        return NV_FLOW_FALSE;
+    }
+    for (NvFlowUint64 childIdx = 0u; childIdx < dstType->childReflectDataCount; childIdx++)
+    {
+        const NvFlowReflectData* childDst = dstType->childReflectDatas + childIdx;
+        const NvFlowReflectData* childSrc = srcType->childReflectDatas + childIdx;
+        if (childDst->reflectMode != childSrc->reflectMode ||
+            childDst->dataOffset != childSrc->dataOffset ||
+            childDst->arraySizeOffset != childSrc->arraySizeOffset ||
+            childDst->versionOffset != childSrc->versionOffset ||
+            NvFlowReflectStringCompare(childDst->name, childSrc->name) != 0)
+        {
+            return NV_FLOW_FALSE;
+        }
+        if (!NvFlowReflectLayoutCompare(childDst->dataType, childSrc->dataType))
+        {
+            return NV_FLOW_FALSE;
+        }
+    }
+    return NV_FLOW_TRUE;
+}
+
 NV_FLOW_INLINE void NvFlowReflectCopyByName(
 	void* dstData, const NvFlowReflectDataType* dstType,
 	const void* srcData, const NvFlowReflectDataType* srcType
@@ -204,58 +240,95 @@ NV_FLOW_INLINE void NvFlowReflectCopyByName(
 	// Start with raw copy, to potential cover non-reflect data
 	NvFlowReflectMemcpy(dstData, srcData, safeCopySize);
 
-	// Single level copy by name, enough to cover interfaces
+	// Copy by name
 	if (dstType != srcType)
 	{
 		NvFlowUint64 srcIdx = 0u;
 		for (NvFlowUint64 dstIdx = 0u; dstIdx < dstType->childReflectDataCount; dstIdx++)
 		{
-			for (NvFlowUint64 srcCount = 0u; srcCount < srcType->childReflectDataCount; srcCount++)
-			{
-				const NvFlowReflectData* childDst = dstType->childReflectDatas + dstIdx;
-				const NvFlowReflectData* childSrc = srcType->childReflectDatas + srcIdx;
-				if (childDst->name == childSrc->name ||
-					NvFlowReflectStringCompare(childDst->name, childSrc->name) == 0)
-				{
-					// only copy if not covered by bulk memcpy
-					if (childDst->dataOffset != childSrc->dataOffset)
-					{
-						NvFlowReflectMemcpy(
-							dstData8 + childDst->dataOffset,
-							srcData8 + childSrc->dataOffset,
-							(childDst->reflectMode & eNvFlowReflectMode_pointerArray) ? sizeof(void*) : childDst->dataType->elementSize
-						);
-					}
-					if (childDst->reflectMode & eNvFlowReflectMode_array)
-					{
-						if (childDst->arraySizeOffset != childSrc->arraySizeOffset)
-						{
-							NvFlowReflectMemcpy(
-								dstData8 + childDst->arraySizeOffset,
-								srcData8 + childSrc->arraySizeOffset,
-								sizeof(NvFlowUint64)
-							);
-						}
-					}
-					if (childDst->reflectMode & eNvFlowReflectMode_valueVersioned)
-					{
-						if (childDst->versionOffset != childSrc->versionOffset)
-						{
-							NvFlowReflectMemcpy(
-								dstData8 + childDst->versionOffset,
-								srcData8 + childSrc->versionOffset,
-								sizeof(NvFlowUint64)
-							);
-						}
-					}
-					srcCount = srcType->childReflectDataCount - 1u;
-				}
-				srcIdx++;
-				if (srcIdx >= srcType->childReflectDataCount)
-				{
-					srcIdx = 0u;
-				}
-			}
+            const NvFlowReflectData* childDst = dstType->childReflectDatas + dstIdx;
+            NvFlowUint64 matchSrcIdx = ~0llu;
+            for (NvFlowUint64 srcCount = 0u; matchSrcIdx == ~0llu && srcCount < srcType->childReflectDataCount; srcCount++)
+            {
+                const NvFlowReflectData* childSrc = srcType->childReflectDatas + srcIdx;
+                if (childDst->name == childSrc->name ||
+                    NvFlowReflectStringCompare(childDst->name, childSrc->name) == 0)
+                {
+                    matchSrcIdx = srcIdx;
+                }
+                srcIdx++;
+                if (srcIdx >= srcType->childReflectDataCount)
+                {
+                    srcIdx = 0u;
+                }
+            }
+            if (matchSrcIdx < srcType->childReflectDataCount)
+            {
+                const NvFlowReflectData* childSrc = srcType->childReflectDatas + matchSrcIdx;
+                if (childSrc->dataType->dataType == eNvFlowType_struct &&
+                    (childSrc->reflectMode == eNvFlowReflectMode_value || childSrc->reflectMode == eNvFlowReflectMode_valueVersioned))
+                {
+                    NvFlowReflectCopyByName(
+                        dstData8 + childDst->dataOffset, childDst->dataType,
+                        srcData8 + childSrc->dataOffset, childSrc->dataType
+                    );
+                }
+                else
+                {
+                    // only copy if not covered by bulk memcpy
+                    if (childDst->dataOffset != childSrc->dataOffset)
+                    {
+                        NvFlowReflectMemcpy(
+                            dstData8 + childDst->dataOffset,
+                            srcData8 + childSrc->dataOffset,
+                            (childDst->reflectMode & eNvFlowReflectMode_pointerArray) ? sizeof(void*) : childDst->dataType->elementSize
+                        );
+                    }
+                    if (childDst->reflectMode & eNvFlowReflectMode_array)
+                    {
+                        if (childDst->arraySizeOffset != childSrc->arraySizeOffset)
+                        {
+                            NvFlowReflectMemcpy(
+                                dstData8 + childDst->arraySizeOffset,
+                                srcData8 + childSrc->arraySizeOffset,
+                                sizeof(NvFlowUint64)
+                            );
+                        }
+                    }
+                    if (childDst->reflectMode & eNvFlowReflectMode_valueVersioned)
+                    {
+                        if (childDst->versionOffset != childSrc->versionOffset)
+                        {
+                            NvFlowReflectMemcpy(
+                                dstData8 + childDst->versionOffset,
+                                srcData8 + childSrc->versionOffset,
+                                sizeof(NvFlowUint64)
+                            );
+                        }
+                    }
+                }
+            }
+            else
+            {
+                NvFlowReflectClear(
+                    dstData8 + childDst->dataOffset,
+                    (childDst->reflectMode & eNvFlowReflectMode_pointerArray) ? sizeof(void*) : childDst->dataType->elementSize
+                );
+                if (childDst->reflectMode & eNvFlowReflectMode_array)
+                {
+                    NvFlowReflectClear(
+                        dstData8 + childDst->arraySizeOffset,
+                        sizeof(NvFlowUint64)
+                    );
+                }
+                if (childDst->reflectMode & eNvFlowReflectMode_valueVersioned)
+                {
+                    NvFlowReflectClear(
+                        dstData8 + childDst->versionOffset,
+                        sizeof(NvFlowUint64)
+                    );
+                }
+            }
 		}
 	}
 }
@@ -422,11 +495,12 @@ static const NvFlowReflectDataType void_NvFlowReflectDataType = { eNvFlowType_vo
 #define NV_FLOW_REFLECT_INTERFACE_IMPL() \
 	NV_FLOW_INLINE void NV_FLOW_REFLECT_XCONCAT(NV_FLOW_REFLECT_TYPE,_duplicate)(NV_FLOW_REFLECT_TYPE* dst, const NV_FLOW_REFLECT_TYPE* src) \
 	{ \
-		dst->interface_NvFlowReflectDataType = &NV_FLOW_REFLECT_XCONCAT(NV_FLOW_REFLECT_TYPE,_NvFlowReflectDataType); \
-		NvFlowReflectCopyByName( \
-			dst, dst->interface_NvFlowReflectDataType, \
-			src, src->interface_NvFlowReflectDataType  \
-		); \
+        const NvFlowReflectDataType* dstType = &NV_FLOW_REFLECT_XCONCAT(NV_FLOW_REFLECT_TYPE,_NvFlowReflectDataType); \
+        NvFlowReflectCopyByName( \
+            dst, dstType, \
+            src, src->interface_NvFlowReflectDataType  \
+        ); \
+        dst->interface_NvFlowReflectDataType = dstType; \
 	}
 
 #define NV_FLOW_REFLECT_TYPE NvFlowReflectData

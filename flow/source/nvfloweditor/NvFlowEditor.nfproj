@@ -1,4 +1,6 @@
 includeDir("../../../include/nvflow");
+includeDir("../../../include/nvflow/shaders");
+includeDir("../../../source/nvfloweditor/shaders");
 computeShader("shaders/ImguiCS.hlsl");
 computeShader("shaders/ImguiBuildCS.hlsl");
 computeShader("shaders/ImguiTileCS.hlsl");

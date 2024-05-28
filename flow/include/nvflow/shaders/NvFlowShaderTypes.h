@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NV_FLOW_SHADER_TYPES_H
@@ -156,7 +156,7 @@ struct NvFlowSparseLayerParams
 	NvFlowFloat3 blockSizeWorld;
 	float blockSizeWorld3;
 	NvFlowFloat3 blockSizeWorldInv;
-	int layer;
+	int layerAndLevel;
 	NvFlowInt4 locationMin;
 	NvFlowInt4 locationMax;
 	NvFlowFloat3 worldMin;

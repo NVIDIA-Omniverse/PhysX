@@ -24,7 +24,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_LOADER_H
 #define NV_FLOW_LOADER_H
@@ -88,26 +88,39 @@ struct NvFlowLoader
 	NvFlowGridParamsInterface gridParamsInterface;
 	NvFlowContextOptInterface contextOptInterface;
 	NvFlowDeviceInterface deviceInterface;
+
+    NvFlowOpList* opList_orig;
+    NvFlowExtOpList* extOpList_orig;
 };
 
-static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const char* str, void* userdata), void* userdata, NvFlowContextApi deviceAPI)
+static void NvFlowLoaderInitDeviceAPICustom(
+    NvFlowLoader* ptr,
+    void(*printError)(const char* str, void* userdata),
+    void* userdata,
+    NvFlowContextApi deviceAPI,
+    const char* nvflow_dll,
+    const char* nvflow_so,
+    const char* nvflowext_dll,
+    const char* nvflowext_so )
 {
 	NvFlowReflectClear(ptr, sizeof(NvFlowLoader));
 
 	/// Load nvflow and nvflowext
-	ptr->module_nvflow = NvFlowLoadLibrary("nvflow.dll", "libnvflow.so");
+	ptr->module_nvflow = NvFlowLoadLibrary(nvflow_dll, nvflow_so);
 	if (ptr->module_nvflow)
 	{
 		PFN_NvFlowGetOpList getOpList = (PFN_NvFlowGetOpList)NvFlowGetProcAddress(ptr->module_nvflow, "NvFlowGetOpList");
 
 		if (getOpList) { NvFlowOpList_duplicate(&ptr->opList, getOpList()); }
+
+        if (getOpList) { ptr->opList_orig = getOpList(); }
 	}
 	else if (printError)
 	{
 		printError(NvFlowLoadLibraryError(), userdata);
 	}
 
-	ptr->module_nvflowext = NvFlowLoadLibrary("nvflowext.dll", "libnvflowext.so");
+	ptr->module_nvflowext = NvFlowLoadLibrary(nvflowext_dll, nvflowext_so);
 	if (ptr->module_nvflowext)
 	{
 		PFN_NvFlowGetExtOpList getExtOpList = (PFN_NvFlowGetExtOpList)NvFlowGetProcAddress(ptr->module_nvflowext, "NvFlowGetExtOpList");
@@ -121,6 +134,8 @@ static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const
 		if (getGridParamsInterface) { NvFlowGridParamsInterface_duplicate(&ptr->gridParamsInterface, getGridParamsInterface()); }
 		if (getContextOptInterface) { NvFlowContextOptInterface_duplicate(&ptr->contextOptInterface, getContextOptInterface()); }
 		if (getDeviceInterface) { NvFlowDeviceInterface_duplicate(&ptr->deviceInterface, getDeviceInterface(deviceAPI)); }
+
+        if (getExtOpList) { ptr->extOpList_orig = getExtOpList(); }
 	}
 	else if (printError)
 	{
@@ -128,9 +143,30 @@ static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const
 	}
 }
 
+static void NvFlowLoaderInitDeviceAPI(NvFlowLoader* ptr, void(*printError)(const char* str, void* userdata), void* userdata, NvFlowContextApi deviceAPI)
+{
+    NvFlowLoaderInitDeviceAPICustom(ptr, printError, userdata, deviceAPI,
+        "nvflow.dll", "libnvflow.so", "nvflowext.dll", "libnvflowext.so"
+    );
+}
+
 static void NvFlowLoaderInit(NvFlowLoader* ptr, void(*printError)(const char* str, void* userdata), void* userdata)
 {
 	NvFlowLoaderInitDeviceAPI(ptr, printError, userdata, eNvFlowContextApi_vulkan);
+}
+
+static void NvFlowLoaderInitCustom(
+    NvFlowLoader* ptr,
+    void(*printError)(const char* str, void* userdata),
+    void* userdata,
+    const char* nvflow_dll,
+    const char* nvflow_so,
+    const char* nvflowext_dll,
+    const char* nvflowext_so)
+{
+    NvFlowLoaderInitDeviceAPICustom(ptr, printError, userdata, eNvFlowContextApi_vulkan,
+        nvflow_dll, nvflow_so, nvflowext_dll, nvflowext_so
+    );
 }
 
 static void NvFlowLoaderDestroy(NvFlowLoader* ptr)

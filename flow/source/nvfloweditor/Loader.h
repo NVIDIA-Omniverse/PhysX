@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #pragma once
 
@@ -86,7 +86,7 @@ inline void GlfwLoader_init(GlfwLoader* ptr)
 #if defined(__aarch64__)
 	ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw_aarch64.so.3.3");
 #else
-	ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw.so.3");
+	ptr->module = NvFlowLoadLibrary("glfw3.dll", "libglfw.so.3.3");
 #endif
 
 	GLFW_PTR_LOAD(glfwInit);

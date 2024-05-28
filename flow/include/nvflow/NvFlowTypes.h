@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2014-2022 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2014-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_FLOW_TYPES_H
 #define NV_FLOW_TYPES_H
@@ -39,11 +39,11 @@
 #define NV_FLOW_ABI __cdecl
 #else
 #if defined(__cplusplus)
-#define NV_FLOW_API extern "C"
+#define NV_FLOW_API extern "C" __attribute__((visibility("default")))
 #else
-#define NV_FLOW_API
+#define NV_FLOW_API __attribute__((visibility("default")))
 #endif
-#define NV_FLOW_ABI 
+#define NV_FLOW_ABI
 #endif
 
 #if defined(__cplusplus)
@@ -75,6 +75,8 @@ typedef void(NV_FLOW_ABI* NvFlowLogPrint_t)(NvFlowLogLevel level, const char* fo
 
 #define NV_FLOW_FALSE 0
 #define NV_FLOW_TRUE 1
+
+#define NV_FLOW_INFINITY ((float)(1e+300 * 1e+300))
 
 typedef enum NvFlowType
 {
