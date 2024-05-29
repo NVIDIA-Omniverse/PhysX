@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2024 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastExtStressSolver.h"
@@ -1050,7 +1050,7 @@ public:
     virtual uint32_t                        generateFractureCommandsPerActor(const NvBlastActor** actorBuffer, NvBlastFractureBuffers* commandsBuffer, uint32_t bufferSize) override;
 
 
-    void                                    reset() override
+    virtual void                            reset() override
     {
         m_reset = true;
     }
@@ -1088,6 +1088,10 @@ public:
 
     virtual const DebugBuffer               fillDebugRender(const uint32_t* nodes, uint32_t nodeCount, DebugRenderMode mode, float scale) override;
 
+
+    //////// ExtStressSolverImpl public methods ////////
+
+    bool                                    valid() { return m_valid; }
 
 private:
     ~ExtStressSolverImpl();
@@ -1153,6 +1157,7 @@ private:
     Array<NvBlastBondFractureData>::type                                m_bondFractureBuffer;
     Array<uint8_t>::type                                                m_scratch;
     Array<DebugLine>::type                                              m_debugLineBuffer;
+    bool                                                                m_valid;
 };
 
 
@@ -1175,13 +1180,17 @@ NV_INLINE T* ExtStressSolverImpl::getScratchArray(uint32_t size)
 ExtStressSolverImpl::ExtStressSolverImpl(const NvBlastFamily& family, const ExtStressSolverSettings& settings)
     : m_family(family), m_settings(settings), m_isDirty(false), m_reset(false),
     m_errorAngular(std::numeric_limits<float>::max()), m_errorLinear(std::numeric_limits<float>::max()),
-    m_converged(false), m_framesCount(0)
+    m_converged(false), m_framesCount(0), m_valid(false)
 {
     // this needs to be called any time settings change, including when they are first set
     inheritSettingsLimits();
 
     const NvBlastAsset* asset = NvBlastFamilyGetAsset(&m_family, logLL);
-    NVBLAST_ASSERT(asset);
+    if (!asset)
+    {
+        NVBLAST_LOG_ERROR("ExtStressSolverImpl::ExtStressSolverImpl: family has NULL asset");
+        return;
+    }
 
     m_graph = NvBlastAssetGetSupportGraph(asset, logLL);
     const uint32_t bondCount = NvBlastAssetGetBondCount(asset, logLL);
@@ -1214,6 +1223,9 @@ ExtStressSolverImpl::ExtStressSolverImpl(const NvBlastFamily& family, const ExtS
             }
         }
     }
+
+    // If we got here we should have a valid solver
+    m_valid = true;
 }
 
 ExtStressSolverImpl::~ExtStressSolverImpl()
@@ -1223,7 +1235,16 @@ ExtStressSolverImpl::~ExtStressSolverImpl()
 
 ExtStressSolver* ExtStressSolver::create(const NvBlastFamily& family, const ExtStressSolverSettings& settings)
 {
-    return NVBLAST_NEW(ExtStressSolverImpl) (family, settings);
+    ExtStressSolverImpl* solver = NVBLAST_NEW(ExtStressSolverImpl) (family, settings);
+
+    if (!solver->valid())
+    {
+        solver->release();
+        solver = nullptr;
+        NVBLAST_LOG_ERROR("ExtStressSolver::create: could not create solver");
+    }
+
+    return solver;
 }
 
 void ExtStressSolverImpl::release()

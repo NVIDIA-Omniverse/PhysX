@@ -22,9 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2008-2023 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2023 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2023 NovodeX AG. All rights reserved.
+// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #ifndef NV_NSFOUNDATION_NSALIGNEDMALLOC_H
 #define NV_NSFOUNDATION_NSALIGNEDMALLOC_H

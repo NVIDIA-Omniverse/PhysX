@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2024 NVIDIA Corporation. All rights reserved.
 
 
 #include "NvBlastTypes.h"
@@ -259,6 +259,8 @@ void FamilyHeader::fractureSubSupport(uint32_t chunkIndex, uint32_t suboffset, f
 
 void FamilyHeader::fractureNoEvents(uint32_t chunkFractureCount, const NvBlastChunkFractureData* chunkFractures, Actor* filterActor, NvBlastLog logFn)
 {
+    NVBLASTLL_CHECK(m_asset != nullptr, logFn, "FamilyHeader::fractureNoEvents: m_asset is NULL.", return);
+
     const SupportGraph& graph = m_asset->m_graph;
     const uint32_t* graphAdjacencyPartition = graph.getAdjacencyPartition();
     const uint32_t* adjacentBondIndices = graph.getAdjacentBondIndices();
@@ -318,6 +320,8 @@ void FamilyHeader::fractureNoEvents(uint32_t chunkFractureCount, const NvBlastCh
 
 void FamilyHeader::fractureWithEvents(uint32_t chunkFractureCount, const NvBlastChunkFractureData* commands, NvBlastChunkFractureData* events, uint32_t eventsSize, uint32_t* count, Actor* filterActor, NvBlastLog logFn)
 {
+    NVBLASTLL_CHECK(m_asset != nullptr, logFn, "FamilyHeader::fractureWithEvents: m_asset is NULL.", return);
+
     const SupportGraph& graph = m_asset->m_graph;
     const uint32_t* graphAdjacencyPartition = graph.getAdjacencyPartition();
     const uint32_t* adjacentBondIndices = graph.getAdjacentBondIndices();
@@ -386,6 +390,8 @@ void FamilyHeader::fractureWithEvents(uint32_t chunkFractureCount, const NvBlast
 
 void FamilyHeader::fractureInPlaceEvents(uint32_t chunkFractureCount, NvBlastChunkFractureData* inoutbuffer, uint32_t eventsSize, uint32_t* count, Actor* filterActor, NvBlastLog logFn)
 {
+    NVBLASTLL_CHECK(m_asset != nullptr, logFn, "FamilyHeader::fractureInPlaceEvents: m_asset is NULL.", return);
+
     const SupportGraph& graph = m_asset->m_graph;
     const uint32_t* graphAdjacencyPartition = graph.getAdjacencyPartition();
     const uint32_t* adjacentBondIndices = graph.getAdjacentBondIndices();
@@ -465,6 +471,8 @@ void FamilyHeader::fractureInPlaceEvents(uint32_t chunkFractureCount, NvBlastChu
 
 void FamilyHeader::applyFracture(NvBlastFractureBuffers* eventBuffers, const NvBlastFractureBuffers* commands, Actor* filterActor, NvBlastLog logFn, NvBlastTimers* timers)
 {
+    NVBLASTLL_CHECK(m_asset != nullptr, logFn, "FamilyHeader::applyFracture: m_asset is NULL.", return);
+
     NVBLASTLL_CHECK(commands != nullptr, logFn, "NvBlastActorApplyFracture: NULL commands pointer input.", return);
     NVBLASTLL_CHECK(isValid(commands), logFn, "NvBlastActorApplyFracture: commands memory is NULL but size is > 0.", return);
     NVBLASTLL_CHECK(eventBuffers == nullptr || isValid(eventBuffers), logFn, "NvBlastActorApplyFracture: eventBuffers memory is NULL but size is > 0.",

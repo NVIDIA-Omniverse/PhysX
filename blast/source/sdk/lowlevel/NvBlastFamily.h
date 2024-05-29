@@ -22,7 +22,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Copyright (c) 2016-2023 NVIDIA Corporation. All rights reserved.
+// Copyright (c) 2016-2024 NVIDIA Corporation. All rights reserved.
 
 
 #ifndef NVBLASTFAMILY_H
@@ -70,28 +70,28 @@ struct FamilyHeader : public NvBlastDataBlock
     Actors with support chunks will use this array in the range [0, m_asset->m_graphNodeCount),
     while subsupport actors will be placed in the range [m_asset->m_graphNodeCount, m_asset->getLowerSupportChunkCount()).
     */
-    NvBlastBlockArrayData(Actor, m_actorsOffset, getActors, m_asset->getLowerSupportChunkCount());
+    NvBlastBlockArrayData(Actor, m_actorsOffset, getActors, m_asset ? m_asset->getLowerSupportChunkCount() : 0);
 
     /**
     Visible chunk index links, of type IndexDLink<uint32_t>.
 
     getVisibleChunkIndexLinks returns an array of size m_asset->m_chunkCount of IndexDLink<uint32_t> (see IndexDLink).
     */
-    NvBlastBlockArrayData(IndexDLink<uint32_t>, m_visibleChunkIndexLinksOffset, getVisibleChunkIndexLinks, m_asset->m_chunkCount);
+    NvBlastBlockArrayData(IndexDLink<uint32_t>, m_visibleChunkIndexLinksOffset, getVisibleChunkIndexLinks, m_asset ? m_asset->m_chunkCount : 0);
 
     /**
     Chunk actor IDs, of type uint32_t.  These correspond to the ID of the actor which owns each chunk.  A value of invalidIndex<uint32_t>() indicates no owner.
 
     getChunkActorIndices returns an array of size m_asset->m_firstSubsupportChunkIndex.
     */
-    NvBlastBlockArrayData(uint32_t, m_chunkActorIndicesOffset, getChunkActorIndices, m_asset->m_firstSubsupportChunkIndex);
+    NvBlastBlockArrayData(uint32_t, m_chunkActorIndicesOffset, getChunkActorIndices, m_asset ? m_asset->m_firstSubsupportChunkIndex : 0);
 
     /**
     Graph node index links, of type uint32_t.  The successor to index[i] is m_graphNodeIndexLinksOffset[i].  A value of invalidIndex<uint32_t>() indicates no successor.
 
     getGraphNodeIndexLinks returns an array of size m_asset->m_graphNodeCount.
     */
-    NvBlastBlockArrayData(uint32_t, m_graphNodeIndexLinksOffset, getGraphNodeIndexLinks, m_asset->m_graph.m_nodeCount);
+    NvBlastBlockArrayData(uint32_t, m_graphNodeIndexLinksOffset, getGraphNodeIndexLinks, m_asset ? m_asset->m_graph.m_nodeCount : 0);
 
     /**
     Health for each support chunk and subsupport chunk, of type float.
@@ -100,7 +100,7 @@ struct FamilyHeader : public NvBlastDataBlock
 
     To access subsupport chunk healths, use getSubsupportChunkHealths (see documentation for details).
     */
-    NvBlastBlockArrayData(float, m_lowerSupportChunkHealthsOffset, getLowerSupportChunkHealths, m_asset->getLowerSupportChunkCount());
+    NvBlastBlockArrayData(float, m_lowerSupportChunkHealthsOffset, getLowerSupportChunkHealths, m_asset ? m_asset->getLowerSupportChunkCount() : 0);
 
     /**
     Utility function to get the start of the subsupport chunk health array.
@@ -112,7 +112,7 @@ struct FamilyHeader : public NvBlastDataBlock
     float*    getSubsupportChunkHealths() const
     {
         NVBLAST_ASSERT(m_asset != nullptr);
-        return (float*)((uintptr_t)this + m_lowerSupportChunkHealthsOffset) + m_asset->m_graph.m_nodeCount;
+        return (float*)((uintptr_t)this + m_lowerSupportChunkHealthsOffset) + (m_asset ? m_asset->m_graph.m_nodeCount : 0);
     }
 
     /**
@@ -120,14 +120,14 @@ struct FamilyHeader : public NvBlastDataBlock
 
     getBondHealths returns the array of healths associated with all bonds in the support graph.
     */
-    NvBlastBlockArrayData(float, m_graphBondHealthsOffset, getBondHealths, m_asset->getBondCount());
+    NvBlastBlockArrayData(float, m_graphBondHealthsOffset, getBondHealths, m_asset ? m_asset->getBondCount() : 0);
 
     /**
     Bond health for the interfaces between two chunks, of type float.  Since the bond is shared by two chunks, the same bond health is used for chunk[i] -> chunk[j] as for chunk[j] -> chunk[i].
 
     getCachedBondHealths returns the array of manually cached healths associated with all bonds in the support graph.
     */
-    NvBlastBlockArrayData(float, m_graphCachedBondHealthsOffset, getCachedBondHealths, m_asset->getBondCount());
+    NvBlastBlockArrayData(float, m_graphCachedBondHealthsOffset, getCachedBondHealths, m_asset ? m_asset->getBondCount() : 0);
 
     /**
     The instance graph for islands searching, of type FamilyGraph.
@@ -373,8 +373,12 @@ NV_INLINE Actor* FamilyHeader::getActorByIndex(uint32_t index) const
 
 NV_INLINE uint32_t FamilyHeader::getChunkActorIndex(uint32_t chunkIndex) const
 {
-    NVBLAST_ASSERT(m_asset);
-    NVBLAST_ASSERT(chunkIndex < m_asset->m_chunkCount);
+    if (m_asset == nullptr || chunkIndex >= m_asset->m_chunkCount)
+    {
+        NVBLAST_ASSERT(m_asset && chunkIndex < m_asset->m_chunkCount);
+        return invalidIndex<uint32_t>();
+    }
+
     if (chunkIndex < m_asset->getUpperSupportChunkCount())
     {
         return getChunkActorIndices()[chunkIndex];
@@ -388,8 +392,12 @@ NV_INLINE uint32_t FamilyHeader::getChunkActorIndex(uint32_t chunkIndex) const
 
 NV_INLINE uint32_t FamilyHeader::getNodeActorIndex(uint32_t nodeIndex) const
 {
-    NVBLAST_ASSERT(m_asset);
-    NVBLAST_ASSERT(nodeIndex < m_asset->m_graph.m_nodeCount);
+    if (m_asset == nullptr || nodeIndex >= m_asset->m_graph.m_nodeCount)
+    {
+        NVBLAST_ASSERT(m_asset && nodeIndex < m_asset->m_graph.m_nodeCount);
+        return invalidIndex<uint32_t>();
+    }
+
     const uint32_t chunkIndex = m_asset->m_graph.getChunkIndices()[nodeIndex];
     return isInvalidIndex(chunkIndex) ? chunkIndex : getChunkActorIndices()[chunkIndex];
 }
