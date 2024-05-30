@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Debug Visualization &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Omniverse Visual Debugger" href="OmniVisualDebugger.html" />
+    <link rel="prev" title="Character Controllers" href="CharacterControllers.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Debug Visualization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Debug Visualization</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="debug-visualization">
+<span id="debugvisualization"></span><h1>Debug Visualization<a class="headerlink" href="#debug-visualization" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>With the OmniPVD (see <a class="reference internal" href="OmniVisualDebugger.html#omniphysxvisualdebugger"><span class="std std-ref">Omniverse Visual Debugger</span></a>), NVIDIA offers a tool to record information about simulated PhysX scenes and visualize that information in a remote viewer application. However, sometimes it is preferable to integrate visual debug information directly into the application’s view. For that purpose, PhysX provides an interface to extract visual debug information as a set of basic rendering primitives, that is, points, lines, triangles and text. These primitives can then be rendered and overlayed with the application render objects.</p>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h2>
+<p>To enable debug visualization, the global visualization scale has to be set to a positive value first:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="n">scene</span><span class="o">-&gt;</span><span class="n">setVisualizationParameter</span><span class="p">(</span><span class="n">PxVisualizationParameter</span><span class="o">::</span><span class="n">eSCALE</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then the individual properties that should be visualized can be enabled using, again, a positive value:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">setVisualizationParameter</span><span class="p">(</span><span class="n">PxVisualizationParameter</span><span class="o">::</span><span class="n">eACTOR_AXES</span><span class="p">,</span><span class="w"> </span><span class="mf">2.0f</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In the example, the actor world axes will be visualized. The scale used for visualization will be the product of the global scale (1.0 in this example) and the property scale (2.0 in this example). Please note that for some properties the scale factor does not apply: shape geometry, for example, will not be scaled since the size is defined by the user application. Furthermore, for some objects, visualization has to be enabled explicitly on the corresponding object instances too (see <em>PxActorFlag::eVISUALIZATION</em>, <em>PxShapeFlag::eVISUALIZATION</em>, …).</p>
+<p>After a simulation step, the visualization primitives can then be extracted as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxRenderBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">getRenderBuffer</span><span class="p">();</span><span class="w"></span>
+
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">rb</span><span class="p">.</span><span class="n">getNbPoints</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxDebugPoint</span><span class="o">&amp;</span><span class="w"> </span><span class="n">point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rb</span><span class="p">.</span><span class="n">getPoints</span><span class="p">()[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// render the point</span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">rb</span><span class="p">.</span><span class="n">getNbLines</span><span class="p">();</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxDebugLine</span><span class="o">&amp;</span><span class="w"> </span><span class="n">line</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rb</span><span class="p">.</span><span class="n">getLines</span><span class="p">()[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// render the line</span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// etc ...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>Do not extract render primitives while the simulation is running.</p></li>
+<li><p>Visualization primitives associated with dynamic actors might seem delayed by one frame when the current step’s primitives are rendered together with the updated actor transforms. This perceived delay results from the computation of debug visualization primitives using the actor transforms at the beginning of the simulation step. The pre-simulation-step transforms ensure the accurate alignment of collision shapes and contact points in the debug visualization, since contacts are generated based on the pre-simulation-step actor transforms.</p></li>
+</ul>
+</div>
+<p>The amount of debug visualization data might be too vast to create efficiently for large scenes. In cases where only a localized area is of interest, there is the option to use a culling box for debug visualization via <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene26setVisualizationCullingBoxERK9PxBounds3" title="PxScene::setVisualizationCullingBox"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setVisualizationCullingBox()</span></code></a>.</p>
+<p>Note that simply enabling debug visualization (PxVisualizationParameter::eSCALE) can have a significant performance impact, even when all the other individual visualization flags are disabled. Thus, make sure debug visualization is disabled in your final/release builds.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleSuspensionForceLegacyParams &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxVehicleSuspensionForceParams" href="struct_px_vehicle_suspension_force_params.html" />
+    <link rel="prev" title="PxVehicleSuspensionForce" href="struct_px_vehicle_suspension_force.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="structs.html">Structs</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="struct_interpolation.html">Interpolation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_omni_pvd_command.html">OmniPvdCommand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_omni_pvd_data_type.html">OmniPvdDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_omni_pvd_writer_status_flag.html">OmniPvdWriterStatusFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px1_d_constraint.html">Px1DConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px1_d_constraint_flag.html">Px1DConstraintFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_actor_cache_flag.html">PxActorCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_actor_flag.html">PxActorFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_actor_shape.html">PxActorShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_actor_type.html">PxActorType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_actor_type_flag.html">PxActorTypeFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_aggregate_type.html">PxAggregateType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_allocator_traits.html">PxAllocatorTraits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_axis.html">PxArticulationAxis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_data_r_c.html">PxArticulationDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_drive.html">PxArticulationDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_drive_type.html">PxArticulationDriveType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_flag.html">PxArticulationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_g_p_u_a_p_i_max_counts.html">PxArticulationGPUAPIMaxCounts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_joint_data_r_c.html">PxArticulationJointDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_joint_type.html">PxArticulationJointType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_kinematic_flag.html">PxArticulationKinematicFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_limit.html">PxArticulationLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_link_cookie.html">PxArticulationLinkCookie</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_link_data_r_c.html">PxArticulationLinkDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_link_derived_data_r_c.html">PxArticulationLinkDerivedDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_link_handle.html">PxArticulationLinkHandle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_link_mutable_data_r_c.html">PxArticulationLinkMutableDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_motion.html">PxArticulationMotion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_articulation_root_link_data.html">PxArticulationRootLinkData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_b_v_h33_midphase_desc.html">PxBVH33MidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_b_v_h34_build_strategy.html">PxBVH34BuildStrategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_b_v_h34_midphase_desc.html">PxBVH34MidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_b_v_h_build_strategy.html">PxBVHBuildStrategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_b_v_h_internal_data.html">PxBVHInternalData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_base_flag.html">PxBaseFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_batch_query_status.html">PxBatchQueryStatus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_bounded_data.html">PxBoundedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_caps.html">PxBroadPhaseCaps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_pair.html">PxBroadPhasePair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_region.html">PxBroadPhaseRegion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_region_info.html">PxBroadPhaseRegionInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_results.html">PxBroadPhaseResults</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_broad_phase_type.html">PxBroadPhaseType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_c_uenum.html">PxCUenum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cache.html">PxCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_capsule_climbing_mode.html">PxCapsuleClimbingMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_combine_mode.html">PxCombineMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_concrete_type.html">PxConcreteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cone_limit_params.html">PxConeLimitParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cone_limited_constraint.html">PxConeLimitedConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_batch_header.html">PxConstraintBatchHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_ext_i_ds.html">PxConstraintExtIDs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_flag.html">PxConstraintFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_info.html">PxConstraintInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_inv_mass_scale.html">PxConstraintInvMassScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_residual.html">PxConstraintResidual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_shader_table.html">PxConstraintShaderTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_solve_hint.html">PxConstraintSolveHint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_constraint_visualization_flag.html">PxConstraintVisualizationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact.html">PxContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair.html">PxContactPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_extra_data_item.html">PxContactPairExtraDataItem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_extra_data_iterator.html">PxContactPairExtraDataIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_extra_data_type.html">PxContactPairExtraDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_flag.html">PxContactPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_friction_anchor.html">PxContactPairFrictionAnchor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_header.html">PxContactPairHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_header_flag.html">PxContactPairHeaderFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_index.html">PxContactPairIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_point.html">PxContactPairPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_pose.html">PxContactPairPose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_pair_velocity.html">PxContactPairVelocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_patch.html">PxContactPatch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_point.html">PxContactPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_contact_stream_iterator.html">PxContactStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_behavior_flag.html">PxControllerBehaviorFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_collision_flag.html">PxControllerCollisionFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_debug_render_flag.html">PxControllerDebugRenderFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_hit.html">PxControllerHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_non_walkable_mode.html">PxControllerNonWalkableMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_obstacle_hit.html">PxControllerObstacleHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_shape_hit.html">PxControllerShapeHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_shape_type.html">PxControllerShapeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_state.html">PxControllerState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controller_stats.html">PxControllerStats</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_controllers_hit.html">PxControllersHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_converter_report_mode.html">PxConverterReportMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_convex_flag.html">PxConvexFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_convex_mesh_cooking_result.html">PxConvexMeshCookingResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_convex_mesh_cooking_type.html">PxConvexMeshCookingType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_convex_mesh_geometry_flag.html">PxConvexMeshGeometryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cooking_params.html">PxCookingParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_counter_frequency_to_tens_of_nanos.html">PxCounterFrequencyToTensOfNanos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_create_articulation_link_cookie.html">PxCreateArticulationLinkCookie</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cuda_interop_register_flag.html">PxCudaInteropRegisterFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_cuda_kernel_param.html">PxCudaKernelParam</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_d6_axis.html">PxD6Axis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_d6_drive.html">PxD6Drive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_d6_joint_drive_flag.html">PxD6JointDriveFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_d6_motion.html">PxD6Motion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_data_access_flag.html">PxDataAccessFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_arc.html">PxDebugArc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_arrow.html">PxDebugArrow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_basis.html">PxDebugBasis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_box.html">PxDebugBox</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_circle.html">PxDebugCircle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_color.html">PxDebugColor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_line.html">PxDebugLine</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_point.html">PxDebugPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_text.html">PxDebugText</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_debug_triangle.html">PxDebugTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_default_cpu_dispatcher_wait_for_work_mode.html">PxDefaultCpuDispatcherWaitForWorkMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_deletion_event_flag.html">PxDeletionEventFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_dim3.html">PxDim3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_distance_joint_flag.html">PxDistanceJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_dominance_group_pair.html">PxDominanceGroupPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_dynamic_tree_secondary_pruner.html">PxDynamicTreeSecondaryPruner</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_equal.html">PxEqual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_error_code.html">PxErrorCode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_extended_contact.html">PxExtendedContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_f_e_m_cloth_data_flag.html">PxFEMClothDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_f_e_m_cloth_flag.html">PxFEMClothFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_f_e_m_parameters.html">PxFEMParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_f_e_m_soft_body_material_model.html">PxFEMSoftBodyMaterialModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_filter_data.html">PxFilterData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_filter_flag.html">PxFilterFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_filter_object_flag.html">PxFilterObjectFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_filter_object_type.html">PxFilterObjectType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_filter_op.html">PxFilterOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_force_mode.html">PxForceMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_friction_patch.html">PxFrictionPatch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_friction_type.html">PxFrictionType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geom_index_pair.html">PxGeomIndexPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geom_overlap_hit.html">PxGeomOverlapHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geom_raycast_hit.html">PxGeomRaycastHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geom_sweep_hit.html">PxGeomSweepHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geometry_query_flag.html">PxGeometryQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_geometry_type.html">PxGeometryType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_actor_pair.html">PxGpuActorPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_body_data.html">PxGpuBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_contact_pair.html">PxGpuContactPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_dynamics_memory_config.html">PxGpuDynamicsMemoryConfig</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_dynamics_memory_config_statistics.html">PxGpuDynamicsMemoryConfigStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_mirrored_pointer.html">PxGpuMirroredPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_particle_buffer_index_pair.html">PxGpuParticleBufferIndexPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_gpu_particle_data.html">PxGpuParticleData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_greater.html">PxGreater</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hair_system_data.html">PxHairSystemData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hair_system_flag.html">PxHairSystemFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hash.html">PxHash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hash_3_01const_01char_01_5_01_4.html">PxHash&lt; const char * &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_height_field_flag.html">PxHeightFieldFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_height_field_format.html">PxHeightFieldFormat</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_height_field_material.html">PxHeightFieldMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_height_field_sample.html">PxHeightFieldSample</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_height_field_tess_flag.html">PxHeightFieldTessFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hit_buffer.html">PxHitBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hit_callback.html">PxHitCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hit_flag.html">PxHitFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_hull_polygon.html">PxHullPolygon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_immediate_constraint.html">PxImmediateConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_index_data_pair.html">PxIndexDataPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_isosurface_grid_filtering_type.html">PxIsosurfaceGridFilteringType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_isosurface_params.html">PxIsosurfaceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_jacobian_row.html">PxJacobianRow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_joint_actor_index.html">PxJointActorIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_joint_concrete_type.html">PxJointConcreteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_kernel_index.html">PxKernelIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_less.html">PxLess</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_line_strip_skinned_vertex.html">PxLineStripSkinnedVertex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_location_hit.html">PxLocationHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_log_two.html">PxLogTwo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_log_two_3_011_01_4.html">PxLogTwo&lt; 1 &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_material_flag.html">PxMaterialFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_cooking_hint.html">PxMeshCookingHint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_flag.html">PxMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_geometry_flag.html">PxMeshGeometryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_mesh_query_flag.html">PxMeshMeshQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_mid_phase.html">PxMeshMidPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_mesh_preprocessing_flag.html">PxMeshPreprocessingFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_meta_data_entry.html">PxMetaDataEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_meta_data_flag.html">PxMetaDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_modifiable_contact.html">PxModifiableContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_overlap_buffer_n.html">PxOverlapBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_overlap_hit.html">PxOverlapHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pack_validation.html">PxPackValidation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_padding.html">PxPadding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pair_filtering_mode.html">PxPairFilteringMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pair_flag.html">PxPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_buffer_flag.html">PxParticleBufferFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_cloth.html">PxParticleCloth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_cloth_desc.html">PxParticleClothDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_flag.html">PxParticleFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_lock_flag.html">PxParticleLockFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_phase_flag.html">PxParticlePhaseFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_rigid_attachment.html">PxParticleRigidAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_rigid_filter_pair.html">PxParticleRigidFilterPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_solver_type.html">PxParticleSolverType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_spring.html">PxParticleSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_particle_volume.html">PxParticleVolume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_partitioned_particle_cloth.html">PxPartitionedParticleCloth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_prismatic_joint_flag.html">PxPrismaticJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pruning_structure_type.html">PxPruningStructureType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pvd_instrumentation_flag.html">PxPvdInstrumentationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pvd_scene_flag.html">PxPvdSceneFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_pvd_update_type.html">PxPvdUpdateType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_cache.html">PxQueryCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_filter_data.html">PxQueryFilterData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_flag.html">PxQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_hit.html">PxQueryHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_hit_type.html">PxQueryHitType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_query_thread_context.html">PxQueryThreadContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_raycast_buffer_n.html">PxRaycastBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_raycast_hit.html">PxRaycastHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_rep_x_instantiation_args.html">PxRepXInstantiationArgs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_rep_x_object.html">PxRepXObject</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_residual.html">PxResidual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_residuals.html">PxResiduals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_revolute_joint_flag.html">PxRevoluteJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_rigid_body_data.html">PxRigidBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_rigid_body_flag.html">PxRigidBodyFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_rigid_dynamic_lock_flag.html">PxRigidDynamicLockFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_s_list_impl.html">PxSListImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_scene_flag.html">PxSceneFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_scene_query_update_mode.html">PxSceneQueryUpdateMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_shape_flag.html">PxShapeFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_soft_body_data_flag.html">PxSoftBodyDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_soft_body_flag.html">PxSoftBodyFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_body.html">PxSolverBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_body_data.html">PxSolverBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_constraint_desc.html">PxSolverConstraintDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_constraint_prep_desc.html">PxSolverConstraintPrepDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_constraint_prep_desc_base.html">PxSolverConstraintPrepDescBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_contact_desc.html">PxSolverContactDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_solver_type.html">PxSolverType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_sparse_grid_params.html">PxSparseGridParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_spatial_force.html">PxSpatialForce</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_spatial_vector.html">PxSpatialVector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_spatial_velocity.html">PxSpatialVelocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_spherical_joint_flag.html">PxSphericalJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_strided_data.html">PxStridedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_sweep_buffer_n.html">PxSweepBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_sweep_hit.html">PxSweepHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_body_data.html">PxTGSSolverBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_body_tx_inertia.html">PxTGSSolverBodyTxInertia</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_body_vel.html">PxTGSSolverBodyVel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc.html">PxTGSSolverConstraintPrepDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_constraint_prep_desc_base.html">PxTGSSolverConstraintPrepDescBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_t_g_s_solver_contact_desc.html">PxTGSSolverContactDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_task_type.html">PxTaskType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_tetrahedron_mesh_flag.html">PxTetrahedronMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_thread_priority.html">PxThreadPriority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_transform_padded.html">PxTransformPadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_triangle_mesh_cooking_result.html">PxTriangleMeshCookingResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_triangle_mesh_flag.html">PxTriangleMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_triangle_mesh_internal_data.html">PxTriangleMeshInternalData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_trigger_pair.html">PxTriggerPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_trigger_pair_flag.html">PxTriggerPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info.html">PxTypeInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_actor_01_4.html">PxTypeInfo&lt; PxActor &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_aggregate_01_4.html">PxTypeInfo&lt; PxAggregate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_joint_reduced_coordinate_01_4.html">PxTypeInfo&lt; PxArticulationJointReducedCoordinate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_link_01_4.html">PxTypeInfo&lt; PxArticulationLink &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_articulation_reduced_coordinate_01_4.html">PxTypeInfo&lt; PxArticulationReducedCoordinate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h33_triangle_mesh_01_4.html">PxTypeInfo&lt; PxBVH33TriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_b_v_h34_triangle_mesh_01_4.html">PxTypeInfo&lt; PxBVH34TriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_base_01_4.html">PxTypeInfo&lt; PxBase &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_constraint_01_4.html">PxTypeInfo&lt; PxConstraint &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_convex_mesh_01_4.html">PxTypeInfo&lt; PxConvexMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_01_4.html">PxTypeInfo&lt; PxFEMCloth &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_cloth_material_01_4.html">PxTypeInfo&lt; PxFEMClothMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_f_e_m_soft_body_material_01_4.html">PxTypeInfo&lt; PxFEMSoftBodyMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_hair_system_01_4.html">PxTypeInfo&lt; PxHairSystem &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_height_field_01_4.html">PxTypeInfo&lt; PxHeightField &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_material_01_4.html">PxTypeInfo&lt; PxMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_material_01_4.html">PxTypeInfo&lt; PxPBDMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_p_b_d_particle_system_01_4.html">PxTypeInfo&lt; PxPBDParticleSystem &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_particle_and_diffuse_buffer_01_4.html">PxTypeInfo&lt; PxParticleAndDiffuseBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_particle_buffer_01_4.html">PxTypeInfo&lt; PxParticleBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_particle_cloth_buffer_01_4.html">PxTypeInfo&lt; PxParticleClothBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_particle_rigid_buffer_01_4.html">PxTypeInfo&lt; PxParticleRigidBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_pruning_structure_01_4.html">PxTypeInfo&lt; PxPruningStructure &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_actor_01_4.html">PxTypeInfo&lt; PxRigidActor &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_body_01_4.html">PxTypeInfo&lt; PxRigidBody &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_dynamic_01_4.html">PxTypeInfo&lt; PxRigidDynamic &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_rigid_static_01_4.html">PxTypeInfo&lt; PxRigidStatic &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_shape_01_4.html">PxTypeInfo&lt; PxShape &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_soft_body_01_4.html">PxTypeInfo&lt; PxSoftBody &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_tetrahedron_mesh_01_4.html">PxTypeInfo&lt; PxTetrahedronMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_type_info_3_01_px_triangle_mesh_01_4.html">PxTypeInfo&lt; PxTriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_typed_strided_data.html">PxTypedStridedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_un_const.html">PxUnConst</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_un_const_3_01const_01_t_01_4.html">PxUnConst&lt; const T &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_ackermann_params.html">PxVehicleAckermannParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_anti_roll_force_params.html">PxVehicleAntiRollForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_anti_roll_torque.html">PxVehicleAntiRollTorque</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_array_data.html">PxVehicleArrayData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_autobox_params.html">PxVehicleAutoboxParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_autobox_state.html">PxVehicleAutoboxState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_axes.html">PxVehicleAxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_axle_description.html">PxVehicleAxleDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_brake_command_response_params.html">PxVehicleBrakeCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_clutch_accuracy_mode.html">PxVehicleClutchAccuracyMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_clutch_command_response_params.html">PxVehicleClutchCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_clutch_command_response_state.html">PxVehicleClutchCommandResponseState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_clutch_params.html">PxVehicleClutchParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_clutch_slip_state.html">PxVehicleClutchSlipState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_command_response_params.html">PxVehicleCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_command_state.html">PxVehicleCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_command_value_response_table.html">PxVehicleCommandValueResponseTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_component_sequence.html">PxVehicleComponentSequence</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_component_sequence_limits.html">PxVehicleComponentSequenceLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_differential_state.html">PxVehicleDifferentialState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_direct_drive_throttle_command_response_params.html">PxVehicleDirectDriveThrottleCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_direct_drive_transmission_command_state.html">PxVehicleDirectDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_engine_drive_throttle_command_response_state.html">PxVehicleEngineDriveThrottleCommandResponseState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_engine_drive_transmission_command_state.html">PxVehicleEngineDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_engine_params.html">PxVehicleEngineParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_engine_state.html">PxVehicleEngineState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_legacy_params.html">PxVehicleFourWheelDriveDifferentialLegacyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_four_wheel_drive_differential_params.html">PxVehicleFourWheelDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_frame.html">PxVehicleFrame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_gearbox_params.html">PxVehicleGearboxParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_gearbox_state.html">PxVehicleGearboxState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_limits.html">PxVehicleLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_multi_wheel_drive_differential_params.html">PxVehicleMultiWheelDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_actor.html">PxVehiclePhysXActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_actor_update_mode.html">PxVehiclePhysXActorUpdateMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_constraint_limits.html">PxVehiclePhysXConstraintLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_constraint_state.html">PxVehiclePhysXConstraintState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_constraints.html">PxVehiclePhysXConstraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_material_friction.html">PxVehiclePhysXMaterialFriction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_material_friction_params.html">PxVehiclePhysXMaterialFrictionParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_params.html">PxVehiclePhysXRoadGeometryQueryParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_state.html">PxVehiclePhysXRoadGeometryQueryState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_type.html">PxVehiclePhysXRoadGeometryQueryType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_simulation_context.html">PxVehiclePhysXSimulationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_steer_state.html">PxVehiclePhysXSteerState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_phys_x_suspension_limit_constraint_params.html">PxVehiclePhysXSuspensionLimitConstraintParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_pvd_context.html">PxVehiclePvdContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_rigid_body_params.html">PxVehicleRigidBodyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_rigid_body_state.html">PxVehicleRigidBodyState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_road_geometry_state.html">PxVehicleRoadGeometryState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_scale.html">PxVehicleScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_simulation_context.html">PxVehicleSimulationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_simulation_context_type.html">PxVehicleSimulationContextType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_sized_array_data.html">PxVehicleSizedArrayData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_steer_command_response_params.html">PxVehicleSteerCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_compliance_params.html">PxVehicleSuspensionComplianceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_compliance_state.html">PxVehicleSuspensionComplianceState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_force.html">PxVehicleSuspensionForce</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxVehicleSuspensionForceLegacyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_force_params.html">PxVehicleSuspensionForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_jounce_calculation_type.html">PxVehicleSuspensionJounceCalculationType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_params.html">PxVehicleSuspensionParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_state.html">PxVehicleSuspensionState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_suspension_state_calculation_params.html">PxVehicleSuspensionStateCalculationParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tank_drive_differential_params.html">PxVehicleTankDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tank_drive_transmission_command_state.html">PxVehicleTankDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_axis_sticky_params.html">PxVehicleTireAxisStickyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_camber_angle_state.html">PxVehicleTireCamberAngleState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_direction_modes.html">PxVehicleTireDirectionModes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_direction_state.html">PxVehicleTireDirectionState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_force.html">PxVehicleTireForce</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_force_params.html">PxVehicleTireForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_grip_state.html">PxVehicleTireGripState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_slip_params.html">PxVehicleTireSlipParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_slip_state.html">PxVehicleTireSlipState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_speed_state.html">PxVehicleTireSpeedState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_sticky_params.html">PxVehicleTireStickyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_tire_sticky_state.html">PxVehicleTireStickyState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_wheel_actuation_state.html">PxVehicleWheelActuationState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_wheel_constraint_group_state.html">PxVehicleWheelConstraintGroupState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_wheel_local_pose.html">PxVehicleWheelLocalPose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_wheel_params.html">PxVehicleWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_vehicle_wheel_rigid_body1d_state.html">PxVehicleWheelRigidBody1dState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_px_visualization_parameter.html">PxVisualizationParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_pxs_particle_material_data.html">PxsParticleMaterialData</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="structs.html">Structs</a> &raquo;</li>
+<li>PxVehicleSuspensionForceLegacyParams</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehiclesuspensionforcelegacyparams">
+<h1>PxVehicleSuspensionForceLegacyParams<a class="headerlink" href="#pxvehiclesuspensionforcelegacyparams" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_suspension_PxVehicleSuspensionParams.h.html#px-vehicle-suspension-params-8h"><span class="std std-ref">include/vehicle2/suspension/PxVehicleSuspensionParams.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv436PxVehicleSuspensionForceLegacyParams">
+<span id="_CPPv336PxVehicleSuspensionForceLegacyParams"></span><span id="_CPPv236PxVehicleSuspensionForceLegacyParams"></span><span id="PxVehicleSuspensionForceLegacyParams"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleSuspensionForceLegacyParams</span></span></span><a class="headerlink" href="#_CPPv436PxVehicleSuspensionForceLegacyParams" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Suspension force is computed by converting suspenson state to suspension force under the assumption of a linear spring. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000149"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>This API was introduced with the new Vehicle API for transition purposes but will be removed in a future version.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxVehicleSuspensionLegacyForceUpdate </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleSuspensionForceLegacyParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale">
+<span id="_CPPv3NK36PxVehicleSuspensionForceLegacyParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="_CPPv2NK36PxVehicleSuspensionForceLegacyParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale"></span><span id="PxVehicleSuspensionForceLegacyParams::transformAndScale__PxVehicleFrameCR.PxVehicleFrameCR.PxVehicleScaleCR.PxVehicleScaleCRC"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1a661205c4b28bc1ad5ab9d446bb609362"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv436PxVehicleSuspensionForceLegacyParams" title="PxVehicleSuspensionForceLegacyParams"><span class="n"><span class="pre">PxVehicleSuspensionForceLegacyParams</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">transformAndScale</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_frame.html#_CPPv414PxVehicleFrame" title="PxVehicleFrame"><span class="n"><span class="pre">PxVehicleFrame</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgFrame</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">srcScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_scale.html#_CPPv414PxVehicleScale" title="PxVehicleScale"><span class="n"><span class="pre">PxVehicleScale</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">trgScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleSuspensionForceLegacyParams17transformAndScaleERK14PxVehicleFrameRK14PxVehicleFrameRK14PxVehicleScaleRK14PxVehicleScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK36PxVehicleSuspensionForceLegacyParams7isValidEv">
+<span id="_CPPv3NK36PxVehicleSuspensionForceLegacyParams7isValidEv"></span><span id="_CPPv2NK36PxVehicleSuspensionForceLegacyParams7isValidEv"></span><span id="PxVehicleSuspensionForceLegacyParams::isValidC"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1a5ea3aa726857223bd84dcdd683ea87c9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK36PxVehicleSuspensionForceLegacyParams7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleSuspensionForceLegacyParams9stiffnessE">
+<span id="_CPPv3N36PxVehicleSuspensionForceLegacyParams9stiffnessE"></span><span id="_CPPv2N36PxVehicleSuspensionForceLegacyParams9stiffnessE"></span><span id="PxVehicleSuspensionForceLegacyParams::stiffness__PxReal"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1ac208e3bb63d616437031ee1a2e6819d8"></span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">stiffness</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleSuspensionForceLegacyParams9stiffnessE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Spring strength of suspension. </p>
+<p><strong>Range:</strong> (0, inf)<strong>Unit:</strong> mass / (time^2) </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleSuspensionForceLegacyParams7dampingE">
+<span id="_CPPv3N36PxVehicleSuspensionForceLegacyParams7dampingE"></span><span id="_CPPv2N36PxVehicleSuspensionForceLegacyParams7dampingE"></span><span id="PxVehicleSuspensionForceLegacyParams::damping__PxReal"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1a3daa50de784f036325600313c0cab74c"></span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">damping</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleSuspensionForceLegacyParams7dampingE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Spring damper rate of suspension. </p>
+<p><strong>Range:</strong> [0, inf)<strong>Unit:</strong> mass / time </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleSuspensionForceLegacyParams12restDistanceE">
+<span id="_CPPv3N36PxVehicleSuspensionForceLegacyParams12restDistanceE"></span><span id="_CPPv2N36PxVehicleSuspensionForceLegacyParams12restDistanceE"></span><span id="PxVehicleSuspensionForceLegacyParams::restDistance__PxReal"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1a696e18666dc9e8474a4cc9d099c44c89"></span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">restDistance</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleSuspensionForceLegacyParams12restDistanceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The suspension compression that balances the gravitational force acting on the sprung mass. </p>
+<p><strong>Range:</strong> (0, inf)<strong>Unit:</strong> length </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N36PxVehicleSuspensionForceLegacyParams10sprungMassE">
+<span id="_CPPv3N36PxVehicleSuspensionForceLegacyParams10sprungMassE"></span><span id="_CPPv2N36PxVehicleSuspensionForceLegacyParams10sprungMassE"></span><span id="PxVehicleSuspensionForceLegacyParams::sprungMass__PxReal"></span><span class="target" id="struct_px_vehicle_suspension_force_legacy_params_1a7a887620dd4d3656773072b68b5dee29"></span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sprungMass</span></span></span><a class="headerlink" href="#_CPPv4N36PxVehicleSuspensionForceLegacyParams10sprungMassE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The mass supported by the suspension spring. </p>
+<p><strong>Range:</strong> (0, inf)<strong>Unit:</strong> mass </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

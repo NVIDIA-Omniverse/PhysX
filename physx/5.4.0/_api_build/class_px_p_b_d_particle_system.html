@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxPBDParticleSystem &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxPair" href="class_px_pair.html" />
+    <link rel="prev" title="PxPBDMaterial" href="class_px_p_b_d_material.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_reader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_compute_type.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_read_type.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_write_type.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_mimic_joint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_direct_g_p_u_a_p_i.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_friction_anchor_stream_iterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pinned_allocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body_ext.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_read_type.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_write_type.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxPBDParticleSystem</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxpbdparticlesystem">
+<h1>PxPBDParticleSystem<a class="headerlink" href="#pxpbdparticlesystem" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxPBDParticleSystem.h.html#px-p-b-d-particle-system-8h"><span class="std std-ref">include/PxPBDParticleSystem.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxPBDParticleSystem">
+<span id="_CPPv319PxPBDParticleSystem"></span><span id="_CPPv219PxPBDParticleSystem"></span><span id="PxPBDParticleSystem"></span><span class="target" id="class_px_p_b_d_particle_system"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDParticleSystem</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_actor.html#_CPPv47PxActor" title="PxActor"><span class="n"><span class="pre">PxActor</span></span></a><a class="headerlink" href="#_CPPv419PxPBDParticleSystem" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A particle system that uses the position based dynamics(PBD) solver. </p>
+<p>The position based dynamics solver for particle systems supports behaviors like fluid, cloth, inflatables etc. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystemD0Ev">
+<span id="_CPPv3N19PxPBDParticleSystemD0Ev"></span><span id="_CPPv2N19PxPBDParticleSystemD0Ev"></span><span id="PxPBDParticleSystem::~PxPBDParticleSystem"></span><span class="target" id="class_px_p_b_d_particle_system_1ae84ae9367633383c3016e912c40eb662"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxPBDParticleSystem</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystemD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem24setSolverIterationCountsE5PxU325PxU32">
+<span id="_CPPv3N19PxPBDParticleSystem24setSolverIterationCountsE5PxU325PxU32"></span><span id="_CPPv2N19PxPBDParticleSystem24setSolverIterationCountsE5PxU325PxU32"></span><span id="PxPBDParticleSystem::setSolverIterationCounts__PxU32.PxU32"></span><span class="target" id="class_px_p_b_d_particle_system_1a71f01dd10137aa56ea8124a0b333571b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSolverIterationCounts</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minPositionIters</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minVelocityIters</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem24setSolverIterationCountsE5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the solver iteration counts for the body. </p>
+<p>The solver iteration count determines how accurately joints and contacts are resolved. If you are having trouble with jointed bodies oscillating and behaving erratically, then setting a higher position iteration count may improve their stability.</p>
+<p>If intersecting bodies are being depenetrated too violently, increase the number of velocity iterations. More velocity iterations will drive the relative exit velocity of the intersecting objects closer to the correct value given the restitution.</p>
+<p><strong>Default:</strong> 4 position iterations, 1 velocity iteration</p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a3e5c0be58b523f125dd2823196bfdea1"><span class="std std-ref">getSolverIterationCounts()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>minPositionIters</strong> – <strong>[in]</strong> Number of position iterations the solver should perform for this body. <strong>Range:</strong> [1,255] </p></li>
+<li><p><strong>minVelocityIters</strong> – <strong>[in]</strong> Number of velocity iterations the solver should perform for this body. <strong>Range:</strong> [1,255]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem24getSolverIterationCountsER5PxU32R5PxU32">
+<span id="_CPPv3NK19PxPBDParticleSystem24getSolverIterationCountsER5PxU32R5PxU32"></span><span id="_CPPv2NK19PxPBDParticleSystem24getSolverIterationCountsER5PxU32R5PxU32"></span><span id="PxPBDParticleSystem::getSolverIterationCounts__PxU32R.PxU32RC"></span><span class="target" id="class_px_p_b_d_particle_system_1a3e5c0be58b523f125dd2823196bfdea1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSolverIterationCounts</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minPositionIters</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minVelocityIters</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem24getSolverIterationCountsER5PxU32R5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the solver iteration counts. </p>
+<p>See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a71f01dd10137aa56ea8124a0b333571b"><span class="std std-ref">setSolverIterationCounts()</span></a> </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem23getSimulationFilterDataEv">
+<span id="_CPPv3NK19PxPBDParticleSystem23getSimulationFilterDataEv"></span><span id="_CPPv2NK19PxPBDParticleSystem23getSimulationFilterDataEv"></span><span id="PxPBDParticleSystem::getSimulationFilterDataC"></span><span class="target" id="class_px_p_b_d_particle_system_1aff8e7363a0beb85957bae4c00beb1158"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSimulationFilterData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem23getSimulationFilterDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the collision filter settings. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The filter data </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem23setSimulationFilterDataERK12PxFilterData">
+<span id="_CPPv3N19PxPBDParticleSystem23setSimulationFilterDataERK12PxFilterData"></span><span id="_CPPv2N19PxPBDParticleSystem23setSimulationFilterDataERK12PxFilterData"></span><span id="PxPBDParticleSystem::setSimulationFilterData__PxFilterDataCR"></span><span class="target" id="class_px_p_b_d_particle_system_1a7d8d66200fc83fcd40a9063b31cb8525"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSimulationFilterData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_filter_data.html#_CPPv412PxFilterData" title="PxFilterData"><span class="n"><span class="pre">PxFilterData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">data</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem23setSimulationFilterDataERK12PxFilterData" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set collision filter settings. </p>
+<p>Allows to control with which objects the particle system collides</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> – <strong>[in]</strong> The filter data </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem15setParticleFlagEN14PxParticleFlag4EnumEb">
+<span id="_CPPv3N19PxPBDParticleSystem15setParticleFlagEN14PxParticleFlag4EnumEb"></span><span id="_CPPv2N19PxPBDParticleSystem15setParticleFlagEN14PxParticleFlag4EnumEb"></span><span id="PxPBDParticleSystem::setParticleFlag__PxParticleFlag::Enum.b"></span><span class="target" id="class_px_p_b_d_particle_system_1aea85608373ab6262b5cd8a26da445291"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_particle_flag.html#_CPPv414PxParticleFlag" title="PxParticleFlag"><span class="n"><span class="pre">PxParticleFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_particle_flag.html#_CPPv4N14PxParticleFlag4EnumE" title="PxParticleFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">val</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem15setParticleFlagEN14PxParticleFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set particle flag. </p>
+<p>Allows to control self collision etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to set </p></li>
+<li><p><strong>val</strong> – <strong>[in]</strong> The new value of the flag </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem16setParticleFlagsE15PxParticleFlags">
+<span id="_CPPv3N19PxPBDParticleSystem16setParticleFlagsE15PxParticleFlags"></span><span id="_CPPv2N19PxPBDParticleSystem16setParticleFlagsE15PxParticleFlags"></span><span id="PxPBDParticleSystem::setParticleFlags__PxParticleFlags"></span><span class="target" id="class_px_p_b_d_particle_system_1a468957427a1cc7395ca5b057f9742d1a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a477a6cb9995a5ccd7992beae5e8cdf89.html#_CPPv415PxParticleFlags" title="PxParticleFlags"><span class="n"><span class="pre">PxParticleFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem16setParticleFlagsE15PxParticleFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set particle flags. </p>
+<p>Allows to control self collision etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> The flags to set </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem16getParticleFlagsEv">
+<span id="_CPPv3NK19PxPBDParticleSystem16getParticleFlagsEv"></span><span id="_CPPv2NK19PxPBDParticleSystem16getParticleFlagsEv"></span><span id="PxPBDParticleSystem::getParticleFlagsC"></span><span class="target" id="class_px_p_b_d_particle_system_1a17e6c50f9d8577cdc44c51940f40e228"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a477a6cb9995a5ccd7992beae5e8cdf89.html#_CPPv415PxParticleFlags" title="PxParticleFlags"><span class="n"><span class="pre">PxParticleFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem16getParticleFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the particle flags. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The particle flags </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem27setMaxDepenetrationVelocityE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem27setMaxDepenetrationVelocityE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem27setMaxDepenetrationVelocityE6PxReal"></span><span id="PxPBDParticleSystem::setMaxDepenetrationVelocity__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a16b6dcaf8ea1e603fdc7fcbca133abdb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxDepenetrationVelocity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxDepenetrationVelocity</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem27setMaxDepenetrationVelocityE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the maximal depenetration velocity particles can reach. </p>
+<p>Allows to limit the particles’ maximal depenetration velocity to avoid that collision responses lead to very high particle velocities</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maxDepenetrationVelocity</strong> – <strong>[in]</strong> The maximal depenetration velocity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem27getMaxDepenetrationVelocityEv">
+<span id="_CPPv3NK19PxPBDParticleSystem27getMaxDepenetrationVelocityEv"></span><span id="_CPPv2NK19PxPBDParticleSystem27getMaxDepenetrationVelocityEv"></span><span id="PxPBDParticleSystem::getMaxDepenetrationVelocityC"></span><span class="target" id="class_px_p_b_d_particle_system_1a003c1f55b5677e012d43a8ece79296e3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxDepenetrationVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem27getMaxDepenetrationVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves maximal depenetration velocity a particle can have. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximal depenetration velocity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem14setMaxVelocityE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem14setMaxVelocityE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem14setMaxVelocityE6PxReal"></span><span id="PxPBDParticleSystem::setMaxVelocity__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a77db1b16b98fdded1af892e92edeef8e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMaxVelocity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxVelocity</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem14setMaxVelocityE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the maximal velocity particles can reach. </p>
+<p>Allows to limit the particles’ maximal velocity to control the maximal distance a particle can move per frame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>maxVelocity</strong> – <strong>[in]</strong> The maximal velocity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem14getMaxVelocityEv">
+<span id="_CPPv3NK19PxPBDParticleSystem14getMaxVelocityEv"></span><span id="_CPPv2NK19PxPBDParticleSystem14getMaxVelocityEv"></span><span id="PxPBDParticleSystem::getMaxVelocityC"></span><span class="target" id="class_px_p_b_d_particle_system_1a98dab80fdf63ebaa298e47e222457b75"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem14getMaxVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves maximal velocity a particle can have. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximal velocity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem21getCudaContextManagerEv">
+<span id="_CPPv3NK19PxPBDParticleSystem21getCudaContextManagerEv"></span><span id="_CPPv2NK19PxPBDParticleSystem21getCudaContextManagerEv"></span><span id="PxPBDParticleSystem::getCudaContextManagerC"></span><span class="target" id="class_px_p_b_d_particle_system_1a260bbc175616f62ab15517eeca258a79"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getCudaContextManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem21getCudaContextManagerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the cuda context manager. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The cuda context manager </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem13setRestOffsetE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem13setRestOffsetE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem13setRestOffsetE6PxReal"></span><span id="PxPBDParticleSystem::setRestOffset__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a81d88e5632de5ec578d436071f693d03"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRestOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">restOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem13setRestOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the rest offset for the collision between particles and rigids or soft bodies. </p>
+<p>A particle and a rigid or soft body will come to rest at a distance equal to the sum of their restOffset values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>restOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, contactOffset) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem13getRestOffsetEv">
+<span id="_CPPv3NK19PxPBDParticleSystem13getRestOffsetEv"></span><span id="_CPPv2NK19PxPBDParticleSystem13getRestOffsetEv"></span><span id="PxPBDParticleSystem::getRestOffsetC"></span><span class="target" id="class_px_p_b_d_particle_system_1afab8cceaabec3dd1363f2a20c429981d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRestOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem13getRestOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the rest offset. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a81d88e5632de5ec578d436071f693d03"><span class="std std-ref">setRestOffset()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the rest offset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem16setContactOffsetE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem16setContactOffsetE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem16setContactOffsetE6PxReal"></span><span id="PxPBDParticleSystem::setContactOffset__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1ae6496c5aa0f4d993a8db83a65b9492b4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem16setContactOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the contact offset for the collision between particles and rigids or soft bodies. </p>
+<p>The contact offset needs to be larger than the rest offset. Contact constraints are generated for a particle and a rigid or softbody below the distance equal to the sum of their contacOffset values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>contactOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (restOffset, PX_MAX_F32) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem16getContactOffsetEv">
+<span id="_CPPv3NK19PxPBDParticleSystem16getContactOffsetEv"></span><span id="_CPPv2NK19PxPBDParticleSystem16getContactOffsetEv"></span><span id="PxPBDParticleSystem::getContactOffsetC"></span><span class="target" id="class_px_p_b_d_particle_system_1a674e6fdc9ca7333560dfb259d5600a3e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem16getContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the contact offset. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1ae6496c5aa0f4d993a8db83a65b9492b4"><span class="std std-ref">setContactOffset()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the contact offset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem24setParticleContactOffsetE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem24setParticleContactOffsetE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem24setParticleContactOffsetE6PxReal"></span><span id="PxPBDParticleSystem::setParticleContactOffset__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a1ae7a311d0941883603e8f98ae8407ce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleContactOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem24setParticleContactOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the contact offset for the interactions between particles. </p>
+<p>The particle contact offset needs to be larger than the fluid rest offset and larger than the solid rest offset. Interactions for two particles are computed if their distance is below twice the particleContactOffset value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>particleContactOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (Max(solidRestOffset, fluidRestOffset), PX_MAX_F32) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem24getParticleContactOffsetEv">
+<span id="_CPPv3NK19PxPBDParticleSystem24getParticleContactOffsetEv"></span><span id="_CPPv2NK19PxPBDParticleSystem24getParticleContactOffsetEv"></span><span id="PxPBDParticleSystem::getParticleContactOffsetC"></span><span class="target" id="class_px_p_b_d_particle_system_1afd693770017393c06fe6ff74dd64184e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem24getParticleContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the particle contact offset. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a1ae7a311d0941883603e8f98ae8407ce"><span class="std std-ref">setParticleContactOffset()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the particle contact offset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem18setSolidRestOffsetE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem18setSolidRestOffsetE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem18setSolidRestOffsetE6PxReal"></span><span id="PxPBDParticleSystem::setSolidRestOffset__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a04cb32c69d1704cef33e3c20c26e45d7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSolidRestOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">solidRestOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem18setSolidRestOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the solid rest offset. </p>
+<p>Two solid particles (or a solid and a fluid particle) will come to rest at a distance equal to twice the solidRestOffset value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>solidRestOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, particleContactOffset) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem18getSolidRestOffsetEv">
+<span id="_CPPv3NK19PxPBDParticleSystem18getSolidRestOffsetEv"></span><span id="_CPPv2NK19PxPBDParticleSystem18getSolidRestOffsetEv"></span><span id="PxPBDParticleSystem::getSolidRestOffsetC"></span><span class="target" id="class_px_p_b_d_particle_system_1aba716a81fe55a91b51236fe84d475609"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSolidRestOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem18getSolidRestOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the solid rest offset. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a04cb32c69d1704cef33e3c20c26e45d7"><span class="std std-ref">setSolidRestOffset()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the solid rest offset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem18addRigidAttachmentEP12PxRigidActor">
+<span id="_CPPv3N19PxPBDParticleSystem18addRigidAttachmentEP12PxRigidActor"></span><span id="_CPPv2N19PxPBDParticleSystem18addRigidAttachmentEP12PxRigidActor"></span><span id="PxPBDParticleSystem::addRigidAttachment__PxRigidActorP"></span><span class="target" id="class_px_p_b_d_particle_system_1a97fffc156738863e816c16d7af2e6ba8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addRigidAttachment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem18addRigidAttachmentEP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a rigid attachment between a particle and a rigid actor. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000115"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p>This method creates a symbolic attachment between the particle system and a rigid body for the purpose of island management. The actual attachments will be contained in the particle buffers.</p>
+<p>Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash. The particle system keeps track of these attachments but the rigid body does not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The rigid actor used for the attachment </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem21removeRigidAttachmentEP12PxRigidActor">
+<span id="_CPPv3N19PxPBDParticleSystem21removeRigidAttachmentEP12PxRigidActor"></span><span id="_CPPv2N19PxPBDParticleSystem21removeRigidAttachmentEP12PxRigidActor"></span><span id="PxPBDParticleSystem::removeRigidAttachment__PxRigidActorP"></span><span class="target" id="class_px_p_b_d_particle_system_1a8f9b3a3af5c3604d7208777eca8fe85c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeRigidAttachment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_rigid_actor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem21removeRigidAttachmentEP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Removes a rigid attachment between a particle and a rigid body. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000116"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated.</p>
+</dd></dl>
+
+</p>
+<p>This method destroys a symbolic attachment between the particle system and a rigid body for the purpose of island management.</p>
+<p>Be aware that destroying the rigid body before destroying the attachment is illegal and may cause a crash. The particle system keeps track of these attachments but the rigid body does not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> The rigid body actor used for the attachment </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem9enableCCDEb">
+<span id="_CPPv3N19PxPBDParticleSystem9enableCCDEb"></span><span id="_CPPv2N19PxPBDParticleSystem9enableCCDEb"></span><span id="PxPBDParticleSystem::enableCCD__b"></span><span class="target" id="class_px_p_b_d_particle_system_1a813a40a3b7376d56f5971a0eceb08e89"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">enableCCD</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">enable</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem9enableCCDEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Enable continuous collision detection for particles. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000117"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Replaced by particle flag,</p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_particle_flag.html#struct_px_particle_flag_1a289f88fd89d3d5224d74e5a72c7eee28a535e54c77a5ca2125063b5a9ea372121"><span class="std std-ref">PxParticleFlag::eENABLE_SPECULATIVE_CCD</span></a>.</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>enable</strong> – <strong>[in]</strong> Boolean indicates whether continuous collision detection is enabled. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem20getParticleLockFlagsEv">
+<span id="_CPPv3NK19PxPBDParticleSystem20getParticleLockFlagsEv"></span><span id="_CPPv2NK19PxPBDParticleSystem20getParticleLockFlagsEv"></span><span id="PxPBDParticleSystem::getParticleLockFlagsC"></span><span class="target" id="class_px_p_b_d_particle_system_1a8e43789a2c0ec33394f38f97c4d01ad0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a525ccc423d7db7ccbabae3a62ca93f4b.html#_CPPv419PxParticleLockFlags" title="PxParticleLockFlags"><span class="n"><span class="pre">PxParticleLockFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleLockFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem20getParticleLockFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reads the particle lock flags. </p>
+<p>See the list of flags <a class="reference internal" href="struct_px_particle_lock_flag.html#struct_px_particle_lock_flag"><span class="std std-ref">PxParticleLockFlag</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_particle_lock_flag.html#struct_px_particle_lock_flag"><span class="std std-ref">PxParticleLockFlag</span></a> <a class="reference internal" href="#class_px_p_b_d_particle_system_1a91dbf28bd53ad65e50a38d3812700a17"><span class="std std-ref">setParticleLockFlag()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The values of the particle lock flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem19setParticleLockFlagEN18PxParticleLockFlag4EnumEb">
+<span id="_CPPv3N19PxPBDParticleSystem19setParticleLockFlagEN18PxParticleLockFlag4EnumEb"></span><span id="_CPPv2N19PxPBDParticleSystem19setParticleLockFlagEN18PxParticleLockFlag4EnumEb"></span><span id="PxPBDParticleSystem::setParticleLockFlag__PxParticleLockFlag::Enum.b"></span><span class="target" id="class_px_p_b_d_particle_system_1a91dbf28bd53ad65e50a38d3812700a17"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleLockFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_particle_lock_flag.html#_CPPv418PxParticleLockFlag" title="PxParticleLockFlag"><span class="n"><span class="pre">PxParticleLockFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_particle_lock_flag.html#_CPPv4N18PxParticleLockFlag4EnumE" title="PxParticleLockFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem19setParticleLockFlagEN18PxParticleLockFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raises or clears a particular particle lock flag. </p>
+<p>See the list of flags <a class="reference internal" href="struct_px_particle_lock_flag.html#struct_px_particle_lock_flag"><span class="std std-ref">PxParticleLockFlag</span></a></p>
+<p><strong>Default:</strong> no flags are set</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_particle_lock_flag.html#struct_px_particle_lock_flag"><span class="std std-ref">PxParticleLockFlag</span></a> <a class="reference internal" href="#class_px_p_b_d_particle_system_1a8e43789a2c0ec33394f38f97c4d01ad0"><span class="std std-ref">getParticleLockFlags()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The <a class="reference internal" href="struct_px_particle_lock_flag.html#struct_px_particle_lock_flag"><span class="std std-ref">PxParticleLockFlag</span></a> to raise(set) or clear. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The new boolean value for the flag.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem20setParticleLockFlagsE19PxParticleLockFlags">
+<span id="_CPPv3N19PxPBDParticleSystem20setParticleLockFlagsE19PxParticleLockFlags"></span><span id="_CPPv2N19PxPBDParticleSystem20setParticleLockFlagsE19PxParticleLockFlags"></span><span id="PxPBDParticleSystem::setParticleLockFlags__PxParticleLockFlags"></span><span class="target" id="class_px_p_b_d_particle_system_1a9ca48aefe7265bc191f48ec61ae7fc64"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleLockFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a525ccc423d7db7ccbabae3a62ca93f4b.html#_CPPv419PxParticleLockFlags" title="PxParticleLockFlags"><span class="n"><span class="pre">PxParticleLockFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem20setParticleLockFlagsE19PxParticleLockFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set all particle lock flags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_p_b_d_particle_system_1a91dbf28bd53ad65e50a38d3812700a17"><span class="std std-ref">setParticleLockFlag()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem11createPhaseEP13PxPBDMaterial20PxParticlePhaseFlags">
+<span id="_CPPv3N19PxPBDParticleSystem11createPhaseEP13PxPBDMaterial20PxParticlePhaseFlags"></span><span id="_CPPv2N19PxPBDParticleSystem11createPhaseEP13PxPBDMaterial20PxParticlePhaseFlags"></span><span id="PxPBDParticleSystem::createPhase__PxPBDMaterialP.PxParticlePhaseFlags"></span><span class="target" id="class_px_p_b_d_particle_system_1a7588f634c79e676e7f7e52b83e2ee2bf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">createPhase</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_p_b_d_material.html#_CPPv413PxPBDMaterial" title="PxPBDMaterial"><span class="n"><span class="pre">PxPBDMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">material</span></span>, <a class="reference internal" href="typedef__px_particle_system_flag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4.html#_CPPv420PxParticlePhaseFlags" title="PxParticlePhaseFlags"><span class="n"><span class="pre">PxParticlePhaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem11createPhaseEP13PxPBDMaterial20PxParticlePhaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates combined particle flag with particle material and particle phase flags. </p>
+<p>
+See <a class="reference internal" href="struct_px_particle_phase_flag.html#struct_px_particle_phase_flag"><span class="std std-ref">PxParticlePhaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>material</strong> – <strong>[in]</strong> A material instance to associate with the new particle group. </p></li>
+<li><p><strong>flags</strong> – <strong>[in]</strong> The particle phase flags. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The combined particle group index and phase flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem22getNbParticleMaterialsEv">
+<span id="_CPPv3NK19PxPBDParticleSystem22getNbParticleMaterialsEv"></span><span id="_CPPv2NK19PxPBDParticleSystem22getNbParticleMaterialsEv"></span><span id="PxPBDParticleSystem::getNbParticleMaterialsC"></span><span class="target" id="class_px_p_b_d_particle_system_1a8d770a0ef9dd59c04ac4ab87744b5043"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbParticleMaterials</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem22getNbParticleMaterialsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns number of particle materials referenced by particle phases. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of particle materials </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem20getParticleMaterialsEPP13PxPBDMaterial5PxU325PxU32">
+<span id="_CPPv3NK19PxPBDParticleSystem20getParticleMaterialsEPP13PxPBDMaterial5PxU325PxU32"></span><span id="_CPPv2NK19PxPBDParticleSystem20getParticleMaterialsEPP13PxPBDMaterial5PxU325PxU32"></span><span id="PxPBDParticleSystem::getParticleMaterials__PxPBDMaterialPP.PxU32.PxU32C"></span><span class="target" id="class_px_p_b_d_particle_system_1a5ddac72499dd382e8987f791727566ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getParticleMaterials</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_p_b_d_material.html#_CPPv413PxPBDMaterial" title="PxPBDMaterial"><span class="n"><span class="pre">PxPBDMaterial</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">bufferSize</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startIndex</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem20getParticleMaterialsEPP13PxPBDMaterial5PxU325PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns particle materials referenced by particle phases. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The particle materials </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem25setParticleSystemCallbackEP24PxParticleSystemCallback">
+<span id="_CPPv3N19PxPBDParticleSystem25setParticleSystemCallbackEP24PxParticleSystemCallback"></span><span id="_CPPv2N19PxPBDParticleSystem25setParticleSystemCallbackEP24PxParticleSystemCallback"></span><span id="PxPBDParticleSystem::setParticleSystemCallback__PxParticleSystemCallbackP"></span><span class="target" id="class_px_p_b_d_particle_system_1a2107bd5141d0a360cc3dd078e397aac8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setParticleSystemCallback</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_particle_system_callback.html#_CPPv424PxParticleSystemCallback" title="PxParticleSystemCallback"><span class="n"><span class="pre">PxParticleSystemCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">callback</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem25setParticleSystemCallbackEP24PxParticleSystemCallback" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a user notify object which receives special simulation events when they occur. </p>
+<p>
+See <a class="reference internal" href="class_px_particle_system_callback.html#class_px_particle_system_callback"><span class="std std-ref">PxParticleSystemCallback</span></a>, <a class="reference internal" href="#class_px_p_b_d_particle_system_1a1d827afe2050978591d249be6f288035"><span class="std std-ref">getParticleSystemCallback()</span></a> </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Do not set the callback while the simulation is running. Calls to this method while the simulation is running will be ignored. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A call to fetchResultsParticleSystem() on the <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> will synchronize the work such that the caller knows that all worke done in the callback completed.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>callback</strong> – <strong>[in]</strong> User notification callback. See <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback"><span class="std std-ref">PxSimulationEventCallback</span></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem25getParticleSystemCallbackEv">
+<span id="_CPPv3NK19PxPBDParticleSystem25getParticleSystemCallbackEv"></span><span id="_CPPv2NK19PxPBDParticleSystem25getParticleSystemCallbackEv"></span><span id="PxPBDParticleSystem::getParticleSystemCallbackC"></span><span class="target" id="class_px_p_b_d_particle_system_1a1d827afe2050978591d249be6f288035"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_particle_system_callback.html#_CPPv424PxParticleSystemCallback" title="PxParticleSystemCallback"><span class="n"><span class="pre">PxParticleSystemCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getParticleSystemCallback</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem25getParticleSystemCallbackEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the simulationEventCallback pointer set with setSimulationEventCallback(). </p>
+<p>
+See <a class="reference internal" href="class_px_particle_system_callback.html#class_px_particle_system_callback"><span class="std std-ref">PxParticleSystemCallback</span></a>, <a class="reference internal" href="#class_px_p_b_d_particle_system_1a2107bd5141d0a360cc3dd078e397aac8"><span class="std std-ref">setParticleSystemCallback()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current user notify pointer. See <a class="reference internal" href="class_px_simulation_event_callback.html#class_px_simulation_event_callback"><span class="std std-ref">PxSimulationEventCallback</span></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem17addParticleBufferEP16PxParticleBuffer">
+<span id="_CPPv3N19PxPBDParticleSystem17addParticleBufferEP16PxParticleBuffer"></span><span id="_CPPv2N19PxPBDParticleSystem17addParticleBufferEP16PxParticleBuffer"></span><span id="PxPBDParticleSystem::addParticleBuffer__PxParticleBufferP"></span><span class="target" id="class_px_p_b_d_particle_system_1a4d5211f3c7a2753f3ae11a688cbc7c3a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addParticleBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_particle_buffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><span class="n"><span class="pre">PxParticleBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">particleBuffer</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem17addParticleBufferEP16PxParticleBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Add an existing particle buffer to the particle system. </p>
+<p>
+See <a class="reference internal" href="class_px_particle_buffer.html#class_px_particle_buffer"><span class="std std-ref">PxParticleBuffer</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>particleBuffer</strong> – <strong>[in]</strong> a PxParticleBuffer*.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem20removeParticleBufferEP16PxParticleBuffer">
+<span id="_CPPv3N19PxPBDParticleSystem20removeParticleBufferEP16PxParticleBuffer"></span><span id="_CPPv2N19PxPBDParticleSystem20removeParticleBufferEP16PxParticleBuffer"></span><span id="PxPBDParticleSystem::removeParticleBuffer__PxParticleBufferP"></span><span class="target" id="class_px_p_b_d_particle_system_1a32ecac4c6e41f916ec3ee052b46ae346"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeParticleBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_particle_buffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><span class="n"><span class="pre">PxParticleBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">particleBuffer</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem20removeParticleBufferEP16PxParticleBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Remove particle buffer from the particle system. </p>
+<p>
+See <a class="reference internal" href="class_px_particle_buffer.html#class_px_particle_buffer"><span class="std std-ref">PxParticleBuffer</span></a>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>particleBuffer</strong> – <strong>[in]</strong> a PxParticleBuffer*.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem25getGpuParticleSystemIndexEv">
+<span id="_CPPv3N19PxPBDParticleSystem25getGpuParticleSystemIndexEv"></span><span id="_CPPv2N19PxPBDParticleSystem25getGpuParticleSystemIndexEv"></span><span id="PxPBDParticleSystem::getGpuParticleSystemIndex"></span><span class="target" id="class_px_p_b_d_particle_system_1a45756f116e42fddb29dd1361348c0b1c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGpuParticleSystemIndex</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem25getGpuParticleSystemIndexEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the GPU particle system index. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The GPU index, if the particle system is in a scene and PxSceneFlag::eENABLE_DIRECT_GPU_API is set, or 0xFFFFFFFF otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem7setWindERK6PxVec3">
+<span id="_CPPv3N19PxPBDParticleSystem7setWindERK6PxVec3"></span><span id="_CPPv2N19PxPBDParticleSystem7setWindERK6PxVec3"></span><span id="PxPBDParticleSystem::setWind__PxVec3CR"></span><span class="target" id="class_px_p_b_d_particle_system_1a25dd3d94c74c8bd96e02589ae091a103"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setWind</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">wind</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem7setWindERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set wind direction and intensity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>wind</strong> – <strong>[in]</strong> The wind direction and intensity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem7getWindEv">
+<span id="_CPPv3NK19PxPBDParticleSystem7getWindEv"></span><span id="_CPPv2NK19PxPBDParticleSystem7getWindEv"></span><span id="PxPBDParticleSystem::getWindC"></span><span class="target" id="class_px_p_b_d_particle_system_1a5a94c2b09a447f201e5f387526747954"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWind</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem7getWindEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the wind direction and intensity. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The wind direction and intensity </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem28setFluidBoundaryDensityScaleE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem28setFluidBoundaryDensityScaleE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem28setFluidBoundaryDensityScaleE6PxReal"></span><span id="PxPBDParticleSystem::setFluidBoundaryDensityScale__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a21c22bd1350f6af27bf52570e0524b9e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFluidBoundaryDensityScale</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fluidBoundaryDensityScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem28setFluidBoundaryDensityScaleE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the fluid boundary density scale. </p>
+<p>Defines how strong of a contribution the boundary (typically a rigid surface) should have on a fluid particle’s density.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fluidBoundaryDensityScale</strong> – <strong>[in]</strong> <strong>Range:</strong> (0.0, 1.0) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem28getFluidBoundaryDensityScaleEv">
+<span id="_CPPv3NK19PxPBDParticleSystem28getFluidBoundaryDensityScaleEv"></span><span id="_CPPv2NK19PxPBDParticleSystem28getFluidBoundaryDensityScaleEv"></span><span id="PxPBDParticleSystem::getFluidBoundaryDensityScaleC"></span><span class="target" id="class_px_p_b_d_particle_system_1a9ccbddd165fbeb7f80b3d4c84d3f8e5b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFluidBoundaryDensityScale</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem28getFluidBoundaryDensityScaleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the fluid boundary density scale. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a21c22bd1350f6af27bf52570e0524b9e"><span class="std std-ref">setFluidBoundaryDensityScale()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the fluid boundary density scale</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem18setFluidRestOffsetE6PxReal">
+<span id="_CPPv3N19PxPBDParticleSystem18setFluidRestOffsetE6PxReal"></span><span id="_CPPv2N19PxPBDParticleSystem18setFluidRestOffsetE6PxReal"></span><span id="PxPBDParticleSystem::setFluidRestOffset__PxReal"></span><span class="target" id="class_px_p_b_d_particle_system_1a9107c8cf9bdc8ab7c72096952fe0e040"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFluidRestOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fluidRestOffset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem18setFluidRestOffsetE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the fluid rest offset. </p>
+<p>Two fluid particles will come to rest at a distance equal to twice the fluidRestOffset value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fluidRestOffset</strong> – <strong>[in]</strong> <strong>Range:</strong> (0, particleContactOffset) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem18getFluidRestOffsetEv">
+<span id="_CPPv3NK19PxPBDParticleSystem18getFluidRestOffsetEv"></span><span id="_CPPv2NK19PxPBDParticleSystem18getFluidRestOffsetEv"></span><span id="PxPBDParticleSystem::getFluidRestOffsetC"></span><span class="target" id="class_px_p_b_d_particle_system_1ad1dc45656419b18d51863f5ae4d2fec7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFluidRestOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem18getFluidRestOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the fluid rest offset. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a9107c8cf9bdc8ab7c72096952fe0e040"><span class="std std-ref">setFluidRestOffset()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the fluid rest offset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem12setGridSizeXE5PxU32">
+<span id="_CPPv3N19PxPBDParticleSystem12setGridSizeXE5PxU32"></span><span id="_CPPv2N19PxPBDParticleSystem12setGridSizeXE5PxU32"></span><span id="PxPBDParticleSystem::setGridSizeX__PxU32"></span><span class="target" id="class_px_p_b_d_particle_system_1a6a9be7ff0cc2b7936bd0daf2a0439b14"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGridSizeX</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">gridSizeX</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem12setGridSizeXE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the particle system grid size x dimension. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gridSizeX</strong> – <strong>[in]</strong> x dimension in the particle grid </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12getGridSizeXEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12getGridSizeXEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12getGridSizeXEv"></span><span id="PxPBDParticleSystem::getGridSizeXC"></span><span class="target" id="class_px_p_b_d_particle_system_1a037afd1a838b6c938b1c893168568e7c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGridSizeX</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12getGridSizeXEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the particle system grid size x dimension. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a6a9be7ff0cc2b7936bd0daf2a0439b14"><span class="std std-ref">setGridSizeX()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[in] the x dimension in the particle grid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem12setGridSizeYE5PxU32">
+<span id="_CPPv3N19PxPBDParticleSystem12setGridSizeYE5PxU32"></span><span id="_CPPv2N19PxPBDParticleSystem12setGridSizeYE5PxU32"></span><span id="PxPBDParticleSystem::setGridSizeY__PxU32"></span><span class="target" id="class_px_p_b_d_particle_system_1a995611b0d49757dc8ed8742a2ba67aa8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGridSizeY</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">gridSizeY</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem12setGridSizeYE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the particle system grid size y dimension. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gridSizeY</strong> – <strong>[in]</strong> y dimension in the particle grid </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12getGridSizeYEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12getGridSizeYEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12getGridSizeYEv"></span><span id="PxPBDParticleSystem::getGridSizeYC"></span><span class="target" id="class_px_p_b_d_particle_system_1a65afc31a6d651fb770bb3fe77285c6ee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGridSizeY</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12getGridSizeYEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the particle system grid size y dimension. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a995611b0d49757dc8ed8742a2ba67aa8"><span class="std std-ref">setGridSizeY()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[in] the y dimension in the particle grid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem12setGridSizeZE5PxU32">
+<span id="_CPPv3N19PxPBDParticleSystem12setGridSizeZE5PxU32"></span><span id="_CPPv2N19PxPBDParticleSystem12setGridSizeZE5PxU32"></span><span id="PxPBDParticleSystem::setGridSizeZ__PxU32"></span><span class="target" id="class_px_p_b_d_particle_system_1a810152f2ff8ed29ad45f2f504d22c221"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setGridSizeZ</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">gridSizeZ</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem12setGridSizeZE5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the particle system grid size z dimension. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>gridSizeZ</strong> – <strong>[in]</strong> z dimension in the particle grid </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12getGridSizeZEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12getGridSizeZEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12getGridSizeZEv"></span><span id="PxPBDParticleSystem::getGridSizeZC"></span><span class="target" id="class_px_p_b_d_particle_system_1a8ed8c3b2e3c7cd8b542ecbf51a9fec0c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getGridSizeZ</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12getGridSizeZEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the particle system grid size z dimension. </p>
+<p>
+See <a class="reference internal" href="#class_px_p_b_d_particle_system_1a810152f2ff8ed29ad45f2f504d22c221"><span class="std std-ref">setGridSizeZ()</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[in] the z dimension in the particle grid</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem19getConcreteTypeNameEv">
+<span id="_CPPv3NK19PxPBDParticleSystem19getConcreteTypeNameEv"></span><span id="_CPPv2NK19PxPBDParticleSystem19getConcreteTypeNameEv"></span><span id="PxPBDParticleSystem::getConcreteTypeNameC"></span><span class="target" id="class_px_p_b_d_particle_system_1a84d73b0b90e0be1d86140e8318c2e054"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem7releaseEv">
+<span id="_CPPv3N19PxPBDParticleSystem7releaseEv"></span><span id="_CPPv2N19PxPBDParticleSystem7releaseEv"></span><span id="PxPBDParticleSystem::release"></span><span class="target" id="class_px_actor_1a589a4e70ef83b583ee6a4fc5c7767762"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deletes the actor. </p>
+<p>Do not keep a reference to the deleted instance.</p>
+<p>If the actor belongs to a <a class="reference internal" href="class_px_aggregate.html#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> object, it is automatically removed from the aggregate.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_base.html#class_px_base_1afe6aedda1df0d6d29b1a28213a5ee25a"><span class="std std-ref">PxBase.release()</span></a>, <a class="reference internal" href="class_px_aggregate.html#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem7getTypeEv">
+<span id="_CPPv3NK19PxPBDParticleSystem7getTypeEv"></span><span id="_CPPv2NK19PxPBDParticleSystem7getTypeEv"></span><span id="PxPBDParticleSystem::getTypeC"></span><span class="target" id="class_px_actor_1a76a3489218f85ce9fe3ffb883ba8ce63"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_actor_type.html#_CPPv411PxActorType" title="PxActorType"><span class="n"><span class="pre">PxActorType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_actor_type.html#_CPPv4N11PxActorType4EnumE" title="PxActorType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the type of actor. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_type.html#struct_px_actor_type"><span class="std std-ref">PxActorType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The actor type of the actor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem8getSceneEv">
+<span id="_CPPv3NK19PxPBDParticleSystem8getSceneEv"></span><span id="_CPPv2NK19PxPBDParticleSystem8getSceneEv"></span><span id="PxPBDParticleSystem::getSceneC"></span><span class="target" id="class_px_actor_1aa036e4445092795dad7207011fbd3918"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the scene which this actor belongs to. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Owner Scene. NULL if not part of a scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem7setNameEPKc">
+<span id="_CPPv3N19PxPBDParticleSystem7setNameEPKc"></span><span id="_CPPv2N19PxPBDParticleSystem7setNameEPKc"></span><span id="PxPBDParticleSystem::setName__cCP"></span><span class="target" id="class_px_actor_1afdcfb185892a5c8311fd0d825b0ce758"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem7setNameEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a name string for the object that can be retrieved with <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ac3ac0879f9553b05e36b9b370ce729f6"><span class="std std-ref">getName()</span></a>. </p>
+<p>This is for debugging and is not used by the SDK. The string is not copied by the SDK, only the pointer is stored.</p>
+<p><strong>Default:</strong> NULL</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ac3ac0879f9553b05e36b9b370ce729f6"><span class="std std-ref">getName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – <strong>[in]</strong> String to set the objects name to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem7getNameEv">
+<span id="_CPPv3NK19PxPBDParticleSystem7getNameEv"></span><span id="_CPPv2NK19PxPBDParticleSystem7getNameEv"></span><span id="PxPBDParticleSystem::getNameC"></span><span class="target" id="class_px_actor_1ac3ac0879f9553b05e36b9b370ce729f6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem7getNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the name string set with <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1afdcfb185892a5c8311fd0d825b0ce758"><span class="std std-ref">setName()</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_actor_1afdcfb185892a5c8311fd0d825b0ce758"><span class="std std-ref">setName()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Name string associated with object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem14getWorldBoundsEf">
+<span id="_CPPv3NK19PxPBDParticleSystem14getWorldBoundsEf"></span><span id="_CPPv2NK19PxPBDParticleSystem14getWorldBoundsEf"></span><span id="PxPBDParticleSystem::getWorldBounds__floatC"></span><span class="target" id="class_px_actor_1acab89ce3ee6d27b580063d131a417721"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_bounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getWorldBounds</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">float</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">inflation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">1.01f</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem14getWorldBoundsEf" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the axis aligned bounding box enclosing the actor. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_bounds3.html#class_px_bounds3"><span class="std std-ref">PxBounds3</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is not allowed to use this method while the simulation is running (except during <a class="reference internal" href="class_px_scene.html#class_px_scene_1a698947ec5653ac7a2c466122f393e477"><span class="std std-ref">PxScene::collide()</span></a>, in <a class="reference internal" href="class_px_contact_modify_callback.html#class_px_contact_modify_callback"><span class="std std-ref">PxContactModifyCallback</span></a> or in contact report callbacks).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inflation</strong> – <strong>[in]</strong> Scale factor for computed world bounds. Box extents are multiplied by this value.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The actor’s bounding box.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem12setActorFlagEN11PxActorFlag4EnumEb">
+<span id="_CPPv3N19PxPBDParticleSystem12setActorFlagEN11PxActorFlag4EnumEb"></span><span id="_CPPv2N19PxPBDParticleSystem12setActorFlagEN11PxActorFlag4EnumEb"></span><span id="PxPBDParticleSystem::setActorFlag__PxActorFlag::Enum.b"></span><span class="target" id="class_px_actor_1ae24ff3f3ed0cb2a138b382fd0720b94f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setActorFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_actor_flag.html#_CPPv411PxActorFlag" title="PxActorFlag"><span class="n"><span class="pre">PxActorFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_actor_flag.html#_CPPv4N11PxActorFlag4EnumE" title="PxActorFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem12setActorFlagEN11PxActorFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Raises or clears a particular actor flag. </p>
+<p>See the list of flags <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a></p>
+<p><strong>Sleeping:</strong> Does <strong>NOT</strong> wake the actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1afb92fb228de76bbcd42210d060b558d1"><span class="std std-ref">getActorFlags()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> flag to raise(set) or clear. See <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a>. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The boolean value to assign to the flag.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem13setActorFlagsE12PxActorFlags">
+<span id="_CPPv3N19PxPBDParticleSystem13setActorFlagsE12PxActorFlags"></span><span id="_CPPv2N19PxPBDParticleSystem13setActorFlagsE12PxActorFlags"></span><span id="PxPBDParticleSystem::setActorFlags__PxActorFlags"></span><span class="target" id="class_px_actor_1af60720e190324e8ff36281a2360c6043"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setActorFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_actor_8h_1a468ad85db838378f0c58cfd02a96949b.html#_CPPv412PxActorFlags" title="PxActorFlags"><span class="n"><span class="pre">PxActorFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem13setActorFlagsE12PxActorFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the actor flags. </p>
+<p>See the list of flags <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ae24ff3f3ed0cb2a138b382fd0720b94f"><span class="std std-ref">setActorFlag()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem13getActorFlagsEv">
+<span id="_CPPv3NK19PxPBDParticleSystem13getActorFlagsEv"></span><span id="_CPPv2NK19PxPBDParticleSystem13getActorFlagsEv"></span><span id="PxPBDParticleSystem::getActorFlagsC"></span><span class="target" id="class_px_actor_1afb92fb228de76bbcd42210d060b558d1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_actor_8h_1a468ad85db838378f0c58cfd02a96949b.html#_CPPv412PxActorFlags" title="PxActorFlags"><span class="n"><span class="pre">PxActorFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getActorFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem13getActorFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reads the <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> flags. </p>
+<p>See the list of flags <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a></p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1ae24ff3f3ed0cb2a138b382fd0720b94f"><span class="std std-ref">setActorFlag()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The values of the <a class="reference internal" href="class_px_actor.html#class_px_actor"><span class="std std-ref">PxActor</span></a> flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem17setDominanceGroupE16PxDominanceGroup">
+<span id="_CPPv3N19PxPBDParticleSystem17setDominanceGroupE16PxDominanceGroup"></span><span id="_CPPv2N19PxPBDParticleSystem17setDominanceGroupE16PxDominanceGroup"></span><span id="PxPBDParticleSystem::setDominanceGroup__PxDominanceGroup"></span><span class="target" id="class_px_actor_1a614c46687cf76eb219ce47927fc90824"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDominanceGroup</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_actor_8h_1af665154f3f66f7c4f65ca9015db8ee87.html#_CPPv416PxDominanceGroup" title="PxDominanceGroup"><span class="n"><span class="pre">PxDominanceGroup</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dominanceGroup</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem17setDominanceGroupE16PxDominanceGroup" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Assigns dynamic actors a dominance group identifier. </p>
+<p>PxDominanceGroup is a 5 bit group identifier (legal range from 0 to 31).</p>
+<p>The <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab6d9e986e6af967d2bd60a63a0b550c4"><span class="std std-ref">PxScene::setDominanceGroupPair()</span></a> lets you set certain behaviors for pairs of dominance groups. By default every dynamic actor is created in group 0.</p>
+<p><strong>Default:</strong> 0</p>
+<p><strong>Sleeping:</strong> Changing the dominance group does <strong>NOT</strong> wake the actor up automatically.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_actor_1a24602fee489b3e797ff0f82613eef755"><span class="std std-ref">getDominanceGroup()</span></a> PxDominanceGroup <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab6d9e986e6af967d2bd60a63a0b550c4"><span class="std std-ref">PxScene::setDominanceGroupPair()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dominanceGroup</strong> – <strong>[in]</strong> The dominance group identifier. <strong>Range:</strong> [0..31]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem17getDominanceGroupEv">
+<span id="_CPPv3NK19PxPBDParticleSystem17getDominanceGroupEv"></span><span id="_CPPv2NK19PxPBDParticleSystem17getDominanceGroupEv"></span><span id="PxPBDParticleSystem::getDominanceGroupC"></span><span class="target" id="class_px_actor_1a24602fee489b3e797ff0f82613eef755"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_actor_8h_1af665154f3f66f7c4f65ca9015db8ee87.html#_CPPv416PxDominanceGroup" title="PxDominanceGroup"><span class="n"><span class="pre">PxDominanceGroup</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDominanceGroup</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem17getDominanceGroupEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the value set with <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1a614c46687cf76eb219ce47927fc90824"><span class="std std-ref">setDominanceGroup()</span></a>. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_soft_body.html#class_px_actor_1a614c46687cf76eb219ce47927fc90824"><span class="std std-ref">setDominanceGroup()</span></a> PxDominanceGroup <a class="reference internal" href="class_px_scene.html#class_px_scene_1ab6d9e986e6af967d2bd60a63a0b550c4"><span class="std std-ref">PxScene::setDominanceGroupPair()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The dominance group of this actor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem14setOwnerClientE10PxClientID">
+<span id="_CPPv3N19PxPBDParticleSystem14setOwnerClientE10PxClientID"></span><span id="_CPPv2N19PxPBDParticleSystem14setOwnerClientE10PxClientID"></span><span id="PxPBDParticleSystem::setOwnerClient__PxClientID"></span><span class="target" id="class_px_actor_1a9bb8613863cf1d73e4d0c0227f25bc6e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setOwnerClient</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#_CPPv410PxClientID" title="PxClientID"><span class="n"><span class="pre">PxClientID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inClient</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem14setOwnerClientE10PxClientID" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the owner client of an actor. </p>
+<p>This cannot be done once the actor has been placed into a scene.</p>
+<p><strong>Default:</strong> PX_DEFAULT_CLIENT</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxClientID <a class="reference internal" href="class_px_scene.html#class_px_scene_1a285849425521dd0344f55b4a7c0a834a"><span class="std std-ref">PxScene::createClient()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem14getOwnerClientEv">
+<span id="_CPPv3NK19PxPBDParticleSystem14getOwnerClientEv"></span><span id="_CPPv2NK19PxPBDParticleSystem14getOwnerClientEv"></span><span id="PxPBDParticleSystem::getOwnerClientC"></span><span class="target" id="class_px_actor_1a660828fb83c91f0ada2ca43e06aa2b35"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#_CPPv410PxClientID" title="PxClientID"><span class="n"><span class="pre">PxClientID</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getOwnerClient</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem14getOwnerClientEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the owner client that was specified at creation time. </p>
+<p>This value cannot be changed once the object is placed into the scene.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxClientID <a class="reference internal" href="class_px_scene.html#class_px_scene_1a285849425521dd0344f55b4a7c0a834a"><span class="std std-ref">PxScene::createClient()</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12getAggregateEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12getAggregateEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12getAggregateEv"></span><span id="PxPBDParticleSystem::getAggregateC"></span><span class="target" id="class_px_actor_1a7162841fb23006373dbb86c4ebda0896"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_aggregate.html#_CPPv411PxAggregate" title="PxAggregate"><span class="n"><span class="pre">PxAggregate</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAggregate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12getAggregateEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the aggregate the actor might be a part of. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_aggregate.html#class_px_aggregate"><span class="std std-ref">PxAggregate</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The aggregate the actor is a part of, or NULL if the actor does not belong to an aggregate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN19PxPBDParticleSystem2isEP1Tv">
+<span id="_CPPv3I0EN19PxPBDParticleSystem2isEv"></span><span id="_CPPv2I0EN19PxPBDParticleSystem2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN19PxPBDParticleSystem2isEP1Tv" title="PxPBDParticleSystem::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN19PxPBDParticleSystem2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxPBDParticleSystem2isEPK1Tv">
+<span id="_CPPv3I0ENK19PxPBDParticleSystem2isEv"></span><span id="_CPPv2I0ENK19PxPBDParticleSystem2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK19PxPBDParticleSystem2isEPK1Tv" title="PxPBDParticleSystem::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxPBDParticleSystem2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem15getConcreteTypeEv">
+<span id="_CPPv3NK19PxPBDParticleSystem15getConcreteTypeEv"></span><span id="_CPPv2NK19PxPBDParticleSystem15getConcreteTypeEv"></span><span id="PxPBDParticleSystem::getConcreteTypeC"></span><span class="target" id="class_px_base_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_base_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type"><span class="std std-ref">PxConcreteType</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><a class="reference internal" href="struct_px_concrete_type.html#struct_px_concrete_type_1ad762aca1d4c8fffae41267fae4f1b8e8"><span class="std std-ref">PxConcreteType::Enum</span></a> of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N19PxPBDParticleSystem11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N19PxPBDParticleSystem11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxPBDParticleSystem::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="class_px_base_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_base_flag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_base_flag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set <a class="reference internal" href="struct_px_base_flag.html#struct_px_base_flag"><span class="std std-ref">PxBaseFlag</span></a> </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N19PxPBDParticleSystem12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N19PxPBDParticleSystem12setBaseFlagsE11PxBaseFlags"></span><span id="PxPBDParticleSystem::setBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12getBaseFlagsEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12getBaseFlagsEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12getBaseFlagsEv"></span><span id="PxPBDParticleSystem::getBaseFlagsC"></span><span class="target" id="class_px_base_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem12isReleasableEv">
+<span id="_CPPv3NK19PxPBDParticleSystem12isReleasableEv"></span><span id="_CPPv2NK19PxPBDParticleSystem12isReleasableEv"></span><span id="PxPBDParticleSystem::isReleasableC"></span><span class="target" id="class_px_base_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization.html#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">PxSerialization::isSerializable</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem8userDataE">
+<span id="_CPPv3N19PxPBDParticleSystem8userDataE"></span><span id="_CPPv2N19PxPBDParticleSystem8userDataE"></span><span id="PxPBDParticleSystem::userData__voidP"></span><span class="target" id="class_px_actor_1ace426ce4cca4de88806beee01eb4b87e"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem19PxPBDParticleSystemE6PxType11PxBaseFlags">
+<span id="_CPPv3N19PxPBDParticleSystem19PxPBDParticleSystemE6PxType11PxBaseFlags"></span><span id="_CPPv2N19PxPBDParticleSystem19PxPBDParticleSystemE6PxType11PxBaseFlags"></span><span id="PxPBDParticleSystem::PxPBDParticleSystem__PxType.PxBaseFlags"></span><span class="target" id="class_px_p_b_d_particle_system_1a35384a5138be97ee6ba711f3d469f9ab"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDParticleSystem</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_base_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem19PxPBDParticleSystemE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem19PxPBDParticleSystemE11PxBaseFlags">
+<span id="_CPPv3N19PxPBDParticleSystem19PxPBDParticleSystemE11PxBaseFlags"></span><span id="_CPPv2N19PxPBDParticleSystem19PxPBDParticleSystemE11PxBaseFlags"></span><span id="PxPBDParticleSystem::PxPBDParticleSystem__PxBaseFlags"></span><span class="target" id="class_px_p_b_d_particle_system_1acc670a266becf8875dc76298511c5ef8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxPBDParticleSystem</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem19PxPBDParticleSystemE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxPBDParticleSystem8isKindOfEPKc">
+<span id="_CPPv3NK19PxPBDParticleSystem8isKindOfEPKc"></span><span id="_CPPv2NK19PxPBDParticleSystem8isKindOfEPKc"></span><span id="PxPBDParticleSystem::isKindOf__cCPC"></span><span class="target" id="class_px_p_b_d_particle_system_1a8287b604b083f1621662dfe57baf1f29"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><a class="headerlink" href="#_CPPv4NK19PxPBDParticleSystem8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxPBDParticleSystem9typeMatchEbv">
+<span id="_CPPv3I0ENK19PxPBDParticleSystem9typeMatchEv"></span><span id="_CPPv2I0ENK19PxPBDParticleSystem9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="class_px_base_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxPBDParticleSystem9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem13mConcreteTypeE">
+<span id="_CPPv3N19PxPBDParticleSystem13mConcreteTypeE"></span><span id="_CPPv2N19PxPBDParticleSystem13mConcreteTypeE"></span><span id="PxPBDParticleSystem::mConcreteType__PxType"></span><span class="target" id="class_px_base_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef__px_base_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem10mBaseFlagsE">
+<span id="_CPPv3N19PxPBDParticleSystem10mBaseFlagsE"></span><span id="_CPPv2N19PxPBDParticleSystem10mBaseFlagsE"></span><span id="PxPBDParticleSystem::mBaseFlags__PxBaseFlags"></span><span class="target" id="class_px_base_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxPBDParticleSystem16mBuiltInRefCountE">
+<span id="_CPPv3N19PxPBDParticleSystem16mBuiltInRefCountE"></span><span id="_CPPv2N19PxPBDParticleSystem16mBuiltInRefCountE"></span><span id="PxPBDParticleSystem::mBuiltInRefCount__PxU32"></span><span class="target" id="class_px_base_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N19PxPBDParticleSystem16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

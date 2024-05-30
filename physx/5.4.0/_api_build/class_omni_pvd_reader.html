@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniPvdReader &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="OmniPvdWriteStream" href="class_omni_pvd_write_stream.html" />
+    <link rel="prev" title="OmniPvdReadStream" href="class_omni_pvd_read_stream.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_compute_type.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_read_type.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_write_type.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_mimic_joint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_direct_g_p_u_a_p_i.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_friction_anchor_stream_iterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_particle_system.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pinned_allocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body_ext.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_read_type.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_write_type.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>OmniPvdReader</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omnipvdreader">
+<h1>OmniPvdReader<a class="headerlink" href="#omnipvdreader" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_pvdruntime_include_OmniPvdReader.h.html#omni-pvd-reader-8h"><span class="std std-ref">pvdruntime/include/OmniPvdReader.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413OmniPvdReader">
+<span id="_CPPv313OmniPvdReader"></span><span id="_CPPv213OmniPvdReader"></span><span id="OmniPvdReader"></span><span class="target" id="class_omni_pvd_reader"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OmniPvdReader</span></span></span><a class="headerlink" href="#_CPPv413OmniPvdReader" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Used to read debug information from an <a class="reference internal" href="class_omni_pvd_read_stream.html#class_omni_pvd_read_stream"><span class="std std-ref">OmniPvdReadStream</span></a>. </p>
+<p>Using the getNextCommand function in a while loop for example one can traverse the stream one command after another. Given the command, different functions below will be available.</p>
+<p>Using the OmniPvdCommand::Enum one can determine the type of command and like that use the appropriate get functions to extract the payload from the command. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReaderD0Ev">
+<span id="_CPPv3N13OmniPvdReaderD0Ev"></span><span id="_CPPv2N13OmniPvdReaderD0Ev"></span><span id="OmniPvdReader::~OmniPvdReader"></span><span class="target" id="class_omni_pvd_reader_1a0589be8c253e41d517ff898beb3273c2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~OmniPvdReader</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13OmniPvdReaderD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction">
+<span id="_CPPv3N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction"></span><span id="_CPPv2N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction"></span><span id="OmniPvdReader::setLogFunction__OmniPvdLogFunction"></span><span class="target" id="class_omni_pvd_reader_1abc8eebf5cc4ad2010dad3dfdb5aaeb10"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLogFunction</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#_CPPv418OmniPvdLogFunction" title="OmniPvdLogFunction"><span class="n"><span class="pre">OmniPvdLogFunction</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">logFunction</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14setLogFunctionE18OmniPvdLogFunction" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the log function to print the internal debug messages of the OmniPVD Reader instance. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logFunction</strong> – The function pointer to receive the log messages </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader13setReadStreamER17OmniPvdReadStream">
+<span id="_CPPv3N13OmniPvdReader13setReadStreamER17OmniPvdReadStream"></span><span id="_CPPv2N13OmniPvdReader13setReadStreamER17OmniPvdReadStream"></span><span id="OmniPvdReader::setReadStream__OmniPvdReadStreamR"></span><span class="target" id="class_omni_pvd_reader_1ad60469de6e9510091eef6e923ef40802"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setReadStream</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_omni_pvd_read_stream.html#_CPPv417OmniPvdReadStream" title="OmniPvdReadStream"><span class="n"><span class="pre">OmniPvdReadStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader13setReadStreamER17OmniPvdReadStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the read stream that contains the OmniPVD API command stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stream</strong> – The <a class="reference internal" href="class_omni_pvd_read_stream.html#class_omni_pvd_read_stream"><span class="std std-ref">OmniPvdReadStream</span></a> that holds the stream of API calls/notifications </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType">
+<span id="_CPPv3N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType"></span><span id="_CPPv2N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType"></span><span id="OmniPvdReader::startReading__OmniPvdVersionTypeR.OmniPvdVersionTypeR.OmniPvdVersionTypeR"></span><span class="target" id="class_omni_pvd_reader_1a100b5c5205de3d6dddd83c8554ce5411"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">startReading</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">majorVersion</span></span>, <a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">minorVersion</span></span>, <a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">patch</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12startReadingER18OmniPvdVersionTypeR18OmniPvdVersionTypeR18OmniPvdVersionType" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Extracts the versions from the binary file to read and tests if the file is older or equal to that of the reader. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>majorVersion</strong> – The major versions of the stream </p></li>
+<li><p><strong>minorVersion</strong> – The minor versions of the stream </p></li>
+<li><p><strong>patch</strong> – The patch number of the stream </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>If the reading was possible to start or not </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14getNextCommandEv">
+<span id="_CPPv3N13OmniPvdReader14getNextCommandEv"></span><span id="_CPPv2N13OmniPvdReader14getNextCommandEv"></span><span id="OmniPvdReader::getNextCommand"></span><span class="target" id="class_omni_pvd_reader_1a3cf1d39e4b1f6a667aec9259c58dcaf0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_omni_pvd_command.html#_CPPv414OmniPvdCommand" title="OmniPvdCommand"><span class="n"><span class="pre">OmniPvdCommand</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_omni_pvd_command.html#_CPPv4N14OmniPvdCommand4EnumE" title="OmniPvdCommand::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNextCommand</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14getNextCommandEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The heartbeat function of the reader class. </p>
+<p>As long as the command that is returned is not equal to OmniPvdCommand::eINVALID, then one can safely extract the data fields from the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The command enum type </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getMajorVersionEv">
+<span id="_CPPv3N13OmniPvdReader15getMajorVersionEv"></span><span id="_CPPv2N13OmniPvdReader15getMajorVersionEv"></span><span id="OmniPvdReader::getMajorVersion"></span><span class="target" id="class_omni_pvd_reader_1abdf2743b1c28ebb2a5f58bad5a975e50"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMajorVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getMajorVersionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the major version of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The major version </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getMinorVersionEv">
+<span id="_CPPv3N13OmniPvdReader15getMinorVersionEv"></span><span id="_CPPv2N13OmniPvdReader15getMinorVersionEv"></span><span id="OmniPvdReader::getMinorVersion"></span><span class="target" id="class_omni_pvd_reader_1a23a894f1a484552a856dbd4ca722fd49"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMinorVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getMinorVersionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the minor version of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The minor version </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader8getPatchEv">
+<span id="_CPPv3N13OmniPvdReader8getPatchEv"></span><span id="_CPPv2N13OmniPvdReader8getPatchEv"></span><span id="OmniPvdReader::getPatch"></span><span class="target" id="class_omni_pvd_reader_1a41c4d95f0b0caaa1d47114f923fb388e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_CPPv418OmniPvdVersionType" title="OmniPvdVersionType"><span class="n"><span class="pre">OmniPvdVersionType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader8getPatchEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the patch number of the stream. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The patch value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getContextHandleEv">
+<span id="_CPPv3N13OmniPvdReader16getContextHandleEv"></span><span id="_CPPv2N13OmniPvdReader16getContextHandleEv"></span><span id="OmniPvdReader::getContextHandle"></span><span class="target" id="class_omni_pvd_reader_1a2786bc9a9d3e4f37f4d725839be21bec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_CPPv420OmniPvdContextHandle" title="OmniPvdContextHandle"><span class="n"><span class="pre">OmniPvdContextHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContextHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getContextHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the context handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The context handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader15getObjectHandleEv">
+<span id="_CPPv3N13OmniPvdReader15getObjectHandleEv"></span><span id="_CPPv2N13OmniPvdReader15getObjectHandleEv"></span><span id="OmniPvdReader::getObjectHandle"></span><span class="target" id="class_omni_pvd_reader_1aea3feac01dc052ba37347b5c00697bd1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_CPPv419OmniPvdObjectHandle" title="OmniPvdObjectHandle"><span class="n"><span class="pre">OmniPvdObjectHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getObjectHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader15getObjectHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the object handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The object handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader14getClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader14getClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader14getClassHandleEv"></span><span id="OmniPvdReader::getClassHandle"></span><span class="target" id="class_omni_pvd_reader_1a0889843b7861a35866b1c4023042af81"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader14getClassHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the class handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The class handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getBaseClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getBaseClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getBaseClassHandleEv"></span><span id="OmniPvdReader::getBaseClassHandle"></span><span class="target" id="class_omni_pvd_reader_1ac4b4e25b5629952022011f32e85e3b99"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getBaseClassHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the base class handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The base class handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getAttributeHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getAttributeHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getAttributeHandleEv"></span><span id="OmniPvdReader::getAttributeHandle"></span><span class="target" id="class_omni_pvd_reader_1a0cca77be5e2de11d6137305423362b3e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_CPPv422OmniPvdAttributeHandle" title="OmniPvdAttributeHandle"><span class="n"><span class="pre">OmniPvdAttributeHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getAttributeHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the attribute handle of the latest command, if it had one, else OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The attribute handle of the latest command </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12getClassNameEv">
+<span id="_CPPv3N13OmniPvdReader12getClassNameEv"></span><span id="_CPPv2N13OmniPvdReader12getClassNameEv"></span><span id="OmniPvdReader::getClassName"></span><span class="target" id="class_omni_pvd_reader_1a2e568efce6613cddebef4cf33ab53a4a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getClassName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12getClassNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the class name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The string containing the class name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getAttributeNameEv">
+<span id="_CPPv3N13OmniPvdReader16getAttributeNameEv"></span><span id="_CPPv2N13OmniPvdReader16getAttributeNameEv"></span><span id="OmniPvdReader::getAttributeName"></span><span class="target" id="class_omni_pvd_reader_1ab8ce3798816d3b7dc9a33580620ec403"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getAttributeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the attribute name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The string containing the attribute name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader13getObjectNameEv">
+<span id="_CPPv3N13OmniPvdReader13getObjectNameEv"></span><span id="_CPPv2N13OmniPvdReader13getObjectNameEv"></span><span id="OmniPvdReader::getObjectName"></span><span class="target" id="class_omni_pvd_reader_1afa4e63f524038596a33a8032b54abade"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getObjectName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader13getObjectNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the object name of the latest command, if it had one, else a null terminated string of length 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The string containing the object name </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader23getAttributeDataPointerEv">
+<span id="_CPPv3N13OmniPvdReader23getAttributeDataPointerEv"></span><span id="_CPPv2N13OmniPvdReader23getAttributeDataPointerEv"></span><span id="OmniPvdReader::getAttributeDataPointer"></span><span class="target" id="class_omni_pvd_reader_1a239dfd0666f0920d3b51ca876d0de36a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint8_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataPointer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader23getAttributeDataPointerEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the attribute data pointer, if it had one, else returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The array containing the attribute data </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader20getAttributeDataTypeEv">
+<span id="_CPPv3N13OmniPvdReader20getAttributeDataTypeEv"></span><span id="_CPPv2N13OmniPvdReader20getAttributeDataTypeEv"></span><span id="OmniPvdReader::getAttributeDataType"></span><span class="target" id="class_omni_pvd_reader_1acb229154c831f975e3b666b6fccf5fcb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_omni_pvd_data_type.html#_CPPv415OmniPvdDataType" title="OmniPvdDataType"><span class="n"><span class="pre">OmniPvdDataType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_omni_pvd_data_type.html#_CPPv4N15OmniPvdDataType4EnumE" title="OmniPvdDataType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader20getAttributeDataTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the attribute data type, the data type is undefined if the last command did not contain attribute data. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The attribute data type </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader22getAttributeDataLengthEv">
+<span id="_CPPv3N13OmniPvdReader22getAttributeDataLengthEv"></span><span id="_CPPv2N13OmniPvdReader22getAttributeDataLengthEv"></span><span id="OmniPvdReader::getAttributeDataLength"></span><span class="target" id="class_omni_pvd_reader_1a0ecd864fde0ced7ceae5de38330f5bee"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeDataLength</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader22getAttributeDataLengthEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the attribute data length, the data length of the last command if it was defined, otherwise returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The attribute data length </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader26getAttributeNumberElementsEv">
+<span id="_CPPv3N13OmniPvdReader26getAttributeNumberElementsEv"></span><span id="_CPPv2N13OmniPvdReader26getAttributeNumberElementsEv"></span><span id="OmniPvdReader::getAttributeNumberElements"></span><span class="target" id="class_omni_pvd_reader_1a2823d06429968288d2010c955f9bf94e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeNumberElements</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader26getAttributeNumberElementsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of elements contained in the last set operation, if they were defined, otherwise returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The number of elements </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader23getAttributeClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader23getAttributeClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader23getAttributeClassHandleEv"></span><span id="OmniPvdReader::getAttributeClassHandle"></span><span class="target" id="class_omni_pvd_reader_1adc207b9791e4aba79e39596e7a700c19"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getAttributeClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader23getAttributeClassHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the numberclass handle of the attribute class, if it was defined, else returns OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The attibute class handle </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader17getFrameTimeStartEv">
+<span id="_CPPv3N13OmniPvdReader17getFrameTimeStartEv"></span><span id="_CPPv2N13OmniPvdReader17getFrameTimeStartEv"></span><span id="OmniPvdReader::getFrameTimeStart"></span><span class="target" id="class_omni_pvd_reader_1a69f84027b2f732a91a519da942363c1b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFrameTimeStart</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader17getFrameTimeStartEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the frame start value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The frame ID value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader16getFrameTimeStopEv">
+<span id="_CPPv3N13OmniPvdReader16getFrameTimeStopEv"></span><span id="_CPPv2N13OmniPvdReader16getFrameTimeStopEv"></span><span id="OmniPvdReader::getFrameTimeStop"></span><span class="target" id="class_omni_pvd_reader_1aee0d9767d37792abe6f6c3ccd548318e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFrameTimeStop</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader16getFrameTimeStopEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the frame stop value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The frame ID value </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader18getEnumClassHandleEv">
+<span id="_CPPv3N13OmniPvdReader18getEnumClassHandleEv"></span><span id="_CPPv2N13OmniPvdReader18getEnumClassHandleEv"></span><span id="OmniPvdReader::getEnumClassHandle"></span><span class="target" id="class_omni_pvd_reader_1a065c9005042bc89137446cc3d91dbefa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_CPPv418OmniPvdClassHandle" title="OmniPvdClassHandle"><span class="n"><span class="pre">OmniPvdClassHandle</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEnumClassHandle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader18getEnumClassHandleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the class handle containing the enum values, if it was defined, else returns OMNI_PVD_INVALID_HANDLE. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The enum class handle </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13OmniPvdReader12getEnumValueEv">
+<span id="_CPPv3N13OmniPvdReader12getEnumValueEv"></span><span id="_CPPv2N13OmniPvdReader12getEnumValueEv"></span><span id="OmniPvdReader::getEnumValue"></span><span class="target" id="class_omni_pvd_reader_1a11b0fb6fb492f6789033cc5cb383afa7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#_CPPv420OmniPvdEnumValueType" title="OmniPvdEnumValueType"><span class="n"><span class="pre">OmniPvdEnumValueType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getEnumValue</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N13OmniPvdReader12getEnumValueEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the enum value for a specific flag, if it was defined, else returns 0. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The enum value </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExtGpu &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ExtGpu::PxCreateAndPopulateParticleAndDiffuseBuffer" href="function__px_particle_ext_8h_1a2033610bde128db674322afe1f9eebf0.html" />
+    <link rel="prev" title="Namespaces" href="namespaces.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">ExtGpu</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a2033610bde128db674322afe1f9eebf0.html">PxCreateAndPopulateParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a894fa2d24d58f68b5f6c33d8c062c46c.html">PxCreateAndPopulateParticleBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a2ce51fe8160cb38a6d0755ddcd21ece4.html">PxCreateAndPopulateParticleClothBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a7b15aefa77133d2a3745bee551edaba4.html">PxCreateAndPopulateParticleRigidBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1ae95284301d9c54615a4fea5a21c3ffd4.html">PxCreateParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a865ba51e4fdf0d508878d4821c672fd9.html">PxCreateParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1a25dd2d94226d301b551654612353014b.html">PxCreateParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function__px_particle_ext_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html">PxCreateParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc.html">PxParticleAndDiffuseBufferDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="class_ext_gpu_1_1_px_particle_attachment_buffer.html">PxParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_buffer_desc.html">PxParticleBufferDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_buffer_helper.html">PxParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_cloth_constraint.html">PxParticleClothConstraint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_cooker.html">PxParticleClothCooker</a></li>
+<li class="toctree-l5"><a class="reference internal" href="class_ext_gpu_1_1_px_particle_rigid_buffer_helper.html">PxParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_rigid_desc.html">PxParticleRigidDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="class_ext_gpu_1_1_px_particle_volume_buffer_helper.html">PxParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_volume_mesh.html">PxParticleVolumeMesh</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_aos.html">aos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_physx.html">physx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_pvdsdk.html">pvdsdk</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+<li>ExtGpu</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extgpu">
+<h1>ExtGpu<a class="headerlink" href="#extgpu" title="Permalink to this headline"></a></h1>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv46ExtGpu">
+<span id="_CPPv36ExtGpu"></span><span id="_CPPv26ExtGpu"></span><span id="ExtGpu"></span><span class="target" id="namespace_ext_gpu"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExtGpu</span></span></span><a class="headerlink" href="#_CPPv46ExtGpu" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+<p class="rubric-h4 rubric">Classes</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="class_ext_gpu_1_1_px_particle_attachment_buffer.html#class_ext_gpu_1_1_px_particle_attachment_buffer"><span class="std std-ref">PxParticleAttachmentBuffer</span></a>: Holds user-defined attachment data to attach particles to other bodies.</p></li>
+<li><p><a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_buffer_helper.html#class_ext_gpu_1_1_px_particle_cloth_buffer_helper"><span class="std std-ref">PxParticleClothBufferHelper</span></a>: Helper class to manage <a class="reference internal" href="struct_px_particle_cloth_desc.html#struct_px_particle_cloth_desc"><span class="std std-ref">PxParticleClothDesc</span></a> buffers used for communicating particle based cloths to <a class="reference internal" href="class_px_particle_cloth_buffer.html#class_px_particle_cloth_buffer"><span class="std std-ref">PxParticleClothBuffer</span></a> .</p></li>
+<li><p><a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_cooker.html#class_ext_gpu_1_1_px_particle_cloth_cooker"><span class="std std-ref">PxParticleClothCooker</span></a></p></li>
+<li><p><a class="reference internal" href="class_ext_gpu_1_1_px_particle_rigid_buffer_helper.html#class_ext_gpu_1_1_px_particle_rigid_buffer_helper"><span class="std std-ref">PxParticleRigidBufferHelper</span></a>: Helper class to manage <a class="reference internal" href="struct_ext_gpu_1_1_px_particle_rigid_desc.html#struct_ext_gpu_1_1_px_particle_rigid_desc"><span class="std std-ref">PxParticleRigidDesc</span></a> buffers used for communicating particle based rigids to PxPaticleSystem.</p></li>
+<li><p><a class="reference internal" href="class_ext_gpu_1_1_px_particle_volume_buffer_helper.html#class_ext_gpu_1_1_px_particle_volume_buffer_helper"><span class="std std-ref">PxParticleVolumeBufferHelper</span></a>: Helper class to manage communicating PxParticleVolumes data to <a class="reference internal" href="class_px_particle_buffer.html#class_px_particle_buffer"><span class="std std-ref">PxParticleBuffer</span></a> .</p></li>
+</ul>
+<p class="rubric-h4 rubric">Functions</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a2033610bde128db674322afe1f9eebf0.html#_px_particle_ext_8h_1a2033610bde128db674322afe1f9eebf0"><span class="std std-ref">PxCreateAndPopulateParticleAndDiffuseBuffer(const ExtGpu::PxParticleAndDiffuseBufferDesc &amp;desc, PxCudaContextManager *cudaContextManager)</span></a>: Creates and populates a particle buffer that includes support for diffuse particles.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a894fa2d24d58f68b5f6c33d8c062c46c.html#_px_particle_ext_8h_1a894fa2d24d58f68b5f6c33d8c062c46c"><span class="std std-ref">PxCreateAndPopulateParticleBuffer(const ExtGpu::PxParticleBufferDesc &amp;desc, PxCudaContextManager *cudaContextManager)</span></a>: Creates and populates a particle buffer.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a2ce51fe8160cb38a6d0755ddcd21ece4.html#_px_particle_ext_8h_1a2ce51fe8160cb38a6d0755ddcd21ece4"><span class="std std-ref">PxCreateAndPopulateParticleClothBuffer(const ExtGpu::PxParticleBufferDesc &amp;desc, const PxParticleClothDesc &amp;clothDesc, PxPartitionedParticleCloth &amp;output, PxCudaContextManager *cudaContextManager)</span></a>: Creates and populates a particle cloth buffer.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a7b15aefa77133d2a3745bee551edaba4.html#_px_particle_ext_8h_1a7b15aefa77133d2a3745bee551edaba4"><span class="std std-ref">PxCreateAndPopulateParticleRigidBuffer(const ExtGpu::PxParticleBufferDesc &amp;desc, const ExtGpu::PxParticleRigidDesc &amp;rigidDesc, PxCudaContextManager *cudaContextManager)</span></a>: Creates and populates a particle rigid buffer.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1ae95284301d9c54615a4fea5a21c3ffd4.html#_px_particle_ext_8h_1ae95284301d9c54615a4fea5a21c3ffd4"><span class="std std-ref">PxCreateParticleAttachmentBuffer(PxParticleBuffer &amp;particleBuffer, PxParticleSystem &amp;particleSystem)</span></a>: Creates a particle attachment buffer.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a865ba51e4fdf0d508878d4821c672fd9.html#_px_particle_ext_8h_1a865ba51e4fdf0d508878d4821c672fd9"><span class="std std-ref">PxCreateParticleClothBufferHelper(const PxU32 maxCloths, const PxU32 maxTriangles, const PxU32 maxSprings, const PxU32 maxParticles, PxCudaContextManager *cudaContextManager)</span></a>: Creates a <a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_buffer_helper.html#class_ext_gpu_1_1_px_particle_cloth_buffer_helper"><span class="std std-ref">PxParticleClothBufferHelper</span></a> helper.</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1a25dd2d94226d301b551654612353014b.html#_px_particle_ext_8h_1a25dd2d94226d301b551654612353014b"><span class="std std-ref">PxCreateParticleRigidBufferHelper(PxU32 maxRigids, PxU32 maxParticles, PxCudaContextManager *cudaContextManager)</span></a>: Creates a <a class="reference internal" href="class_ext_gpu_1_1_px_particle_rigid_buffer_helper.html#class_ext_gpu_1_1_px_particle_rigid_buffer_helper"><span class="std std-ref">PxParticleRigidBufferHelper</span></a> .</p></li>
+<li><p><a class="reference internal" href="function__px_particle_ext_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html#_px_particle_ext_8h_1abd8ab6fb014642410e9e5cf0db466fa1"><span class="std std-ref">PxCreateParticleVolumeBufferHelper(PxU32 maxVolumes, PxU32 maxTriangles, PxCudaContextManager *cudaContextManager)</span></a>: Creates a <a class="reference internal" href="class_ext_gpu_1_1_px_particle_volume_buffer_helper.html#class_ext_gpu_1_1_px_particle_volume_buffer_helper"><span class="std std-ref">PxParticleVolumeBufferHelper</span></a> .</p></li>
+</ul>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc.html#struct_ext_gpu_1_1_px_particle_and_diffuse_buffer_desc"><span class="std std-ref">PxParticleAndDiffuseBufferDesc</span></a>: Structure to define user-defined particle state when constructing a new particle system that includes diffuse particles.</p></li>
+<li><p><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_buffer_desc.html#struct_ext_gpu_1_1_px_particle_buffer_desc"><span class="std std-ref">PxParticleBufferDesc</span></a>: Structure to define user-defined particle state when constructing a new particle system.</p></li>
+<li><p><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_cloth_constraint.html#struct_ext_gpu_1_1_px_particle_cloth_constraint"><span class="std std-ref">PxParticleClothConstraint</span></a>: Holds all the information for a particle cloth constraint used in the <a class="reference internal" href="class_ext_gpu_1_1_px_particle_cloth_cooker.html#class_ext_gpu_1_1_px_particle_cloth_cooker"><span class="std std-ref">PxParticleClothCooker</span></a> .</p></li>
+<li><p><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_rigid_desc.html#struct_ext_gpu_1_1_px_particle_rigid_desc"><span class="std std-ref">PxParticleRigidDesc</span></a>: Structure to define user-defined particle state when constructing a new particle system that includes shape-matched rigid bodies.</p></li>
+<li><p><a class="reference internal" href="struct_ext_gpu_1_1_px_particle_volume_mesh.html#struct_ext_gpu_1_1_px_particle_volume_mesh"><span class="std std-ref">PxParticleVolumeMesh</span></a>: Helper struct that holds information about a specific mesh in a <a class="reference internal" href="class_ext_gpu_1_1_px_particle_volume_buffer_helper.html#class_ext_gpu_1_1_px_particle_volume_buffer_helper"><span class="std std-ref">PxParticleVolumeBufferHelper</span></a> .</p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

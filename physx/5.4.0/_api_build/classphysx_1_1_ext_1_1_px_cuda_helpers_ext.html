@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physx::Ext::PxCudaHelpersExt &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="physx::vehicle2" href="namespace_physx__vehicle2.html" />
+    <link rel="prev" title="physx::Ext" href="namespace_physx___ext.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="namespace__ext_gpu.html">ExtGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_aos.html">aos</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="namespace_physx.html">physx</a><ul class="current">
+<li class="toctree-l5 current"><a class="reference internal" href="namespace_physx___ext.html">Ext</a><ul class="current">
+<li class="toctree-l6 current"><a class="current reference internal" href="#">PxCudaHelpersExt</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="namespace_physx__vehicle2.html">vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_pvdsdk.html">pvdsdk</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+    <li><a href="namespace_physx.html">physx</a> &raquo;</li>
+    <li><a href="namespace_physx___ext.html">physx::Ext</a> &raquo;</li>
+<li>physx::Ext::PxCudaHelpersExt</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="physx-ext-pxcudahelpersext">
+<h1>physx::Ext::PxCudaHelpersExt<a class="headerlink" href="#physx-ext-pxcudahelpersext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxCudaHelpersExt.h.html#px-cuda-helpers-ext-8h"><span class="std std-ref">include/extensions/PxCudaHelpersExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N5physx3Ext16PxCudaHelpersExtE">
+<span id="_CPPv3N5physx3Ext16PxCudaHelpersExtE"></span><span id="_CPPv2N5physx3Ext16PxCudaHelpersExtE"></span><span id="physx::Ext::PxCudaHelpersExt"></span><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCudaHelpersExt</span></span></span><a class="headerlink" href="#_CPPv4N5physx3Ext16PxCudaHelpersExtE" title="Permalink to this definition"></a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt17allocDeviceBufferEP1TR20PxCudaContextManager5PxU64">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt17allocDeviceBufferER20PxCudaContextManager5PxU64"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt17allocDeviceBufferER20PxCudaContextManager5PxU64"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a309b5d3aafa0ce3656bddaa0ab64483b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt17allocDeviceBufferEP1TR20PxCudaContextManager5PxU64" title="physx::Ext::PxCudaHelpersExt::allocDeviceBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocDeviceBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt17allocDeviceBufferEP1TR20PxCudaContextManager5PxU64" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a device buffer and returns the pointer to the memory. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context the allocation should be attributed to. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to allocate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the allocated memory. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt16freeDeviceBufferEvR20PxCudaContextManagerRP1T">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt16freeDeviceBufferER20PxCudaContextManagerRP1T"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt16freeDeviceBufferER20PxCudaContextManagerRP1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a44db2c631ed0879730ed05c24baadbd5"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freeDeviceBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt16freeDeviceBufferEvR20PxCudaContextManagerRP1T" title="physx::Ext::PxCudaHelpersExt::freeDeviceBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt16freeDeviceBufferEvR20PxCudaContextManagerRP1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frees a device buffer. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context the device buffer is attributed to. </p></li>
+<li><p><strong>deviceBuffer</strong> – <strong>[in]</strong> reference to a pointer pointing to the device memory buffer. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt21allocPinnedHostBufferEP1TR20PxCudaContextManager5PxU64">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt21allocPinnedHostBufferER20PxCudaContextManager5PxU64"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt21allocPinnedHostBufferER20PxCudaContextManager5PxU64"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1aa8d8615b235a31277334a3626360dba4"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt21allocPinnedHostBufferEP1TR20PxCudaContextManager5PxU64" title="physx::Ext::PxCudaHelpersExt::allocPinnedHostBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocPinnedHostBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt21allocPinnedHostBufferEP1TR20PxCudaContextManager5PxU64" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a pinned host buffer and returns the pointer to the memory. </p>
+<p>A pinned host buffer can be used on the gpu after getting a mapped device pointer from the pinned host buffer pointer, see getMappedDevicePtr The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context the allocation should be attributed to. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to allocate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to the allocated memory. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt20freePinnedHostBufferEvR20PxCudaContextManagerRP1T">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt20freePinnedHostBufferER20PxCudaContextManagerRP1T"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt20freePinnedHostBufferER20PxCudaContextManagerRP1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1af1c757e64504f006f7321de80a27073c"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freePinnedHostBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt20freePinnedHostBufferEvR20PxCudaContextManagerRP1T" title="physx::Ext::PxCudaHelpersExt::freePinnedHostBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pinnedHostBuffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt20freePinnedHostBufferEvR20PxCudaContextManagerRP1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frees a pinned host buffer. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context the pinned memory buffer is attributed to. </p></li>
+<li><p><strong>pinnedHostBuffer</strong> – <strong>[in]</strong> reference to a pointer pointing to the pinned memory buffer. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyDToHEvR20PxCudaContextManagerP1TPK1T5PxU64">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt8copyDToHER20PxCudaContextManagerP1TPK1T5PxU64"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt8copyDToHER20PxCudaContextManagerP1TPK1T5PxU64"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a5e50dd63a4bf5b32ef36cb8e56021900"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToH</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyDToHEvR20PxCudaContextManagerP1TPK1T5PxU64" title="physx::Ext::PxCudaHelpersExt::copyDToH::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyDToHEvR20PxCudaContextManagerP1TPK1T5PxU64" title="physx::Ext::PxCudaHelpersExt::copyDToH::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyDToHEvR20PxCudaContextManagerP1TPK1T5PxU64" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies a device buffer to the host. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>hostBuffer</strong> – <strong>[in]</strong> pointer to the destination (pinned) host memory buffer. </p></li>
+<li><p><strong>deviceBuffer</strong> – <strong>[in]</strong> pointer to the source device buffer. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to copy. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyHToDEvR20PxCudaContextManagerP1TPK1T5PxU64">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt8copyHToDER20PxCudaContextManagerP1TPK1T5PxU64"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt8copyHToDER20PxCudaContextManagerP1TPK1T5PxU64"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a1ea6048eb7d8b9b23522a0068a7fb90a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToD</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyHToDEvR20PxCudaContextManagerP1TPK1T5PxU64" title="physx::Ext::PxCudaHelpersExt::copyHToD::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyHToDEvR20PxCudaContextManagerP1TPK1T5PxU64" title="physx::Ext::PxCudaHelpersExt::copyHToD::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt8copyHToDEvR20PxCudaContextManagerP1TPK1T5PxU64" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies a host buffer to the device. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>deviceBuffer</strong> – <strong>[in]</strong> pointer to the destination device buffer. </p></li>
+<li><p><strong>hostBuffer</strong> – <strong>[in]</strong> pointer to the source (pinned) host memory buffer. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to copy. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a79ba4b437427f5b04653af8b26edd5f7"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToHAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyDToHAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyDToHAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToHAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules device to host copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>hostBuffer</strong> – <strong>[in]</strong> pointer to the destination (pinned) host memory buffer. </p></li>
+<li><p><strong>deviceBuffer</strong> – <strong>[in]</strong> pointer to the source device buffer. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to copy. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> the CUDA stream to perform the operation on. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1ae48875a34549023ca76534eca85aa2e0"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToDAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyHToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyHToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyHToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules host to device copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>deviceBuffer</strong> – <strong>[in]</strong> pointer to the destination device buffer. </p></li>
+<li><p><strong>hostBuffer</strong> – <strong>[in]</strong> pointer to the source (pinned) host memory buffer. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to copy. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> the CUDA stream to perform the operation on. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncER20PxCudaContextManagerP1TPK1T5PxU648CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a5899fd3b2b888538d910d1670f9a52af"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToDAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyDToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::copyDToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">srcDeviceBuffer</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt13copyDToDAsyncEvR20PxCudaContextManagerP1TPK1T5PxU648CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules device to device copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>dstDeviceBuffer</strong> – <strong>[in]</strong> pointer to the destination device buffer. </p></li>
+<li><p><strong>srcDeviceBuffer</strong> – <strong>[in]</strong> pointer to the source device buffer. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to copy. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> the CUDA stream to perform the operation on. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncEvR20PxCudaContextManagerP1TRK1T5PxU648CUstream">
+<span id="_CPPv3I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncER20PxCudaContextManagerP1TRK1T5PxU648CUstream"></span><span id="_CPPv2I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncER20PxCudaContextManagerP1TRK1T5PxU648CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classphysx_1_1_ext_1_1_px_cuda_helpers_ext_1a9acc10b77fa2e350c92b4bec6661694b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">memsetAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_cuda_context_manager.html#_CPPv420PxCudaContextManager" title="PxCudaContextManager"><span class="n"><span class="pre">PxCudaContextManager</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cudaContextManager</span></span>, <a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncEvR20PxCudaContextManagerP1TRK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::memsetAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncEvR20PxCudaContextManagerP1TRK1T5PxU648CUstream" title="physx::Ext::PxCudaHelpersExt::memsetAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">value</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN5physx3Ext16PxCudaHelpersExt11memsetAsyncEvR20PxCudaContextManagerP1TRK1T5PxU648CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules a memset operation on the device on the specified stream. </p>
+<p>Only supported for 1 bytes or 4 byte data types.</p>
+<p>The cuda context will get acquired automatically</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cudaContextManager</strong> – <strong>[in]</strong> the <a class="reference internal" href="class_px_cuda_context_manager.html#class_px_cuda_context_manager"><span class="std std-ref">PxCudaContextManager</span></a> managing the CUDA context executing the operation. </p></li>
+<li><p><strong>dstDeviceBuffer</strong> – <strong>[in]</strong> pointer to the destination device buffer. </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> the value to set the memory to. </p></li>
+<li><p><strong>numElements</strong> – <strong>[in]</strong> the number of elements of type T to set. </p></li>
+<li><p><strong>stream</strong> – <strong>[in]</strong> the CUDA stream to perform the operation on. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

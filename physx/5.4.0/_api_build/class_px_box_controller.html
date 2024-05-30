@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBoxController &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxBoxControllerDesc" href="class_px_box_controller_desc.html" />
+    <link rel="prev" title="PxBounds3" href="class_px_bounds3.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_reader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_compute_type.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_read_type.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_write_type.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_mimic_joint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_direct_g_p_u_a_p_i.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_friction_anchor_stream_iterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_particle_system.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pinned_allocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body_ext.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_read_type.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_write_type.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxBoxController</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxboxcontroller">
+<h1>PxBoxController<a class="headerlink" href="#pxboxcontroller" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_characterkinematic_PxBoxController.h.html#px-box-controller-8h"><span class="std std-ref">include/characterkinematic/PxBoxController.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxBoxController">
+<span id="_CPPv315PxBoxController"></span><span id="_CPPv215PxBoxController"></span><span id="PxBoxController"></span><span class="target" id="class_px_box_controller"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxController</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller.html#_CPPv412PxController" title="PxController"><span class="n"><span class="pre">PxController</span></span></a><a class="headerlink" href="#_CPPv415PxBoxController" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Box character controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc"><span class="std std-ref">PxBoxControllerDesc</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller"><span class="std std-ref">PxController</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getHalfHeightEv">
+<span id="_CPPv3NK15PxBoxController13getHalfHeightEv"></span><span id="_CPPv2NK15PxBoxController13getHalfHeightEv"></span><span id="PxBoxController::getHalfHeightC"></span><span class="target" id="class_px_box_controller_1a25c66f4fabdb4d689bc77aba02f66ebd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfHeight</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getHalfHeightEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a815c411aad6776da24bbb4fceb6aa8b6"><span class="std std-ref">PxBoxControllerDesc.halfHeight</span></a> <a class="reference internal" href="#class_px_box_controller_1af959bc51b41f2c00156cd28bd19fc240"><span class="std std-ref">setHalfHeight()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half height of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController17getHalfSideExtentEv">
+<span id="_CPPv3NK15PxBoxController17getHalfSideExtentEv"></span><span id="_CPPv2NK15PxBoxController17getHalfSideExtentEv"></span><span id="PxBoxController::getHalfSideExtentC"></span><span class="target" id="class_px_box_controller_1a3e1de6ef41ef607c768012530931cb98"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfSideExtent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController17getHalfSideExtentEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half side extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1ab3c305136be5d04e77862a7e2e4f4808"><span class="std std-ref">PxBoxControllerDesc.halfSideExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1af1b0b85810c79821ddb61cb42d0ef730"><span class="std std-ref">setHalfSideExtent()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half side extent of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController20getHalfForwardExtentEv">
+<span id="_CPPv3NK15PxBoxController20getHalfForwardExtentEv"></span><span id="_CPPv2NK15PxBoxController20getHalfForwardExtentEv"></span><span id="PxBoxController::getHalfForwardExtentC"></span><span class="target" id="class_px_box_controller_1addbaf29dafa43422705e70449a62a8a1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getHalfForwardExtent</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController20getHalfForwardExtentEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets controller’s half forward extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a4efede85355dc05251d1c5c8bbb5a8bf"><span class="std std-ref">PxBoxControllerDesc.halfForwardExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1acae44a6bab0ca9da6d47b84345d03e61"><span class="std std-ref">setHalfForwardExtent()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The half forward extent of the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setHalfHeightE5PxF32">
+<span id="_CPPv3N15PxBoxController13setHalfHeightE5PxF32"></span><span id="_CPPv2N15PxBoxController13setHalfHeightE5PxF32"></span><span id="PxBoxController::setHalfHeight__PxF32"></span><span class="target" id="class_px_box_controller_1af959bc51b41f2c00156cd28bd19fc240"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfHeight</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfHeight</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setHalfHeightE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a815c411aad6776da24bbb4fceb6aa8b6"><span class="std std-ref">PxBoxControllerDesc.halfHeight</span></a> <a class="reference internal" href="#class_px_box_controller_1a25c66f4fabdb4d689bc77aba02f66ebd"><span class="std std-ref">getHalfHeight()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfHeight</strong> – <strong>[in]</strong> The new half height for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController17setHalfSideExtentE5PxF32">
+<span id="_CPPv3N15PxBoxController17setHalfSideExtentE5PxF32"></span><span id="_CPPv2N15PxBoxController17setHalfSideExtentE5PxF32"></span><span id="PxBoxController::setHalfSideExtent__PxF32"></span><span class="target" id="class_px_box_controller_1af1b0b85810c79821ddb61cb42d0ef730"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfSideExtent</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfSideExtent</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController17setHalfSideExtentE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half side extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1ab3c305136be5d04e77862a7e2e4f4808"><span class="std std-ref">PxBoxControllerDesc.halfSideExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1a3e1de6ef41ef607c768012530931cb98"><span class="std std-ref">getHalfSideExtent()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfSideExtent</strong> – <strong>[in]</strong> The new half side extent for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController20setHalfForwardExtentE5PxF32">
+<span id="_CPPv3N15PxBoxController20setHalfForwardExtentE5PxF32"></span><span id="_CPPv2N15PxBoxController20setHalfForwardExtentE5PxF32"></span><span id="PxBoxController::setHalfForwardExtent__PxF32"></span><span class="target" id="class_px_box_controller_1acae44a6bab0ca9da6d47b84345d03e61"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setHalfForwardExtent</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfForwardExtent</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController20setHalfForwardExtentE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s half forward extent. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_box_controller_desc.html#class_px_box_controller_desc_1a4efede85355dc05251d1c5c8bbb5a8bf"><span class="std std-ref">PxBoxControllerDesc.halfForwardExtent</span></a> <a class="reference internal" href="#class_px_box_controller_1addbaf29dafa43422705e70449a62a8a1"><span class="std std-ref">getHalfForwardExtent()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>this doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>halfForwardExtent</strong> – <strong>[in]</strong> The new half forward extent for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController7getTypeEv">
+<span id="_CPPv3NK15PxBoxController7getTypeEv"></span><span id="_CPPv2NK15PxBoxController7getTypeEv"></span><span id="PxBoxController::getTypeC"></span><span class="target" id="class_px_controller_1ad98589ad22dcdcedaf1c5fa9f0f40b53"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv421PxControllerShapeType" title="PxControllerShapeType"><span class="n"><span class="pre">PxControllerShapeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_shape_type.html#_CPPv4N21PxControllerShapeType4EnumE" title="PxControllerShapeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController7getTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the type of controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxControllerType </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController7releaseEv">
+<span id="_CPPv3N15PxBoxController7releaseEv"></span><span id="_CPPv2N15PxBoxController7releaseEv"></span><span id="PxBoxController::release"></span><span class="target" id="class_px_controller_1a0ed314c5bf5dd95f9f340de15efb5776"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases the controller. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext">
+<span id="_CPPv3N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="_CPPv2N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext"></span><span id="PxBoxController::move__PxVec3CR.PxF32.PxF32.PxControllerFiltersCR.PxObstacleContextCP"></span><span class="target" id="class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_controller_8h_1a3cb7e2aaf5144c3ed9bbf504c2fd66db.html#_CPPv426PxControllerCollisionFlags" title="PxControllerCollisionFlags"><span class="n"><span class="pre">PxControllerCollisionFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">move</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">disp</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">minDist</span></span>, <a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">elapsedTime</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_controller_filters.html#_CPPv419PxControllerFilters" title="PxControllerFilters"><span class="n"><span class="pre">PxControllerFilters</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filters</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_obstacle_context.html#_CPPv417PxObstacleContext" title="PxObstacleContext"><span class="n"><span class="pre">PxObstacleContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">obstacles</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController4moveERK6PxVec35PxF325PxF32RK19PxControllerFiltersPK17PxObstacleContext" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Moves the character using a “collide-and-slide” algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>disp</strong> – <strong>[in]</strong> Displacement vector </p></li>
+<li><p><strong>minDist</strong> – <strong>[in]</strong> The minimum travelled distance to consider. If travelled distance is smaller, the character doesn’t move. This is used to stop the recursive motion algorithm when remaining distance to travel is small. </p></li>
+<li><p><strong>elapsedTime</strong> – <strong>[in]</strong> Time elapsed since last call </p></li>
+<li><p><strong>filters</strong> – <strong>[in]</strong> User-defined filters for this move </p></li>
+<li><p><strong>obstacles</strong> – <strong>[in]</strong> Potential additional obstacles the CCT should collide with. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Collision flags, collection of PxControllerCollisionFlags </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController11setPositionERK14PxExtendedVec3">
+<span id="_CPPv3N15PxBoxController11setPositionERK14PxExtendedVec3"></span><span id="_CPPv2N15PxBoxController11setPositionERK14PxExtendedVec3"></span><span id="PxBoxController::setPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController11setPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets controller’s position. </p>
+<p>The position controlled by this function is the center of the collision shape.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a4185e3387e7a43141370af88f4200526"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions. </p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The character’s position must be such that it does not overlap the static geometry.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (center) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController11getPositionEv">
+<span id="_CPPv3NK15PxBoxController11getPositionEv"></span><span id="_CPPv2NK15PxBoxController11getPositionEv"></span><span id="PxBoxController::getPositionC"></span><span class="target" id="class_px_controller_1a4185e3387e7a43141370af88f4200526"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController11getPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the raw position of the controller. </p>
+<p>The position retrieved by this function is the center of the collision shape. To retrieve the bottom position of the shape, a.k.a. the foot position, use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> function.</p>
+<p>The position is updated by calls to <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a>. Calling this method without calling <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> will return the last position or the initial position of the controller.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s center position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15setFootPositionERK14PxExtendedVec3">
+<span id="_CPPv3N15PxBoxController15setFootPositionERK14PxExtendedVec3"></span><span id="_CPPv2N15PxBoxController15setFootPositionERK14PxExtendedVec3"></span><span id="PxBoxController::setFootPosition__PxExtendedVec3CR"></span><span class="target" id="class_px_controller_1ab09889972859bf03168d1d48434094ff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setFootPosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">position</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController15setFootPositionERK14PxExtendedVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set controller’s foot position. </p>
+<p>The position controlled by this function is the bottom of the collision shape, a.k.a. the foot position.</p>
+<p>
+To move the character under normal conditions use the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a4185e3387e7a43141370af88f4200526"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a401af38fab565432d05b87112b26b816"><span class="std std-ref">getFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This is a ‘teleport’ function, it doesn’t check for collisions.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>position</strong> – <strong>[in]</strong> The new (bottom) positon for the controller. </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Currently always returns true.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController15getFootPositionEv">
+<span id="_CPPv3NK15PxBoxController15getFootPositionEv"></span><span id="_CPPv2NK15PxBoxController15getFootPositionEv"></span><span id="PxBoxController::getFootPositionC"></span><span class="target" id="class_px_controller_1a401af38fab565432d05b87112b26b816"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#_CPPv414PxExtendedVec3" title="PxExtendedVec3"><span class="n"><span class="pre">PxExtendedVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getFootPosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController15getFootPositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the “foot” position of the controller, i.e. </p>
+<p>the position of the bottom of the CCT’s shape.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a32b1a3f9f58902b31058b9c076fd8ae3"><span class="std std-ref">PxControllerDesc.position</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a2687b4fabb77f2998ce31bffccc74a78"><span class="std std-ref">setPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a4185e3387e7a43141370af88f4200526"><span class="std std-ref">getPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1ab09889972859bf03168d1d48434094ff"><span class="std std-ref">setFootPosition()</span></a> <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">move()</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The foot position takes the contact offset into account</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The controller’s foot position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getActorEv">
+<span id="_CPPv3NK15PxBoxController8getActorEv"></span><span id="_CPPv2NK15PxBoxController8getActorEv"></span><span id="PxBoxController::getActorC"></span><span class="target" id="class_px_controller_1aaff85c35e7f06ebff0699283389c9de1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_rigid_dynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><span class="n"><span class="pre">PxRigidDynamic</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getActor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getActorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the rigid body actor associated with this controller (see PhysX documentation). </p>
+<p>The behavior upon manually altering this actor is undefined, you should primarily use it for reading const properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the actor associated with the controller. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setStepOffsetEK5PxF32">
+<span id="_CPPv3N15PxBoxController13setStepOffsetEK5PxF32"></span><span id="_CPPv2N15PxBoxController13setStepOffsetEK5PxF32"></span><span id="PxBoxController::setStepOffset__PxF32C"></span><span class="target" id="class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setStepOffset</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setStepOffsetEK5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a51fe254a4807b832b2d34e884d856438"><span class="std std-ref">PxControllerDesc.stepOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The new step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getStepOffsetEv">
+<span id="_CPPv3NK15PxBoxController13getStepOffsetEv"></span><span id="_CPPv2NK15PxBoxController13getStepOffsetEv"></span><span id="PxBoxController::getStepOffsetC"></span><span class="target" id="class_px_controller_1a2a46763eb7541abe5d1c73eacca4639c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStepOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getStepOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the step height. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a6cad9ee5c32ccbf80ec47465a07dcdc3"><span class="std std-ref">setStepOffset()</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The step offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE">
+<span id="_CPPv3N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="_CPPv2N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE"></span><span id="PxBoxController::setNonWalkableMode__PxControllerNonWalkableMode::Enum"></span><span class="target" id="class_px_controller_1a8f30123d5e7d45c6fdb1992cf8c748ef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setNonWalkableMode</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController18setNonWalkableModeEN27PxControllerNonWalkableMode4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flag</strong> – <strong>[in]</strong> The new value of the non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController18getNonWalkableModeEv">
+<span id="_CPPv3NK15PxBoxController18getNonWalkableModeEv"></span><span id="_CPPv2NK15PxBoxController18getNonWalkableModeEv"></span><span id="PxBoxController::getNonWalkableModeC"></span><span class="target" id="class_px_controller_1ad16b10c1e20376c23ce81af23b5ef880"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv427PxControllerNonWalkableMode" title="PxControllerNonWalkableMode"><span class="n"><span class="pre">PxControllerNonWalkableMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#_CPPv4N27PxControllerNonWalkableMode4EnumE" title="PxControllerNonWalkableMode::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNonWalkableMode</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController18getNonWalkableModeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the non-walkable mode for the CCT. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_non_walkable_mode.html#struct_px_controller_non_walkable_mode"><span class="std std-ref">PxControllerNonWalkableMode</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current non-walkable mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController16getContactOffsetEv">
+<span id="_CPPv3NK15PxBoxController16getContactOffsetEv"></span><span id="_CPPv2NK15PxBoxController16getContactOffsetEv"></span><span id="PxBoxController::getContactOffsetC"></span><span class="target" id="class_px_controller_1a836a426813b11552b4dfb481e0ba576f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContactOffset</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController16getContactOffsetEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController16setContactOffsetE5PxF32">
+<span id="_CPPv3N15PxBoxController16setContactOffsetE5PxF32"></span><span id="_CPPv2N15PxBoxController16setContactOffsetE5PxF32"></span><span id="PxBoxController::setContactOffset__PxF32"></span><span class="target" id="class_px_controller_1a6bf15ba0b66b3f271fdb2f2c6cb8c68b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setContactOffset</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">offset</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController16setContactOffsetE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the contact offset. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1a811b0354ee3c9c037dca94f7cae4205e"><span class="std std-ref">PxControllerDesc.contactOffset</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>offset</strong> – <strong>[in]</strong> The contact offset for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController14getUpDirectionEv">
+<span id="_CPPv3NK15PxBoxController14getUpDirectionEv"></span><span id="_CPPv2NK15PxBoxController14getUpDirectionEv"></span><span id="PxBoxController::getUpDirectionC"></span><span class="target" id="class_px_controller_1ad8fe2f181b59bcbee150f786bb41adfe"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUpDirection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController14getUpDirectionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController14setUpDirectionERK6PxVec3">
+<span id="_CPPv3N15PxBoxController14setUpDirectionERK6PxVec3"></span><span id="_CPPv2N15PxBoxController14setUpDirectionERK6PxVec3"></span><span id="PxBoxController::setUpDirection__PxVec3CR"></span><span class="target" id="class_px_controller_1a3393ba5043c3534712d8f362a9872cfc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUpDirection</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">up</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController14setUpDirectionERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the ‘up’ direction. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1af1a0990b26249f3114c41e20a9cb3087"><span class="std std-ref">PxControllerDesc.upDirection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>up</strong> – <strong>[in]</strong> The up direction for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController13getSlopeLimitEv">
+<span id="_CPPv3NK15PxBoxController13getSlopeLimitEv"></span><span id="_CPPv2NK15PxBoxController13getSlopeLimitEv"></span><span id="PxBoxController::getSlopeLimitC"></span><span class="target" id="class_px_controller_1a7e03e7863dd2036f673b084f3ce94629"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSlopeLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController13getSlopeLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController13setSlopeLimitE5PxF32">
+<span id="_CPPv3N15PxBoxController13setSlopeLimitE5PxF32"></span><span id="_CPPv2N15PxBoxController13setSlopeLimitE5PxF32"></span><span id="PxBoxController::setSlopeLimit__PxF32"></span><span class="target" id="class_px_controller_1a5e3a554fe03319301360df65122f22c8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSlopeLimit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_CPPv45PxF32" title="PxF32"><span class="n"><span class="pre">PxF32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">slopeLimit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController13setSlopeLimitE5PxF32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the slope limit. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1aadb1325a040c61b6cd29cfa94d24c180"><span class="std std-ref">PxControllerDesc.slopeLimit</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature can not be enabled at runtime, i.e. if the slope limit is zero when creating the CCT (which disables the feature) then changing the slope limit at runtime will not have any effect, and the call will be ignored.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>slopeLimit</strong> – <strong>[in]</strong> The slope limit for the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15invalidateCacheEv">
+<span id="_CPPv3N15PxBoxController15invalidateCacheEv"></span><span id="_CPPv2N15PxBoxController15invalidateCacheEv"></span><span id="PxBoxController::invalidateCache"></span><span class="target" id="class_px_controller_1a4d65669022c2f65926fde8112e72c500"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invalidateCache</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController15invalidateCacheEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Flushes internal geometry cache. </p>
+<p>The character controller uses caching in order to speed up collision testing. The cache is automatically flushed when a change to static objects is detected in the scene. For example when a static shape is added, updated, or removed from the scene, the cache is automatically invalidated.</p>
+<p>However there may be situations that cannot be automatically detected, and those require manual invalidation of the cache. Currently the user must call this when the filtering behavior changes (the <a class="reference internal" href="class_px_controller_filters.html#class_px_controller_filters"><span class="std std-ref">PxControllerFilters</span></a> parameter of the <a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController::move</span></a> call). While the controller in principle could detect a change in these parameters, it cannot detect a change in the behavior of the filtering function.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller.html#class_px_controller_1a1cbd9da6b634f45585df92bb71e37782"><span class="std std-ref">PxController.move</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController8getSceneEv">
+<span id="_CPPv3N15PxBoxController8getSceneEv"></span><span id="_CPPv2N15PxBoxController8getSceneEv"></span><span id="PxBoxController::getScene"></span><span class="target" id="class_px_controller_1a4b803ae8a9706efb55db7ccab705045e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="class_px_scene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieve the scene associated with the controller. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The physics scene </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController11getUserDataEv">
+<span id="_CPPv3NK15PxBoxController11getUserDataEv"></span><span id="_CPPv2NK15PxBoxController11getUserDataEv"></span><span id="PxBoxController::getUserDataC"></span><span class="target" id="class_px_controller_1a7cdecc4c41e952e4b8934151a2706916"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getUserData</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController11getUserDataEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController11setUserDataEPv">
+<span id="_CPPv3N15PxBoxController11setUserDataEPv"></span><span id="_CPPv2N15PxBoxController11setUserDataEPv"></span><span id="PxBoxController::setUserData__voidP"></span><span class="target" id="class_px_controller_1a2b6c1841bafa53877baa3dca8543c9ca"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUserData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">userData</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController11setUserDataEPv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the user data associated with this controller. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_controller_desc.html#class_px_controller_desc_1ab1144ac32fd0a4173e8d3136ae3e604f"><span class="std std-ref">PxControllerDesc.userData</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>userData</strong> – <strong>[in]</strong> The user pointer associated with the controller.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getStateER17PxControllerState">
+<span id="_CPPv3NK15PxBoxController8getStateER17PxControllerState"></span><span id="_CPPv2NK15PxBoxController8getStateER17PxControllerState"></span><span id="PxBoxController::getState__PxControllerStateRC"></span><span class="target" id="class_px_controller_1ad694218683ad584f6120bc001c0d1616"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getState</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_state.html#_CPPv417PxControllerState" title="PxControllerState"><span class="n"><span class="pre">PxControllerState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getStateER17PxControllerState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns information about the controller’s internal state. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_state.html#struct_px_controller_state"><span class="std std-ref">PxControllerState</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>state</strong> – <strong>[out]</strong> The controller’s internal state</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK15PxBoxController8getStatsER17PxControllerStats">
+<span id="_CPPv3NK15PxBoxController8getStatsER17PxControllerStats"></span><span id="_CPPv2NK15PxBoxController8getStatsER17PxControllerStats"></span><span id="PxBoxController::getStats__PxControllerStatsRC"></span><span class="target" id="class_px_controller_1ae98a10df99157bdaed67a05795fb3599"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getStats</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="struct_px_controller_stats.html#_CPPv417PxControllerStats" title="PxControllerStats"><span class="n"><span class="pre">PxControllerStats</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stats</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK15PxBoxController8getStatsER17PxControllerStats" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the controller’s internal statistics. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="struct_px_controller_stats.html#struct_px_controller_stats"><span class="std std-ref">PxControllerStats</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>stats</strong> – <strong>[out]</strong> The controller’s internal statistics</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController6resizeE6PxReal">
+<span id="_CPPv3N15PxBoxController6resizeE6PxReal"></span><span id="_CPPv2N15PxBoxController6resizeE6PxReal"></span><span id="PxBoxController::resize__PxReal"></span><span class="target" id="class_px_controller_1a4b982db163cd5189357eee4c26430cf6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">resize</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">height</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N15PxBoxController6resizeE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Resizes the controller. </p>
+<p>This function attempts to resize the controller to a given size, while making sure the bottom position of the controller remains constant. In other words the function modifies both the height and the (center) position of the controller. This is a helper function that can be used to implement a ‘crouch’ functionality for example.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>height</strong> – <strong>[in]</strong> Desired controller’s height </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxController15PxBoxControllerEv">
+<span id="_CPPv3N15PxBoxController15PxBoxControllerEv"></span><span id="_CPPv2N15PxBoxController15PxBoxControllerEv"></span><span id="PxBoxController::PxBoxController"></span><span class="target" id="class_px_box_controller_1a7ac9da5c6362b5a5b89eb124245327e7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBoxController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxBoxController15PxBoxControllerEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxBoxControllerD0Ev">
+<span id="_CPPv3N15PxBoxControllerD0Ev"></span><span id="_CPPv2N15PxBoxControllerD0Ev"></span><span id="PxBoxController::~PxBoxController"></span><span class="target" id="class_px_box_controller_1a792cdd51d6c3efdf97679f7afb399332"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBoxController</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxBoxControllerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

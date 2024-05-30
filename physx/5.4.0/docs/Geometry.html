@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Custom Geometry" href="CustomGeometry.html" />
+    <link rel="prev" title="Threading" href="Threading.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#geometry-types">Geometry Types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#spheres">Spheres</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#capsules">Capsules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#boxes">Boxes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#planes">Planes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#convex-meshes">Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#convex-mesh-cooking">Convex Mesh cooking</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#if-only-vertex-points-are-provided">If Only Vertex Points are Provided</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#quickhull-algorithm">Quickhull Algorithm</a></li>
+<li class="toctree-l5"><a class="reference internal" href="#vertex-limit-algorithms">Vertex Limit Algorithms</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#vertex-points-indices-and-polygons-are-provided">Vertex Points, Indices and Polygons are Provided</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#triangle-meshes">Triangle Meshes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#triangle-mesh-cooking">Triangle Mesh cooking</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#height-fields">Height Fields</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#quantizing-heightfield-samples">Quantizing Heightfield Samples</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heightfield-cooking">Heightfield cooking</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heightfields-contact-generation">Heightfields contact generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#heightfields-registration">Heightfields registration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#deformable-meshes">Deformable meshes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mesh-scaling">Mesh Scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxgeometryholder">PxGeometryHolder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vertex-and-face-data">Vertex and Face Data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Triangle Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Height Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#heightfield-modification">Heightfield Modification</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Geometry</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="geometry">
+<span id="id1"></span><h1>Geometry<a class="headerlink" href="#geometry" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This section discusses the PhysX geometry classes. Geometries are used to build shapes for rigid bodies, as collision triggers, and as volumes in PhysX’ scene query system. PhysX also provides standalone functions for testing intersection between geometries, raycasting against them, and sweeping one geometry against another.</p>
+<p>Geometries are value types, and inherit from a common base class, <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a>. Each geometry class defines a volume or surface with a fixed position and orientation. A transform specifies the frame in which the geometry is interpreted. For plane and capsule geometry types PhysX provides helper functions to construct these transforms from common alternative representations.</p>
+<p>Geometries fall into two classes:</p>
+<ul class="simple">
+<li><p>primitives (<a class="reference internal" href="../_api_build/class_px_box_geometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBoxGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_sphere_geometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSphereGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_capsule_geometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCapsuleGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlaneGeometry</span></code></a>) where the geometry object contains all of the data</p></li>
+<li><p>meshes or height fields (<a class="reference internal" href="../_api_build/class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMeshGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a>), where the geometry object contains a pointer to a much larger object (<a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a>, <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMesh</span></code></a>, <a class="reference internal" href="../_api_build/class_px_height_field.html#_CPPv413PxHeightField" title="PxHeightField"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightField</span></code></a> respectively) You can use these objects with different scales in each <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> type which references them. The larger objects must be created using a <em>cooking</em> process, described for each type below.</p></li>
+</ul>
+<p>When passed into and out of the SDK for use as simulation geometry, the geometry is copied into and out of a <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> class. It can be awkward in this case to retrieve the geometry without knowing its type, so PhysX provides a union-like wrapper class (<a class="reference internal" href="../_api_build/class_px_geometry_holder.html#_CPPv416PxGeometryHolder" title="PxGeometryHolder"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometryHolder</span></code></a>) that can be used to pass any geometry type by value. Each mesh (or height field) has a reference count that tracks the number of PxShapes whose geometries reference the mesh.</p>
+</section>
+<section id="geometry-types">
+<h2>Geometry Types<a class="headerlink" href="#geometry-types" title="Permalink to this headline"></a></h2>
+<section id="spheres">
+<h3>Spheres<a class="headerlink" href="#spheres" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeSphere.png" src="../_images/GeomTypeSphere.png" />
+<p>A <a class="reference internal" href="../_api_build/class_px_sphere_geometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSphereGeometry</span></code></a> is specified by one attribute, its radius, and is centered at the origin.</p>
+</section>
+<section id="capsules">
+<h3>Capsules<a class="headerlink" href="#capsules" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeCapsule.png" src="../_images/GeomTypeCapsule.png" />
+<p>A <a class="reference internal" href="../_api_build/class_px_capsule_geometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCapsuleGeometry</span></code></a> is centered at the origin. It is specified by a radius and a half-height value by which its axis extends along the positive and negative X-axis.</p>
+<p>To create a dynamic actor whose geometry is a capsule standing upright, the shape needs a relative transform that rotates it around the Z-axis by a quarter-circle. By doing this, the capsule will extend along the Y-axis of the actor instead of the X-axis. Setting up the shape and actor is otherwise the same as for the sphere:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">aCapsuleActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">thePhysics</span><span class="o">-&gt;</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">position</span><span class="p">));</span><span class="w"></span>
+<span class="n">PxTransform</span><span class="w"> </span><span class="nf">relativePose</span><span class="p">(</span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxHalfPi</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">aCapsuleShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">aCapsuleActor</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxCapsuleGeometry</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">halfHeight</span><span class="p">),</span><span class="w"> </span><span class="n">aMaterial</span><span class="p">);</span><span class="w"></span>
+<span class="n">aCapsuleShape</span><span class="o">-&gt;</span><span class="n">setLocalPose</span><span class="p">(</span><span class="n">relativePose</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxRigidBodyExt</span><span class="o">::</span><span class="n">updateMassAndInertia</span><span class="p">(</span><span class="o">*</span><span class="n">aCapsuleActor</span><span class="p">,</span><span class="w"> </span><span class="n">capsuleDensity</span><span class="p">);</span><span class="w"></span>
+<span class="n">aScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="n">aCapsuleActor</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The function <a class="reference internal" href="../_api_build/function__px_math_utils_8h_1ac3d19767c1de17d720edaf7bd4bdf612.html#_CPPv422PxTransformFromSegmentRK6PxVec3RK6PxVec3P6PxReal" title="PxTransformFromSegment"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxTransformFromSegment()</span></code></a> converts from a line segment defining the capsule axis to a transform and halfheight.</p>
+</section>
+<section id="boxes">
+<h3>Boxes<a class="headerlink" href="#boxes" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeBox.png" src="../_images/GeomTypeBox.png" />
+<p>A <a class="reference internal" href="../_api_build/class_px_box_geometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBoxGeometry</span></code></a> has three attributes, the three extents halved:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">aBoxShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">aBoxActor</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="n">a</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">aMaterial</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Where a, b and c are the side lengths of the resulting box.</p>
+</section>
+<section id="planes">
+<h3>Planes<a class="headerlink" href="#planes" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypePlane.png" src="../_images/GeomTypePlane.png" />
+<p>Planes divide space into “above” and “below” them. Everything “below” the plane will collide with it.</p>
+<p>The Plane lies on the YZ plane with “above” pointing towards positive X. To convert from a plane equation to an equivalent transform, use the function <a class="reference internal" href="../_api_build/function__px_math_utils_8h_1a7b4d7bdd33c9aef3c754f668228fa8e4.html#_CPPv428PxTransformFromPlaneEquationRK7PxPlane" title="PxTransformFromPlaneEquation"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxTransformFromPlaneEquation()</span></code></a>. <a class="reference internal" href="../_api_build/function__px_math_utils_8h_1a9927851bee11574416444fd181154498.html#_CPPv428PxPlaneEquationFromTransformRK11PxTransform" title="PxPlaneEquationFromTransform"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPlaneEquationFromTransform()</span></code></a> performs the reverse conversion.</p>
+<p>A <a class="reference internal" href="../_api_build/class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlaneGeometry</span></code></a> has no attributes, since the shape’s pose entirely defines the plane’s collision volume.</p>
+<p>Shapes with a <a class="reference internal" href="../_api_build/class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlaneGeometry</span></code></a> may only be created for static actors.</p>
+</section>
+<section id="convex-meshes">
+<h3>Convex Meshes<a class="headerlink" href="#convex-meshes" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeConvex.png" src="../_images/GeomTypeConvex.png" />
+<p>A shape is convex if, given any two points within the shape, the shape contains the line between them. A <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> is a convex polyhedron represented as a set of vertices and polygonal faces. The number of vertices and faces of a convex mesh in PhysX is limited to 255.</p>
+<p>Creating a <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> requires cooking. The following steps explain how to create a simple square pyramid.</p>
+<p>First, define the vertices of the convex object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">-1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">-1</span><span class="p">)};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then construct a description of the convex data layout:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxConvexMeshDesc</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">flags</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">PxConvexFlag</span><span class="o">::</span><span class="n">eCOMPUTE_CONVEX</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now use the cooking function to construct a <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">PxTolerancesScale</span><span class="w"> </span><span class="n">scale</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxCookingParams</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="n">scale</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxDefaultMemoryOutputStream</span><span class="w"> </span><span class="n">buf</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxConvexMeshCookingResult</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">PxCookConvexMesh</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxDefaultMemoryInputData</span><span class="w"> </span><span class="nf">input</span><span class="p">(</span><span class="n">buf</span><span class="p">.</span><span class="n">getData</span><span class="p">(),</span><span class="w"> </span><span class="n">buf</span><span class="p">.</span><span class="n">getSize</span><span class="p">());</span><span class="w"></span>
+<span class="n">PxConvexMesh</span><span class="o">*</span><span class="w"> </span><span class="n">convexMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physics</span><span class="o">-&gt;</span><span class="n">createConvexMesh</span><span class="p">(</span><span class="n">input</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Finally, create a shape using a <a class="reference internal" href="../_api_build/class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshGeometry</span></code></a> which instances the mesh:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">aConvexShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">aConvexActor</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxConvexMeshGeometry</span><span class="p">(</span><span class="n">convexMesh</span><span class="p">),</span><span class="w"> </span><span class="n">aMaterial</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Alternatively the <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> can be cooked and directly inserted into <a class="reference internal" href="../_api_build/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> without stream serialization. This is useful if real-time cooking is required. It is strongly recommended to use offline cooking and streams. Here is an example showing how to improve cooking speed if needed:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxConvexMeshDesc</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">flags</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">PxConvexFlag</span><span class="o">::</span><span class="n">eCOMPUTE_CONVEX</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxConvexFlag</span><span class="o">::</span><span class="n">eDISABLE_MESH_VALIDATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxConvexFlag</span><span class="o">::</span><span class="n">eFAST_INERTIA_COMPUTATION</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#ifdef _DEBUG</span>
+<span class="w">    </span><span class="c1">// mesh should be validated before cooking without the mesh cleaning</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxValidateConvexMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">res</span><span class="p">);</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="n">PxConvexMesh</span><span class="o">*</span><span class="w"> </span><span class="n">aConvexMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateConvexMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">thePhysics</span><span class="o">-&gt;</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Please note that mesh validation is required for debug and checked builds, as creating meshes from unvalidated input descriptors may result in undefined behavior. Providing <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum25eFAST_INERTIA_COMPUTATIONE" title="PxConvexFlag::eFAST_INERTIA_COMPUTATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eFAST_INERTIA_COMPUTATION</span></code></a> flag the volume integration will use SIMD code path which does faster computation but with lesser precision.</p>
+<p>The user can optionally provide a per-instance <a class="reference internal" href="../_api_build/class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMeshScale</span></code></a> in the <a class="reference internal" href="../_api_build/class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshGeometry</span></code></a>. The scale defaults to identity. Negative scale is not supported for convex meshes.</p>
+<p><a class="reference internal" href="../_api_build/class_px_convex_mesh_geometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshGeometry</span></code></a> also contains flags to tweak some aspects of the convex object. By default the system computes approximate (loose) bounds around convex objects. Using <a class="reference internal" href="../_api_build/struct_px_convex_mesh_geometry_flag.html#_CPPv4N24PxConvexMeshGeometryFlag4Enum13eTIGHT_BOUNDSE" title="PxConvexMeshGeometryFlag::eTIGHT_BOUNDS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexMeshGeometryFlag::eTIGHT_BOUNDS</span></code></a> enables smaller/tighter bounds, which are more expensive to compute but could result in improved simulation performance when a lot of convex objects are interacting with each other.</p>
+</section>
+<section id="convex-mesh-cooking">
+<h3>Convex Mesh cooking<a class="headerlink" href="#convex-mesh-cooking" title="Permalink to this headline"></a></h3>
+<p>Convex Mesh cooking transforms the mesh data into a form which allows the SDK to perform efficient collision detection. The input to cooking is defined using the input <a class="reference internal" href="../_api_build/class_px_convex_mesh_desc.html#_CPPv416PxConvexMeshDesc" title="PxConvexMeshDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMeshDesc</span></code></a>.</p>
+<p>There are different ways to fill in this structure, depending on whether you want to produce a convex mesh starting from just a cloud of vertices, or whether you have the vertices and faces of a polyhedron already.</p>
+<section id="if-only-vertex-points-are-provided">
+<h4>If Only Vertex Points are Provided<a class="headerlink" href="#if-only-vertex-points-are-provided" title="Permalink to this headline"></a></h4>
+<p>When providing only vertices, set the <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE" title="PxConvexFlag::eCOMPUTE_CONVEX"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eCOMPUTE_CONVEX</span></code></a> flag to compute the mesh:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxConvexMeshDesc</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">flags</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">PxConvexFlag</span><span class="o">::</span><span class="n">eCOMPUTE_CONVEX</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">maxVerts</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxDefaultMemoryOutputStream</span><span class="w"> </span><span class="n">buf</span><span class="p">;</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">PxCookConvexMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The algorithm tries to create a convex mesh from the source vertices. The field convexDesc.vertexLimit specifies the limit for the maximum number of vertices in the resulting hull.</p>
+<p>This routine can sometimes fail when the source data is geometrically challenging, for example if it contains a lot of vertices close to each-other. If cooking fails, an error is reported to the error stream and the routine returns false.</p>
+<p>If <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum26eCHECK_ZERO_AREA_TRIANGLESE" title="PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eCHECK_ZERO_AREA_TRIANGLES</span></code></a> is used, the algorithm does not include triangles with an area less than PxCookingParams::areaTestEpsilon. If the algorithm cannot find 4 initial vertices without a small triangle, <a class="reference internal" href="../_api_build/struct_px_convex_mesh_cooking_result.html#_CPPv4N25PxConvexMeshCookingResult4Enum22eZERO_AREA_TEST_FAILEDE" title="PxConvexMeshCookingResult::eZERO_AREA_TEST_FAILED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexMeshCookingResult::eZERO_AREA_TEST_FAILED</span></code></a> is returned. This means that the provided vertices were in a very small area and the cooker could not produce a valid hull.
+In order to obtain a robust strategy for convex mesh cooking, the AABB or OBB can be used in case of cooking failure.</p>
+<p>It is recommended to provide vertices around origin and put transformation in <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a>, otherwise additional <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum15eSHIFT_VERTICESE" title="PxConvexFlag::eSHIFT_VERTICES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eSHIFT_VERTICES</span></code></a> flag for the mesh computation.</p>
+<p>If huge amount of input vertices are provided, it might be useful to quantize the input vertices, in this case use <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum15eQUANTIZE_INPUTE" title="PxConvexFlag::eQUANTIZE_INPUT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eQUANTIZE_INPUT</span></code></a> and set the required <a class="reference internal" href="../_api_build/class_px_convex_mesh_desc.html#_CPPv4N16PxConvexMeshDesc14quantizedCountE" title="PxConvexMeshDesc::quantizedCount"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxConvexMeshDesc::quantizedCount</span></code></a>.</p>
+<section id="quickhull-algorithm">
+<h5>Quickhull Algorithm<a class="headerlink" href="#quickhull-algorithm" title="Permalink to this headline"></a></h5>
+<p>This algorithm creates a convex mesh whose vertices are a subset of the original vertices, and the number of vertices is guaranteed to be no more than the specified maximum.</p>
+<p>The Quickhull algorithm performs these steps:</p>
+<ul class="simple">
+<li><p>Cleans the vertices - removes duplicates etc.</p></li>
+<li><p>Finds a subset of vertices, no more than vertexLimit, that enclose the input set.</p></li>
+<li><p>If the vertexLimit is reached, expand the limited hull around the input vertices to ensure we encapsulate all the input vertices.</p></li>
+<li><p>Compute a vertex map table. (Requires at least 3 neighbor polygons for each vertex.)</p></li>
+<li><p>Checks the polygon data - verifies that all vertices are on or inside the hull, etc.</p></li>
+<li><p>Computes mass and inertia tensor assuming density is 1.</p></li>
+<li><p>Saves data to stream.</p></li>
+</ul>
+<p>When the hull is constructed each new vertex added must be further than <a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams14planeToleranceE" title="PxCookingParams::planeTolerance"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::planeTolerance</span></code></a> from the hull, if not that vertex is dropped.</p>
+</section>
+<section id="vertex-limit-algorithms">
+<h5>Vertex Limit Algorithms<a class="headerlink" href="#vertex-limit-algorithms" title="Permalink to this headline"></a></h5>
+<p>If a vertex limit has been provided, there are two algorithms that handle vertex limitation.</p>
+<p>The default algorithm computes the full hull, and an OBB around the input vertices. This OBB is then sliced with the hull planes until the vertex limit is reached. The default algorithm requires the vertex limit to be set to at least 8, and typically produces results that are much better quality than are produced by plane shifting.</p>
+<p>When plane shifting is enabled (<a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum15ePLANE_SHIFTINGE" title="PxConvexFlag::ePLANE_SHIFTING"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::ePLANE_SHIFTING</span></code></a>), the hull computation stops when vertex limit is reached. The hull planes are then shifted to contain all input vertices, and the new plane intersection points are then used to generate the final hull with the given vertex limit. Plane shifting may produce sharp edges to vertices very far away from the input cloud, and does not guarantee that all input vertices are inside the resulting hull. However, it can be used with a vertex limit as low as 4, and so may be a better choice for cases such as small pieces of debris with very low vertex counts.</p>
+</section>
+</section>
+<section id="vertex-points-indices-and-polygons-are-provided">
+<h4>Vertex Points, Indices and Polygons are Provided<a class="headerlink" href="#vertex-points-indices-and-polygons-are-provided" title="Permalink to this headline"></a></h4>
+<p>To create a <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> given a set of input vertices (convexVerts) and polygons (hullPolygons):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxConvexMeshDesc</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">              </span><span class="o">=</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDescPolygons</span><span class="p">.</span><span class="n">polygons</span><span class="p">.</span><span class="n">count</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDescPolygons</span><span class="p">.</span><span class="n">polygons</span><span class="p">.</span><span class="n">stride</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHullPolygon</span><span class="p">);</span><span class="w"></span>
+<span class="n">convexDescPolygons</span><span class="p">.</span><span class="n">polygons</span><span class="p">.</span><span class="n">data</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">hullPolygons</span><span class="p">;</span><span class="w"></span>
+<span class="n">convexDesc</span><span class="p">.</span><span class="n">flags</span><span class="w">                    </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxDefaultMemoryOutputStream</span><span class="w"> </span><span class="n">buf</span><span class="p">;</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">PxCookConvexMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">convexDesc</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When points and polygons are provided, the SDK validates the mesh and creates the <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> directly. This is the fastest way to create a convex mesh. Note that the SDK requires at least 3 neighbor polygons for each vertex. Otherwise acceleration structure for PCM is not created and it does result in performance penalty if PCM is enabled.</p>
+<p>(NOTE: the SDK should reject such a mesh as invalid)</p>
+<p>Internal steps during convex cooking:</p>
+<ul class="simple">
+<li><p>Compute vertex map table, requires at least 3 neighbor polygons for each vertex.</p></li>
+<li><p>Check polygons data - check if all vertices are on or inside the hull, etc.</p></li>
+<li><p>Compute mass and inertia tensor assuming density 1.</p></li>
+<li><p>Save data to stream.</p></li>
+</ul>
+</section>
+</section>
+<section id="triangle-meshes">
+<span id="trianglemeshes"></span><h3>Triangle Meshes<a class="headerlink" href="#triangle-meshes" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeMesh.png" src="../_images/GeomTypeMesh.png" />
+<p>Like graphical triangle meshes, a collision triangle mesh consists of a collection of vertices and the triangle indices. Triangle mesh creation requires use of cooking functions:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxTriangleMeshDesc</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="n">nbVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">verts</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">count</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="n">triCount</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">stride</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">);</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">data</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">indices32</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxTolerancesScale</span><span class="w"> </span><span class="n">scale</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxCookingParams</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="n">scale</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxDefaultMemoryOutputStream</span><span class="w"> </span><span class="n">writeBuffer</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxTriangleMeshCookingResult</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">result</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCookTriangleMesh</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">writeBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">status</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxDefaultMemoryInputData</span><span class="w"> </span><span class="nf">readBuffer</span><span class="p">(</span><span class="n">writeBuffer</span><span class="p">.</span><span class="n">getData</span><span class="p">(),</span><span class="w"> </span><span class="n">writeBuffer</span><span class="p">.</span><span class="n">getSize</span><span class="p">());</span><span class="w"></span>
+<span class="k">return</span><span class="w"> </span><span class="n">physics</span><span class="p">.</span><span class="n">createTriangleMesh</span><span class="p">(</span><span class="n">readBuffer</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Alternatively <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMesh</span></code></a> can be cooked and directly inserted into <a class="reference internal" href="../_api_build/class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPhysics</span></code></a> without stream serialization. This is useful if real-time cooking is required. It is strongly recommended to use offline cooking and streams. Example how to improve cooking speed if needed:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxTolerancesScale</span><span class="w"> </span><span class="n">scale</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxCookingParams</span><span class="w"> </span><span class="nf">params</span><span class="p">(</span><span class="n">scale</span><span class="p">);</span><span class="w"></span>
+<span class="c1">// disable mesh cleaning - perform mesh validation on development configurations</span>
+<span class="n">params</span><span class="p">.</span><span class="n">meshPreprocessParams</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxMeshPreprocessingFlag</span><span class="o">::</span><span class="n">eDISABLE_CLEAN_MESH</span><span class="p">;</span><span class="w"></span>
+<span class="c1">// disable edge precompute, edges are set for each triangle, slows contact generation</span>
+<span class="n">params</span><span class="p">.</span><span class="n">meshPreprocessParams</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxMeshPreprocessingFlag</span><span class="o">::</span><span class="n">eDISABLE_ACTIVE_EDGES_PRECOMPUTE</span><span class="p">;</span><span class="w"></span>
+<span class="c1">// lower hierarchy for internal mesh</span>
+<span class="n">params</span><span class="p">.</span><span class="n">meshCookingHint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMeshCookingHint</span><span class="o">::</span><span class="n">eCOOKING_PERFORMANCE</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxTriangleMeshDesc</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="n">nbVerts</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">stride</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">);</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">data</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="n">verts</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">count</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="n">triCount</span><span class="p">;</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">stride</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxU32</span><span class="p">);</span><span class="w"></span>
+<span class="n">meshDesc</span><span class="p">.</span><span class="n">triangles</span><span class="p">.</span><span class="n">data</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="n">indices32</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#ifdef _DEBUG</span>
+<span class="w">    </span><span class="c1">// mesh should be validated before cooked without the mesh cleaning</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxValidateTriangleMesh</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">res</span><span class="p">);</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="n">PxTriangleMesh</span><span class="o">*</span><span class="w"> </span><span class="n">aTriangleMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateTriangleMesh</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">thePhysics</span><span class="o">-&gt;</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Indices can be 16 or 32 bit. The strides used here assume that vertices and indices are arrays of PxVec3s and 32bit integers respectively with no gaps in the data layout.</p>
+<p>Returned result enum <a class="reference internal" href="../_api_build/struct_px_triangle_mesh_cooking_result.html#_CPPv4N27PxTriangleMeshCookingResult4Enum15eLARGE_TRIANGLEE" title="PxTriangleMeshCookingResult::eLARGE_TRIANGLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxTriangleMeshCookingResult::eLARGE_TRIANGLE</span></code></a> does warn the user if the mesh contains large triangles, which should be tessellated to ensure better simulation and CCT stability.</p>
+<p>Like height fields, triangle meshes support per-triangle material indices. To use per-triangle materials for a mesh, provide per-triangle indices to the cooking library in the mesh descriptor. Later, when creating the <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a>, supply a table mapping the index values in the mesh to material instances.</p>
+<p>For dynamic triangle meshes (i.e., triangle meshes attached to a non-kinematic dynamic actor), a SDF (Signed Distance Field) must be available in order to support collision detection.
+An SDF can be created during cooking but it is optional to do so.
+SDFs can have a large memory footprint but help accelerating the collision detection significantly.
+Note that they are only available when using the GPU collision detection pipeline.
+To reduce the memory consumption, it is recommended to use sparse SDFs where the majority of distance samples are stored near the triangle mesh’s surface and only few samples further away from the surface.
+This makes sense since collisions occur on the mesh’s surface and therefore it is sufficient to have precise values near the surface and less precise values further away.
+Collision detection performance of sparse and dense SDFs is almost identical.</p>
+<p>Cooking a SDF mesh can be done by providing a PxSDFDesc structure populated with all values required. Since the cooking of a SDF can be quite time consuming, there is a possibility to cook it on the GPU by providing a pointer to a specialized gpu cooker:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSDFDesc</span><span class="w"> </span><span class="n">sdfDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">sdfDesc</span><span class="p">.</span><span class="n">spacing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdfSpacing</span><span class="p">;</span><span class="w"></span>
+<span class="n">sdfDesc</span><span class="p">.</span><span class="n">subgridSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sdfSubgridSize</span><span class="p">;</span><span class="w"></span>
+<span class="n">sdfDesc</span><span class="p">.</span><span class="n">bitsPerSubgridPixel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bitsPerSdfSubgridPixel</span><span class="p">;</span><span class="w"></span>
+<span class="n">sdfDesc</span><span class="p">.</span><span class="n">numThreadsForSdfConstruction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">enableGpuAcceleratedCooking</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">//If sdfBuilder is NULL, the sdf will get cooked on the CPU using the number of threads specified above</span>
+<span class="w">    </span><span class="n">sdfDesc</span><span class="p">.</span><span class="n">sdfBuilder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGetPhysicsGpu</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">createSDFBuilder</span><span class="p">(</span><span class="n">cudaContextManager</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">PxTriangleMeshDesc</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc</span><span class="p">.</span><span class="n">sdfDesc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sdfDesc</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<section id="triangle-mesh-cooking">
+<h4>Triangle Mesh cooking<a class="headerlink" href="#triangle-mesh-cooking" title="Permalink to this headline"></a></h4>
+<p>Triangle mesh cooking proceeds as follows:</p>
+<ul class="simple">
+<li><p>Check validity of input vertices.</p></li>
+<li><p>Weld vertices and check triangle sizes.</p></li>
+<li><p>Create acceleration structure for queries.</p></li>
+<li><p>Compute edge convexity information and adjacencies.</p></li>
+<li><p>Save data to stream.</p></li>
+</ul>
+<p>Note that mesh cleaning may result in the set of triangles produced by cooking being a subset different from the original input set. Mesh cleaning removes invalid triangles (containing out-of-range vertex references), duplicate triangles, and zero-area triangles. When this happens, PhysX optionally outputs a mesh remapping table that links each internal triangle to its source triangle in the user’s data.</p>
+<p>There are multiple parameters to control mesh creation.</p>
+<p>In <a class="reference internal" href="../_api_build/class_px_triangle_mesh_desc.html#_CPPv418PxTriangleMeshDesc" title="PxTriangleMeshDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMeshDesc</span></code></a>:</p>
+<ul class="simple">
+<li><p><em>materialIndices</em> defines per triangle materials. When a triangle mesh collides with another object, a material is required at the collision point. If materialIndices is NULL, then the material of the PxShape instance is used.</p></li>
+<li><p><em>sdfDesc</em> is an optional description. If set and configured it defines the properties of a SDF (Signed Distance Field) that gets generated for the triangle mesh to speed up collision detection between dynamic triangle meshes. As soon as spacing has a value larger than zero, SDF data will get generated during cooking. It is recommended to use a sparse SDF which can be enabled by setting the subgridSize to a value larger than zero. Values in the range of 4 to 8 usually produce the best memory saving effect. Sparse SDFs allow to reduce the memory per sample by using quantization, usually 16 bits per subgrid pixel are sufficient. For detailed information about the SDF properties, see <a class="reference internal" href="../_api_build/class_px_s_d_f_desc.html#_CPPv49PxSDFDesc" title="PxSDFDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSDFDesc</span></code></a>.</p></li>
+</ul>
+<p>In <a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCookingParams</span></code></a>:</p>
+<ul>
+<li><p><em>scale</em> defines Tolerance scale is used to check if cooked triangles are not too huge. This check will help with simulation stability.</p></li>
+<li><p><em>suppressTriangleMeshRemapTable</em> specifies whether the face remap table is created. If not, this saves a significant amount of memory, but the SDK will not be able to provide information about which original mesh triangle is hit in collisions, sweeps or raycasts hits.</p></li>
+<li><p><em>buildTriangleAdjacencies</em> specifies if the triangle adjacency information is created. The adjacent triangles can be retrieved for a given triangle using the getTriangle.</p></li>
+<li><p><em>meshPreprocessParams</em> specifies mesh pre-processing parameters.</p>
+<blockquote>
+<div><ul>
+<li><p><em>PxMeshPreprocessingFlag::eWELD_VERTICES</em> enables vertex welding during triangle mesh cooking.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH</em> disables mesh clean process. Vertices duplicities are not searched, huge triangles test is not done. Vertices welding is not done. Does speed up the cooking.</p></li>
+<li><p><em>PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE</em> disables vertex edge precomputation. Makes cooking faster but slow up contact generation.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><em>meshWeldTolerance</em> - If mesh welding is enabled, this controls the distance at which vertices are welded. If mesh welding is not enabled, this value defines the acceptance distance for mesh validation. Provided no two vertices are within this distance, the mesh is considered to be clean. If not, a warning will be emitted. Having a clean mesh is required to achieve the best possible performance.</p></li>
+<li><p><em>midphaseDesc</em> specifies the desired midphase acceleration structure descriptor.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>PxBVH33MidphaseDesc - PxMeshMidPhase::eBVH33</em> was the one used in older PhysX versions up to PhysX 3.3. It has good performance and is supported on all platforms.</p></li>
+<li><p><em>PxBVH34MidphaseDesc - PxMeshMidPhase::eBVH34</em> is a revisited implementation introduced in PhysX 3.4 and it is the default structure by now. It can be significantly faster both in terms of cooking performance and runtime performance, but it is currently only available on platforms supporting the SSE2 instuction set.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p><em>PxBVH33MidphaseDesc params</em>:</p>
+<ul class="simple">
+<li><p><em>meshCookingHint</em> specifies mesh hierarchy construction preferences. Enables better cooking performance over collision performance, for applications where cooking performance is more important than best quality mesh creation.</p></li>
+<li><p><em>meshSizePerformanceTradeOff</em> specifies the trade-off between mesh size and runtime performance.</p></li>
+</ul>
+<p><em>PxBVH34MidphaseDesc params</em>:</p>
+<ul class="simple">
+<li><p><em>numTrisPerLeaf</em> specifies the number of triangles per leaf. Less triangles per leaf produces larger meshes with general better runtime performance and worse cooking performance.</p></li>
+</ul>
+</section>
+</section>
+<section id="height-fields">
+<h3>Height Fields<a class="headerlink" href="#height-fields" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomTypeHeightField.png" src="../_images/GeomTypeHeightField.png" />
+<dl class="simple">
+<dt>Local space axes for the height fields are:</dt><dd><ul class="simple">
+<li><p>Row - X axis</p></li>
+<li><p>Column - Z axis</p></li>
+<li><p>Height - Y axis</p></li>
+</ul>
+</dd>
+</dl>
+<p>As the name suggests, terrains can be described by just the height values on a regular, rectangular sampling grid:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxHeightFieldSample</span><span class="o">*</span><span class="w"> </span><span class="n">samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="o">*</span><span class="p">)</span><span class="n">alloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">)</span><span class="o">*</span><span class="w"></span>
+<span class="w">    </span><span class="p">(</span><span class="n">numRows</span><span class="o">*</span><span class="n">numCols</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Each sample consists of a 16 bit integer height value, two materials (for the two triangles in the samples rectangle) and a tessellation flag.</p>
+<p>The flag and materials refer to the cell below and to the right of the sample point, and indicate along which diagonal to split it into triangles, and the materials of those triangles.  A special predefined material <a class="reference internal" href="../_api_build/struct_px_height_field_material.html#_CPPv4N21PxHeightFieldMaterial4Enum5eHOLEE" title="PxHeightFieldMaterial::eHOLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHeightFieldMaterial::eHOLE</span></code></a> specifies a hole in the height field. See the reference documentation for <a class="reference internal" href="../_api_build/struct_px_height_field_sample.html#_CPPv419PxHeightFieldSample" title="PxHeightFieldSample"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldSample</span></code></a> for more details.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Tesselation flag not set</p></th>
+<th class="head"><p>Tesselation flag set</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><img alt="../_images/heightfieldTriMat11.PNG" src="../_images/heightfieldTriMat11.PNG" />
+</td>
+<td><img alt="../_images/heightfieldTriMat21.PNG" src="../_images/heightfieldTriMat21.PNG" />
+</td>
+</tr>
+</tbody>
+</table>
+<p>Examples:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Tesselation flags</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><div class="line-block">
+<div class="line">0,0,0</div>
+<div class="line">0,0,0</div>
+<div class="line">0,0,0</div>
+</div>
+</td>
+<td><img alt="../_images/heightfieldTess2.png" src="../_images/heightfieldTess2.png" />
+</td>
+</tr>
+<tr class="row-odd"><td><div class="line-block">
+<div class="line">1,1,1</div>
+<div class="line">1,1,1</div>
+<div class="line">1,1,1</div>
+</div>
+</td>
+<td><img alt="../_images/heightfieldTess1.png" src="../_images/heightfieldTess1.png" />
+</td>
+</tr>
+<tr class="row-even"><td><div class="line-block">
+<div class="line">1,0,1</div>
+<div class="line">0,1,0</div>
+<div class="line">1,0,1</div>
+</div>
+</td>
+<td><img alt="../_images/heightfieldTess3.png" src="../_images/heightfieldTess3.png" />
+</td>
+</tr>
+</tbody>
+</table>
+<p>To tell the system the number of sampled heights in each direction, use a descriptor to instantiate a PxHeightField object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxHeightFieldDesc</span><span class="w"> </span><span class="n">hfDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfDesc</span><span class="p">.</span><span class="n">format</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">PxHeightFieldFormat</span><span class="o">::</span><span class="n">eS16_TM</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfDesc</span><span class="p">.</span><span class="n">nbColumns</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">numCols</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfDesc</span><span class="p">.</span><span class="n">nbRows</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="n">numRows</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">data</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">samples</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">stride</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxHeightField</span><span class="o">*</span><span class="w"> </span><span class="n">aHeightField</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateHeightField</span><span class="p">(</span><span class="n">hfDesc</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">thePhysics</span><span class="o">-&gt;</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now create a <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a> and a shape:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxHeightFieldGeometry</span><span class="w"> </span><span class="nf">hfGeom</span><span class="p">(</span><span class="n">aHeightField</span><span class="p">,</span><span class="w"> </span><span class="n">PxMeshGeometryFlags</span><span class="p">(),</span><span class="w"> </span><span class="n">heightScale</span><span class="p">,</span><span class="w"> </span><span class="n">rowScale</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">colScale</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">aHeightFieldShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">aHeightFieldActor</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">hfGeom</span><span class="p">,</span><span class="w"> </span><span class="n">aMaterialArray</span><span class="p">,</span><span class="w"> </span><span class="n">nbMaterials</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The row and column scales tell the system how far apart the sampled points lie in the associated direction. The height scale scales the integer height values to a floating point range.</p>
+<p>The variant of <em>createExclusiveShape()</em> used here specifies an array of materials for the height field, which will be indexed by the material indices of each cell to resolve collisions with that cell. The single-material variant may be used instead, but the height field material indices must all be a single value or the special value <code class="docutils literal notranslate"><span class="pre">eHOLE</span></code>.</p>
+<p>Contact generation with triangle edges at the terrain’s borders can be disabled using the <a class="reference internal" href="../_api_build/struct_px_height_field_flag.html#_CPPv4N17PxHeightFieldFlag4Enum18eNO_BOUNDARY_EDGESE" title="PxHeightFieldFlag::eNO_BOUNDARY_EDGES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHeightFieldFlag::eNO_BOUNDARY_EDGES</span></code></a> flag, allowing more efficient contact generation when there are multiple heightfield shapes arranged so that their edges touch.</p>
+<section id="quantizing-heightfield-samples">
+<h4>Quantizing Heightfield Samples<a class="headerlink" href="#quantizing-heightfield-samples" title="Permalink to this headline"></a></h4>
+<p>Heightfield samples are encoded using signed 16-bit integers for the y-height that are then converted to a float and multiplied by <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv4N21PxHeightFieldGeometry11heightScaleE" title="PxHeightFieldGeometry::heightScale"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHeightFieldGeometry::heightScale</span></code></a> to obtain local space scaled coordinates. Shape transform is then applied on top to obtain world space location.
+The transformation is performed as follows (in pseudo-code):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">localScaledVertex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">row</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rowScale</span><span class="p">,</span><span class="w"> </span><span class="n">PxF32</span><span class="p">(</span><span class="n">heightSample</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">heightScale</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">col</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">columnScale</span><span class="p">)</span><span class="w"></span>
+<span class="n">worldVertex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shapeTransform</span><span class="p">(</span><span class="w"> </span><span class="n">localScaledVertex</span><span class="w"> </span><span class="p">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The following code snippet shows one possible way to build quantized unscaled local space heightfield coordinates from world space grid heights stored in terrainData.verts:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">ts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"> </span><span class="c1">// user heightfield dimensions (ts = terrain samples)</span>
+<span class="c1">// create the actor for heightfield</span>
+<span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="n">actor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physics</span><span class="p">.</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span><span class="w"></span>
+
+<span class="c1">// iterate over source data points and find minimum and maximum heights</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">minHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PX_MAX_F32</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">PX_MAX_F32</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">ts</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ts</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">minHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMin</span><span class="p">(</span><span class="n">minHeight</span><span class="p">,</span><span class="w"> </span><span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[</span><span class="n">s</span><span class="p">].</span><span class="n">y</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">maxHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMax</span><span class="p">(</span><span class="n">maxHeight</span><span class="p">,</span><span class="w"> </span><span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[</span><span class="n">s</span><span class="p">].</span><span class="n">y</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// compute maximum height difference</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">deltaHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxHeight</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">minHeight</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// maximum positive value that can be represented with signed 16 bit integer</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">quantization</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">PxReal</span><span class="p">)</span><span class="mh">0x7fff</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// compute heightScale such that the forward transform will generate the closest point</span>
+<span class="c1">// to the source</span>
+<span class="c1">// clamp to at least PX_MIN_HEIGHTFIELD_Y_SCALE to respect the PhysX API specs</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">heightScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMax</span><span class="p">(</span><span class="n">deltaHeight</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">quantization</span><span class="p">,</span><span class="w"> </span><span class="n">PX_MIN_HEIGHTFIELD_Y_SCALE</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxHeightFieldSample</span><span class="o">*</span><span class="w"> </span><span class="n">hfSamples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PxHeightFieldSample</span><span class="p">[</span><span class="n">ts</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ts</span><span class="p">];</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">col</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">ts</span><span class="p">;</span><span class="w"> </span><span class="n">col</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">row</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">ts</span><span class="p">;</span><span class="w"> </span><span class="n">row</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxI16</span><span class="w"> </span><span class="n">height</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxI16</span><span class="p">(</span><span class="n">quantization</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">((</span><span class="n">terrainData</span><span class="p">.</span><span class="n">verts</span><span class="p">[(</span><span class="n">col</span><span class="o">*</span><span class="n">ts</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">row</span><span class="p">].</span><span class="n">y</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">minHeight</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"></span>
+<span class="w">            </span><span class="n">deltaHeight</span><span class="p">));</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">PxHeightFieldSample</span><span class="o">&amp;</span><span class="w"> </span><span class="n">smp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hfSamples</span><span class="p">[(</span><span class="n">row</span><span class="o">*</span><span class="n">ts</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">col</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">smp</span><span class="p">.</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">height</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">smp</span><span class="p">.</span><span class="n">materialIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">userValue0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">smp</span><span class="p">.</span><span class="n">materialIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">userValue1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">userFlipEdge</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="n">smp</span><span class="p">.</span><span class="n">setTessFlag</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Build PxHeightFieldDesc from samples</span>
+<span class="n">PxHeightFieldDesc</span><span class="w"> </span><span class="n">terrainDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">format</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">PxHeightFieldFormat</span><span class="o">::</span><span class="n">eS16_TM</span><span class="p">;</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">nbColumns</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="n">ts</span><span class="p">;</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">nbRows</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">ts</span><span class="p">;</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">data</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">hfSamples</span><span class="p">;</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">stride</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">);</span><span class="w"></span>
+<span class="n">terrainDesc</span><span class="p">.</span><span class="n">flags</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="n">PxHeightFieldFlags</span><span class="p">();</span><span class="w"></span>
+
+<span class="n">PxHeightFieldGeometry</span><span class="w"> </span><span class="n">hfGeom</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">columnScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">terrainWidth</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">ts</span><span class="mi">-1</span><span class="p">);</span><span class="w"> </span><span class="c1">// compute column and row scale from input terrain</span>
+<span class="w">                                            </span><span class="c1">// height grid</span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">rowScale</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">terrainWidth</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">ts</span><span class="mi">-1</span><span class="p">);</span><span class="w"></span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">heightScale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deltaHeight</span><span class="o">!=</span><span class="mf">0.0f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">heightScale</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">;</span><span class="w"></span>
+<span class="n">hfGeom</span><span class="p">.</span><span class="n">heightField</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateHeightField</span><span class="p">(</span><span class="n">terrainDesc</span><span class="p">,</span><span class="w"> </span><span class="n">physics</span><span class="p">.</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+
+<span class="k">delete</span><span class="w"> </span><span class="p">[]</span><span class="w"> </span><span class="n">hfSamples</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxTransform</span><span class="w"> </span><span class="n">localPose</span><span class="p">;</span><span class="w"></span>
+<span class="n">localPose</span><span class="p">.</span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">terrainWidth</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">),</span><span class="w">    </span><span class="c1">// make it so that the center of the</span>
+<span class="w">    </span><span class="n">minHeight</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="n">terrainWidth</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">));</span><span class="w">         </span><span class="c1">// heightfield is at world (0,minHeight,0)</span>
+<span class="n">localPose</span><span class="p">.</span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">hfGeom</span><span class="p">,</span><span class="w"> </span><span class="n">material</span><span class="p">,</span><span class="w"> </span><span class="n">nbMaterials</span><span class="p">);</span><span class="w"></span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">setLocalPose</span><span class="p">(</span><span class="n">localPose</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="heightfield-cooking">
+<h4>Heightfield cooking<a class="headerlink" href="#heightfield-cooking" title="Permalink to this headline"></a></h4>
+<p>Heightfield data can be cooked in offline and then used to createHeightField. The cooking does precompute and store the edge information. This allows much faster create of the heightfield, since the edges are already precomputed. It is very useful if you need to create heightfields in the runtime, since it does improve the speed of createHeightField significantly.</p>
+<p>Heightfield cooking proceeds as follows:</p>
+<ul class="simple">
+<li><p>Load heightfield samples into internal memory.</p></li>
+<li><p>Precompute edge collision information.</p></li>
+<li><p>Save data to stream.</p></li>
+</ul>
+</section>
+<section id="heightfields-contact-generation">
+<h4>Heightfields contact generation<a class="headerlink" href="#heightfields-contact-generation" title="Permalink to this headline"></a></h4>
+<p>The heightfield contact generation approach extracts triangles from the heightfield and utilizes the same low-level contact generation code that is used for triangle meshes. This approach ensures equivalent behavior and performance if triangle meshes or heightfields are used interchangeably. However, with this approach, the heightfield surface has no thickness so fast-moving objects may tunnel if CCD is not enabled.</p>
+</section>
+<section id="heightfields-registration">
+<h4>Heightfields registration<a class="headerlink" href="#heightfields-registration" title="Permalink to this headline"></a></h4>
+<p>Heightfields are enabled by calling:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRegisterHeightFields</span><span class="p">(</span><span class="n">PxPhysics</span><span class="o">&amp;</span><span class="w"> </span><span class="n">physics</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This call must be made before creating any scene, otherwise warnings will be issued. This is a global setting, and it applies to all scenes.</p>
+<p>If PxCreatePhysics(…) is called, this will automatically call PxRegisterHeightFields(…). If PxCreateBasePhysics(…) is called, heightfields are not registered by default. If heightfields are used, the application must call the heightfield registration function.</p>
+</section>
+</section>
+</section>
+<section id="deformable-meshes">
+<h2>Deformable meshes<a class="headerlink" href="#deformable-meshes" title="Permalink to this headline"></a></h2>
+<p>PhysX supports deformable meshes, i.e. meshes whose vertices move over time (while the topology, i.e. the triangle indices, remains fixed).</p>
+<p>Because the mesh vertices are going to be updated, the mapping between the user-defined vertices and PhysX’ internal vertices must also be preserved. That is, PhysX should not reorder vertices during cooking. So all cooking operations that could reorder vertices should be disabled, and it is the user’s responsibility to make sure that the passed vertices are correct w.r.t. disabled operations. For example the mesh cleaning phase should be disabled:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">cookingParams</span><span class="p">.</span><span class="n">meshPreprocessParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMeshPreprocessingFlag</span><span class="o">::</span><span class="n">eDISABLE_CLEAN_MESH</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To modify the vertices, use the <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv4N14PxTriangleMesh26getVerticesForModificationEv" title="PxTriangleMesh::getVerticesForModification"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxTriangleMesh::getVerticesForModification()</span></code></a> and <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv4N14PxTriangleMesh8refitBVHEv" title="PxTriangleMesh::refitBVH"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxTriangleMesh::refitBVH()</span></code></a> functions before simulating the scene:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// get vertex array</span>
+<span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">verts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">getVerticesForModification</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// update the vertices here</span>
+<span class="p">...</span><span class="w"></span>
+
+<span class="c1">// tell PhysX to update the mesh structure</span>
+<span class="n">PxBounds3</span><span class="w"> </span><span class="n">newBounds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">refitBVH</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then use <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene14resetFilteringER7PxActor" title="PxScene::resetFiltering"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::resetFiltering()</span></code></a> for the corresponding mesh actor, to tell the broadphase its bounds have been modified:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">resetFiltering</span><span class="p">(</span><span class="o">*</span><span class="n">actor</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When the mesh deforms and moves away from the objects resting on it, said meshes can bounce and jitter slightly on the mesh. Using a slightly negative rest offset for the mesh shape can help reduce this effect:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span><span class="w"></span>
+<span class="n">mesh</span><span class="o">-&gt;</span><span class="n">getShapes</span><span class="p">(</span><span class="o">&amp;</span><span class="n">shape</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">setRestOffset</span><span class="p">(</span><span class="mf">-0.5f</span><span class="p">);</span><span class="w">   </span><span class="c1">// something negative, value depends on your world&#39;s scale</span>
+</pre></div>
+</div>
+<p>This will let objects “sink” a bit into the dynamic mesh. That way contacts are not immediately lost and the motion remains smooth. Please refer to the deformable mesh snippet in the SDK for more details.</p>
+</section>
+<section id="mesh-scaling">
+<h2>Mesh Scaling<a class="headerlink" href="#mesh-scaling" title="Permalink to this headline"></a></h2>
+<p>A shared <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMesh</span></code></a> or <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> may be stretched or compressed when it is instanced by a geometry. This allows multiple instancing of the same mesh with different scale factors applied.  Scaling is specified with the <a class="reference internal" href="../_api_build/class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMeshScale</span></code></a> class, which defines scale factors to be applied along 3 orthogonal axes. A factor greater than 1.0 results in stretching, while a factor less than 1.0 results in compression. The directions of the axes are governed by a quaternion, and specified in the local frame of the shape.</p>
+<p>Negative mesh scale is supported, with negative values producing a reflection along each corresponding axis. In addition PhysX will flip the normals for mesh triangles when scale.x*scale.y*scale.z &lt; 0.</p>
+<p>The following code creates a shape with a <a class="reference internal" href="../_api_build/class_px_triangle_mesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMesh</span></code></a> scaled by a factor of x along the x-axis, y along the y-axis, and z along the z-axis:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// created earlier</span>
+<span class="n">PxRigidActor</span><span class="o">*</span><span class="w"> </span><span class="n">myActor</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxTriangleMesh</span><span class="o">*</span><span class="w"> </span><span class="n">myTriMesh</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">myMaterial</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// create a shape instancing a triangle mesh at the given scale</span>
+<span class="n">PxMeshScale</span><span class="w"> </span><span class="nf">scale</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">),</span><span class="w"> </span><span class="n">PxQuat</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span><span class="w"></span>
+<span class="n">PxTriangleMeshGeometry</span><span class="w"> </span><span class="nf">geom</span><span class="p">(</span><span class="n">myTriMesh</span><span class="p">,</span><span class="n">scale</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">myTriMeshShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">myActor</span><span class="p">,</span><span class="n">geom</span><span class="p">,</span><span class="o">*</span><span class="n">myMaterial</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Convex meshes are scaled using the <a class="reference internal" href="../_api_build/class_px_mesh_scale.html#_CPPv411PxMeshScale" title="PxMeshScale"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMeshScale</span></code></a> class in a similar manner.  The following code creates a shape with a <a class="reference internal" href="../_api_build/class_px_convex_mesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxConvexMesh</span></code></a> scaled by a factor of x along (sqrt(1/2), 1.0, -sqrt(1/2)), by a factor of y along (0,1,0) and a by a factor of z along (sqrt(1/2), 1.0, sqrt(1/2)):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxMeshScale</span><span class="w"> </span><span class="nf">scale</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">),</span><span class="w"> </span><span class="n">PxQuat</span><span class="w"> </span><span class="n">quat</span><span class="p">(</span><span class="n">PxPi</span><span class="o">*</span><span class="mf">0.25f</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxConvexMeshGeometry</span><span class="w"> </span><span class="nf">geom</span><span class="p">(</span><span class="n">myTriMesh</span><span class="p">,</span><span class="n">scale</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">myConvexMeshShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">myActor</span><span class="p">,</span><span class="n">geom</span><span class="p">,</span><span class="o">*</span><span class="n">myMaterial</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Height fields can also be scaled, using scale factors stored in <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a>. In this case the scale is assumed to be along the axes of the rows, columns and height directions of the height field. The scaling of is demonstrated in SampleNorthPole in SampleNorthPoleBuilder.cpp:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxHeightFieldGeometry</span><span class="w"> </span><span class="nf">hfGeom</span><span class="p">(</span><span class="n">heightField</span><span class="p">,</span><span class="w"> </span><span class="n">PxMeshGeometryFlags</span><span class="p">(),</span><span class="w"> </span><span class="n">heightScale</span><span class="p">,</span><span class="w"> </span><span class="n">hfScale</span><span class="p">,</span><span class="w"> </span><span class="n">hfScale</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">hfShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">hfActor</span><span class="p">,</span><span class="w"> </span><span class="n">hfGeom</span><span class="p">,</span><span class="w"> </span><span class="n">getDefaultMaterial</span><span class="p">());</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this example, the coordinates along the x and z axes are scaled by hfScale, while the sample heights are scaled by heightScale.</p>
+</section>
+<section id="pxgeometryholder">
+<h2>PxGeometryHolder<a class="headerlink" href="#pxgeometryholder" title="Permalink to this headline"></a></h2>
+<p>When a geometry is provided for a shape, either on creation or with <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape11setGeometryERK10PxGeometry" title="PxShape::setGeometry"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setGeometry()</span></code></a>, the geometry is copied into the SDK’s internal structures. If you know the type of a shape’s geometry you may retrieve it directly:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBoxGeometry</span><span class="w"> </span><span class="n">boxGeom</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">getBoxGeometry</span><span class="p">(</span><span class="n">geometry</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The status return code is set to false if the shape’s geometry is not of the expected type.</p>
+<p>However, it is often convenient to retrieve a geometry object from a shape without first knowing its type - for example, to call a function which takes a PxGeometry reference as an argument.</p>
+<p><a class="reference internal" href="../_api_build/class_px_geometry_holder.html#_CPPv416PxGeometryHolder" title="PxGeometryHolder"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometryHolder</span></code></a> is a union-like class that allows the return of a <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> object by value, regardless of type. Its use is illustrated in the <em>createRenderObjectFromShape()</em> function in PhysXSample.cpp:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryHolder</span><span class="w"> </span><span class="nf">geom</span><span class="p">(</span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">getGeometry</span><span class="p">());</span><span class="w"></span>
+
+<span class="k">switch</span><span class="p">(</span><span class="n">geom</span><span class="p">.</span><span class="n">getType</span><span class="p">())</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">case</span><span class="w"> </span><span class="no">PxGeometryType</span><span class="o">::</span><span class="no">eSPHERE</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">shapeRenderActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SAMPLE_NEW</span><span class="p">(</span><span class="n">RenderSphereActor</span><span class="p">)(</span><span class="n">renderer</span><span class="p">,</span><span class="w"> </span><span class="n">geom</span><span class="p">.</span><span class="n">sphere</span><span class="p">().</span><span class="n">radius</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="k">case</span><span class="w"> </span><span class="no">PxGeometryType</span><span class="o">::</span><span class="no">eCAPSULE</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">shapeRenderActor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SAMPLE_NEW</span><span class="p">(</span><span class="n">RenderCapsuleActor</span><span class="p">)(</span><span class="n">renderer</span><span class="p">,</span><span class="w"> </span><span class="n">geom</span><span class="p">.</span><span class="n">capsule</span><span class="p">().</span><span class="n">radius</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">geom</span><span class="p">.</span><span class="n">capsule</span><span class="p">().</span><span class="n">halfHeight</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The function <a class="reference internal" href="../_api_build/class_px_geometry_holder.html#_CPPv4N16PxGeometryHolder3anyEv" title="PxGeometryHolder::any"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryHolder::any()</span></code></a> returns a reference to a <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> object. For example, to compare two shapes in a scene for overlap:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">testForOverlap</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxShape</span><span class="o">&amp;</span><span class="w"> </span><span class="n">s0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxShape</span><span class="o">&amp;</span><span class="w"> </span><span class="n">s1</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">overlap</span><span class="p">(</span><span class="n">s0</span><span class="p">.</span><span class="n">getGeometry</span><span class="p">().</span><span class="n">any</span><span class="p">(),</span><span class="w"> </span><span class="n">PxShapeExt</span><span class="o">::</span><span class="n">getGlobalPose</span><span class="p">(</span><span class="n">s0</span><span class="p">),</span><span class="w"></span>
+<span class="w">                                    </span><span class="n">s1</span><span class="p">.</span><span class="n">getGeometry</span><span class="p">().</span><span class="n">any</span><span class="p">(),</span><span class="w"> </span><span class="n">PxShapeExt</span><span class="o">::</span><span class="n">getGlobalPose</span><span class="p">(</span><span class="n">s1</span><span class="p">));</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that since PhysX 5 the <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4NK7PxShape11getGeometryEv" title="PxShape::getGeometry"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::getGeometry()</span></code></a> function directly retrieves the reference to a <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> object.</p>
+</section>
+<section id="vertex-and-face-data">
+<h2>Vertex and Face Data<a class="headerlink" href="#vertex-and-face-data" title="Permalink to this headline"></a></h2>
+<p>Convex meshes, triangle meshes, and height fields can all be queried for vertex and face data.  This is particularly useful, for example, when rendering the mesh of the convex shape. The function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">RenderBaseActor</span><span class="o">*</span><span class="w"> </span><span class="n">PhysXSample</span><span class="o">::</span><span class="n">createRenderObjectFromShape</span><span class="p">(</span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">RenderMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">material</span><span class="p">)</span><span class="w"></span>
+</pre></div>
+</div>
+<p>in PhysXSample.cpp contains a switch statement with a case for each shape type, illustrating the steps required to query the vertices and faces.</p>
+<p>It is possible to get information about triangle from a triangle mesh or height field using <a class="reference internal" href="../_api_build/class_px_mesh_query.html#_CPPv4N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32" title="PxMeshQuery::getTriangle"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxMeshQuery::getTriangle()</span></code></a> function. You can also retrieve adjacent triangle indices for the given triangle (triangle triangleNeighbour[i] shares the edge vertex[i]-vertex[(i+1)%3] with triangle indexed as ‘triangleIndex’, where vertex is in the range from 0 to 2). To enable this feature the triangle mesh is cooked with buildTriangleAdjacencies parameter set to true.</p>
+<section id="id2">
+<h3>Convex Meshes<a class="headerlink" href="#id2" title="Permalink to this headline"></a></h3>
+<p>A convex mesh contains an array of vertices, an array of faces, and an index buffer which concatenates the vertex indices for each face. To unpack a convex mesh, the first step is to extract the shared convex mesh:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxConvexMesh</span><span class="o">*</span><span class="w"> </span><span class="n">convexMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geom</span><span class="p">.</span><span class="n">convexMesh</span><span class="p">().</span><span class="n">convexMesh</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then obtain references to the vertex and index buffers:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">convexMesh</span><span class="o">-&gt;</span><span class="n">getNbVertices</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">convexVerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">convexMesh</span><span class="o">-&gt;</span><span class="n">getVertices</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">indexBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">convexMesh</span><span class="o">-&gt;</span><span class="n">getIndexBuffer</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Now iterate over the array of faces to triangulate them:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="n">offset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">nbPolygons</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxHullPolygon</span><span class="w"> </span><span class="n">face</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">convexMesh</span><span class="o">-&gt;</span><span class="n">getPolygonData</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">face</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_ASSERT</span><span class="p">(</span><span class="n">status</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxU8</span><span class="o">*</span><span class="w"> </span><span class="n">faceIndices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">indexBuffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">face</span><span class="p">.</span><span class="n">mIndexBase</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">j</span><span class="o">&lt;</span><span class="n">face</span><span class="p">.</span><span class="n">mNbVerts</span><span class="p">;</span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">vertices</span><span class="p">[</span><span class="n">offset</span><span class="o">+</span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">convexVerts</span><span class="p">[</span><span class="n">faceIndices</span><span class="p">[</span><span class="n">j</span><span class="p">]];</span><span class="w"></span>
+<span class="w">        </span><span class="n">normals</span><span class="p">[</span><span class="n">offset</span><span class="o">+</span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">face</span><span class="p">.</span><span class="n">mPlane</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">face</span><span class="p">.</span><span class="n">mPlane</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="n">face</span><span class="p">.</span><span class="n">mPlane</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="o">=</span><span class="mi">2</span><span class="p">;</span><span class="n">j</span><span class="o">&lt;</span><span class="n">face</span><span class="p">.</span><span class="n">mNbVerts</span><span class="p">;</span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">triangles</span><span class="o">++</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU16</span><span class="p">(</span><span class="n">offset</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">triangles</span><span class="o">++</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU16</span><span class="p">(</span><span class="n">offset</span><span class="o">+</span><span class="n">j</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">triangles</span><span class="o">++</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxU16</span><span class="p">(</span><span class="n">offset</span><span class="o">+</span><span class="n">j</span><span class="mi">-1</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">offset</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">face</span><span class="p">.</span><span class="n">mNbVerts</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Observe that the vertex indices of the polygon begin at indexBuffer[face.mIndexBase], and the count of vertices is given by face.mNbVerts.</p>
+</section>
+<section id="id3">
+<h3>Triangle Meshes<a class="headerlink" href="#id3" title="Permalink to this headline"></a></h3>
+<p>Triangle meshes contain arrays of vertices and index triplets which define the triangles by indexing into the vertex buffer. The arrays can be accessed directly from the shared triangle mesh:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxTriangleMesh</span><span class="o">*</span><span class="w"> </span><span class="n">tm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geom</span><span class="p">.</span><span class="n">triangleMesh</span><span class="p">().</span><span class="n">triangleMesh</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tm</span><span class="o">-&gt;</span><span class="n">getNbVertices</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">verts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tm</span><span class="o">-&gt;</span><span class="n">getVertices</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbTris</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tm</span><span class="o">-&gt;</span><span class="n">getNbTriangles</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">tris</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tm</span><span class="o">-&gt;</span><span class="n">getTriangles</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The indices may be stored with either 16-bit or 32-bit values, specified when the mesh was originally cooked. To determine the storage format at runtime, use the API call:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">has16bitIndices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tm</span><span class="o">-&gt;</span><span class="n">has16BitTriangleIndices</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Assuming that the triangle indices are stored in 16-bit format, find the jth vertex of the ith triangle by:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxU16</span><span class="o">*</span><span class="w"> </span><span class="n">triIndices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxU16</span><span class="o">*</span><span class="p">)</span><span class="n">tris</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU16</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">triIndices</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="n">j</span><span class="p">];</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The corresponding vertex is:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">vertex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">verts</span><span class="p">[</span><span class="n">index</span><span class="p">];</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="id4">
+<h3>Height Fields<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h3>
+<p>The storage of height field data is platform-dependent, and therefore direct access to the height field samples is not provided. Instead, calls are provided to render the samples to a user-supplied buffer.</p>
+<p>Again, the first step is to retrieve the geometry for the height field:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxHeightFieldGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geom</span><span class="p">.</span><span class="n">heightField</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The height field has three scaling parameters:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w">    </span><span class="n">rs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="p">.</span><span class="n">rowScale</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w">    </span><span class="n">hs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="p">.</span><span class="n">heightScale</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w">    </span><span class="n">cs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="p">.</span><span class="n">columnScale</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And a shared data structure, which stores the row and column count:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxHeightField</span><span class="o">*</span><span class="w">  </span><span class="n">hf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">geometry</span><span class="p">.</span><span class="n">heightField</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w">     </span><span class="n">nbCols</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hf</span><span class="o">-&gt;</span><span class="n">getNbColumns</span><span class="p">();</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w">     </span><span class="n">nbRows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hf</span><span class="o">-&gt;</span><span class="n">getNbRows</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>To render the height field, first extract the samples to an array:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVerts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbRows</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbCols</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxHeightFieldSample</span><span class="o">*</span><span class="w"> </span><span class="n">sampleBuffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PxHeightFieldSample</span><span class="p">[</span><span class="n">nbVerts</span><span class="p">];</span><span class="w"></span>
+<span class="n">hf</span><span class="o">-&gt;</span><span class="n">saveCells</span><span class="p">(</span><span class="n">sampleBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">nbVerts</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The samples are stored in row-major order; that is, row0 is stored first, followed by row1, then row2, and so on. Thus the sample corresponding to the ith row and the jth column is i*nbCols + j.</p>
+<p>Evaluate the scaled vertices of the height field as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">vertices</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">[</span><span class="n">nbVerts</span><span class="p">];</span><span class="w"></span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbRows</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbCols</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbCols</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="n">PxReal</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">rs</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="n">sampleBuffer</span><span class="p">[</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="n">nbCols</span><span class="p">)].</span><span class="n">height</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">hs</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="p">(</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cs</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Then tessellate the field from the samples as required.</p>
+</section>
+<section id="heightfield-modification">
+<h3>Heightfield Modification<a class="headerlink" href="#heightfield-modification" title="Permalink to this headline"></a></h3>
+<p>Heightfield samples can be modified at runtime in rectangular blocks. In the following code snippet we create a HF and modify its samples:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// create a 5x5 HF with height 100 and materials 2,3</span>
+<span class="n">PxHeightFieldSample</span><span class="w"> </span><span class="n">samples1</span><span class="p">[</span><span class="mi">25</span><span class="p">];</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">25</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">samples1</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">samples1</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">materialIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">samples1</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">materialIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">PxHeightFieldDesc</span><span class="w"> </span><span class="n">heightFieldDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">heightFieldDesc</span><span class="p">.</span><span class="n">nbColumns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
+<span class="n">heightFieldDesc</span><span class="p">.</span><span class="n">nbRows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w"></span>
+<span class="n">heightFieldDesc</span><span class="p">.</span><span class="n">convexEdgeThreshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
+<span class="n">heightFieldDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">samples1</span><span class="p">;</span><span class="w"></span>
+<span class="n">heightFieldDesc</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxHeightField</span><span class="o">*</span><span class="w"> </span><span class="n">pHeightField</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateHeightField</span><span class="p">(</span><span class="n">heightFieldDesc</span><span class="p">,</span><span class="w"> </span><span class="n">physics</span><span class="o">-&gt;</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+
+<span class="c1">// create modified HF samples, this 10-sample strip will be used as a modified row</span>
+<span class="c1">// Source samples that are out of range of target heightfield will be clipped with no error.</span>
+<span class="n">PxHeightFieldSample</span><span class="w"> </span><span class="n">samplesM</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">samplesM</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">samplesM</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">materialIndex0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">samplesM</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">materialIndex1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">127</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">PxHeightFieldDesc</span><span class="w"> </span><span class="n">desc10Rows</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc10Rows</span><span class="p">.</span><span class="n">nbColumns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc10Rows</span><span class="p">.</span><span class="n">nbRows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc10Rows</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">samplesM</span><span class="p">;</span><span class="w"></span>
+<span class="n">desc10Rows</span><span class="p">.</span><span class="n">samples</span><span class="p">.</span><span class="n">stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxHeightFieldSample</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">pHeightField</span><span class="o">-&gt;</span><span class="n">modifySamples</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">desc10Rows</span><span class="p">);</span><span class="w"> </span><span class="c1">// modify row 1 with new sample data</span>
+</pre></div>
+</div>
+<p>PhysX does not keep a mapping from the heightfield to heightfield shapes that reference it. Call <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape11setGeometryERK10PxGeometry" title="PxShape::setGeometry"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setGeometry()</span></code></a> on each shape which references the height field, to ensure that internal data structures are updated to reflect the new geometry:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="w"> </span><span class="o">*</span><span class="n">hfShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">userGetHfShape</span><span class="p">();</span><span class="w"> </span><span class="c1">// the user is responsible for keeping track of</span>
+<span class="w">                                     </span><span class="c1">// shapes associated with modified HF</span>
+<span class="n">hfShape</span><span class="o">-&gt;</span><span class="n">setGeometry</span><span class="p">(</span><span class="n">PxHeightFieldGeometry</span><span class="p">(</span><span class="n">pHeightField</span><span class="p">,</span><span class="w"> </span><span class="p">...));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Please also note that <a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape11setGeometryERK10PxGeometry" title="PxShape::setGeometry"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setGeometry()</span></code></a> does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry.</p>
+<p>The method <a class="reference internal" href="../_api_build/class_px_height_field.html#_CPPv4NK13PxHeightField12getTimestampEv" title="PxHeightField::getTimestamp"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxHeightField::getTimestamp()</span></code></a> returns the number of times a heightfield has been modified.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

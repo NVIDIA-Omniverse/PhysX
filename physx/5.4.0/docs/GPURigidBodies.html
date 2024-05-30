@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPU Rigid Bodies &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Direct GPU API" href="DirectGPUAPI.html" />
+    <link rel="prev" title="Articulations" href="Articulations.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GPU Rigid Bodies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-gpu-rigid-bodies">Using GPU Rigid Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-gpu-accelerated">What is GPU accelerated?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gpu-memory">GPU Memory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-out-of-gpu-memory">Running Out Of GPU Memory</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>GPU Rigid Bodies</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gpu-rigid-bodies">
+<span id="gpurigidbodies"></span><h1>GPU Rigid Bodies<a class="headerlink" href="#gpu-rigid-bodies" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>PhysX rigid body simulation can be configured to take advantage of CUDA capable GPUs under Linux or Windows.
+This provides a performance benefit proportional to the arithmetic complexity of a scene.
+It supports the entire rigid body pipeline feature-set including articulations.
+The state of GPU-accelerated rigid bodies can be modified and queried using the exact same API as used to modify and query CPU rigid bodies.
+GPU rigid bodies can easily be used in conjunction with character controllers (CCTs) and vehicles.</p>
+</section>
+<section id="using-gpu-rigid-bodies">
+<h2>Using GPU Rigid Bodies<a class="headerlink" href="#using-gpu-rigid-bodies" title="Permalink to this headline"></a></h2>
+<p>GPU rigid bodies are no more difficult to use than CPU rigid bodies.
+GPU rigid bodies use the exact same API and same classes as CPU rigid bodies.
+GPU rigid body acceleration is enabled on a per-scene basis.
+If enabled, all rigid bodies occupying the scene will be processed by the GPU.
+This feature is implemented in CUDA and requires SM3.0 (Kepler) or later compatible GPU.
+If no compatible device is found, simulation will fall back onto the CPU and corresponding error messages will be provided.</p>
+<p>The GPU acceleration feature is split into two components: rigid body dynamics and broad phase.
+These are enabled using <a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE" title="PxSceneFlag::eENABLE_GPU_DYNAMICS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_GPU_DYNAMICS</span></code></a> and by setting <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc14broadPhaseTypeE" title="PxSceneDesc::broadPhaseType"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::broadPhaseType</span></code></a> to <a class="reference internal" href="../_api_build/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eGPUE" title="PxBroadPhaseType::eGPU"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eGPU</span></code></a>, respectively.
+These properties are immutable properties of the scene.
+In addition, you must initialize the CUDA context manager and set it on the PxSceneDesc.
+A snippet demonstrating how to enable GPU rigid body simulation is provided in SnippetHelloGRB.
+The code example below serves as a brief reference:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxCudaContextManagerDesc</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">gCudaContextManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateCudaContextManager</span><span class="p">(</span><span class="o">*</span><span class="n">gFoundation</span><span class="p">,</span><span class="w"> </span><span class="n">cudaContextManagerDesc</span><span class="p">,</span><span class="w"> </span><span class="n">PxGetProfilerCallback</span><span class="p">());</span><span class="w"></span>
+
+<span class="n">PxSceneDesc</span><span class="w"> </span><span class="nf">sceneDesc</span><span class="p">(</span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">getTolerancesScale</span><span class="p">());</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">gravity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">-9.81f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">);</span><span class="w"></span>
+<span class="n">gDispatcher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultCpuDispatcherCreate</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">cpuDispatcher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gDispatcher</span><span class="p">;</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">filterShader</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">PxDefaultSimulationFilterShader</span><span class="p">;</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">cudaContextManager</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gCudaContextManager</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxSceneFlag</span><span class="o">::</span><span class="n">eENABLE_GPU_DYNAMICS</span><span class="p">;</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">broadPhaseType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxBroadPhaseType</span><span class="o">::</span><span class="n">eGPU</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">gScene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createScene</span><span class="p">(</span><span class="n">sceneDesc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Enabling GPU rigid body dynamics turns on GPU-accelerated contact generation, shape/body management and the GPU-accelerated constraint solver.
+This accelerates the majority of the discrete rigid body pipeline.</p>
+<p>Turning on GPU broad phase replaces the CPU broad phase with a GPU-accelerated broad phase.</p>
+<p>Each can be enabled independently so, for example, you may enable GPU broad phase with CPU rigid body dynamics, CPU broad phase (SAP, MBP or ABP) with GPU rigid body dynamics or combine GPU broad phase with GPU rigid body dynamics.</p>
+</section>
+<section id="what-is-gpu-accelerated">
+<h2>What is GPU accelerated?<a class="headerlink" href="#what-is-gpu-accelerated" title="Permalink to this headline"></a></h2>
+<p>The GPU rigid body feature provides GPU-accelerated implementations of:</p>
+<ul class="simple">
+<li><p>Broad Phase</p></li>
+<li><p>Contact generation</p></li>
+<li><p>Shape and body management</p></li>
+<li><p>Constraint solver</p></li>
+</ul>
+<p>All other features are performed on the CPU.</p>
+<p>There are several caveats to GPU contact generation. These are as follows:</p>
+<ul class="simple">
+<li><p>Convex hulls require <a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams12buildGPUDataE" title="PxCookingParams::buildGPUData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::buildGPUData</span></code></a> to be set to true to build data required to perform contact generation on the GPU. The cooking function will ensure that the limits of 64 vertices and polygons for GPU contact generation will be respected, if the user raises the <a class="reference internal" href="../_api_build/struct_px_convex_flag.html#_CPPv4N12PxConvexFlag4Enum15eCOMPUTE_CONVEXE" title="PxConvexFlag::eCOMPUTE_CONVEX"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexFlag::eCOMPUTE_CONVEX</span></code></a> flag. Note that this may generate suboptimal convex hulls, in which case building without <a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams12buildGPUDataE" title="PxCookingParams::buildGPUData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::buildGPUData</span></code></a> raised might make more sense, but contact generation will be performed on the CPU in this case.</p></li>
+<li><p>Triangle meshes require <a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams12buildGPUDataE" title="PxCookingParams::buildGPUData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::buildGPUData</span></code></a> to be set to true to build data required to process the mesh on the GPU. If this flag is not set during cooking, the GPU data for the mesh will be absent and any contact generation involving this mesh will be processed on CPU.</p></li>
+<li><p>Any pairs requesting contact modification will be processed on the CPU.</p></li>
+<li><p>PxSceneFlag::eENABLE_PCM must be enabled for GPU contact generation to be performed. This is the only form of contact generation implemented on the GPU. If eENABLE_PCM is not raised, contact generation will be processed on CPU for all pairs using the non distance-based legacy contact generation.</p></li>
+</ul>
+<p>Irrespective of whether contact generation for a given pair is processed on CPU or GPU, the GPU solver will process all pairs with contacts that request collision response in their filter shader.</p>
+<p>The GPU rigid body solver provides full support for joints and contacts.
+However, best performance is achieved using D6 joints because D6 joints are natively supported on the GPU, i.e., the full solver pipeline from prep to solve is implemented on the GPU.
+Other joint types are supported by the GPU solver but their joint shaders are run on the CPU.
+This will incur some additional host-side performance overhead compared to D6 joints.</p>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permalink to this headline"></a></h2>
+<p>GPU rigid bodies can provide extremely large performance advantages over CPU rigid bodies in scenes with several thousand active rigid bodies. However, there are some performance considerations to be taken into account.</p>
+<ul class="simple">
+<li><p>D6 joints will provide best performance when used with GPU rigid bodies. Other joint types will be partially GPU-accelerated but the performance advantages will be less than the performance advantage exhibited by D6 joints.</p></li>
+<li><p>Convex hulls with more than 64 vertices or polygons or with more than 32 vertices per-face will have their contacts processed by the CPU rather than the GPU, so, if possible, keep vertex counts within these limits. Vertex limits can be defined in cooking to ensure that cooked convex hulls do not exceed these limits.</p></li>
+<li><p>If your application makes heavy use of contact modification, this may limit the number of pairs that have contact generation performed on the GPU.</p></li>
+<li><p>Modifying the state of actors forces data to be re-synced to the GPU, e.g. transforms for actors must be updated if the application adjusts global pose, velocities must be updated if the application modifies the bodies’ velocities etc.. The associated cost of re-syncing data to the GPU is relatively low but it should be taken into consideration.</p></li>
+<li><p>Features such as joint projection, CCD and triggers are not GPU accelerated and are still processed on the CPU.</p></li>
+</ul>
+</section>
+<section id="gpu-memory">
+<span id="gpumemory"></span><h2>GPU Memory<a class="headerlink" href="#gpu-memory" title="Permalink to this headline"></a></h2>
+<p>Unlike CPU PhysX, the GPU simulation is not able to dynamically grow all buffers.
+Therefore, it is necessary to provide pre-allocated buffer sizes for the GPU simulation, which are specified at scene creation through <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc17gpuDynamicsConfigE" title="PxSceneDesc::gpuDynamicsConfig"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::gpuDynamicsConfig</span></code></a>.
+Please refer to the API documentation for the exact meaning of the members of <a class="reference internal" href="../_api_build/struct_px_gpu_dynamics_memory_config.html#_CPPv425PxGpuDynamicsMemoryConfig" title="PxGpuDynamicsMemoryConfig"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxGpuDynamicsMemoryConfig</span></code></a>.</p>
+<p>Corresponding default values are generally sufficient for scenes simulating approximately 10’000 rigid bodies.
+If insufficient memory is available, the system will issue warnings and discard overflowing objects like contacts/constraints/pairs, which means that behavior may be adversely affected.
+For tuning the pre-allocated sizes of subsequent runs, the simulation statistics (see <a class="reference internal" href="../_api_build/class_px_simulation_statistics.html#_CPPv422PxSimulationStatistics" title="PxSimulationStatistics"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxSimulationStatistics</span></code></a> and Section <a class="reference internal" href="Statistics.html#statistics"><span class="std std-ref">Simulation Statistics</span></a>) contain a <a class="reference internal" href="../_api_build/struct_px_gpu_dynamics_memory_config_statistics.html#_CPPv435PxGpuDynamicsMemoryConfigStatistics" title="PxGpuDynamicsMemoryConfigStatistics"><code class="xref cpp cpp-struct docutils literal notranslate"><span class="pre">PxGpuDynamicsMemoryConfigStatistics</span></code></a> which report the actual required values of the parameters in PxGpuDynamicsMemoryConfig for a simulation with GPU dynamics/broadphase.</p>
+</section>
+<section id="running-out-of-gpu-memory">
+<h2>Running Out Of GPU Memory<a class="headerlink" href="#running-out-of-gpu-memory" title="Permalink to this headline"></a></h2>
+<p>GPU memory is a limited resource. Compared to traditional system memory, there is no transparent mechanism to swap rarely used memory regions to disk to avoid allocation failures and crashes. Therefore, it is possible that memory allocations can fail inside the GPU simulation pipeline because of insufficient memory. In case of a failed allocation, PhysX will stop all GPU work submission and mark the current scene as corrupted to avoid thrashing the CUDA context and crashing the GPU. As a consequence of this, PhysX will remain usable but all scenes that have been marked corrupted have to be recreated to continue simulation.</p>
+<p>In case of an out-of-memory event, the following will happen:</p>
+<ul class="simple">
+<li><p>The GPU memory allocator will report an error with code <a class="reference internal" href="../_api_build/struct_px_error_code.html#_CPPv4N11PxErrorCode4Enum14eOUT_OF_MEMORYE" title="PxErrorCode::eOUT_OF_MEMORY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eOUT_OF_MEMORY</span></code></a>.</p></li>
+<li><p>The PxCudaContext in use will be transitioned to abort mode, and skip any future work submission.</p></li>
+<li><p><a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv4N13PxCudaContext12getLastErrorEv" title="PxCudaContext::getLastError"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCudaContext::getLastError()</span></code></a> will return <cite>CUDA_ERROR_OUT_OF_MEMORY</cite>.</p></li>
+<li><p>A lot of GPU-related errors will be reported due to the fact that GPU work will be skipped.</p></li>
+<li><p>The next call to <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> or <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene14fetchCollisionEb" title="PxScene::fetchCollision"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchCollision()</span></code></a> will return an error with code <a class="reference internal" href="../_api_build/struct_px_error_code.html#_CPPv4N11PxErrorCode4Enum6eABORTE" title="PxErrorCode::eABORT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eABORT</span></code></a>.</p></li>
+<li><p>The scene that was simulated will be marked as corrupt, and any attempt to simulate further will return an error with code <a class="reference internal" href="../_api_build/struct_px_error_code.html#_CPPv4N11PxErrorCode4Enum15eINTERNAL_ERRORE" title="PxErrorCode::eINTERNAL_ERROR"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxErrorCode::eINTERNAL_ERROR</span></code></a>.</p></li>
+<li><p>There is no guarantee that any data of a corrupt scene obtained through the API will be correct.</p></li>
+</ul>
+<p>Querying whether the <a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv413PxCudaContext" title="PxCudaContext"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCudaContext</span></code></a> is currently in abort mode can be done by calling <a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv4N13PxCudaContext13isInAbortModeEv" title="PxCudaContext::isInAbortMode"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCudaContext::isInAbortMode()</span></code></a>. This can be used instead of parsing the errors, or when the PhysX CUDA context manager is used outside of the core SDK for other GPU work. In case of an allocation failure outside of the SDK, the PhysX GPU allocator will not transition the <a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv413PxCudaContext" title="PxCudaContext"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCudaContext</span></code></a> to abort mode, but the user can do so themselves by calling <code class="docutils literal notranslate"><span class="pre">PxCudaContext::setAbortMode(true)</span></code>.</p>
+<p>To reenable simulation and recover the <a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv413PxCudaContext" title="PxCudaContext"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCudaContext</span></code></a> from an out-of-memory scenario, the <a class="reference internal" href="../_api_build/class_px_cuda_context.html#_CPPv413PxCudaContext" title="PxCudaContext"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCudaContext</span></code></a> can be reset by calling <code class="docutils literal notranslate"><span class="pre">PxCudaContext::setAbortMode(false)</span></code>. Any scene that was marked corrupt needs to be recreated, and the user needs to verify that sufficient GPU memory is available.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

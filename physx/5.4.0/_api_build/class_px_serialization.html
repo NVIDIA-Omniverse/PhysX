@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxSerialization &mdash; physx 5.4.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxSerializationContext" href="class_px_serialization_context.html" />
+    <link rel="prev" title="PxSdfBitsPerSubgridPixel" href="class_px_sdf_bits_per_subgrid_pixel.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Rigid Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_read_stream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_file_write_stream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_memory_stream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_read_stream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_reader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_write_stream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_omni_pvd_writer.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_a_a_b_b_manager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_actor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_aligned_allocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocation_listener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_allocator_callback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_callback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_anisotropy_generator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_array_converter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_attachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_cache_flag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_fixed_tendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_compute_type.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_read_type.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_g_p_u_a_p_i_write_type.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_gpu_data_type.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_joint_reduced_coordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_link.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_mimic_joint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_reduced_coordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_spatial_tendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_joint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_articulation_tendon_limit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h33_triangle_mesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h34_triangle_mesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_b_v_h_desc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_material.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_base_task.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_batch_query_ext.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_binary_converter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_and_data_t.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bit_map_base.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_bounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_controller_desc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_geometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_box_obstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_callback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_desc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_ext.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_regions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broad_phase_update_data.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_allocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_broadcasting_error_callback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_c_c_d_contact_modify_callback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cache_allocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_controller_desc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_geometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_capsule_obstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_map.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_coalesced_hash_set.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collection_ext.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_mesh_mapping_data.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_collision_tetrahedron_mesh_data.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_allocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_connector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_constraint_visualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_buffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_joint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_callback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_modify_pair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_recorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_contact_set.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_behavior_callback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_desc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filter_callback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_filters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_controller_manager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_desc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_convex_mesh_geometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cpu_dispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_cuda_context_manager_desc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_geometry_ext.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_custom_scene_query_system_adapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_d6_joint_drive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_allocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_cpu_dispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_error_callback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_input_data.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_file_output_stream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_input_data.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_default_memory_output_stream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_delay_load_hook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deletion_listener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_deserialization_context.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_device_allocator_callback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_diffuse_particle_params.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_direct_g_p_u_a_p_i.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_distance_joint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_dynamic_array_report_callback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_error_callback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_external_storage_report_callback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_cloth_material.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_material.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_e_m_soft_body_material.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_f_p_u_guard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_file_buf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_joint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_fixed_size_lookup_table.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_flags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_foundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_friction_anchor_stream_iterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gear_joint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_holder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_geometry_query.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gjk_query_ext.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_fixed_tendon_data.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_load_hook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_particle_system.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_spatial_tendon_data.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_attachment_data.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_gpu_tendon_joint_coefficient_data.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_groups_mask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hair_system_geometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_base.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_map_base.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_hash_set_base.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_desc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_height_field_geometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_allocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_inline_array.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_data.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_input_stream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_insertion_callback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_callback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_isosurface_extractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_angular_limit_pair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_cone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_parameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_limit_pyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_joint_linear_limit_pair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_light_cpu_task.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_line_strip_skinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_local_storage_report_callback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_locked_data.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mass_properties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat33_t.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat34_t.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mat44_t.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_material.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_overlap_util.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_query.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mesh_scale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_midphase_desc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_multi_callback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_impl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_mutex_t.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_neighborhood_iterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_node_index.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_obstacle_context.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_omni_pvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_output_stream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_material.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_p_b_d_particle_system.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_and_diffuse_buffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_buffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_buffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_cloth_pre_processor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_neighborhood_provider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_rigid_buffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_callback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_particle_system_geometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_physics_gpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pinned_allocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_plane_geometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_poisson_sampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_prismatic_joint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_process_px_base_callback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profile_scoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_profiler_callback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pruning_structure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_scene_client.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_pvd_transport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_quat_t.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_query_filter_callback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rack_and_pinion_joint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_raw_allocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_read_write_lock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_ref_counted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_reflection_allocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_regular_report_callback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_remeshing_ext.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_buffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_render_output.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rep_x_serializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_report_callback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_revolute_joint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_actor_ext.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_body_ext.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_read_type.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_dynamic_g_p_u_a_p_i_write_type.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_rigid_static.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_runnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_builder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_d_f_desc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_i_m_d_guard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_entry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_s_list_t.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sampling_ext.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_desc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_limits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_desc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_ext.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_query_system_base.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_read_lock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_s_q_system.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scene_write_lock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_cuda_lock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_scoped_pointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sdf_bits_per_subgrid_pixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_context.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serialization_registry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_serializer_default_adapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_shape_ext.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simple_triangle_mesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_event_callback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_filter_callback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_statistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_simulation_tetrahedron_mesh_data.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_callback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_smoothed_position_generator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_socket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_aux_data.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_collision_data.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_ext.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_gpu_data_flag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_mesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_soft_body_simulation_data_desc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sparse_grid_isosurface_extractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sphere_geometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spherical_joint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_spring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_stride_iterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_string_table_ext.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_impl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_sync_t.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_task_manager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_temp_allocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tet_maker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_analysis_result.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_data.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_desc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_ext.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tetrahedron_mesh_geometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_impl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_thread_t.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_time.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_tolerances_scale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_transform_t.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_analysis_result.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_desc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_geometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_mesh_poisson_sampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_triangle_padded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_allocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_user_controller_hit_report.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec2_t.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec3_t.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vec4_t.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_command_non_linear_response_params.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_component.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_constraint_connector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_actuation_state_component.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drive_command_response_component.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_direct_drivetrain_component.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_actuation_state_component.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drive_command_response_component.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_engine_drivetrain_component.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_fixed_size_lookup_table.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_four_wheel_drive_differential_state_component.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_four_wheel_drive_differential_state_component.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_suspension_component.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_legacy_tire_component.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix33_solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_gauss_seidel_solver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_matrix_n_n_l_u_solver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_multi_wheel_drive_differential_state_component.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_p_v_d_component.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_begin_component.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_actor_end_component.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_constraint_component.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_params.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_rigid_actor_shape_params.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_road_geometry_scene_query_component.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_params.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_phys_x_wheel_shape_params.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_rigid_body_component.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_suspension_component.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tank_drive_differential_state_component.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_tire_component.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_vector_n.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_vehicle_wheel_component.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_px_virtual_allocator_callback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="class_raycast_c_c_d_manager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxSerialization</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxserialization">
+<h1>PxSerialization<a class="headerlink" href="#pxserialization" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxSerialization.h.html#px-serialization-8h"><span class="std std-ref">include/extensions/PxSerialization.h</span></a></p>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxXmlMiscParameter</span></a>: Additional <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> and <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> options stored in XML serialized data.</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv415PxSerialization">
+<span id="_CPPv315PxSerialization"></span><span id="_CPPv215PxSerialization"></span><span id="PxSerialization"></span><span class="target" id="class_px_serialization"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxSerialization</span></span></span><a class="headerlink" href="#_CPPv415PxSerialization" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Utility functions for serialization. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization14isSerializableER12PxCollectionR23PxSerializationRegistryPK12PxCollection">
+<span id="_CPPv3N15PxSerialization14isSerializableER12PxCollectionR23PxSerializationRegistryPK12PxCollection"></span><span id="_CPPv2N15PxSerialization14isSerializableER12PxCollectionR23PxSerializationRegistryPK12PxCollection"></span><span id="PxSerialization::isSerializable__PxCollectionR.PxSerializationRegistryR.PxCollectionCP"></span><span class="target" id="class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isSerializable</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalReferences</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization14isSerializableER12PxCollectionR23PxSerializationRegistryPK12PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether the collection is serializable with the externalReferences collection. </p>
+<p>Some definitions to explain whether a collection can be serialized or not:</p>
+<p>For definitions of <strong>requires</strong> and <strong>complete</strong> see <a class="reference internal" href="#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization::complete</span></a></p>
+<p>A serializable object is <strong>subordinate</strong> if it cannot be serialized on its own The following objects are subordinate:<ul class="simple">
+<li><p>articulation links</p></li>
+<li><p>articulation joints</p></li>
+<li><p>joints</p></li>
+</ul>
+</p>
+<p>A collection C can be serialized with external references collection D iff<ul class="simple">
+<li><p>C is complete relative to D (no dangling references)</p></li>
+<li><p>Every object in D required by an object in C has a valid ID (no unnamed references)</p></li>
+<li><p>Every subordinate object in C is required by another object in C (no orphans)</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization::complete</span></a>, <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>, <a class="reference internal" href="#class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref">PxSerialization::serializeCollectionToXml</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>collection</strong> – <strong>[in]</strong> Collection to be checked </p></li>
+<li><p><strong>sr</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>externalReferences</strong> – <strong>[in]</strong> the external References collection </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Whether the collection is serializable </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization8completeER12PxCollectionR23PxSerializationRegistryPK12PxCollectionb">
+<span id="_CPPv3N15PxSerialization8completeER12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="_CPPv2N15PxSerialization8completeER12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="PxSerialization::complete__PxCollectionR.PxSerializationRegistryR.PxCollectionCP.b"></span><span class="target" id="class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">complete</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">exceptFor</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">followJoints</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization8completeER12PxCollectionR23PxSerializationRegistryPK12PxCollectionb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds to a collection all objects such that it can be successfully serialized. </p>
+<p>A collection C is complete relative to an other collection D if every object required by C is either in C or D. This function adds objects to a collection, such that it becomes complete with respect to the exceptFor collection. Completeness is needed for serialization. See <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>, <a class="reference internal" href="#class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref">PxSerialization::serializeCollectionToXml</span></a>.</p>
+<p>Sdk objects require other sdk object according to the following rules:<ul class="simple">
+<li><p>joints require their actors and constraint</p></li>
+<li><p>rigid actors require their shapes</p></li>
+<li><p>shapes require their material(s) and mesh (triangle mesh, convex mesh or height field), if any</p></li>
+<li><p>articulations require their links and joints</p></li>
+<li><p>aggregates require their actors</p></li>
+</ul>
+</p>
+<p>If followJoints is specified another rule is added:<ul class="simple">
+<li><p>actors require their joints</p></li>
+</ul>
+</p>
+<p>Specifying followJoints will make whole jointed actor chains being added to the collection. Following chains is interrupted whenever a object in exceptFor is encountered.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>, <a class="reference internal" href="#class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref">PxSerialization::serializeCollectionToXml</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>collection</strong> – <strong>[inout]</strong> Collection which is completed </p></li>
+<li><p><strong>sr</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>exceptFor</strong> – <strong>[in]</strong> Optional exemption collection </p></li>
+<li><p><strong>followJoints</strong> – <strong>[in]</strong> Specifies whether joints should be added for jointed actors </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization21createSerialObjectIdsER12PxCollectionK16PxSerialObjectId">
+<span id="_CPPv3N15PxSerialization21createSerialObjectIdsER12PxCollectionK16PxSerialObjectId"></span><span id="_CPPv2N15PxSerialization21createSerialObjectIdsER12PxCollectionK16PxSerialObjectId"></span><span id="PxSerialization::createSerialObjectIds__PxCollectionR.PxSerialObjectIdC"></span><span class="target" id="class_px_serialization_1a84d55e6e21727087653a70cc20557765"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">createSerialObjectIds</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_serial_framework_8h_1ab2ccfb663643cd2d66b59908189d88cd.html#_CPPv416PxSerialObjectId" title="PxSerialObjectId"><span class="n"><span class="pre">PxSerialObjectId</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">base</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization21createSerialObjectIdsER12PxCollectionK16PxSerialObjectId" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates PxSerialObjectId values for unnamed objects in a collection. </p>
+<p>Creates PxSerialObjectId names for unnamed objects in a collection starting at a base value and incrementing, skipping values that are already assigned to objects in the collection.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>collection</strong> – <strong>[inout]</strong> Collection for which names are created </p></li>
+<li><p><strong>base</strong> – <strong>[in]</strong> Start address for PxSerialObjectId names </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization23createCollectionFromXmlER11PxInputDataRK15PxCookingParamsR23PxSerializationRegistryPK12PxCollectionP13PxStringTableP18PxXmlMiscParameter">
+<span id="_CPPv3N15PxSerialization23createCollectionFromXmlER11PxInputDataRK15PxCookingParamsR23PxSerializationRegistryPK12PxCollectionP13PxStringTableP18PxXmlMiscParameter"></span><span id="_CPPv2N15PxSerialization23createCollectionFromXmlER11PxInputDataRK15PxCookingParamsR23PxSerializationRegistryPK12PxCollectionP13PxStringTableP18PxXmlMiscParameter"></span><span id="PxSerialization::createCollectionFromXml__PxInputDataR.PxCookingParamsCR.PxSerializationRegistryR.PxCollectionCP.PxStringTableP.PxXmlMiscParameterP"></span><span class="target" id="class_px_serialization_1af2b460d435af5210fac525802655395c"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createCollectionFromXml</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_input_data.html#_CPPv411PxInputData" title="PxInputData"><span class="n"><span class="pre">PxInputData</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inputData</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">params</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalRefs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="class_px_string_table.html#_CPPv413PxStringTable" title="PxStringTable"><span class="n"><span class="pre">PxStringTable</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">stringTable</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="#_CPPv4N15PxSerialization18PxXmlMiscParameterE" title="PxSerialization::PxXmlMiscParameter"><span class="n"><span class="pre">PxXmlMiscParameter</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">outArgs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization23createCollectionFromXmlER11PxInputDataRK15PxCookingParamsR23PxSerializationRegistryPK12PxCollectionP13PxStringTableP18PxXmlMiscParameter" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> from XML data. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000060"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a>, <a class="reference internal" href="class_px_input_data.html#class_px_input_data"><span class="std std-ref">PxInputData</span></a>, <a class="reference internal" href="class_px_string_table.html#class_px_string_table"><span class="std std-ref">PxStringTable</span></a>, PxCooking, <a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxSerialization::PxXmlMiscParameter</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputData</strong> – The input data containing the XML collection. </p></li>
+<li><p><strong>params</strong> – Cooking parameters used for sdk object instantiation. </p></li>
+<li><p><strong>sr</strong> – <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>externalRefs</strong> – <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> used to resolve external references. </p></li>
+<li><p><strong>stringTable</strong> – <a class="reference internal" href="class_px_string_table.html#class_px_string_table"><span class="std std-ref">PxStringTable</span></a> instance used for storing object names. </p></li>
+<li><p><strong>outArgs</strong> – Optional parameters of physics and scene deserialized from XML. See <a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxSerialization::PxXmlMiscParameter</span></a> </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a pointer to a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> if successful or NULL if it failed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization26createCollectionFromBinaryEPvR23PxSerializationRegistryPK12PxCollection">
+<span id="_CPPv3N15PxSerialization26createCollectionFromBinaryEPvR23PxSerializationRegistryPK12PxCollection"></span><span id="_CPPv2N15PxSerialization26createCollectionFromBinaryEPvR23PxSerializationRegistryPK12PxCollection"></span><span id="PxSerialization::createCollectionFromBinary__voidP.PxSerializationRegistryR.PxCollectionCP"></span><span class="target" id="class_px_serialization_1abf291765eca0d6dedca531cb07f18809"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createCollectionFromBinary</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">memBlock</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalRefs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization26createCollectionFromBinaryEPvR23PxSerializationRegistryPK12PxCollection" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deserializes a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> from memory. </p>
+<p>Creates a collection from memory. If the collection has external dependencies another collection can be provided to resolve these.</p>
+<p>The memory block provided has to be 128 bytes aligned and contain a contiguous serialized collection as written by <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>. The contained binary data needs to be compatible with the current binary format version which is defined by “PX_PHYSICS_VERSION_MAJOR.PX_PHYSICS_VERSION_MINOR.PX_PHYSICS_VERSION_BUGFIX-PX_BINARY_SERIAL_VERSION”. For a list of compatible sdk releases refer to the documentation of PX_BINARY_SERIAL_VERSION.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization::complete</span></a>, <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a>, PX_BINARY_SERIAL_VERSION </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memBlock</strong> – <strong>[in]</strong> Pointer to memory block containing the serialized collection </p></li>
+<li><p><strong>sr</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>externalRefs</strong> – <strong>[in]</strong> Collection to resolve external dependencies</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization24serializeCollectionToXmlER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK15PxCookingParamsPK12PxCollectionP18PxXmlMiscParameter">
+<span id="_CPPv3N15PxSerialization24serializeCollectionToXmlER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK15PxCookingParamsPK12PxCollectionP18PxXmlMiscParameter"></span><span id="_CPPv2N15PxSerialization24serializeCollectionToXmlER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK15PxCookingParamsPK12PxCollectionP18PxXmlMiscParameter"></span><span id="PxSerialization::serializeCollectionToXml__PxOutputStreamR.PxCollectionR.PxSerializationRegistryR.PxCookingParamsCP.PxCollectionCP.PxXmlMiscParameterP"></span><span class="target" id="class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">serializeCollectionToXml</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outputStream</span></span>, <a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_cooking_params.html#_CPPv415PxCookingParams" title="PxCookingParams"><span class="n"><span class="pre">PxCookingParams</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">params</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalRefs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="#_CPPv4N15PxSerialization18PxXmlMiscParameterE" title="PxSerialization::PxXmlMiscParameter"><span class="n"><span class="pre">PxXmlMiscParameter</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">inArgs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization24serializeCollectionToXmlER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK15PxCookingParamsPK12PxCollectionP18PxXmlMiscParameter" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Serializes a physics collection to an XML output stream. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000061"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.</p>
+</dd></dl>
+
+</p>
+<p>The collection to be serialized needs to be complete <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization.complete</span></a>. Optionally the XML may contain meshes in binary cooked format for fast loading. It does this when providing a valid non-null PxCooking pointer.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref">PxOutputStream</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a>, PxCooking, <a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxSerialization::PxXmlMiscParameter</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Serialization of objects in a scene that is simultaneously being simulated is not supported and leads to undefined behavior.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputStream</strong> – Stream to save collection to. </p></li>
+<li><p><strong>collection</strong> – <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> instance which is serialized. The collection needs to be complete with respect to the externalRefs collection. </p></li>
+<li><p><strong>sr</strong> – <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>params</strong> – Optional pointer to cooking params. If provided, cooked mesh data is cached for fast loading. </p></li>
+<li><p><strong>externalRefs</strong> – Collection containing external references. </p></li>
+<li><p><strong>inArgs</strong> – Optional parameters of physics and scene serialized to XML along with the collection. See <a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxSerialization::PxXmlMiscParameter</span></a> </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>true if the collection is successfully serialized.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization27serializeCollectionToBinaryER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb">
+<span id="_CPPv3N15PxSerialization27serializeCollectionToBinaryER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="_CPPv2N15PxSerialization27serializeCollectionToBinaryER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="PxSerialization::serializeCollectionToBinary__PxOutputStreamR.PxCollectionR.PxSerializationRegistryR.PxCollectionCP.b"></span><span class="target" id="class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">serializeCollectionToBinary</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outputStream</span></span>, <a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalRefs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">exportNames</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization27serializeCollectionToBinaryER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Serializes a collection to a binary stream. </p>
+<p>Serializes a collection to a stream. In order to resolve external dependencies the externalReferences collection has to be provided. Optionally names of objects that where set for example with <a class="reference internal" href="class_px_soft_body.html#class_px_actor_1afdcfb185892a5c8311fd0d825b0ce758"><span class="std std-ref">PxActor::setName</span></a> are serialized along with the objects.</p>
+<p>The collection can be successfully serialized if isSerializable(collection) returns true. See <a class="reference internal" href="#class_px_serialization_1ad9f930bc95e3372c46bac3347742068f"><span class="std std-ref">isSerializable</span></a>.</p>
+<p>The implementation of the output stream needs to fulfill the requirements on the memory block input taken by <a class="reference internal" href="#class_px_serialization_1abf291765eca0d6dedca531cb07f18809"><span class="std std-ref">PxSerialization::createCollectionFromBinary</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a>, <a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref">PxOutputStream</span></a>, <a class="reference internal" href="#class_px_serialization_1a0cf59eda36c56e9e66bac0c2b5168094"><span class="std std-ref">PxSerialization::complete</span></a>, <a class="reference internal" href="#class_px_serialization_1abf291765eca0d6dedca531cb07f18809"><span class="std std-ref">PxSerialization::createCollectionFromBinary</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Serialization of objects in a scene that is simultaneously being simulated is not supported and leads to undefined behavior.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputStream</strong> – <strong>[out]</strong> into which the collection is serialized </p></li>
+<li><p><strong>collection</strong> – <strong>[in]</strong> Collection to be serialized </p></li>
+<li><p><strong>sr</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes. </p></li>
+<li><p><strong>externalRefs</strong> – <strong>[in]</strong> Collection used to resolve external dependencies </p></li>
+<li><p><strong>exportNames</strong> – <strong>[in]</strong> Specifies whether object names are serialized </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Whether serialization was successful</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization40serializeCollectionToBinaryDeterministicER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb">
+<span id="_CPPv3N15PxSerialization40serializeCollectionToBinaryDeterministicER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="_CPPv2N15PxSerialization40serializeCollectionToBinaryDeterministicER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb"></span><span id="PxSerialization::serializeCollectionToBinaryDeterministic__PxOutputStreamR.PxCollectionR.PxSerializationRegistryR.PxCollectionCP.b"></span><span class="target" id="class_px_serialization_1a159728a265b7ed81cd5cf329f8cad30e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">serializeCollectionToBinaryDeterministic</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outputStream</span></span>, <a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">collection</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="class_px_collection.html#_CPPv412PxCollection" title="PxCollection"><span class="n"><span class="pre">PxCollection</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">externalRefs</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">exportNames</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization40serializeCollectionToBinaryDeterministicER14PxOutputStreamR12PxCollectionR23PxSerializationRegistryPK12PxCollectionb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Serializes a collection to a binary stream. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000062"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Deterministic binary serialization is deprecated. <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a> might become deterministic in the future.</p>
+</dd></dl>
+
+</p>
+<p>Convenience function that serializes a collection to a stream while rebasing memory addresses and handles to achieve a deterministic output, independent of the PhysX runtime environment the objects have been created in.</p>
+<p>The same functionality can be achieved by manually<ul class="simple">
+<li><p>creating a binary data stream with <a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a></p></li>
+<li><p>producing the binary meta data of the current runtime platform with <a class="reference internal" href="#class_px_serialization_1a86026f68eb651de87e4a7720bc708893"><span class="std std-ref">PxSerialization::dumpBinaryMetaData</span></a></p></li>
+<li><p>converting the binary data stream with the <a class="reference internal" href="class_px_binary_converter.html#class_px_binary_converter"><span class="std std-ref">PxBinaryConverter</span></a>, using the binary meta for both source and destination</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_serialization_1a1d6242bea0c7513bfbfb24670e5cfb03"><span class="std std-ref">PxSerialization::serializeCollectionToBinary</span></a>, <a class="reference internal" href="#class_px_serialization_1a86026f68eb651de87e4a7720bc708893"><span class="std std-ref">PxSerialization::dumpBinaryMetaData</span></a>, <a class="reference internal" href="class_px_binary_converter.html#class_px_binary_converter"><span class="std std-ref">PxBinaryConverter</span></a> </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18dumpBinaryMetaDataER14PxOutputStreamR23PxSerializationRegistry">
+<span id="_CPPv3N15PxSerialization18dumpBinaryMetaDataER14PxOutputStreamR23PxSerializationRegistry"></span><span id="_CPPv2N15PxSerialization18dumpBinaryMetaDataER14PxOutputStreamR23PxSerializationRegistry"></span><span id="PxSerialization::dumpBinaryMetaData__PxOutputStreamR.PxSerializationRegistryR"></span><span class="target" id="class_px_serialization_1a86026f68eb651de87e4a7720bc708893"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dumpBinaryMetaData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_output_stream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">outputStream</span></span>, <a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">sr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization18dumpBinaryMetaDataER14PxOutputStreamR23PxSerializationRegistry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Dumps the binary meta-data to a stream. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000063"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Binary conversion and binary meta data are deprecated.</p>
+</dd></dl>
+
+</p>
+<p>A meta-data file contains information about the SDK’s internal classes and about custom user types ready for serialization. Such a file is needed to convert binary-serialized data from one platform to another (re-targeting). The converter needs meta-data files for the source and target platforms to perform conversions.</p>
+<p>Custom user types can be supported with <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry_1a10e39bebee808707bff3c73f01d60f07"><span class="std std-ref">PxSerializationRegistry::registerBinaryMetaDataCallback</span></a> (see the guide for more information).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_output_stream.html#class_px_output_stream"><span class="std std-ref">PxOutputStream</span></a>, <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputStream</strong> – <strong>[out]</strong> Stream to write meta data to </p></li>
+<li><p><strong>sr</strong> – <strong>[in]</strong> <a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance with information about registered classes used for conversion.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization21createBinaryConverterEv">
+<span id="_CPPv3N15PxSerialization21createBinaryConverterEv"></span><span id="_CPPv2N15PxSerialization21createBinaryConverterEv"></span><span id="PxSerialization::createBinaryConverter"></span><span class="target" id="class_px_serialization_1a634f2a5a59c46e975e61d096af986fc4"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_binary_converter.html#_CPPv417PxBinaryConverter" title="PxBinaryConverter"><span class="n"><span class="pre">PxBinaryConverter</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createBinaryConverter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization21createBinaryConverterEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates binary converter for re-targeting binary-serialized data. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000064"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Binary conversion and binary meta data are deprecated.</p>
+</dd></dl>
+
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Binary converter instance. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization27createSerializationRegistryER9PxPhysics">
+<span id="_CPPv3N15PxSerialization27createSerializationRegistryER9PxPhysics"></span><span id="_CPPv2N15PxSerialization27createSerializationRegistryER9PxPhysics"></span><span id="PxSerialization::createSerializationRegistry__PxPhysicsR"></span><span class="target" id="class_px_serialization_1a0c8bd280537d8d18989d3f0557ae7754"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><a class="reference internal" href="class_px_serialization_registry.html#_CPPv423PxSerializationRegistry" title="PxSerializationRegistry"><span class="n"><span class="pre">PxSerializationRegistry</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">createSerializationRegistry</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="class_px_physics.html#_CPPv49PxPhysics" title="PxPhysics"><span class="n"><span class="pre">PxPhysics</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">physics</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization27createSerializationRegistryER9PxPhysics" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Creates an application managed registry for serialization. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>physics</strong> – <strong>[in]</strong> Physics SDK to generate create serialization registry</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><a class="reference internal" href="class_px_serialization_registry.html#class_px_serialization_registry"><span class="std std-ref">PxSerializationRegistry</span></a> instance.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18PxXmlMiscParameterE">
+<span id="_CPPv3N15PxSerialization18PxXmlMiscParameterE"></span><span id="_CPPv2N15PxSerialization18PxXmlMiscParameterE"></span><span id="PxSerialization::PxXmlMiscParameter"></span><span class="target" id="struct_px_serialization_1_1_px_xml_misc_parameter"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxXmlMiscParameter</span></span></span><a class="headerlink" href="#_CPPv4N15PxSerialization18PxXmlMiscParameterE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Additional <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> and <a class="reference internal" href="class_px_physics.html#class_px_physics"><span class="std std-ref">PxPhysics</span></a> options stored in XML serialized data. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000059"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Xml serialization is deprecated. An alternative serialization system is provided through USD Physics.</p>
+</dd></dl>
+
+</p>
+<p>The <a class="reference internal" href="#struct_px_serialization_1_1_px_xml_misc_parameter"><span class="std std-ref">PxXmlMiscParameter</span></a> parameter can be serialized and deserialized along with <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> instances (XML only). This is for application use only and has no impact on how objects are serialized or deserialized.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#class_px_serialization_1af2b460d435af5210fac525802655395c"><span class="std std-ref">PxSerialization::createCollectionFromXml</span></a>, <a class="reference internal" href="#class_px_serialization_1a4f10972f3d0d0e6fa637905a572bc316"><span class="std std-ref">PxSerialization::serializeCollectionToXml</span></a> </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterEv">
+<span id="_CPPv3N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterEv"></span><span id="_CPPv2N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterEv"></span><span id="PxSerialization::PxXmlMiscParameter::PxXmlMiscParameter"></span><span class="target" id="struct_px_serialization_1_1_px_xml_misc_parameter_1aa23353942908b5783b0d7aebe4ce3205"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxXmlMiscParameter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterER6PxVec317PxTolerancesScale">
+<span id="_CPPv3N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterER6PxVec317PxTolerancesScale"></span><span id="_CPPv2N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterER6PxVec317PxTolerancesScale"></span><span id="PxSerialization::PxXmlMiscParameter::PxXmlMiscParameter__PxVec3R.PxTolerancesScale"></span><span class="target" id="struct_px_serialization_1_1_px_xml_misc_parameter_1ab7f05bbfdf68b9cd2445508f40d9a6f1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxXmlMiscParameter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">inUpVector</span></span>, <a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inScale</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N15PxSerialization18PxXmlMiscParameter18PxXmlMiscParameterER6PxVec317PxTolerancesScale" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18PxXmlMiscParameter8upVectorE">
+<span id="_CPPv3N15PxSerialization18PxXmlMiscParameter8upVectorE"></span><span id="_CPPv2N15PxSerialization18PxXmlMiscParameter8upVectorE"></span><span id="PxSerialization::PxXmlMiscParameter::upVector__PxVec3"></span><span class="target" id="struct_px_serialization_1_1_px_xml_misc_parameter_1a03c769123fd992745d9214c8ea30e483"></span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">upVector</span></span></span><a class="headerlink" href="#_CPPv4N15PxSerialization18PxXmlMiscParameter8upVectorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Up vector for the scene reference coordinate system. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N15PxSerialization18PxXmlMiscParameter5scaleE">
+<span id="_CPPv3N15PxSerialization18PxXmlMiscParameter5scaleE"></span><span id="_CPPv2N15PxSerialization18PxXmlMiscParameter5scaleE"></span><span id="PxSerialization::PxXmlMiscParameter::scale__PxTolerancesScale"></span><span class="target" id="struct_px_serialization_1_1_px_xml_misc_parameter_1ab910bcc05cf5dc2606d04c9e18a7af63"></span><a class="reference internal" href="class_px_tolerances_scale.html#_CPPv417PxTolerancesScale" title="PxTolerancesScale"><span class="n"><span class="pre">PxTolerancesScale</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N15PxSerialization18PxXmlMiscParameter5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Tolerances scale to be used for the scene. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on May 30, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
