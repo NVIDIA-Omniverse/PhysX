@@ -18,7 +18,7 @@ Compilers and C++ Standard:
     * Ubuntu 22.04 LTS with gcc 11 or clang 14 
     * Note: PhysX may fail to compile with clang versions higher than 14 as they have not been tested
   * For linux aarch64 builds we support gcc version 9
-  * C++17 compatible
+  * Tested with C++11 standard
 
 
 ## Generating Makefiles:

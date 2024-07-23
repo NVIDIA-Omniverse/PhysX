@@ -224,7 +224,7 @@ void NpFactory::onArticulationRelease(PxArticulationReducedCoordinate* a)
 
 NpArticulationLink* NpFactory::createNpArticulationLink(NpArticulationReducedCoordinate& root, NpArticulationLink* parent, const PxTransform& pose)
 {
-	 NpArticulationLink* npArticulationLink;
+	NpArticulationLink* npArticulationLink;
 	{
 		PxMutex::ScopedLock lock(mArticulationLinkPoolLock);		
 		npArticulationLink = mArticulationLinkPool.construct(pose, root, parent);
@@ -941,7 +941,6 @@ void NpFactory::addCollection(const Collection& collection)
 		{
 			NpAggregate* np = static_cast<NpAggregate*>(s);
 			addAggregate(np, false);
-
 			// PT: TODO: double-check this.... is it correct?			
 			for(PxU32 j=0;j<np->getCurrentSizeFast();j++)
 			{
@@ -949,11 +948,17 @@ void NpFactory::addCollection(const Collection& collection)
 				const PxType serialType1 = actor->getConcreteType();
 
 				if(serialType1==PxConcreteType::eRIGID_STATIC)
+				{
 					addRigidStatic(static_cast<NpRigidStatic*>(actor), false);
+				}
 				else if(serialType1==PxConcreteType::eRIGID_DYNAMIC)
+				{
 					addRigidDynamic(static_cast<NpRigidDynamic*>(actor), false);
+				}
 				else if(serialType1==PxConcreteType::eARTICULATION_LINK)
-				{}
+				{
+					// This is not needed as the articulation links get handled separately
+				}
 				else PX_ASSERT(0);
 			}
 		}
@@ -964,11 +969,11 @@ void NpFactory::addCollection(const Collection& collection)
 		}
 		else if(serialType==PxConcreteType::eARTICULATION_LINK)
 		{
-//			NpArticulationLink* np = static_cast<NpArticulationLink*>(s);
+			OMNI_PVD_NOTIFY_ADD(static_cast<NpArticulationLink*>(s));
 		}
 		else if(serialType==PxConcreteType::eARTICULATION_JOINT_REDUCED_COORDINATE)
 		{
-//			NpArticulationJoint* np = static_cast<NpArticulationJoint*>(s);
+			OMNI_PVD_NOTIFY_ADD(static_cast<PxArticulationJointReducedCoordinate*>(s));
 		}
 		else
 		{

@@ -1,3 +1,40 @@
+# v5.4.1-106.0
+
+## General
+
+### Added
+
+* Debug visualization of contact friction was added, controlled by the following visualization parameter flags: PxVisualizationParameter::eFRICTION_POINT, PxVisualizationParameter::eFRICTION_NORMAL, and PxVisualizationParameter::eFRICTION_IMPULSE.
+* PxVisualizationParameter::eCONTACT_IMPULSE flag was added to replace PxVisualizationParameter::eCONTACT_FORCE.
+
+### Deprecated
+
+* PxVisualizationParameter::eCONTACT_FORCE was deprecated. Use PxVisualizationParameter::eCONTACT_IMPULSE instead.
+
+### Fixed
+
+* A bug in Debug Visualization where collision contact points are misaligned with collision geometry.
+* A bug in the GPU broadphase that resulted in a crash when overflowing the preallocated number of lost and found pairs.
+
+## Articulations
+
+### Added
+
+* Possibility to apply a force or a torque to an articulation link through articulation cache with the flags PxArticulationCacheFlag::eLINK_FORCE and PxArticulationCacheFlag::eLINK_TORQUE.
+
+### Fixed
+
+* Runtime changes to PxArticulationJointReducedCoordinate::setMaxJointVelocity() were not working for the GPU pipeline.
+* Runtime changes to PxArticulationJointReducedCoordinate::setFrictionCoefficient() were not working for the GPU pipeline.
+* A bug when adding articulations to a scene that already contained other articulations.
+* Corrected the calculation of the first tangent vector used in the friction patch model of articulations. This may have increased the probability of artifacts in the friction calculation.
+
+## PVD
+
+### Fixed
+
+* Missing OVD object creation calls in deserializations of PxCollection and PxAggregate with regards to articulations.
+
 # v5.4.0-106.0
 
 ## Supported Platforms
@@ -5,7 +42,6 @@
 ### Runtime
 
 * Linux (tested on Ubuntu 20.04 and 22.04)
-* Linux glibc version 2.31 or higher
 * Microsoft Windows 10 or later (64 bit) 
 * GPU acceleration: display driver supporting CUDA toolkit 11.8 and Pascal GPU or above
 

@@ -97,10 +97,11 @@ namespace Sc
 																			PxsContactManagerOutputIterator& outputs, ContactReportAllocationManager* alloc = NULL);  // ccdPass is 0 for discrete collision and then 1,2,... for the CCD passes
 
 						void					visualize(	PxRenderOutput&, PxsContactManagerOutputIterator&,
-															float scale, float param_contactForce, float param_contactNormal, float param_contactError, float param_contactPoint
-															);
+															float scale, float contactImpulse, float contactNormal, float contactError, float contactPoint,
+															float frictionImpulse, float frictionNormal, float frictionPoint);
 
 						PxU32					getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& patchCount, const PxReal*& impulses, PxU32 startOffset, PxsContactManagerOutputIterator& outputs);
+						PxU32					getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& patchCount, const PxReal*& impulses, PxU32 startOffset, PxsContactManagerOutputIterator& outputs, const void*& frictionPatches);
 
 						bool					managerLostTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);
 						void					managerNewTouch(PxU32 ccdPass, bool adjustCounters, PxsContactManagerOutputIterator& outputs);

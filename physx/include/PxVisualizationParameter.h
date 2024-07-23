@@ -143,9 +143,30 @@ struct PxVisualizationParameter
 		eCONTACT_ERROR,
 		
 		/**
-		\brief Visualize Contact forces. Will enable contact information.
+		\brief Visualize Contact impulses. Will enable contact information.
 		*/
-		eCONTACT_FORCE,
+		eCONTACT_IMPULSE,
+
+		/**
+		\brief Visualize Contact forces. Will enable contact information.
+		\deprecated Use eCONTACT_IMPULSE instead.
+		*/
+		eCONTACT_FORCE PX_DEPRECATED = eCONTACT_IMPULSE,
+
+		/**
+		\brief  Visualize friction points. Will enable contact information.
+		*/
+		eFRICTION_POINT,
+
+		/**
+		\brief Visualize friction normals. Will enable contact information.
+		*/
+		eFRICTION_NORMAL,
+
+		/**
+		\brief Visualize friction impulses. Will enable contact information.
+		*/
+		eFRICTION_IMPULSE,
 
 		/**
 		\brief Visualize actor axes.

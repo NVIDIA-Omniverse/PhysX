@@ -360,6 +360,44 @@ namespace Dy
 			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_JOINT_TARGET_VEL;
 		}
 
+		if (flag & PxArticulationCacheFlag::eLINK_FORCE)
+		{
+			const PxU32 linkCount = data.getLinkCount();
+			for (PxU32 i = 0; i < linkCount; ++i)
+			{
+				const PxVec3 linkForce = cache.linkForce[i];
+				localShouldWake = localShouldWake || linkForce != PxVec3(0.0f);
+				ArticulationLink& link = mArticulationData.getLink(i);
+
+				PxsBodyCore& core = *link.bodyCore;
+				data.mExternalAcceleration[i].linear = linkForce * core.inverseMass;
+			}
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_EXT_ACCEL;
+		}
+
+		if (flag & PxArticulationCacheFlag::eLINK_TORQUE)
+		{
+			const PxU32 linkCount = data.getLinkCount();
+			for (PxU32 i = 0; i < linkCount; ++i)
+			{
+				ArticulationLink& link = mArticulationData.getLink(i);
+				PxsBodyCore& core = *link.bodyCore;
+
+				const PxQuat& q = core.body2World.q;
+				const PxVec3& linkTorque = cache.linkTorque[i];
+				const PxVec3 localLinkTorque = q.rotateInv(linkTorque);
+				localShouldWake = localShouldWake || localLinkTorque != PxVec3(0.0f);
+
+				// turn localLinkTorque into acceleration in local frame
+				const PxVec3 localAccel = core.inverseInertia.multiply(localLinkTorque);
+				// turn localAccel into world space
+				const PxVec3 worldAccel = q.rotate(localAccel);
+
+				data.mExternalAcceleration[i].angular = worldAccel;
+			}
+			mGPUDirtyFlags |= ArticulationDirtyFlag::eDIRTY_EXT_ACCEL;
+		}
+
 		// the updateKinematic functions rely on updated joint frames.
 		if (mJcalcDirty)
 		{

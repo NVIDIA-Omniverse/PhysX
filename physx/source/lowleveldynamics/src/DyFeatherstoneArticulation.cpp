@@ -614,6 +614,8 @@ namespace Dy
 			+ sizeof(PxSpatialVelocity) * linkCount * 2				// link velocity, (PxArticulationCacheFlag::eLINK_VELOCITY)
 																	// link acceleration (PxArticulationCacheFlag::eLINK_ACCELERATION)
 			+ sizeof(PxSpatialForce) * linkCount					// link incoming joint forces (PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE)
+			+ sizeof(PxVec3) * linkCount * 2						// link force (PxArticulationCacheFlag::eLINK_FORCE)
+																	// link torque (PxArticulationCacheFlag::eLINK_TORQUE)
 			+ sizeof(PxArticulationRootLinkData);					// root link data (PxArticulationCacheFlag::eROOT_TRANSFORM, PxArticulationCacheFlag::eROOT_VELOCITIES)
 	
 		return totalSize;
@@ -665,6 +667,15 @@ namespace Dy
 		cache->linkIncomingJointForce = reinterpret_cast<PxSpatialForce*>(tCache + offset);
 		offset += sizeof(PxSpatialForce) * linkCount;
 
+		// PxArticulationCacheFlag::eLINK_FORCE
+		PX_ASSERT((offset & 15) == 0);
+		cache->linkForce = reinterpret_cast<PxVec3*>(tCache + offset);
+        offset += sizeof(PxVec3) * linkCount;
+
+		// PxArticulationCacheFlag::eLINK_TORQUE
+		cache->linkTorque = reinterpret_cast<PxVec3*>(tCache + offset);
+		offset += sizeof(PxVec3) * linkCount;
+
 		cache->denseJacobian = reinterpret_cast<PxReal*>(tCache + offset);
 		offset += sizeof(PxReal) * (6 + totalDofs) * (linkCount * 6);				//size of dense jacobian assuming free floating base link.
 
@@ -705,6 +716,7 @@ namespace Dy
 		PxU32 scratchMemorySize =
 			sizeof(Cm::SpatialVectorF) * linkCount * 5	//motionVelocity, motionAccelerations, coriolisVectors, spatialZAVectors, externalAccels;
 			+ sizeof(Dy::SpatialMatrix) * linkCount		//compositeSpatialInertias;
+			+ sizeof(PxVec3) * linkCount * 2			//linkForce, linkTorque
 			+ sizeof(PxReal) * totalDofs * 7;			//jointVelocity, jointAcceleration, jointForces, jointPositions, jointFrictionForces, jointTargetPositions, jointTargetVelocities
 
 		scratchMemorySize = (scratchMemorySize+15)&~15;

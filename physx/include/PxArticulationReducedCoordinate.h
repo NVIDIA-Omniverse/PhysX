@@ -111,6 +111,8 @@ namespace physx
 			linkVelocity			(NULL),
 			linkAcceleration		(NULL),
 			linkIncomingJointForce	(NULL),
+			linkForce				(NULL),
+			linkTorque				(NULL),
 			rootLinkData			(NULL),
 			coefficientMatrix		(NULL),
 			lambda					(NULL),
@@ -261,7 +263,27 @@ namespace physx
 		\note The root link reports a zero spatial force.
 		*/
 		PxSpatialForce*			linkIncomingJointForce;
-		
+
+		/**
+		\brief Link force, i.e. an external force applied to the link's center of mass.
+
+		- N = getNbLinks().
+		- Write using PxArticulationCacheFlag::eLINK_FORCE.
+		- The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.
+		- The force is given in world space.
+        */
+        PxVec3*					linkForce;
+
+		/**
+		\brief Link torque, i.e. an external torque applied to the link.
+
+		- N = getNbLinks().
+		- Write using PxArticulationCacheFlag::eLINK_TORQUE.
+		- The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.
+		- The torque is given in world space.
+		*/
+		PxVec3*                 linkTorque;
+
 		/**
 		\brief Root link transform, velocities, and accelerations.
 

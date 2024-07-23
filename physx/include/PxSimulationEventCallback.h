@@ -708,8 +708,6 @@ PX_INLINE PxU32 PxContactPair::extractFrictionAnchors(PxContactPairFrictionAncho
 	{
 		PxFrictionAnchorStreamIterator iter(contactPatches, frictionPatches, patchCount);
 
-		const PxU32 hasImpulses = (flags & PxContactPairFlag::eINTERNAL_HAS_IMPULSES);
-
 		while(iter.hasNextPatch())
 		{
 			iter.nextPatch();
@@ -719,10 +717,7 @@ PX_INLINE PxU32 PxContactPair::extractFrictionAnchors(PxContactPairFrictionAncho
 				PxContactPairFrictionAnchor& dst = userBuffer[nbAnchors];
 
 				dst.position = iter.getPosition();
-
-				dst.impulse = hasImpulses
-								? iter.getImpulse()
-								: PxVec3(0.0f);
+				dst.impulse = iter.getImpulse();
 
 				++nbAnchors;
 				if(nbAnchors == bufferSize)

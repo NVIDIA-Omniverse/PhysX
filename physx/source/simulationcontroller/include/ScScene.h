@@ -431,6 +431,7 @@ namespace Sc
 					PxU32						getDefaultContactReportStreamBufferSize() const;
 
 					void						visualizeStartStep();
+					void						visualizeContacts();
 
 // PX_ENABLE_SIM_STATS
 					void						getStats(PxSimulationStatistics& stats) const;

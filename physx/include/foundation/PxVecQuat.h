@@ -297,7 +297,7 @@ PX_FORCE_INLINE bool isFiniteQuatV(const QuatV q)
 	return isFiniteVec4V(q);
 }
 
-#if PX_LINUX && PX_CLANG
+#if (PX_LINUX || PX_SWITCH) && PX_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wbitwise-instead-of-logical" // bitwise intentionally chosen for performance
 #endif

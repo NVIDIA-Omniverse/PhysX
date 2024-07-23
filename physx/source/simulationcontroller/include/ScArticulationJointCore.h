@@ -90,6 +90,9 @@ namespace Sc
 						void								setJointVelocity(PxArticulationAxis::Enum axis, const PxReal jointVel);
 						PxReal								getJointVelocity(PxArticulationAxis::Enum axis)	const;
 
+						void								setMaxJointVelocity(PxReal maxJointV);
+		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()	const	{ return mCore.maxJointVelocity;	}
+
 		// PT: TODO: don't we need to set ArticulationJointCoreDirtyFlag::eMOTION here?
 		PX_FORCE_INLINE	void								setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum motion)	{ mCore.motion[axis] = PxU8(motion);						}
 		PX_FORCE_INLINE	PxArticulationMotion::Enum			getMotion(PxArticulationAxis::Enum axis)							const	{ return PxArticulationMotion::Enum(mCore.motion[axis]);	}
@@ -97,11 +100,8 @@ namespace Sc
 		PX_FORCE_INLINE	void								setJointType(PxArticulationJointType::Enum type)	{ mCore.initJointType(type);								}
 		PX_FORCE_INLINE	PxArticulationJointType::Enum		getJointType()								const	{ return PxArticulationJointType::Enum(mCore.jointType);	}
 						
-		PX_FORCE_INLINE	void								setFrictionCoefficient(const PxReal coefficient)	{ mCore.initFrictionCoefficient(coefficient);	}
+						void								setFrictionCoefficient(const PxReal coefficient);
 		PX_FORCE_INLINE	PxReal								getFrictionCoefficient()					const	{ return mCore.frictionCoefficient;				}
-
-		PX_FORCE_INLINE	void								setMaxJointVelocity(const PxReal maxJointV)			{ mCore.initMaxJointVelocity(maxJointV);		}
-		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()						const	{ return mCore.maxJointVelocity;				}
 
 		PX_FORCE_INLINE	ArticulationJointSim*					getSim()									const	{ return mSim;	}
 		PX_FORCE_INLINE	void									setSim(ArticulationJointSim* sim)

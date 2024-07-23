@@ -1492,6 +1492,7 @@ void Sc::Scene::setEdgesConnected(PxBaseTask*)
 			ShapeInteraction* si = getSI(mTouchFoundEvents[i]);
 
 			// jcarius: defensive coding for OM-99507. If this assert hits, you maybe hit the same issue, please report!
+			// ### DEFENSIVE
 			if(si == NULL || si->getEdgeIndex() == IG_INVALID_EDGE)
 			{
 				outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene::setEdgesConnected: adding an invalid edge. Skipping.");
@@ -1866,6 +1867,16 @@ void Sc::Scene::processNarrowPhaseLostTouchEventsIslands(PxBaseTask*)
 	for(PxU32 i=0; i <count; ++i)
 	{
 		ShapeInteraction* si = getSI(mTouchLostEvents[i]);
+
+		// AD: defensive coding for OMPE-12798/PX-5240. If this assert hits, you maybe hit the same issue, please report!
+		// ### DEFENSIVE
+		if (si == NULL || si->getEdgeIndex() == IG_INVALID_EDGE)
+		{
+			outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene::setEdgeDisconnected: removing an invalid edge. Skipping.");
+			PX_ALWAYS_ASSERT();
+			continue;
+		}
+
 		mSimpleIslandManager->setEdgeDisconnected(si->getEdgeIndex());
 	}
 }
@@ -1891,6 +1902,16 @@ void Sc::Scene::processNarrowPhaseLostTouchEvents(PxBaseTask*)
 	for(PxU32 i=0; i<count; ++i)
 	{
 		ShapeInteraction* si = getSI(mTouchLostEvents[i]);
+
+		// AD: defensive coding for OMPE-12798/PX-5240. If this assert hits, you maybe hit the same issue, please report!
+		// ### DEFENSIVE
+		if (si == NULL || si->getEdgeIndex() == IG_INVALID_EDGE)
+		{
+			outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "Sc::Scene::processNarrowPhaseLostTouchEvents: processing an invalid edge. Skipping.");
+			PX_ALWAYS_ASSERT();
+			continue;
+		}
+
 		PX_ASSERT(si);
 		if(si->managerLostTouch(0, true, outputs) && !si->readFlag(ShapeInteraction::CONTACTS_RESPONSE_DISABLED))
 			addToLostTouchList(si->getShape0().getActor(), si->getShape1().getActor());
@@ -2433,6 +2454,10 @@ void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)
 	// AD: WIP, will be gone once we removed the warm-start with sim step.
 	if (mPublicFlags & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 		setDirectGPUAPIInitialized();
+
+	// VR: do this at finalizationPhase when all contact and
+	// friction impulses and CCD contacts are already computed
+	visualizeContacts();
 }
 
 void Sc::Scene::collectSolverResidual()

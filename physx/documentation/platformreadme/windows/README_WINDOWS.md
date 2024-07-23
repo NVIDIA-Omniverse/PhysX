@@ -7,13 +7,13 @@
 
 ## Required packages to generate projects:
 
-* Microsoft Windows 10 (or later) + headers for at least Win7 (`_WIN32_WINNT = 0x0601`)
+* Microsoft Windows 10 (or later)
 * CMake, minimum version 3.21
 * Python, minimum version 3.5
 
 Compilers and C++ Standard:
   * Microsoft Visual Studio 2017, 2019, 2022 (64 bit)
-  * C++17 compatible
+  * Tested with C++14 standard
 
 ## PhysX GPU Acceleration:
 

@@ -734,6 +734,16 @@ public:
 	}
 
 	/**
+	\brief Get the friction anchor's normal.
+	\return The friction anchor's normal.
+	*/
+	PX_CUDA_CALLABLE PX_FORCE_INLINE const PxVec3& getNormal() const
+	{
+		PX_ASSERT(patchIsValid());
+		return mContactPatches[mPatchIndex].normal;
+	}
+
+	/**
 	\brief Get current patch's static friction coefficient.
 	\return The patch's static friction coefficient.
 	*/

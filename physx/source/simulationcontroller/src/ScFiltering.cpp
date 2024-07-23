@@ -492,6 +492,9 @@ static PX_FORCE_INLINE bool testShapeSimCorePointers(const ShapeSimBase* s0, con
 	// GW: further defensive coding added for OM-111249 / PX-4478.
 	// This is only a temporary / immediate solution to mitigate crashes
 	// Still need to root-cause what is causing null pointers here
+	//
+	// AD: TODO what are we doing about this now that there is a fix? Can we "deprecate" this test?
+	//
 	// ### DEFENSIVE
 	if(!isValid0 || !isValid1)
 		return outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "NPhaseCore::runOverlapFilters: found null PxsShapeCore pointers!");

@@ -572,6 +572,15 @@ void Sc::ShapeInteraction::sendLostTouchReport(bool shapeVolumeRemoved, PxU32 cc
 PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& numPatches, const PxReal*& impulses, PxU32 startOffset,
 	PxsContactManagerOutputIterator& outputs)
 {
+	const void* frictionPatches;
+	return getContactPointData(contactPatches, contactPoints, contactDataSize,
+							   contactPointCount, numPatches, impulses, startOffset,
+							   outputs, frictionPatches);
+}
+
+PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, const void*& contactPoints, PxU32& contactDataSize, PxU32& contactPointCount, PxU32& numPatches, const PxReal*& impulses, PxU32 startOffset,
+	PxsContactManagerOutputIterator& outputs, const void*& frictionPatches)
+{
 	// Process LL generated contacts
 	if(mManager != NULL)
 	{
@@ -608,6 +617,7 @@ PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, con
 					contactPointCount = output->nbContacts;
 					numPatches = output->nbPatches;
 					impulses = output->contactForces;
+					frictionPatches = output->frictionPatches;
 
 					if(!ccdContactStream)
 						return startOffset;
@@ -630,6 +640,7 @@ PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, con
 					contactPointCount = 1;
 					numPatches = 1;
 					impulses = reinterpret_cast<const PxReal*>(stream + ((streamSize + 0xf) & 0xfffffff0));
+					frictionPatches = NULL;
 
 					if(!ccdContactStream->nextStream)
 						return startOffset;
@@ -653,6 +664,7 @@ PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, con
 	contactPointCount = 0;
 	numPatches = 0;
 	impulses = NULL;
+	frictionPatches = NULL;
 	return startOffset;
 }
 
@@ -776,7 +788,10 @@ PX_FORCE_INLINE void Sc::ShapeInteraction::updateFlags(const Sc::Scene& scene, c
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_ERROR) ||
-										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_FORCE)) );
+										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_IMPULSE)) ||
+										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_POINT) ||
+										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_NORMAL) ||
+										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_IMPULSE) );
 }
 
 PX_INLINE PxReal ScGetRestOffset(const Sc::ShapeSimBase& shapeSim)

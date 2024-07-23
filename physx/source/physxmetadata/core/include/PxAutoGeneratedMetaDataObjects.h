@@ -1220,6 +1220,8 @@ template<> struct PxEnumTraits< physx::PxArticulationFlag::Enum > { PxEnumTraits
 		{ "eLINK_INCOMING_JOINT_FORCE", static_cast<PxU32>( physx::PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE ) },
 		{ "eJOINT_TARGET_POSITIONS", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS ) },
 		{ "eJOINT_TARGET_VELOCITIES", static_cast<PxU32>( physx::PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES ) },
+		{ "eLINK_FORCE", static_cast<PxU32>( physx::PxArticulationCacheFlag::eLINK_FORCE ) },
+		{ "eLINK_TORQUE", static_cast<PxU32>( physx::PxArticulationCacheFlag::eLINK_TORQUE ) },
 		{ "eALL", static_cast<PxU32>( physx::PxArticulationCacheFlag::eALL ) },
 		{ NULL, 0 }
 	};
@@ -2471,7 +2473,11 @@ template<> struct PxEnumTraits< physx::PxSolverType::Enum > { PxEnumTraits() : N
 		{ "eCONTACT_POINT", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_POINT ) },
 		{ "eCONTACT_NORMAL", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_NORMAL ) },
 		{ "eCONTACT_ERROR", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_ERROR ) },
+		{ "eCONTACT_IMPULSE", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_IMPULSE ) },
 		{ "eCONTACT_FORCE", static_cast<PxU32>( physx::PxVisualizationParameter::eCONTACT_FORCE ) },
+		{ "eFRICTION_POINT", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_POINT ) },
+		{ "eFRICTION_NORMAL", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_NORMAL ) },
+		{ "eFRICTION_IMPULSE", static_cast<PxU32>( physx::PxVisualizationParameter::eFRICTION_IMPULSE ) },
 		{ "eACTOR_AXES", static_cast<PxU32>( physx::PxVisualizationParameter::eACTOR_AXES ) },
 		{ "eCOLLISION_AABBS", static_cast<PxU32>( physx::PxVisualizationParameter::eCOLLISION_AABBS ) },
 		{ "eCOLLISION_SHAPES", static_cast<PxU32>( physx::PxVisualizationParameter::eCOLLISION_SHAPES ) },
