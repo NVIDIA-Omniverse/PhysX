@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Directories &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="include" href="dir_include.html" />
+    <link rel="prev" title="Macros" href="macros.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Directories</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="dir_include.html">include</a></li>
+<li class="toctree-l4"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+<li>Directories</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="directories">
+<h1>Directories<a class="headerlink" href="#directories" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="dir_include.html#dir-d44c64559bbebec7f509842c48db8b23"><span class="std std-ref">include</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_characterkinematic.html#dir-8c16dd04caec3179df2fe30f89a5ed72"><span class="std std-ref">include/characterkinematic</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_collision.html#dir-312d41ab30208a3dd62592fda05fa745"><span class="std std-ref">include/collision</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_common.html#dir-0966d06610f72609fd9aa4979c2b5a92"><span class="std std-ref">include/common</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_cooking.html#dir-1b6487466cb5005f2ea55800b0db2c5a"><span class="std std-ref">include/cooking</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_cudamanager.html#dir-8c8d19f6300aeb2225a2901b2cb301d4"><span class="std std-ref">include/cudamanager</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_extensions.html#dir-5f3c992b9598cad4d972dc3d4b10f244"><span class="std std-ref">include/extensions</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_filebuf.html#dir-74a1ccd8a4b1ef48ea7fe82fb748a237"><span class="std std-ref">include/filebuf</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_foundation.html#dir-f18186a387490b1e7f8a515370a2043c"><span class="std std-ref">include/foundation</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_geometry.html#dir-cac21311fa223bf4e936802c78bf215f"><span class="std std-ref">include/geometry</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_geomutils.html#dir-928e78d8e4f3c85139a5463784214c3e"><span class="std std-ref">include/geomutils</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_gpu.html#dir-a7cfaa47baa6c085790d1eb26cdffca8"><span class="std std-ref">include/gpu</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_omnipvd.html#dir-20e1daa5cfa41671113b7e4085363050"><span class="std std-ref">include/omnipvd</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_pvd.html#dir-4cf68a21110e1bd812edd17aa227a398"><span class="std std-ref">include/pvd</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_solver.html#dir-a41085eaf10b710b06fa633322b65393"><span class="std std-ref">include/solver</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_task.html#dir-7209ed1703959184fd325a1c62bce49f"><span class="std std-ref">include/task</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2.html#dir-5238d192cd0a5de85086c71c03d5d520"><span class="std std-ref">include/vehicle2</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_braking.html#dir-774d704f7c00817f324ef55465e00ef3"><span class="std std-ref">include/vehicle2/braking</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_commands.html#dir-3942351a6fe59d9d0e71fcea8373b490"><span class="std std-ref">include/vehicle2/commands</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_drivetrain.html#dir-1323636185c1cb4de158e1b6bc8a772c"><span class="std std-ref">include/vehicle2/drivetrain</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_physxActor.html#dir-05939869526efa535fb331700cf3fb6c"><span class="std std-ref">include/vehicle2/physxActor</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_physxConstraints.html#dir-7e491a7693c4d9e8ccf36c99e56ead2a"><span class="std std-ref">include/vehicle2/physxConstraints</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_physxRoadGeometry.html#dir-ef0569d6626d92cdb3539cab01dabca9"><span class="std std-ref">include/vehicle2/physxRoadGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_pvd.html#dir-1527ad6fd42e791d0a16663884e326d3"><span class="std std-ref">include/vehicle2/pvd</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_rigidBody.html#dir-5ceda65599b54d1f3af9a7a3d87850e6"><span class="std std-ref">include/vehicle2/rigidBody</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_roadGeometry.html#dir-a38b4aafbd3b51b920598f59c73b51fe"><span class="std std-ref">include/vehicle2/roadGeometry</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_steering.html#dir-f0ddfe7933594b710af68e0c1219be1e"><span class="std std-ref">include/vehicle2/steering</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_suspension.html#dir-7ff9aa4392caa6d5963e5fa59a8637b5"><span class="std std-ref">include/vehicle2/suspension</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_tire.html#dir-fecadb1ca59277f037a253d784d47732"><span class="std std-ref">include/vehicle2/tire</span></a></p></li>
+<li><p><a class="reference internal" href="dir_include_vehicle2_wheel.html#dir-fb9eacbf83098a13813531a15f03afcf"><span class="std std-ref">include/vehicle2/wheel</span></a></p></li>
+<li><p><a class="reference internal" href="dir_pvdruntime.html#dir-4119b4430f66a5738cea6c6685bdd46c"><span class="std std-ref">pvdruntime</span></a></p></li>
+<li><p><a class="reference internal" href="dir_pvdruntime_include.html#dir-03a5e7364fb36d8835b14ea6927af523"><span class="std std-ref">pvdruntime/include</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

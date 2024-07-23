@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating From PhysX SDK 5.3 to 5.4 &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PhysX SDK API" href="../_api_build/physx_api.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 5.2 to 5.3" href="MigrationTo53.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating From PhysX SDK 5.3 to 5.4</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#particle">Particle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#direct-gpu-api">Direct-GPU API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Migrating From PhysX SDK 5.3 to 5.4</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-from-physx-sdk-5-3-to-5-4">
+<span id="migrationto54"></span><h1>Migrating From PhysX SDK 5.3 to 5.4<a class="headerlink" href="#migrating-from-physx-sdk-5-3-to-5-4" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last release. An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+</ul>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxMaterialFlag::eCOMPLIANT_CONTACT has been deprecated. Remove any usage of it as it will not be used by the simulation. Compliant contact behavior is now active whenever a negative restitution value is set.</p></li>
+<li><p>PxCudaContextManager::allocDeviceBuffer, PxCudaContextManager::freeDeviceBuffer, PxCudaContextManager::allocPinnedHostBuffer, PxCudaContextManager::freePinnedHostBuffer, PxCudaContextManager::clearDeviceBufferAsync, PxCudaContextManager::copyDtoH, PxCudaContextManager::copyHtoD, PxCudaContextManager::copyDToHAsync, PxCudaContextManager::copyHtoDAsync, PxCudaContextManager::copyDtoDAsync, PxCudaContextManager::memsetAsync and the macros using them have been deprecated. The replacement is to either use the direct functions in PxCudaContext, or the helpers provided in PxCudaHelpersExt.h as part of PhysXExtensions.</p></li>
+</ul>
+</section>
+<section id="particle">
+<h2>Particle<a class="headerlink" href="#particle" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxFLIPParticleSystem, PxFLIPMaterial, PxMPMParticleSystem, PxMPMMaterial: experimental features have been removed.</p></li>
+<li><p>PxParticleSystem: deprecated and re-routed to PxPBDParticleSystem using ‘typedef’</p></li>
+<li><p>PxParticleMaterial: deprecated and re-routed to PxPBDMaterial using ‘typedef’</p></li>
+<li><p>PxParticleSolverType: deprecated, and PxParticleSolverType::eMPM and PxParticleSolverType::eFLIP have been removed.</p></li>
+<li><p>PxScene::getNbParticleSystems, PxScene::getParticleSystems: deprecated, use PxScene::getNbPBDParticleSystems, PxScene::getPBDParticleSystems instead.</p></li>
+<li><p>PxParticleSystem::enableCCD(): deprecated use PxParticleFlag::eENABLE_SPECULATIVE_CCD instead.</p></li>
+<li><p>PxParticleBuffer::bufferUniqueId: deprecated, use PxParticleBuffer::getUniqueId() instead.</p></li>
+<li><p>PxParticleBuffer::bufferIndex, PxParticleBuffer::setInternalData(), PxParticleBuffer::onParticleSystemDestroy(): have been removed. They are not needed outside of the SDK.</p></li>
+</ul>
+</section>
+<section id="direct-gpu-api">
+<h2>Direct-GPU API<a class="headerlink" href="#direct-gpu-api" title="Permalink to this headline"></a></h2>
+<p>The existing batched direct-GPU API has been revised and moved from PxScene to PxDirectGPUAPI. Both function signatures and data layouts have been changed in many cases.
+There is detailed inline documentation in the header that explains the parameters and data layouts. All the respective functions in PxScene are deprecated and will be removed in a future release.</p>
+<ul class="simple">
+<li><p>PxScene::applyActorData is now PxDirectGPUAPI::setRigidDynamicData. The data types have been separated, and the indirect indexing has been removed.</p></li>
+<li><p>PxScene::copyBodyData is now PxDirectGPUAPI::getRigidDynamicData. The PxGpuBodyData struct has been split up to allow direct access to the individual members, and the indirect indexing has been removed.</p></li>
+<li><p>PxScene::copyArticulationData is now PxDirectGPUAPI::getArticulationData. The main change here is that the indexing into the data array is not according to the GPU index anymore, but made parallel: the articulation with its GPU index at position x in the index array will have the data at position x in the data array.</p></li>
+<li><p>PxScene::applyArticulationData is now PxDirectGPUAPI::setArticulationData. The same data layout change as for getArticulationData applies here as well.</p></li>
+<li><p>PxScene::updateArticulationsKinematic, PxScene::computeDenseJacobians, PxScene::computeGeneralizedMassMatrices, PxScene::computeGeneralizedGravityForces and PxScene::computeCoriolisAndCentrifugalForces have been combined into PxDirectGPUAPI::computeArticulationData.</p></li>
+<li><p>PxScene::evaluateSDFDistances is now PxDirectGPUAPI::evaluateSDFDistances. There are changes to the order of the function parameters and their types.</p></li>
+<li><p>PxScene::copyContactData is now PxDirectGPUAPI::copyContactData. There are changes to the order of the function parameters and their types.</p></li>
+<li><p>PxScene::applySoftBodyData and PxScene::copySoftBodyData are deprecated and will have no replacement.</p></li>
+<li><p>PxScene::applyParticleBufferData is deprecated and will have no replacement. The data is now exposed in PxParticleBuffer.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

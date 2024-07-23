@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExtGpu::PxParticleClothBufferHelper &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ExtGpu::PxParticleClothConstraint" href="structExtGpu_1_1PxParticleClothConstraint.html" />
+    <link rel="prev" title="ExtGpu::PxParticleBufferDesc" href="structExtGpu_1_1PxParticleBufferDesc.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="namespace_ExtGpu.html">ExtGpu</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a2033610bde128db674322afe1f9eebf0.html">PxCreateAndPopulateParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a894fa2d24d58f68b5f6c33d8c062c46c.html">PxCreateAndPopulateParticleBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a2ce51fe8160cb38a6d0755ddcd21ece4.html">PxCreateAndPopulateParticleClothBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a7b15aefa77133d2a3745bee551edaba4.html">PxCreateAndPopulateParticleRigidBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1ae95284301d9c54615a4fea5a21c3ffd4.html">PxCreateParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a865ba51e4fdf0d508878d4821c672fd9.html">PxCreateParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a25dd2d94226d301b551654612353014b.html">PxCreateParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html">PxCreateParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html">PxParticleAndDiffuseBufferDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleAttachmentBuffer.html">PxParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleBufferDesc.html">PxParticleBufferDesc</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">PxParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleClothConstraint.html">PxParticleClothConstraint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleClothCooker.html">PxParticleClothCooker</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleRigidBufferHelper.html">PxParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleRigidDesc.html">PxParticleRigidDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html">PxParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleVolumeMesh.html">PxParticleVolumeMesh</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_aos.html">aos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_physx.html">physx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_pvdsdk.html">pvdsdk</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+    <li><a href="namespace_ExtGpu.html">ExtGpu</a> &raquo;</li>
+<li>ExtGpu::PxParticleClothBufferHelper</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extgpu-pxparticleclothbufferhelper">
+<h1>ExtGpu::PxParticleClothBufferHelper<a class="headerlink" href="#extgpu-pxparticleclothbufferhelper" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxParticleExt.h.html#pxparticleext-8h"><span class="std std-ref">include/extensions/PxParticleExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelperE">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelperE"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelperE"></span><span id="ExtGpu::PxParticleClothBufferHelper"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleClothBufferHelper</span></span></span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelperE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Helper class to manage PxParticleClothDesc buffers used for communicating particle based cloths to PxParticleClothBuffer. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000129"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelper7releaseEv">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelper7releaseEv"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelper7releaseEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::release"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1ac2f4294708bb6ab7e5b1bd135c0ac495"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelper7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper12getMaxClothsEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper12getMaxClothsEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper12getMaxClothsEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getMaxClothsC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a85b8ebd6bab9f2e1f4482771e862963f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxCloths</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper12getMaxClothsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximum number of cloths this PxParticleClothBufferHelper can hold. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper12getNumClothsEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper12getNumClothsEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper12getNumClothsEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getNumClothsC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a17b5512499ff048a712caf408d576da1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumCloths</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper12getNumClothsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current number of cloths in this PxParticleClothBufferHelper. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper13getMaxSpringsEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper13getMaxSpringsEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper13getMaxSpringsEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getMaxSpringsC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1aaafe50078fdac20f3a2eec50542d932e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxSprings</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper13getMaxSpringsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximum number of springs this PxParticleClothBufferHelper can hold. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper13getNumSpringsEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper13getNumSpringsEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper13getNumSpringsEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getNumSpringsC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a897bc5b5d8c3228c4b65e0256beb1624"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumSprings</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper13getNumSpringsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current number of springs in this PxParticleClothBufferHelper. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getMaxTrianglesEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper15getMaxTrianglesEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper15getMaxTrianglesEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getMaxTrianglesC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a1e80eb3c9413aa494f028a0c07203ebb"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getMaxTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximum number of triangles this PxParticleClothBufferHelper can hold. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getNumTrianglesEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper15getNumTrianglesEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper15getNumTrianglesEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getNumTrianglesC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a0c7c113f2582bb958d4b479c015f89c0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getNumTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current number of triangles in this PxParticleClothBufferHelper. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getMaxParticlesEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper15getMaxParticlesEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper15getMaxParticlesEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getMaxParticlesC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1aa679a97c7439b6c73ac449fe7335d31f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxParticles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getMaxParticlesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The maximum number of particles this PxParticleClothBufferHelper can hold. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getNumParticlesEv">
+<span id="_CPPv3NK6ExtGpu27PxParticleClothBufferHelper15getNumParticlesEv"></span><span id="_CPPv2NK6ExtGpu27PxParticleClothBufferHelper15getNumParticlesEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getNumParticlesC"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a67bd64136f83337c4f5639dc10a6bef1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNumParticles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK6ExtGpu27PxParticleClothBufferHelper15getNumParticlesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The current number of particles in this PxParticleClothBufferHelper. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelper8addClothERK15PxParticleClothPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelper8addClothERK15PxParticleClothPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelper8addClothERK15PxParticleClothPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32"></span><span id="ExtGpu::PxParticleClothBufferHelper::addCloth__PxParticleClothCR.PxU32CP.PxU32C.PxParticleSpringCP.PxU32C.PxVec4CP.PxU32C"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1ae79c7493b042d00b41ad9af848c26160"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addCloth</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxParticleCloth.html#_CPPv415PxParticleCloth" title="PxParticleCloth"><span class="n"><span class="pre">PxParticleCloth</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">particleCloth</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triangles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numTriangles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxParticleSpring.html#_CPPv416PxParticleSpring" title="PxParticleSpring"><span class="n"><span class="pre">PxParticleSpring</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">springs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numSprings</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositions</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelper8addClothERK15PxParticleClothPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a PxParticleCloth to this PxParticleClothBufferHelper instance. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxParticleCloth PxParticleSpring </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>particleCloth</strong> – <strong>[in]</strong> The PxParticleCloth to be added. </p></li>
+<li><p><strong>triangles</strong> – <strong>[in]</strong> A pointer to the triangles </p></li>
+<li><p><strong>numTriangles</strong> – <strong>[in]</strong> The number of triangles </p></li>
+<li><p><strong>springs</strong> – <strong>[in]</strong> A pointer to the springs </p></li>
+<li><p><strong>numSprings</strong> – <strong>[in]</strong> The number of springs </p></li>
+<li><p><strong>restPositions</strong> – <strong>[in]</strong> A pointer to the particle rest positions </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles in this cloth</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelper8addClothEK6PxRealK6PxRealK6PxRealPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelper8addClothEK6PxRealK6PxRealK6PxRealPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelper8addClothEK6PxRealK6PxRealK6PxRealPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32"></span><span id="ExtGpu::PxParticleClothBufferHelper::addCloth__PxRealC.PxRealC.PxRealC.PxU32CP.PxU32C.PxParticleSpringCP.PxU32C.PxVec4CP.PxU32C"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1acc55c0795fc1040668aa3344571c2ae2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addCloth</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">blendScale</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">restVolume</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pressure</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">triangles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numTriangles</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="structPxParticleSpring.html#_CPPv416PxParticleSpring" title="PxParticleSpring"><span class="n"><span class="pre">PxParticleSpring</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">springs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numSprings</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">restPositions</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numParticles</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelper8addClothEK6PxRealK6PxRealK6PxRealPK5PxU32K5PxU32PK16PxParticleSpringK5PxU32PK6PxVec4K5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Adds a cloth to this PxParticleClothBufferHelper instance. </p>
+<p>Adds a cloth to this PxParticleClothBufferHelper instance. With this method the relevant parameters for inflatable simulation (restVolume, pressure) can be set directly.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxParticleSpring </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blendScale</strong> – <strong>[in]</strong> This should be 1.f / (numPartitions + 1) if the springs are partitioned by the user. Otherwise this will be set during spring partitioning. </p></li>
+<li><p><strong>restVolume</strong> – <strong>[in]</strong> The rest volume of the inflatable </p></li>
+<li><p><strong>pressure</strong> – <strong>[in]</strong> The pressure of the inflatable. The target inflatable volume is defined as restVolume * pressure. Setting this to &gt; 0.0 will enable inflatable simulation. </p></li>
+<li><p><strong>triangles</strong> – <strong>[in]</strong> A pointer to the triangles </p></li>
+<li><p><strong>numTriangles</strong> – <strong>[in]</strong> The number of triangles </p></li>
+<li><p><strong>springs</strong> – <strong>[in]</strong> A pointer to the springs </p></li>
+<li><p><strong>numSprings</strong> – <strong>[in]</strong> The number of springs </p></li>
+<li><p><strong>restPositions</strong> – <strong>[in]</strong> A pointer to the particle rest positions </p></li>
+<li><p><strong>numParticles</strong> – <strong>[in]</strong> The number of particles in this cloth</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelper20getParticleClothDescEv">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelper20getParticleClothDescEv"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelper20getParticleClothDescEv"></span><span id="ExtGpu::PxParticleClothBufferHelper::getParticleClothDesc"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a7bcdd465b4a78f9a9c759f8615592f7d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxParticleClothDesc.html#_CPPv419PxParticleClothDesc" title="PxParticleClothDesc"><span class="n"><span class="pre">PxParticleClothDesc</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">getParticleClothDesc</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelper20getParticleClothDescEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns a PxParticleClothDesc for this PxParticleClothBufferHelper instance to be used for spring partitioning. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxCreateAndPopulateParticleClothBuffer, PxParticleClothPreProcessor::partitionSprings </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the PxParticleClothDesc.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu27PxParticleClothBufferHelperD0Ev">
+<span id="_CPPv3N6ExtGpu27PxParticleClothBufferHelperD0Ev"></span><span id="_CPPv2N6ExtGpu27PxParticleClothBufferHelperD0Ev"></span><span id="ExtGpu::PxParticleClothBufferHelper::~PxParticleClothBufferHelper"></span><span class="target" id="classextgpu_1_1pxparticleclothbufferhelper_1a0ca48aaec9c684cbbda596904bef3378"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxParticleClothBufferHelper</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu27PxParticleClothBufferHelperD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxArticulationCache &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxArticulationCacheFlag" href="classPxArticulationCacheFlag.html" />
+    <link rel="prev" title="PxArticulationAttachment" href="classPxArticulationAttachment.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxArticulationCache</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxarticulationcache">
+<h1>PxArticulationCache<a class="headerlink" href="#pxarticulationcache" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html#pxarticulationreducedcoordinate-8h"><span class="std std-ref">include/PxArticulationReducedCoordinate.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxArticulationCache">
+<span id="_CPPv319PxArticulationCache"></span><span id="_CPPv219PxArticulationCache"></span><span id="PxArticulationCache"></span><span class="target" id="classpxarticulationcache"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationCache</span></span></span><a class="headerlink" href="#_CPPv419PxArticulationCache" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Data structure used to read and write internal articulation data. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationCacheFlag, PxArticulationReducedCoordinate::createCache, PxArticulationReducedCoordinate::applyCache, PxArticulationReducedCoordinate::copyInternalStateToCache </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache19PxArticulationCacheEv">
+<span id="_CPPv3N19PxArticulationCache19PxArticulationCacheEv"></span><span id="_CPPv2N19PxArticulationCache19PxArticulationCacheEv"></span><span id="PxArticulationCache::PxArticulationCache"></span><span class="target" id="classpxarticulationcache_1a750cf6f5d426723b6d6cf731bd290ea5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxArticulationCache</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxArticulationCache19PxArticulationCacheEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache7releaseEv">
+<span id="_CPPv3N19PxArticulationCache7releaseEv"></span><span id="_CPPv2N19PxArticulationCache7releaseEv"></span><span id="PxArticulationCache::release"></span><span class="target" id="classpxarticulationcache_1a75e7125f62125bba418e2a90f0d3b5a5"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxArticulationCache7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Releases an articulation cache. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::createCache, PxArticulationReducedCoordinate::applyCache, PxArticulationReducedCoordinate::copyInternalStateToCache </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache14externalForcesE">
+<span id="_CPPv3N19PxArticulationCache14externalForcesE"></span><span id="_CPPv2N19PxArticulationCache14externalForcesE"></span><span id="PxArticulationCache::externalForces__PxSpatialForceP"></span><span class="target" id="classpxarticulationcache_1a6bcc917d32fa1a60a671283e0a907e5c"></span><a class="reference internal" href="structPxSpatialForce.html#_CPPv414PxSpatialForce" title="PxSpatialForce"><span class="n"><span class="pre">PxSpatialForce</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">externalForces</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache14externalForcesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>External forces acting on the articulation links for inverse dynamics computation. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Indexing follows the low-level link indices, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The forces are with respect to the center of mass of the link.</p></li>
+<li><p>This field cannot be used to apply forces to links during the next PxScene::simulate() call. Use PxRigidBody::addForce and related functions instead.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::computeGeneralizedExternalForce </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13denseJacobianE">
+<span id="_CPPv3N19PxArticulationCache13denseJacobianE"></span><span id="_CPPv2N19PxArticulationCache13denseJacobianE"></span><span id="PxArticulationCache::denseJacobian__PxRealP"></span><span class="target" id="classpxarticulationcache_1a215d7bc2b910aef6ba6e594843d136bc"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">denseJacobian</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13denseJacobianE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Dense Jacobian data. </p>
+<p><ul class="simple">
+<li><p>N = nbRows * nbCols = (6 * getNbLinks()) * (6 + getDofs()) -&gt; size includes possible floating-base DOFs regardless of PxArticulationFlag::eFIX_BASE flag.</p></li>
+<li><p>The links, i.e. rows are in order of the low-level link indices (minus one if PxArticulationFlag::eFIX_BASE is true), see PxArticulationLink::getLinkIndex. The corresponding spatial velocities are stacked [vx; vy; vz; wx; wy; wz], where vx and wx refer to the linear and rotational velocity in world X.</p></li>
+<li><p>The DOFs, i.e. column indices correspond to the low-level DOF indices, see PxArticulationCache::jointVelocity.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::computeDenseJacobian </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10massMatrixE">
+<span id="_CPPv3N19PxArticulationCache10massMatrixE"></span><span id="_CPPv2N19PxArticulationCache10massMatrixE"></span><span id="PxArticulationCache::massMatrix__PxRealP"></span><span class="target" id="classpxarticulationcache_1a40849b1b079c9b0e517fb7eaea488ccf"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">massMatrix</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10massMatrixE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The generalized mass matrix that maps joint accelerations to joint forces. </p>
+<p><ul class="simple">
+<li><p>N = getDofs() * getDofs().</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::computeGeneralizedMassMatrix </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13jointVelocityE">
+<span id="_CPPv3N19PxArticulationCache13jointVelocityE"></span><span id="_CPPv2N19PxArticulationCache13jointVelocityE"></span><span id="PxArticulationCache::jointVelocity__PxRealP"></span><span class="target" id="classpxarticulationcache_1aab37dabd7db43ef927337da7f6ea9f5a"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointVelocity</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13jointVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint DOF velocities. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/write using PxArticulationCacheFlag::eVELOCITY.</p></li>
+<li><p>The indexing follows the internal DOF index order. Therefore, the application should calculate the DOF data indices by summing the joint DOFs in the order of the links’ low-level indices (see the manual Section “Cache Indexing” for a snippet for this calculation): <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Low</span><span class="o">-</span><span class="n">level</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="n">index</span><span class="o">:</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getLinkIndex</span><span class="p">()</span><span class="w"></span>
+</pre></div>
+</div>
+ <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Link</span><span class="w"> </span><span class="n">inbound</span><span class="w"> </span><span class="n">joint</span><span class="w"> </span><span class="n">DOF</span><span class="o">:</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="mi">0</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">2</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">PxArticulationLink</span><span class="o">::</span><span class="n">getInboundJointDof</span><span class="p">()</span><span class="w"></span>
+</pre></div>
+</div>
+ <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">Low</span><span class="o">-</span><span class="n">level</span><span class="w"> </span><span class="n">DOF</span><span class="w"> </span><span class="n">index</span><span class="o">:</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="o">-</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">0</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="mi">3</span><span class="w">      </span><span class="o">|</span><span class="w"> </span><span class="p">...</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+</pre></div>
+</div>
+ The root link always has low-level index 0 and always has zero inbound joint DOFs. The link DOF indexing follows the order in PxArticulationAxis::Enum. For example, assume that low-level link 2 has an inbound spherical joint with two DOFs: eSWING1 and eSWING2. The corresponding low-level joint DOF indices are therefore 1 for eSWING1 and 2 for eSWING2. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache17jointAccelerationE">
+<span id="_CPPv3N19PxArticulationCache17jointAccelerationE"></span><span id="_CPPv2N19PxArticulationCache17jointAccelerationE"></span><span id="PxArticulationCache::jointAcceleration__PxRealP"></span><span class="target" id="classpxarticulationcache_1a515142b078989bf5034c5a97b6978c1b"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointAcceleration</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache17jointAccelerationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint DOF accelerations. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read using PxArticulationCacheFlag::eACCELERATION.</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.</p></li>
+<li><p>Delta joint DOF velocities can be computed from acceleration * dt. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13jointPositionE">
+<span id="_CPPv3N19PxArticulationCache13jointPositionE"></span><span id="_CPPv2N19PxArticulationCache13jointPositionE"></span><span id="PxArticulationCache::jointPosition__PxRealP"></span><span class="target" id="classpxarticulationcache_1a64e8f0b09d6860f91d7a830c11bdddc9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointPosition</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13jointPositionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint DOF positions. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/write using PxArticulationCacheFlag::ePOSITION.</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.</p></li>
+<li><p>For spherical joints, the joint position for each axis on the joint must be in range [-Pi, Pi]. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10jointForceE">
+<span id="_CPPv3N19PxArticulationCache10jointForceE"></span><span id="_CPPv2N19PxArticulationCache10jointForceE"></span><span id="PxArticulationCache::jointForce__PxRealP"></span><span class="target" id="classpxarticulationcache_1a952f509c174636c1c11e8c61bda30eaa"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10jointForceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint DOF forces. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Read/Write using PxArticulationCacheFlag::eFORCE.</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity.</p></li>
+<li><p>Applied joint forces persist and are applied each frame until changed. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache20jointTargetPositionsE">
+<span id="_CPPv3N19PxArticulationCache20jointTargetPositionsE"></span><span id="_CPPv2N19PxArticulationCache20jointTargetPositionsE"></span><span id="PxArticulationCache::jointTargetPositions__PxRealP"></span><span class="target" id="classpxarticulationcache_1a0d43f4f0509496703a0401e2ba146ea4"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointTargetPositions</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache20jointTargetPositionsE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint drive target positions. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Write using PxArticulationCacheFlag::eJOINT_TARGET_POSITIONS.</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache21jointTargetVelocitiesE">
+<span id="_CPPv3N19PxArticulationCache21jointTargetVelocitiesE"></span><span id="_CPPv2N19PxArticulationCache21jointTargetVelocitiesE"></span><span id="PxArticulationCache::jointTargetVelocities__PxRealP"></span><span class="target" id="classpxarticulationcache_1abcb7117c92107307b83f45b5f49ee102"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">jointTargetVelocities</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache21jointTargetVelocitiesE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The articulation joint drive target velocities. </p>
+<p><ul class="simple">
+<li><p>N = getDofs().</p></li>
+<li><p>Write using PxArticulationCacheFlag::eJOINT_TARGET_VELOCITIES.</p></li>
+<li><p>The indexing follows the internal DOF index order, see PxArticulationCache::jointVelocity. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache12linkVelocityE">
+<span id="_CPPv3N19PxArticulationCache12linkVelocityE"></span><span id="_CPPv2N19PxArticulationCache12linkVelocityE"></span><span id="PxArticulationCache::linkVelocity__PxSpatialVelocityP"></span><span class="target" id="classpxarticulationcache_1a91adda674694b0f628a07e4ca89bcec5"></span><a class="reference internal" href="structPxSpatialVelocity.html#_CPPv417PxSpatialVelocity" title="PxSpatialVelocity"><span class="n"><span class="pre">PxSpatialVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkVelocity</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache12linkVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Link spatial velocity. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using PxArticulationCacheFlag::eLINK_VELOCITY.</p></li>
+<li><p>The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The velocity is with respect to the link’s center of mass but represented in world space.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidBody::getCMassLocalPose </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache16linkAccelerationE">
+<span id="_CPPv3N19PxArticulationCache16linkAccelerationE"></span><span id="_CPPv2N19PxArticulationCache16linkAccelerationE"></span><span id="PxArticulationCache::linkAcceleration__PxSpatialVelocityP"></span><span class="target" id="classpxarticulationcache_1ac67f33a6b89001467a31fd4a3f4afa23"></span><a class="reference internal" href="structPxSpatialVelocity.html#_CPPv417PxSpatialVelocity" title="PxSpatialVelocity"><span class="n"><span class="pre">PxSpatialVelocity</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkAcceleration</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache16linkAccelerationE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Link classical acceleration. </p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using PxArticulationCacheFlag::eLINK_ACCELERATION.</p></li>
+<li><p>The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The acceleration is with respect to the link’s center of mass.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::getLinkAcceleration, PxRigidBody::getCMassLocalPose </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache22linkIncomingJointForceE">
+<span id="_CPPv3N19PxArticulationCache22linkIncomingJointForceE"></span><span id="_CPPv2N19PxArticulationCache22linkIncomingJointForceE"></span><span id="PxArticulationCache::linkIncomingJointForce__PxSpatialForceP"></span><span class="target" id="classpxarticulationcache_1a264a1e45dbecc7b8fe020e4428f37e12"></span><a class="reference internal" href="structPxSpatialForce.html#_CPPv414PxSpatialForce" title="PxSpatialForce"><span class="n"><span class="pre">PxSpatialForce</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkIncomingJointForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache22linkIncomingJointForceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Link incoming joint force, i.e. </p>
+<p>the total force transmitted from the parent link to this link.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Read using PxArticulationCacheFlag::eLINK_INCOMING_JOINT_FORCE.</p></li>
+<li><p>The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The force is reported in the child joint frame of the link’s incoming joint.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationJointReducedCoordinate::getChildPose </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The root link reports a zero spatial force. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache9linkForceE">
+<span id="_CPPv3N19PxArticulationCache9linkForceE"></span><span id="_CPPv2N19PxArticulationCache9linkForceE"></span><span id="PxArticulationCache::linkForce__PxVec3P"></span><span class="target" id="classpxarticulationcache_1acc23879ff343c2ed282397ee55d30037"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkForce</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache9linkForceE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Link force, i.e. </p>
+<p>an external force applied to the link’s center of mass.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Write using PxArticulationCacheFlag::eLINK_FORCE.</p></li>
+<li><p>The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The force is given in world space. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache10linkTorqueE">
+<span id="_CPPv3N19PxArticulationCache10linkTorqueE"></span><span id="_CPPv2N19PxArticulationCache10linkTorqueE"></span><span id="PxArticulationCache::linkTorque__PxVec3P"></span><span class="target" id="classpxarticulationcache_1a9984ef072f469ed3f18db780342b0d61"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">linkTorque</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache10linkTorqueE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Link torque, i.e. </p>
+<p>an external torque applied to the link.</p>
+<p><ul class="simple">
+<li><p>N = getNbLinks().</p></li>
+<li><p>Write using PxArticulationCacheFlag::eLINK_TORQUE.</p></li>
+<li><p>The indexing follows the internal link indexing, see PxArticulationLink::getLinkIndex.</p></li>
+<li><p>The torque is given in world space. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache12rootLinkDataE">
+<span id="_CPPv3N19PxArticulationCache12rootLinkDataE"></span><span id="_CPPv2N19PxArticulationCache12rootLinkDataE"></span><span id="PxArticulationCache::rootLinkData__PxArticulationRootLinkDataP"></span><span class="target" id="classpxarticulationcache_1ae0431d9e6e127c49cf7cc53532b4b393"></span><a class="reference internal" href="structPxArticulationRootLinkData.html#_CPPv426PxArticulationRootLinkData" title="PxArticulationRootLinkData"><span class="n"><span class="pre">PxArticulationRootLinkData</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">rootLinkData</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache12rootLinkDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Root link transform, velocities, and accelerations. </p>
+<p><ul class="simple">
+<li><p>N = 1.</p></li>
+<li><p>Read/write using PxArticulationCacheFlag::eROOT_TRANSFORM and PxArticulationCacheFlag::eROOT_VELOCITIES (accelerations are read-only).</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationRootLinkData </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache17coefficientMatrixE">
+<span id="_CPPv3N19PxArticulationCache17coefficientMatrixE"></span><span id="_CPPv2N19PxArticulationCache17coefficientMatrixE"></span><span id="PxArticulationCache::coefficientMatrix__PxRealP"></span><span class="target" id="classpxarticulationcache_1a9df694963228f4ae0c9e58ca9d6bff02"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">coefficientMatrix</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache17coefficientMatrixE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constraint coefficient matrix. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000044"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The API related to loop joints will be removed in a future version once a replacement is made available.</p>
+</dd></dl>
+
+</p>
+<p><ul class="simple">
+<li><p>N = getCoefficentMatrixSize().</p></li>
+<li><p>The user needs to allocate memory and set this member to the allocated memory.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::computeCoefficientMatrix </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache6lambdaE">
+<span id="_CPPv3N19PxArticulationCache6lambdaE"></span><span id="_CPPv2N19PxArticulationCache6lambdaE"></span><span id="PxArticulationCache::lambda__PxRealP"></span><span class="target" id="classpxarticulationcache_1aa90b660a293d6ce7984d49e8be270465"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">lambda</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache6lambdaE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constraint lambda values (impulses applied by the respective constraints). </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000045"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The API related to loop joints will be removed in a future version once a replacement is made available.</p>
+</dd></dl>
+
+</p>
+<p><ul class="simple">
+<li><p>N = getNbLoopJoints().</p></li>
+<li><p>The user needs to allocate memory and set this member to the allocated memory.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::computeLambda </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache13scratchMemoryE">
+<span id="_CPPv3N19PxArticulationCache13scratchMemoryE"></span><span id="_CPPv2N19PxArticulationCache13scratchMemoryE"></span><span id="PxArticulationCache::scratchMemory__voidP"></span><span class="target" id="classpxarticulationcache_1a237505e945f16c9afddb3c431f9d6a7b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">scratchMemory</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache13scratchMemoryE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The scratch memory is used for internal calculations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache16scratchAllocatorE">
+<span id="_CPPv3N19PxArticulationCache16scratchAllocatorE"></span><span id="_CPPv2N19PxArticulationCache16scratchAllocatorE"></span><span id="PxArticulationCache::scratchAllocator__voidP"></span><span class="target" id="classpxarticulationcache_1ac5356bfc4c7b57dec9bdd33c698ae96c"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">scratchAllocator</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache16scratchAllocatorE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The scratch allocator is used for internal calculations. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxArticulationCache7versionE">
+<span id="_CPPv3N19PxArticulationCache7versionE"></span><span id="_CPPv2N19PxArticulationCache7versionE"></span><span id="PxArticulationCache::version__PxU32"></span><span class="target" id="classpxarticulationcache_1af8becefcb89c7a26df4372809e31b343"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">version</span></span></span><a class="headerlink" href="#_CPPv4N19PxArticulationCache7versionE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The cache version used internally to check compatibility with the articulation, i.e. detect if the articulation configuration changed after the cache was created. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

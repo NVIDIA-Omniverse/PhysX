@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxD6Joint &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxD6JointDrive" href="classPxD6JointDrive.html" />
+    <link rel="prev" title="PxCustomSceneQuerySystemAdapter" href="classPxCustomSceneQuerySystemAdapter.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxD6Joint</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxd6joint">
+<h1>PxD6Joint<a class="headerlink" href="#pxd6joint" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxD6Joint.h.html#pxd6joint-8h"><span class="std std-ref">include/extensions/PxD6Joint.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv49PxD6Joint">
+<span id="_CPPv39PxD6Joint"></span><span id="_CPPv29PxD6Joint"></span><span id="PxD6Joint"></span><span class="target" id="classpxd6joint"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxD6Joint</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxJoint.html#_CPPv47PxJoint" title="PxJoint"><span class="n"><span class="pre">PxJoint</span></span></a><a class="headerlink" href="#_CPPv49PxD6Joint" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A D6 joint is a general constraint between two actors. </p>
+<p>It allows the application to individually define the linear and rotational degrees of freedom, and also to configure a variety of limits and driven degrees of freedom.</p>
+<p>By default all degrees of freedom are locked. So to create a prismatic joint with free motion along the x-axis:</p>
+<p><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="p">...</span><span class="w"></span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setMotion</span><span class="p">(</span><span class="n">PxD6Axis</span><span class="o">::</span><span class="n">eX</span><span class="p">,</span><span class="w"> </span><span class="n">PxD6JointMotion</span><span class="o">::</span><span class="n">eFREE</span><span class="p">);</span><span class="w"></span>
+<span class="w"> </span><span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+</p>
+<p>Or a Revolute joint with motion free allowed around the x-axis:</p>
+<p><div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="p">...</span><span class="w"> </span>
+<span class="n">joint</span><span class="o">-&gt;</span><span class="n">setMotion</span><span class="p">(</span><span class="n">PxD6Axis</span><span class="o">::</span><span class="n">eTWIST</span><span class="p">,</span><span class="w"> </span><span class="n">PxD6JointMotion</span><span class="o">::</span><span class="n">eFREE</span><span class="p">);</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+</p>
+<p>Degrees of freedom may also be set to limited instead of locked.</p>
+<p>There are two different kinds of linear limits available. The first kind is a single limit value for all linear degrees of freedom, which may act as a linear, circular, or spherical limit depending on which degrees of freedom are limited. This is similar to a distance limit. Then, the second kind supports a pair of limit values for each linear axis, which can be used to implement a traditional prismatic joint for example.</p>
+<p>If the twist degree of freedom is limited, is supports upper and lower limits. The two swing degrees of freedom are limited with a cone limit. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxD6JointCreate() PxJoint </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint9setMotionEN8PxD6Axis4EnumEN10PxD6Motion4EnumE">
+<span id="_CPPv3N9PxD6Joint9setMotionEN8PxD6Axis4EnumEN10PxD6Motion4EnumE"></span><span id="_CPPv2N9PxD6Joint9setMotionEN8PxD6Axis4EnumEN10PxD6Motion4EnumE"></span><span id="PxD6Joint::setMotion__PxD6Axis::Enum.PxD6Motion::Enum"></span><span class="target" id="classpxd6joint_1a6253223e558ef6c3fd22a4d558dee97d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setMotion</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Axis.html#_CPPv48PxD6Axis" title="PxD6Axis"><span class="n"><span class="pre">PxD6Axis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Axis.html#_CPPv4N8PxD6Axis4EnumE" title="PxD6Axis::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span>, <a class="reference internal" href="structPxD6Motion.html#_CPPv410PxD6Motion" title="PxD6Motion"><span class="n"><span class="pre">PxD6Motion</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Motion.html#_CPPv4N10PxD6Motion4EnumE" title="PxD6Motion::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">type</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint9setMotionEN8PxD6Axis4EnumEN10PxD6Motion4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the motion type around the specified axis. </p>
+<p>Each axis may independently specify that the degree of freedom is locked (blocking relative movement along or around this axis), limited by the corresponding limit, or free.</p>
+<p><strong>Default:</strong> all degrees of freedom are locked</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getMotion() PxD6Axis PxD6Motion </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axis</strong> – <strong>[in]</strong> the axis around which motion is specified </p></li>
+<li><p><strong>type</strong> – <strong>[in]</strong> the motion type around the specified axis</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint9getMotionEN8PxD6Axis4EnumE">
+<span id="_CPPv3NK9PxD6Joint9getMotionEN8PxD6Axis4EnumE"></span><span id="_CPPv2NK9PxD6Joint9getMotionEN8PxD6Axis4EnumE"></span><span id="PxD6Joint::getMotion__PxD6Axis::EnumC"></span><span class="target" id="classpxd6joint_1a8bd1ae81eb92e4dbd2c695fd9d8bfba8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxD6Motion.html#_CPPv410PxD6Motion" title="PxD6Motion"><span class="n"><span class="pre">PxD6Motion</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Motion.html#_CPPv4N10PxD6Motion4EnumE" title="PxD6Motion::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMotion</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Axis.html#_CPPv48PxD6Axis" title="PxD6Axis"><span class="n"><span class="pre">PxD6Axis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Axis.html#_CPPv4N8PxD6Axis4EnumE" title="PxD6Axis::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint9getMotionEN8PxD6Axis4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the motion type around the specified axis. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setMotion() PxD6Axis PxD6Motion</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> – <strong>[in]</strong> the degree of freedom around which the motion type is specified </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the motion type around the specified axis </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint13getTwistAngleEv">
+<span id="_CPPv3NK9PxD6Joint13getTwistAngleEv"></span><span id="_CPPv2NK9PxD6Joint13getTwistAngleEv"></span><span id="PxD6Joint::getTwistAngleC"></span><span class="target" id="classpxd6joint_1a9f7e22d28ef62a95240120ae9619dcc2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTwistAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint13getTwistAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the twist angle of the joint, in the range (-2*Pi, 2*Pi] </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint8getTwistEv">
+<span id="_CPPv3NK9PxD6Joint8getTwistEv"></span><span id="_CPPv2NK9PxD6Joint8getTwistEv"></span><span id="PxD6Joint::getTwistC"></span><span class="target" id="classpxd6joint_1a4656e67e1cbf34d7de568970ed80fa0e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTwist</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint8getTwistEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the twist angle of the joint </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000124"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use getTwistAngle instead. Deprecated since PhysX version 4.0 </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint14getSwingYAngleEv">
+<span id="_CPPv3NK9PxD6Joint14getSwingYAngleEv"></span><span id="_CPPv2NK9PxD6Joint14getSwingYAngleEv"></span><span id="PxD6Joint::getSwingYAngleC"></span><span class="target" id="classpxd6joint_1aae0e5965a6423397bd3351c2b975a650"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSwingYAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint14getSwingYAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the swing angle of the joint from the Y axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint14getSwingZAngleEv">
+<span id="_CPPv3NK9PxD6Joint14getSwingZAngleEv"></span><span id="_CPPv2NK9PxD6Joint14getSwingZAngleEv"></span><span id="PxD6Joint::getSwingZAngleC"></span><span class="target" id="classpxd6joint_1ae8551ae9f94587a55c0eae851d612fd7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSwingZAngle</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint14getSwingZAngleEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the swing angle of the joint from the Z axis </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16setDistanceLimitERK18PxJointLinearLimit">
+<span id="_CPPv3N9PxD6Joint16setDistanceLimitERK18PxJointLinearLimit"></span><span id="_CPPv2N9PxD6Joint16setDistanceLimitERK18PxJointLinearLimit"></span><span id="PxD6Joint::setDistanceLimit__PxJointLinearLimitCR"></span><span class="target" id="classpxd6joint_1a0eff52923cf31b1a3bc3b8f9b4dd7f33"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDistanceLimit</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimit.html#_CPPv418PxJointLinearLimit" title="PxJointLinearLimit"><span class="n"><span class="pre">PxJointLinearLimit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16setDistanceLimitERK18PxJointLinearLimit" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the distance limit for the joint. </p>
+<p>A single limit constraints all linear limited degrees of freedom, forming a linear, circular or spherical constraint on motion depending on the number of limited degrees. This is similar to a distance limit.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getDistanceLimit() PxJointLinearLimit </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> the distance limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint16getDistanceLimitEv">
+<span id="_CPPv3NK9PxD6Joint16getDistanceLimitEv"></span><span id="_CPPv2NK9PxD6Joint16getDistanceLimitEv"></span><span id="PxD6Joint::getDistanceLimitC"></span><span class="target" id="classpxd6joint_1a8fbb13e6e3e3792e7cca0c781a3a3a02"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimit.html#_CPPv418PxJointLinearLimit" title="PxJointLinearLimit"><span class="n"><span class="pre">PxJointLinearLimit</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDistanceLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint16getDistanceLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the distance limit for the joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setDistanceLimit() PxJointLinearLimit </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the distance limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint14setLinearLimitERK18PxJointLinearLimit">
+<span id="_CPPv3N9PxD6Joint14setLinearLimitERK18PxJointLinearLimit"></span><span id="_CPPv2N9PxD6Joint14setLinearLimitERK18PxJointLinearLimit"></span><span id="PxD6Joint::setLinearLimit__PxJointLinearLimitCR"></span><span class="target" id="classpxd6joint_1a15d7e18a2bd253f7facc0016c4874d2d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLinearLimit</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimit.html#_CPPv418PxJointLinearLimit" title="PxJointLinearLimit"><span class="n"><span class="pre">PxJointLinearLimit</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint14setLinearLimitERK18PxJointLinearLimit" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000125"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use setDistanceLimit instead. Deprecated since PhysX version 4.0 </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint14getLinearLimitEv">
+<span id="_CPPv3NK9PxD6Joint14getLinearLimitEv"></span><span id="_CPPv2NK9PxD6Joint14getLinearLimitEv"></span><span id="PxD6Joint::getLinearLimitC"></span><span class="target" id="classpxd6joint_1a51b4b407ec90d74c9155d303433efdca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimit.html#_CPPv418PxJointLinearLimit" title="PxJointLinearLimit"><span class="n"><span class="pre">PxJointLinearLimit</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLinearLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint14getLinearLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000126"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use getDistanceLimit instead. Deprecated since PhysX version 4.0 </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint14setLinearLimitEN8PxD6Axis4EnumERK22PxJointLinearLimitPair">
+<span id="_CPPv3N9PxD6Joint14setLinearLimitEN8PxD6Axis4EnumERK22PxJointLinearLimitPair"></span><span id="_CPPv2N9PxD6Joint14setLinearLimitEN8PxD6Axis4EnumERK22PxJointLinearLimitPair"></span><span id="PxD6Joint::setLinearLimit__PxD6Axis::Enum.PxJointLinearLimitPairCR"></span><span class="target" id="classpxd6joint_1a862ed19d30985ca7d908bce3002d7c8a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLinearLimit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Axis.html#_CPPv48PxD6Axis" title="PxD6Axis"><span class="n"><span class="pre">PxD6Axis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Axis.html#_CPPv4N8PxD6Axis4EnumE" title="PxD6Axis::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimitPair.html#_CPPv422PxJointLinearLimitPair" title="PxJointLinearLimitPair"><span class="n"><span class="pre">PxJointLinearLimitPair</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint14setLinearLimitEN8PxD6Axis4EnumERK22PxJointLinearLimitPair" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the linear limit for a given linear axis. </p>
+<p>This function extends the previous setDistanceLimit call with the following features:<ul class="simple">
+<li><p>there can be a different limit for each linear axis</p></li>
+<li><p>each limit is defined by two values, i.e. it can now be asymmetric</p></li>
+</ul>
+</p>
+<p>This can be used to create prismatic joints similar to PxPrismaticJoint, or point-in-quad joints, or point-in-box joints.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLinearLimit() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axis</strong> – <strong>[in]</strong> The limited linear axis (must be PxD6Axis::eX, PxD6Axis::eY or PxD6Axis::eZ) </p></li>
+<li><p><strong>limit</strong> – <strong>[in]</strong> The linear limit pair structure</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint14getLinearLimitEN8PxD6Axis4EnumE">
+<span id="_CPPv3NK9PxD6Joint14getLinearLimitEN8PxD6Axis4EnumE"></span><span id="_CPPv2NK9PxD6Joint14getLinearLimitEN8PxD6Axis4EnumE"></span><span id="PxD6Joint::getLinearLimit__PxD6Axis::EnumC"></span><span class="target" id="classpxd6joint_1a4400ad4b1a072f10af325de0bbd69183"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLinearLimitPair.html#_CPPv422PxJointLinearLimitPair" title="PxJointLinearLimitPair"><span class="n"><span class="pre">PxJointLinearLimitPair</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLinearLimit</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Axis.html#_CPPv48PxD6Axis" title="PxD6Axis"><span class="n"><span class="pre">PxD6Axis</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Axis.html#_CPPv4N8PxD6Axis4EnumE" title="PxD6Axis::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">axis</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint14getLinearLimitEN8PxD6Axis4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the linear limit for a given linear axis. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setLinearLimit() PxJointLinearLimit </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>axis</strong> – <strong>[in]</strong> The limited linear axis (must be PxD6Axis::eX, PxD6Axis::eY or PxD6Axis::eZ)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the linear limit pair structure from desired axis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint13setTwistLimitERK23PxJointAngularLimitPair">
+<span id="_CPPv3N9PxD6Joint13setTwistLimitERK23PxJointAngularLimitPair"></span><span id="_CPPv2N9PxD6Joint13setTwistLimitERK23PxJointAngularLimitPair"></span><span id="PxD6Joint::setTwistLimit__PxJointAngularLimitPairCR"></span><span class="target" id="classpxd6joint_1a6461182921ceab095997f58891fb4adc"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setTwistLimit</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointAngularLimitPair.html#_CPPv423PxJointAngularLimitPair" title="PxJointAngularLimitPair"><span class="n"><span class="pre">PxJointAngularLimitPair</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint13setTwistLimitERK23PxJointAngularLimitPair" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the twist limit for the joint. </p>
+<p>The twist limit controls the range of motion around the twist axis.</p>
+<p>The limit angle range is (-2*Pi, 2*Pi).</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getTwistLimit() PxJointAngularLimitPair </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> the twist limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint13getTwistLimitEv">
+<span id="_CPPv3NK9PxD6Joint13getTwistLimitEv"></span><span id="_CPPv2NK9PxD6Joint13getTwistLimitEv"></span><span id="PxD6Joint::getTwistLimitC"></span><span class="target" id="classpxd6joint_1ad61577f7428193e59399a4dd4a24e153"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxJointAngularLimitPair.html#_CPPv423PxJointAngularLimitPair" title="PxJointAngularLimitPair"><span class="n"><span class="pre">PxJointAngularLimitPair</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTwistLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint13getTwistLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the twist limit for the joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setTwistLimit() PxJointAngularLimitPair </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the twist limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint13setSwingLimitERK16PxJointLimitCone">
+<span id="_CPPv3N9PxD6Joint13setSwingLimitERK16PxJointLimitCone"></span><span id="_CPPv2N9PxD6Joint13setSwingLimitERK16PxJointLimitCone"></span><span id="PxD6Joint::setSwingLimit__PxJointLimitConeCR"></span><span class="target" id="classpxd6joint_1a72a1f48dffd418d278ec9beb110a9236"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setSwingLimit</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLimitCone.html#_CPPv416PxJointLimitCone" title="PxJointLimitCone"><span class="n"><span class="pre">PxJointLimitCone</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint13setSwingLimitERK16PxJointLimitCone" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the swing cone limit for the joint. </p>
+<p>The cone limit is used if either or both swing axes are limited. The extents are symmetrical and measured in the frame of the parent. If only one swing degree of freedom is limited, the corresponding value from the cone limit defines the limit range.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLimitCone() PxJointLimitCone </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> the cone limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint13getSwingLimitEv">
+<span id="_CPPv3NK9PxD6Joint13getSwingLimitEv"></span><span id="_CPPv2NK9PxD6Joint13getSwingLimitEv"></span><span id="PxD6Joint::getSwingLimitC"></span><span class="target" id="classpxd6joint_1af2919895cc7726ee85c25600ae849362"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLimitCone.html#_CPPv416PxJointLimitCone" title="PxJointLimitCone"><span class="n"><span class="pre">PxJointLimitCone</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSwingLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint13getSwingLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the cone limit for the joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setLimitCone() PxJointLimitCone </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the swing limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint20setPyramidSwingLimitERK19PxJointLimitPyramid">
+<span id="_CPPv3N9PxD6Joint20setPyramidSwingLimitERK19PxJointLimitPyramid"></span><span id="_CPPv2N9PxD6Joint20setPyramidSwingLimitERK19PxJointLimitPyramid"></span><span id="PxD6Joint::setPyramidSwingLimit__PxJointLimitPyramidCR"></span><span class="target" id="classpxd6joint_1a70933ddadd0b01af92d65564075f5d69"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPyramidSwingLimit</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLimitPyramid.html#_CPPv419PxJointLimitPyramid" title="PxJointLimitPyramid"><span class="n"><span class="pre">PxJointLimitPyramid</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">limit</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint20setPyramidSwingLimitERK19PxJointLimitPyramid" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set a pyramidal swing limit for the joint. </p>
+<p>The pyramid limits will only be used in the following cases:<ul class="simple">
+<li><p>both swing Y and Z are limited. The limit shape is then a pyramid.</p></li>
+<li><p>Y is limited and Z is locked, or vice versa. The limit shape is an asymmetric angular section, similar to what is supported for the twist axis. The remaining cases (Y limited and Z is free, or vice versa) are not supported.</p></li>
+</ul>
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLimitCone() PxJointLimitPyramid </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit</strong> – <strong>[in]</strong> the cone limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint20getPyramidSwingLimitEv">
+<span id="_CPPv3NK9PxD6Joint20getPyramidSwingLimitEv"></span><span id="_CPPv2NK9PxD6Joint20getPyramidSwingLimitEv"></span><span id="PxD6Joint::getPyramidSwingLimitC"></span><span class="target" id="classpxd6joint_1a90994ad1d74f54c839c3d4c3226ff9a5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxJointLimitPyramid.html#_CPPv419PxJointLimitPyramid" title="PxJointLimitPyramid"><span class="n"><span class="pre">PxJointLimitPyramid</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPyramidSwingLimit</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint20getPyramidSwingLimitEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the pyramidal swing limit for the joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setLimitCone() PxJointLimitPyramid </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the swing limit structure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint8setDriveEN9PxD6Drive4EnumERK14PxD6JointDrive">
+<span id="_CPPv3N9PxD6Joint8setDriveEN9PxD6Drive4EnumERK14PxD6JointDrive"></span><span id="_CPPv2N9PxD6Joint8setDriveEN9PxD6Drive4EnumERK14PxD6JointDrive"></span><span id="PxD6Joint::setDrive__PxD6Drive::Enum.PxD6JointDriveCR"></span><span class="target" id="classpxd6joint_1a85811f1770be8ff4ea79b4e49b313599"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDrive</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Drive.html#_CPPv49PxD6Drive" title="PxD6Drive"><span class="n"><span class="pre">PxD6Drive</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Drive.html#_CPPv4N9PxD6Drive4EnumE" title="PxD6Drive::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxD6JointDrive.html#_CPPv414PxD6JointDrive" title="PxD6JointDrive"><span class="n"><span class="pre">PxD6JointDrive</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">drive</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint8setDriveEN9PxD6Drive4EnumERK14PxD6JointDrive" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the drive parameters for the specified drive type. </p>
+<p><strong>Default</strong> The default drive spring and damping values are zero, the force limit is zero, and no flags are set. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getDrive() PxD6JointDrive</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> – <strong>[in]</strong> the type of drive being specified </p></li>
+<li><p><strong>drive</strong> – <strong>[in]</strong> the drive parameters</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint8getDriveEN9PxD6Drive4EnumE">
+<span id="_CPPv3NK9PxD6Joint8getDriveEN9PxD6Drive4EnumE"></span><span id="_CPPv2NK9PxD6Joint8getDriveEN9PxD6Drive4EnumE"></span><span id="PxD6Joint::getDrive__PxD6Drive::EnumC"></span><span class="target" id="classpxd6joint_1abcafdd8e465cac74e3f1b4770e9e1373"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxD6JointDrive.html#_CPPv414PxD6JointDrive" title="PxD6JointDrive"><span class="n"><span class="pre">PxD6JointDrive</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDrive</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxD6Drive.html#_CPPv49PxD6Drive" title="PxD6Drive"><span class="n"><span class="pre">PxD6Drive</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxD6Drive.html#_CPPv4N9PxD6Drive4EnumE" title="PxD6Drive::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint8getDriveEN9PxD6Drive4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the drive parameters for the specified drive type. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setDrive() PxD6JointDrive </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>index</strong> – <strong>[in]</strong> the specified drive type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16setDrivePositionERK11PxTransformb">
+<span id="_CPPv3N9PxD6Joint16setDrivePositionERK11PxTransformb"></span><span id="_CPPv2N9PxD6Joint16setDrivePositionERK11PxTransformb"></span><span id="PxD6Joint::setDrivePosition__PxTransformCR.b"></span><span class="target" id="classpxd6joint_1a51b34c70a64113c986b43b4db9535b67"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDrivePosition</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pose</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">autowake</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16setDrivePositionERK11PxTransformb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the drive goal pose. </p>
+<p>The goal is relative to the constraint frame of actor[0]</p>
+<p><strong>Default</strong> the identity transform</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setDrivePosition() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pose</strong> – <strong>[in]</strong> The goal drive pose if positional drive is in use. </p></li>
+<li><p><strong>autowake</strong> – <strong>[in]</strong> If true and the attached actors are in a scene, this call wakes them up and increases their wake counters to PxSceneDesc::wakeCounterResetValue if the counter value is below the reset value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint16getDrivePositionEv">
+<span id="_CPPv3NK9PxD6Joint16getDrivePositionEv"></span><span id="_CPPv2NK9PxD6Joint16getDrivePositionEv"></span><span id="PxD6Joint::getDrivePositionC"></span><span class="target" id="classpxd6joint_1acffd2ae67bab2eae2b03be5c57ae564a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDrivePosition</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint16getDrivePositionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the drive goal pose. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getDrivePosition() </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16setDriveVelocityERK6PxVec3RK6PxVec3b">
+<span id="_CPPv3N9PxD6Joint16setDriveVelocityERK6PxVec3RK6PxVec3b"></span><span id="_CPPv2N9PxD6Joint16setDriveVelocityERK6PxVec3RK6PxVec3b"></span><span id="PxD6Joint::setDriveVelocity__PxVec3CR.PxVec3CR.b"></span><span class="target" id="classpxd6joint_1abd2e4262dd8d882e753406823e83a9a6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setDriveVelocity</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linear</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angular</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">autowake</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16setDriveVelocityERK6PxVec3RK6PxVec3b" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the target goal velocity for drive. </p>
+<p>The velocity is measured in the constraint frame of actor[0]</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getDriveVelocity() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linear</strong> – <strong>[in]</strong> The goal velocity for linear drive </p></li>
+<li><p><strong>angular</strong> – <strong>[in]</strong> The goal velocity for angular drive </p></li>
+<li><p><strong>autowake</strong> – <strong>[in]</strong> If true and the attached actors are in a scene, this call wakes them up and increases their wake counters to PxSceneDesc::wakeCounterResetValue if the counter value is below the reset value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint16getDriveVelocityER6PxVec3R6PxVec3">
+<span id="_CPPv3NK9PxD6Joint16getDriveVelocityER6PxVec3R6PxVec3"></span><span id="_CPPv2NK9PxD6Joint16getDriveVelocityER6PxVec3R6PxVec3"></span><span id="PxD6Joint::getDriveVelocity__PxVec3R.PxVec3RC"></span><span class="target" id="classpxd6joint_1acaebc6c005a26fbbba5faa65721e9269"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDriveVelocity</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">linear</span></span>, <a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">angular</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint16getDriveVelocityER6PxVec3R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the target goal velocity for joint drive. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setDriveVelocity() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linear</strong> – <strong>[in]</strong> The goal velocity for linear drive </p></li>
+<li><p><strong>angular</strong> – <strong>[in]</strong> The goal velocity for angular drive</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint19getConcreteTypeNameEv">
+<span id="_CPPv3NK9PxD6Joint19getConcreteTypeNameEv"></span><span id="_CPPv2NK9PxD6Joint19getConcreteTypeNameEv"></span><span id="PxD6Joint::getConcreteTypeNameC"></span><span class="target" id="classpxd6joint_1aea69d29f0aff435bbadb205fb5a23cee"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of PxD6Joint, used for serialization. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint9setActorsEP12PxRigidActorP12PxRigidActor">
+<span id="_CPPv3N9PxD6Joint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="_CPPv2N9PxD6Joint9setActorsEP12PxRigidActorP12PxRigidActor"></span><span id="PxD6Joint::setActors__PxRigidActorP.PxRigidActorP"></span><span class="target" id="classpxjoint_1ae3f3bbd628f77104c438a16a1e9bff2f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setActors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor0</span></span>, <a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">actor1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint9setActorsEP12PxRigidActorP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the actors for this joint. </p>
+<p>An actor may be NULL to indicate the world frame. At most one of the actors may be NULL.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getActors() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[in]</strong> the first actor. </p></li>
+<li><p><strong>actor1</strong> – <strong>[in]</strong> the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint9getActorsERP12PxRigidActorRP12PxRigidActor">
+<span id="_CPPv3NK9PxD6Joint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="_CPPv2NK9PxD6Joint9getActorsERP12PxRigidActorRP12PxRigidActor"></span><span id="PxD6Joint::getActors__PxRigidActorPR.PxRigidActorPRC"></span><span class="target" id="classpxjoint_1a744ebe07ff38e08fa0497155b891cfb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getActors</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor0</span></span>, <a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">actor1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint9getActorsERP12PxRigidActorRP12PxRigidActor" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the actors for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setActors() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor0</strong> – <strong>[out]</strong> the first actor. </p></li>
+<li><p><strong>actor1</strong> – <strong>[out]</strong> the second actor</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform">
+<span id="_CPPv3N9PxD6Joint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform"></span><span id="_CPPv2N9PxD6Joint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform"></span><span id="PxD6Joint::setLocalPose__PxJointActorIndex::Enum.PxTransformCR"></span><span class="target" id="classpxjoint_1a7bb7f7676c3660945356ef6e726c48b3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setLocalPose</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxJointActorIndex.html#_CPPv417PxJointActorIndex" title="PxJointActorIndex"><span class="n"><span class="pre">PxJointActorIndex</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxJointActorIndex.html#_CPPv4N17PxJointActorIndex4EnumE" title="PxJointActorIndex::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">actor</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPose</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint12setLocalPoseEN17PxJointActorIndex4EnumERK11PxTransform" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set the joint local pose for an actor. </p>
+<p>This is the relative pose which locates the joint frame relative to the actor.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getLocalPose() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor</strong> – <strong>[in]</strong> 0 for the first actor, 1 for the second actor. </p></li>
+<li><p><strong>localPose</strong> – <strong>[in]</strong> the local pose for the actor this joint</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint12getLocalPoseEN17PxJointActorIndex4EnumE">
+<span id="_CPPv3NK9PxD6Joint12getLocalPoseEN17PxJointActorIndex4EnumE"></span><span id="_CPPv2NK9PxD6Joint12getLocalPoseEN17PxJointActorIndex4EnumE"></span><span id="PxD6Joint::getLocalPose__PxJointActorIndex::EnumC"></span><span class="target" id="classpxjoint_1ad13a76df450cf57cfbed486a5359c895"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalPose</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxJointActorIndex.html#_CPPv417PxJointActorIndex" title="PxJointActorIndex"><span class="n"><span class="pre">PxJointActorIndex</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxJointActorIndex.html#_CPPv4N17PxJointActorIndex4EnumE" title="PxJointActorIndex::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">actor</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint12getLocalPoseEN17PxJointActorIndex4EnumE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the joint local pose for an actor. </p>
+<p>
+return the local pose for this joint</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setLocalPose() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>actor</strong> – <strong>[in]</strong> 0 for the first actor, 1 for the second actor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint20getRelativeTransformEv">
+<span id="_CPPv3NK9PxD6Joint20getRelativeTransformEv"></span><span id="_CPPv2NK9PxD6Joint20getRelativeTransformEv"></span><span id="PxD6Joint::getRelativeTransformC"></span><span class="target" id="classpxjoint_1a116450043c073548c1c55d032014f7e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeTransform</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint20getRelativeTransformEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative pose for this joint </p>
+<p>This function returns the pose of the joint frame of actor1 relative to actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint25getRelativeLinearVelocityEv">
+<span id="_CPPv3NK9PxD6Joint25getRelativeLinearVelocityEv"></span><span id="_CPPv2NK9PxD6Joint25getRelativeLinearVelocityEv"></span><span id="PxD6Joint::getRelativeLinearVelocityC"></span><span class="target" id="classpxjoint_1aba1e47a8ff180a564a2ef44a016372bf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeLinearVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint25getRelativeLinearVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative linear velocity of the joint </p>
+<p>This function returns the linear velocity of the origin of the constraint frame of actor1, relative to the origin of the constraint frame of actor0. The value is returned in the constraint frame of actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint26getRelativeAngularVelocityEv">
+<span id="_CPPv3NK9PxD6Joint26getRelativeAngularVelocityEv"></span><span id="_CPPv2NK9PxD6Joint26getRelativeAngularVelocityEv"></span><span id="PxD6Joint::getRelativeAngularVelocityC"></span><span class="target" id="classpxjoint_1ae1d90c4cb53d5807584474ae130048df"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRelativeAngularVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint26getRelativeAngularVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the relative angular velocity of the joint </p>
+<p>This function returns the angular velocity of actor1 relative to actor0. The value is returned in the constraint frame of actor0 </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint13setBreakForceE6PxReal6PxReal">
+<span id="_CPPv3N9PxD6Joint13setBreakForceE6PxReal6PxReal"></span><span id="_CPPv2N9PxD6Joint13setBreakForceE6PxReal6PxReal"></span><span id="PxD6Joint::setBreakForce__PxReal.PxReal"></span><span class="target" id="classpxjoint_1a1cfe86fe5c8131cea1b9b5ff9df7a014"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBreakForce</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">force</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">torque</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint13setBreakForceE6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the break force for this joint. </p>
+<p>if the constraint force or torque on the joint exceeds the specified values, the joint will break, at which point it will not constrain the two actors and the flag PxConstraintFlag::eBROKEN will be set. The force and torque are measured in the joint frame of the first actor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>force</strong> – <strong>[in]</strong> the maximum force the joint can apply before breaking </p></li>
+<li><p><strong>torque</strong> – <strong>[in]</strong> the maximum torque the joint can apply before breaking </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint13getBreakForceER6PxRealR6PxReal">
+<span id="_CPPv3NK9PxD6Joint13getBreakForceER6PxRealR6PxReal"></span><span id="_CPPv2NK9PxD6Joint13getBreakForceER6PxRealR6PxReal"></span><span id="PxD6Joint::getBreakForce__PxRealR.PxRealRC"></span><span class="target" id="classpxjoint_1a900aa5084125aa37f8d12bb9f37eab93"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBreakForce</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">force</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">torque</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint13getBreakForceER6PxRealR6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the break force for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setBreakForce() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>force</strong> – <strong>[out]</strong> the maximum force the joint can apply before breaking </p></li>
+<li><p><strong>torque</strong> – <strong>[out]</strong> the maximum torque the joint can apply before breaking</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint18setConstraintFlagsE17PxConstraintFlags">
+<span id="_CPPv3N9PxD6Joint18setConstraintFlagsE17PxConstraintFlags"></span><span id="_CPPv2N9PxD6Joint18setConstraintFlagsE17PxConstraintFlags"></span><span id="PxD6Joint::setConstraintFlags__PxConstraintFlags"></span><span class="target" id="classpxjoint_1a857ea5abc40d94b0e1537b566a9d45bf"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setConstraintFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxConstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flags</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint18setConstraintFlagsE17PxConstraintFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the constraint flags for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlag </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flags</strong> – <strong>[in]</strong> the constraint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint17setConstraintFlagEN16PxConstraintFlag4EnumEb">
+<span id="_CPPv3N9PxD6Joint17setConstraintFlagEN16PxConstraintFlag4EnumEb"></span><span id="_CPPv2N9PxD6Joint17setConstraintFlagEN16PxConstraintFlag4EnumEb"></span><span id="PxD6Joint::setConstraintFlag__PxConstraintFlag::Enum.b"></span><span class="target" id="classpxjoint_1a5bbf2a4196e036d711eea9bd5e542ce9"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setConstraintFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxConstraintFlag.html#_CPPv416PxConstraintFlag" title="PxConstraintFlag"><span class="n"><span class="pre">PxConstraintFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxConstraintFlag.html#_CPPv4N16PxConstraintFlag4EnumE" title="PxConstraintFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint17setConstraintFlagEN16PxConstraintFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set a constraint flags for this joint to a specified value. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlag </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> the constraint flag </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> the value to which to set the flag</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint18getConstraintFlagsEv">
+<span id="_CPPv3NK9PxD6Joint18getConstraintFlagsEv"></span><span id="_CPPv2NK9PxD6Joint18getConstraintFlagsEv"></span><span id="PxD6Joint::getConstraintFlagsC"></span><span class="target" id="classpxjoint_1a1da1a62c8aa565a92ff25c83825d1657"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxConstraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#_CPPv417PxConstraintFlags" title="PxConstraintFlags"><span class="n"><span class="pre">PxConstraintFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConstraintFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint18getConstraintFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the constraint flags for this joint. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConstraintFlag </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the constraint flags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16setInvMassScale0E6PxReal">
+<span id="_CPPv3N9PxD6Joint16setInvMassScale0E6PxReal"></span><span id="_CPPv2N9PxD6Joint16setInvMassScale0E6PxReal"></span><span id="PxD6Joint::setInvMassScale0__PxReal"></span><span class="target" id="classpxjoint_1adf8d09205b60811980a2202f1265562b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale0</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16setInvMassScale0E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse mass scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getInvMassScale0 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invMassScale</strong> – <strong>[in]</strong> the scale to apply to the inverse mass of actor 0 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint16getInvMassScale0Ev">
+<span id="_CPPv3NK9PxD6Joint16getInvMassScale0Ev"></span><span id="_CPPv2NK9PxD6Joint16getInvMassScale0Ev"></span><span id="PxD6Joint::getInvMassScale0C"></span><span class="target" id="classpxjoint_1af3bcb7920b533cd5911906744ab2f98c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint16getInvMassScale0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse mass scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setInvMassScale0 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse mass scale for actor0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint19setInvInertiaScale0E6PxReal">
+<span id="_CPPv3N9PxD6Joint19setInvInertiaScale0E6PxReal"></span><span id="_CPPv2N9PxD6Joint19setInvInertiaScale0E6PxReal"></span><span id="PxD6Joint::setInvInertiaScale0__PxReal"></span><span class="target" id="classpxjoint_1a97cc4d817e404177af4c2a598bb944c3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale0</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint19setInvInertiaScale0E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse inertia scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getInvMassScale0 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invInertiaScale</strong> – <strong>[in]</strong> the scale to apply to the inverse inertia of actor0 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint19getInvInertiaScale0Ev">
+<span id="_CPPv3NK9PxD6Joint19getInvInertiaScale0Ev"></span><span id="_CPPv2NK9PxD6Joint19getInvInertiaScale0Ev"></span><span id="PxD6Joint::getInvInertiaScale0C"></span><span class="target" id="classpxjoint_1a84e7520dfde380005d1c09a258602d33"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale0</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint19getInvInertiaScale0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse inertia scale for actor0. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setInvInertiaScale0 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse inertia scale for actor0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16setInvMassScale1E6PxReal">
+<span id="_CPPv3N9PxD6Joint16setInvMassScale1E6PxReal"></span><span id="_CPPv2N9PxD6Joint16setInvMassScale1E6PxReal"></span><span id="PxD6Joint::setInvMassScale1__PxReal"></span><span class="target" id="classpxjoint_1a2f5f6c66b5e6933f8578a880a4a957ad"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvMassScale1</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invMassScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16setInvMassScale1E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse mass scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getInvMassScale1 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invMassScale</strong> – <strong>[in]</strong> the scale to apply to the inverse mass of actor 1 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint16getInvMassScale1Ev">
+<span id="_CPPv3NK9PxD6Joint16getInvMassScale1Ev"></span><span id="_CPPv2NK9PxD6Joint16getInvMassScale1Ev"></span><span id="PxD6Joint::getInvMassScale1C"></span><span class="target" id="classpxjoint_1a36e5f97539fc423389536bbe20d59785"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvMassScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint16getInvMassScale1Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse mass scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setInvMassScale1 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse mass scale for actor1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint19setInvInertiaScale1E6PxReal">
+<span id="_CPPv3N9PxD6Joint19setInvInertiaScale1E6PxReal"></span><span id="_CPPv2N9PxD6Joint19setInvInertiaScale1E6PxReal"></span><span id="PxD6Joint::setInvInertiaScale1__PxReal"></span><span class="target" id="classpxjoint_1ad733659ee380ebf04a5d1d50fcf46222"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setInvInertiaScale1</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">invInertiaScale</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint19setInvInertiaScale1E6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>set the inverse inertia scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getInvInertiaScale1 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invInertiaScale</strong> – <strong>[in]</strong> the scale to apply to the inverse inertia of actor1 for resolving this constraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint19getInvInertiaScale1Ev">
+<span id="_CPPv3NK9PxD6Joint19getInvInertiaScale1Ev"></span><span id="_CPPv2NK9PxD6Joint19getInvInertiaScale1Ev"></span><span id="PxD6Joint::getInvInertiaScale1C"></span><span class="target" id="classpxjoint_1a4d2fb184640f84666e2f6198dc6b7e0d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getInvInertiaScale1</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint19getInvInertiaScale1Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get the inverse inertia scale for actor1. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setInvInertiaScale1 </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inverse inertia scale for actor1</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint13getConstraintEv">
+<span id="_CPPv3NK9PxD6Joint13getConstraintEv"></span><span id="_CPPv2NK9PxD6Joint13getConstraintEv"></span><span id="PxD6Joint::getConstraintC"></span><span class="target" id="classpxjoint_1a857bdc3f20cb4412a67381739a3cf5ef"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxConstraint.html#_CPPv412PxConstraint" title="PxConstraint"><span class="n"><span class="pre">PxConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConstraint</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint13getConstraintEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the PxConstraint corresponding to this joint. </p>
+<p>This can be used to determine, among other things, the force applied at the joint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the constraint </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint7setNameEPKc">
+<span id="_CPPv3N9PxD6Joint7setNameEPKc"></span><span id="_CPPv2N9PxD6Joint7setNameEPKc"></span><span id="PxD6Joint::setName__cCP"></span><span class="target" id="classpxjoint_1a79fbf86820e6ac2b1e5aedf13478e3c4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setName</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint7setNameEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets a name string for the object that can be retrieved with getName(). </p>
+<p>This is for debugging and is not used by the SDK. The string is not copied by the SDK, only the pointer is stored.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getName() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – <strong>[in]</strong> String to set the objects name to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint7getNameEv">
+<span id="_CPPv3NK9PxD6Joint7getNameEv"></span><span id="_CPPv2NK9PxD6Joint7getNameEv"></span><span id="PxD6Joint::getNameC"></span><span class="target" id="classpxjoint_1a6bff01c41bf80808621d184bb5737bd8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint7getNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the name string set with setName(). </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>setName() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Name string associated with object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint7releaseEv">
+<span id="_CPPv3N9PxD6Joint7releaseEv"></span><span id="_CPPv2N9PxD6Joint7releaseEv"></span><span id="PxD6Joint::release"></span><span class="target" id="classpxjoint_1ae0e293532bc9faecd381a2a84b1c866f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deletes the joint. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This call does not wake up the connected rigid bodies. </p>
+</div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint8getSceneEv">
+<span id="_CPPv3NK9PxD6Joint8getSceneEv"></span><span id="_CPPv2NK9PxD6Joint8getSceneEv"></span><span id="PxD6Joint::getSceneC"></span><span class="target" id="classpxjoint_1a5f26a52e3df5d7dd1ef7ae1c3afa4916"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxScene.html#_CPPv47PxScene" title="PxScene"><span class="n"><span class="pre">PxScene</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getScene</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint8getSceneEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Retrieves the scene which this joint belongs to. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxScene </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Owner Scene. NULL if not part of a scene.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN9PxD6Joint2isEP1Tv">
+<span id="_CPPv3I0EN9PxD6Joint2isEv"></span><span id="_CPPv2I0EN9PxD6Joint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN9PxD6Joint2isEP1Tv" title="PxD6Joint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN9PxD6Joint2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK9PxD6Joint2isEPK1Tv">
+<span id="_CPPv3I0ENK9PxD6Joint2isEv"></span><span id="_CPPv2I0ENK9PxD6Joint2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK9PxD6Joint2isEPK1Tv" title="PxD6Joint::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK9PxD6Joint2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint15getConcreteTypeEv">
+<span id="_CPPv3NK9PxD6Joint15getConcreteTypeEv"></span><span id="_CPPv2NK9PxD6Joint15getConcreteTypeEv"></span><span id="PxD6Joint::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConcreteType </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N9PxD6Joint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N9PxD6Joint11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxD6Joint::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlag </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N9PxD6Joint12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N9PxD6Joint12setBaseFlagsE11PxBaseFlags"></span><span id="PxD6Joint::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint12getBaseFlagsEv">
+<span id="_CPPv3NK9PxD6Joint12getBaseFlagsEv"></span><span id="_CPPv2NK9PxD6Joint12getBaseFlagsEv"></span><span id="PxD6Joint::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint12isReleasableEv">
+<span id="_CPPv3NK9PxD6Joint12isReleasableEv"></span><span id="_CPPv2NK9PxD6Joint12isReleasableEv"></span><span id="PxD6Joint::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSerialization::isSerializable </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint8userDataE">
+<span id="_CPPv3N9PxD6Joint8userDataE"></span><span id="_CPPv2N9PxD6Joint8userDataE"></span><span id="PxD6Joint::userData__voidP"></span><span class="target" id="classpxjoint_1a8ce68f3ee0d88b6475e6cafbf1fc73ea"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">userData</span></span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint8userDataE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>user can assign this to whatever, usually to create a 1:1 relationship with a user object. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint17getBinaryMetaDataER14PxOutputStream">
+<span id="_CPPv3N9PxD6Joint17getBinaryMetaDataER14PxOutputStream"></span><span id="_CPPv2N9PxD6Joint17getBinaryMetaDataER14PxOutputStream"></span><span id="PxD6Joint::getBinaryMetaData__PxOutputStreamR"></span><span class="target" id="classpxjoint_1a373b38ccd4aff8671b5b17761b73af1b"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBinaryMetaData</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxOutputStream.html#_CPPv414PxOutputStream" title="PxOutputStream"><span class="n"><span class="pre">PxOutputStream</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint17getBinaryMetaDataER14PxOutputStream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Put class meta data in stream, used for serialization. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint9PxD6JointE6PxType11PxBaseFlags">
+<span id="_CPPv3N9PxD6Joint9PxD6JointE6PxType11PxBaseFlags"></span><span id="_CPPv2N9PxD6Joint9PxD6JointE6PxType11PxBaseFlags"></span><span id="PxD6Joint::PxD6Joint__PxType.PxBaseFlags"></span><span class="target" id="classpxd6joint_1a681807c770e7ffe73d6a8461c6c8d319"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxD6Joint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint9PxD6JointE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint9PxD6JointE11PxBaseFlags">
+<span id="_CPPv3N9PxD6Joint9PxD6JointE11PxBaseFlags"></span><span id="_CPPv2N9PxD6Joint9PxD6JointE11PxBaseFlags"></span><span id="PxD6Joint::PxD6Joint__PxBaseFlags"></span><span class="target" id="classpxd6joint_1a558ced8392f17c5b668b212f1ebf7288"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxD6Joint</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N9PxD6Joint9PxD6JointE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Deserialization constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK9PxD6Joint8isKindOfEPKc">
+<span id="_CPPv3NK9PxD6Joint8isKindOfEPKc"></span><span id="_CPPv2NK9PxD6Joint8isKindOfEPKc"></span><span id="PxD6Joint::isKindOf__cCPC"></span><span class="target" id="classpxd6joint_1af964a5d2eac1ce5bede9c1b208513adb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK9PxD6Joint8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK9PxD6Joint9typeMatchEbv">
+<span id="_CPPv3I0ENK9PxD6Joint9typeMatchEv"></span><span id="_CPPv2I0ENK9PxD6Joint9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK9PxD6Joint9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint13mConcreteTypeE">
+<span id="_CPPv3N9PxD6Joint13mConcreteTypeE"></span><span id="_CPPv2N9PxD6Joint13mConcreteTypeE"></span><span id="PxD6Joint::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint10mBaseFlagsE">
+<span id="_CPPv3N9PxD6Joint10mBaseFlagsE"></span><span id="_CPPv2N9PxD6Joint10mBaseFlagsE"></span><span id="PxD6Joint::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N9PxD6Joint16mBuiltInRefCountE">
+<span id="_CPPv3N9PxD6Joint16mBuiltInRefCountE"></span><span id="_CPPv2N9PxD6Joint16mBuiltInRefCountE"></span><span id="PxD6Joint::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N9PxD6Joint16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

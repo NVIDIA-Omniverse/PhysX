@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rigid Body Dynamics &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulation" href="Simulation.html" />
+    <link rel="prev" title="Rigid Body Collision" href="RigidBodyCollision.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Rigid Body Dynamics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#velocity">Velocity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mass-properties">Mass Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#applying-forces-and-torques">Applying Forces and Torques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gravity">Gravity</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gyroscopic-forces">Gyroscopic Forces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#friction-and-restitution">Friction and Restitution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compliant-contacts">Compliant Contacts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sleeping">Sleeping</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sleep-state-change-events">Sleep state change events</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#kinematic-actors">Kinematic Actors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#kinematic-surface-velocities">Kinematic Surface Velocities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#active-actors">Active Actors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dominance">Dominance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constraint-solver">Constraint Solver</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#solver-iterations">Solver Iterations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#projected-gauss-seidel-and-temporal-gauss-seidel">Projected Gauss-Seidel and Temporal Gauss-Seidel</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tgs-force-application">TGS Force Application</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#immediate-mode">Immediate Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#enhanced-determinism">Enhanced Determinism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#axis-locking">Axis locking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Rigid Body Dynamics</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rigid-body-dynamics">
+<span id="rigidbodydynamics"></span><h1>Rigid Body Dynamics<a class="headerlink" href="#rigid-body-dynamics" title="Permalink to this headline"></a></h1>
+<p>In this chapter we cover a number of topics that are also important to understand once you are comfortable with setting up a basic rigid body simulation world.</p>
+<section id="velocity">
+<h2>Velocity<a class="headerlink" href="#velocity" title="Permalink to this headline"></a></h2>
+<p>A rigid body’s motion is separated into linear and angular velocity components.
+During simulation, PhysX will modify the velocity of an object in accordance with gravity, other applied forces and torques, and as a result of various constraints, such as collisions or joints.</p>
+<p>A body’s linear and angular velocities can be read using the following methods:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec3</span><span class="w"> </span><span class="nf">PxRigidBody::getLinearVelocity</span><span class="p">();</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="nf">PxRigidBody::getAngularVelocity</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A body’s linear and angular velocities can be set using the following methods:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBody::setLinearVelocity</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">linVel</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">autowake</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBody::setAngularVelocity</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">angVel</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">autowake</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="mass-properties">
+<h2>Mass Properties<a class="headerlink" href="#mass-properties" title="Permalink to this headline"></a></h2>
+<p>A dynamic actor needs mass properties: the mass, moment of inertia, and the center of mass frame which specifies the position of the actor’s center of mass and its principal inertia axes. The easiest way to calculate mass properties is to use the PxRigidBodyExt::updateMassAndInertia() helper function, which will set all three properties based on the actor’s shapes and a uniform density value. Variants of this function allow combinations of per-shape densities and manual specification of some mass properties. See the reference for PxRigidBodyExt for more details.</p>
+<p>The Wobbly Snowmen in SnippetMassProperties illustrate the use of different mass properties.  The snowmen act like roly-poly toys, which are usually just an empty shell with the bottom filled with some heavy material. The low centers of mass cause them to move back to an upright position after they have been tilted. They come in different flavors, depending on how the mass properties are set:</p>
+<ol class="arabic simple">
+<li><p>The first is basically massless. There is just a little sphere with a relatively high mass at the bottom of the Actor. This results in a quite rapid movement due to the small resulting moments of inertia. The snowman feels light.</p></li>
+<li><p>The second uses the mass of the bottom snowball only, resulting in a bigger inertia. Later on, the center of mass is moved to the bottom of the actor. This approximation is by no means physically correct, but the resulting snowman feels a bit more filled.</p></li>
+<li><p>The third and fourth snowman use shapes to calculate the mass. The difference is that one calculates the moments of inertia first (from the real center of mass) and then the center of mass is moved to the bottom. The other calculates the moments of inertia about the low center of mass that we pass to the calculation routine. Note how much slower the wobbling is for the second case although both have the same mass. This is because the head accounts for much more in the moment of inertia (the distance from the center of mass squared).</p></li>
+<li><p>The last snowman’s mass properties are set up manually. The snippet uses rough values for the moment of inertia to create a specific desired behavior. The diagonal tensor has a low value in X, and high values in Y and Z, producing a low resistance to rotation around the X-axis and high resistance around Y and Z. As a consequence, the snowman will wobble back and forth only around the X axis.</p></li>
+</ol>
+<p>If you have a 3x3 inertia matrix (for example, you have real-life inertia tensors for your objects) use the PxDiagonalize() function to obtain principal axes and diagonal inertia tensors to initialize PxRigidDynamic actors.</p>
+<p>When manually setting the mass/inertia tensor of bodies, PhysX requires positive values for the mass and each principal axis of inertia. However, it is legal to provide 0s in these values. When provided with a 0 mass or inertia value, PhysX interprets this to mean infinite mass or inertia around that principal axis. This can be used to create bodies that resist all linear motion or that resist all or some angular motion. Examples of the effects that could be achieved using this approach are:</p>
+<ul class="simple">
+<li><p>Bodies that behave as if they were kinematic.</p></li>
+<li><p>Bodies whose translation behaves kinematically but whose rotation is dynamic.</p></li>
+<li><p>Bodies whose translation is dynamic but whose rotation is kinematic.</p></li>
+<li><p>Bodies which can only rotate around a specific axis.</p></li>
+</ul>
+<p>Some examples of what could be achieved are detailed below. First, let’s assume that we are creating a common structure - a windmill. The code to construct the bodies that would be part of the windmill are provided below:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">dyn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">,</span><span class="w"> </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.2f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">,</span><span class="w"> </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">0.2f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setActorFlag</span><span class="p">(</span><span class="n">PxActorFlag</span><span class="o">::</span><span class="n">eDISABLE_GRAVITY</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setAngularVelocity</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">5.f</span><span class="p">));</span><span class="w"></span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setAngularDamping</span><span class="p">(</span><span class="mf">0.f</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="n">st</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">-1.f</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">st</span><span class="p">,</span><span class="w"> </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.8f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">dyn</span><span class="p">);</span><span class="w"></span>
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">st</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The above code creates a static box frame for the windmill and a cross to represent the blades of the turbine. We turn off gravity and angular damping on the windmill blade and give it an initial angular velocity. As a result, this turbine blade will rotate at a constant angular velocity indefinitely. However, if another object collided with the turbine, our windmill would cease to function correctly because the turbine blade would be knocked out of place. There are several options to make the turbine blade stay in the correct position when other bodies interact with it. One such approach might be to make the turbine have infinite mass and inertia. In this case, any interactions with bodies would not affect the turbine at all:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setMass</span><span class="p">(</span><span class="mf">0.f</span><span class="p">);</span><span class="w"></span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setMassSpaceInertiaTensor</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This example retains the previous behavior of the turbine spinning at a constant angular velocity indefinitely. However, now the body’s velocities cannot be affected by any constraints because the body has infinite mass and inertia. If a body collided with the turbine blade, the collision would behave as if the turbine blade was a kinematic body.</p>
+<p>Another alternative would be to make the turbine have infinite mass and limit its rotation to just around the body’s local z-axis. This would provide the same effect as applying a revolute joint between the turbine and the static windmill frame:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setMass</span><span class="p">(</span><span class="mf">0.f</span><span class="p">);</span><span class="w"></span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setMassSpaceInertiaTensor</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">10.f</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In both examples, the body’s mass was set to 0, indicating that the body has infinite mass so its linear velocity cannot be changed by any constraints. However, in this example, the body’s inertia is configured to permit the body’s angular velocity to be affected by constraints around one principal axis or inertia. This provides a similar effect to introducing a revolute joint. The value of the inertia around the z-axis can be increased or decreased to make the turbines more/less resistive to motion.</p>
+</section>
+<section id="applying-forces-and-torques">
+<h2>Applying Forces and Torques<a class="headerlink" href="#applying-forces-and-torques" title="Permalink to this headline"></a></h2>
+<p>The most physics-friendly way to interact with a body is to apply a force to it. In classical mechanics, most interactions between bodies are typically solved by using forces. Because of the law:</p>
+<blockquote>
+<div><p>f = m*a</p>
+<p>(force = mass * acceleration)</p>
+</div></blockquote>
+<p>Forces directly control a body’s acceleration, but its velocity and position only indirectly. For this reason control by force may be inconvenient if you need immediate response. The advantage of forces is that regardless of what forces you apply to the bodies in the scene, the simulation will be able to keep all the defined constraints (joints and contacts) satisfied. For example gravity works by applying a force to bodies.</p>
+<p>Unfortunately applying large forces to articulated bodies at the resonant frequency of a system may lead to ever increasing velocities, and eventually to the failure of the solver to maintain the joint constraints. This is not unlike a real world system, where the joints would ultimately break.</p>
+<p>The forces acting on a body are accumulated before each simulation frame, applied to the simulation, and then reset to zero in preparation for the next frame. The relevant methods of PxRigidBody and PxRigidBodyExt are listed below. Please refer to the API reference for more detail:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBody::addForce</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">force</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">autowake</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBody::addTorque</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">torque</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">autowake</span><span class="p">);</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBodyExt::addForceAtPos</span><span class="p">(</span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">force</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">wakeup</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBodyExt::addForceAtLocalPos</span><span class="p">(</span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">force</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">wakeup</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBodyExt::addLocalForceAtPos</span><span class="p">(</span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">force</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">wakeup</span><span class="p">);</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBodyExt::addLocalForceAtLocalPos</span><span class="p">(</span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">force</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">PxForceMode</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">wakeup</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The PxForceMode member defaults to PxForceMode::eFORCE to apply simple forces.
+There are other possibilities.
+For example, PxForceMode::eIMPULSE will apply an impulsive force.
+PxForceMode::eVELOCITY_CHANGE will do the same, but also ignore the mass of the body, effectively leading to an instantaneous velocity change.
+See the API documentation of <a class="reference internal" href="../_api_build/structPxForceMode.html#_CPPv411PxForceMode" title="PxForceMode"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxForceMode</span></code></a> for the other possibilities.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The methods in PxRigidBodyExt support only the force modes eFORCE and eIMPULSE.</p>
+</div>
+<p>There are further extension functions that compute the linear and angular velocity changes that would arise in the next simulation frame if an impulsive force or impulsive torque were to be applied:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidBodyExt::computeVelocityDeltaFromImpulse</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBody</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">impulsiveForce</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">impulsiveTorque</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deltaLinearVelocity</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deltaAngularVelocity</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A use case for this function might be to predict an updated velocity for an object so that asset loading may be initiated in advance of the simulation frame if the body is likely to exceed a threshold velocity at the end of the frame.  The impulsive force and torque are simply the force and torque that are to be applied to the body multiplied by the timestep of the simulation frame.  Neglecting the effect of constraint and contact forces, the change in linear and angular velocity that are expected to arise in the next simulation frame are returned in deltaLinearVelocity and deltaAngularVelocity.  The predicted linear velocity can then be computed with body.getLinearVelocity() + deltaLinearVelocity, while the predicted angular velocity can be computed with body.getAngularVelocity() + deltaAngularVelocity.  If required, it is possible to immediately update the velocity of the body using body.setLinearVelocity(body.getLinearVelocity() + deltaLinearVelocity) and body.setAngularVelocity(body.getAngularVelocity() + deltaAngularVelocity).</p>
+</section>
+<section id="gravity">
+<h2>Gravity<a class="headerlink" href="#gravity" title="Permalink to this headline"></a></h2>
+<p>Gravity is such a common force in simulations that PhysX makes it particularly simple to apply.
+For a scene-wide gravity effect, or any other uniform force field, set the PxScene class’ gravity vector using <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene10setGravityERK6PxVec3" title="PxScene::setGravity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setGravity()</span></code></a>.</p>
+<p>The parameter is the acceleration due to gravity. In meters and seconds, this works out to have a magnitude of about 9.8 on earth, and should point downwards. The force that will be applied at the center of mass of each body in the scene is this acceleration vector times the actor’s mass.</p>
+<p>Certain special effects can require that some dynamic actors are not influenced by gravity. To specify this set the flag:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxActor</span><span class="o">::</span><span class="n">setActorFlag</span><span class="p">(</span><span class="n">PxActorFlag</span><span class="o">::</span><span class="n">eDISABLE_GRAVITY</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Be careful when changing gravity (or enabling/disabling it) during the simulation. For performance reasons the change will not wake up sleeping actors automatically. Thus it may be necessary to iterate through all actors and call PxRigidDynamic::wakeUp() manually.</p>
+</div>
+<p>An alternative to PxActorFlag::eDISABLE_GRAVITY is to use a zero gravity vector for the whole scene, then apply your own gravity force to rigid bodies, each frame.</p>
+</section>
+<section id="gyroscopic-forces">
+<h2>Gyroscopic Forces<a class="headerlink" href="#gyroscopic-forces" title="Permalink to this headline"></a></h2>
+<p>PhysX offers users the option to include or exclude gyroscopic forces when simulating rigid bodies.
+In many cases, these forces are unnecessary and can be disabled to improve computational efficiency and stability.
+However, for simulations that require a high degree of accuracy, such as those involving the Dzhanibekov Effect or flywheels, the gyroscopic effects can be activated using the <a class="reference internal" href="../_api_build/structPxRigidBodyFlag.html#_CPPv4N15PxRigidBodyFlag4Enum25eENABLE_GYROSCOPIC_FORCESE" title="PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eENABLE_GYROSCOPIC_FORCES</span></code></a> flag.</p>
+</section>
+<section id="friction-and-restitution">
+<h2>Friction and Restitution<a class="headerlink" href="#friction-and-restitution" title="Permalink to this headline"></a></h2>
+<p>All physical objects have at least one material, which defines the friction and restitution properties used to resolve a collision with the objects.</p>
+<p>To create a material, call <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics14createMaterialE6PxReal6PxReal6PxReal" title="PxPhysics::createMaterial"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::createMaterial()</span></code></a>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">mMaterial</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">mMaterial</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">createMaterial</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">);</span><span class="w"> </span><span class="c1">// static friction, dynamic friction,</span>
+<span class="w">                                                        </span><span class="c1">// restitution</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">mMaterial</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">fatalError</span><span class="p">(</span><span class="s">&quot;createMaterial failed!&quot;</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Materials are owned by the PxPhysics object, and can be shared among objects in multiple scenes.
+The material properties of two objects involved in a collision may be combined in various ways.
+See the reference documentation for <a class="reference internal" href="../_api_build/classPxMaterial.html#_CPPv410PxMaterial" title="PxMaterial"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMaterial</span></code></a> for more details.</p>
+<p>PhysX objects whose collision geometry is a triangle mesh or a heightfield (see <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollisionshapes"><span class="std std-ref">Shapes</span></a>) can have a material per triangle.</p>
+<p>Friction uses the coulomb friction model, which is based around the concepts of 2 coefficients: the static friction coefficient and the dynamic friction coefficient (sometimes called kinetic friction). Friction resists relative lateral motion of two solid surfaces in contact. These two coefficients define a relationship between the normal force exerted by each surface on the other and the amount of friction force that is applied to resist lateral motion. Static friction defines the amount of friction that is applied between surfaces that are not moving lateral to each-other. Dynamic friction defines the amount of friction applied between surfaces that are moving relative to each-other.</p>
+<p>PhysX computes friction per contact patch. Up to two contact points lying in the contact patch area are selected as friction anchors to which friction impulses are applied. If there are more than two contact points, to select anchors from, the anchors are selected using a heuristic that tries to maximize the distance between the anchors within the contact patch area. The normal impulses of all contact points in the contact patch are accumulated and distributed equally among the friction anchors for friction computation. For each contact patch, two perpendicular axes of the contact patch plane are selected. A 1D-constraint along each of the two axes is used to implement friction at a friction anchor point. Note that the two axes are processed separately when the PGS solver type is selected. This can lead to asymmetries when transitioning from dynamic to static friction and vice versa in certain edge cases. The TGS solver type, on the other hand, works with the combined impulse along the two axes and as such avoids this potential problem, but this is slightly more computationally expensive. Another difference between TGS and PGS is that TGS applies friction throughout all position and all velocity iterations, while PGS by default applies friction throughout the last 3 position iterations and all velocity iterations (unless <a class="reference internal" href="../_api_build/structPxSceneFlag.html#_CPPv4N11PxSceneFlag4Enum32eENABLE_FRICTION_EVERY_ITERATIONE" title="PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_FRICTION_EVERY_ITERATION</span></code></a> is used).</p>
+<p>The coefficient of restitution of two colliding objects is a fractional value representing the ratio of speeds after and before an impact, taken along the line of impact. A coefficient of restitution of 1 is said to collide elastically, while a coefficient of restitution &lt; 1 is said to be inelastic.</p>
+</section>
+<section id="compliant-contacts">
+<span id="compliantcontacts"></span><h2>Compliant Contacts<a class="headerlink" href="#compliant-contacts" title="Permalink to this headline"></a></h2>
+<p>Since PhysX 5.1 it is possible to use a compliant contact model for contacts between rigids to model the way the materials compress under collision.
+This feature is enabled by assigning a negative restitution value to the material that is associated with the rigid body.
+The normal force of each contact point is subsequently computed using an implicit spring-damper whose properties are controlled by the material’s damping and restitution coefficient, see <a class="reference internal" href="../_api_build/classPxMaterial.html#_CPPv4N10PxMaterial10setDampingE6PxReal" title="PxMaterial::setDamping"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxMaterial::setDamping()</span></code></a> and <a class="reference internal" href="../_api_build/classPxMaterial.html#_CPPv4N10PxMaterial14setRestitutionE6PxReal" title="PxMaterial::setRestitution"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxMaterial::setRestitution()</span></code></a>.
+As a consequence, this feature works best when the number and the positions of contact points between two shapes does not change significantly from frame to frame, which may not be the case with complex meshes or SDF collisions.</p>
+<p>It is also possible to raise the <a class="reference internal" href="../_api_build/structPxMaterialFlag.html#_CPPv4N14PxMaterialFlag4Enum30eCOMPLIANT_ACCELERATION_SPRINGE" title="PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMaterialFlag::eCOMPLIANT_ACCELERATION_SPRING</span></code></a> flag to switch the implicit force spring to an acceleration spring.
+Doing so makes the effect independent of the mass of the colliding objects.
+In the acceleration spring case, the compliant contact is particularly easy to tune as there are direct correspondences between
+the time constant (parametrized via the angular frequency omega := 2*pi/timeConstant) and the damping ratio of the resulting harmonic oscillator
+and the parameters of the compliant contact acceleration spring:</p>
+<ul class="simple">
+<li><p>contactSpringStiffness = -restitution = omega^2 = (2*pi/timeConstant)^2</p></li>
+<li><p>contactDamping = 2 * dampingRatio * omega = 2 * dampingRatio * sqrt(springStiffness)</p></li>
+</ul>
+<p>Note that when a compliant body collides with a rigid (non-compliant) one, the collision behavior is dictated by the compliant one.
+If two compliant bodies collide, their spring-damper parameters are combined according to the default material combination rules.</p>
+<p>Compliant contacts are particularly useful when dealing with contact configurations that become easily unstable.
+Other useful settings to consider when dealing with unstable contacts are</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv4N11PxRigidBody25setContactSlopCoefficientE6PxReal" title="PxRigidBody::setContactSlopCoefficient"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::setContactSlopCoefficient()</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv4N11PxRigidBody27setMaxDepenetrationVelocityE6PxReal" title="PxRigidBody::setMaxDepenetrationVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::setMaxDepenetrationVelocity()</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene26setFrictionOffsetThresholdEK6PxReal" title="PxScene::setFrictionOffsetThreshold"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setFrictionOffsetThreshold()</span></code></a></p></li>
+</ul>
+</section>
+<section id="sleeping">
+<span id="id1"></span><h2>Sleeping<a class="headerlink" href="#sleeping" title="Permalink to this headline"></a></h2>
+<p>When an actor does not move for a period of time, it is assumed that it will not move in the future either until some external force acts on it that throws it out of equilibrium. Until then it is no longer simulated in order to save resources. This state is called sleeping. You can query an actor’s sleep state with the following method:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxRigidDynamic::isSleeping</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It is, however, often more convenient to listen for events that the SDK sends when actors fall asleep or wake up.
+To receive the following events, PxActorFlag::eSEND_SLEEP_NOTIFIES must be set for the actor:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxSimulationEventCallback::onWake</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxSimulationEventCallback::onSleep</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>See the section <a class="reference internal" href="Simulation.html#callbacks"><span class="std std-ref">Callback Sequence</span></a> and the subsection <a class="reference internal" href="#sleep-callbacks"><span class="std std-ref">Sleep state change events</span></a> for more information.</p>
+<p>An actor goes to sleep when its kinetic energy is below a given threshold for a certain time.
+Basically, every dynamic rigid actor has a wake counter which is decremented by the simulation every time step when the kinetic energy of the actor is below the specified threshold.
+However, if the energy is above the threshold after a simulation step, the counter is reset to a minimum default value and the whole process starts anew.
+Once the wake counter reaches zero, it will not be decremented any further and the actor is ready to go to sleep.
+Please note that a zero wake counter does not mean that the actor has to be asleep, it only indicates that it is ready to go to sleep.
+There are other factors that might keep an actor awake for a while longer.</p>
+<p>The energy threshold as well as the minimum amount of time an actor will stay awake can be manipulated using the following methods:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidDynamic::setSleepThreshold</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">threshold</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="nf">PxRigidDynamic::getSleepThreshold</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidDynamic::setWakeCounter</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">wakeCounterValue</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="nf">PxRigidDynamic::getWakeCounter</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For kinematic actors, special sleep rules apply.
+A kinematic actor is asleep unless a target pose has been set (in which case it will stay awake until two consecutive simulation steps without a target pose being set have passed).
+As a consequence, it is not allowed to use setWakeCounter() for kinematic actors.
+The wake counter of a kinematic actor is solely defined based on whether a target pose has been set.</p>
+</div>
+<p>If a dynamic rigid actor is sleeping, the following state is guaranteed:</p>
+<ul class="simple">
+<li><p>The wake counter is zero.</p></li>
+<li><p>The linear and angular velocity is zero.</p></li>
+<li><p>There is no force update pending.</p></li>
+</ul>
+<p>When an actor gets inserted into a scene, it will be considered asleep if all the points above hold, else it will be treated as awake.</p>
+<p>In general, a dynamic rigid actor is guaranteed to be awake if at least one of the following holds:</p>
+<ul class="simple">
+<li><p>The wake counter is positive.</p></li>
+<li><p>The linear or angular velocity is non-zero.</p></li>
+<li><p>A non-zero force or torque has been applied.</p></li>
+</ul>
+<p>As a consequence, the following calls will wake the actor up automatically:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic14setWakeCounterE6PxReal" title="PxRigidDynamic::setWakeCounter"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setWakeCounter()</span></code></a>, if the wake counter value is larger than zero.</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic17setLinearVelocityERK6PxVec3b" title="PxRigidDynamic::setLinearVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setLinearVelocity()</span></code></a>, <a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic18setAngularVelocityERK6PxVec3b" title="PxRigidDynamic::setAngularVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setAngularVelocity()</span></code></a>, if the velocity is non-zero.</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv4N11PxRigidBody8addForceERK6PxVec3N11PxForceMode4EnumEb" title="PxRigidBody::addForce"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::addForce()</span></code></a>, <a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv4N11PxRigidBody9addTorqueERK6PxVec3N11PxForceMode4EnumEb" title="PxRigidBody::addTorque"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::addTorque()</span></code></a>, if the force/torque is non-zero.</p></li>
+</ul>
+<p>In addition, the following calls and events wake an actor up:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic18setKinematicTargetERK11PxTransform" title="PxRigidDynamic::setKinematicTarget"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code></a> in the case of a kinematic actor (because this also sets the wake counter to a positive value).</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv4N12PxRigidActor13setGlobalPoseERK11PxTransformb" title="PxRigidActor::setGlobalPose"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActor::setGlobalPose()</span></code></a>, if the autowake parameter is set to true (default).</p></li>
+<li><p>Simulation gets disabled for a PxRigidActor by raising PxActorFlag::eDISABLE_SIMULATION.</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene14resetFilteringER7PxActor" title="PxScene::resetFiltering"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::resetFiltering()</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxShape.html#_CPPv4N7PxShape23setSimulationFilterDataERK12PxFilterData" title="PxShape::setSimulationFilterData"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setSimulationFilterData()</span></code></a>, if the subsequent re-filtering causes the type of the shape pair to transition between suppressed, trigger and contact.</p></li>
+<li><p>Touch with an actor that is awake.</p></li>
+<li><p>A touching rigid actor gets removed from the scene (this is the default behavior but it can be specified by the user, see note further below).</p></li>
+<li><p>Contact with a static rigid actor is lost.</p></li>
+<li><p>Contact with a dynamic rigid actor is lost and this actor is awake in the next simulation step.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When removing a rigid actor from the scene or a shape from an actor, it is possible to specify whether to wake up the objects that were touching the removed object in the previous simulation step. See the API comments in PxScene::removeActor() and PxRigidActor::detachShape() for details.</p>
+</div>
+<p>To explicitly wake up a sleeping object, or force an object to sleep, use:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidDynamic::wakeUp</span><span class="p">();</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidDynamic::putToSleep</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is not allowed to use these methods for kinematic actors. The sleep state of a kinematic actor is solely defined based on whether a target pose has been set.</p>
+</div>
+<p>The API reference documents exactly which methods cause an actor to be woken up.</p>
+<section id="sleep-state-change-events">
+<span id="sleep-callbacks"></span><h3>Sleep state change events<a class="headerlink" href="#sleep-state-change-events" title="Permalink to this headline"></a></h3>
+<p>As mentioned above, PhysX provides an event system that reports changes to the sleep state of dynamic rigid bodies during <em>PxScene::fetchResults()</em>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxSimulationEventCallback::onWake</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">PxSimulationEventCallback::onSleep</span><span class="p">(</span><span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">actors</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It is important to understand the correct usage of these events, and their limitations:</p>
+<ul class="simple">
+<li><p>A body added since the previous <em>fetchResults()</em> or <em>flushSimulation()</em> will always generate an event, even if no sleep state transition occured.</p></li>
+<li><p>If there have been multiple changes in a body’s sleep state since the previous <em>fetchResults()</em> or <em>flushSimulation()</em>, PhysX will report only the most recent.</p></li>
+</ul>
+<p>Sometimes it is desirable to detect transitions between awake and asleep, e.g. when keeping track of the number of awake bodies. Suppose a sleeping body <em>B</em> is woken by the application, the counter is incremented, and during the next simulation step <em>B</em> stays awake. Even though <em>B</em>’s sleep state did not change during simulation, it has changed since the previous <em>fetchResults()</em>, and so an <em>onWake()</em> event will be generated for it. If the counter is incremented again in response to this event, its value will be incorrect.</p>
+<p>To use sleep state events to detect transitions, a record of the sleep state for objects of interest has to be kept, for example in a hash. When processing an event, this record can be used to check whether there has been a transition.</p>
+</section>
+</section>
+<section id="kinematic-actors">
+<h2>Kinematic Actors<a class="headerlink" href="#kinematic-actors" title="Permalink to this headline"></a></h2>
+<p>Sometimes controlling an actor using forces or constraints is not sufficiently robust, precise or flexible.
+For example, moving platforms or character controllers often need to manipulate an actor’s position or have it exactly follow a specific path.
+Such a control scheme is provided by kinematic actors.</p>
+<p>A kinematic actor is controlled using the <a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic18setKinematicTargetERK11PxTransform" title="PxRigidDynamic::setKinematicTarget"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code></a> function. Each simulation step PhysX moves the actor to its target position, regardless of external forces, gravity, collision, etc.
+Thus, one must continually call setKinematicTarget(), every time step, for each kinematic actor, to make them move along their desired paths.
+The movement of a kinematic actor affects dynamic actors with which it collides or to which it is constrained with a joint.
+The actor will appear to have infinite mass and will push regular dynamic actors out of the way.</p>
+<p>To create a kinematic actor, simply create a regular dynamic actor then set its kinematic flag:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidBody</span><span class="o">::</span><span class="n">setRigidBodyFlag</span><span class="p">(</span><span class="n">PxRigidBodyFlag</span><span class="o">::</span><span class="n">eKINEMATIC</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use the same function to transform a kinematic actor back to a regular dynamic actor.
+While you do need to provide a mass for the kinematic actor (as for all dynamic actors), this mass will not actually be used for anything while the actor is in kinematic mode.</p>
+<p>Caveats:</p>
+<ul class="simple">
+<li><p>It is important to understand the difference between <a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv4N14PxRigidDynamic18setKinematicTargetERK11PxTransform" title="PxRigidDynamic::setKinematicTarget"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setKinematicTarget()</span></code></a> and <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv4N12PxRigidActor13setGlobalPoseERK11PxTransformb" title="PxRigidActor::setGlobalPose"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActor::setGlobalPose()</span></code></a> here.
+While setGlobalPose() would also move the actor to the desired position, it would not make that actor properly interact with other objects.
+In particular, with setGlobalPose() the kinematic actor would not push away other dynamic actors in its path, instead it would go right through them. The setGlobalPose() function can still be used though, if one simply wants to teleport a kinematic actor to a new position.</p></li>
+<li><p>A kinematic actor can push away dynamic objects, but nothing pushes it back. As a result, a kinematic can easily squish a dynamic actor against a static actor, or against another kinematic actor. As a result, the squished dynamic object can deeply penetrate the geometry it has been pushed into.</p></li>
+<li><p>There is no interaction or collision between kinematic actors and static actors. However, it is possible to request contact information for these cases with the PxSceneDesc::kineKineFilteringMode and PxSceneDesc::staticKineFilteringMode.</p></li>
+</ul>
+<section id="kinematic-surface-velocities">
+<h3>Kinematic Surface Velocities<a class="headerlink" href="#kinematic-surface-velocities" title="Permalink to this headline"></a></h3>
+<p>Independent of the motion of a kinematic actor, one may like to emulate a surface velocity, meaning that objects interacting with the kinematic actor through collisions will behave as if the kinematic actor is moving, although the kinematic’s pose does not actually change.
+This mechanism can be used to create conveyor belts and rotating surfaces.
+Please refer to the <a class="reference internal" href="AdvancedCollisionDetection.html#contact-modification"><span class="std std-ref">Contact Modification</span></a> section for a detailed explanation.</p>
+</section>
+</section>
+<section id="active-actors">
+<h2>Active Actors<a class="headerlink" href="#active-actors" title="Permalink to this headline"></a></h2>
+<p>The active actors API provides an efficient way to reflect actor transform changes in a PhysX scene to an associated external object such as a render mesh.</p>
+<p>When a scene’s fetchResults() method is called an array of active <em>PxActor</em> is generated. Because only actors that have moved will be included in the list this approach is potentially much more efficient than, for example, analyzing each actor in the scene individually.</p>
+<p>The example below shows how to use active actors to update a render object:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// update scene</span>
+<span class="n">scene</span><span class="p">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+<span class="n">scene</span><span class="p">.</span><span class="n">fetchResults</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// retrieve array of actors that moved</span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">nbActiveActors</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxActor</span><span class="o">**</span><span class="w"> </span><span class="n">activeActors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="p">.</span><span class="n">getActiveActors</span><span class="p">(</span><span class="n">nbActiveActors</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// update each render object with the new transform</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbActiveActors</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">MyRenderObject</span><span class="o">*</span><span class="w"> </span><span class="n">renderObject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="n">MyRenderObject</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">activeActors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">userData</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">renderObject</span><span class="o">-&gt;</span><span class="n">setTransform</span><span class="p">(</span><span class="n">activeActors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getGlobalPose</span><span class="p">());</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PxSceneFlag::eENABLE_ACTIVE_ACTORS must be set on the scene for the active actors array to be generated.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since the target transform for kinematic rigid bodies is set by the user, kinematics can be excluded from the list by setting the flag PxSceneFlag::eEXCLUDE_KINEMATICS_FROM_ACTIVE_ACTORS.</p>
+</div>
+</section>
+<section id="dominance">
+<h2>Dominance<a class="headerlink" href="#dominance" title="Permalink to this headline"></a></h2>
+<p>Dominance is a mechanism to enable dynamic bodies to dominate each-other. Dominance effectively imbues the dominant body in a pair with infinite mass. This is a form of local mass modification within the constraint solver and, as such, can override the mass of one of the bodies in a pair. Similar effects can be achieved through local mass modification in contact modification but dominance has the advantage of being handled automatically within the SDK so does not incur the additional memory and performance overhead of contact modification.</p>
+<p>Each actor must be assigned a dominance group ID. This is a 5-bit value in the range [0, 31]. As such, you are restricted to at-most 32 dominance groups. By default, all bodies are placed in dominance group 0. An actor can be assigned to a dominance group using the following method on PxActor:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setDominanceGroup</span><span class="p">(</span><span class="n">PxDominanceGroup</span><span class="w"> </span><span class="n">dominanceGroup</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Dominance is defined by 2 real numbers in the following struct:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">PxDominanceGroupPair</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxDominanceGroupPair</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="o">:</span><span class="w"> </span><span class="n">dominance0</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="w"> </span><span class="n">dominance1</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dominance0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dominance1</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>And dominance between two dominance groups can be configured using the following method on PxScene:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setDominanceGroupPair</span><span class="p">(</span><span class="n">PxDominanceGroup</span><span class="w"> </span><span class="n">group1</span><span class="p">,</span><span class="w"> </span><span class="n">PxDominanceGroup</span><span class="w"> </span><span class="n">group2</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">PxDominanceGroupPair</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dominance</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The user can define 3 different states for a given PxDominanceGroupPair:</p>
+<ul class="simple">
+<li><p>1 : 1. This indicates that both bodies have equal dominance. This is the default behavior.</p></li>
+<li><p>1 : 0. This indicates that body B dominates body A.</p></li>
+<li><p>0 : 1. This indicates that body A dominates body B.</p></li>
+</ul>
+<p>Any values other than 0 and 1 are not valid in a PxDominanceGroupPair. Assigning 0 to both sides of the PxDominanceGroupPair is also invalid. These values can be considered to be scales applied to the bodies’ respective inverse mass and inverse inertia. A dominance value of 0 would therefore equate to an infinite mass body.</p>
+<p>The following example sets two actors, actorA and actorB, into different dominance groups and configures the dominance group to make actorA dominate actorB:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">actorA</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span><span class="w"></span>
+<span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">actorB</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="o">-&gt;</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span><span class="w"></span>
+
+<span class="n">actorA</span><span class="o">-&gt;</span><span class="n">setDominanceGroup</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="n">actorB</span><span class="o">-&gt;</span><span class="n">setDominanceGroup</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">mScene</span><span class="o">-&gt;</span><span class="n">setDominanceGroupPair</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">PxDominanceGroupPair</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.f</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Dominance values will not affect joints. Local mass modification on joints must be performed using the following methods on PxJoint:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setInvMassScale0</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setInvMassScale1</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setInvInertiaScale0</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">invInertiaScale</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">setInvInertiaScale1</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">invInertiaScale</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>As previously mentioned, dominance does not permit values other than 0 or 1 and any dominance values are applied uniformly to both the inverse mass and inverse inertia. Joints and contacts through contact modification permit defining separate inverse mass and inverse inertia scales, which accept any values within the range [0, PX_MAX_REAL] so can be used to achieve a wider range of effects than dominance can.</p>
+<p>Dominance can produce some very peculiar results if misused. For example, given bodies A, B and C configured in the following way:</p>
+<ul class="simple">
+<li><p>Body A dominates body B</p></li>
+<li><p>Body B dominance body C</p></li>
+<li><p>Body C dominates body A</p></li>
+</ul>
+<p>In this situation, body A cannot push body C directly. However, it can push body C if it pushes body B into body C.</p>
+</section>
+<section id="constraint-solver">
+<h2>Constraint Solver<a class="headerlink" href="#constraint-solver" title="Permalink to this headline"></a></h2>
+<section id="solver-iterations">
+<span id="id2"></span><h3>Solver Iterations<a class="headerlink" href="#solver-iterations" title="Permalink to this headline"></a></h3>
+<p>When the motion of a rigid body is constrained either by contacts or joints, the constraint solver comes into play.
+The solver satisfies the constraints on the bodies by iterating over all the constraints restricting the motion of the body a certain number of times.
+The more iterations, the more accurate the results become.
+The solver iteration count defaults to 4 position iterations and 1 velocity iteration.
+Those counts may be set individually for each body using the following function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxRigidDynamic::setSolverIterationCounts</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">minPositionIters</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">minVelocityIters</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The iteration counts set in this way are understood to be lower bounds. The final number of iterations is dependent on the solver island, see <a class="reference internal" href="Simulation.html#island-management"><span class="std std-ref">Island Management</span></a> for more information.</p>
+<p>In general, and in particular when the bodies are subject to contact or other constraints, one cannot expect that the reported body velocity will match the position difference between two simulation steps.
+This is because the solver uses a split impulse strategy for resolving geometric (position) and velocity error separately:
+Position iterations solve for both geometric and velocity error.
+They do so by including the geometric error in the velocity-level constraint equation as a bias term, which <em>biases</em> the post-solve velocities towards values that reduce the geometric error after integration.
+These post-solve velocities resulting from the position iterations are used for integrating the body transforms at the end of a time step.
+On the contrary, velocity iterations only solve for velocity error, i.e., their bias is zero except in some specific cases (see e.g., <a class="reference internal" href="../_api_build/structPx1DConstraintFlag.html#_CPPv4N18Px1DConstraintFlag4Type9eKEEPBIASE" title="Px1DConstraintFlag::eKEEPBIAS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">Px1DConstraintFlag::eKEEPBIAS</span></code></a>, <a class="reference internal" href="#compliantcontacts"><span class="std std-ref">Compliant Contacts</span></a>).
+Due to the absence of the geometric bias in the velocity iterations, they do not operate on the same constraint equations as the position iterations.
+The velocity iterations’ post-solve velocities are the velocities that are carried across frames and they are reported in the corresponding body velocity fields (e.g., <a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv4NK11PxRigidBody17getLinearVelocityEv" title="PxRigidBody::getLinearVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::getLinearVelocity()</span></code></a>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <a class="reference internal" href="#temporalgaussseidel"><span class="std std-ref">Projected Gauss-Seidel and Temporal Gauss-Seidel</span></a> solver will become the default solver. We recommend using one velocity iteration by default.</p>
+</div>
+<p>Typically it is only necessary to significantly increase these values for objects with lots of joints and a small tolerance for joint error.
+If you find a need to use a setting higher than 30, you may wish to reconsider the configuration of your simulation.
+To tune the number of iterations, it may be helpful to use the solver residual reporting, see <a class="reference internal" href="../_api_build/structPxSceneFlag.html#_CPPv4N11PxSceneFlag4Enum33eENABLE_SOLVER_RESIDUAL_REPORTINGE" title="PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_SOLVER_RESIDUAL_REPORTING</span></code></a>.</p>
+<p>The solver groups contacts into friction patches; friction patches are groups of contacts which share the same materials and have similar contact normals.
+However, the solver permits a maximum of 32 friction patches per contact manager (pair of shapes).
+If more than 32 friction patches are produced, which may be due to very complex collision geometry or very large contact offsets, the solver will ignore the remaining friction patches.
+A warning will be issued in checked/debug builds when this happens.</p>
+</section>
+<section id="projected-gauss-seidel-and-temporal-gauss-seidel">
+<span id="temporalgaussseidel"></span><h3>Projected Gauss-Seidel and Temporal Gauss-Seidel<a class="headerlink" href="#projected-gauss-seidel-and-temporal-gauss-seidel" title="Permalink to this headline"></a></h3>
+<p>PhysX supports two types of solvers:
+the Projected Gauss-Seidel-style (PGS) solver and the Temporal Gauss-Seidel (TGS) solver, which was introduced in PhysX 5.1.
+TGS is generally the recommended solver and will become the default soon, but as an alternative and for backwards compatibility the standard PGS solver is still available.
+Both solvers are available for CPU and GPU simulation.</p>
+<p>The solver can be configured on a per-scene basis through the <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc10solverTypeE" title="PxSceneDesc::solverType"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::solverType</span></code></a> field.
+This choice is an immutable scene property that must be set before the scene is constructed.</p>
+<p>Both solvers utilize the same equations of motion and feature implicit time discretization with approximations.
+However, they employ different strategies to enforce desired constraints.
+For a detailed justification of the approximations, see the XPBD paper (<a class="reference internal" href="#macklin-et-al-2016">Macklin et al., 2016</a>), specifically Chapter 4.
+Also refer to the section on solver iterations (<a class="reference internal" href="#solver-iterations"><span class="std std-ref">Solver Iterations</span></a>).</p>
+<p>Within a single call to the scene’s simulate method, each iteration of the PGS solver runs through the <strong>same</strong> list of constraints.
+After all the iterations have concluded, the (hopefully converged) velocities of all bodies are integrated over the time step duration.</p>
+<p>In contrast, TGS subdivides the time step into multiple equally-sized substeps.
+The number of substeps is equal to the number of position iterations.
+Each position iteration involves solving all constraints for this TGS substep <strong>once</strong>.
+Subsequently, the velocities are integrated immediately over the substep before the next substep (=position iteration) begins, which will then solve slightly updated constraints because the body positions have already been modified by the previous substep(s).
+Therefore, the TGS substepping scheme is conceptually similar to calling the PGS solver with a smaller timestep multiple times, each time only requesting a single solver iteration.</p>
+<p>TGS velocity iterations do not integrate velocities at every iteration anymore, they merely solve the unbiased constraint equations for the last substep.
+After the velocity iterations are complete, the final transformations of all objects are computed based on the velocity after the last velocity iteration (see split impulse strategy above).
+Unless the scene exhibits significant geometrical errors before simulation begins, it is often sufficient to run TGS without any velocity iterations because the increased time resolution should keep the effect of geometric errors small throughout all substeps.</p>
+<p>Temporal Gauss-Seidel offers several advantages over the PGS-style solver:</p>
+<ul class="simple">
+<li><p>Improved convergence</p></li>
+<li><p>Improved handling of high-mass ratios</p></li>
+<li><p>Improved joint drive accuracy</p></li>
+<li><p>More accurate simulation of high frequency effects due to better time resolution</p></li>
+</ul>
+<p>Each TGS iteration is generally a little slower than PGS.
+This is partially due to the increased complexity of the constraint solver and also partially due to TGS solving friction constraints every iteration, whereas PGS solves friction constraints only in the final 3 position iterations by default.</p>
+<section id="tgs-force-application">
+<h4>TGS Force Application<a class="headerlink" href="#tgs-force-application" title="Permalink to this headline"></a></h4>
+<p>The scene flag <a class="reference internal" href="../_api_build/structPxSceneFlag.html#_CPPv4N11PxSceneFlag4Enum43eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGSE" title="PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_EXTERNAL_FORCES_EVERY_ITERATION_TGS</span></code></a> gives the user control over how external forces and gravity are applied to simulation actors.
+The current default setting (off) means external forces and gravity are applied only once at the beginning of a simulation frame in order to maintain similar free-fall behavior as with the PGS solver.
+With this flag raised, external forces and gravity are instead applied proportionally at every TGS position iteration (= internal substep).
+Please refer to the API documentation for technical details.</p>
+</section>
+</section>
+</section>
+<section id="immediate-mode">
+<h2>Immediate Mode<a class="headerlink" href="#immediate-mode" title="Permalink to this headline"></a></h2>
+<p>In addition to simulation using a <em>PxScene</em>, <em>PhysX</em> offers a low-level simulation API called “immediate mode”.
+This provides an API to access the low-level contact generation and constraint solver.
+This approach currently only supports a limited feature set.</p>
+<p>The immediate mode API is defined in <em>PxImmediateMode.h</em> and there are two Snippets demonstrating its usage: “SnippetImmediateMode” and “SnippetImmediateArticulation”. The first one does not use articulations and shows how to use the API for rigid bodies and joints that still belong to a <em>PxScene</em>. This can be used e.g. to simulate a specific actor of a scene with a higher frequency than the rest of the scene. The second snippet is a “pure” immediate mode example where all involved actors, joints and articulations exist without the need for <em>PxScene</em>, <em>PxActor</em> or <em>PxArticulation</em> objects.</p>
+<p>The immediate mode API provides a function to perform contact generation:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxGenerateContacts</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"> </span><span class="n">PxCache</span><span class="o">*</span><span class="w"> </span><span class="n">contactCache</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxContactRecorder</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactRecorder</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">meshContactMargin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"> </span><span class="n">PxCacheAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This function takes a set of pairs of <em>PxGeometry</em> objects located at specific poses and performs collision detection between the pairs. If the pair of geometries collide, contacts are generated, which are reported to <em>contactRecorder</em>. In addition, information may be cached in <em>contactCache</em> to accelerate future queries between these pairs of geometries. Any memory required for this cached information will be allocated using <em>allocator</em>.</p>
+<p>In addition, the immediate mode provides APIs for the constraint solver. These include functions to create bodies used by the solver:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructSolverBodies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">inRigidData</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">outSolverBodyData</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructStaticSolverBody</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">globalPose</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">solverBodyData</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In addition to constructing the bodies, <em>PxConstructSolverBodies</em> also integrates the provided gravitational acceleration into the bodies velocities.</p>
+<p>The following function is optional and is used to batch constraints:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxBatchConstraints</span><span class="p">(</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbConstraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                                                </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">outBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">outOrderedConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                                                </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">**</span><span class="w"> </span><span class="n">articulations</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbArticulations</span><span class="o">=</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Batching constraints reorders the provided constraints and produces batchHeaders, which can be used by the solver to accelerate constraint solving by grouping together independent constraints and solving them in parallel using multiple lanes in SIMD registers.
+This process is entirely optional and can be bypassed if not desired.
+Note that this will change the order in which constraints are processed, which can change the outcome of the solver.</p>
+<p>The following methods are provided to create contact constraints:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateContactConstraints</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverContactDesc</span><span class="o">*</span><span class="w"> </span><span class="n">contactDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">bounceThreshold</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">frictionOffsetThreshold</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">correlationDistance</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This method can be provided with the contacts produced by <em>PxGenerateContacts</em> or by contacts produced by application-specific contact generation approaches.</p>
+<p>The following methods are provided to create joint constraints:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraints</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                                                        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithShaders</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraint</span><span class="o">**</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                                                                                </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithImmediateShaders</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">immConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                                                                                                </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The methods provide a mechanism for the application to define joint rows or for the application to make use of <em>PhysX PxConstraint</em> objects, which create the constraint rows.</p>
+<p>The following method solves the constraints:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxSolveConstraints</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">linearMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">angularMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverBodies</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPositionIterations</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVelocityIterations</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">invDt</span><span class="o">=</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverArticulations</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">**</span><span class="w"> </span><span class="n">solverArticulations</span><span class="o">=</span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This method performs all required position and velocity iterations and updates the objects’ delta velocities and motion velocities, which are stored in <em>PxSolverBody</em> and <em>linear/angularMotionVelocity</em> respectively.</p>
+<p>The following method is provided to integrate the bodies’ final poses and update the bodies’ velocities to reflect the motion produced by the constraint solver:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxIntegrateSolverBodies</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodyData</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">linearMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">angularMotionState</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodiesToIntegrate</span><span class="p">,</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The above methods are the ones needed for simulating regular rigid bodies and joints in immediate mode. See SnippetImmediateMode for an example.</p>
+<p>Additional functions are provided to simulate reduced coordinate articulations. First, register articulation-related solver functions with <em>PxRegisterImmediateArticulations</em>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxRegisterImmediateArticulations</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This is the counterpart of <em>PxRegisterArticulationsReducedCoordinate</em> for immediate mode. You only need to call it once at the start of your program. Then create a low-level reduced coordinate articulations with the following function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w">        </span><span class="n">PxCreateFeatherstoneArticulation</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxFeatherstoneArticulationData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Once the articulation is created, add articulation links to it with the following function:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w">        </span><span class="n">PxAddArticulationLink</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxFeatherstoneArticulationLinkData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">isLastLink</span><span class="o">=</span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The number of links per articulation is currently limited to 64, just as with PxScene-level articulations. After all links have been added, the articulation is ready to be simulated.</p>
+<p>Note that for articulations the current API is not as “immediate” as for rigid bodies, since the returned object is still a thin “retained mode” wrapper around low-level structures. This is done to make articulations easier to use: the low-level structures currently contain data for both reduced coordinate and maximal coordinate articulations, and intimate knowledge of PhysX’s internals is needed to distinguish between the two. The thin wrapper makes things more accessible. On the other hand, the data is not directly owned by the user, and the following function must be called to eventually release it at the end of your program:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w">      </span><span class="n">PxReleaseArticulation</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w"> </span><span class="n">articulation</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Meanwhile there are a number of data accessor functions available:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w">        </span><span class="n">PxGetLinkArticulation</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w">     </span><span class="n">PxGetLinkIndex</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w">      </span><span class="n">PxGetLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxLinkData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w">     </span><span class="n">PxGetAllLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxLinkData</span><span class="o">*</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w">      </span><span class="n">PxGetMutableLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxMutableLinkData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w">      </span><span class="n">PxSetMutableLinkData</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxMutableLinkData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w">      </span><span class="n">PxGetJointData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxFeatherstoneArticulationJointData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w">      </span><span class="n">PxSetJointData</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationLinkHandle</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxFeatherstoneArticulationJointData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Some of them are here to update the data at runtime, say for articulation drives. Some of them are needed to setup the articulation data for aforementioned immediate mode functions like <em>PxSolveConstraints</em>, which have been updated in <em>PhysX 4.1</em> to take additional articulation-related parameters (but which should otherwise be used the same way as for immediate mode rigid bodies).</p>
+<p>The only new articulation-specific functions are otherwise:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w">      </span><span class="n">PxComputeUnconstrainedVelocities</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+<span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w">      </span><span class="n">PxUpdateArticulationBodies</span><span class="p">(</span><span class="n">Dy</span><span class="o">::</span><span class="n">ArticulationV</span><span class="o">*</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Use the first one at the start of the simulation loop to compute unconstrained velocities for each immediate mode articulations. Use the second one at the end of the simulation loop to update the articulation bodies/links after <em>PxIntegrateSolverBodies</em> has finished. Please refer to SnippetImmediateArticulation for examples.</p>
+<p>For a standalone version of the broadphase, refer to section <a class="reference internal" href="RigidBodyCollision.html#broadphaseimmediatemode"><span class="std std-ref">Standalone Broad-phase</span></a>.</p>
+</section>
+<section id="enhanced-determinism">
+<h2>Enhanced Determinism<a class="headerlink" href="#enhanced-determinism" title="Permalink to this headline"></a></h2>
+<p>PhysX provides limited deterministic simulation. Specifically, the results of the simulation will be identical between runs if simulating the exact same scene (same actors inserted in the same order) using the same time-stepping scheme and same PhysX release running on the same platform. The simulation behavior is not influenced by the number of worker threads that are used.</p>
+<p>However, the results of the simulation can change if actors are inserted in a different order. In addition, the overall behavior of the simulation can change if additional actors are added or if some actors are removed from the scene. This means that the simulation of a particular collection of actors can change depending on whether other actors are present in the scene or not, irrespective of whether these actors actually interact with the collection of actors. This behavioral property is usually tolerable but there are circumstances in which it is not acceptable.</p>
+<p>To overcome this issue, PhysX provides a flag: <a class="reference internal" href="../_api_build/structPxSceneFlag.html#_CPPv4N11PxSceneFlag4Enum28eENABLE_ENHANCED_DETERMINISME" title="PxSceneFlag::eENABLE_ENHANCED_DETERMINISM"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_ENHANCED_DETERMINISM</span></code></a>, which provides additional levels of determinism. Specifically, provided the application inserts the actors in a deterministic order, with this flag raised, the simulation of an island will be identical regardless of any other islands in the scene. However, this mode sacrifices some performance to ensure this additional determinism.</p>
+</section>
+<section id="axis-locking">
+<h2>Axis locking<a class="headerlink" href="#axis-locking" title="Permalink to this headline"></a></h2>
+<p>It is possible to restrict motion along or around specific world-space axes in PhysX using <a class="reference internal" href="../_api_build/structPxRigidDynamicLockFlag.html#_CPPv422PxRigidDynamicLockFlag" title="PxRigidDynamicLockFlag"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxRigidDynamicLockFlag</span></code></a>.
+For example, the below code snippet demonstrates how to restrict a PxRigidDynamic to a two-dimensional simulation.
+In this case, we permit the PxRigidDynamic to rotate only around the Z-axis and to translate only along the X- and Y- axes:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">dyn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">physics</span><span class="p">.</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="c1">//Lock the motion</span>
+<span class="n">dyn</span><span class="o">-&gt;</span><span class="n">setRigidDynamicLockFlags</span><span class="p">(</span><span class="n">PxRigidDynamicLockFlag</span><span class="o">::</span><span class="n">eLOCK_LINEAR_Z</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxRigidDynamicLockFlag</span><span class="o">::</span><span class="n">eLOCK_ANGULAR_X</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxRigidDynamicLockFlag</span><span class="o">::</span><span class="n">eLOCK_ANGULAR_Y</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It is legal to restrict movement or rotation around any combination of the 6 degrees of freedom.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
+<p id="macklin-et-al-2016">MACKLIN M., MÜLLER M., CHENTANEZ N. 2016: XPBD: Position-based simulation of compliant constrained dynamics. In Proceedings of the 9th International Conference on Motion in Games (New
+York, NY, USA, 2016), MIG ’16, Association for Computing Machinery, p. 49-54. URL: <a class="reference external" href="https://doi.org/10.1145/2994258.2994272">https://doi.org/10.1145/2994258.2994272</a>, doi:10.1145/2994258.2994272. 2, 3</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

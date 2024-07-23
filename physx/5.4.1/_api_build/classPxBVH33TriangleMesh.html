@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxBVH33TriangleMesh &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxBVH34TriangleMesh" href="classPxBVH34TriangleMesh.html" />
+    <link rel="prev" title="PxBVH" href="classPxBVH.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxBVH33TriangleMesh</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxbvh33trianglemesh">
+<h1>PxBVH33TriangleMesh<a class="headerlink" href="#pxbvh33trianglemesh" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_geometry_PxTriangleMesh.h.html#pxtrianglemesh-8h"><span class="std std-ref">include/geometry/PxTriangleMesh.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv419PxBVH33TriangleMesh">
+<span id="_CPPv319PxBVH33TriangleMesh"></span><span id="_CPPv219PxBVH33TriangleMesh"></span><span id="PxBVH33TriangleMesh"></span><span class="target" id="classpxbvh33trianglemesh"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxTriangleMesh.html#_CPPv414PxTriangleMesh" title="PxTriangleMesh"><span class="n"><span class="pre">PxTriangleMesh</span></span></a><a class="headerlink" href="#_CPPv419PxBVH33TriangleMesh" title="Permalink to this definition"></a><br /></dt>
+<dd><p>A triangle mesh containing the PxMeshMidPhase::eBVH33 structure. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000038"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use PxBVH34TriangleMesh instead.</p>
+</dd></dl>
+
+</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxMeshMidPhase </p>
+</div>
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh13getNbVerticesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh13getNbVerticesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh13getNbVerticesEv"></span><span id="PxBVH33TriangleMesh::getNbVerticesC"></span><span class="target" id="classpxtrianglemesh_1ab2ee402843a2f19a252ecb229d9cfbc8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh13getNbVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getVertices() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh11getVerticesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh11getVerticesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh11getVerticesEv"></span><span id="PxBVH33TriangleMesh::getVerticesC"></span><span class="target" id="classpxtrianglemesh_1a76a26a4dbeaddf6be059dc935bd23bab"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVertices</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh11getVerticesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the vertices. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbVertices() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>array of vertices </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh26getVerticesForModificationEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh26getVerticesForModificationEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh26getVerticesForModificationEv"></span><span id="PxBVH33TriangleMesh::getVerticesForModification"></span><span class="target" id="classpxtrianglemesh_1a4a037fd65ae091eadc1979b4f703d106"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getVerticesForModification</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh26getVerticesForModificationEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns all mesh vertices for modification. </p>
+<p>This function will return the vertices of the mesh so that their positions can be changed in place. After modifying the vertices you must call refitBVH for the refitting to actually take place. This function maintains the old mesh topology (triangle indices). </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbVertices() </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>refitBVH() </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is recommended to use this feature for scene queries only. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Size of array returned is equal to the number returned by getNbVertices(). </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function operates on cooked vertex indices. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This means the index mapping and vertex count can be different from what was provided as an input to the cooking routine. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To achieve unchanged 1-to-1 index mapping with orignal mesh data (before cooking) please use the following cooking flags: </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eWELD_VERTICES = 0, eDISABLE_CLEAN_MESH = 1. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>inplace vertex coordinates for each existing mesh vertex.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh8refitBVHEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh8refitBVHEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh8refitBVHEv"></span><span id="PxBVH33TriangleMesh::refitBVH"></span><span class="target" id="classpxtrianglemesh_1acc5c3b6c67a887917a111c432a799eff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">refitBVH</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh8refitBVHEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Refits BVH for mesh vertices. </p>
+<p>This function will refit the mesh BVH to correctly enclose the new positions updated by getVerticesForModification. Mesh BVH will not be reoptimized by this function so significantly different new positions will cause significantly reduced performance. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbVertices() </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getVerticesForModification() </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBVH34MidphaseDesc::quantized </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For PxMeshMidPhase::eBVH34 trees the refit operation is only available on non-quantized trees (see PxBVH34MidphaseDesc::quantized) </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX does not keep a mapping from the mesh to mesh shapes that reference it. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Call PxShape::setGeometry on each shape which references the mesh, to ensure that internal data structures are updated to reflect the new geometry. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PxShape::setGeometry does not guarantee correct/continuous behavior when objects are resting on top of old or new geometry. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is also recommended to make sure that a call to validateTriangleMesh returns true if mesh cleaning is disabled. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Active edges information will be lost during refit, the rigid body mesh contact generation might not perform as expected. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>New bounds for the entire mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh14getNbTrianglesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh14getNbTrianglesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh14getNbTrianglesEv"></span><span id="PxBVH33TriangleMesh::getNbTrianglesC"></span><span class="target" id="classpxtrianglemesh_1a611c8453a6b6256a63f1450aa8cf237a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getNbTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh14getNbTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the number of triangles. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getTriangles() getTrianglesRemap() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>number of triangles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12getTrianglesEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12getTrianglesEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12getTrianglesEv"></span><span id="PxBVH33TriangleMesh::getTrianglesC"></span><span class="target" id="classpxtrianglemesh_1aaba16b4d85ec80320e1906bf8f6273a7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTriangles</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12getTrianglesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the triangle indices. </p>
+<p>The indices can be 16 or 32bit depending on the number of triangles in the mesh. Call getTriangleMeshFlags() to know if the indices are 16 or 32 bits.</p>
+<p>The number of indices is the number of triangles * 3.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbTriangles() getTriangleMeshFlags() getTrianglesRemap() </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>array of triangles </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv"></span><span id="PxBVH33TriangleMesh::getTriangleMeshFlagsC"></span><span class="target" id="classpxtrianglemesh_1adf820099ddef71863f8528e6b8fc957c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTriangleMesh_8h_1a9bff69ddd57aac22aad966a4b30983e7.html#_CPPv419PxTriangleMeshFlags" title="PxTriangleMeshFlags"><span class="n"><span class="pre">PxTriangleMeshFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMeshFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh20getTriangleMeshFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Reads the PxTriangleMesh flags. </p>
+<p>See the list of flags PxTriangleMeshFlag</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxTriangleMesh </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The values of the PxTriangleMesh flags.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh17getTrianglesRemapEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh17getTrianglesRemapEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh17getTrianglesRemapEv"></span><span id="PxBVH33TriangleMesh::getTrianglesRemapC"></span><span class="target" id="classpxtrianglemesh_1a35fcfe415fe778a1259dea87522c0e42"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getTrianglesRemap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh17getTrianglesRemapEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the triangle remapping table. </p>
+<p>The triangles are internally sorted according to various criteria. Hence the internal triangle order does not always match the original (user-defined) order. The remapping table helps finding the old indices knowing the new ones: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">remapTable</span><span class="p">[</span><span class="w"> </span><span class="n">internalTriangleIndex</span><span class="w"> </span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">originalTriangleIndex</span><span class="w"></span>
+</pre></div>
+</div>
+ <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getNbTriangles() getTriangles() PxCookingParams::suppressTriangleMeshRemapTable </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the remapping table (or NULL if ‘PxCookingParams::suppressTriangleMeshRemapTable’ has been used) </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh7releaseEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh7releaseEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh7releaseEv"></span><span id="PxBVH33TriangleMesh::release"></span><span class="target" id="classpxtrianglemesh_1a168cc0000372c63857d128d04f1d32fa"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Decrements the reference count of a triangle mesh and releases it if the new reference count is zero. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxPhysics.createTriangleMesh() </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID">
+<span id="_CPPv3NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID"></span><span id="_CPPv2NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID"></span><span id="PxBVH33TriangleMesh::getTriangleMaterialIndex__PxTriangleIDC"></span><span class="target" id="classpxtrianglemesh_1ac6ce228303232206a8ac953152007818"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1ac816bc62a68a52f01bf21f963295e822.html#_CPPv420PxMaterialTableIndex" title="PxMaterialTableIndex"><span class="n"><span class="pre">PxMaterialTableIndex</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getTriangleMaterialIndex</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxPhysXCommonConfig_8h_1a19403877bf7ce42d7240e4e4c758c016.html#_CPPv412PxTriangleID" title="PxTriangleID"><span class="n"><span class="pre">PxTriangleID</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">triangleIndex</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh24getTriangleMaterialIndexE12PxTriangleID" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns material table index of given triangle. </p>
+<p>This function takes a post cooking triangle index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>triangleIndex</strong> – <strong>[in]</strong> (internal) index of desired triangle </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Material table index, or 0xffff if no per-triangle materials are used </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh14getLocalBoundsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh14getLocalBoundsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh14getLocalBoundsEv"></span><span id="PxBVH33TriangleMesh::getLocalBoundsC"></span><span class="target" id="classpxtrianglemesh_1afe5283d82a46081bae3ef7c7132b64ec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><span class="n"><span class="pre">PxBounds3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getLocalBounds</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh14getLocalBoundsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the local-space (vertex space) AABB from the triangle mesh. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>local-space bounds </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh6getSDFEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh6getSDFEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh6getSDFEv"></span><span id="PxBVH33TriangleMesh::getSDFC"></span><span class="target" id="classpxtrianglemesh_1aa6ef25a286b8f31cca2c81d934340de5"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getSDF</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh6getSDFEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the local-space Signed Distance Field for this mesh if it has one. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>local-space SDF. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32">
+<span id="_CPPv3NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32"></span><span id="_CPPv2NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32"></span><span id="PxBVH33TriangleMesh::getSDFDimensions__PxU32R.PxU32R.PxU32RC"></span><span class="target" id="classpxtrianglemesh_1aa498992b3a97288f048bd6bf930ee56f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSDFDimensions</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numX</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numY</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">numZ</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh16getSDFDimensionsER5PxU32R5PxU32R5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the resolution of the local-space dense SDF. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh22setPreferSDFProjectionEb">
+<span id="_CPPv3N19PxBVH33TriangleMesh22setPreferSDFProjectionEb"></span><span id="_CPPv2N19PxBVH33TriangleMesh22setPreferSDFProjectionEb"></span><span id="PxBVH33TriangleMesh::setPreferSDFProjection__b"></span><span class="target" id="classpxtrianglemesh_1a98bd6edb0c357e5a37f1cdcfd473a569"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setPreferSDFProjection</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">preferProjection</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh22setPreferSDFProjectionEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets whether this mesh should be preferred for SDF projection. </p>
+<p>By default, meshes are flagged as preferring projection and the decisions on which mesh to project is based on the triangle and vertex count. The model with the fewer triangles is projected onto the SDF of the more detailed mesh. If one of the meshes is set to prefer SDF projection (default) and the other is set to not prefer SDF projection, model flagged as preferring SDF projection will be projected onto the model flagged as not preferring, regardless of the detail of the respective meshes. Where both models are flagged as preferring no projection, the less detailed model will be projected as before.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>preferProjection</strong> – <strong>[in]</strong> Indicates if projection is preferred </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv"></span><span id="PxBVH33TriangleMesh::getPreferSDFProjectionC"></span><span class="target" id="classpxtrianglemesh_1ae936c830304b0703c0f9778ad6fad8ce"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getPreferSDFProjection</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh22getPreferSDFProjectionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether this mesh prefers SDF projection. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>whether this mesh prefers SDF projection. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3">
+<span id="_CPPv3NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="_CPPv2NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3"></span><span id="PxBVH33TriangleMesh::getMassInformation__PxRealR.PxMat33R.PxVec3RC"></span><span class="target" id="classpxtrianglemesh_1a9449bec7cd2eaa333f9ea7d74ff386d8"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMassInformation</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mass</span></span>, <a class="reference internal" href="typedef_PxMat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61.html#_CPPv47PxMat33" title="PxMat33"><span class="n"><span class="pre">PxMat33</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localInertia</span></span>, <a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localCenterOfMass</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh18getMassInformationER6PxRealR7PxMat33R6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the mass properties of the mesh assuming unit density. </p>
+<p>The following relationship holds between mass and volume: <div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">volume</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">density</span><span class="w"></span>
+</pre></div>
+</div>
+ The mass of a unit density mesh is equal to its volume, so this function returns the volume of the mesh.</p>
+<p>Similarly, to obtain the localInertia of an identically shaped object with a uniform density of d, simply multiply the localInertia of the unit density mesh by d.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mass</strong> – <strong>[out]</strong> The mass of the mesh assuming unit density. </p></li>
+<li><p><strong>localInertia</strong> – <strong>[out]</strong> The inertia tensor in mesh local space assuming unit density. </p></li>
+<li><p><strong>localCenterOfMass</strong> – <strong>[out]</strong> Position of center of mass (or centroid) in mesh local space. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh17getReferenceCountEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh17getReferenceCountEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh17getReferenceCountEv"></span><span id="PxBVH33TriangleMesh::getReferenceCountC"></span><span class="target" id="classpxrefcounted_1a3a26eca4ce76cd027b8b13f89527340d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getReferenceCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh17getReferenceCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns the reference count of the object. </p>
+<p>At creation, the reference count of the object is 1. Every other object referencing this object increments the count by 1. When the reference count reaches 0, and only then, the object gets destroyed automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the current reference count. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh16acquireReferenceEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh16acquireReferenceEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh16acquireReferenceEv"></span><span id="PxBVH33TriangleMesh::acquireReference"></span><span class="target" id="classpxrefcounted_1afbe1ee78e3f6917024d1a20d558c42c2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireReference</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh16acquireReferenceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquires a counted reference to this object. </p>
+<p>This method increases the reference count of the object by 1. Decrement the reference count by calling release() </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh19getConcreteTypeNameEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh19getConcreteTypeNameEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh19getConcreteTypeNameEv"></span><span id="PxBVH33TriangleMesh::getConcreteTypeNameC"></span><span class="target" id="classpxbase_1aeb82884b9f8bc2b9de87964e50d79f72"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteTypeName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh19getConcreteTypeNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns string name of dynamic type. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Class name of most derived type of this object. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv">
+<span id="_CPPv3I0EN19PxBVH33TriangleMesh2isEv"></span><span id="_CPPv2I0EN19PxBVH33TriangleMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a8edaf23ba03b5be89ba82e59423ab000"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv" title="PxBVH33TriangleMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN19PxBVH33TriangleMesh2isEP1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv">
+<span id="_CPPv3I0ENK19PxBVH33TriangleMesh2isEv"></span><span id="_CPPv2I0ENK19PxBVH33TriangleMesh2isEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1af62cab18475fb0cf3f0249d0f13748f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv" title="PxBVH33TriangleMesh::is::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">is</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxBVH33TriangleMesh2isEPK1Tv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh15getConcreteTypeEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh15getConcreteTypeEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh15getConcreteTypeEv"></span><span id="PxBVH33TriangleMesh::getConcreteTypeC"></span><span class="target" id="classpxbase_1a9ec6ee9d0c82f56c32679e0843c660ca"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getConcreteType</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh15getConcreteTypeEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns concrete type of object. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxConcreteType </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxConcreteType::Enum of serialized object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb">
+<span id="_CPPv3N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="_CPPv2N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb"></span><span id="PxBVH33TriangleMesh::setBaseFlag__PxBaseFlag::Enum.b"></span><span class="target" id="classpxbase_1a9c11c3d22d4966fb324e7fb77b59ddc3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlag</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="structPxBaseFlag.html#_CPPv410PxBaseFlag" title="PxBaseFlag"><span class="n"><span class="pre">PxBaseFlag</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="structPxBaseFlag.html#_CPPv4N10PxBaseFlag4EnumE" title="PxBaseFlag::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">flag</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh11setBaseFlagEN10PxBaseFlag4EnumEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlag </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flag</strong> – <strong>[in]</strong> The flag to be set </p></li>
+<li><p><strong>value</strong> – <strong>[in]</strong> The flags new value </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::setBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1abb9193da65b420d44cd355dc66de6337"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setBaseFlags</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">inFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh12setBaseFlagsE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Set PxBaseFlags </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inFlags</strong> – <strong>[in]</strong> The flags to be set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12getBaseFlagsEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12getBaseFlagsEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12getBaseFlagsEv"></span><span id="PxBVH33TriangleMesh::getBaseFlagsC"></span><span class="target" id="classpxbase_1a6c2fd20994306a92a2df4595f0d159f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getBaseFlags</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12getBaseFlagsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns PxBaseFlags. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxBaseFlags </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxBaseFlags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh12isReleasableEv">
+<span id="_CPPv3NK19PxBVH33TriangleMesh12isReleasableEv"></span><span id="_CPPv2NK19PxBVH33TriangleMesh12isReleasableEv"></span><span id="PxBVH33TriangleMesh::isReleasableC"></span><span class="target" id="classpxbase_1a38952fcb80e99f1f5dbf774a75ac2c3d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isReleasable</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh12isReleasableEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Whether the object is subordinate. </p>
+<p>A class is subordinate, if it can only be instantiated in the context of another class.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxSerialization::isSerializable </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Whether the class is subordinate</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::PxBVH33TriangleMesh__PxType.PxBaseFlags"></span><span class="target" id="classpxbvh33trianglemesh_1ad85ec25a086f4da4097dc950d260d96d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">concreteType</span></span>, <a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE6PxType11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags">
+<span id="_CPPv3N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags"></span><span id="_CPPv2N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags"></span><span id="PxBVH33TriangleMesh::PxBVH33TriangleMesh__PxBaseFlags"></span><span class="target" id="classpxbvh33trianglemesh_1aacfa3353879468fc550a5cd01de66016"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">baseFlags</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh19PxBVH33TriangleMeshE11PxBaseFlags" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMeshD0Ev">
+<span id="_CPPv3N19PxBVH33TriangleMeshD0Ev"></span><span id="_CPPv2N19PxBVH33TriangleMeshD0Ev"></span><span id="PxBVH33TriangleMesh::~PxBVH33TriangleMesh"></span><span class="target" id="classpxbvh33trianglemesh_1a04d73d186e849be0d064aca6fdf8d535"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxBVH33TriangleMesh</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMeshD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK19PxBVH33TriangleMesh8isKindOfEPKc">
+<span id="_CPPv3NK19PxBVH33TriangleMesh8isKindOfEPKc"></span><span id="_CPPv2NK19PxBVH33TriangleMesh8isKindOfEPKc"></span><span id="PxBVH33TriangleMesh::isKindOf__cCPC"></span><span class="target" id="classpxbvh33trianglemesh_1a1fa2f684198b26d57c862436373470a1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isKindOf</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK19PxBVH33TriangleMesh8isKindOfEPKc" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns whether a given type name matches with the type of this instance. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh14onRefCountZeroEv">
+<span id="_CPPv3N19PxBVH33TriangleMesh14onRefCountZeroEv"></span><span id="_CPPv2N19PxBVH33TriangleMesh14onRefCountZeroEv"></span><span id="PxBVH33TriangleMesh::onRefCountZero"></span><span class="target" id="classpxrefcounted_1a3f3a71766b60f7eed3c384655b017040"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">onRefCountZero</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh14onRefCountZeroEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK19PxBVH33TriangleMesh9typeMatchEbv">
+<span id="_CPPv3I0ENK19PxBVH33TriangleMesh9typeMatchEv"></span><span id="_CPPv2I0ENK19PxBVH33TriangleMesh9typeMatchEv"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxbase_1a3782ca64c8f12c41443f604e300fc207"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">typeMatch</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK19PxBVH33TriangleMesh9typeMatchEbv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-attributes">Protected Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh13mConcreteTypeE">
+<span id="_CPPv3N19PxBVH33TriangleMesh13mConcreteTypeE"></span><span id="_CPPv2N19PxBVH33TriangleMesh13mConcreteTypeE"></span><span id="PxBVH33TriangleMesh::mConcreteType__PxType"></span><span class="target" id="classpxbase_1a1abe9d19726e1f8f8e56abeb2269b5d4"></span><a class="reference internal" href="typedef_PxBase_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_CPPv46PxType" title="PxType"><span class="n"><span class="pre">PxType</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mConcreteType</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh13mConcreteTypeE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh10mBaseFlagsE">
+<span id="_CPPv3N19PxBVH33TriangleMesh10mBaseFlagsE"></span><span id="_CPPv2N19PxBVH33TriangleMesh10mBaseFlagsE"></span><span id="PxBVH33TriangleMesh::mBaseFlags__PxBaseFlags"></span><span class="target" id="classpxbase_1aff7105f65905ecb9f6f7993ba28b712d"></span><a class="reference internal" href="typedef_PxBase_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_CPPv411PxBaseFlags" title="PxBaseFlags"><span class="n"><span class="pre">PxBaseFlags</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBaseFlags</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh10mBaseFlagsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N19PxBVH33TriangleMesh16mBuiltInRefCountE">
+<span id="_CPPv3N19PxBVH33TriangleMesh16mBuiltInRefCountE"></span><span id="_CPPv2N19PxBVH33TriangleMesh16mBuiltInRefCountE"></span><span id="PxBVH33TriangleMesh::mBuiltInRefCount__PxU32"></span><span class="target" id="classpxbase_1a75c4aea9ecffd5106ef27ee9e86a2bb9"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mBuiltInRefCount</span></span></span><a class="headerlink" href="#_CPPv4N19PxBVH33TriangleMesh16mBuiltInRefCountE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

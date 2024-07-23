@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExtGpu::PxParticleAttachmentBuffer &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="ExtGpu::PxParticleBufferDesc" href="structExtGpu_1_1PxParticleBufferDesc.html" />
+    <link rel="prev" title="ExtGpu::PxParticleAndDiffuseBufferDesc" href="structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="namespaces.html">Namespaces</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="namespace_ExtGpu.html">ExtGpu</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a2033610bde128db674322afe1f9eebf0.html">PxCreateAndPopulateParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a894fa2d24d58f68b5f6c33d8c062c46c.html">PxCreateAndPopulateParticleBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a2ce51fe8160cb38a6d0755ddcd21ece4.html">PxCreateAndPopulateParticleClothBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a7b15aefa77133d2a3745bee551edaba4.html">PxCreateAndPopulateParticleRigidBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1ae95284301d9c54615a4fea5a21c3ffd4.html">PxCreateParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a865ba51e4fdf0d508878d4821c672fd9.html">PxCreateParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1a25dd2d94226d301b551654612353014b.html">PxCreateParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="function_PxParticleExt_8h_1abd8ab6fb014642410e9e5cf0db466fa1.html">PxCreateParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html">PxParticleAndDiffuseBufferDesc</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">PxParticleAttachmentBuffer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleBufferDesc.html">PxParticleBufferDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleClothBufferHelper.html">PxParticleClothBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleClothConstraint.html">PxParticleClothConstraint</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleClothCooker.html">PxParticleClothCooker</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleRigidBufferHelper.html">PxParticleRigidBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleRigidDesc.html">PxParticleRigidDesc</a></li>
+<li class="toctree-l5"><a class="reference internal" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html">PxParticleVolumeBufferHelper</a></li>
+<li class="toctree-l5"><a class="reference internal" href="structExtGpu_1_1PxParticleVolumeMesh.html">PxParticleVolumeMesh</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_aos.html">aos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_physx.html">physx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="namespace_pvdsdk.html">pvdsdk</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="namespaces.html">Namespaces</a> &raquo;</li>
+    <li><a href="namespace_ExtGpu.html">ExtGpu</a> &raquo;</li>
+<li>ExtGpu::PxParticleAttachmentBuffer</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="extgpu-pxparticleattachmentbuffer">
+<h1>ExtGpu::PxParticleAttachmentBuffer<a class="headerlink" href="#extgpu-pxparticleattachmentbuffer" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxParticleExt.h.html#pxparticleext-8h"><span class="std std-ref">include/extensions/PxParticleExt.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBufferE">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBufferE"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBufferE"></span><span id="ExtGpu::PxParticleAttachmentBuffer"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleAttachmentBuffer</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxUserAllocated.html#_CPPv415PxUserAllocated" title="PxUserAllocated"><span class="n"><span class="pre">PxUserAllocated</span></span></a><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBufferE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Holds user-defined attachment data to attach particles to other bodies. </p>
+<p><dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000133"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Particle-cloth, -rigids, -attachments and -volumes have been deprecated. </p>
+</dd></dl>
+
+</p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer26PxParticleAttachmentBufferER16PxParticleBufferR19PxPBDParticleSystem">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer26PxParticleAttachmentBufferER16PxParticleBufferR19PxPBDParticleSystem"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer26PxParticleAttachmentBufferER16PxParticleBufferR19PxPBDParticleSystem"></span><span id="ExtGpu::PxParticleAttachmentBuffer::PxParticleAttachmentBuffer__PxParticleBufferR.PxPBDParticleSystemR"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1aea3c8fad104b307f757854b3f8b615ae"></span><span class="sig-name descname"><span class="n"><span class="pre">PxParticleAttachmentBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxParticleBuffer.html#_CPPv416PxParticleBuffer" title="PxParticleBuffer"><span class="n"><span class="pre">PxParticleBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">particleBuffer</span></span>, <a class="reference internal" href="classPxPBDParticleSystem.html#_CPPv419PxPBDParticleSystem" title="PxPBDParticleSystem"><span class="n"><span class="pre">PxPBDParticleSystem</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">particleSystem</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer26PxParticleAttachmentBufferER16PxParticleBufferR19PxPBDParticleSystem" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBufferD0Ev">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBufferD0Ev"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBufferD0Ev"></span><span id="ExtGpu::PxParticleAttachmentBuffer::~PxParticleAttachmentBuffer"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1abed4125aadabc386365b69f95adcf613"></span><span class="sig-name descname"><span class="n"><span class="pre">~PxParticleAttachmentBuffer</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBufferD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer18addRigidAttachmentEP12PxRigidActorK5PxU32RK6PxVec3P23PxConeLimitedConstraint">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer18addRigidAttachmentEP12PxRigidActorK5PxU32RK6PxVec3P23PxConeLimitedConstraint"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer18addRigidAttachmentEP12PxRigidActorK5PxU32RK6PxVec3P23PxConeLimitedConstraint"></span><span id="ExtGpu::PxParticleAttachmentBuffer::addRigidAttachment__PxRigidActorP.PxU32C.PxVec3CR.PxConeLimitedConstraintP"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1a5fb42b82f6fc128d2953e89d88b6d6e7"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addRigidAttachment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rigidBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleID</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">localPose</span></span>, <a class="reference internal" href="structPxConeLimitedConstraint.html#_CPPv423PxConeLimitedConstraint" title="PxConeLimitedConstraint"><span class="n"><span class="pre">PxConeLimitedConstraint</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">coneLimit</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer18addRigidAttachmentEP12PxRigidActorK5PxU32RK6PxVec3P23PxConeLimitedConstraint" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer21removeRigidAttachmentEP12PxRigidActorK5PxU32">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer21removeRigidAttachmentEP12PxRigidActorK5PxU32"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer21removeRigidAttachmentEP12PxRigidActorK5PxU32"></span><span id="ExtGpu::PxParticleAttachmentBuffer::removeRigidAttachment__PxRigidActorP.PxU32C"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1a25a22c12cd7472e5945eb257e81c80af"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeRigidAttachment</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rigidBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleID</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer21removeRigidAttachmentEP12PxRigidActorK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer14addRigidFilterEP12PxRigidActorK5PxU32">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer14addRigidFilterEP12PxRigidActorK5PxU32"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer14addRigidFilterEP12PxRigidActorK5PxU32"></span><span id="ExtGpu::PxParticleAttachmentBuffer::addRigidFilter__PxRigidActorP.PxU32C"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1a7548d372f1911b06ba264496bbfe7fd4"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">addRigidFilter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rigidBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleID</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer14addRigidFilterEP12PxRigidActorK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer17removeRigidFilterEP12PxRigidActorK5PxU32">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer17removeRigidFilterEP12PxRigidActorK5PxU32"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer17removeRigidFilterEP12PxRigidActorK5PxU32"></span><span id="ExtGpu::PxParticleAttachmentBuffer::removeRigidFilter__PxRigidActorP.PxU32C"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1ac75449102fc9dc5fdba831ca61c2c8ba"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">removeRigidFilter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><span class="n"><span class="pre">PxRigidActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">rigidBody</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">particleID</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer17removeRigidFilterEP12PxRigidActorK5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffer12copyToDeviceE8CUstream">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffer12copyToDeviceE8CUstream"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffer12copyToDeviceE8CUstream"></span><span id="ExtGpu::PxParticleAttachmentBuffer::copyToDevice__CUstream"></span><span class="target" id="classextgpu_1_1pxparticleattachmentbuffer_1a6c1f6f9b4cf670b071543b3c25db3aab"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyToDevice</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffer12copyToDeviceE8CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBuffernwE6size_tPv">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBuffernwE6size_tPv"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBuffernwE6size_tPv"></span><span id="ExtGpu::PxParticleAttachmentBuffer::new-operator__s.voidP"></span><span class="target" id="classpxuserallocated_1aa6fd472f71d52663a105a95ad5818c74"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBuffernwE6size_tPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBuffernwE6size_t5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBuffernwE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1a275d78f8e676c024f1d76c9958f20620"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBuffernwE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBuffernwE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1a4c040a1ece162d3422277e8dc6652eb2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t6size_t5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator new::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernwEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBufferdlEPvPv">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBufferdlEPvPv"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBufferdlEPvPv"></span><span id="ExtGpu::PxParticleAttachmentBuffer::delete-operator__voidP.voidP"></span><span class="target" id="classpxuserallocated_1a04c7cb45584c4f0ce7a8347ca740896b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span>, <span class="kt"><span class="pre">void</span></span><span class="p"><span class="pre">*</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBufferdlEPvPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdlEvPv5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBufferdlEPv5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBufferdlEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1a3cf613200747f3cefb86a365c74aa162"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdlEvPv5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator delete::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdlEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBufferdlEPv">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBufferdlEPv"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBufferdlEPv"></span><span id="ExtGpu::PxParticleAttachmentBuffer::delete-operator__voidP"></span><span class="target" id="classpxuserallocated_1a2c4e502fe3d2248c358dd77dd3057238"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBufferdlEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBuffernaE6size_t5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBuffernaE6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1ad3723670d7b4a44840144ed4b359f16f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t6size_t5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBuffernaE6size_t6size_t5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBuffernaE6size_t6size_t5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1a3d5b9e2f65db6fe525d07c4a062cffdd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">new[]</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span>, <span class="n"><span class="pre">size_t</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t6size_t5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator new[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBuffernaEPv6size_t6size_t5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdaEvPv5AllocPKci">
+<span id="_CPPv3I0EN6ExtGpu26PxParticleAttachmentBufferdaEPv5AllocPKci"></span><span id="_CPPv2I0EN6ExtGpu26PxParticleAttachmentBufferdaEPv5AllocPKci"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Alloc</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxuserallocated_1a27bba9023c672c7294bf98666139f482"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span>, <a class="reference internal" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdaEvPv5AllocPKci" title="ExtGpu::PxParticleAttachmentBuffer::operator delete[]::Alloc"><span class="n"><span class="pre">Alloc</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">alloc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">fileName</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN6ExtGpu26PxParticleAttachmentBufferdaEvPv5AllocPKci" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N6ExtGpu26PxParticleAttachmentBufferdaEPv">
+<span id="_CPPv3N6ExtGpu26PxParticleAttachmentBufferdaEPv"></span><span id="_CPPv2N6ExtGpu26PxParticleAttachmentBufferdaEPv"></span><span id="ExtGpu::PxParticleAttachmentBuffer::delete-array-operator__voidP"></span><span class="target" id="classpxuserallocated_1a2b6969f7ac154e808f41a906a25a4a05"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="w"> </span><span class="o"><span class="pre">delete[]</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N6ExtGpu26PxParticleAttachmentBufferdaEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gjk Queries &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Vehicles" href="Vehicles.html" />
+    <link rel="prev" title="Scene Queries" href="SceneQueries.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Gjk Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#support-mapping-interface">Support Mapping Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pxgjkquery-overlap">PxGjkQuery::overlap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgjkquery-sweep">PxGjkQuery::sweep()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgjkquery-raycast">PxGjkQuery::raycast()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgjkquery-proximityinfo">PxGjkQuery::proximityInfo()</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#extensions">Extensions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pre-made-support-mappings">Pre-made support mappings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgjkqueryext-generatecontacts">PxGjkQueryExt::generateContacts()</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Gjk Queries</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gjk-queries">
+<span id="gjkqueries"></span><h1>Gjk Queries<a class="headerlink" href="#gjk-queries" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This section describes the special set of query functions operating on GJK Support Mappings.</p>
+<p><strong>GJK (Gilbert-Johnson-Keerthi)</strong> is an algorithm determining the minimum distance between two convex shapes.
+Unlike many other distance algorithms, it does not require the geometry data to be stored in any specific
+format, but instead relies solely on <strong>support mappings</strong>.</p>
+<p><strong>Support Mapping</strong> of a convex shape is a function that takes direction as an argument and returns the point
+on the shape’s surface farthest in a given direction.</p>
+</section>
+<section id="support-mapping-interface">
+<h2>Support Mapping Interface<a class="headerlink" href="#support-mapping-interface" title="Permalink to this headline"></a></h2>
+<p>Every function in this API expects a pair of support mapping objects. Each support mapping should implement
+the <a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQuery::Support</span></code></a> interface, which has the following functions:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4NK10PxGjkQuery7Support12supportLocalERK6PxVec3" title="PxGjkQuery::Support::supportLocal"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::Support::supportLocal()</span></code></a> defining the shape’s core, and</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4NK10PxGjkQuery7Support9getMarginEv" title="PxGjkQuery::Support::getMargin"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::Support::getMargin()</span></code></a> returning the shape’s margin.</p></li>
+</ul>
+<p>The core of a shape is a convex hull of an arbitrary set of points. The <strong>supportLocal()</strong> function of the shape’s
+support mapping should be able to return the farthest point on the hull surface in any given direction.</p>
+<p>The margin of a shape is the distance from the shape’s core where all points still belong to the shape.</p>
+<p>For example, this code defines the support mapping of a sphere shape:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">SphereSupport</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxGjkQuery</span><span class="o">::</span><span class="n">Support</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">radius</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="nf">getMargin</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">radius</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="nf">supportLocal</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dir</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here the sphere’s core is a single point - [0 0 0], and the sphere’s margin is its radius.</p>
+<p>A slightly more complex example is the support mapping of a capsule shape:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">CapsuleSupport</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxGjkQuery</span><span class="o">::</span><span class="n">Support</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">radius</span><span class="p">,</span><span class="w"> </span><span class="n">halfHeight</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="nf">getMargin</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">radius</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="nf">supportLocal</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">dir</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">((</span><span class="n">dir</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">halfHeight</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="o">-</span><span class="n">halfHeight</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The capsule’s core is a line segment, thus, depending on the direction, the <strong>supportLocal()</strong> function returns
+one of the two end points of this segment, either [halfHeight 0 0] or [-halfHeight 0 0]. The margin of
+a capsule is its radius, same as for a sphere.</p>
+</section>
+<section id="queries">
+<h2>Queries<a class="headerlink" href="#queries" title="Permalink to this headline"></a></h2>
+<p>Queries are simple tests for two shapes located in space.</p>
+<section id="pxgjkquery-overlap">
+<h3>PxGjkQuery::overlap()<a class="headerlink" href="#pxgjkquery-overlap" title="Permalink to this headline"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxGjkQuery::overlap</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseA</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseB</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery7overlapERK7SupportRK7SupportRK11PxTransformRK11PxTransform" title="PxGjkQuery::overlap"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::overlap()</span></code></a> query tests if two shapes intersect. It returns true if they do.</p>
+</section>
+<section id="pxgjkquery-sweep">
+<h3>PxGjkQuery::sweep()<a class="headerlink" href="#pxgjkquery-sweep" title="Permalink to this headline"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxGjkQuery::sweep</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseA</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseB</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery5sweepERK7SupportRK7SupportRK11PxTransformRK11PxTransformRK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3" title="PxGjkQuery::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::sweep()</span></code></a> query tests if one moving shape B hits the other stationary shape A. It returns true if the hit occurs,
+and computes the hit distance, hit normal, and hit point.</p>
+</section>
+<section id="pxgjkquery-raycast">
+<h3>PxGjkQuery::raycast()<a class="headerlink" href="#pxgjkquery-raycast" title="Permalink to this headline"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxGjkQuery::raycast</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">shape</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">rayStart</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery7raycastERK7SupportRK11PxTransformRK6PxVec3RK6PxVec36PxRealR6PxRealR6PxVec3R6PxVec3" title="PxGjkQuery::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::raycast()</span></code></a> query tests a ray against a shape. It returns true if the ray hits the shape, and computes the hit
+distance, hit normal, and hit point. Internally a raycast is a sweep of a point (or a sphere with zero radius) against a shape.</p>
+</section>
+<section id="pxgjkquery-proximityinfo">
+<h3>PxGjkQuery::proximityInfo()<a class="headerlink" href="#pxgjkquery-proximityinfo" title="Permalink to this headline"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxGjkQuery::proximityInfo</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseA</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseB</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pointA</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pointB</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">separatingAxis</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="o">&amp;</span><span class="w"> </span><span class="n">separation</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal" title="PxGjkQuery::proximityInfo"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::proximityInfo()</span></code></a> query returns true if the distance between two shapes is smaller than the provided
+contact distance. It also computes such proximity information as the closest/deepest points on the shapes’
+surfaces, the axis separating two shapes (the separating plane normal), and the separation/penetration
+distance.</p>
+</section>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline"></a></h2>
+<p><strong>PhysXExtensions</strong> module’s <strong>PxGjkQueryExt API</strong> provides several auxiliary classes and functions for <strong>PxGjkQuery API</strong>.
+This includes 5 pre-made support mappings and a contact generation helper function.</p>
+<section id="pre-made-support-mappings">
+<h3>Pre-made support mappings<a class="headerlink" href="#pre-made-support-mappings" title="Permalink to this headline"></a></h3>
+<p>There are 4 support mappings for convex geometry types:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt13SphereSupportE" title="PxGjkQueryExt::SphereSupport"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQueryExt::SphereSupport</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt14CapsuleSupportE" title="PxGjkQueryExt::CapsuleSupport"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQueryExt::CapsuleSupport</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt10BoxSupportE" title="PxGjkQueryExt::BoxSupport"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQueryExt::BoxSupport</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE" title="PxGjkQueryExt::ConvexMeshSupport"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQueryExt::ConvexMeshSupport</span></code></a></p></li>
+</ul>
+<p>And a universal support mapping which automatically detects any of the four types above and internally creates
+the corresponding support mapping.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE" title="PxGjkQueryExt::ConvexGeomSupport"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGjkQueryExt::ConvexGeomSupport</span></code></a></p></li>
+</ul>
+</section>
+<section id="pxgjkqueryext-generatecontacts">
+<h3>PxGjkQueryExt::generateContacts()<a class="headerlink" href="#pxgjkqueryext-generatecontacts" title="Permalink to this headline"></a></h3>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxGjkQueryExt::generateContacts</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGjkQuery</span><span class="o">::</span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGjkQuery</span><span class="o">::</span><span class="n">Support</span><span class="o">&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseA</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">poseB</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxContactBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactBuffer</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxGjkQueryExt.html#_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer" title="PxGjkQueryExt::generateContacts"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQueryExt::generateContacts()</span></code></a> function internally uses <a class="reference internal" href="../_api_build/classPxGjkQuery.html#_CPPv4N10PxGjkQuery13proximityInfoERK7SupportRK7SupportRK11PxTransformRK11PxTransform6PxReal6PxRealR6PxVec3R6PxVec3R6PxVec3R6PxReal" title="PxGjkQuery::proximityInfo"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGjkQuery::proximityInfo()</span></code></a> query and then writes its result as a contact
+to the provided contact buffer.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

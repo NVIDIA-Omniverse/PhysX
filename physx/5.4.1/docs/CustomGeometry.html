@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Geometry &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Body Overview" href="RigidBodyOverview.html" />
+    <link rel="prev" title="Geometry" href="Geometry.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Custom Geometry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-geometry-callbacks">Custom Geometry Callbacks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#custom-type">Custom Type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#collision-detection">Collision Detection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scene-queries">Scene Queries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debug-visualization">Debug Visualization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mass-properties-computation">Mass Properties Computation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#extensions">Extensions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pre-made-callbacks-classes">Pre-made callbacks classes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Custom Geometry</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="custom-geometry">
+<span id="customgeometry"></span><h1>Custom Geometry<a class="headerlink" href="#custom-geometry" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This section describes how to use PhysX’s Custom Geometry feature.</p>
+<p>The purpose of the Custom Geometry feature is to allow the creation of application specific collision
+geometries (e.g. a voxel map) that can seamlessly interact with the PhysX’s built-in geometry types.
+Any custom geometry is represented by the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a> class in the PhysX SDK. The constructor of
+the class expects a reference to an object implementing the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a> virtual interface.</p>
+<p>This is how an example of a custom geometry usage could look like:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">gVoxelMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">));</span><span class="w"></span>
+<span class="n">gVoxelMapCallbacks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">VoxelMapCallbacks</span><span class="p">();</span><span class="w"></span>
+<span class="n">gVoxelMapGeometry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCustomGeometry</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMapCallbacks</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMap</span><span class="p">,</span><span class="w"> </span><span class="n">gVoxelMapGeometry</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">gDefaultMaterial</span><span class="p">);</span><span class="w"></span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">gVoxelMap</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Every custom geometry type needs to implement all or some functions of the callbacks interface in order to
+enable the functionality required for the application.</p>
+<p>Note: Custom geometry only stores a reference to the callback object;
+multiple custom geometries can maintain a reference to the same callback object;
+managing a callback object’s lifetime is the user’s responsibility.</p>
+</section>
+<section id="custom-geometry-callbacks">
+<h2>Custom Geometry Callbacks<a class="headerlink" href="#custom-geometry-callbacks" title="Permalink to this headline"></a></h2>
+<p>A custom callbacks class inherited from the <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a> interface will need to
+implement 9 virtual functions, serving to provide following functionality:</p>
+<section id="custom-type">
+<h3>Custom Type<a class="headerlink" href="#custom-type" title="Permalink to this headline"></a></h3>
+<p>PhysX doesn’t use Custom Geometry’s Custom Type, but it may be useful for users to identify a custom
+geometry object if they have more than one type of custom geometry in their application. The function
+<a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks13getCustomTypeEv" title="PxCustomGeometry::Callbacks::getCustomType"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getCustomType()</span></code></a> returns a custom type unique to each implementation.
+The custom type is set using the macros DECLARE_CUSTOM_GEOMETRY_TYPE and IMPLEMENT_CUSTOM_GEOMETRY_TYPE.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// VoxelMap.h</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">VoxelMapCallbacks</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxCustomGeometry</span><span class="o">::</span><span class="n">Callbacks</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">DECLARE_CUSTOM_GEOMETRY_TYPE</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="c1">// VoxelMap.cpp</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;VoxelMap.h&quot;</span><span class="cp"></span>
+
+<span class="n">IMPLEMENT_CUSTOM_GEOMETRY_TYPE</span><span class="p">(</span><span class="n">VoxelMapCallbacks</span><span class="p">)</span><span class="w"></span>
+
+<span class="p">...</span><span class="w"></span>
+
+<span class="c1">// Test if custom geometry is a voxel map</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">gCustomGeometry</span><span class="p">.</span><span class="n">getCustomType</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">VoxelMapCallbacks</span><span class="o">::</span><span class="n">TYPE</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="collision-detection">
+<h3>Collision Detection<a class="headerlink" href="#collision-detection" title="Permalink to this headline"></a></h3>
+<p>To enable collision detection for a custom geometry, the following virtual functions need to be implemented:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBounds3</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::getLocalBounds</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks14getLocalBoundsERK10PxGeometry" title="PxCustomGeometry::Callbacks::getLocalBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getLocalBounds()</span></code></a> is used to determine overlapping bounds in BroadPhase.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::generateContacts</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">meshContactMargin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxContactBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactBuffer</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks16generateContactsERK10PxGeometryRK10PxGeometryRK11PxTransformRK11PxTransformK6PxRealK6PxRealK6PxRealR15PxContactBuffer" title="PxCustomGeometry::Callbacks::generateContacts"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::generateContacts()</span></code></a> is used for exact contact points computation in NarrowPhase.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::usePersistentContactManifold</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="o">&amp;</span><span class="w"> </span><span class="n">breakingThreshold</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks28usePersistentContactManifoldERK10PxGeometryR6PxReal" title="PxCustomGeometry::Callbacks::usePersistentContactManifold"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::usePersistentContactManifold()</span></code></a> should return true if the geometry has complex
+structure and may generate many (more than 32) contact points.</p>
+<p>Note: Cutom Geometry is CPU-only yet, and thus can not interact with the GPU-only features like soft bodies or particles.</p>
+</section>
+<section id="scene-queries">
+<h3>Scene Queries<a class="headerlink" href="#scene-queries" title="Permalink to this headline"></a></h3>
+<p>These 4 functions will allow the geometry to participate in scene queries:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBounds3</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::getLocalBounds</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks14getLocalBoundsERK10PxGeometry" title="PxCustomGeometry::Callbacks::getLocalBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::getLocalBounds()</span></code></a> is used for preliminary testing.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::raycast</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxHits</span><span class="p">,</span><span class="w"> </span><span class="n">PxGeomRaycastHit</span><span class="o">*</span><span class="w"> </span><span class="n">rayHits</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">stride</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxRaycastThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks7raycastERK6PxVec3RK6PxVec3RK10PxGeometryRK11PxTransform6PxReal10PxHitFlags5PxU32P16PxGeomRaycastHit5PxU32P22PxRaycastThreadContext" title="PxCustomGeometry::Callbacks::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::raycast()</span></code></a> is used for raycast queries against the geometry.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::overlap</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxOverlapThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks7overlapERK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformP22PxOverlapThreadContext" title="PxCustomGeometry::Callbacks::overlap"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::overlap()</span></code></a> is used for overlap queries against the geometry.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::sweep</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"> </span><span class="n">PxGeomSweepHit</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sweepHit</span><span class="p">,</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">inflation</span><span class="p">,</span><span class="w"> </span><span class="n">PxSweepThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformR14PxGeomSweepHit10PxHitFlagsK6PxRealP20PxSweepThreadContext" title="PxCustomGeometry::Callbacks::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::sweep()</span></code></a> is used for sweep queries against the geometry.</p>
+</section>
+<section id="debug-visualization">
+<h3>Debug Visualization<a class="headerlink" href="#debug-visualization" title="Permalink to this headline"></a></h3>
+<p>Users can implement this function to have their custom geometry drawn in PhysX’s debug visualization.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::visualize</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="n">PxRenderOutput</span><span class="o">&amp;</span><span class="w"> </span><span class="n">out</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">absPose</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxBounds3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cullbox</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks9visualizeERK10PxGeometryR14PxRenderOutputRK11PxTransformRK9PxBounds3" title="PxCustomGeometry::Callbacks::visualize"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::visualize()</span></code></a> is used for debug visualization of the geometry.</p>
+</section>
+<section id="mass-properties-computation">
+<h3>Mass Properties Computation<a class="headerlink" href="#mass-properties-computation" title="Permalink to this headline"></a></h3>
+<p>To enable automatic dynamic rigid body mass computation.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">PxCustomGeometry::Callbacks::computeMassProperties</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geometry</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxMassProperties</span><span class="o">&amp;</span><span class="w"> </span><span class="n">massProperties</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p><a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv4NK16PxCustomGeometry9Callbacks21computeMassPropertiesERK10PxGeometryR16PxMassProperties" title="PxCustomGeometry::Callbacks::computeMassProperties"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks::computeMassProperties()</span></code></a> for the geometry that can be used with dynamic rigid bodies.</p>
+</section>
+</section>
+<section id="extensions">
+<h2>Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline"></a></h2>
+<p>PhysXExtensions module’s PxCustomGeometryExt API provides two pre-made custom geometry callbacks classes.</p>
+<section id="pre-made-callbacks-classes">
+<h3>Pre-made callbacks classes<a class="headerlink" href="#pre-made-callbacks-classes" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxCustomGeometryExt.html#_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE" title="PxCustomGeometryExt::CylinderCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::CylinderCallbacks</span></code></a> for cylinder collision geometry</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxCustomGeometryExt.html#_CPPv4N19PxCustomGeometryExt13ConeCallbacksE" title="PxCustomGeometryExt::ConeCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::ConeCallbacks</span></code></a> for cone collision geometry</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

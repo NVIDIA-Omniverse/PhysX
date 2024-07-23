@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxGjkQueryExt &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxGpuFixedTendonData" href="classPxGpuFixedTendonData.html" />
+    <link rel="prev" title="PxGjkQuery" href="classPxGjkQuery.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxGjkQueryExt</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxgjkqueryext">
+<h1>PxGjkQueryExt<a class="headerlink" href="#pxgjkqueryext" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_extensions_PxGjkQueryExt.h.html#pxgjkqueryext-8h"><span class="std std-ref">include/extensions/PxGjkQueryExt.h</span></a></p>
+<p class="rubric-h4 rubric">Structs</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#structpxgjkqueryext_1_1boxsupport"><span class="std std-ref">BoxSupport</span></a>: Pre-made support mapping for a box.</p></li>
+<li><p><a class="reference internal" href="#structpxgjkqueryext_1_1capsulesupport"><span class="std std-ref">CapsuleSupport</span></a>: Pre-made support mapping for a capsule.</p></li>
+<li><p><a class="reference internal" href="#structpxgjkqueryext_1_1convexgeomsupport"><span class="std std-ref">ConvexGeomSupport</span></a>: Pre-made support mapping for any PhysX's convex geometry (sphere, capsule, box, convex mesh)</p></li>
+<li><p><a class="reference internal" href="#structpxgjkqueryext_1_1convexmeshsupport"><span class="std std-ref">ConvexMeshSupport</span></a>: Pre-made support mapping for a convex mesh.</p></li>
+<li><p><a class="reference internal" href="#structpxgjkqueryext_1_1spheresupport"><span class="std std-ref">SphereSupport</span></a>: Pre-made support mapping for a sphere.</p></li>
+</ul>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv413PxGjkQueryExt">
+<span id="_CPPv313PxGjkQueryExt"></span><span id="_CPPv213PxGjkQueryExt"></span><span id="PxGjkQueryExt"></span><span class="target" id="classpxgjkqueryext"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxGjkQueryExt</span></span></span><a class="headerlink" href="#_CPPv413PxGjkQueryExt" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for built-in convex geometry types. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-static-functions">Public Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer">
+<span id="_CPPv3N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer"></span><span id="_CPPv2N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer"></span><span id="PxGjkQueryExt::generateContacts__PxGjkQuery::SupportCR.PxGjkQuery::SupportCR.PxTransformCR.PxTransformCR.PxReal.PxReal.PxContactBufferR"></span><span class="target" id="classpxgjkqueryext_1aab6247227c2317418146ba9026816e20"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">generateContacts</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">a</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">b</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseA</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><span class="n"><span class="pre">PxTransform</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">poseB</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">contactDistance</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">toleranceLength</span></span>, <a class="reference internal" href="classPxContactBuffer.html#_CPPv415PxContactBuffer" title="PxContactBuffer"><span class="n"><span class="pre">PxContactBuffer</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">contactBuffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt16generateContactsERKN10PxGjkQuery7SupportERKN10PxGjkQuery7SupportERK11PxTransformRK11PxTransform6PxReal6PxRealR15PxContactBuffer" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Generates a contact point between two shapes using GJK-EPA algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – <strong>[in]</strong> Shape A support mapping </p></li>
+<li><p><strong>b</strong> – <strong>[in]</strong> Shape B support mapping </p></li>
+<li><p><strong>poseA</strong> – <strong>[in]</strong> Shape A transformation </p></li>
+<li><p><strong>poseB</strong> – <strong>[in]</strong> Shape B transformation </p></li>
+<li><p><strong>contactDistance</strong> – <strong>[in]</strong> The distance at which contacts begin to be generated between the shapes </p></li>
+<li><p><strong>toleranceLength</strong> – <strong>[in]</strong> The toleranceLength. Used for scaling distance-based thresholds internally to produce appropriate results given simulations in different units </p></li>
+<li><p><strong>contactBuffer</strong> – <strong>[out]</strong> A buffer to store the contact</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if there is a contact. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupportE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupportE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupportE"></span><span id="PxGjkQueryExt::BoxSupport"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for a box. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportEv"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a27d065c6226a813884a17622e7e266fc"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport__PxVec3CR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1ae3407104bf1d29a25d9f26c873ef1d69"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">halfExtents</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK6PxVec36PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a BoxSupport for a box halfExtents with optional margin. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal"></span><span id="PxGjkQueryExt::BoxSupport::BoxSupport__PxBoxGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1adb1da6f5b3bc79b3ce68f8ffec7ed57b"></span><span class="sig-name descname"><span class="n"><span class="pre">BoxSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxBoxGeometry.html#_CPPv413PxBoxGeometry" title="PxBoxGeometry"><span class="n"><span class="pre">PxBoxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">box</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport10BoxSupportERK13PxBoxGeometry6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a BoxSupport for a PxBoxGeometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt10BoxSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt10BoxSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt10BoxSupport9getMarginEv"></span><span id="PxGjkQueryExt::BoxSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a52c73187802c8a384e355f0784d7e193"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::BoxSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a710f702d98b7db5a9dad5a42ed8c42e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt10BoxSupport12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport11halfExtentsE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport11halfExtentsE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport11halfExtentsE"></span><span id="PxGjkQueryExt::BoxSupport::halfExtents__PxVec3"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1a8f79ccb4c49424e67a9d3dc4a5e0c04b"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">halfExtents</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport11halfExtentsE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt10BoxSupport6marginE">
+<span id="_CPPv3N13PxGjkQueryExt10BoxSupport6marginE"></span><span id="_CPPv2N13PxGjkQueryExt10BoxSupport6marginE"></span><span id="PxGjkQueryExt::BoxSupport::margin__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1boxsupport_1aa3d851ee901c35438f5837604f3f8c82"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">margin</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt10BoxSupport6marginE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupportE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupportE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupportE"></span><span id="PxGjkQueryExt::CapsuleSupport"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for a capsule. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a0bb634f3d5611c9f3e7d7bfd80da7e72"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport__PxReal.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a359636b62101fc96f8962db6d356d6b8"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">halfHeight</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportE6PxReal6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a CapsuleSupport for capsule radius and halfHeight. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry"></span><span id="PxGjkQueryExt::CapsuleSupport::CapsuleSupport__PxCapsuleGeometryCR"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1af9a5bc62dd2c9090030ff48abb8ccc16"></span><span class="sig-name descname"><span class="n"><span class="pre">CapsuleSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxCapsuleGeometry.html#_CPPv417PxCapsuleGeometry" title="PxCapsuleGeometry"><span class="n"><span class="pre">PxCapsuleGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport14CapsuleSupportERK17PxCapsuleGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a CapsuleSupport for a PxCapsuleGeometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt14CapsuleSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt14CapsuleSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt14CapsuleSupport9getMarginEv"></span><span id="PxGjkQueryExt::CapsuleSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1af86a0352afc99e221e16b3884273bd85"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::CapsuleSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a97a7ed8c03ae327ea80a50c0c8334f6c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt14CapsuleSupport12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport6radiusE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport6radiusE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport6radiusE"></span><span id="PxGjkQueryExt::CapsuleSupport::radius__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1a475b03e30504de7738aa49b7c717d98c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radius</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport6radiusE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt14CapsuleSupport10halfHeightE">
+<span id="_CPPv3N13PxGjkQueryExt14CapsuleSupport10halfHeightE"></span><span id="_CPPv2N13PxGjkQueryExt14CapsuleSupport10halfHeightE"></span><span id="PxGjkQueryExt::CapsuleSupport::halfHeight__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1capsulesupport_1ad3b2b8921414c0103c11394f6a39cfa4"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">halfHeight</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupport10halfHeightE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupportE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupportE"></span><span id="PxGjkQueryExt::ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for any PhysX’s convex geometry (sphere, capsule, box, convex mesh) </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a6fe981b5faa1eede91761f9b3f657b6e"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal"></span><span id="PxGjkQueryExt::ConvexGeomSupport::ConvexGeomSupport__PxGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a7eb36bcf4689f9b35436cc6a0cc3c316"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxGeometry.html#_CPPv410PxGeometry" title="PxGeometry"><span class="n"><span class="pre">PxGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport17ConvexGeomSupportERK10PxGeometry6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a BoxSupport for a PxGeometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupportD0Ev">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupportD0Ev"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupportD0Ev"></span><span id="PxGjkQueryExt::ConvexGeomSupport::~ConvexGeomSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1adff5439384aec7be73e95b944489876c"></span><span class="sig-name descname"><span class="n"><span class="pre">~ConvexGeomSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupportD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Destructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::isValidC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1ab1289a702a7e79fa031c471244a70551"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport7isValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Returns false if ConvexGeomSupport was constructed from non-convex geometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv"></span><span id="PxGjkQueryExt::ConvexGeomSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a09d6efa8bf9b8f61fd29ce687d505363"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::ConvexGeomSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a57edb76db0a8295b557aaac286180d76"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexGeomSupport12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport9alignmentE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport9alignmentE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport9alignmentE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::alignment__voidP"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a6ab38786fefcfba677298da9ac63730b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">alignment</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport9alignmentE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport6sphereE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport6sphereE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport6sphereE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::sphere__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a33dbc3fa307a8fa966f5bc65cc63ecc0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sphere</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt13SphereSupportE" title="PxGjkQueryExt::SphereSupport"><span class="n"><span class="pre">SphereSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport6sphereE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport7capsuleE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport7capsuleE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport7capsuleE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::capsule__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1a60e4e7ad6e7180d97eccc4301fc187a0"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capsule</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt14CapsuleSupportE" title="PxGjkQueryExt::CapsuleSupport"><span class="n"><span class="pre">CapsuleSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport7capsuleE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport3boxE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport3boxE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport3boxE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::box__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1aaff3f67932181003af8be2210648c93c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">box</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt10BoxSupportE" title="PxGjkQueryExt::BoxSupport"><span class="n"><span class="pre">BoxSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport3boxE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE"></span><span id="PxGjkQueryExt::ConvexGeomSupport::convexMesh__PxU8A"></span><span class="target" id="structpxgjkqueryext_1_1convexgeomsupport_1ad4a92ea58864935649b5c39b81d04295"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">convexMesh</span></span></span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE" title="PxGjkQueryExt::ConvexMeshSupport"><span class="n"><span class="pre">ConvexMeshSupport</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexGeomSupport10convexMeshE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupportE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupportE"></span><span id="PxGjkQueryExt::ConvexMeshSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for a convex mesh. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a038032c176d7b6087555b74855f799c4"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport__PxConvexMeshCR.PxVec3CR.PxQuatCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a00deb91760dc356c5543504750a67b21"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">convexMesh</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scale</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">scaleRotation</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="p"><span class="pre">(</span></span><a class="reference internal" href="enum_Px_8h_1a70160ca5bbafef277790b3e0f12baf38.html#_CPPv4N10PxIDENTITY10PxIdentityE" title="PxIdentity"><span class="n"><span class="pre">PxIdentity</span></span></a><span class="p"><span class="pre">)</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK12PxConvexMeshRK6PxVec3RK6PxQuat6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a BoxSupport for a PxConvexMesh. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal"></span><span id="PxGjkQueryExt::ConvexMeshSupport::ConvexMeshSupport__PxConvexMeshGeometryCR.PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1ae54c6f08230fbc5354ff9f6760801162"></span><span class="sig-name descname"><span class="n"><span class="pre">ConvexMeshSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMeshGeometry.html#_CPPv420PxConvexMeshGeometry" title="PxConvexMeshGeometry"><span class="n"><span class="pre">PxConvexMeshGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">convexMesh</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">margin</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport17ConvexMeshSupportERK20PxConvexMeshGeometry6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a BoxSupport for a PxConvexMeshGeometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv"></span><span id="PxGjkQueryExt::ConvexMeshSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a63bf0784651c31cf551c8aaee0287166"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::ConvexMeshSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a75123e34a1a086b8477f860e2d915371"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt17ConvexMeshSupport12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::convexMesh__PxConvexMeshCP"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a756901c126c68b89a78d49e4f74abe18"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxConvexMesh.html#_CPPv412PxConvexMesh" title="PxConvexMesh"><span class="n"><span class="pre">PxConvexMesh</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">convexMesh</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport10convexMeshE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport5scaleE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport5scaleE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport5scaleE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::scale__PxVec3"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1abac35cb9df1f1b6900512f96dfbced38"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scale</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport5scaleE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::scaleRotation__PxQuat"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a8c898840fc5a6c4b9aa8055ade0892ce"></span><a class="reference internal" href="typedef_PxQuat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_CPPv46PxQuat" title="PxQuat"><span class="n"><span class="pre">PxQuat</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">scaleRotation</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport13scaleRotationE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt17ConvexMeshSupport6marginE">
+<span id="_CPPv3N13PxGjkQueryExt17ConvexMeshSupport6marginE"></span><span id="_CPPv2N13PxGjkQueryExt17ConvexMeshSupport6marginE"></span><span id="PxGjkQueryExt::ConvexMeshSupport::margin__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1convexmeshsupport_1a4ff8d3e968946b4008b611acbca2088c"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">margin</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt17ConvexMeshSupport6marginE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupportE">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupportE"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupportE"></span><span id="PxGjkQueryExt::SphereSupport"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="classPxGjkQuery.html#_CPPv410PxGjkQuery" title="PxGjkQuery"><span class="n"><span class="pre">PxGjkQuery</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxGjkQuery.html#_CPPv4N10PxGjkQuery7SupportE" title="PxGjkQuery::Support"><span class="n"><span class="pre">Support</span></span></a><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupportE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Pre-made support mapping for a sphere. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportEv">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportEv"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportEv"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a44b21125d449d4c0b58be5302411466a"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Default constructor. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a1f9c2f25a15897690c0269fd23a345ad"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">radius</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportE6PxReal" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a SphereSupport for a sphere radius. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry"></span><span id="PxGjkQueryExt::SphereSupport::SphereSupport__PxSphereGeometryCR"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1aa850d928e0306bf71a12e6a611459408"></span><span class="sig-name descname"><span class="n"><span class="pre">SphereSupport</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="classPxSphereGeometry.html#_CPPv416PxSphereGeometry" title="PxSphereGeometry"><span class="n"><span class="pre">PxSphereGeometry</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">geom</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport13SphereSupportERK16PxSphereGeometry" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Constructs a SphereSupport for a PxSphereGeometry. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt13SphereSupport9getMarginEv">
+<span id="_CPPv3NK13PxGjkQueryExt13SphereSupport9getMarginEv"></span><span id="_CPPv2NK13PxGjkQueryExt13SphereSupport9getMarginEv"></span><span id="PxGjkQueryExt::SphereSupport::getMarginC"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1aa4cec0d0af28e304b3aabc3e9ac749d2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMargin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport9getMarginEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the user defined shape margin. </p>
+<p>Margin should be greater than or equal to 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Margin. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3">
+<span id="_CPPv3NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3"></span><span id="_CPPv2NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3"></span><span id="PxGjkQueryExt::SphereSupport::supportLocal__PxVec3CRC"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1ae353f2a7bacabb45ddaaa05c6db8ab3d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportLocal</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">dir</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK13PxGjkQueryExt13SphereSupport12supportLocalERK6PxVec3" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the farthest point on the user defined shape’s core in given direction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dir</strong> – <strong>[in]</strong> Direction</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Farthest point in given direction. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N13PxGjkQueryExt13SphereSupport6radiusE">
+<span id="_CPPv3N13PxGjkQueryExt13SphereSupport6radiusE"></span><span id="_CPPv2N13PxGjkQueryExt13SphereSupport6radiusE"></span><span id="PxGjkQueryExt::SphereSupport::radius__PxReal"></span><span class="target" id="structpxgjkqueryext_1_1spheresupport_1a009b71a7824afcf5d0b5a8ad003f27ab"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_CPPv46PxReal" title="PxReal"><span class="n"><span class="pre">PxReal</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">radius</span></span></span><a class="headerlink" href="#_CPPv4N13PxGjkQueryExt13SphereSupport6radiusE" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

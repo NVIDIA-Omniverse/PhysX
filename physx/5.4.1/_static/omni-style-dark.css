@@ -1,0 +1,315 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+html[data-theme="dark"]
+{
+    --text: #cecece;
+    --background-default: #121212;
+    --background-alternate: #242424;
+    --ui-and-graphics: #666666;
+
+    --black: #000000;
+    --gray-1: #111111;
+    --gray-2: #1a1a1a;
+    --gray-3: #222222;
+    --gray-4: #333333;
+
+    /* omni-style */
+    --sidebar-text-color: #eeeeee;
+
+    --important-background-alt-color: #333333;
+
+    --table-background-header: var(--ui-and-graphics);
+
+    --api-member-background-color: #222222;
+    --api-member-header-text-color: #FCFCFC;
+    --api-member-header-background-color: #181818;
+
+    /* fix for bright tab borders */
+    --sd-color-tabs-overline: var(--ui-and-graphics);
+    --sd-color-tabs-underline: var(--ui-and-graphics);
+
+    /* fix for missing details borders */
+    --sd-color-card-border: var(--ui-and-graphics);
+}
+
+[data-theme='dark'] #theme-switcher {
+    color: #FCFCFC;
+    background-color: #333333;
+}
+
+/* page default background override */
+[data-theme='dark'] .wy-body-for-nav
+{
+    background-color: #1F1F1F;
+}
+
+ /* affects search box */
+[data-theme='dark'] #rtd-search-form,
+[data-theme='dark'] #rtd-search-form > input:nth-child(1)
+{
+    color-scheme: dark;
+    border-color: #FCFCFC;
+}
+
+/**********************************************************************************************************************/
+/*                                         Admonitions                                                                */
+/**********************************************************************************************************************/
+
+/* general non-specific admonition */
+[data-theme='dark'] .rst-content .admonition
+{
+    background: #222238;
+}
+
+/* todo, attention, caution, warning body */
+[data-theme='dark'] .rst-content .admonition-todo,
+[data-theme='dark'] .rst-content .attention,
+[data-theme='dark'] .rst-content .caution,
+[data-theme='dark'] .rst-content .warning,
+[data-theme='dark'] .rst-content .wy-alert-warning.admonition,
+[data-theme='dark'] .rst-content .wy-alert-warning.danger,
+[data-theme='dark'] .rst-content .wy-alert-warning.error,
+[data-theme='dark'] .rst-content .wy-alert-warning.hint,
+[data-theme='dark'] .rst-content .wy-alert-warning.important,
+[data-theme='dark'] .rst-content .wy-alert-warning.note,
+[data-theme='dark'] .rst-content .wy-alert-warning.seealso,
+[data-theme='dark'] .rst-content .wy-alert-warning.tip,
+[data-theme='dark'] .wy-alert.wy-alert-warning
+{
+    background: #502000;
+}
+
+/* danger, error body */
+[data-theme='dark'] .rst-content .danger,
+[data-theme='dark'] .rst-content .error,
+[data-theme='dark'] .rst-content .wy-alert-danger.admonition,
+[data-theme='dark'] .rst-content .wy-alert-danger.admonition-todo,
+[data-theme='dark'] .rst-content .wy-alert-danger.attention,
+[data-theme='dark'] .rst-content .wy-alert-danger.caution,
+[data-theme='dark'] .rst-content .wy-alert-danger.hint,
+[data-theme='dark'] .rst-content .wy-alert-danger.important,
+[data-theme='dark'] .rst-content .wy-alert-danger.note,
+[data-theme='dark'] .rst-content .wy-alert-danger.seealso,
+[data-theme='dark'] .rst-content .wy-alert-danger.tip,
+[data-theme='dark'] .rst-content .wy-alert-danger.warning,
+[data-theme='dark'] .wy-alert.wy-alert-danger
+{
+    background: #301010;
+}
+
+/* hint, important, tip, note, see also body */
+[data-theme='dark'] .rst-content .hint,
+[data-theme='dark'] .rst-content .important,
+[data-theme='dark'] .rst-content .tip,
+[data-theme='dark'] .rst-content .wy-alert-success.admonition,
+[data-theme='dark'] .rst-content .wy-alert-success.admonition-todo,
+[data-theme='dark'] .rst-content .wy-alert-success.attention,
+[data-theme='dark'] .rst-content .wy-alert-success.caution,
+[data-theme='dark'] .rst-content .wy-alert-success.danger,
+[data-theme='dark'] .rst-content .wy-alert-success.error,
+[data-theme='dark'] .rst-content .wy-alert-success.note,
+[data-theme='dark'] .rst-content .wy-alert-success.seealso,
+[data-theme='dark'] .rst-content .wy-alert-success.warning,
+[data-theme='dark'] .wy-alert.wy-alert-success,
+[data-theme='dark'] .rst-content .note,
+[data-theme='dark'] .rst-content .seealso,
+[data-theme='dark'] .rst-content .wy-alert-info.admonition,
+[data-theme='dark'] .rst-content .wy-alert-info.admonition-todo,
+[data-theme='dark'] .rst-content .wy-alert-info.attention,
+[data-theme='dark'] .rst-content .wy-alert-info.caution,
+[data-theme='dark'] .rst-content .wy-alert-info.danger,
+[data-theme='dark'] .rst-content .wy-alert-info.error,
+[data-theme='dark'] .rst-content .wy-alert-info.hint,
+[data-theme='dark'] .rst-content .wy-alert-info.important,
+[data-theme='dark'] .rst-content .wy-alert-info.tip,
+[data-theme='dark'] .rst-content .wy-alert-info.warning,
+[data-theme='dark'] .wy-alert.wy-alert-info
+{
+    background: #183018;
+}
+
+[data-theme='dark'] .rst-content code.literal,
+[data-theme='dark'] .rst-content tt.literal
+{
+    color: var(--nv-green);
+}
+
+/* make links to function looks like other literals */
+[data-theme='dark'] .rst-content code.xref,
+[data-theme='dark'] .rst-content tt.xref,
+[data-theme='dark'] a .rst-content code,
+[data-theme='dark'] a .rst-content tt
+{
+    color: var(--nv-green);
+}
+
+[data-theme='dark'] .rst-content div[class^="highlight"],
+[data-theme='dark'] .rst-content pre.literal-block
+{
+    border-color: #777777;
+}
+
+[data-theme='dark'] .rst-content code.literal,
+[data-theme='dark'] a .rst-content code.literal
+{
+    background-color: #102410;
+    border-color: #777777;
+}
+
+/* add nvidia logo (like www.nvidia.com) */
+[data-theme='dark'] footer p:first-child::before
+{
+    content: url(../_static/NVIDIA-LogoWhite.svg);
+}
+
+[data-theme='dark'] .wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a
+{
+    color: #FCFCFC;
+    border: none;
+}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a{background-color: #404040;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a{background-color: #484848;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a{background-color: #505050;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a{background-color: #585858;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a{background-color: #606060;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a{background-color: #686868;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a{background-color: #707070;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a{background-color: #787878;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a{background-color: #808080;}
+
+[data-theme='dark'] .wy-menu-vertical li.toctree-l1.current:hover li.toctree-l2 > a:hover {background-color: #484848;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l2.current:hover li.toctree-l3 > a:hover {background-color: #505050;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l3.current:hover li.toctree-l4 > a:hover {background-color: #585858;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l4.current:hover li.toctree-l5 > a:hover {background-color: #606060;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l5.current:hover li.toctree-l6 > a:hover {background-color: #686868;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l6.current:hover li.toctree-l7 > a:hover {background-color: #707070;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l7.current:hover li.toctree-l8 > a:hover {background-color: #787878;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l8.current:hover li.toctree-l9 > a:hover {background-color: #808080;}
+[data-theme='dark'] .wy-menu-vertical li.toctree-l9.current:hover li.toctree-l10 > a:hover {background-color: #888888;}
+
+[data-theme='dark'] .wy-menu-vertical li.toctree-l1 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l2 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l3 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l4 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l5 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l6 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l7 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l8 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l9 a:hover,
+[data-theme='dark'] .wy-menu-vertical li.toctree-l10 a:hover
+{
+    color: #FCFCFC;
+    background-color: #383838;
+}
+
+[data-theme='dark'] .wy-menu-vertical .toctree-l1 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l2 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l3 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l4 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l5 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l6 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l7 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l8 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l9 a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l10 a:hover
+{
+    color: #FFFFFF;
+    background-color: #222222;
+}
+
+[data-theme='dark'] .wy-menu-vertical .toctree-l1.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l2.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l3.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l4.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l5.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l6.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l7.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l8.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l9.current a:hover,
+[data-theme='dark'] .wy-menu-vertical .toctree-l10.current a:hover
+{
+    color: #FCFCFC;
+}
+
+[data-theme='dark'] .wy-menu-vertical .toctree-l1.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l2.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l3.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l4.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l5.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l6.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l7.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l8.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l9.current,
+[data-theme='dark'] .wy-menu-vertical .toctree-l10.current
+{
+    color: #FCFCFC;
+}
+
+/* break these up into shades of grey? at different levels? */
+[data-theme='dark'] .wy-menu-vertical .toctree-l1.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l2.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l3.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l4.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l5.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l6.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l7.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l8.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l9.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l10.current a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l1.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l2.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l3.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l4.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l5.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l6.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l7.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l8.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l9.on a,
+[data-theme='dark'] .wy-menu-vertical .toctree-l10.on a
+{
+    color: #FCFCFC;
+    background-color: #222222;
+}
+
+/* plus/minus expansion signs */
+[data-theme='dark'] .wy-menu-vertical li span.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.current > a span.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.current > a:hover span.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.current > a button.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.current > a:hover button.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.on > a span.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.on > a:hover span.toctree-expand,
+[data-theme='dark'] .wy-menu-vertical li.on a button.toctree-expand
+{
+    color: #FCFCFC;
+}
+
+[data-theme='dark'] .wy-grid-for-nav
+{
+    border-left: #888888 solid 1px;
+    border-right: #888888 solid 1px;
+}
+
+/* Return, Parameters, Notes heading in member description */
+[data-theme='dark'] html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl.simple>dt
+{
+    color: #FCFCFC;
+}

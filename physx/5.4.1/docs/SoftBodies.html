@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soft Bodies &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Particle System" href="ParticleSystem.html" />
+    <link rel="prev" title="Direct GPU API" href="DirectGPUAPI.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Soft Bodies</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tet-maker">Tet Maker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mesh-cleaning">Mesh Cleaning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cooking">Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-gpu-soft-bodies">Using GPU Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#kinematic-soft-bodies">Kinematic Soft Bodies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#constitutive-model">Constitutive Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning">Tuning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Soft Bodies</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="soft-bodies">
+<span id="softbodies"></span><h1>Soft Bodies<a class="headerlink" href="#soft-bodies" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>As opposed to rigid bodies, which preserve the relative poses of their vertex representation, soft bodies support relative motion of the nodes governing their form.
+A consequence of this complexity is that soft bodies deform under applied force, while rigid bodies do not.
+PhysX soft body simulation employs a combination of FEM (Finite Element Method) and two tetrahedral meshes.
+The first tetrahedral mesh is a simulation mesh, which only needs to approximately match the body’s shape.
+This freedom allows the use of meshes with more regular and equal-sized tetrahedra.
+The second tetrahedral mesh is the collision mesh.
+The collision mesh needs to match the surface of the simulated body accurately, otherwise the collision response will not be accurate.
+In addition to the simulation and collision meshes, there is also an associated triangle mesh that is used for rendering.
+The render mesh is typically used to generate the collision mesh.
+To achieve a smooth deformation the render mesh should have uniformly distributed vertices.</p>
+<p>Given that TGS offers better convergence with a computational cost comparable to PGS, TGS is recommended for soft body simulation (<a class="reference internal" href="#macklin-et-al-2019">Macklin et al., 2019</a>).</p>
+</section>
+<section id="tet-maker">
+<h2>Tet Maker<a class="headerlink" href="#tet-maker" title="Permalink to this headline"></a></h2>
+<p>The tetrahedral meshes required to create a soft body can be provided either from an external source or they can be created directly in PhysX by a component called Tet Maker. This process can be time consuming, therefore it is recommended to do it as a preprocessing step and save the cooked meshes to a file.
+The collision mesh is typically created from the render mesh by calling createConformingTetrahedronMesh(…). The surface of the resulting tetrahedral mesh will exactly match the surface of the input triangle mesh. The vertex list of the collision mesh replicates all vertices from the render mesh. The mesher can append additional vertices in case this is required to generate a valid tetrahedral mesh.
+The simulation mesh can be created by calling createVoxelTetrahedronMesh(…) which takes the previously generated collision mesh as input as well as parameters to define the resolution of the output mesh. It will create voxels completely enclosing the collision mesh. The following image shows the render mesh, the collision tetmesh and the simulation tetmesh from left to right.</p>
+<img alt="../_images/Tetmeshes.png" src="../_images/Tetmeshes.png" />
+<p>There are a few variables for users to control the resolution of the mesh and to get optional embedding information:</p>
+<ul class="simple">
+<li><p>numVoxelsAlongLongestBoundingBoxAxis: Allows control over the resolution of the resulting mesh. The parameter specifies the number of voxels to generate along the longest axis of the input mesh’s bounding box. The number of cells along the smaller dimensions will be computed such that voxels get similar edge lengths in all directions.</p></li>
+<li><p>numTetsPerVoxel: Every voxel will be split into 5 or 6 tetrahedra to produce a mesh with elements of similar size and shape.</p></li>
+<li><p>inputPointToOutputTetIndex: This is an optional parameter that allows a mapping between input point and the tetrahedron containing the point. If NULL is passed in, that information is not generated, otherwise pointer to a list with size matching the number of input vertices can be provided.</p></li>
+</ul>
+<p>The example in the section Using GPU Soft Bodies shows how to generate both meshes.</p>
+</section>
+<section id="mesh-cleaning">
+<h2>Mesh Cleaning<a class="headerlink" href="#mesh-cleaning" title="Permalink to this headline"></a></h2>
+<p>Some triangle meshes contain holes, self intersections, sliver triangles (triangles where at least one angle is much bigger or much smaller than the other angles) or other defects. Generating a tetmesh out of a triangle mesh that has defects might not be possible or lead to a bad tetmesh. In that case a remeshing operation can help to fix the mesh defects. Other triangle meshes might simply have an excessive amount of triangles such that it makes sense to reduce the mesh’s resolution before generating a collision and a simulation tetmesh. The high resolution triangle mesh can still be used for rendering.</p>
+<p>The following piece of code shows how to create a new set of vertices and triangles using a remeshing operation to fix mesh defects:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxVec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputVertices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputIndices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxVec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outputVertices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outputIndices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxI32</span><span class="w"> </span><span class="n">remesherGridResolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxTetMaker</span><span class="o">::</span><span class="n">remeshTriangleMesh</span><span class="p">(</span><span class="n">inputVertices</span><span class="p">,</span><span class="w"> </span><span class="n">inputIndices</span><span class="p">,</span><span class="w"> </span><span class="n">remesherGridResolution</span><span class="p">,</span><span class="w"> </span><span class="n">outputVertices</span><span class="p">,</span><span class="w"> </span><span class="n">outputIndices</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A remeshing operation might increase the number of triangles. This depends on the resolution of the internal grid that the remesher uses. In many cases it makes sense to reduce the number of triangles to a number that still captures the mesh’s surface well while being as low as possible because the less triangles, the less tetrahedra the collision tetmesh will have and the faster the simulation will run. The following code shows how to reduce the number of triangles in a mesh to a given target. It does not make use of the maximal edge length feature that allows to avoid too long triangle edges because big triangles don’t approximate the body’s shape well when it starts deforming:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxVec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputVertices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputIndices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxVec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outputVertices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxArray</span><span class="o">&lt;</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outputIndices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxI32</span><span class="w"> </span><span class="n">targetTriangleCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">500</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maximalTriangleEdgeLength</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxTetMaker</span><span class="o">::</span><span class="n">simplifyTriangleMesh</span><span class="p">(</span><span class="n">inputVertices</span><span class="p">,</span><span class="w"> </span><span class="n">inputIndices</span><span class="p">,</span><span class="w"> </span><span class="n">targetTriangleCount</span><span class="p">,</span><span class="w"> </span><span class="n">maximalTriangleEdgeLength</span><span class="p">,</span><span class="w"> </span><span class="n">outputVertices</span><span class="p">,</span><span class="w"> </span><span class="n">outputIndices</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>All mesh processing steps are usually performed in the following order</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Remeshing (optional)</p></li>
+<li><p>Mesh Simplification (optional)</p></li>
+<li><p>Creation of collision tetmesh</p></li>
+<li><p>Creation of simulation tetmesh using the voxel tetmesher</p></li>
+</ol>
+</div></blockquote>
+<img alt="../_images/SoftBodySimplification.png" src="../_images/SoftBodySimplification.png" />
+</section>
+<section id="cooking">
+<h2>Cooking<a class="headerlink" href="#cooking" title="Permalink to this headline"></a></h2>
+<p>During the cooking process, all internal structures required by the simulation are configured. This includes acceleration structures for collision detection; ordering and partitioning for the tetrahedra mesh; mass/volume properties for every vertex/tetrahedra of the simulation mesh; and remap tables to update the collision mesh’s vertices according to the simulation mesh’s deformation. This precomputed data must be updated if the topology of the soft body is changed by the application at runtime e.g. due to tearing/cutting. Density, uniform scaling and translation are defined when the softbody is constructed.</p>
+<p>Depending on the mesh’s resolution, cooking might take some time. To avoid calculating this data every time a simulation starts, the cooked data can be saved to a file by calling cookSoftbodyMesh. To load the cooked file, the PxPhysics instance provides a createSoftbodyMesh method that takes a file stream as source:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//Cook and save the mesh</span>
+<span class="n">PxDefaultFileOutputStream</span><span class="w"> </span><span class="nf">writeBuffer</span><span class="p">(</span><span class="n">cacheFilename</span><span class="p">);</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCookSoftBodyMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">simMeshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">simDesc</span><span class="p">,</span><span class="w"> </span><span class="n">writeBuffer</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//Load the cooked mesh</span>
+<span class="n">PxDefaultFileInputData</span><span class="w"> </span><span class="nf">readBuffer</span><span class="p">(</span><span class="n">cacheFilename</span><span class="p">);</span><span class="w"></span>
+<span class="n">tetMesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createSoftbodyMesh</span><span class="p">(</span><span class="n">readBuffer</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="using-gpu-soft-bodies">
+<h2>Using GPU Soft Bodies<a class="headerlink" href="#using-gpu-soft-bodies" title="Permalink to this headline"></a></h2>
+<p>PhysX soft bodies are currently only supported on GPU. This feature is implemented in CUDA and requires a compatible GPU. If no compatible device is found, an error message will be displayed.
+The following snippet shows how to create a softbody from scratch given only triangle mesh vertices and indices. Separate collision and simulation meshes are used in the snippet. It is also possible to use the same mesh as simulation and collision mesh:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//Compute collision mesh</span>
+<span class="n">physx</span><span class="o">::</span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">physx</span><span class="o">::</span><span class="n">PxVec3</span><span class="o">&gt;</span><span class="w"> </span><span class="n">collisionMeshVertices</span><span class="p">,</span><span class="w"> </span><span class="n">simulationMeshVertices</span><span class="p">;</span><span class="w"></span>
+<span class="n">physx</span><span class="o">::</span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">physx</span><span class="o">::</span><span class="n">PxU32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">collisionMeshIndices</span><span class="p">,</span><span class="w"> </span><span class="n">simulationMeshIndices</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxTetMaker</span><span class="o">::</span><span class="n">createConformingTetrahedronMesh</span><span class="p">(</span><span class="n">surfaceMesh</span><span class="p">,</span><span class="w"> </span><span class="n">collisionMeshVertices</span><span class="p">,</span><span class="w"> </span><span class="n">collisionMeshIndices</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxTetrahedronMeshDesc</span><span class="w"> </span><span class="nf">meshDesc</span><span class="p">(</span><span class="n">collisionMeshVertices</span><span class="p">,</span><span class="w"> </span><span class="n">collisionMeshIndices</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//Compute simulation mesh</span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">numVoxelsAlongLongestAABBAxis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w"></span>
+<span class="n">physx</span><span class="o">::</span><span class="n">PxArray</span><span class="o">&lt;</span><span class="n">physx</span><span class="o">::</span><span class="n">PxI32</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vertexToTet</span><span class="p">;</span><span class="w"></span>
+<span class="n">vertexToTet</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">meshDesc</span><span class="p">.</span><span class="n">points</span><span class="p">.</span><span class="n">count</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxTetMaker</span><span class="o">::</span><span class="n">createVoxelTetrahedronMesh</span><span class="p">(</span><span class="n">meshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">numVoxelsAlongLongestAABBAxis</span><span class="p">,</span><span class="w"> </span><span class="n">simulationMeshVertices</span><span class="p">,</span><span class="w"> </span><span class="n">simulationMeshIndices</span><span class="p">,</span><span class="w"> </span><span class="n">vertexToTet</span><span class="p">.</span><span class="n">begin</span><span class="p">());</span><span class="w"></span>
+<span class="n">PxTetrahedronMeshDesc</span><span class="w"> </span><span class="nf">simMeshDesc</span><span class="p">(</span><span class="n">simulationMeshVertices</span><span class="p">,</span><span class="w"> </span><span class="n">simulationMeshIndices</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxSoftbodySimulationDataDesc</span><span class="w"> </span><span class="nf">simDesc</span><span class="p">(</span><span class="n">vertexToTet</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxSoftbodyMesh</span><span class="o">*</span><span class="w"> </span><span class="n">mesh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateSoftBodyMesh</span><span class="p">(</span><span class="n">cookingParams</span><span class="p">,</span><span class="w"> </span><span class="n">simMeshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">meshDesc</span><span class="p">,</span><span class="w"> </span><span class="n">simDesc</span><span class="p">,</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+
+<span class="n">PxSoftBody</span><span class="o">*</span><span class="w"> </span><span class="n">softBody</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createSoftBody</span><span class="p">(</span><span class="o">*</span><span class="n">mCudaContextManager</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxFEMSoftBodyMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">materialPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createFEMSoftBodyMaterial</span><span class="p">(</span><span class="mf">1e+9f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.45f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5f</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxTetrahedronMeshGeometry</span><span class="w"> </span><span class="nf">geometry</span><span class="p">(</span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">getCollisionMesh</span><span class="p">());</span><span class="w"></span>
+<span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">getPhysics</span><span class="p">().</span><span class="n">createShape</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="n">softBody</span><span class="o">-&gt;</span><span class="n">attachShape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">);</span><span class="w"></span>
+<span class="n">softBody</span><span class="o">-&gt;</span><span class="n">attachSimulationMesh</span><span class="p">(</span><span class="o">*</span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">getSimulationMesh</span><span class="p">(),</span><span class="w"> </span><span class="o">*</span><span class="n">mesh</span><span class="o">-&gt;</span><span class="n">getSoftBodyAuxData</span><span class="p">());</span><span class="w"></span>
+<span class="n">getActiveScene</span><span class="p">().</span><span class="n">addSoftBody</span><span class="p">(</span><span class="o">*</span><span class="n">softBody</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>After the soft body has been added to the scene, the GPU data needs to be initialized and copied to the GPU. We provide a set of extension functions in <a class="reference internal" href="../_api_build/classPxSoftBodyExt.html#_CPPv413PxSoftBodyExt" title="PxSoftBodyExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSoftBodyExt</span></code></a> that serve as a starting point. First, pinned host memory buffers to mirror the data have to be allocated and initialized:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">simPositionInvMassPinned</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">simVelocityPinned</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">collPositionInvMassPinned</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">restPositionPinned</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxSoftBodyExt</span><span class="o">::</span><span class="n">allocateAndInitializeHostMirror</span><span class="p">(</span><span class="o">*</span><span class="n">softBody</span><span class="p">,</span><span class="w"> </span><span class="n">mCudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">simPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">simVelocityPinned</span><span class="p">,</span><span class="w"> </span><span class="n">collPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">restPositionPinned</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Ownership of the pinned host buffers is transferred to the user, who is responsible for freeing these buffers during the shutdown procedure.
+To adjust location, orientation and scaling of a softbody after cooking, an optional call to transform will modify the internal softbody buffers accordingly:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSoftBodyExt</span><span class="o">::</span><span class="n">transform</span><span class="p">(</span><span class="o">*</span><span class="n">softBody</span><span class="p">,</span><span class="w"> </span><span class="n">transform</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="p">,</span><span class="w"> </span><span class="n">simPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">simVelocityPinned</span><span class="p">,</span><span class="w"> </span><span class="n">collPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">restPositionPinned</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The maximal inverse mass ratio specifies how much the mass at connected vertices is allowed to vary. Big mass ratios in the mesh can be bad for the simulation stability and convergence. To ensure that the body has a properly defined mass, either total mass or mass density must be specified:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSoftBodyExt</span><span class="o">::</span><span class="n">updateMass</span><span class="p">(</span><span class="o">*</span><span class="n">softBody</span><span class="p">,</span><span class="w"> </span><span class="n">density</span><span class="p">,</span><span class="w"> </span><span class="n">maxInvMassRatio</span><span class="p">,</span><span class="w"> </span><span class="n">simPositionInvMassPinned</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Finally, the softbody buffers need to be uploaded to the GPU. This can either be done by calling Cudamemcpy for every buffer to upload or more easily using the copyToDevice method from the softbody extensions:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSoftBodyExt</span><span class="o">::</span><span class="n">copyToDevice</span><span class="p">(</span><span class="o">*</span><span class="n">softBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxSoftBodyDataFlag</span><span class="o">::</span><span class="n">eALL</span><span class="p">,</span><span class="w"> </span><span class="n">simPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">simVelocityPinned</span><span class="p">,</span><span class="w"> </span><span class="n">collPositionInvMassPinned</span><span class="p">,</span><span class="w"> </span><span class="n">restPositionPinned</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In addition to the softbody geometry, a few solver settings should be configured. The section about tuning provides more details:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">softBody</span><span class="o">-&gt;</span><span class="n">setParameter</span><span class="p">(</span><span class="n">femParams</span><span class="p">);</span><span class="w"></span>
+<span class="n">softBody</span><span class="o">-&gt;</span><span class="n">setSolverIterationCounts</span><span class="p">(</span><span class="n">iterCount</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="kinematic-soft-bodies">
+<h2>Kinematic Soft Bodies<a class="headerlink" href="#kinematic-soft-bodies" title="Permalink to this headline"></a></h2>
+<p>Softbodies support user-driven movements similar to kinematic rigid bodies. In addition a softbody can be partially kinematic. A partially kinematic softbody has kinematic targets specified for some of its vertices while others can move freely (the solver will update their location to minimize the softbody’s internal stress). PhysX ensures that vertices that got moved kinematically get the correct velocity assigned which is important for good collision responses.</p>
+<p>One of the main use cases for partially kinematic softbodies are animated characters where the movement of the skin (often the skin is a time-sampled triangle mesh) is pre-defined but the body should still interact with the world, e. g. a shirt over the skin should show correct physical behavior and move with the animated object through collisions. The main advantage of using a softbody for this interaction is that they are space filling which makes collision detection more robust.</p>
+<p>The setup of a fully or partially kinematic softbody is similar to a normal soft body but requires a couple of additional steps.</p>
+<p>A fully kinematic softbody expects a kinematic target to be set for every simulation vertex whereas a partially kinematic softbody only expects a valid kinematic target for simulation mesh vertices with an inverse mass of zero. An inverse mass of zero means the vertex cannot be moved by the solver. This is desired since constrained vertices that have a kinematic target should not move since it’s the users responsibility to place them. The number of elements in the kinematic target buffer is always equal to the number of vertices in the simulation tetmesh. The preparation of kinematic targets can be done as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">kinematicTargets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PX_EXT_PINNED_MEMORY_ALLOC</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">vertexCount</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">positionInvMass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sb</span><span class="o">-&gt;</span><span class="n">mPositionsInvMass</span><span class="p">;</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">vertexCount</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec4</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">//Fix a couple of vertices</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">9.9f</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="n">p</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.1f</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="n">p</span><span class="p">.</span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">kinematicTargets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">PxVec4</span><span class="o">*</span><span class="w"> </span><span class="n">kinematicTargetsD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PX_EXT_DEVICE_MEMORY_ALLOC</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">cudaContextManager</span><span class="p">,</span><span class="w"> </span><span class="n">vertexCount</span><span class="p">);</span><span class="w"></span>
+<span class="n">cudaContextManager</span><span class="o">-&gt;</span><span class="n">getCudaContext</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">memcpyHtoD</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">CUdeviceptr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">softBody</span><span class="o">-&gt;</span><span class="n">getSimPositionInvMassBufferD</span><span class="p">()),</span><span class="w"> </span><span class="n">positionInvMass</span><span class="p">,</span><span class="w"> </span><span class="n">vertexCount</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">));</span><span class="w"></span>
+<span class="n">cudaContextManager</span><span class="o">-&gt;</span><span class="n">getCudaContext</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">memcpyHtoD</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">CUdeviceptr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">kinematicTargetsD</span><span class="p">),</span><span class="w"> </span><span class="n">kinematicTargets</span><span class="p">,</span><span class="w"> </span><span class="n">vertexCount</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxVec4</span><span class="p">));</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The user owns the kinematic target buffers and therefore is responsible to release their memory when they are not used anymore. To update the kinematic targets, one just executes the last line of the above snippets again to copy new kinematic targets to the gpu.</p>
+<p>As last step of the setup process, the gpu buffer holding the kinematic targets must be registered:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">softBody</span><span class="o">-&gt;</span><span class="n">setKinematicTargetBufferD</span><span class="p">(</span><span class="n">kinematicTargetsD</span><span class="p">,</span><span class="w"> </span><span class="n">PxSoftBodyFlag</span><span class="o">::</span><span class="n">ePARTIALLY_KINEMATIC</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>It usually makes sense to use the same simulation and collision tetmesh for a kinematic softbody (no voxel simulation mesh) because this setup simplifies the transfer of the animated motion to the softbody’s kinematic targets which is the users responsibility. To improve performance, it is possible to use the mesh simplifier to create a mapping that allows to drive a lower resolution softbody with a high resolution animated skin mesh.</p>
+</section>
+<section id="constitutive-model">
+<span id="id1"></span><h2>Constitutive Model<a class="headerlink" href="#constitutive-model" title="Permalink to this headline"></a></h2>
+<p>To simulate soft body deformation, a version of corotated linear elasticity is used that inherits the simplicity of linear models while enforcing rotational invariance.
+A commonly used corotated model has the following form:</p>
+<div class="math notranslate nohighlight">
+\[\Psi(\mathbf{F}) = \mu \| \mathbf{F} - \mathbf{R} \|_F^2 + \frac{\lambda}{2} \operatorname{tr}^2(\mathbf{R}^T\mathbf{F} - \mathbf{I})\]</div>
+<blockquote>
+<div><ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\mathbf{F}\)</span>: The deformation gradient.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\Psi\)</span>: The energy density function of <span class="math notranslate nohighlight">\(\mathbf{F}\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{R}\)</span>: The rotational component of <span class="math notranslate nohighlight">\(\mathbf{F}\)</span> (<span class="math notranslate nohighlight">\(\mathbf{F}\)</span> = <span class="math notranslate nohighlight">\(\mathbf{R} \mathbf{S}\)</span>).</p></li>
+<li><p><span class="math notranslate nohighlight">\(\mathbf{I}\)</span>: The Identity matrix.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\lambda\)</span>, <span class="math notranslate nohighlight">\(\mu\)</span>: The Lamé parameters.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\operatorname{tr(\cdot)}\)</span>: The trace of a matrix.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\operatorname{det(\cdot)}\)</span>: The determinant of a matrix.</p></li>
+<li><p><span class="math notranslate nohighlight">\(\| \cdot \|_F^2\)</span>: The Frobenius norm of a matrix.</p></li>
+</ul>
+</div></blockquote>
+<p>The first term resists stretching and compression and often referred as the As-Rigid-As-Possible (ARAP) energy, and the second term is to preserve the volume.
+PhysX uses a similar energy model to the corotated linear model, but incorporates a different volume coservation term as shown below:</p>
+<div class="math notranslate nohighlight">
+\[\Psi(\mathbf{F}) = \mu \| \mathbf{F} - \mathbf{R} \|_F^2 + \frac{\lambda}{2} (\operatorname{det}(\mathbf{F}) - 1)^2.\]</div>
+<p>This energy model is often referred to as the fixed corotated model.</p>
+</section>
+<section id="tuning">
+<h2>Tuning<a class="headerlink" href="#tuning" title="Permalink to this headline"></a></h2>
+<p>As illustrated in <a class="reference internal" href="#constitutive-model"><span class="std std-ref">Constitutive Model</span></a>, the material behaviors are controlled by the Lamé parameters in the energy density function:
+<span class="math notranslate nohighlight">\(\mu\)</span> for the first term (ARAP energy) and <span class="math notranslate nohighlight">\(\lambda\)</span> for the second term (volume-preserving energy).
+However, many physics simulators including PhysX use an equivalent set of parameters: Young’s modulus <span class="math notranslate nohighlight">\(E\)</span> and Poisson’s ratio <span class="math notranslate nohighlight">\(\nu\)</span>, where</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mu &amp;= \frac{E}{2(1 + \nu)} \\ \\
+\lambda &amp;= \frac{E \nu}{(1 + \nu)(1 - 2\nu)}.\end{split}\]</div>
+<p>Practically speaking, increasing Young’s modulus <span class="math notranslate nohighlight">\(E\)</span> effectively makes the soft body stiffer, while a higher value of Poisson’s ratio <span class="math notranslate nohighlight">\(\nu \in [0, 0.5]\)</span> enforces better incompressibility.
+Using a value of 0.5 for the Poisson’s ratio means enforcing full incompressibility (i.e., applying infinite stiffness to the volume-preserving term).
+These material properties are controlled via <a class="reference internal" href="../_api_build/classPxFEMMaterial.html#_CPPv413PxFEMMaterial" title="PxFEMMaterial"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFEMMaterial</span></code></a>.</p>
+<p>Additionally, the effect of damping can be added by setting a non-zero value for damping via <a class="reference internal" href="../_api_build/classPxFEMSoftBodyMaterial.html#_CPPv4N21PxFEMSoftBodyMaterial10setDampingE6PxReal" title="PxFEMSoftBodyMaterial::setDamping"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFEMSoftBodyMaterial::setDamping()</span></code></a>.</p>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permalink to this headline"></a></h2>
+<p>To improve performance, it is advisable to choose tetrahedral meshes with the lowest resolution that delivers satisfactory results.
+At each simulation timestep, a stress measure is evaluated for each tetrahedron.
+The resolution of a mesh, therefore, has a direct impact on the computational effort required to update the deformation.
+Very stiff materials typically require more solver iterations to achieve convergence.
+Using a lower resolution simulation mesh often helps to simulate stiff objects, while keeping the required number of iterations low.
+To reduce the number of tetrahedra it is worth considering a collision mesh with very few interior nodes.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline"></a></h2>
+<p id="macklin-et-al-2019">MACKLIN M., STOREY K., LU M., TERDIMAN P., CHENTANEZ N., JESCHKE S., MÜLLER M.: Small steps in physics simulation. In Proceedings of the 18th Annual ACM SIGGRAPH/Eurographics
+Symposium on Computer Animation (New York, NY, USA, 2019), SCA ’19, Association for Computing Machinery. URL: <a class="reference external" href="https://doi.org/10.1145/3309486.3340247">https://doi.org/10.1145/3309486.3340247</a>, doi:10.1145/3309486. 3340247. 3, 4</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rigid Body Overview &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Rigid Body Collision" href="RigidBodyCollision.html" />
+    <link rel="prev" title="Custom Geometry" href="CustomGeometry.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Rigid Body Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rigid-body-object-model">Rigid Body Object Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-rigid-actors">Creating Rigid Actors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Rigid Body Overview</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="rigid-body-overview">
+<span id="rigidbodyoverview"></span><h1>Rigid Body Overview<a class="headerlink" href="#rigid-body-overview" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This chapter will introduce the fundamentals of simulating rigid body dynamics using the NVIDIA PhysX engine.</p>
+</section>
+<section id="rigid-body-object-model">
+<h2>Rigid Body Object Model<a class="headerlink" href="#rigid-body-object-model" title="Permalink to this headline"></a></h2>
+<p>PhysX uses a hierarchical rigid body object/actor model.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 14%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Class</p></th>
+<th class="head"><p>Extends</p></th>
+<th class="head"><p>Functionality</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv46PxBase" title="PxBase"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBase</span></code></a></p></td>
+<td><p>N/A</p></td>
+<td><p>Reflection/querying object types.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_api_build/classPxActor.html#_CPPv47PxActor" title="PxActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxActor</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv46PxBase" title="PxBase"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBase</span></code></a></p></td>
+<td><p>Actor name, actor flags, dominance, clients, aggregates, query world bounds.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxActor.html#_CPPv47PxActor" title="PxActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxActor</span></code></a></p></td>
+<td><p>Shapes, transforms, and querying constraints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv411PxRigidBody" title="PxRigidBody"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidBody</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a></p></td>
+<td><p>Mass, inertia, velocities, damping, forces, body flags.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../_api_build/classPxRigidStatic.html#_CPPv413PxRigidStatic" title="PxRigidStatic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidStatic</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a></p></td>
+<td><p>Interface for static body in the scene. This kind of body has implicit infinite mass/inertia.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv411PxRigidBody" title="PxRigidBody"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidBody</span></code></a></p></td>
+<td><p>Interface for dynamic rigid body in the scene. Introduces support for kinematic targets and object sleeping.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../_api_build/classPxArticulationLink.html#_CPPv418PxArticulationLink" title="PxArticulationLink"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationLink</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv411PxRigidBody" title="PxRigidBody"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidBody</span></code></a></p></td>
+<td><p>Interface for a dynamic rigid body link in a PxArticulation. Introduces support for querying the articulation and adjacent links.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../_api_build/classPxArticulationReducedCoordinate.html#_CPPv431PxArticulationReducedCoordinate" title="PxArticulationReducedCoordinate"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationReducedCoordinate</span></code></a></p></td>
+<td><p><a class="reference internal" href="../_api_build/classPxBase.html#_CPPv46PxBase" title="PxBase"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBase</span></code></a></p></td>
+<td><p>Defines interface for a PxArticulation. Effectively a container referencing multiple PxArticulationLink rigid bodies.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The following diagram shows the relationship between the main types involved in the rigid body pipeline:</p>
+<img alt="../_images/RigidBodyOverview.PNG" src="../_images/RigidBodyOverview.PNG" />
+</section>
+<section id="creating-rigid-actors">
+<h2>Creating Rigid Actors<a class="headerlink" href="#creating-rigid-actors" title="Permalink to this headline"></a></h2>
+<p>Rigid actors along with their shapes can be created through the <em>PxPhysics</em> instance:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShapeFlags</span><span class="w"> </span><span class="n">shapeFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eVISUALIZATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSCENE_QUERY_SHAPE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxShapeFlag</span><span class="o">::</span><span class="n">eSIMULATION_SHAPE</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxMaterial</span><span class="o">*</span><span class="w"> </span><span class="n">materialPtr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">material</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">//plane rigid static</span>
+<span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidStatic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransformFromPlaneEquation</span><span class="p">(</span><span class="n">PxPlane</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createShape</span><span class="p">(</span><span class="n">PxPlaneGeometry</span><span class="p">(),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">rigidStatic</span><span class="o">-&gt;</span><span class="n">attachShape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"> </span><span class="c1">// this way shape gets automatically released with actor</span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">//single shape rigid dynamic</span>
+<span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidDynamic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createShape</span><span class="p">(</span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">materialPtr</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="n">shapeFlags</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">rigidDynamic</span><span class="o">-&gt;</span><span class="n">attachShape</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">shape</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"> </span><span class="c1">// this way shape gets automatically released with actor</span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidStatic</span><span class="p">);</span><span class="w"></span>
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidDynamic</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>More details on collision geometry and shapes are provided in <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><span class="std std-ref">Rigid Body Collision</span></a>. In the case of single shape actors the <a class="reference internal" href="../_api_build/classPxRigidActorExt.html#_CPPv4N15PxRigidActorExt20createExclusiveShapeER12PxRigidActorRK10PxGeometryPPC10PxMaterial5PxU1612PxShapeFlags" title="PxRigidActorExt::createExclusiveShape"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActorExt::createExclusiveShape()</span></code></a> function from <a class="reference internal" href="../_api_build/file_include_extensions_PxRigidActorExt.h.html"><span class="doc">PxRigidActorExt.h</span></a> can be used:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//plane rigid static</span>
+<span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidStatic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidStatic</span><span class="p">(</span><span class="n">PxTransformFromPlaneEquation</span><span class="p">(</span><span class="n">PxPlane</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">rigidStatic</span><span class="p">,</span><span class="w"> </span><span class="n">PxPlaneGeometry</span><span class="p">(),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//single shape rigid dynamic</span>
+<span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidDynamic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mPhysics</span><span class="p">.</span><span class="n">createRigidDynamic</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)));</span><span class="w"></span>
+<span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createExclusiveShape</span><span class="p">(</span><span class="o">*</span><span class="n">rigidDynamic</span><span class="p">,</span><span class="w"> </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidStatic</span><span class="p">);</span><span class="w"></span>
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidDynamic</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Helper functions in <a class="reference internal" href="../_api_build/file_include_extensions_PxSimpleFactory.h.html"><span class="doc">PxSimpleFactory.h</span></a> can further simplify the setup for common cases:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">//plane rigid static</span>
+<span class="n">PxRigidStatic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidStatic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePlane</span><span class="p">(</span><span class="n">mPhysics</span><span class="p">,</span><span class="w"> </span><span class="n">PxPlane</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">1.f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="mf">0.f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">//single shape rigid dynamic</span>
+<span class="n">PxRigidDynamic</span><span class="o">*</span><span class="w"> </span><span class="n">rigidDynamic</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateDynamic</span><span class="p">(</span><span class="n">mPhysics</span><span class="p">,</span><span class="w"> </span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">0.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.5f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.f</span><span class="p">)),</span><span class="w"> </span><span class="n">PxBoxGeometry</span><span class="p">(</span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">,</span><span class="w"> </span><span class="mf">2.f</span><span class="p">),</span><span class="w"> </span><span class="n">material</span><span class="p">,</span><span class="w"> </span><span class="mf">1.f</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidStatic</span><span class="p">);</span><span class="w"></span>
+<span class="n">mScene</span><span class="p">.</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">rigidDynamic</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The helpers in <a class="reference internal" href="../_api_build/file_include_extensions_PxSimpleFactory.h.html"><span class="doc">PxSimpleFactory.h</span></a> further support creating kinematic actors, cloning shapes, actors and scaling actors.</p>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Permalink to this headline"></a></h2>
+<p>For the actual simulation rigid body objects need to be added to a scene and that scene will be stepped forwards in time. See section <a class="reference internal" href="Simulation.html#simulation-loop"><span class="std std-ref">The Simulation Loop</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxDirectGPUAPI &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxDistanceJoint" href="classPxDistanceJoint.html" />
+    <link rel="prev" title="PxDiffuseParticleParams" href="classPxDiffuseParticleParams.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxDirectGPUAPI</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxdirectgpuapi">
+<h1>PxDirectGPUAPI<a class="headerlink" href="#pxdirectgpuapi" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxDirectGPUAPI.h.html#pxdirectgpuapi-8h"><span class="std std-ref">include/PxDirectGPUAPI.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv414PxDirectGPUAPI">
+<span id="_CPPv314PxDirectGPUAPI"></span><span id="_CPPv214PxDirectGPUAPI"></span><span id="PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDirectGPUAPI</span></span></span><a class="headerlink" href="#_CPPv414PxDirectGPUAPI" title="Permalink to this definition"></a><br /></dt>
+<dd><p>PxDirectGPUAPI exposes an API that enables batched direct access to GPU data for a PxScene. </p>
+<p>The functions in this class allow batched direct access to GPU data for PxRigidDynamic, PxArticulationReducedCoordinate and PxShape types. This allows interoperation with GPU post- and preprocessing for users and allows the user to implement more efficient CPU-GPU data copies based on the specific needs of the application.</p>
+<p>Using this direct-API will disable the existing CPU-based API for all the data exposed in the direct-API. For any API function that does not have a counterpart in this direct-API, the existing API will continue to work.</p>
+<p>To use this API, PxSceneFlag::eENABLE_DIRECT_GPU_API needs to be raised, in combination with PxSceneFlag::eENABLE_GPU_DYNAMICS and PxBroadphaseType::eGPU. Note that these options are immutable and cannot be changed after the scene has been created.</p>
+<p>Due to the internal architecture of the GPU-accelerated parts of PhysX, using this API comes with caveats:</p>
+<p>1) All GPU-CPU copies for data exposed in this API will be disabled. This means that the existing CPU-based API will return outdated data, and any setters for data exposed in the interface will not work. On the other hand, significant speedups can be achieved because of the reduced amount of GPU-CPU memory copies.</p>
+<p>2) Due to the internal architecture of the GPU-accelerated PhysX, this API will only work after a first simulation step has been taken. The reason for this is that the PxScene first needs to know all the actors it will have to simulate, and setup the sizes of the GPU-based structures. For setup, the existing CPU API should be used.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Due to the fact that this API is exposing low-level data, we do reserve the right to change this API without deprecation in case of changes in the internal implementations. </p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::getRigidDynamicData__voidP.PxRigidDynamicGPUIndexCP.PxRigidDynamicGPUAPIReadType::Enum.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1a5958b954dfe3c6b8e51a908264f3791a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getRigidDynamicData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a81c06417f3e249c64200a4ce643446f9.html#_CPPv422PxRigidDynamicGPUIndex" title="PxRigidDynamicGPUIndex"><span class="n"><span class="pre">PxRigidDynamicGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span>, <a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#_CPPv428PxRigidDynamicGPUAPIReadType" title="PxRigidDynamicGPUAPIReadType"><span class="n"><span class="pre">PxRigidDynamicGPUAPIReadType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html#_CPPv4N28PxRigidDynamicGPUAPIReadType4EnumE" title="PxRigidDynamicGPUAPIReadType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI19getRigidDynamicDataEPvPK22PxRigidDynamicGPUIndexN28PxRigidDynamicGPUAPIReadType4EnumE5PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies the simulation state for a set of PxRigidDynamic actors into a user-provided GPU data buffer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data requested for the PxRigidDynamic with its GPU index at position x in the gpuIndices array will be located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidDynamicGPUAPIReadType. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in PxRigidDynamicGPUAPIReadType. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this get operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to get. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of rigid bodies to be copied. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::setRigidDynamicData__voidCP.PxRigidDynamicGPUIndexCP.PxRigidDynamicGPUAPIWriteType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a55a15df9fd2a6b38d83e4cf9c4dd84ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setRigidDynamicData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a81c06417f3e249c64200a4ce643446f9.html#_CPPv422PxRigidDynamicGPUIndex" title="PxRigidDynamicGPUIndex"><span class="n"><span class="pre">PxRigidDynamicGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span>, <a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#_CPPv429PxRigidDynamicGPUAPIWriteType" title="PxRigidDynamicGPUAPIWriteType"><span class="n"><span class="pre">PxRigidDynamicGPUAPIWriteType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html#_CPPv4N29PxRigidDynamicGPUAPIWriteType4EnumE" title="PxRigidDynamicGPUAPIWriteType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI19setRigidDynamicDataEPKvPK22PxRigidDynamicGPUIndexN29PxRigidDynamicGPUAPIWriteType4EnumE5PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the simulation state for a set of PxRigidDynamic actors from a user-provided GPU data buffer. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidDynamic::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxRigidDynamicGPUIndex). The data for the PxRigidDynamic with its GPU index at position x in the gpuIndices array needs to be located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxRigidDynamicGPUAPIWriteType. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[in]</strong> User-provided GPU data buffer which has size nbElements * sizeof(type). For the types, see the dataType options in PxRigidDynamicGPUAPIWriteType. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxRigidDynamicGPUIndex. This buffer contains the GPU indices of the PxRigidDynamic objects that are part of this set operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to set. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of rigid bodies to be set. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::getArticulationData__voidP.PxArticulationGPUIndexCP.PxArticulationGPUAPIReadType::Enum.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1aee59fa52e0aa719e6fa608c17904778f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getArticulationData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span>, <a class="reference internal" href="classPxArticulationGPUAPIReadType.html#_CPPv428PxArticulationGPUAPIReadType" title="PxArticulationGPUAPIReadType"><span class="n"><span class="pre">PxArticulationGPUAPIReadType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIReadType.html#_CPPv4N28PxArticulationGPUAPIReadType4EnumE" title="PxArticulationGPUAPIReadType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI19getArticulationDataEPvPK22PxArticulationGPUIndexN28PxArticulationGPUAPIReadType4EnumE5PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets the simulation state for a set of articulations, i.e. </p>
+<p>PxArticulationReducedCoordinate objects and copies into a user-provided GPU data buffer.</p>
+<p>
+The data buffer must be sized according to the maximum component counts across all articulations in the PxScene, as summarised in PxArticulationGPUAPIMaxCounts. The data buffer is split into sequential blocks that are of equal size and can hold the data for all components of an articulation. For example, for a link-centric data type (PxArticulationGPUAPIReadType::eLINK_GLOBAL_POSE, for example) each of these blocks has to be maxLinks * sizeof(dataType). The size of the complete buffer would then be nbElements * maxLinks * sizeof(dataType). For a dof-centric data type, the block size would be maxDofs * sizeof(dataType). The specific layout for each dataType is detailed in the API documentation of PxArticulationGPUAPIReadType. The max counts for a scene can be obtained by calling PxDirectGPUAPI::getArticulationGPUAPIMaxCounts().<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array will have its data block located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationGPUAPIReadType. </p>
+</div>
+</p>
+<p>The link and dof indexing of these blocks then follows the same pattern as the PxArticulationCache API. We refer to the user guide for an explanation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer that is appropriately sized for the data being requested. The sizing is explained in detail below. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this get operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to get. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to copy data from. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::setArticulationData__voidCP.PxArticulationGPUIndexCP.PxArticulationGPUAPIWriteType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a8f0cd900de000a77fb5aa3ed8a881bb7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setArticulationData</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span>, <a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#_CPPv429PxArticulationGPUAPIWriteType" title="PxArticulationGPUAPIWriteType"><span class="n"><span class="pre">PxArticulationGPUAPIWriteType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html#_CPPv4N29PxArticulationGPUAPIWriteType4EnumE" title="PxArticulationGPUAPIWriteType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">dataType</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI19setArticulationDataEPKvPK22PxArticulationGPUIndexN29PxArticulationGPUAPIWriteType4EnumE5PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Sets the simulation state for a set of articulations, i.e. </p>
+<p>PxArticulationReducedCoordinate objects from a user-provided GPU data buffer.</p>
+<p>
+The data buffer must be sized according to the maximum component counts across all articulations in the PxScene, as summarised in PxArticulationGPUAPIMaxCounts. The data buffer is split into sequential blocks that are of equal size and can hold the data for all components of an articulation. For example, for a link-centric data type (PxArticulationGPUAPIWriteType::eLINK_FORCE, for example) each of these blocks has to be maxLinks * sizeof(dataType). The size of the complete buffer would then be nbElements * maxLinks * sizeof(dataType). For a dof-centric data type, the block size would be maxDofs * sizeof(dataType). The specific layout for each dataType is detailed in the API documentation of PxArticulationGPUAPIWriteType. The max counts for a scene can be obtained by calling PxDirectGPUAPI::getArticulationGPUAPIMaxCounts().<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). The data for the PxArticulationReducedCoordinate with its GPU index at position x in the gpuIndices array needs to have its data block located at position x in the data array. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationGPUAPIWriteType. </p>
+</div>
+</p>
+<p>The internal indexing of these blocks then follows the same pattern as the PxArticulationCache API. We refer to the user guide for an explanation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[in]</strong> User-provided GPU data buffer that is appropriately sized for the data to be set. The sizing is explained in detail below. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this set operation. </p></li>
+<li><p><strong>dataType</strong> – <strong>[in]</strong> The type of data to set. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to set data for. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent">
+<span id="_CPPv3N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent"></span><span id="_CPPv2N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::computeArticulationData__voidP.PxArticulationGPUIndexCP.PxArticulationGPUAPIComputeType::Enum.PxU32.CUevent.CUevent"></span><span class="target" id="classpxdirectgpuapi_1a2f78069c94e9557d7b0131d0b1eef82c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">computeArticulationData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_CPPv422PxArticulationGPUIndex" title="PxArticulationGPUIndex"><span class="n"><span class="pre">PxArticulationGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">gpuIndices</span></span>, <a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#_CPPv431PxArticulationGPUAPIComputeType" title="PxArticulationGPUAPIComputeType"><span class="n"><span class="pre">PxArticulationGPUAPIComputeType</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html#_CPPv4N31PxArticulationGPUAPIComputeType4EnumE" title="PxArticulationGPUAPIComputeType::Enum"><span class="n"><span class="pre">Enum</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">operation</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI23computeArticulationDataEPvPK22PxArticulationGPUIndexN31PxArticulationGPUAPIComputeType4EnumE5PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>performs a compute operation on a set of articulations, i.e. </p>
+<p>PxArticulationReducedCoordinate objects.</p>
+<p>
+The appropriate sizing of the data buffer as well as the data layout is documented alongside the compute operations in the API documentation of PxArticulationGPUAPIComputeType. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationReducedCoordinate::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxArticulationGPUIndex). </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[inout]</strong> User-provided GPU data buffer that is appropriately sized for the operation to be performed. Depending on the operation, can be input or output data. </p></li>
+<li><p><strong>gpuIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxArticulationGPUIndex. This buffer contains the GPU indices of the PxArticulationReducedCoordinate objects that are part of this compute operation. </p></li>
+<li><p><strong>operation</strong> – <strong>[in]</strong> The operation to perform. See PxArticulationGPUAPIComputeType::Enum. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of articulations to perform this compute operation on. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the computation to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::copyContactData__voidP.PxU32P.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1a6f1e63793d8191f1424cf0d1311a96bd"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyContactData</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">nbContactPairs</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxPairs</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI15copyContactDataEPvP5PxU325PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copy rigid body (PxRigidBody) and articulation (PxArticulationReducedCoordinate) contact data to a user-provided GPU data buffer. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function only reports contact data for actor pairs where both actors are either rigid bodies or articulations. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The contact data contains pointers to internal state and is only valid until the next call to simulate().</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – <strong>[out]</strong> User-provided GPU data buffer, which should be the size of PxGpuContactPair * maxPairs </p></li>
+<li><p><strong>nbContactPairs</strong> – <strong>[out]</strong> User-provided GPU data buffer of 1 * sizeof(PxU32) that contains the actual number of pairs that was written. </p></li>
+<li><p><strong>maxPairs</strong> – <strong>[in]</strong> The maximum number of pairs that the buffer can contain. </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the copy immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the copy to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent">
+<span id="_CPPv3NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent"></span><span id="_CPPv2NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent"></span><span id="PxDirectGPUAPI::evaluateSDFDistances__PxVec4P.PxShapeGPUIndexCP.PxVec4CP.PxU32CP.PxU32.PxU32.CUevent.CUeventC"></span><span class="target" id="classpxdirectgpuapi_1ab5baad2007d195075689533b254dc52a"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">evaluateSDFDistances</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">localGradientAndSDFConcatenated</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1aead54aeb211f662449da2d7adb4b45eb.html#_CPPv415PxShapeGPUIndex" title="PxShapeGPUIndex"><span class="n"><span class="pre">PxShapeGPUIndex</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">shapeIndices</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxVec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_CPPv46PxVec4" title="PxVec4"><span class="n"><span class="pre">PxVec4</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">localSamplePointsConcatenated</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">samplePointCountPerShape</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">nbElements</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">maxPointCount</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">startEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_CPPv47CUevent" title="CUevent"><span class="n"><span class="pre">CUevent</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">finishEvent</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI20evaluateSDFDistancesEP6PxVec4PK15PxShapeGPUIndexPK6PxVec4PK5PxU325PxU325PxU327CUevent7CUevent" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Evaluate sample point distances on SDF shapes. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxShape::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>localGradientAndSDFConcatenated</strong> – <strong>[out]</strong> User-provided GPU buffer where the evaluated distances and gradients in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. </p></li>
+<li><p><strong>shapeIndices</strong> – <strong>[in]</strong> User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the PxShape objects that are part of this operation. </p></li>
+<li><p><strong>localSamplePointsConcatenated</strong> – <strong>[in]</strong> User-provided GPU buffer containing the sample point locations for every shape in the shapes’ local space. The buffer stride is maxPointCount. </p></li>
+<li><p><strong>samplePointCountPerShape</strong> – <strong>[in]</strong> User-provided GPU buffer containing the number of sample points for every shape. </p></li>
+<li><p><strong>nbElements</strong> – <strong>[in]</strong> The number of shapes to be queried. </p></li>
+<li><p><strong>maxPointCount</strong> – <strong>[in]</strong> The maximum value in the array samplePointCountPerShape </p></li>
+<li><p><strong>startEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately. </p></li>
+<li><p><strong>finishEvent</strong> – <strong>[in]</strong> User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the computation to finish before returning.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv">
+<span id="_CPPv3NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv"></span><span id="_CPPv2NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv"></span><span id="PxDirectGPUAPI::getArticulationGPUAPIMaxCountsC"></span><span class="target" id="classpxdirectgpuapi_1a41b9b9eef95652e28fe7432a16ce6438"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html#_CPPv429PxArticulationGPUAPIMaxCounts" title="PxArticulationGPUAPIMaxCounts"><span class="n"><span class="pre">PxArticulationGPUAPIMaxCounts</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getArticulationGPUAPIMaxCounts</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK14PxDirectGPUAPI30getArticulationGPUAPIMaxCountsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the maximal articulation index and component counts for a PxScene. </p>
+<p>Get the maximal articulation index and component counts for a PxScene. This is a helper function to ease the derivation of the correct data layout for the articulation functions in PxDirectGPUAPI. Specifically, this function will return maxLinks, maxDofs, maxFixedTendons, maxFixedTendonJoints, maxSpatialTendons and maxSpatialTendonAttachments for a scene. <div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxArticulationGPUAPIMaxCounts.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxDirectGPUAPI::getArticulationData, PxDirectGPUAPI::setArticulationData, PxDirectGPUAPI::computeArticulationData</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>PxArticulationGPUAPIMaxCounts the max counts across the scene for all articulation indices and components. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPI14PxDirectGPUAPIEv">
+<span id="_CPPv3N14PxDirectGPUAPI14PxDirectGPUAPIEv"></span><span id="_CPPv2N14PxDirectGPUAPI14PxDirectGPUAPIEv"></span><span id="PxDirectGPUAPI::PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi_1ae7f1cb7354bc33d3ec033e6e9d9687ec"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxDirectGPUAPI</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPI14PxDirectGPUAPIEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N14PxDirectGPUAPID0Ev">
+<span id="_CPPv3N14PxDirectGPUAPID0Ev"></span><span id="_CPPv2N14PxDirectGPUAPID0Ev"></span><span id="PxDirectGPUAPI::~PxDirectGPUAPI"></span><span class="target" id="classpxdirectgpuapi_1a98f246ec05658c6ce564fb0acbff3bd8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxDirectGPUAPI</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N14PxDirectGPUAPID0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

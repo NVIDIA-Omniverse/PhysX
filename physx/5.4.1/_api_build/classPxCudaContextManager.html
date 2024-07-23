@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxCudaContextManager &mdash; physx 5.4.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxCudaContextManagerDesc" href="classPxCudaContextManagerDesc.html" />
+    <link rel="prev" title="PxCudaContext" href="classPxCudaContext.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMClothMaterial.html">PxFEMClothMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMMaterial.html">PxFEMMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFEMSoftBodyMaterial.html">PxFEMSoftBodyMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHairSystemGeometry.html">PxHairSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLineStripSkinning.html">PxLineStripSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBody.html">PxSoftBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyAuxData.html">PxSoftBodyAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyCollisionData.html">PxSoftBodyCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyExt.html">PxSoftBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyMesh.html">PxSoftBodyMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationData.html">PxSoftBodySimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodySimulationDataDesc.html">PxSoftBodySimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxCudaContextManager</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcudacontextmanager">
+<h1>PxCudaContextManager<a class="headerlink" href="#pxcudacontextmanager" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_cudamanager_PxCudaContextManager.h.html#pxcudacontextmanager-8h"><span class="std std-ref">include/cudamanager/PxCudaContextManager.h</span></a></p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv420PxCudaContextManager">
+<span id="_CPPv320PxCudaContextManager"></span><span id="_CPPv220PxCudaContextManager"></span><span id="PxCudaContextManager"></span><span class="target" id="classpxcudacontextmanager"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxCudaContextManager</span></span></span><a class="headerlink" href="#_CPPv420PxCudaContextManager" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Manages thread locks, and task scheduling for a CUDA context. </p>
+<p>A PxCudaContextManager manages access to a single CUDA context, allowing it to be shared between multiple scenes. The context must be acquired from the manager before using any CUDA APIs unless stated differently.</p>
+<p>The PxCudaContextManager is based on the CUDA driver API and explicitly does not support the CUDA runtime API (aka, CUDART). </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager22clearDeviceBufferAsyncEvP1T5PxU328CUstream5PxI32">
+<span id="_CPPv3I0EN20PxCudaContextManager22clearDeviceBufferAsyncEP1T5PxU328CUstream5PxI32"></span><span id="_CPPv2I0EN20PxCudaContextManager22clearDeviceBufferAsyncEP1T5PxU328CUstream5PxI32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a7b19ff0c94d3d07ca71bdc7061f0eb13"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clearDeviceBufferAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager22clearDeviceBufferAsyncEvP1T5PxU328CUstream5PxI32" title="PxCudaContextManager::clearDeviceBufferAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager22clearDeviceBufferAsyncEvP1T5PxU328CUstream5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules clear operation for a device memory buffer on the specified stream. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000095"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The replacement is PxCudaHelpersExt::memsetAsync. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager8copyDToHEvP1TPK1T5PxU32">
+<span id="_CPPv3I0EN20PxCudaContextManager8copyDToHEP1TPK1T5PxU32"></span><span id="_CPPv2I0EN20PxCudaContextManager8copyDToHEP1TPK1T5PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1aed83eaea5a3e9328c72195a6cebb7f11"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToH</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager8copyDToHEvP1TPK1T5PxU32" title="PxCudaContextManager::copyDToH::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager8copyDToHEvP1TPK1T5PxU32" title="PxCudaContextManager::copyDToH::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager8copyDToHEvP1TPK1T5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies a device buffer to the host. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000096"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The replacement is PxCudaHelpersExt::copyDToH. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager8copyHToDEvP1TPK1T5PxU32">
+<span id="_CPPv3I0EN20PxCudaContextManager8copyHToDEP1TPK1T5PxU32"></span><span id="_CPPv2I0EN20PxCudaContextManager8copyHToDEP1TPK1T5PxU32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1aa75739bceee0e71dc09a8b5592d3d2b6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToD</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager8copyHToDEvP1TPK1T5PxU32" title="PxCudaContextManager::copyHToD::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager8copyHToDEvP1TPK1T5PxU32" title="PxCudaContextManager::copyHToD::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager8copyHToDEvP1TPK1T5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Copies a host buffer to the device. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000097"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>The replacement is PxCudaHelpersExt::copyHtoD </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager13copyDToHAsyncEvP1TPK1T5PxU328CUstream">
+<span id="_CPPv3I0EN20PxCudaContextManager13copyDToHAsyncEP1TPK1T5PxU328CUstream"></span><span id="_CPPv2I0EN20PxCudaContextManager13copyDToHAsyncEP1TPK1T5PxU328CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a9a2cc4bc7eed9c2891f850ca0926d529"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToHAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyDToHAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyDToHAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyDToHAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyDToHAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager13copyDToHAsyncEvP1TPK1T5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules device to host copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000098"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use PxCudaHelpersExt::copyDToHAsync instead. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager13copyHToDAsyncEvP1TPK1T5PxU328CUstream">
+<span id="_CPPv3I0EN20PxCudaContextManager13copyHToDAsyncEP1TPK1T5PxU328CUstream"></span><span id="_CPPv2I0EN20PxCudaContextManager13copyHToDAsyncEP1TPK1T5PxU328CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a9adaf493fcac9b191697773a7e5b82e6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToDAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyHToDAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyHToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyHToDAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyHToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager13copyHToDAsyncEvP1TPK1T5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules host to device copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000099"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use PxCudaHelpersExt::copyHToDAsync instead. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager13copyDToDAsyncEvP1TPK1T5PxU328CUstream">
+<span id="_CPPv3I0EN20PxCudaContextManager13copyDToDAsyncEP1TPK1T5PxU328CUstream"></span><span id="_CPPv2I0EN20PxCudaContextManager13copyDToDAsyncEP1TPK1T5PxU328CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a4d3b831faf7bd2e708c2fbefe5acce2b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToDAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyDToDAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyDToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager13copyDToDAsyncEvP1TPK1T5PxU328CUstream" title="PxCudaContextManager::copyDToDAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">srcDeviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager13copyDToDAsyncEvP1TPK1T5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules device to device copy operation on the specified stream. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000100"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use PxCudaHelpersExt::copyDToDAsync instead. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager11memsetAsyncEvP1TRK1T5PxU328CUstream">
+<span id="_CPPv3I0EN20PxCudaContextManager11memsetAsyncEP1TRK1T5PxU328CUstream"></span><span id="_CPPv2I0EN20PxCudaContextManager11memsetAsyncEP1TRK1T5PxU328CUstream"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a724d358b2c17ed62007323c75b3240f8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">memsetAsync</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager11memsetAsyncEvP1TRK1T5PxU328CUstream" title="PxCudaContextManager::memsetAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager11memsetAsyncEvP1TRK1T5PxU328CUstream" title="PxCudaContextManager::memsetAsync::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">value</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager11memsetAsyncEvP1TRK1T5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Schedules a memset operation on the device on the specified stream. </p>
+<p>Only supported for 1 byte or 4 byte data types.</p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000101"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p>Use PxCudaHelpersExt::memsetAsync instead. </p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEvRP1T5PxU32PKc5PxI32">
+<span id="_CPPv3I0EN20PxCudaContextManager17allocDeviceBufferERP1T5PxU32PKc5PxI32"></span><span id="_CPPv2I0EN20PxCudaContextManager17allocDeviceBufferERP1T5PxU32PKc5PxI32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1aba25a6dd8d09c111e9018de7c0e5b6cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocDeviceBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEvRP1T5PxU32PKc5PxI32" title="PxCudaContextManager::allocDeviceBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__FILE__</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__LINE__</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEvRP1T5PxU32PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a device buffer. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000102"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::allocDeviceBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEP1T5PxU32PKc5PxI32">
+<span id="_CPPv3I0EN20PxCudaContextManager17allocDeviceBufferE5PxU32PKc5PxI32"></span><span id="_CPPv2I0EN20PxCudaContextManager17allocDeviceBufferE5PxU32PKc5PxI32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1adb990d3e04793a323a40c43d12ede137"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEP1T5PxU32PKc5PxI32" title="PxCudaContextManager::allocDeviceBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocDeviceBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__FILE__</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__LINE__</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager17allocDeviceBufferEP1T5PxU32PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a device buffer and returns the pointer to the memory. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000103"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::allocDeviceBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager16freeDeviceBufferEvRP1T">
+<span id="_CPPv3I0EN20PxCudaContextManager16freeDeviceBufferERP1T"></span><span id="_CPPv2I0EN20PxCudaContextManager16freeDeviceBufferERP1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a1db732f53c60f4bcb4170de5c3363b39"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freeDeviceBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager16freeDeviceBufferEvRP1T" title="PxCudaContextManager::freeDeviceBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager16freeDeviceBufferEvRP1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frees a device buffer. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000104"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::freeDeviceBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEvRP1T5PxU32PKc5PxI32">
+<span id="_CPPv3I0EN20PxCudaContextManager21allocPinnedHostBufferERP1T5PxU32PKc5PxI32"></span><span id="_CPPv2I0EN20PxCudaContextManager21allocPinnedHostBufferERP1T5PxU32PKc5PxI32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1ac152f0da563a4a695a9be36082ec062c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">allocPinnedHostBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEvRP1T5PxU32PKc5PxI32" title="PxCudaContextManager::allocPinnedHostBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pinnedHostBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__FILE__</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__LINE__</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEvRP1T5PxU32PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a pinned host buffer. </p>
+<p>A pinned host buffer can be used on the gpu after getting a mapped device pointer from the pinned host buffer pointer, see getMappedDevicePtr The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000105"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::allocPinnedHostBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getMappedDevicePtr </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEP1T5PxU32PKc5PxI32">
+<span id="_CPPv3I0EN20PxCudaContextManager21allocPinnedHostBufferE5PxU32PKc5PxI32"></span><span id="_CPPv2I0EN20PxCudaContextManager21allocPinnedHostBufferE5PxU32PKc5PxI32"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1abc458d6c9548778f962722d013b48d33"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEP1T5PxU32PKc5PxI32" title="PxCudaContextManager::allocPinnedHostBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocPinnedHostBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numElements</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__FILE__</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">__LINE__</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager21allocPinnedHostBufferEP1T5PxU32PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Allocates a pinned host buffer and returns the pointer to the memory. </p>
+<p>A pinned host buffer can be used on the gpu after getting a mapped device pointer from the pinned host buffer pointer, see getMappedDevicePtr The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000106"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::allocPinnedHostBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>getMappedDevicePtr </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN20PxCudaContextManager20freePinnedHostBufferEvRP1T">
+<span id="_CPPv3I0EN20PxCudaContextManager20freePinnedHostBufferERP1T"></span><span id="_CPPv2I0EN20PxCudaContextManager20freePinnedHostBufferERP1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classpxcudacontextmanager_1a2f0f3021f96ce44ec306a565ec20e195"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freePinnedHostBuffer</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN20PxCudaContextManager20freePinnedHostBufferEvRP1T" title="PxCudaContextManager::freePinnedHostBuffer::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pinnedHostBuffer</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN20PxCudaContextManager20freePinnedHostBufferEvRP1T" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Frees a pinned host buffer. </p>
+<p>The cuda context will get acquired automatically <dl>
+<dt class="sig sig-object cpp">
+<a class="reference internal" href="page_deprecated.html#deprecated_1_deprecated000107"><span class="std std-ref"><span class="pre">Deprecated:</span></span></a></dt>
+<dd><p><ul class="simple">
+<li><p>use PxCudaHelpersExt::freePinnedHostBuffer instead. </p></li>
+</ul>
+</p>
+</dd></dl>
+
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager18getMappedDevicePtrEPv">
+<span id="_CPPv3N20PxCudaContextManager18getMappedDevicePtrEPv"></span><span id="_CPPv2N20PxCudaContextManager18getMappedDevicePtrEPv"></span><span id="PxCudaContextManager::getMappedDevicePtr__voidP"></span><span class="target" id="classpxcudacontextmanager_1a0316eb2d3e99f3d13d51799da30dcb95"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxCudaTypes_8h_1a5e264ce2ad6a38761e7e04921ef771de.html#_CPPv411CUdeviceptr" title="CUdeviceptr"><span class="n"><span class="pre">CUdeviceptr</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMappedDevicePtr</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pinnedHostBuffer</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager18getMappedDevicePtrEPv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Gets a mapped pointer from a pinned host buffer that can be used in cuda kernels directly. </p>
+<p>Data access performance with a mapped pinned host pointer will be slower than using a device pointer directly but the changes done in the kernel will be available on the host immediately. The cuda context will get acquired automatically </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager14acquireContextEv">
+<span id="_CPPv3N20PxCudaContextManager14acquireContextEv"></span><span id="_CPPv2N20PxCudaContextManager14acquireContextEv"></span><span id="PxCudaContextManager::acquireContext"></span><span class="target" id="classpxcudacontextmanager_1a6c674f0a07e5c73d0db36762be2479a4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">acquireContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager14acquireContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Acquire the CUDA context for the current thread. </p>
+<p>Acquisitions are allowed to be recursive within a single thread. You can acquire the context multiple times so long as you release it the same count.</p>
+<p>The context must be acquired before using most CUDA functions. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager14releaseContextEv">
+<span id="_CPPv3N20PxCudaContextManager14releaseContextEv"></span><span id="_CPPv2N20PxCudaContextManager14releaseContextEv"></span><span id="PxCudaContextManager::releaseContext"></span><span class="target" id="classpxcudacontextmanager_1a41e4a66821fe1eec0369c318f629a4f6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">releaseContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager14releaseContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Release the CUDA context from the current thread. </p>
+<p>The CUDA context should be released as soon as practically possible, to allow other CPU threads to work efficiently. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager10getContextEv">
+<span id="_CPPv3N20PxCudaContextManager10getContextEv"></span><span id="_CPPv2N20PxCudaContextManager10getContextEv"></span><span id="PxCudaContextManager::getContext"></span><span class="target" id="classpxcudacontextmanager_1a65cd943c8712ef0264349e2a1cb3ac5f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxCudaTypes_8h_1af9f5bd81658f866613785b3a0bb7d7d9.html#_CPPv49CUcontext" title="CUcontext"><span class="n"><span class="pre">CUcontext</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager10getContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the CUcontext. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager14getCudaContextEv">
+<span id="_CPPv3N20PxCudaContextManager14getCudaContextEv"></span><span id="_CPPv2N20PxCudaContextManager14getCudaContextEv"></span><span id="PxCudaContextManager::getCudaContext"></span><span class="target" id="classpxcudacontextmanager_1a7f8fbb10b6dfb124502c8d8e8286ba39"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="classPxCudaContext.html#_CPPv413PxCudaContext" title="PxCudaContext"><span class="n"><span class="pre">PxCudaContext</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getCudaContext</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager14getCudaContextEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Return the CudaContext. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager14contextIsValidEv">
+<span id="_CPPv3NK20PxCudaContextManager14contextIsValidEv"></span><span id="_CPPv2NK20PxCudaContextManager14contextIsValidEv"></span><span id="PxCudaContextManager::contextIsValidC"></span><span class="target" id="classpxcudacontextmanager_1af16cfa9899936afb93306bcc14afb578"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contextIsValid</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager14contextIsValidEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Context manager has a valid CUDA context. </p>
+<p>This method should be called after creating a PxCudaContextManager, especially if the manager was responsible for allocating its own CUDA context (desc.ctx == NULL). </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM10Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM10Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM10Ev"></span><span id="PxCudaContextManager::supportsArchSM10C"></span><span class="target" id="classpxcudacontextmanager_1ad3d88d4673763194ab51a732639c7ab3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM10</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM10Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>G80. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM11Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM11Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM11Ev"></span><span id="PxCudaContextManager::supportsArchSM11C"></span><span class="target" id="classpxcudacontextmanager_1a6cab6cc8d158d900fc0f4f317c33bf41"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM11</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM11Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>G92. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM12Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM12Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM12Ev"></span><span id="PxCudaContextManager::supportsArchSM12C"></span><span class="target" id="classpxcudacontextmanager_1aacebd6f1093ae3e22709c4e344091d02"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM12</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM12Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GT200. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM13Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM13Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM13Ev"></span><span id="PxCudaContextManager::supportsArchSM13C"></span><span class="target" id="classpxcudacontextmanager_1a792ed156791b5d3bb26004f37ffd1e8c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM13</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM13Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GT260. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM20Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM20Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM20Ev"></span><span id="PxCudaContextManager::supportsArchSM20C"></span><span class="target" id="classpxcudacontextmanager_1af03cc08d37275ae525119ad593a5b4ed"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM20</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM20Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GF100. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM30Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM30Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM30Ev"></span><span id="PxCudaContextManager::supportsArchSM30C"></span><span class="target" id="classpxcudacontextmanager_1aaf7193719ae3f558487a68258da4dbb3"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM30</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM30Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GK100. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM35Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM35Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM35Ev"></span><span id="PxCudaContextManager::supportsArchSM35C"></span><span class="target" id="classpxcudacontextmanager_1ae42df60a201efe823ee2d5913fcbf018"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM35</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM35Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GK110. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM50Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM50Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM50Ev"></span><span id="PxCudaContextManager::supportsArchSM50C"></span><span class="target" id="classpxcudacontextmanager_1a4824018005760e905e50dcc32ae1d1f1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM50</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM50Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GM100. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM52Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM52Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM52Ev"></span><span id="PxCudaContextManager::supportsArchSM52C"></span><span class="target" id="classpxcudacontextmanager_1af7bac27a028f5b47c1aea0f37af334ec"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM52</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM52Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GM200. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16supportsArchSM60Ev">
+<span id="_CPPv3NK20PxCudaContextManager16supportsArchSM60Ev"></span><span id="_CPPv2NK20PxCudaContextManager16supportsArchSM60Ev"></span><span id="PxCudaContextManager::supportsArchSM60C"></span><span class="target" id="classpxcudacontextmanager_1ade28d41cf2100a81cf4e91492873ac11"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">supportsArchSM60</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16supportsArchSM60Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>GP100. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager12isIntegratedEv">
+<span id="_CPPv3NK20PxCudaContextManager12isIntegratedEv"></span><span id="_CPPv2NK20PxCudaContextManager12isIntegratedEv"></span><span id="PxCudaContextManager::isIntegratedC"></span><span class="target" id="classpxcudacontextmanager_1a258faadc99ef89fdd0acf1aac9583ba2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">isIntegrated</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager12isIntegratedEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>true if GPU is an integrated (MCP) part </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16canMapHostMemoryEv">
+<span id="_CPPv3NK20PxCudaContextManager16canMapHostMemoryEv"></span><span id="_CPPv2NK20PxCudaContextManager16canMapHostMemoryEv"></span><span id="PxCudaContextManager::canMapHostMemoryC"></span><span class="target" id="classpxcudacontextmanager_1a9d60a97fc3a38b2d947f2b5c2a869da1"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">canMapHostMemory</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16canMapHostMemoryEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>true if GPU map host memory to GPU (0-copy) </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager16getDriverVersionEv">
+<span id="_CPPv3NK20PxCudaContextManager16getDriverVersionEv"></span><span id="_CPPv2NK20PxCudaContextManager16getDriverVersionEv"></span><span id="PxCudaContextManager::getDriverVersionC"></span><span class="target" id="classpxcudacontextmanager_1ad00561bab2f869a8efd91f77207be6d7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDriverVersion</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager16getDriverVersionEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns cached value of cuGetDriverVersion() </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager22getDeviceTotalMemBytesEv">
+<span id="_CPPv3NK20PxCudaContextManager22getDeviceTotalMemBytesEv"></span><span id="_CPPv2NK20PxCudaContextManager22getDeviceTotalMemBytesEv"></span><span id="PxCudaContextManager::getDeviceTotalMemBytesC"></span><span class="target" id="classpxcudacontextmanager_1ac43b7f4825fd9414ae26af27712e4f23"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDeviceTotalMemBytes</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager22getDeviceTotalMemBytesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns cached value of device memory size </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager22getMultiprocessorCountEv">
+<span id="_CPPv3NK20PxCudaContextManager22getMultiprocessorCountEv"></span><span id="_CPPv2NK20PxCudaContextManager22getMultiprocessorCountEv"></span><span id="PxCudaContextManager::getMultiprocessorCountC"></span><span class="target" id="classpxcudacontextmanager_1a71fc2560632de072ba5ad34af021488c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMultiprocessorCount</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager22getMultiprocessorCountEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns cache value of SM unit count </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager12getClockRateEv">
+<span id="_CPPv3NK20PxCudaContextManager12getClockRateEv"></span><span id="_CPPv2NK20PxCudaContextManager12getClockRateEv"></span><span id="PxCudaContextManager::getClockRateC"></span><span class="target" id="classpxcudacontextmanager_1a8a06453d6e1b9699a9ed003ab229277d"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getClockRate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager12getClockRateEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns cached value of SM clock frequency </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager20getSharedMemPerBlockEv">
+<span id="_CPPv3NK20PxCudaContextManager20getSharedMemPerBlockEv"></span><span id="_CPPv2NK20PxCudaContextManager20getSharedMemPerBlockEv"></span><span id="PxCudaContextManager::getSharedMemPerBlockC"></span><span class="target" id="classpxcudacontextmanager_1a7b2e7446f8621db6672df49426abbd11"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSharedMemPerBlock</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager20getSharedMemPerBlockEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns total amount of shared memory available per block in bytes </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager29getSharedMemPerMultiprocessorEv">
+<span id="_CPPv3NK20PxCudaContextManager29getSharedMemPerMultiprocessorEv"></span><span id="_CPPv2NK20PxCudaContextManager29getSharedMemPerMultiprocessorEv"></span><span id="PxCudaContextManager::getSharedMemPerMultiprocessorC"></span><span class="target" id="classpxcudacontextmanager_1aba1417ebadff7c0bc032dfc912b229c4"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getSharedMemPerMultiprocessor</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager29getSharedMemPerMultiprocessorEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns total amount of shared memory available per multiprocessor in bytes </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager21getMaxThreadsPerBlockEv">
+<span id="_CPPv3NK20PxCudaContextManager21getMaxThreadsPerBlockEv"></span><span id="_CPPv2NK20PxCudaContextManager21getMaxThreadsPerBlockEv"></span><span id="PxCudaContextManager::getMaxThreadsPerBlockC"></span><span class="target" id="classpxcudacontextmanager_1ab722230beaa2cbe64df0bfb6fd0183b2"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getMaxThreadsPerBlock</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager21getMaxThreadsPerBlockEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns the maximum number of threads per block </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager13getDeviceNameEv">
+<span id="_CPPv3NK20PxCudaContextManager13getDeviceNameEv"></span><span id="_CPPv2NK20PxCudaContextManager13getDeviceNameEv"></span><span id="PxCudaContextManager::getDeviceNameC"></span><span class="target" id="classpxcudacontextmanager_1aa2dc5bbf4d226f5b59b49d7d0c2d3777"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getDeviceName</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager13getDeviceNameEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns device name retrieved from driver </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager9getDeviceEv">
+<span id="_CPPv3NK20PxCudaContextManager9getDeviceEv"></span><span id="_CPPv2NK20PxCudaContextManager9getDeviceEv"></span><span id="PxCudaContextManager::getDeviceC"></span><span class="target" id="classpxcudacontextmanager_1a57506550605a54e79b4939c88865bf87"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxCudaTypes_8h_1acd81b70eb9968392bb5cdf582af8eab4.html#_CPPv48CUdevice" title="CUdevice"><span class="n"><span class="pre">CUdevice</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDevice</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager9getDeviceEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>returns device handle retrieved from driver </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager25setUsingConcurrentStreamsEb">
+<span id="_CPPv3N20PxCudaContextManager25setUsingConcurrentStreamsEb"></span><span id="_CPPv2N20PxCudaContextManager25setUsingConcurrentStreamsEb"></span><span id="PxCudaContextManager::setUsingConcurrentStreams__b"></span><span class="target" id="classpxcudacontextmanager_1a0473ee4833593f208ecbbc8f0994b24b"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">setUsingConcurrentStreams</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager25setUsingConcurrentStreamsEb" title="Permalink to this definition"></a><br /></dt>
+<dd><p>turn on/off using concurrent streams for GPU work </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager25getUsingConcurrentStreamsEv">
+<span id="_CPPv3NK20PxCudaContextManager25getUsingConcurrentStreamsEv"></span><span id="_CPPv2NK20PxCudaContextManager25getUsingConcurrentStreamsEv"></span><span id="PxCudaContextManager::getUsingConcurrentStreamsC"></span><span class="target" id="classpxcudacontextmanager_1a3c049e0df8aa445ea34e390b4c07dd5c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getUsingConcurrentStreams</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager25getUsingConcurrentStreamsEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>true if GPU work can run in concurrent streams </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager19getDeviceMemoryInfoER6size_tR6size_t">
+<span id="_CPPv3NK20PxCudaContextManager19getDeviceMemoryInfoER6size_tR6size_t"></span><span id="_CPPv2NK20PxCudaContextManager19getDeviceMemoryInfoER6size_tR6size_t"></span><span id="PxCudaContextManager::getDeviceMemoryInfo__sR.sRC"></span><span class="target" id="classpxcudacontextmanager_1ac20fe335f28a8f78c93fb59daaeb2d9c"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">getDeviceMemoryInfo</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">free</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">total</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager19getDeviceMemoryInfoER6size_tR6size_t" title="Permalink to this definition"></a><br /></dt>
+<dd><p>get currently available and total memory </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK20PxCudaContextManager17usingDedicatedGPUEv">
+<span id="_CPPv3NK20PxCudaContextManager17usingDedicatedGPUEv"></span><span id="_CPPv2NK20PxCudaContextManager17usingDedicatedGPUEv"></span><span id="PxCudaContextManager::usingDedicatedGPUC"></span><span class="target" id="classpxcudacontextmanager_1a170da04930d0e39d9192133da57f7fff"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">usingDedicatedGPU</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4NK20PxCudaContextManager17usingDedicatedGPUEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Determine if the user has configured a dedicated PhysX GPU in the NV Control Panel. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If using CUDA Interop, this will always return false </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>1 if there is a dedicated GPU 0 if there is NOT a dedicated GPU -1 if the routine is not implemented </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager12getCuModulesEv">
+<span id="_CPPv3N20PxCudaContextManager12getCuModulesEv"></span><span id="_CPPv2N20PxCudaContextManager12getCuModulesEv"></span><span id="PxCudaContextManager::getCuModules"></span><span class="target" id="classpxcudacontextmanager_1a7220a922143aacc19b8970b3b1c1f09e"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxCudaTypes_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef.html#_CPPv48CUmodule" title="CUmodule"><span class="n"><span class="pre">CUmodule</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">getCuModules</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager12getCuModulesEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Get the cuda modules that have been loaded into this context on construction. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Pointer to the cuda modules </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager7releaseEv">
+<span id="_CPPv3N20PxCudaContextManager7releaseEv"></span><span id="_CPPv2N20PxCudaContextManager7releaseEv"></span><span id="PxCudaContextManager::release"></span><span class="target" id="classpxcudacontextmanager_1a3625bfb1d3426963a3987eda8ff88661"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager7releaseEv" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Release the PxCudaContextManager. </p>
+<p>If the PxCudaContextManager created the CUDA context it was responsible for, it also frees that context.</p>
+<p>Do not release the PxCudaContextManager if there are any scenes using it. Those scenes must be released first. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-protected-functions">Protected Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManagerD0Ev">
+<span id="_CPPv3N20PxCudaContextManagerD0Ev"></span><span id="_CPPv2N20PxCudaContextManagerD0Ev"></span><span id="PxCudaContextManager::~PxCudaContextManager"></span><span class="target" id="classpxcudacontextmanager_1a94e6c0e48087fd0efd42e810e786ea4a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~PxCudaContextManager</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N20PxCudaContextManagerD0Ev" title="Permalink to this definition"></a><br /></dt>
+<dd><p>protected destructor, use release() method </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager25allocDeviceBufferInternalE5PxU64PKc5PxI32">
+<span id="_CPPv3N20PxCudaContextManager25allocDeviceBufferInternalE5PxU64PKc5PxI32"></span><span id="_CPPv2N20PxCudaContextManager25allocDeviceBufferInternalE5PxU64PKc5PxI32"></span><span id="PxCudaContextManager::allocDeviceBufferInternal__PxU64.cCP.PxI32"></span><span class="target" id="classpxcudacontextmanager_1a76b0c656f6166fd460c5dd7555a05203"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocDeviceBufferInternal</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager25allocDeviceBufferInternalE5PxU64PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager29allocPinnedHostBufferInternalE5PxU64PKc5PxI32">
+<span id="_CPPv3N20PxCudaContextManager29allocPinnedHostBufferInternalE5PxU64PKc5PxI32"></span><span id="_CPPv2N20PxCudaContextManager29allocPinnedHostBufferInternalE5PxU64PKc5PxI32"></span><span id="PxCudaContextManager::allocPinnedHostBufferInternal__PxU64.cCP.PxI32"></span><span class="target" id="classpxcudacontextmanager_1a394460ad632f0c3cd31fcc82aa6d70ba"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocPinnedHostBufferInternal</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1afa6be92d904a227b2d07298034476b3a.html#_CPPv45PxU64" title="PxU64"><span class="n"><span class="pre">PxU64</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">filename</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">line</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="m"><span class="pre">1</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager29allocPinnedHostBufferInternalE5PxU64PKc5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager24freeDeviceBufferInternalEPv">
+<span id="_CPPv3N20PxCudaContextManager24freeDeviceBufferInternalEPv"></span><span id="_CPPv2N20PxCudaContextManager24freeDeviceBufferInternalEPv"></span><span id="PxCudaContextManager::freeDeviceBufferInternal__voidP"></span><span class="target" id="classpxcudacontextmanager_1aca0ccc306122009463780283862cc3ac"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freeDeviceBufferInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager24freeDeviceBufferInternalEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager28freePinnedHostBufferInternalEPv">
+<span id="_CPPv3N20PxCudaContextManager28freePinnedHostBufferInternalEPv"></span><span id="_CPPv2N20PxCudaContextManager28freePinnedHostBufferInternalEPv"></span><span id="PxCudaContextManager::freePinnedHostBufferInternal__voidP"></span><span class="target" id="classpxcudacontextmanager_1a2ea3cfc55af0d6944a5fdbd3f2115013"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">freePinnedHostBufferInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">pinnedHostBuffer</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager28freePinnedHostBufferInternalEPv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager30clearDeviceBufferAsyncInternalEPv5PxU328CUstream5PxI32">
+<span id="_CPPv3N20PxCudaContextManager30clearDeviceBufferAsyncInternalEPv5PxU328CUstream5PxI32"></span><span id="_CPPv2N20PxCudaContextManager30clearDeviceBufferAsyncInternalEPv5PxU328CUstream5PxI32"></span><span id="PxCudaContextManager::clearDeviceBufferAsyncInternal__voidP.PxU32.CUstream.PxI32"></span><span class="target" id="classpxcudacontextmanager_1a4b1330d4656cf0093a235a91a0449938"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clearDeviceBufferAsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_CPPv45PxI32" title="PxI32"><span class="n"><span class="pre">PxI32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager30clearDeviceBufferAsyncInternalEPv5PxU328CUstream5PxI32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager21copyDToHAsyncInternalEPvPKv5PxU328CUstream">
+<span id="_CPPv3N20PxCudaContextManager21copyDToHAsyncInternalEPvPKv5PxU328CUstream"></span><span id="_CPPv2N20PxCudaContextManager21copyDToHAsyncInternalEPvPKv5PxU328CUstream"></span><span id="PxCudaContextManager::copyDToHAsyncInternal__voidP.voidCP.PxU32.CUstream"></span><span class="target" id="classpxcudacontextmanager_1a934d16a88450dfd67e6fba1a8b362b1f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToHAsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager21copyDToHAsyncInternalEPvPKv5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager21copyHToDAsyncInternalEPvPKv5PxU328CUstream">
+<span id="_CPPv3N20PxCudaContextManager21copyHToDAsyncInternalEPvPKv5PxU328CUstream"></span><span id="_CPPv2N20PxCudaContextManager21copyHToDAsyncInternalEPvPKv5PxU328CUstream"></span><span id="PxCudaContextManager::copyHToDAsyncInternal__voidP.voidCP.PxU32.CUstream"></span><span class="target" id="classpxcudacontextmanager_1a9cdee1d0cd7ff5e036992e344f8962b6"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToDAsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager21copyHToDAsyncInternalEPvPKv5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager21copyDToDAsyncInternalEPvPKv5PxU328CUstream">
+<span id="_CPPv3N20PxCudaContextManager21copyDToDAsyncInternalEPvPKv5PxU328CUstream"></span><span id="_CPPv2N20PxCudaContextManager21copyDToDAsyncInternalEPvPKv5PxU328CUstream"></span><span id="PxCudaContextManager::copyDToDAsyncInternal__voidP.voidCP.PxU32.CUstream"></span><span class="target" id="classpxcudacontextmanager_1a1284e6bbe202fe145d4c2e1f2d51667f"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToDAsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">srcDeviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager21copyDToDAsyncInternalEPvPKv5PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager16copyDToHInternalEPvPKv5PxU32">
+<span id="_CPPv3N20PxCudaContextManager16copyDToHInternalEPvPKv5PxU32"></span><span id="_CPPv2N20PxCudaContextManager16copyDToHInternalEPvPKv5PxU32"></span><span id="PxCudaContextManager::copyDToHInternal__voidP.voidCP.PxU32"></span><span class="target" id="classpxcudacontextmanager_1ad016a71c56ff3b842b6c9bd083ffd480"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyDToHInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager16copyDToHInternalEPvPKv5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager16copyHToDInternalEPvPKv5PxU32">
+<span id="_CPPv3N20PxCudaContextManager16copyHToDInternalEPvPKv5PxU32"></span><span id="_CPPv2N20PxCudaContextManager16copyHToDInternalEPvPKv5PxU32"></span><span id="PxCudaContextManager::copyHToDInternal__voidP.voidCP.PxU32"></span><span class="target" id="classpxcudacontextmanager_1a24a74d1a3f0734f983d9f0844bfbe1e7"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">copyHToDInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">deviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">hostBuffer</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager16copyHToDInternalEPvPKv5PxU32" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager21memsetD8AsyncInternalEPvRK4PxU85PxU328CUstream">
+<span id="_CPPv3N20PxCudaContextManager21memsetD8AsyncInternalEPvRK4PxU85PxU328CUstream"></span><span id="_CPPv2N20PxCudaContextManager21memsetD8AsyncInternalEPvRK4PxU85PxU328CUstream"></span><span id="PxCudaContextManager::memsetD8AsyncInternal__voidP.PxU8CR.PxU32.CUstream"></span><span class="target" id="classpxcudacontextmanager_1a950292912ce152191a7209470176be60"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">memsetD8AsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">value</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numBytes</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager21memsetD8AsyncInternalEPvRK4PxU85PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N20PxCudaContextManager22memsetD32AsyncInternalEPvRK5PxU325PxU328CUstream">
+<span id="_CPPv3N20PxCudaContextManager22memsetD32AsyncInternalEPvRK5PxU325PxU328CUstream"></span><span id="_CPPv2N20PxCudaContextManager22memsetD32AsyncInternalEPvRK5PxU325PxU328CUstream"></span><span id="PxCudaContextManager::memsetD32AsyncInternal__voidP.PxU32CR.PxU32.CUstream"></span><span class="target" id="classpxcudacontextmanager_1a589996e560026a4474a8cbf11f129160"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">memsetD32AsyncInternal</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">dstDeviceBuffer</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">value</span></span>, <a class="reference internal" href="typedef_PxSimpleTypes_8h_1acce5749db3dcfb916e98c253374264ed.html#_CPPv45PxU32" title="PxU32"><span class="n"><span class="pre">PxU32</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">numIntegers</span></span>, <a class="reference internal" href="typedef_PxCudaTypes_8h_1ab946c7f02e09efd788a204718015d88a.html#_CPPv48CUstream" title="CUstream"><span class="n"><span class="pre">CUstream</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">stream</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N20PxCudaContextManager22memsetD32AsyncInternalEPvRK5PxU325PxU328CUstream" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Jul 23, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
