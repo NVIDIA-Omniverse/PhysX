@@ -2765,6 +2765,8 @@ void Sc::Scene::onBodySleep(BodySim* body)
 
 void Sc::Scene::onBodyWakeUp(BodySim* body)
 {
+	body->getLowLevelBody().setLeapfrogAccelerationScale();
+
 	if(!mSimulationEventCallback && !mOnSleepingStateChanged)
 		return;
 

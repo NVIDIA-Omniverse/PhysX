@@ -2277,6 +2277,17 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 
 		const IG::IslandSim& islandSim = mSimpleIslandManager->getAccurateIslandSim();
 
+		{
+			// clear leapfrog acceleration scale for all active bodies
+			const PxU32 nbActiveBodies = islandSim.getNbActiveNodes(IG::Node::eRIGID_BODY_TYPE);
+			const PxNodeIndex*const activeBodies = islandSim.getActiveNodes(IG::Node::eRIGID_BODY_TYPE);
+			for (PxU32 i = 0; i < nbActiveBodies; ++i)
+			{
+				PxsRigidBody* body = islandSim.getRigidBody(activeBodies[i]);
+				body->resetLeapfrogAccelerationScale();
+			}
+		}
+
 		const PxU32 rigidBodyOffset = BodySim::getRigidBodyOffset();
 
 		const PxU32 numBodiesToDeactivate = islandSim.getNbNodesToDeactivate(IG::Node::eRIGID_BODY_TYPE);
