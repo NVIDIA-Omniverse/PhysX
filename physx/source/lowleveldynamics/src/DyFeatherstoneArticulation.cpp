@@ -936,17 +936,6 @@ namespace Dy
 		return a;
 	}
 
-	void FeatherstoneArticulation::fillIndexType(const PxU32 linkId, PxU8& indexType)
-	{
-		ArticulationLink& link = mArticulationData.getLink(linkId);
-
-		//turn the fixed-base links to static for the solver
-		if(link.bodyCore->fixedBaseLink)
-			indexType = PxsIndexedInteraction::eWORLD;
-		else
-			indexType = PxsIndexedInteraction::eARTICULATION;
-	}
-
 	PxReal FeatherstoneArticulation::getLinkMaxPenBias(const PxU32 linkID) const
 	{
 		return mArticulationData.getLinkData(linkID).maxPenBias;

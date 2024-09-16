@@ -731,7 +731,7 @@ static void setupFinalizeSolverConstraints4Step(PxTGSSolverContactDesc* PX_RESTR
 				// rdt, a, b, x only needed in compliant case
 				const BoolV isCompliant = V4IsGrtr(restitution, zero);
 				const Vec4V rdt = V4Scale(restitution, dt);
-				const BoolV collidingWithVrel = V4IsGrtr(V4Mul(V4Neg(vrel), totalDt), penetration); // Note: using totalDt here instead of penetrationInvDt because the latter has a fudge factor if there are velocity iterations
+				const BoolV collidingWithVrel = V4IsGrtr(V4Neg(vrel), penetrationInvDt);
 				const Vec4V dampingIfEnabled = V4Sel(BAndNot(isSeparated, collidingWithVrel), zero, damping);
 				const Vec4V a = V4Scale(V4Add(dampingIfEnabled, rdt), dt);
 				const Vec4V massIfAccelElseOne = V4Sel(accelSpring, recipResponse, one);

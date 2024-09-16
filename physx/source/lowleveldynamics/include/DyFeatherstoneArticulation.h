@@ -713,8 +713,6 @@ namespace Dy
 
 		Cm::SpatialVector getMotionAcceleration(const PxU32 linkID, const bool isGpuSimEnabled) const;
 
-		void fillIndexType(const PxU32 linkId, PxU8& indexType);
-
 		PxReal getLinkMaxPenBias(const PxU32 linkID) const;
 
 		PxReal getCfm(const PxU32 linkID) const;

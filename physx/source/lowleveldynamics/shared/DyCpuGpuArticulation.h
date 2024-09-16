@@ -179,6 +179,124 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeDriveImpulse
 }
 
 /**
+\brief Apply limit constraints to an articulation joint dof.
+1) Compute the delta impulse required to maintain limit constraints. 
+2) Individually accumulate the impulses that have been applied to maintain both the lower and upper limit.
+3) Compute the updated joint speed after applying the delta impulse.
+\param[in] dt is the timestep of the simulation
+\param[in] recipDt has value 1/dt 
+\param[in] isVelIter is true if we are performing a velocity iteration, false if performing a position iteration.
+\param[in] response is the deltaSpeed response of the joint dof to a unit impulse.
+\param[in] recipResponse has value 1/response.
+\param[in] erp is the Baumgarte multiplier used to resolve a fraction of the limit error.
+\param[in] errorLow is the lower bound of the limit.
+\param[in] errorHigh is the upper bound of the limit.
+\param[in] jointPDelta is the change to the joint position that has accumulated over solver iterations.
+\param[in,out] lowImpulse_ is the accumulated impulse that has been applied to maintain the limit's lower bound.
+\param[in,out] highImpulse_ is the accumulated impulse that has applied to maintain the limit's upper bound.
+\param[in,out] jointV_ is the joint speed before and after applying the limit impulses.
+\return deltaImpulse required to enforce the upper and lower limits.
+*/
+PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
+(const PxReal dt, const PxReal recipDt, const bool  isVelIter, 
+ const PxReal response, const PxReal recipResponse, const PxReal erp,
+ const PxReal errorLow, const PxReal errorHigh,  
+ const PxReal jointPDelta,
+ PxReal& lowImpulse_, PxReal& highImpulse_, PxReal& jointV_)
+{
+	// PT: avoid aliasing
+	PxReal jointV = jointV_;
+	PxReal lowImpulse = lowImpulse_;
+	PxReal highImpulse = highImpulse_;
+
+	const PxReal futureDeltaJointP = jointPDelta + jointV * dt;
+
+	// for all errors: Negative means violated
+	const PxReal currErrLow = errorLow + jointPDelta;
+	const PxReal nextErrLow = errorLow + futureDeltaJointP;
+	const PxReal currErrHigh = errorHigh - jointPDelta;
+	const PxReal nextErrHigh = errorHigh - futureDeltaJointP;
+
+	bool limited = false;
+
+	const PxReal tolerance = 0.f;
+
+	PxReal deltaF = 0.f;
+	if (currErrLow < tolerance || nextErrLow < tolerance)
+	{
+		PxReal newJointV = jointV;
+		limited = true;
+		if (currErrLow < tolerance)
+		{
+			if (!isVelIter)
+				newJointV = -currErrLow * recipDt * erp;
+		}
+		else
+		{
+			// Currently we're not in violation of the limit but would be after this time step given the current velocity.
+			// To prevent that future violation, we want the current velocity to only take us right to the limit, not across it 
+			newJointV = -currErrLow * recipDt;
+		}
+
+		// In position iterations, the newJointV is now such that we end up exactly on the limit after this time step (ignoring erp)
+		// However, we ignored the current velocity, which may already take us further away from the limit than the newJointV.
+		// Therefore, we additionally have to check now that the impulse we're applying is only repulsive overall.
+
+		const PxReal deltaV = newJointV - jointV;
+		deltaF = PxMax(lowImpulse + deltaV * recipResponse, 0.f) - lowImpulse; // accumulated limit impulse must be repulsive
+		lowImpulse += deltaF;
+	}
+	else if (currErrHigh < tolerance || nextErrHigh < tolerance)
+	{
+		PxReal newJointV = jointV;
+		limited = true;
+		if (currErrHigh < tolerance)
+		{
+			if (!isVelIter)
+				newJointV = currErrHigh * recipDt * erp;
+		}
+		else
+			newJointV = currErrHigh * recipDt;
+
+		const PxReal deltaV = newJointV - jointV;
+		deltaF = PxMin(highImpulse + deltaV * recipResponse, 0.f) - highImpulse;
+		highImpulse += deltaF;
+	}
+
+	if (!limited)
+	{
+		// If no limit is violated right now, it could still be that a limit was active in an earlier iteration and
+		// overshot. Therefore, we give that limit from which the joint position is currently moving away a chance to
+		// pull back and correct the overshoot.
+		// The pull-back impulse is the smaller of
+		//     a) The impulse needed to bring the joint velocity to zero.
+		//     b) The opposite impulse of the already applied joint limit impulse, thereby cancelling out the accumulated effect of the limit.
+
+		const PxReal impulseForZeroVel = -jointV * recipResponse; 
+		if (jointV > 0.f) // moving away from the lower limit
+		{
+			deltaF = PxMax(impulseForZeroVel, -lowImpulse);
+			lowImpulse += deltaF;
+				
+		}
+		else // moving away from the higher limit
+		{
+			deltaF = PxMin(impulseForZeroVel, -highImpulse);
+			highImpulse += deltaF;
+		}
+	}
+
+	jointV += deltaF * response;
+
+	lowImpulse_ = lowImpulse;
+	highImpulse_ = highImpulse;
+	jointV_ = jointV;
+
+	return deltaF;
+}
+
+
+/**
 \brief Translate a spatial vector from the frame of one link (the source link) to the frame of another link (the target link).
 \param[in] offset is the vector from the source link to the target link (== posTargetLink - posSourceLlink)
 \param[in] s is the spatial vector in the frame of the source link with s.top representing the angular part of the 

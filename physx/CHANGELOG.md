@@ -1,3 +1,24 @@
+# v5.4.2-106.1
+
+## Articulations
+
+### Fixed
+
+* A bug in the GPU pipeline where setting the maximum joint velocity to zero resulted in a crash.
+
+### Changed
+
+* In the CPU codepath, constraints involving the root link of a fixed-base articulation are now resolved simultaneously with constraints that couple pairs of dynamic rigid bodies and/or articulation links. As a consequence of this change, the CPU and GPU codepaths now resolve constraints and contacts involving the root link of an articulation in the same order. This historic inconsistency, which has now been resolved, may have caused a difference in behavior between CPU and GPU simulation.
+
+## Rigid Body
+
+### Fixed
+
+* In cases where TGS was used with a non-zero number of velocity iterations on CPU, an incorrect timestep was used in part of the rigid-body and articulation solver pipeline.
+* A bug in collision resolution where a sphere could fall through a flat triangle mesh when it landed precisely on a mesh vertex.
+* Acceleration computation for rigid bodies was incorrect for both CPU and GPU APIs if velocities were updated by the user in-between simulation steps. This is fixed now. Affected API: PxRigidBody::getLinearAcceleration(), PxRigidBody::getAngularAcceleration(), PxDirectGPUAPI::getRigidDynamicData().
+* The CPU-side computations of accelerations (controlled with eENABLE_BODY_ACCELERATIONS) have been disabled when eENABLE_DIRECT_GPU_API is enabled. Previously both the CPU and GPU computations happened, which was redundant.
+
 # v5.4.1-106.0
 
 ## General

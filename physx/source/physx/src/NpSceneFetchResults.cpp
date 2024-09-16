@@ -141,7 +141,7 @@ void NpScene::fetchResultsPostContactCallbacks()
 {
 	// PT: I put this here for now, as initially we even considered making this a PxExtensions helper. To make it more
 	// efficient / multithread it we could eventually move this deeper in the Sc-level pipeline.
-	if(mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS)
+	if((mScene.getFlags() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS) && !(mScene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API))
 	{
 		// PT: we store the acceleration data in a separate/dedicated array, so that memory usage doesn't increase for
 		// people who don't use the flag (i.e. most users). The drawback is that there's more cache misses here during the
@@ -151,73 +151,37 @@ void NpScene::fetchResultsPostContactCallbacks()
 
 		const float oneOverDt = mElapsedTime != 0.0f ? 1.0f/mElapsedTime : 0.0f;
 
-		if(1)
+		// PT: this version assumes we index mRigidDynamicsAccelerations as we do mRigidDynamics (with getRigidActorArrayIndex), i.e. we
+		// need to update that array when objects are removed (see removeFromRigidActorListT)
+
+		// PT: another (archived) version used getRigidActorSceneIndex(). The acceleration array could become larger than necessary,
+		// but the index was constant for the lifetime of the object. At this point we could just have used a hashmap.
+
+		PxU32 size = mRigidDynamics.size();
+		NpRigidDynamic** rigidDynamics = mRigidDynamics.begin();
+
+		if(mRigidDynamicsAccelerations.size()!=size)
+			mRigidDynamicsAccelerations.resize(size);
+
+		Acceleration* accels = mRigidDynamicsAccelerations.begin();
+		while(size--)
 		{
-			// PT: this version assumes we index mRigidDynamicsAccelerations as we do mRigidDynamics (with getRigidActorArrayIndex), i.e. we
-			// need to update that array when objects are removed (see removeFromRigidActorListT)
+			const NpRigidDynamic* current = *rigidDynamics++;
+			const Sc::BodyCore&	core = current->getCore();
 
-			PxU32 size = mRigidDynamics.size();
-			if(mRigidDynamicsAccelerations.size()!=size)
-			{
-				mRigidDynamicsAccelerations.resize(size);
-			}
+			const PxVec3 linVel = core.getLinearVelocity();
+			const PxVec3 angVel = core.getAngularVelocity();
 
-			NpRigidDynamic** rigidDynamics = mRigidDynamics.begin();
-			Acceleration* accels = mRigidDynamicsAccelerations.begin();
-			while(size--)
-			{
-				const NpRigidDynamic* current = *rigidDynamics++;
-				const Sc::BodyCore&	core = current->getCore();
+			const PxVec3 deltaLinVel = linVel - accels->mPrevLinVel;
+			const PxVec3 deltaAngVel = angVel - accels->mPrevAngVel;
 
-				const PxVec3 linVel = core.getLinearVelocity();
-				const PxVec3 angVel = core.getAngularVelocity();
+			accels->mLinAccel = deltaLinVel * oneOverDt;
+			accels->mAngAccel = deltaAngVel * oneOverDt;
 
-				const PxVec3 deltaLinVel = linVel - accels->mPrevLinVel;
-				const PxVec3 deltaAngVel = angVel - accels->mPrevAngVel;
+			accels->mPrevLinVel = linVel;
+			accels->mPrevAngVel = angVel;
 
-				accels->mLinAccel = deltaLinVel * oneOverDt;
-				accels->mAngAccel = deltaAngVel * oneOverDt;
-
-				accels->mPrevLinVel = linVel;
-				accels->mPrevAngVel = angVel;
-
-				accels++;
-			}
-		}
-		else
-		{
-			// PT: this version uses getRigidActorSceneIndex(). The acceleration array can become larger than necessary,
-			// but the index is constant for the lifetime of the object. At this point we could just use a hashmap.
-
-			PxU32 size = mRigidDynamics.size();
-			NpRigidDynamic** rigidDynamics = mRigidDynamics.begin();
-			while(size--)
-			{
-				const NpRigidDynamic* current = *rigidDynamics++;
-
-				const PxU32 index = current->getRigidActorSceneIndex();
-				if(index+1>mRigidDynamicsAccelerations.size())
-				{
-					mRigidDynamicsAccelerations.resize(index+1);
-				}
-				Acceleration* accels = mRigidDynamicsAccelerations.begin();
-				accels += index;
-
-				const Sc::BodyCore&	core = current->getCore();
-
-				const PxVec3 linVel = core.getLinearVelocity();
-				const PxVec3 angVel = core.getAngularVelocity();
-
-				const PxVec3 deltaLinVel = linVel - accels->mPrevLinVel;
-				const PxVec3 deltaAngVel = angVel - accels->mPrevAngVel;
-
-				accels->mLinAccel = deltaLinVel * oneOverDt;
-				accels->mAngAccel = deltaAngVel * oneOverDt;
-
-				accels->mPrevLinVel = linVel;
-				accels->mPrevAngVel = angVel;
-			}
-
+			accels++;
 		}
 	}
 
