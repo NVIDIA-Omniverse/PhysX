@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Best Practices Guide &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Migrating From PhysX SDK 2.x to 3.x" href="MigrationFrom28.html" />
+    <link rel="prev" title="Extending Serialization" href="ExtendingSerialization.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Best Practices Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#use-checked-builds-and-the-error-stream">Use checked builds and the error stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#visualizing-physics-data">Visualizing physics data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#limiting-coordinates">Limiting coordinates</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-issues">Performance Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#use-release-builds-for-final-performance-tests">Use release builds for final performance tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#disable-debug-visualization-in-final-release-builds">Disable debug visualization in final/release builds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debug-visualization-is-very-slow">Debug visualization is very slow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-using-tight-bounds-for-convex-meshes">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-scratch-buffers">Use scratch buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-the-proper-mid-phase-algorithm">Use the proper mid-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-the-proper-narrow-phase-algorithm">Use the proper narrow-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-the-proper-broad-phase-algorithm">Use the proper broad-phase algorithm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-the-scene-query-and-simulation-flags">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tweak-the-dynamic-tree-rebuild-rate">Tweak the dynamic tree rebuild rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tweak-the-number-of-objects-per-node">Tweak the number of objects per node</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-using-the-compound-pruner">Consider using the compound pruner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-the-insertion-callback-when-cooking-at-runtime">Use the insertion callback when cooking at runtime</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kill-kinematic-pairs-early">Kill kinematic pairs early</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#beware-of-pxscene-getactors">Beware of PxScene::getActors()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-using-aggregates">Consider using aggregates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup-proper-aggregate-filtering">Setup proper aggregate filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-disabling-pxgeometryqueryflag-esimd-guard">Consider disabling PxGeometryQueryFlag::eSIMD_GUARD</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-disabling-scene-query-updates-when-substepping">Consider disabling scene query updates when substepping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consider-changing-the-pxdefaultcpudispatcherwaitforworkmode">Consider changing the PxDefaultCpuDispatcherWaitForWorkMode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-well-of-despair">The “Well of Despair”</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pruner-performance-for-streamed-environments">Pruner Performance for Streamed Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#performance-implications-for-multi-threading">Performance Implications for Multi-Threading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memory-allocation">Memory allocation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reducing-memory-usage">Reducing memory usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Consider using tight bounds for convex meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Use scratch buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flush-simulation-buffers">Flush simulation buffers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#use-preallocation">Use preallocation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tweak-cooking-parameters">Tweak cooking parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#share-shape-and-mesh-data">Share shape and mesh data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Use the scene-query and simulation flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Kill kinematic pairs early</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#behavior-issues">Behavior issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#objects-do-not-spin-realistically">Objects do not spin realistically</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overlapping-objects-explode">Overlapping objects explode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rigid-bodies-are-jittering-on-the-ground">Rigid bodies are jittering on the ground</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#piles-or-stacks-of-objects-are-not-going-to-sleep">Piles or stacks of objects are not going to sleep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jointed-objects-are-unstable">Jointed objects are unstable</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#gpu-rigid-bodies">GPU Rigid Bodies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Best Practices Guide</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="best-practices-guide">
+<span id="bestpractices"></span><h1>Best Practices Guide<a class="headerlink" href="#best-practices-guide" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This chapter covers a number of best practices for the PhysX SDK to assist in diagnosing and fixing frequently encountered issues.</p>
+</section>
+<hr class="docutils" />
+<section id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline"></a></h2>
+<p>The PhysX SDK contains a few debugging helpers. They can be used to make sure the scenes are properly set up.</p>
+<section id="use-checked-builds-and-the-error-stream">
+<h3>Use checked builds and the error stream<a class="headerlink" href="#use-checked-builds-and-the-error-stream" title="Permalink to this headline"></a></h3>
+<p>The PhysX SDK has different build configurations: Debug, Checked, Release, Profile. To make sure that the scene is properly set up without warnings or errors, use either the Debug or Checked builds, and monitor the error callback. Please refer to the <a class="reference internal" href="API.html#errorreporting"><span class="std std-ref">Error Reporting</span></a> chapter for details. Note that some checks can be expensive and thus they are not performed in Release or Profile builds. If the SDK silently fails or even crashes in a Release build, please switch to Debug or Checked builds to ensure this is not caused by an uncaught error.</p>
+</section>
+<section id="visualizing-physics-data">
+<h3>Visualizing physics data<a class="headerlink" href="#visualizing-physics-data" title="Permalink to this headline"></a></h3>
+<p>Use the Omniverse Visual Debugger (OmniPVD) to see what PhysX is seeing and make sure the physics data is what you expect it to be. Please refer to the <a class="reference internal" href="OmniVisualDebugger.html#omniphysxvisualdebugger"><span class="std std-ref">Omniverse Visual Debugger</span></a> chapter for details. Note that this is only available in Debug, Checked and Profile builds.</p>
+<p>An alternative to OmniPVD is the built-in debug visualization system. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><span class="std std-ref">Debug Visualization</span></a> chapter for details. This option is available with all build configurations.</p>
+</section>
+<section id="limiting-coordinates">
+<h3>Limiting coordinates<a class="headerlink" href="#limiting-coordinates" title="Permalink to this headline"></a></h3>
+<p>Bugs in applications, or issues in content creation, can sometimes result in object placement at unexpected coordinates. We recommend the use of <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc12sanityBoundsE" title="PxSceneDesc::sanityBounds"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::sanityBounds</span></code></a>, to generate reports when objects are inserted at positions beyond what your application expects, or when application code moves them to such unexpected positions. Note that these bounds only apply to application updates of actor coordinates, not updates by the simulation engine.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-issues">
+<h2>Performance Issues<a class="headerlink" href="#performance-issues" title="Permalink to this headline"></a></h2>
+<p>The PhysX SDK has been optimized a lot in the past dot releases. However, there still exist various performance pitfalls that the user should be aware of.</p>
+<section id="use-release-builds-for-final-performance-tests">
+<h3>Use release builds for final performance tests<a class="headerlink" href="#use-release-builds-for-final-performance-tests" title="Permalink to this headline"></a></h3>
+<p>The PhysX SDK has different build configurations: Debug, Checked, Release, Profile. The Release builds are the most optimal. If you encounter a performance issue while using other builds, please switch to Release builds and check if the problem is still there.</p>
+</section>
+<section id="disable-debug-visualization-in-final-release-builds">
+<h3>Disable debug visualization in final/release builds<a class="headerlink" href="#disable-debug-visualization-in-final-release-builds" title="Permalink to this headline"></a></h3>
+<p>Debug visualization is great for debugging but it can have a significant performance impact. Make sure it is disabled in your final/release builds. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><span class="std std-ref">Debug Visualization</span></a> chapter for details.</p>
+</section>
+<section id="debug-visualization-is-very-slow">
+<h3>Debug visualization is very slow<a class="headerlink" href="#debug-visualization-is-very-slow" title="Permalink to this headline"></a></h3>
+<p>Debug visualization can  be very slow, because both the code gathering the debug data and the code rendering it is usually not optimal. Use a culling box to limit the amount of data the SDK gathers and sends to the renderer. Please refer to the <a class="reference internal" href="DebugVisualization.html#debugvisualization"><span class="std std-ref">Debug Visualization</span></a> chapter for details.</p>
+</section>
+<section id="consider-using-tight-bounds-for-convex-meshes">
+<h3>Consider using tight bounds for convex meshes<a class="headerlink" href="#consider-using-tight-bounds-for-convex-meshes" title="Permalink to this headline"></a></h3>
+<p>By default PhysX computes approximate (loose) bounds around convex objects. Using <a class="reference internal" href="../_api_build/struct_px_convex_mesh_geometry_flag.html#_CPPv4N24PxConvexMeshGeometryFlag4Enum13eTIGHT_BOUNDSE" title="PxConvexMeshGeometryFlag::eTIGHT_BOUNDS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxConvexMeshGeometryFlag::eTIGHT_BOUNDS</span></code></a> enables smaller/tighter bounds, which are more expensive to compute but can result in improved simulation performance when a lot of convex objects are interacting with each other. Please refer to the <a class="reference internal" href="Geometry.html#geometry"><span class="std std-ref">Geometry</span></a> chapter for details.</p>
+</section>
+<section id="use-scratch-buffers">
+<h3>Use scratch buffers<a class="headerlink" href="#use-scratch-buffers" title="Permalink to this headline"></a></h3>
+<p>The <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> function accepts optional scratch buffers that can be used to reduce temporary allocations and improve simulation performance. Please refer to the <a class="reference internal" href="Simulation.html#simulation"><span class="std std-ref">Simulation</span></a> chapter for details.</p>
+</section>
+<section id="use-the-proper-mid-phase-algorithm">
+<h3>Use the proper mid-phase algorithm<a class="headerlink" href="#use-the-proper-mid-phase-algorithm" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams12midphaseDescE" title="PxCookingParams::midphaseDesc"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::midphaseDesc</span></code></a> can be used to select the desired mid-phase structure. It is a good idea to try the different options and see which one works best for you. Generally speaking the new <a class="reference internal" href="../_api_build/struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4Enum6eBVH34E" title="PxMeshMidPhase::eBVH34"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshMidPhase::eBVH34</span></code></a> introduced in PhysX 3.4 has better performance for scene queries against large triangle meshes. Please refer to the <a class="reference internal" href="Geometry.html#geometry"><span class="std std-ref">Geometry</span></a> chapter for details.</p>
+</section>
+<section id="use-the-proper-narrow-phase-algorithm">
+<h3>Use the proper narrow-phase algorithm<a class="headerlink" href="#use-the-proper-narrow-phase-algorithm" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum11eENABLE_PCME" title="PxSceneFlag::eENABLE_PCM"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_PCM</span></code></a> enables an incremental “persistent contact manifold” algorithm, which is often faster than the previous implementation. PCM should be the default algorithm since PhysX 3.4, but you can also try to enable it in previous versions like 3.3.</p>
+</section>
+<section id="use-the-proper-broad-phase-algorithm">
+<h3>Use the proper broad-phase algorithm<a class="headerlink" href="#use-the-proper-broad-phase-algorithm" title="Permalink to this headline"></a></h3>
+<p>PhysX also provides different broad-phase implementations, selected with <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc14broadPhaseTypeE" title="PxSceneDesc::broadPhaseType"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::broadPhaseType</span></code></a>. The different implementations have various performance characteristics, and it is a good idea to experiment with them and find which one works best for a given application. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><span class="std std-ref">Rigid Body Collision</span></a> chapter for details about the different broad-phases.</p>
+</section>
+<section id="use-the-scene-query-and-simulation-flags">
+<h3>Use the scene-query and simulation flags<a class="headerlink" href="#use-the-scene-query-and-simulation-flags" title="Permalink to this headline"></a></h3>
+<p>If a shape is only used for scene-queries (raycasts, etc), disable its simulation flag. If a shape is only used for simulation (e.g. it will never be raycasted against), disable its scene-query flag. This is good for both memory usage and performance. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><span class="std std-ref">Rigid Body Collision</span></a> chapter for details.</p>
+</section>
+<section id="tweak-the-dynamic-tree-rebuild-rate">
+<h3>Tweak the dynamic tree rebuild rate<a class="headerlink" href="#tweak-the-dynamic-tree-rebuild-rate" title="Permalink to this headline"></a></h3>
+<p>If the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> call takes a significant amount of time in scenes containing a lot of objects, try to increase the <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc26dynamicTreeRebuildRateHintE" title="PxSceneDesc::dynamicTreeRebuildRateHint"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicTreeRebuildRateHint</span></code></a> parameter. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><span class="std std-ref">Scene Queries</span></a> chapter for details.</p>
+</section>
+<section id="tweak-the-number-of-objects-per-node">
+<h3>Tweak the number of objects per node<a class="headerlink" href="#tweak-the-number-of-objects-per-node" title="Permalink to this headline"></a></h3>
+<p>If the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> call takes a significant amount of time in scenes containing a lot of objects, try to increase the <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc22staticNbObjectsPerNodeE" title="PxSceneDesc::staticNbObjectsPerNode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticNbObjectsPerNode</span></code></a> and/or <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc23dynamicNbObjectsPerNodeE" title="PxSceneDesc::dynamicNbObjectsPerNode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicNbObjectsPerNode</span></code></a> parameters. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><span class="std std-ref">Scene Queries</span></a> chapter for details.</p>
+</section>
+<section id="consider-using-the-compound-pruner">
+<h3>Consider using the compound pruner<a class="headerlink" href="#consider-using-the-compound-pruner" title="Permalink to this headline"></a></h3>
+<p>If the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> call takes a significant amount of time in scenes containing a lot of objects, consider using <a class="reference internal" href="../_api_build/class_px_b_v_h.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> structures when adding complex compound actors to the scene. The corresponding actor would then go to an internal ‘compound pruner’ structure, reducing the stress on the regular scene query structures. Please refer to the <a class="reference internal" href="SceneQueries.html#scenequeries"><span class="std std-ref">Scene Queries</span></a> chapter for details.</p>
+</section>
+<section id="use-the-insertion-callback-when-cooking-at-runtime">
+<h3>Use the insertion callback when cooking at runtime<a class="headerlink" href="#use-the-insertion-callback-when-cooking-at-runtime" title="Permalink to this headline"></a></h3>
+<p>Use <a class="reference internal" href="../_api_build/class_px_insertion_callback.html#_CPPv419PxInsertionCallback" title="PxInsertionCallback"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxInsertionCallback</span></code></a> for objects that are cooked at runtime. This is faster than first writing the data to a file or a memory buffer, and then passing the data to PhysX.</p>
+</section>
+<section id="kill-kinematic-pairs-early">
+<h3>Kill kinematic pairs early<a class="headerlink" href="#kill-kinematic-pairs-early" title="Permalink to this headline"></a></h3>
+<p>If you do not need them, use <a class="reference internal" href="../_api_build/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKILLE" title="PxPairFilteringMode::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKILL</span></code></a> to disable kinematic pairs earlier in the pipeline. This is especially effective with the <a class="reference internal" href="../_api_build/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eABPE" title="PxBroadPhaseType::eABP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eABP</span></code></a> or <a class="reference internal" href="../_api_build/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum5ePABPE" title="PxBroadPhaseType::ePABP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::ePABP</span></code></a> broadphases. Sometimes it is not possible to disable all kinematic pairs globally because a few of them are necessary. In that case the <a class="reference internal" href="../_api_build/struct_px_rigid_body_flag.html#_CPPv4N15PxRigidBodyFlag4Enum30eFORCE_KINE_KINE_NOTIFICATIONSE" title="PxRigidBodyFlag::eFORCE_KINE_KINE_NOTIFICATIONS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eFORCE_KINE_KINE_NOTIFICATIONS</span></code></a> and <a class="reference internal" href="../_api_build/struct_px_rigid_body_flag.html#_CPPv4N15PxRigidBodyFlag4Enum32eFORCE_STATIC_KINE_NOTIFICATIONSE" title="PxRigidBodyFlag::eFORCE_STATIC_KINE_NOTIFICATIONS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxRigidBodyFlag::eFORCE_STATIC_KINE_NOTIFICATIONS</span></code></a> flags can help.</p>
+</section>
+<section id="beware-of-pxscene-getactors">
+<h3>Beware of PxScene::getActors()<a class="headerlink" href="#beware-of-pxscene-getactors" title="Permalink to this headline"></a></h3>
+<p>In PhysX versions prior to 5.1, there is an implementation issue in this function that makes it run in O(n^2) time when called for one object at a time. It is fine to call it to retrieve all objects at once though. Or at least call it to retrieve a batch of objects (maybe 64 or 128) at the same time, to limit the performance problem.</p>
+</section>
+<section id="consider-using-aggregates">
+<h3>Consider using aggregates<a class="headerlink" href="#consider-using-aggregates" title="Permalink to this headline"></a></h3>
+<p>Consider using aggregates for actors that remain constantly spatially close to each other, like ragdolls. This reduces the load on the broadphase. Grouping spatially close static actors in aggregates can also help.</p>
+</section>
+<section id="setup-proper-aggregate-filtering">
+<h3>Setup proper aggregate filtering<a class="headerlink" href="#setup-proper-aggregate-filtering" title="Permalink to this headline"></a></h3>
+<p>Mark aggregates that only contain static actors with <a class="reference internal" href="../_api_build/struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4Enum7eSTATICE" title="PxAggregateType::eSTATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxAggregateType::eSTATIC</span></code></a>, and aggregates that only contain kinematic actors with <a class="reference internal" href="../_api_build/struct_px_aggregate_type.html#_CPPv4N15PxAggregateType4Enum10eKINEMATICE" title="PxAggregateType::eKINEMATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxAggregateType::eKINEMATIC</span></code></a>.</p>
+</section>
+<section id="consider-disabling-pxgeometryqueryflag-esimd-guard">
+<h3>Consider disabling PxGeometryQueryFlag::eSIMD_GUARD<a class="headerlink" href="#consider-disabling-pxgeometryqueryflag-esimd-guard" title="Permalink to this headline"></a></h3>
+<p>By default all geometry queries (either at the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a>, <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv415PxGeometryQuery" title="PxGeometryQuery"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometryQuery</span></code></a> or <a class="reference internal" href="../_api_build/class_px_mesh_query.html#_CPPv411PxMeshQuery" title="PxMeshQuery"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMeshQuery</span></code></a> levels), i.e. operations like raycasts, overlaps, sweeps, save, set and restore the SSE control register. This can have a measurable performance hit, so the <a class="reference internal" href="../_api_build/struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum11eSIMD_GUARDE" title="PxGeometryQueryFlag::eSIMD_GUARD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxGeometryQueryFlag::eSIMD_GUARD</span></code></a> flag can be used to skip these steps. You should only do this if the client code already took care of the control register. In particular exceptions should have been disabled, and the DAZ and FTZ flags should have been set (if applicable to your processor).</p>
+</section>
+<section id="consider-disabling-scene-query-updates-when-substepping">
+<h3>Consider disabling scene query updates when substepping<a class="headerlink" href="#consider-disabling-scene-query-updates-when-substepping" title="Permalink to this headline"></a></h3>
+<p>It is sometimes useful to change the scene query update mode (<a class="reference internal" href="../_api_build/struct_px_scene_query_update_mode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQueryUpdateMode</span></code></a>) at runtime. For example when running multiple physics (sub)steps per (render) frame, it is often not necessary to update the scene query structures for each of these substeps. It can thus be useful to disable scene query updates for all substeps except the last one.</p>
+</section>
+<section id="consider-changing-the-pxdefaultcpudispatcherwaitforworkmode">
+<h3>Consider changing the PxDefaultCpuDispatcherWaitForWorkMode<a class="headerlink" href="#consider-changing-the-pxdefaultcpudispatcherwaitforworkmode" title="Permalink to this headline"></a></h3>
+<p>When using many threads, the new CPU dispatcher “wait for work modes” such as PxDefaultCpuDispatcherWaitForWorkMode::eYIELD_THREAD can provide better performance than PxDefaultCpuDispatcherWaitForWorkMode::eWAIT_FOR_WORK. They are however more resource intensive so use it cautiously.</p>
+</section>
+<section id="the-well-of-despair">
+<h3>The “Well of Despair”<a class="headerlink" href="#the-well-of-despair" title="Permalink to this headline"></a></h3>
+<p>One common use-case for a physics engine is to simulate fixed-size time-steps independent of the frame rate that the application is rendered at. If the application is capable of being rendered at a higher frequency than the simulation frequency, the user has the option to render the same simulation state, interpolate frames etc. However, sometimes it is not possible to render the scene at a frequency higher-or-equal to the simulation frequency. At this point, the options are to either run the physics simulation with a larger time-step or to simulate multiple, smaller sub-steps. The latter is generally a preferable solution because changing the size of time-steps in a physics simulation can significantly change perceived behavior. However, when using a sub-stepping approach, one must always be aware of the potential that this has to damage performance.</p>
+<p>As an example, let’s imagine a game that is running using v-sync at 60FPS. This game is simulating a large number of physics bodies and, as a result, the physics is relatively expensive. In order to meet the 60FPS requirement, the entire frame must be completed within ~16ms. As already mentioned, the physics is reasonably expensive and, in this scenario, takes 9ms to simulate 1/60th of a second. If the game was to suddenly spike, e.g. as a result of some OS activity, saving a check-point or loading a new section of the level, we may miss the deadline for 60FPS. If this happens, we must run additional sub-steps in the physics to catch up the missed time in the next frame. Assuming that the previous frame took 50ms instead of 16ms, we must now simulate 3 sub-steps to be able to simulate all the elapsed time. However, each sub-step takes ~9ms, which means that we will take ~27ms to simulate 50ms. As a result, this frame also misses our 16ms deadline for 60FPS, meaning that the frame including v-sync took 33ms (i.e. 30Hz). We must now simulate 2 sub-steps in the next frame, which takes ~18ms and also misses our 16ms deadline. As a result, we never manage to recover back to 60FPS. In this scenario, our decision to sub-step as a result of a spike has resulted in our application being stuck in a performance trough indefinitely. The application is capable of simulating and rendering at 60FPS but becomes stuck in the so-called “physics well of despair” as a result of substepping.</p>
+<p>Problems like this can be alleviated in several ways:</p>
+<ul class="simple">
+<li><p>Decouple the physics simulation from the application’s update/render loop. In this case, the physics simulation becomes a scheduled event that occurs at a fixed frequency. This can make player interaction in the scene more difficult and may introduce latency so must be well-thought through. However, using multiple scenes (one synchronous for “important” objects, one asynchronous for “unimportant” objects) can help.</p></li>
+<li><p>Permit the application to “drop” time when faced with a short-term spike. This may introduce visible motion artifacts if spikes occur frequently.</p></li>
+<li><p>Introduce slight variations in time-step (e.g. instead of simulating at 1/60th, consider simulating a range between 1/50th and 1/60th). This can introduce non-determinism into the simulation so should be used with caution. If this is done, additional time that must be simulated can potentially be amortized over several frames by simulating slightly larger time-steps.</p></li>
+<li><p>Consider simplifying the physics scene, e.g. reducing object count, shape complexity, adjusting iteration counts etc. Provided physics simulation is a small portion of the total frame time, the application should find it easier to recover from spikes.</p></li>
+</ul>
+</section>
+<section id="pruner-performance-for-streamed-environments">
+<h3>Pruner Performance for Streamed Environments<a class="headerlink" href="#pruner-performance-for-streamed-environments" title="Permalink to this headline"></a></h3>
+<p>PhysX provides multiple types of pruners, each of which aimed at specific applications. These are:</p>
+<ul class="simple">
+<li><p>Static AABB tree</p></li>
+<li><p>Dynamic AABB tree</p></li>
+</ul>
+<p>By default, the static AABB tree is used for the static objects in the environment and the dynamic AABB tree is used for the dynamic objects in the environment. In general, this approach works well but it must be noted that creating the static AABB tree can be very expensive. As a result, adding, removing or moving any static objects in the environment will result in the static AABB tree being fully recomputed, which can introduce significant performance cost. As a result, we recommend the use of dynamic AABB trees for both static and dynamic pruners in applications which stream in the static environment. Additionaly scene query performance against newly added objects can be improved by using <a class="reference internal" href="../_api_build/class_px_pruning_structure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a>, which can precompute the AABB structure of inserted objects offline.</p>
+</section>
+<section id="performance-implications-for-multi-threading">
+<h3>Performance Implications for Multi-Threading<a class="headerlink" href="#performance-implications-for-multi-threading" title="Permalink to this headline"></a></h3>
+<p>The PhysX engine is designed from the ground-up to take advantage of multi-core architectures to accelerate physics simulation. However, this does not mean that more threads are always better. When simulating extremely simple scenes, introducing additional worker threads can detrimentally affect performance. This is because, at its core, PhysX operates around a task queue. When a frame’s simulation is started, PhysX dispatches a chain of tasks that encapsulate that frame of physics simulation. At various stages of the physics pipeline, work can be performed in parallel on multiple worker threads. However, if there is insufficient work, there will be little or no parallel execution. In this case, the use of additional worker threads may detrimentally affect performance because the various phases of the pipeline may be run by different worker threads, which may incur some additional overhead depending on the CPU architecture compared to running on just a single worker thread. As a result, developers should measure the performance of the engine with their expected physics loads with different numbers of threads to maximize their performance and make sure that they are making the most of the available processing resources for their application.</p>
+</section>
+<section id="memory-allocation">
+<h3>Memory allocation<a class="headerlink" href="#memory-allocation" title="Permalink to this headline"></a></h3>
+<p>Minimizing dynamic allocation is an important aspect of performance tuning, and PhysX provides several mechanisms to control memory usage.</p>
+<p>Reduce allocation used for tracking objects by presizing the capacities of scene data structures, using either <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc6limitsE" title="PxSceneDesc::limits"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::limits</span></code></a> before creating the scene or the function <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene9setLimitsERK13PxSceneLimits" title="PxScene::setLimits"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::setLimits()</span></code></a>. When resizing, the new capacities will be at least as large as required to deal with the objects currently in the scene. These values are only for preallocation and do not represent hard limits, so if you add more objects to the scene than the capacity limits you have set, PhysX will allocate more space.</p>
+<p>Much of the memory PhysX uses for simulation is held in a pool of blocks, each 16K in size. You can control the current and maximum size of the pool with the nbContactDataBlocks and maxNbContactDataBlocks members of <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv411PxSceneDesc" title="PxSceneDesc"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneDesc</span></code></a>. PhysX will never allocate more than the maximum number of blocks specified, and if there is insufficient memory it will instead simply drop contacts or joint constraints. You can find out how many blocks are currently in use with the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4NK7PxScene26getNbContactDataBlocksUsedEv" title="PxScene::getNbContactDataBlocksUsed"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getNbContactDataBlocksUsed()</span></code></a> method, and find out the maximum number that have ever been used with the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4NK7PxScene29getMaxNbContactDataBlocksUsedEv" title="PxScene::getMaxNbContactDataBlocksUsed"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getMaxNbContactDataBlocksUsed()</span></code></a> method.</p>
+<p>Use <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene15flushSimulationEb" title="PxScene::flushSimulation"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::flushSimulation()</span></code></a> to reclaim unused blocks, and to shrink the size of scene data structures to the size presently required.</p>
+<p>To reduce temporary allocation performed during simulation, provide PhysX with a memory block in the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene8simulateE6PxRealPN5physx10PxBaseTaskEPv5PxU32b" title="PxScene::simulate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::simulate()</span></code></a> call. The block may be reused by the application after the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> call which marks the end of simulation. The size of the block must be a multiple of 16K, and it must be 16-byte aligned.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="reducing-memory-usage">
+<h2>Reducing memory usage<a class="headerlink" href="#reducing-memory-usage" title="Permalink to this headline"></a></h2>
+<p>The following strategies can be used to reduce PhysX’s memory usage.</p>
+<section id="id1">
+<h3>Consider using tight bounds for convex meshes<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h3>
+<p>See the above chapter about Performance Issues for details. Using tight bounds for convex meshes is mainly useful for performance, but it can also reduce the amount of pairs coming out of the broad-phase, which decreases the amount of memory needed to manage these pairs.</p>
+</section>
+<section id="id2">
+<h3>Use scratch buffers<a class="headerlink" href="#id2" title="Permalink to this headline"></a></h3>
+<p>See the above chapter about Performance Issues for details. Scratch buffers can be shared between multiple sub-systems (e.g. physics and rendering), which can globally improve memory usage. PhysX will not use less memory per-se, but it will allocate less of it.</p>
+</section>
+<section id="flush-simulation-buffers">
+<h3>Flush simulation buffers<a class="headerlink" href="#flush-simulation-buffers" title="Permalink to this headline"></a></h3>
+<p>Call the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene15flushSimulationEb" title="PxScene::flushSimulation"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::flushSimulation()</span></code></a> function to free internal buffers used for temporary computations. But be aware that these buffers are usually allocated once and reused in subsequent frames, so releasing the memory might trigger new re-allocations during the next simulate call, which can decrease performance. Please refer to the <a class="reference internal" href="Simulation.html#simulation-memory"><span class="std std-ref">Simulation memory</span></a> chapter for details.</p>
+</section>
+<section id="use-preallocation">
+<h3>Use preallocation<a class="headerlink" href="#use-preallocation" title="Permalink to this headline"></a></h3>
+<p>Use <a class="reference internal" href="../_api_build/class_px_scene_desc.html#_CPPv4N11PxSceneDesc6limitsE" title="PxSceneDesc::limits"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::limits</span></code></a> to preallocate various internal arrays. Preallocating the exact necessary size for internal buffers may use less memory overall than the usual array resizing strategy of dynamic arrays. Please refer to the <a class="reference internal" href="Simulation.html#simulation-memory"><span class="std std-ref">Simulation memory</span></a> chapter for details.</p>
+</section>
+<section id="tweak-cooking-parameters">
+<h3>Tweak cooking parameters<a class="headerlink" href="#tweak-cooking-parameters" title="Permalink to this headline"></a></h3>
+<p>Some cooking parameters have a direct impact on memory usage. In particular, PxMeshPreprocessingFlag::eDISABLE_ACTIVE_EDGES_PRECOMPUTE, PxCookingParams::suppressTriangleMeshRemapTable, PxBVH33MidphaseDesc::meshCookingHint, PxBVH33MidphaseDesc::meshSizePerformanceTradeOff, PxBVH34MidphaseDesc::numTrisPerLeaf, PxCookingParams::midphaseDesc, PxCookingParams::gaussMapLimit and PxCookingParams::buildTriangleAdjacencies can be modified to choose between runtime performance, cooking performance or memory usage.</p>
+</section>
+<section id="share-shape-and-mesh-data">
+<h3>Share shape and mesh data<a class="headerlink" href="#share-shape-and-mesh-data" title="Permalink to this headline"></a></h3>
+<p>Share the same PxConvexMesh and PxTriangleMesh objects between multiple shape instances if possible. Use shared shapes if possible. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><span class="std std-ref">Rigid Body Collision</span></a> chapter for details about shape sharing.</p>
+</section>
+<section id="id3">
+<h3>Use the scene-query and simulation flags<a class="headerlink" href="#id3" title="Permalink to this headline"></a></h3>
+<p>If a shape is only used for scene-queries (raycasts, etc), disable its simulation flag. If a shape is only used for simulation (e.g. it will never be raycasted against), disable its scene-query flag. This is good for both memory usage and performance. Please refer to the <a class="reference internal" href="RigidBodyCollision.html#rigidbodycollision"><span class="std std-ref">Rigid Body Collision</span></a> chapter for details.</p>
+</section>
+<section id="id4">
+<h3>Kill kinematic pairs early<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h3>
+<p>If you do not need them, use <a class="reference internal" href="../_api_build/struct_px_pair_filtering_mode.html#_CPPv4N19PxPairFilteringMode4Enum5eKILLE" title="PxPairFilteringMode::eKILL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPairFilteringMode::eKILL</span></code></a> to disable kinematic pairs earlier in the pipeline.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="behavior-issues">
+<h2>Behavior issues<a class="headerlink" href="#behavior-issues" title="Permalink to this headline"></a></h2>
+<section id="objects-do-not-spin-realistically">
+<h3>Objects do not spin realistically<a class="headerlink" href="#objects-do-not-spin-realistically" title="Permalink to this headline"></a></h3>
+<p>For historical reasons the default maximum angular velocity is set to a low value (7.0). This can artificially prevent the objects from spinning quickly, which may look unrealistic and wrong in some cases. Please use <a class="reference internal" href="../_api_build/class_px_rigid_dynamic.html#_CPPv4N14PxRigidDynamic21setMaxAngularVelocityE6PxReal" title="PxRigidDynamic::setMaxAngularVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setMaxAngularVelocity()</span></code></a> to increase the maximum allowed angular velocity. Note that this default value has been increased to 100.0 in PhysX 4.0.</p>
+</section>
+<section id="overlapping-objects-explode">
+<h3>Overlapping objects explode<a class="headerlink" href="#overlapping-objects-explode" title="Permalink to this headline"></a></h3>
+<p>Rigid bodies created in an initially overlapping state may explode, because the SDK tries to resolve the penetrations in a single time-step, which can lead to large velocities.
+The same problem can appear when the time step of an ongoing simulation is drastically reduced.
+Please use <a class="reference internal" href="../_api_build/class_px_rigid_body.html#_CPPv4N11PxRigidBody27setMaxDepenetrationVelocityE6PxReal" title="PxRigidBody::setMaxDepenetrationVelocity"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::setMaxDepenetrationVelocity()</span></code></a> to limit the de-penetration velocity to a reasonable value.
+It may also help to (temporarily) increase the number of velocity iterations as these reduce the energy that was injected for depenetrating the objects.</p>
+</section>
+<section id="rigid-bodies-are-jittering-on-the-ground">
+<h3>Rigid bodies are jittering on the ground<a class="headerlink" href="#rigid-bodies-are-jittering-on-the-ground" title="Permalink to this headline"></a></h3>
+<p>Visualize the contacts with the visual debugger. If the jittering is caused by contacts that appear and disappear from one frame to another, try to increase the contact offset (<a class="reference internal" href="../_api_build/class_px_shape.html#_CPPv4N7PxShape16setContactOffsetE6PxReal" title="PxShape::setContactOffset"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setContactOffset()</span></code></a>).</p>
+</section>
+<section id="piles-or-stacks-of-objects-are-not-going-to-sleep">
+<h3>Piles or stacks of objects are not going to sleep<a class="headerlink" href="#piles-or-stacks-of-objects-are-not-going-to-sleep" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum21eENABLE_STABILIZATIONE" title="PxSceneFlag::eENABLE_STABILIZATION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_STABILIZATION</span></code></a> might help here. This is not recommended for jointed objects though, so use <a class="reference internal" href="../_api_build/class_px_rigid_dynamic.html#_CPPv4N14PxRigidDynamic25setStabilizationThresholdE6PxReal" title="PxRigidDynamic::setStabilizationThreshold"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidDynamic::setStabilizationThreshold()</span></code></a> to enable/disable this feature on a per-object basis. It should be safe to enable for objects like debris.</p>
+</section>
+<section id="jointed-objects-are-unstable">
+<h3>Jointed objects are unstable<a class="headerlink" href="#jointed-objects-are-unstable" title="Permalink to this headline"></a></h3>
+<p>There are multiple things to try here:</p>
+<ul class="simple">
+<li><p>Enable the new TGS solver in PhysX 4.0.</p></li>
+<li><p>Increase the solver iteration counts, in particular the number of position iterations. Please refer to the <a class="reference internal" href="RigidBodyDynamics.html#rigidbodydynamics"><span class="std std-ref">Rigid Body Dynamics</span></a> chapter for details.</p></li>
+<li><p>Consider creating the same constraints multiple times. This is similar to increasing the number of solver iterations, but the performance impact is localized to the jointed object rather than the simulation island it is a part of. So it can be a better option overall. Note that the order in which constraints are created is important. Say you have 4 constraints named A, B, C, D, and you want to create them 4 times each. Creating them in the AAAABBBBCCCCDDDD order will not improve the behavior, but creating them in the ABCDABCDABCDABCD order will.</p></li>
+<li><p>Use smaller time steps. This can be an effective way to improve joints’ behavior, although it can be an expensive solution. Instead of running 1 simulation call with a time-step dt and N solver iterations, consider trying N simulation calls with a time-step dt/N and 1 solver iteration.</p></li>
+<li><p>Consider tweaking inertia tensors. In particular, for ropes or chains of jointed objects, the <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxJoint::setInvMassScale()</span></code> and <code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxJoint::setInvInertiaScale()</span></code> functions can be quite effective. An alternative is to compute the inertia tensor (e.g. using <a class="reference internal" href="../_api_build/class_px_rigid_body_ext.html#_CPPv4N14PxRigidBodyExt23setMassAndUpdateInertiaER11PxRigidBodyPK6PxReal5PxU32PK6PxVec3b" title="PxRigidBodyExt::setMassAndUpdateInertia"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBodyExt::setMassAndUpdateInertia()</span></code></a>) with an artificially increased mass, and then set the proper mass directly afterwards (using <a class="reference internal" href="../_api_build/class_px_rigid_body.html#_CPPv4N11PxRigidBody7setMassE6PxReal" title="PxRigidBody::setMass"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidBody::setMass()</span></code></a>).</p></li>
+<li><p>Consider adding extra distance constraints. For example in a rope, it can be effective to create an extra distance constraint between the two ends of the rope, to limit its stretching. Alternatively, one can create distance constraints between elements N and N+2 in the chain.</p></li>
+<li><p>Use spheres instead of capsules. A rope made of spheres will be more stable than a rope made of capsules. The positions of pivots can also affect stability. Placing the pivots at the spheres’ centers is more stable than placing them on the spheres’ surfaces.</p></li>
+<li><p>Use articulations. Perhaps not surprisingly, articulations are much better at simulating articulated objects. They can be used to model better ropes, bridges, vehicles, or ragdolls out-of-the-box, without the need for the above workarounds. Please refer to the <a class="reference internal" href="Articulations.html#articulations"><span class="std std-ref">Articulations</span></a> chapter for details. They are more expensive than regular joints though.</p></li>
+</ul>
+</section>
+</section>
+<section id="gpu-rigid-bodies">
+<h2>GPU Rigid Bodies<a class="headerlink" href="#gpu-rigid-bodies" title="Permalink to this headline"></a></h2>
+<p>Collision detection with <a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE" title="PxSceneFlag::eENABLE_GPU_DYNAMICS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_GPU_DYNAMICS</span></code></a> will be executed on GPU for all convex-convex, convex-box, box-box, convex-mesh, box-mesh, convex-HF anb box-HF pairs. However, such pairs will not be processed if the pair requests contact modification, the convex hull or triangle mesh was not cooked with GPU data requested (<a class="reference internal" href="../_api_build/struct_px_cooking_params.html#_CPPv4N15PxCookingParams12buildGPUDataE" title="PxCookingParams::buildGPUData"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxCookingParams::buildGPUData</span></code></a>) or if the triangle mesh makes use of per-triangle materials.</p>
+<p>Aggregates are used to lighten the load on broad phases. When running broad phase on the CPU, aggregates frequently improve performance by reducing the load on the core broad phase algorithm. However, there is some cost when aggregates overlap because these overlaps must be processed by a separate module. When using GPU broad phase, the use of aggregates generally result in performance regressions because the processing of aggregate overlaps occurs on the CPU and, while using aggregates can reduce the load on the GPU broad phase, the amount by which they improve GPU broad phase performance is frequently smaller than the cost of processing the aggregate overlaps.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typedefs &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Variables" href="variables.html" />
+    <link rel="prev" title="PxsParticleMaterialData" href="struct_pxs_particle_material_data.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3"><a class="reference internal" href="directories.html">Directories</a></li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+<li>Typedefs</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="typedefs">
+<h1>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1af9f5bd81658f866613785b3a0bb7d7d9.html#_px_cuda_types_8h_1af9f5bd81658f866613785b3a0bb7d7d9"><span class="std std-ref">CUcontext</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1acd81b70eb9968392bb5cdf582af8eab4.html#_px_cuda_types_8h_1acd81b70eb9968392bb5cdf582af8eab4"><span class="std std-ref">CUdevice</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a5e264ce2ad6a38761e7e04921ef771de.html#_px_cuda_types_8h_1a5e264ce2ad6a38761e7e04921ef771de"><span class="std std-ref">CUdeviceptr</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a6d740185cf0953636d4ae37f68d7559b.html#_px_cuda_types_8h_1a6d740185cf0953636d4ae37f68d7559b"><span class="std std-ref">CUevent</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1aba6128b948022f495706d93bc2cea9c8.html#_px_cuda_types_8h_1aba6128b948022f495706d93bc2cea9c8"><span class="std std-ref">CUfunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1ac0c4e1704647178d9c5ba3be46517dcd.html#_px_cuda_types_8h_1ac0c4e1704647178d9c5ba3be46517dcd"><span class="std std-ref">CUgraphicsResource</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef.html#_px_cuda_types_8h_1a9e4ef4dcfba4662b2299acb8d049a1ef"><span class="std std-ref">CUmodule</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a.html#_px_cuda_types_8h_1ab946c7f02e09efd788a204718015d88a"><span class="std std-ref">CUstream</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff.html#_omni_pvd_defines_8h_1ae95f6ca93d879f4b40bdd7cc5169b1ff"><span class="std std-ref">OmniPvdAttributeHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85.html#_omni_pvd_defines_8h_1a23f8f52ad95030a18e5cdce74935ba85"><span class="std std-ref">OmniPvdClassHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82.html#_omni_pvd_defines_8h_1a2be9f1e670b57eeec2c0c5e3b0432b82"><span class="std std-ref">OmniPvdContextHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4.html#_omni_pvd_defines_8h_1a2cc00fc14cd4f8857bebefe109e301d4"><span class="std std-ref">OmniPvdEnumValueType</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b.html#_omni_pvd_defines_8h_1a85c9bb6cb67ec1996d08b21d3a3de74b"><span class="std std-ref">OmniPvdLogFunction</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d.html#_omni_pvd_defines_8h_1a32cfff849166e6e0a6d68ee522decd2d"><span class="std std-ref">OmniPvdObjectHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01.html#_omni_pvd_defines_8h_1a966078853c0d3490de3cc5869469da01"><span class="std std-ref">OmniPvdVersionType</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_constraint_desc_8h_1aa03d6d79255886721c3e1a946b5a805f.html#_px_constraint_desc_8h_1aa03d6d79255886721c3e1a946b5a805f"><span class="std std-ref">Px1DConstraintFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_actor_data_8h_1ae82234413be03824926beb1b638cbea5.html#_px_actor_data_8h_1ae82234413be03824926beb1b638cbea5"><span class="std std-ref">PxActorCacheFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_actor_cache_flag.html#struct_px_actor_cache_flag"><span class="std std-ref">PxActorCacheFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_actor_8h_1a468ad85db838378f0c58cfd02a96949b.html#_px_actor_8h_1a468ad85db838378f0c58cfd02a96949b"><span class="std std-ref">PxActorFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_actor_flag.html#struct_px_actor_flag"><span class="std std-ref">PxActorFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_8h_1ae76639de8e4ab9d5e155f72b394812d2.html#_px_scene_8h_1ae76639de8e4ab9d5e155f72b394812d2"><span class="std std-ref">PxActorTypeFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_actor_type_flag.html#struct_px_actor_type_flag"><span class="std std-ref">PxActorTypeFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1a4d0184965c0a910f5c96cb69c0690f5c.html#_px_query_report_8h_1a4d0184965c0a910f5c96cb69c0690f5c"><span class="std std-ref">PxAgain</span></a>: Describes query behavior after returning a partial query result via a callback.</p></li>
+<li><p><a class="reference internal" href="typedef__px_aggregate_8h_1a6c0599a93edeb15d6b32e26fc3806d91.html#_px_aggregate_8h_1a6c0599a93edeb15d6b32e26fc3806d91"><span class="std std-ref">PxAggregateFilterHint</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4.html#_px_articulation_flag_8h_1a21e073830d6a0f416901fb683b1536c4"><span class="std std-ref">PxArticulationCacheFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_immediate_mode_8h_1aa4d883a28073281912ebad8bfe70d92e.html#_px_immediate_mode_8h_1aa4d883a28073281912ebad8bfe70d92e"><span class="std std-ref">PxArticulationCookie</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_solver_defs_8h_1a40a321fce7bcb9669d32fca769d2958a.html#_px_solver_defs_8h_1a40a321fce7bcb9669d32fca769d2958a"><span class="std std-ref">PxArticulationFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a4ea36522de4e4f43b810c7a1eb480ca3.html#_px_simple_types_8h_1a4ea36522de4e4f43b810c7a1eb480ca3"><span class="std std-ref">PxArticulationGPUIndex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_immediate_mode_8h_1aa6c21f764f6ca3aeed69495b178ceddf.html#_px_immediate_mode_8h_1aa6c21f764f6ca3aeed69495b178ceddf"><span class="std std-ref">PxArticulationHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_articulation_reduced_coordinate_8h_1ad8023a12d4f2e3a7a4a61d31731a69f5.html#_px_articulation_reduced_coordinate_8h_1ad8023a12d4f2e3a7a4a61d31731a69f5"><span class="std std-ref">PxArticulationKinematicFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_solver_defs_8h_1a4d2907efdef5e5b7b1becd1ab59c2405.html#_px_solver_defs_8h_1a4d2907efdef5e5b7b1becd1ab59c2405"><span class="std std-ref">PxArticulationMotions</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_residual_8h_1a887112c3747e7c6a785b92e9f7b70a03.html#_px_residual_8h_1a887112c3747e7c6a785b92e9f7b70a03"><span class="std std-ref">PxArticulationResidual</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018.html#_px_base_8h_1a1e3721588799f5fbb18d76e4aab7d018"><span class="std std-ref">PxBaseFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_serial_framework_8h_1a9e6be7ab72eead617e6e0d7a6dc7c19b.html#_px_serial_framework_8h_1a9e6be7ab72eead617e6e0d7a6dc7c19b"><span class="std std-ref">PxBinaryMetaDataCallback</span></a>: Callback type for exporting binary meta data for a serializable type.</p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_and_data_8h_1a14fb75b9ecfe655e045173ff85283d8b.html#_px_bit_and_data_8h_1a14fb75b9ecfe655e045173ff85283d8b"><span class="std std-ref">PxBitAndByte</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_and_data_8h_1a798a4f4d0f93249b14d5e92a7a02fe3a.html#_px_bit_and_data_8h_1a798a4f4d0f93249b14d5e92a7a02fe3a"><span class="std std-ref">PxBitAndDword</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_and_data_8h_1a00aa289135639a9f08827f478e4a9c70.html#_px_bit_and_data_8h_1a00aa289135639a9f08827f478e4a9c70"><span class="std std-ref">PxBitAndWord</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_map_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7.html#_px_bit_map_8h_1a79fdfbf05b037439d5f4ebe4cf41a4f7"><span class="std std-ref">PxBitMap</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_bit_map_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f.html#_px_bit_map_8h_1acb5b0e4b3d26ba7a3dc830a964fad81f"><span class="std std-ref">PxBitMapPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ade7b9de07bed712db27ab45b8d4b92a1.html#_px_pinned_array_8h_1ade7b9de07bed712db27ab45b8d4b92a1"><span class="std std-ref">PxBoundsArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a937c23c09c1d2c5449cf3f7445cc5853.html#_px_pinned_array_8h_1a937c23c09c1d2c5449cf3f7445cc5853"><span class="std std-ref">PxBoundsArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_broad_phase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58.html#_px_broad_phase_8h_1a8fa935f8cdd32ff5a37e0ceb520c7f58"><span class="std std-ref">PxBpFilterGroup</span></a>: Broadphase filter group.</p></li>
+<li><p><a class="reference internal" href="typedef__px_broad_phase_8h_1a1ae85a90f4c8bc8fa0119101077273a8.html#_px_broad_phase_8h_1a1ae85a90f4c8bc8fa0119101077273a8"><span class="std std-ref">PxBpIndex</span></a>: Broadphase index. Indexes bounds, groups and distance arrays.</p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_8h_1a7892007c984cd80699301b37c13f6b43.html#_px_cuda_context_8h_1a7892007c984cd80699301b37c13f6b43"><span class="std std-ref">PxCUjit_option</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_8h_1a8c470c7361a92c586cf69763dc3d37ad.html#_px_cuda_context_8h_1a8c470c7361a92c586cf69763dc3d37ad"><span class="std std-ref">PxCUresult</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a2a53f988ec816d9354e933d64307ae6f.html#_px_pinned_array_8h_1a2a53f988ec816d9354e933d64307ae6f"><span class="std std-ref">PxCachedTransformArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a1724d81422447141cd0a3fc79f6c91fa.html#_px_pinned_array_8h_1a1724d81422447141cd0a3fc79f6c91fa"><span class="std std-ref">PxCachedTransformArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12.html#_px_client_8h_1acb0e5a85de6c250f2a54db46e3aa0a12"><span class="std std-ref">PxClientID</span></a>: An ID to identify different clients for multiclient support.</p></li>
+<li><p><a class="reference internal" href="typedef__px_constraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee.html#_px_constraint_8h_1af2b7f07d3fa7fafaf3d85114fbb120ee"><span class="std std-ref">PxConstraintFlags</span></a>: constraint flags</p></li>
+<li><p><a class="reference internal" href="typedef__px_constraint_desc_8h_1a854b403b6a15bd6dda76b08539e30433.html#_px_constraint_desc_8h_1a854b403b6a15bd6dda76b08539e30433"><span class="std std-ref">PxConstraintSolverPrep</span></a>: Solver constraint generation shader.</p></li>
+<li><p><a class="reference internal" href="typedef__px_constraint_desc_8h_1aa85dd505b96db854d4ffdbe24fcb9089.html#_px_constraint_desc_8h_1aa85dd505b96db854d4ffdbe24fcb9089"><span class="std std-ref">PxConstraintVisualize</span></a>: Solver constraint visualization function.</p></li>
+<li><p><a class="reference internal" href="typedef__px_simulation_event_callback_8h_1ae73039b8bd7e7f4a606acfba4811291c.html#_px_simulation_event_callback_8h_1ae73039b8bd7e7f4a606acfba4811291c"><span class="std std-ref">PxContactPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_flag.html#struct_px_contact_pair_flag"><span class="std std-ref">PxContactPairFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_simulation_event_callback_8h_1aa4275c674f70ce3f0be586339eb0b045.html#_px_simulation_event_callback_8h_1aa4275c674f70ce3f0be586339eb0b045"><span class="std std-ref">PxContactPairHeaderFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_contact_pair_header_flag.html#struct_px_contact_pair_header_flag"><span class="std std-ref">PxContactPairHeaderFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_controller_behavior_8h_1ac727cde912827a0304f5ac182a0a0b1c.html#_px_controller_behavior_8h_1ac727cde912827a0304f5ac182a0a0b1c"><span class="std std-ref">PxControllerBehaviorFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_controller_behavior_flag.html#struct_px_controller_behavior_flag"><span class="std std-ref">PxControllerBehaviorFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_controller_8h_1a3cb7e2aaf5144c3ed9bbf504c2fd66db.html#_px_controller_8h_1a3cb7e2aaf5144c3ed9bbf504c2fd66db"><span class="std std-ref">PxControllerCollisionFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_controller_collision_flag.html#struct_px_controller_collision_flag"><span class="std std-ref">PxControllerCollisionFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_controller_manager_8h_1a2404e3aa455180820b7fa4900d75f18e.html#_px_controller_manager_8h_1a2404e3aa455180820b7fa4900d75f18e"><span class="std std-ref">PxControllerDebugRenderFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_controller_debug_render_flag.html#struct_px_controller_debug_render_flag"><span class="std std-ref">PxControllerDebugRenderFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_convex_mesh_desc_8h_1a36d3375ae49e62c3842c3fbe0c620651.html#_px_convex_mesh_desc_8h_1a36d3375ae49e62c3842c3fbe0c620651"><span class="std std-ref">PxConvexFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_convex_flag.html#struct_px_convex_flag"><span class="std std-ref">PxConvexFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_convex_mesh_geometry_8h_1a913cfc3a0f052fb2ea2818e1a31131c2.html#_px_convex_mesh_geometry_8h_1a913cfc3a0f052fb2ea2818e1a31131c2"><span class="std std-ref">PxConvexMeshGeometryFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_convex_mesh_geometry_flag.html#struct_px_convex_mesh_geometry_flag"><span class="std std-ref">PxConvexMeshGeometryFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_cuda_context_manager_8h_1ae45706a37c92d27de3ec53e8dd914719.html#_px_cuda_context_manager_8h_1ae45706a37c92d27de3ec53e8dd914719"><span class="std std-ref">PxCudaInteropRegisterFlags</span></a>: collection of set bits defined in NxCudaInteropRegisterFlag.</p></li>
+<li><p><a class="reference internal" href="typedef__px_d6_joint_8h_1adabf6cf5b61c51816897119d793d16b7.html#_px_d6_joint_8h_1adabf6cf5b61c51816897119d793d16b7"><span class="std std-ref">PxD6JointDriveFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_locked_data_8h_1a90395861aa5abb531d3dd02790bc2b18.html#_px_locked_data_8h_1a90395861aa5abb531d3dd02790bc2b18"><span class="std std-ref">PxDataAccessFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_data_access_flag.html#struct_px_data_access_flag"><span class="std std-ref">PxDataAccessFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_deletion_listener_8h_1afb4c5337ad84e1f9eeaa8d3d33caa819.html#_px_deletion_listener_8h_1afb4c5337ad84e1f9eeaa8d3d33caa819"><span class="std std-ref">PxDeletionEventFlags</span></a>: Collection of set bits defined in <a class="reference internal" href="struct_px_deletion_event_flag.html#struct_px_deletion_event_flag"><span class="std std-ref">PxDeletionEventFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_distance_joint_8h_1ae24713c38834275bb67d41f03bcd28b5.html#_px_distance_joint_8h_1ae24713c38834275bb67d41f03bcd28b5"><span class="std std-ref">PxDistanceJointFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_actor_8h_1af665154f3f66f7c4f65ca9015db8ee87.html#_px_actor_8h_1af665154f3f66f7c4f65ca9015db8ee87"><span class="std std-ref">PxDominanceGroup</span></a>: Group index which allows to specify 1- or 2-way interaction.</p></li>
+<li><p><a class="reference internal" href="typedef__px_extended_8h_1afbd2fb84a13cdeb156b671e895d165b9.html#_px_extended_8h_1afbd2fb84a13cdeb156b671e895d165b9"><span class="std std-ref">PxExtended</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5.html#_px_extended_8h_1a1f23505b356dddb0c12f71d3f3c5b5f5"><span class="std std-ref">PxExtendedVec3</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39.html#_px_simple_types_8h_1a0e5a962f81b1f679072e2fdb67c3af39"><span class="std std-ref">PxF32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1accbaaeabdac7f3574caadb25c783e96f.html#_px_simple_types_8h_1accbaaeabdac7f3574caadb25c783e96f"><span class="std std-ref">PxF64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_f_e_m_cloth_flags_8h_1a0fbf0a454b1c63d501283f51f5e05fb2.html#_px_f_e_m_cloth_flags_8h_1a0fbf0a454b1c63d501283f51f5e05fb2"><span class="std std-ref">PxFEMClothDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_f_e_m_cloth_flags_8h_1aa0343f03a518c6728c7def5bc9856c3a.html#_px_f_e_m_cloth_flags_8h_1aa0343f03a518c6728c7def5bc9856c3a"><span class="std std-ref">PxFEMClothFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_phys_x_common_config_8h_1a5243c1bcb1d89211d250682abb0d70cf.html#_px_phys_x_common_config_8h_1a5243c1bcb1d89211d250682abb0d70cf"><span class="std std-ref">PxFEMMaterialTableIndex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_default_streams_8h_1a8e55355887d57086f097b0248b7ea768.html#_px_default_streams_8h_1a8e55355887d57086f097b0248b7ea768"><span class="std std-ref">PxFileHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_filtering_8h_1a675117fb97324a28d3b982b47430ea02.html#_px_filtering_8h_1a675117fb97324a28d3b982b47430ea02"><span class="std std-ref">PxFilterFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_filter_flag.html#struct_px_filter_flag"><span class="std std-ref">PxFilterFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_filtering_8h_1a7b0c5783657e45e3fd752adfe3c1d069.html#_px_filtering_8h_1a7b0c5783657e45e3fd752adfe3c1d069"><span class="std std-ref">PxFilterObjectAttributes</span></a>: Structure which gets passed into the collision filtering shader and/or callback providing additional information on objects of a collision pair.</p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a6377833ffb381e2cd69910971dc22682.html#_px_pinned_array_8h_1a6377833ffb381e2cd69910971dc22682"><span class="std std-ref">PxFloatArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a76019265d1bee90eaa41f762fa97ed49.html#_px_pinned_array_8h_1a76019265d1bee90eaa41f762fa97ed49"><span class="std std-ref">PxFloatArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_hair_system_flag_8h_1ae706abc346018ada2de0cca9187dfd99.html#_px_hair_system_flag_8h_1ae706abc346018ada2de0cca9187dfd99"><span class="std std-ref">PxHairSystemDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_hair_system_flag_8h_1a7772626588392bc37a18a90a9b6e6ee6.html#_px_hair_system_flag_8h_1a7772626588392bc37a18a90a9b6e6ee6"><span class="std std-ref">PxHairSystemFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_height_field_flag_8h_1a93b547b1968a59b2d23c91aab533e2c8.html#_px_height_field_flag_8h_1a93b547b1968a59b2d23c91aab533e2c8"><span class="std std-ref">PxHeightFieldFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_height_field_flag.html#struct_px_height_field_flag"><span class="std std-ref">PxHeightFieldFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a7e7ee1e36fd2eee807d53763addb76cd.html#_px_simple_types_8h_1a7e7ee1e36fd2eee807d53763addb76cd"><span class="std std-ref">PxI16</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a315a2542f4ce1a1342e7c48cf038c26f.html#_px_simple_types_8h_1a315a2542f4ce1a1342e7c48cf038c26f"><span class="std std-ref">PxI32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a3e32e0264fae3ef69fc38c749ac1cc7b.html#_px_simple_types_8h_1a3e32e0264fae3ef69fc38c749ac1cc7b"><span class="std std-ref">PxI64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1ad605a812a7fbaf12edd328c81a748e90.html#_px_simple_types_8h_1ad605a812a7fbaf12edd328c81a748e90"><span class="std std-ref">PxI8</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1acd2d108e14abbb27874baacb276c2efe.html#_px_pinned_array_8h_1acd2d108e14abbb27874baacb276c2efe"><span class="std std-ref">PxInt16ArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a7b62ec3c2e6c1e5f82df617f2606889d.html#_px_pinned_array_8h_1a7b62ec3c2e6c1e5f82df617f2606889d"><span class="std std-ref">PxInt16ArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a60b199464643df238c74409f13b7e2fc.html#_px_pinned_array_8h_1a60b199464643df238c74409f13b7e2fc"><span class="std std-ref">PxInt32ArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ad75c50bbd75c0437f6ae7d4e9f8351a9.html#_px_pinned_array_8h_1ad75c50bbd75c0437f6ae7d4e9f8351a9"><span class="std std-ref">PxInt32ArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1a61cde5a386d22d7c478f96eb6847b85c.html#_px_pinned_array_8h_1a61cde5a386d22d7c478f96eb6847b85c"><span class="std std-ref">PxInt8ArrayPinned</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1aea49b48126f7db908fe874c9d57b31c6.html#_px_pinned_array_8h_1aea49b48126f7db908fe874c9d57b31c6"><span class="std std-ref">PxInt8ArrayPinnedSafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1afe69b4e42388471a93aa2b4c8b2b3537.html#_px_simple_types_8h_1afe69b4e42388471a93aa2b4c8b2b3537"><span class="std std-ref">PxIntBool</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61.html#_px_mat33_8h_1a2d8dc7bd6d5e77c8e8df90679ae9af61"><span class="std std-ref">PxMat33</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat33_8h_1a00ff839c56bf5793c3fdbcd6902fd57a.html#_px_mat33_8h_1a00ff839c56bf5793c3fdbcd6902fd57a"><span class="std std-ref">PxMat33d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat34_8h_1a03d28fab79443174dd6286b30d569355.html#_px_mat34_8h_1a03d28fab79443174dd6286b30d569355"><span class="std std-ref">PxMat34</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat34_8h_1a3e538c38c2b8447ed67b71ad3882e94d.html#_px_mat34_8h_1a3e538c38c2b8447ed67b71ad3882e94d"><span class="std std-ref">PxMat34d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat44_8h_1a95751c2e7256308fbd285e798495f8ee.html#_px_mat44_8h_1a95751c2e7256308fbd285e798495f8ee"><span class="std std-ref">PxMat44</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mat44_8h_1ac77e8359939fc1b8ccc5df8d906ea6e4.html#_px_mat44_8h_1ac77e8359939fc1b8ccc5df8d906ea6e4"><span class="std std-ref">PxMat44d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_material_8h_1aacd9cb0f0e89fbbc09fec759b254d109.html#_px_material_8h_1aacd9cb0f0e89fbbc09fec759b254d109"><span class="std std-ref">PxMaterialFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_material_flag.html#struct_px_material_flag"><span class="std std-ref">PxMaterialFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_phys_x_common_config_8h_1ac816bc62a68a52f01bf21f963295e822.html#_px_phys_x_common_config_8h_1ac816bc62a68a52f01bf21f963295e822"><span class="std std-ref">PxMaterialTableIndex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_triangle_mesh_8h_1aec23462a84179db8a8ea77e5115d5fb1.html#_px_simple_triangle_mesh_8h_1aec23462a84179db8a8ea77e5115d5fb1"><span class="std std-ref">PxMeshFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_mesh_flag.html#struct_px_mesh_flag"><span class="std std-ref">PxMeshFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_triangle_mesh_geometry_8h_1ab335a00d0493a23fed5423bc3ea9e463.html#_px_triangle_mesh_geometry_8h_1ab335a00d0493a23fed5423bc3ea9e463"><span class="std std-ref">PxMeshGeometryFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_mesh_geometry_flag.html#struct_px_mesh_geometry_flag"><span class="std std-ref">PxMeshGeometryFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_cooking_8h_1a0a0051ee56690c138fac87d780cca9b4.html#_px_cooking_8h_1a0a0051ee56690c138fac87d780cca9b4"><span class="std std-ref">PxMeshPreprocessingFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_mutex_8h_1a368c18aaf1240f41ac9d2569f0d16678.html#_px_mutex_8h_1a368c18aaf1240f41ac9d2569f0d16678"><span class="std std-ref">PxMutex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_controller_obstacles_8h_1ab7f9098f8fe489c3ca261f53db7efea2.html#_px_controller_obstacles_8h_1ab7f9098f8fe489c3ca261f53db7efea2"><span class="std std-ref">PxObstacleHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1a54a708942a891f3321c2427d5c160750.html#_px_query_report_8h_1a54a708942a891f3321c2427d5c160750"><span class="std std-ref">PxOverlapBuffer</span></a>: Overlap query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1a9baa3a8cad31bbb8ef666fe01b3afeb7.html#_px_query_report_8h_1a9baa3a8cad31bbb8ef666fe01b3afeb7"><span class="std std-ref">PxOverlapCallback</span></a>: Overlap query callback.</p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6.html#_px_geometry_query_context_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6"><span class="std std-ref">PxOverlapThreadContext</span></a>: A per-thread context passed to low-level overlap functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_filtering_8h_1acacbeccf757e60dbf45089ef382681d9.html#_px_filtering_8h_1acacbeccf757e60dbf45089ef382681d9"><span class="std std-ref">PxPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pair_flag.html#struct_px_pair_flag"><span class="std std-ref">PxPairFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_particle_system_flag_8h_1a40ee49464d092e80c734711ba65feb25.html#_px_particle_system_flag_8h_1a40ee49464d092e80c734711ba65feb25"><span class="std std-ref">PxParticleBufferFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a477a6cb9995a5ccd7992beae5e8cdf89.html#_px_p_b_d_particle_system_8h_1a477a6cb9995a5ccd7992beae5e8cdf89"><span class="std std-ref">PxParticleFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_p_b_d_particle_system_8h_1a525ccc423d7db7ccbabae3a62ca93f4b.html#_px_p_b_d_particle_system_8h_1a525ccc423d7db7ccbabae3a62ca93f4b"><span class="std std-ref">PxParticleLockFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_particle_system_flag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4.html#_px_particle_system_flag_8h_1a777c7706ccaff3d193fdbce6c1d5d6f4"><span class="std std-ref">PxParticlePhaseFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ab8cb035f6ad68545052c61d3552fbd3b.html#_px_pinned_array_8h_1ab8cb035f6ad68545052c61d3552fbd3b"><span class="std std-ref">PxPinnedArray</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pinned_array_8h_1ae332bc5551c2908fe96233a4cba2d8ca.html#_px_pinned_array_8h_1ae332bc5551c2908fe96233a4cba2d8ca"><span class="std std-ref">PxPinnedArraySafe</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_prismatic_joint_8h_1af683a32f0fc263a83be447fac2879dac.html#_px_prismatic_joint_8h_1af683a32f0fc263a83be447fac2879dac"><span class="std std-ref">PxPrismaticJointFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_pvd_8h_1a4e8b7695b7145523688243b39da116c9.html#_px_pvd_8h_1a4e8b7695b7145523688243b39da116c9"><span class="std std-ref">PxPvdInstrumentationFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_instrumentation_flag.html#struct_px_pvd_instrumentation_flag"><span class="std std-ref">PxPvdInstrumentationFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_pvd_scene_client_8h_1a23ddab69994886fb588a139635bff64b.html#_px_pvd_scene_client_8h_1a23ddab69994886fb588a139635bff64b"><span class="std std-ref">PxPvdSceneFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_pvd_scene_flag.html#struct_px_pvd_scene_flag"><span class="std std-ref">PxPvdSceneFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_quat_8h_1ad2b837fa8365f179d52b48e5aa5bc264.html#_px_quat_8h_1ad2b837fa8365f179d52b48e5aa5bc264"><span class="std std-ref">PxQuat</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_quat_8h_1a1dfc1f8213a28b8e36d5008cb15fd50b.html#_px_quat_8h_1a1dfc1f8213a28b8e36d5008cb15fd50b"><span class="std std-ref">PxQuatd</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_query_filtering_8h_1aacf083b040f6c841644782282171bd61.html#_px_query_filtering_8h_1aacf083b040f6c841644782282171bd61"><span class="std std-ref">PxQueryFlags</span></a>: Flags typedef for the set of bits defined in <a class="reference internal" href="struct_px_query_flag.html#struct_px_query_flag"><span class="std std-ref">PxQueryFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1ab21a68ce9e5a18aa742111920b75a84c.html#_px_query_report_8h_1ab21a68ce9e5a18aa742111920b75a84c"><span class="std std-ref">PxRaycastBuffer</span></a>: Raycast query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1a4dbe8142d799492bd8e7c5ec70bfac41.html#_px_query_report_8h_1a4dbe8142d799492bd8e7c5ec70bfac41"><span class="std std-ref">PxRaycastCallback</span></a>: Raycast query callback.</p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a32eecbfe79ecd6524f3238b98d3889de.html#_px_geometry_query_context_8h_1a32eecbfe79ecd6524f3238b98d3889de"><span class="std std-ref">PxRaycastThreadContext</span></a>: A per-thread context passed to low-level raycast functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352.html#_px_simple_types_8h_1aebdd95ca9e4baca8d6ad390b0902d352"><span class="std std-ref">PxReal</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_revolute_joint_8h_1a064759e7f7a48b93670218bb400355e8.html#_px_revolute_joint_8h_1a064759e7f7a48b93670218bb400355e8"><span class="std std-ref">PxRevoluteJointFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_rigid_body_8h_1a0759d7f23b4fa7e24cd69c51d3efe5bf.html#_px_rigid_body_8h_1a0759d7f23b4fa7e24cd69c51d3efe5bf"><span class="std std-ref">PxRigidBodyFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_rigid_body_flag.html#struct_px_rigid_body_flag"><span class="std std-ref">PxRigidBodyFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a81c06417f3e249c64200a4ce643446f9.html#_px_simple_types_8h_1a81c06417f3e249c64200a4ce643446f9"><span class="std std-ref">PxRigidDynamicGPUIndex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_rigid_dynamic_8h_1a5ff75d3f2ba94c58e7f8f928b11ebb8d.html#_px_rigid_dynamic_8h_1a5ff75d3f2ba94c58e7f8f928b11ebb8d"><span class="std std-ref">PxRigidDynamicLockFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_s_list_8h_1a57cb8fa79252dd5dd29aa6eb33553426.html#_px_s_list_8h_1a57cb8fa79252dd5dd29aa6eb33553426"><span class="std std-ref">PxSList</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_system_8h_1a460c669588757253a2caecdfdc1fafe3.html#_px_scene_query_system_8h_1a460c669588757253a2caecdfdc1fafe3"><span class="std std-ref">PxSQBuildStepHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_system_8h_1a1f27391144cd450192f6c2df38f14abd.html#_px_scene_query_system_8h_1a1f27391144cd450192f6c2df38f14abd"><span class="std std-ref">PxSQCompoundHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_system_8h_1a1065613e3046a090d4d0acae03c8425f.html#_px_scene_query_system_8h_1a1065613e3046a090d4d0acae03c8425f"><span class="std std-ref">PxSQPrunerHandle</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_desc_8h_1a54a626a9a6d80543048bffc654814704.html#_px_scene_desc_8h_1a54a626a9a6d80543048bffc654814704"><span class="std std-ref">PxSceneFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_scene_flag.html#struct_px_scene_flag"><span class="std std-ref">PxSceneFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1a871e9d89cdf9bbab58883b5f0822b5c3.html#_px_scene_query_ext_8h_1a871e9d89cdf9bbab58883b5f0822b5c3"><span class="std std-ref">PxSceneQueryCache</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1af9d442ec851f833a9276ddb7ea46dd23.html#_px_scene_query_ext_8h_1af9d442ec851f833a9276ddb7ea46dd23"><span class="std std-ref">PxSceneQueryFilterCallback</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1a4d19f53556b8b6114e8a359d326c6d10.html#_px_scene_query_ext_8h_1a4d19f53556b8b6114e8a359d326c6d10"><span class="std std-ref">PxSceneQueryFilterData</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1a8a87a0175a8d5014472d5e9eabef59d7.html#_px_scene_query_ext_8h_1a8a87a0175a8d5014472d5e9eabef59d7"><span class="std std-ref">PxSceneQueryFlag</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1a2ddebd682bdb0bdb1db7ba113a93afe4.html#_px_scene_query_ext_8h_1a2ddebd682bdb0bdb1db7ba113a93afe4"><span class="std std-ref">PxSceneQueryFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_scene_query_ext_8h_1a55259fcecc0dd432e8c97f80a1425aad.html#_px_scene_query_ext_8h_1a55259fcecc0dd432e8c97f80a1425aad"><span class="std std-ref">PxSceneQueryHit</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_residual_8h_1a3342f8cd8f3479002ca686e24caa9972.html#_px_residual_8h_1a3342f8cd8f3479002ca686e24caa9972"><span class="std std-ref">PxSceneResidual</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_serial_framework_8h_1ab2ccfb663643cd2d66b59908189d88cd.html#_px_serial_framework_8h_1ab2ccfb663643cd2d66b59908189d88cd"><span class="std std-ref">PxSerialObjectId</span></a>: ID type for <a class="reference internal" href="class_px_base.html#class_px_base"><span class="std std-ref">PxBase</span></a> objects in a <a class="reference internal" href="class_px_collection.html#class_px_collection"><span class="std std-ref">PxCollection</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_shape_8h_1a18053d8127ddb5ed5609e4c748b6ad0d.html#_px_shape_8h_1a18053d8127ddb5ed5609e4c748b6ad0d"><span class="std std-ref">PxShapeFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_shape_flag.html#struct_px_shape_flag"><span class="std std-ref">PxShapeFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1aead54aeb211f662449da2d7adb4b45eb.html#_px_simple_types_8h_1aead54aeb211f662449da2d7adb4b45eb"><span class="std std-ref">PxShapeGPUIndex</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_filtering_8h_1a235380b2a5b3cc89a4cd89d089d72b33.html#_px_filtering_8h_1a235380b2a5b3cc89a4cd89d089d72b33"><span class="std std-ref">PxSimulationFilterShader</span></a>: Filter method to specify how a pair of potentially colliding objects should be processed.</p></li>
+<li><p><a class="reference internal" href="typedef__px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f.html#_px_soft_body_flag_8h_1a8e9b57741d51604f204499f7f81ec58f"><span class="std std-ref">PxSoftBodyDataFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_soft_body_8h_1a4bbe198b0dac953e8f058975b5aba958.html#_px_soft_body_8h_1a4bbe198b0dac953e8f058975b5aba958"><span class="std std-ref">PxSoftBodyFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_spherical_joint_8h_1a4e2440ba605d9e05614c938fcb2e6fcb.html#_px_spherical_joint_8h_1a4e2440ba605d9e05614c938fcb2e6fcb"><span class="std std-ref">PxSphericalJointFlags</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1aecfed2b83a930b922b3d95e22ff30665.html#_px_query_report_8h_1aecfed2b83a930b922b3d95e22ff30665"><span class="std std-ref">PxSweepBuffer</span></a>: Sweep query buffer.</p></li>
+<li><p><a class="reference internal" href="typedef__px_query_report_8h_1a6f93f556cef747d50f643499928dd865.html#_px_query_report_8h_1a6f93f556cef747d50f643499928dd865"><span class="std std-ref">PxSweepCallback</span></a>: Sweep query callback.</p></li>
+<li><p><a class="reference internal" href="typedef__px_geometry_query_context_8h_1a793ad7e47a6be07f1927afaa61d023ed.html#_px_geometry_query_context_8h_1a793ad7e47a6be07f1927afaa61d023ed"><span class="std std-ref">PxSweepThreadContext</span></a>: A per-thread context passed to low-level sweep functions.</p></li>
+<li><p><a class="reference internal" href="typedef__px_sync_8h_1aef475b410db53bdddeae9ed381f9dc80.html#_px_sync_8h_1aef475b410db53bdddeae9ed381f9dc80"><span class="std std-ref">PxSync</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257.html#_px_task_manager_8h_1a69740c6443f7230cf7bce20ecec3c257"><span class="std std-ref">PxTaskID</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_tetrahedron_mesh_analysis_result_8h_1a9a98503e5fbb06a9602ce2124f63484a.html#_px_tetrahedron_mesh_analysis_result_8h_1a9a98503e5fbb06a9602ce2124f63484a"><span class="std std-ref">PxTetrahedronMeshAnalysisResults</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_tetrahedron_mesh_8h_1a346c39a79a6e61767f14c9890da32d42.html#_px_tetrahedron_mesh_8h_1a346c39a79a6e61767f14c9890da32d42"><span class="std std-ref">PxTetrahedronMeshFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_tetrahedron_mesh_flag.html#struct_px_tetrahedron_mesh_flag"><span class="std std-ref">PxTetrahedronMeshFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_thread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f.html#_px_thread_8h_1a9f11017b3d9e1b3702b3c7b8fb5f865f"><span class="std std-ref">PxThread</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_transform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_px_transform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa"><span class="std std-ref">PxTransform</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_transform_8h_1a37e855c6a01046a392b1a0e8b913b9a2.html#_px_transform_8h_1a37e855c6a01046a392b1a0e8b913b9a2"><span class="std std-ref">PxTransform32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_transform_8h_1a9186b8677b8731b7357931bf4bd80796.html#_px_transform_8h_1a9186b8677b8731b7357931bf4bd80796"><span class="std std-ref">PxTransformd</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_phys_x_common_config_8h_1a19403877bf7ce42d7240e4e4c758c016.html#_px_phys_x_common_config_8h_1a19403877bf7ce42d7240e4e4c758c016"><span class="std std-ref">PxTriangleID</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_triangle_mesh_analysis_result_8h_1aff2fd41516e5add87407d4f406d0ce33.html#_px_triangle_mesh_analysis_result_8h_1aff2fd41516e5add87407d4f406d0ce33"><span class="std std-ref">PxTriangleMeshAnalysisResults</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_triangle_mesh_8h_1a9bff69ddd57aac22aad966a4b30983e7.html#_px_triangle_mesh_8h_1a9bff69ddd57aac22aad966a4b30983e7"><span class="std std-ref">PxTriangleMeshFlags</span></a>: collection of set bits defined in <a class="reference internal" href="struct_px_triangle_mesh_flag.html#struct_px_triangle_mesh_flag"><span class="std std-ref">PxTriangleMeshFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_simulation_event_callback_8h_1ae5d4ef1b3321702c4431da8fe72b8f7f.html#_px_simulation_event_callback_8h_1ae5d4ef1b3321702c4431da8fe72b8f7f"><span class="std std-ref">PxTriggerPairFlags</span></a>: Bitfield that contains a set of raised flags defined in <a class="reference internal" href="struct_px_trigger_pair_flag.html#struct_px_trigger_pair_flag"><span class="std std-ref">PxTriggerPairFlag</span></a> .</p></li>
+<li><p><a class="reference internal" href="typedef__px_base_8h_1ac1fb4b256a5d900d394e89db170a2b79.html#_px_base_8h_1ac1fb4b256a5d900d394e89db170a2b79"><span class="std std-ref">PxType</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4.html#_px_simple_types_8h_1a7354283a14b2bf4bed64f9cb6ac36aa4"><span class="std std-ref">PxU16</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed.html#_px_simple_types_8h_1acce5749db3dcfb916e98c253374264ed"><span class="std std-ref">PxU32</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a.html#_px_simple_types_8h_1afa6be92d904a227b2d07298034476b3a"><span class="std std-ref">PxU64</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_simple_types_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_px_simple_types_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27"><span class="std std-ref">PxU8</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec2_8h_1a93b3bd57c939e655e5612b0fbe4c020d.html#_px_vec2_8h_1a93b3bd57c939e655e5612b0fbe4c020d"><span class="std std-ref">PxVec2</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec2_8h_1a33d9558cc59c60de9876a99d4c74ac1a.html#_px_vec2_8h_1a33d9558cc59c60de9876a99d4c74ac1a"><span class="std std-ref">PxVec2d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20"><span class="std std-ref">PxVec3</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec3_8h_1a3ffc2dc1fa8a4957b79f40c2deeb6da7.html#_px_vec3_8h_1a3ffc2dc1fa8a4957b79f40c2deeb6da7"><span class="std std-ref">PxVec3d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec3_8h_1ae19453ec87b14571419b155915cd2553.html#_px_vec3_8h_1ae19453ec87b14571419b155915cd2553"><span class="std std-ref">PxVec3p</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec4_8h_1a7346068a75502045a7c8f65e7dcee471.html#_px_vec4_8h_1a7346068a75502045a7c8f65e7dcee471"><span class="std std-ref">PxVec4</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec4_8h_1af3af9056633ae331153a7cb8d6f8fe20.html#_px_vec4_8h_1af3af9056633ae331153a7cb8d6f8fe20"><span class="std std-ref">PxVec4d</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9.html#_px_vec_math_ao_s_scalar_8h_1a43f86a889be3c4ccc98ded12577036a9"><span class="std std-ref">aos::QuatV</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__px_vec_math_ao_s_scalar_8h_1a69e10d25b12dbc7486b7af6f36a481d0.html#_px_vec_math_ao_s_scalar_8h_1a69e10d25b12dbc7486b7af6f36a481d0"><span class="std std-ref">aos::VecShiftV</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1af6bb76d188e20abc0b5ffd96953e3582.html#_omni_pvd_library_functions_8h_1af6bb76d188e20abc0b5ffd96953e3582"><span class="std std-ref">createOmniPvdFileReadStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1af9e32ef9884ef002e59a6f75862f9adf.html#_omni_pvd_library_functions_8h_1af9e32ef9884ef002e59a6f75862f9adf"><span class="std std-ref">createOmniPvdFileWriteStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ae51831db3fa818d8045b9479319cf72e.html#_omni_pvd_library_functions_8h_1ae51831db3fa818d8045b9479319cf72e"><span class="std std-ref">createOmniPvdMemoryStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a196166c9d5ef3789a553a29440edf67b.html#_omni_pvd_library_functions_8h_1a196166c9d5ef3789a553a29440edf67b"><span class="std std-ref">createOmniPvdReaderFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a9c39a84d61cfdc0b65322f75603935e6.html#_omni_pvd_library_functions_8h_1a9c39a84d61cfdc0b65322f75603935e6"><span class="std std-ref">createOmniPvdWriterFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3.html#_omni_pvd_library_functions_8h_1a8a1e6d1c0bb11a8ed6508de7e979cea3"><span class="std std-ref">destroyOmniPvdFileReadStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a85b00d8076a293941144259864f5d1e5.html#_omni_pvd_library_functions_8h_1a85b00d8076a293941144259864f5d1e5"><span class="std std-ref">destroyOmniPvdFileWriteStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1ad66806ce01e0bd7c16488948403a9c26.html#_omni_pvd_library_functions_8h_1ad66806ce01e0bd7c16488948403a9c26"><span class="std std-ref">destroyOmniPvdMemoryStreamFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1a339b4f4016c2bf602e5567b837970817.html#_omni_pvd_library_functions_8h_1a339b4f4016c2bf602e5567b837970817"><span class="std std-ref">destroyOmniPvdReaderFp</span></a></p></li>
+<li><p><a class="reference internal" href="typedef__omni_pvd_library_functions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b.html#_omni_pvd_library_functions_8h_1abbc4d4317c6cbe899e65a8d9c271c80b"><span class="std std-ref">destroyOmniPvdWriterFp</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

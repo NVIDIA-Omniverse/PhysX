@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry Queries &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Scene Queries" href="SceneQueries.html" />
+    <link rel="prev" title="Particle System" href="ParticleSystem.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Geometry Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxgeometryqueryflags">PxGeometryQueryFlags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#raycasts">Raycasts</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#raycasts-against-spheres-capsules-boxes-and-convex-meshes">Raycasts against Spheres, Capsules, Boxes and Convex Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raycasts-against-planes">Raycasts against Planes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raycasts-against-triangle-meshes">Raycasts against Triangle Meshes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raycasts-against-heightfields">Raycasts against Heightfields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxgeometryquery-raycast-snippet">PxGeometryQuery raycast snippet</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#overlaps">Overlaps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#penetration-depth">Penetration Depth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sweeps">Sweeps</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#initial-overlaps">Initial Overlaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#precise-sweeps">Precise Sweeps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sweeps-against-height-fields">Sweeps against Height Fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pitfalls">Pitfalls</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#additional-pxgeometryquery-functions">Additional PxGeometryQuery functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#point-distance-query">Point-distance query</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bounds-computation">Bounds computation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#triangle-contacts-generation">Triangle contacts generation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pxmeshquery">PxMeshQuery</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mesh-overlaps">Mesh Overlaps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mesh-vs-mesh">Mesh vs mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sweeps-against-triangles">Sweeps against Triangles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Geometry Queries</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="geometry-queries">
+<span id="geometryqueries"></span><h1>Geometry Queries<a class="headerlink" href="#geometry-queries" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>This chapter describes how to use PhysX’ collision functionality with individual geometry objects. There are four main kinds of geometry queries:</p>
+<ul class="simple">
+<li><p>raycasts (“raycast queries”) test a ray against a geometry object. (see <a class="reference internal" href="#geomqueryraycasts"><span class="std std-ref">Raycasts</span></a>)</p></li>
+<li><p>sweeps (“sweep queries”) move one geometry object along a line to find the first point of intersection with another geometry object. (see <a class="reference internal" href="#geomquerysweeps"><span class="std std-ref">Sweeps</span></a>)</p></li>
+<li><p>overlaps (“overlap queries”) determine whether two geometry objects intersect. (see <a class="reference internal" href="#geomqueryoverlaps"><span class="std std-ref">Overlaps</span></a>)</p></li>
+<li><p>penetration depth computations (“minimal translational distance queries”, abbreviated here to “MTD”) test two overlapping geometry objects to find the direction along which they can be separated by the minimum distance. (see <a class="reference internal" href="#penetrationdepth"><span class="std std-ref">Penetration Depth</span></a>)</p></li>
+</ul>
+<p>In addition, PhysX provides helpers to compute the bounds (AABB) of a geometry object (see <a class="reference internal" href="#boundscomputation"><span class="std std-ref">Bounds computation</span></a>), and to compute the distance between a point and a geometry object (see <a class="reference internal" href="#pointdistancequery"><span class="std std-ref">Point-distance query</span></a>).</p>
+<p>In all of the following functions, a geometry object is defined by its shape (a <a class="reference internal" href="../_api_build/class_px_geometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> structure) and its pose (a <a class="reference internal" href="../_api_build/typedef__px_transform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxTransform</span></code></a> structure). All transforms and vectors are interpreted as being in the same space, and the results are also returned in that space.</p>
+<hr class="docutils" />
+</section>
+<section id="pxgeometryqueryflags">
+<span id="geometryqueryflags"></span><h2>PxGeometryQueryFlags<a class="headerlink" href="#pxgeometryqueryflags" title="Permalink to this headline"></a></h2>
+<p>Most of the following geometry queries accept a <code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxGeometryQueryFlags</span></code> input parameter. At time of writing this is only a minor optimization that can be ignored, by using the default flag value (<a class="reference internal" href="../_api_build/struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum8eDEFAULTE" title="PxGeometryQueryFlag::eDEFAULT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxGeometryQueryFlag::eDEFAULT</span></code></a>). Experimented users can take advantage of these flags by omitting <a class="reference internal" href="../_api_build/struct_px_geometry_query_flag.html#_CPPv4N19PxGeometryQueryFlag4Enum11eSIMD_GUARDE" title="PxGeometryQueryFlag::eSIMD_GUARD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxGeometryQueryFlag::eSIMD_GUARD</span></code></a>, provided they manually deal with the SSE control word in their calling code. See <em>SnippetPathTracing</em> and its <em>OPTIM_SKIP_INTERNAL_SIMD_GUARD</em> define  for an example.</p>
+</section>
+<section id="raycasts">
+<span id="geomqueryraycasts"></span><h2>Raycasts<a class="headerlink" href="#raycasts" title="Permalink to this headline"></a></h2>
+<img alt="../_images/GeomQueryRaycast.png" src="../_images/GeomQueryRaycast.png" />
+<p>A raycast query traces a point along a line segment until it hits a geometry object. PhysX supports raycasts for all geometry types except <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTetrahedronMeshGeometry</span></code></a> and <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a>, the code gets re-routed to the user-defined <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a>. By nature, it is up to users to implement the various geometry queries for custom geometries.</p>
+</div>
+<p>The following code illustrates how to use a simple raycast query:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxRaycastHit</span><span class="w"> </span><span class="n">hitInfo</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxHits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="o">|</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eNORMAL</span><span class="o">|</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eUV</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">hitCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">hitFlags</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">maxHits</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">hitInfo</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The arguments are interpreted as follows:</p>
+<ul class="simple">
+<li><p><em>origin</em> is the start point of the ray.</p></li>
+<li><p><em>unitDir</em> is a unit vector defining the direction of the ray.</p></li>
+<li><p><em>maxDist</em> is the maximum distance to search along the ray. It must be in the [0, inf) range. If the maximum distance is 0, a hit will only be returned if the ray starts inside a shape, as detailed below for each geometry.</p></li>
+<li><p><em>geom</em> is the geometry to test against.</p></li>
+<li><p><em>pose</em> is the pose of the geometry.</p></li>
+<li><p><em>hitFlags</em> specifies the values that should be returned by the query, and options for processing the query.</p></li>
+<li><p><em>maxHits</em> is the maximum number of hits to return.</p></li>
+<li><p><em>hitInfo</em> specifies the <a class="reference internal" href="../_api_build/struct_px_raycast_hit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRaycastHit</span></code></a> structure(s) into which the raycast results will be stored.</p></li>
+</ul>
+<p>Since PhysX 5 a new raycast query is also available:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxGeomRaycastHit</span><span class="w"> </span><span class="n">hitInfo</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxHits</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="o">|</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eNORMAL</span><span class="o">|</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eUV</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxGeomRaycastHit</span><span class="p">);</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxRaycastThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">hitCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">hitFlags</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">maxHits</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">hitInfo</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">stride</span><span class="p">,</span><span class="w"> </span><span class="n">queryFlags</span><span class="p">,</span><span class="w"> </span><span class="n">threadContext</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><em>stride</em> is the distance in bytes between consecutive hits in the output buffer. Typically sizeof(PxGeomRaycastHit) for packed arrays.</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+<li><p><em>threadContext</em> is a possible per-thread user-data value, which can be useful when using either custom geometries or a custom scene query system.</p></li>
+</ul>
+<p>The returned result is the number of intersections found. For each intersection, a <a class="reference internal" href="../_api_build/struct_px_geom_raycast_hit.html#_CPPv416PxGeomRaycastHit" title="PxGeomRaycastHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomRaycastHit</span></code></a> is populated. The fields of this structure are as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec3</span><span class="w">      </span><span class="n">position</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w">      </span><span class="n">normal</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxF32</span><span class="w">       </span><span class="n">distance</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxHitFlags</span><span class="w">  </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w">       </span><span class="n">faceIndex</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxF32</span><span class="w">       </span><span class="n">u</span><span class="p">,</span><span class="w"> </span><span class="n">v</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Some fields are optional, and the flags field indicates which members have been filled with result values. The query will fill fields in the output structure if the corresponding flags were set in the input - for example, if the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> is set in the input hitFlags, the query will fill in the <a class="reference internal" href="../_api_build/struct_px_geom_raycast_hit.html#_CPPv4N16PxGeomRaycastHit8positionE" title="PxGeomRaycastHit::position"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxGeomRaycastHit::position</span></code></a> field, and set the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> flag in <a class="reference internal" href="../_api_build/struct_px_geom_raycast_hit.html#_CPPv4N16PxGeomRaycastHit5flagsE" title="PxGeomRaycastHit::flags"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxGeomRaycastHit::flags</span></code></a>. If the input flag is not set for a specific member, the result structure may or may not contain valid data for that member. Omitting the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a> and <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> flags in the input can sometimes result in slightly faster queries.</p>
+<p>For a raycast which is not initially intersecting the geometry object, the fields are populated as follows (optional fields are listed together with the flag that controls them):</p>
+<ul class="simple">
+<li><p><em>position</em> (<a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a>) is the position of the intersection.</p></li>
+<li><p><em>normal</em> (<a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a>) is the surface normal at the point of intersection.</p></li>
+<li><p><em>distance</em> is the distance along the ray at which the intersection was found.</p></li>
+<li><p><em>flags</em> specifies which fields of the structure are valid.</p></li>
+<li><p><em>faceIndex</em> is the index of the face which the ray hit. For triangle mesh and height field intersections, it is a triangle index. For convex mesh intersections it is a polygon index. For other shapes it is always set to 0xffffffff.</p></li>
+<li><p><em>u</em> and <em>v</em> (<a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum3eUVE" title="PxHitFlag::eUV"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eUV</span></code></a>) are the barycentric coordinates of the intersection. These fields (and the flag) are supported only for meshes and heightfields.</p></li>
+</ul>
+<p>The position field is related to the barycentric coordinates via the following formula, where v0, v1 and v2 are the vertices from the hit triangle:</p>
+<blockquote>
+<div><p>position = (1 - u - v)*v0 + u*v1 + v*v2;</p>
+</div></blockquote>
+<p>This mapping is implemented in <a class="reference internal" href="../_api_build/class_px_triangle.html#_CPPv4NK10PxTriangle11pointFromUVE6PxReal6PxReal" title="PxTriangle::pointFromUV"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxTriangle::pointFromUV()</span></code></a>.</p>
+<p>See <a class="reference internal" href="Geometry.html#geometry"><span class="std std-ref">Geometry</span></a> for details of how to retrieve face and vertex data from triangle meshes, convex meshes and height fields using face and vertex indices.</p>
+<p>Exceptions to the above behavior may apply if a ray starts inside an object, in which case PhysX may not be able to compute meaningful output values for some fields. In these cases the field will remain unmodified and the corresponding flag will not be set. Specific details vary by geometry type, and are described below.</p>
+<p>The exact conditions for raycast intersections are as follows:</p>
+<section id="raycasts-against-spheres-capsules-boxes-and-convex-meshes">
+<h3>Raycasts against Spheres, Capsules, Boxes and Convex Meshes<a class="headerlink" href="#raycasts-against-spheres-capsules-boxes-and-convex-meshes" title="Permalink to this headline"></a></h3>
+<p>For solid objects (sphere, capsule, box, convex) at most 1 result is returned. If the ray origin is inside a solid object:</p>
+<ul class="simple">
+<li><p>the reported hit distance is set to zero.</p></li>
+<li><p>the hit normal is set to be the opposite of the ray’s direction, and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a> flag is set in the output.</p></li>
+<li><p>the hit impact position is set to the ray’s origin and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> flag is set in the output.</p></li>
+</ul>
+<p>If the start or end point of a ray is very close to the surface of the object, it may be treated as being on either side of the surface.</p>
+</section>
+<section id="raycasts-against-planes">
+<h3>Raycasts against Planes<a class="headerlink" href="#raycasts-against-planes" title="Permalink to this headline"></a></h3>
+<p>For raycasts, a plane is treated as an infinite single-sided quad that includes its boundary (note that this is not the same as for overlaps). At most one result is returned, and if the ray origin is behind the plane’s surface, no hit will be reported even in case the ray intersects the plane.</p>
+<p>If the start or end point of a ray is very close to the plane, it may be treated as being on either side of the plane.</p>
+</section>
+<section id="raycasts-against-triangle-meshes">
+<span id="raycasts-vs-meshes"></span><h3>Raycasts against Triangle Meshes<a class="headerlink" href="#raycasts-against-triangle-meshes" title="Permalink to this headline"></a></h3>
+<p>Triangle meshes are treated as thin triangle surfaces rather than solid objects. They may be configured to return either an arbitrary hit, the closest hit, or multiple hits.</p>
+<ul class="simple">
+<li><p>if maxHits is 1 and <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a> is not set, the query will return the closest intersection.</p></li>
+<li><p>if maxHits is 1 and <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a> is set, the query will return an arbitrary intersection. Use this when it is sufficient to know whether or not the ray hit the mesh, e.g. for line-of-sight queries or shadow rays.</p></li>
+<li><p>if maxHits is greater than 1, the query will return multiple intersections, up to maxHits. If more than maxHits intersection points exist, there is no guarantee that the results will include the closest. Use this for e.g. wall-piercing bullets that hit multiple triangles, or where special filtering is required. Note that <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="PxHitFlag::eMESH_MULTIPLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_MULTIPLE</span></code></a> must be used in this case.</p></li>
+</ul>
+<p>In general “any hit” queries are faster than “closest hit” queries, and “closest hit” queries are faster than “multiple hits” queries.</p>
+<p>By default, back face hits (where the triangle’s outward-facing normal has a positive dot product with the ray direction) are culled, and so for any triangle hit the reported normal will have a negative dot product with the ray direction. This behavior may be modified by the mesh instance’s <a class="reference internal" href="../_api_build/struct_px_mesh_geometry_flag.html#_CPPv4N18PxMeshGeometryFlag4Enum13eDOUBLE_SIDEDE" title="PxMeshGeometryFlag::eDOUBLE_SIDED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshGeometryFlag::eDOUBLE_SIDED</span></code></a> flag and the query’s <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="PxHitFlag::eMESH_BOTH_SIDES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_BOTH_SIDES</span></code></a> flag:</p>
+<ul class="simple">
+<li><p>if either <a class="reference internal" href="../_api_build/struct_px_mesh_geometry_flag.html#_CPPv4N18PxMeshGeometryFlag4Enum13eDOUBLE_SIDEDE" title="PxMeshGeometryFlag::eDOUBLE_SIDED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshGeometryFlag::eDOUBLE_SIDED</span></code></a> or <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="PxHitFlag::eMESH_BOTH_SIDES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_BOTH_SIDES</span></code></a> is set, culling is disabled.</p></li>
+<li><p>if <a class="reference internal" href="../_api_build/struct_px_mesh_geometry_flag.html#_CPPv4N18PxMeshGeometryFlag4Enum13eDOUBLE_SIDEDE" title="PxMeshGeometryFlag::eDOUBLE_SIDED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshGeometryFlag::eDOUBLE_SIDED</span></code></a> is set, the reported normal is reversed for a back face hit.</p></li>
+</ul>
+<p>For example a transparent glass window could be modeled as a double-sided mesh, so that a ray would hit either side with the reported normal facing opposite to the ray direction. A raycast tracing the path of a bullet that may penetrate the front side of a mesh and emerge from the back could use <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="PxHitFlag::eMESH_BOTH_SIDES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_BOTH_SIDES</span></code></a> to find both front and back facing triangles even when the mesh is single-sided.</p>
+<p>The following diagram shows what happens with different flags, for a single raycast intersecting a mesh in several places.</p>
+<a class="reference internal image-reference" href="../_images/RayMeshDS_Permutations.png"><img alt="../_images/RayMeshDS_Permutations.png" src="../_images/RayMeshDS_Permutations.png" style="width: 686.25px; height: 516.0px;" /></a>
+<p>To use <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="PxHitFlag::eMESH_BOTH_SIDES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_BOTH_SIDES</span></code></a> for selected meshes rather than all, set the flag inside the <a class="reference internal" href="../_api_build/class_px_query_filter_callback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryFilterCallback</span></code></a>.</p>
+<p>If the start or end point of a ray is very close to the surface of a triangle, it may be treated as being on either side of the triangle.</p>
+</section>
+<section id="raycasts-against-heightfields">
+<h3>Raycasts against Heightfields<a class="headerlink" href="#raycasts-against-heightfields" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>Heightfields are treated the same way as triangle meshes with normals oriented (in shape space) in +y direction.</p></li>
+<li><p>Double-sided heightfields are treated the same way as double-sided triangle meshes.</p></li>
+</ul>
+</section>
+<section id="pxgeometryquery-raycast-snippet">
+<span id="snippetgeometryquery"></span><h3>PxGeometryQuery raycast snippet<a class="headerlink" href="#pxgeometryquery-raycast-snippet" title="Permalink to this headline"></a></h3>
+<img alt="../_images/SnippetGeometryQuery.png" src="../_images/SnippetGeometryQuery.png" />
+<p>The <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery7raycastERK6PxVec3RK6PxVec3RK10PxGeometryRK11PxTransform6PxReal10PxHitFlags5PxU32P16PxGeomRaycastHit5PxU3220PxGeometryQueryFlagsP22PxRaycastThreadContext" title="PxGeometryQuery::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::raycast()</span></code></a> function is demonstrated in <em>SnippetGeometryQuery</em>. In this snippet objects are raytraced using the <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv415PxGeometryQuery" title="PxGeometryQuery"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometryQuery</span></code></a> raycast function, and results are displayed in the corner of the screen. Change the object with the function keys. The objects’ colors use the computed hit normals.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="overlaps">
+<span id="geomqueryoverlaps"></span><h2>Overlaps<a class="headerlink" href="#overlaps" title="Permalink to this headline"></a></h2>
+<img alt="../_images/GeomQueryOverlap.png" src="../_images/GeomQueryOverlap.png" />
+<p>Overlap queries simply check whether two geometry objects overlap. All combinations are supported except:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlaneGeometry</span></code></a> vs. {<a class="reference internal" href="../_api_build/class_px_plane_geometry.html#_CPPv415PxPlaneGeometry" title="PxPlaneGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPlaneGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMeshGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a>}</p></li>
+<li><p><a class="reference internal" href="../_api_build/class_px_triangle_mesh_geometry.html#_CPPv422PxTriangleMeshGeometry" title="PxTriangleMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTriangleMeshGeometry</span></code></a> vs. <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a></p></li>
+<li><p><a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a> vs. <a class="reference internal" href="../_api_build/class_px_height_field_geometry.html#_CPPv421PxHeightFieldGeometry" title="PxHeightFieldGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHeightFieldGeometry</span></code></a></p></li>
+<li><p>Anything involving <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTetrahedronMeshGeometry</span></code></a> or <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a>, the code gets re-routed to the user-defined <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a>. By nature, it is up to users to implement the various geometry queries for custom geometries.</p>
+</div>
+<p>The following code illustrates how to use an overlap query:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxOverlapThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">isOverlapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">overlap</span><span class="p">(</span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"> </span><span class="n">queryFlags</span><span class="p">,</span><span class="w"> </span><span class="n">threadContext</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Overlaps do not support hit flags and return only a boolean result. The query does however support extra optional parameters (<code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxGeometryQueryFlags</span></code> and <a class="reference internal" href="../_api_build/typedef__px_geometry_query_context_8h_1a219e5d25bcf4cf3e9a031ae68d7213c6.html#_CPPv422PxOverlapThreadContext" title="PxOverlapThreadContext"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxOverlapThreadContext</span></code></a>) similar to what was described for raycast queries.</p>
+<ul class="simple">
+<li><p>A plane is treated as a solid half-space: that is, everything behind the plane is considered part of the volume.</p></li>
+<li><p>Triangle meshes are treated as thin triangle surfaces rather than solid objects.</p></li>
+<li><p>Heightfields are treated as triangle surface. Overlap geometries that do not intersect with the heightfield surface will not report a hit.</p></li>
+</ul>
+<p>If more than a boolean result is needed for meshes and heightfields, use the <a class="reference internal" href="../_api_build/class_px_mesh_query.html#_CPPv411PxMeshQuery" title="PxMeshQuery"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxMeshQuery</span></code></a> API instead (see <a class="reference internal" href="#meshquery"><span class="std std-ref">PxMeshQuery</span></a>).</p>
+<hr class="docutils" />
+</section>
+<section id="penetration-depth">
+<span id="penetrationdepth"></span><h2>Penetration Depth<a class="headerlink" href="#penetration-depth" title="Permalink to this headline"></a></h2>
+<img alt="../_images/GeomQueryPenetration.png" src="../_images/GeomQueryPenetration.png" />
+<p>When two objects are intersecting, PhysX can compute the minimal distance and direction by which the objects must be translated to separate them (this quantity is sometimes referred to as MTD, for <em>minimum translational distance</em>, as it is the vector of minimal length by which translation will separate the shapes). All combinations of geom objects are supported except:</p>
+<ul class="simple">
+<li><p>plane vs. plane</p></li>
+<li><p>plane vs. mesh</p></li>
+<li><p>plane vs. heightfield</p></li>
+<li><p>mesh vs. mesh</p></li>
+<li><p>mesh vs. heightfield</p></li>
+<li><p>heightfield vs. heightfield</p></li>
+<li><p>anything involving <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTetrahedronMeshGeometry</span></code></a> or <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a></p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a>, the code gets re-routed to the user-defined <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a>. By nature, it is up to users to implement the various geometry queries for custom geometries.</p>
+</div>
+<p>The following code illustrates how to use a penetration depth query:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">isPenetrating</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">computePenetration</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">queryFlags</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The arguments are interpreted as follows:</p>
+<ul class="simple">
+<li><p><em>direction</em> is set to the direction in which the first object should be translated in order to depenetrate from the second.</p></li>
+<li><p><em>distance</em> is set to the distance by which the first object should be translated in order to depenetrate from the second.</p></li>
+<li><p><em>geom0</em> is the first geometry.</p></li>
+<li><p><em>pose0</em> is the transform of the first geometry.</p></li>
+<li><p><em>geom1</em> is the second geometry.</p></li>
+<li><p><em>pose2</em> is the transform of the second geometry.</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+</ul>
+<p>The function returns true if the objects are penetrating, in which case it sets the direction and depth fields. Translating the first object by the depenetration vector D = direction * depth will separate the two objects. If the function returns true, the returned depth will always be positive or zero. If objects do not overlap, the function returns false, and the values of the direction and distance fields are undefined.</p>
+<p>For simple (convex) shapes, returned results are accurate.</p>
+<p>For meshes and heightfields, an iterative algorithm is used and dedicated functions are exposed in <em>PxExtensions</em>:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="n">nb</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxComputeTriangleMeshPenetration</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">geomPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">meshGeom</span><span class="p">,</span><span class="w"> </span><span class="n">meshPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">maxIter</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">nb</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">nb</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxComputeHeightFieldPenetration</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">geomPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">heightFieldGeom</span><span class="p">,</span><span class="w"> </span><span class="n">heightFieldPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                          </span><span class="n">maxIter</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">nb</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here, <em>maxIter</em> is the maximum number of iterations for the algorithm, and <em>nb</em> is an optional output argument which will be set to the number of iterations performed. If no overlap is detected, the function returns false. The code will attempt at most maxIter iterations but may exit earlier if a depenetration vector is found. Usually maxIter = 4 gives good results.</p>
+<p>These functions only compute an approximate depenetration vector, and work best when the amount of overlap between the geometry object and the mesh/heightfield is small. In particular, an intersection with a triangle will be ignored when the object’s center is behind the triangle, and if this holds for all intersecting triangles then no overlap is detected, and the functions do not compute an MTD vector.</p>
+<hr class="docutils" />
+</section>
+<section id="sweeps">
+<span id="geomquerysweeps"></span><h2>Sweeps<a class="headerlink" href="#sweeps" title="Permalink to this headline"></a></h2>
+<img alt="../_images/GeomQuerySweep.png" src="../_images/GeomQuerySweep.png" />
+<p>A sweep query traces one geometry object through space to find the impact point on a second geometry object, and reports information concerning the impact point if one is found. PhysX only supports sweep queries where the first geometry object (the one that is traced through space) is a sphere, box, capsule or convex geometry. The second geometry object may be of any type, except <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTetrahedronMeshGeometry</span></code></a> and <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a>, the code gets re-routed to the user-defined <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a>. By nature, it is up to users to implement the various geometry queries for custom geometries.</p>
+</div>
+<p>The following code illustrates how to use a sweep query:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxGeomSweepHit</span><span class="w"> </span><span class="n">hitInfo</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="o">|</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eNORMAL</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">inflation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxSweepThreadContext</span><span class="o">*</span><span class="w"> </span><span class="n">threadContext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+
+<span class="n">PxU32</span><span class="w"> </span><span class="n">hitCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">sweep</span><span class="p">(</span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDist</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">geomToSweep</span><span class="p">,</span><span class="w"> </span><span class="n">poseToSweep</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">geomSweptAgainst</span><span class="p">,</span><span class="w"> </span><span class="n">poseSweptAgainst</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">hitInfo</span><span class="p">,</span><span class="w"> </span><span class="n">hitFlags</span><span class="p">,</span><span class="w"> </span><span class="n">inflation</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">queryFlags</span><span class="p">,</span><span class="w"> </span><span class="n">threadContext</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The arguments are interpreted as follows:</p>
+<ul class="simple">
+<li><p><em>unitDir</em> is a unit vector defining the direction of the sweep.</p></li>
+<li><p><em>maxDist</em> is the maximum distance to search along the sweep. It must be in the [0, inf) range, and is clamped by SDK code to at most <a class="reference internal" href="../_api_build/define__px_geometry_query_8h_1addb956623c5bb30dd0ad8ab09b84e73d.html#c.PX_MAX_SWEEP_DISTANCE" title="PX_MAX_SWEEP_DISTANCE"><code class="xref c c-macro docutils literal notranslate"><span class="pre">PX_MAX_SWEEP_DISTANCE</span></code></a>. A sweep of length 0 is equivalent to an overlap check.</p></li>
+<li><p><em>geomToSweep</em> is the geometry to sweep. Supported geometries are: box, sphere, capsule or convex mesh.</p></li>
+<li><p><em>poseToSweep</em> is the initial pose of the geometry to sweep.</p></li>
+<li><p><em>geomSweptAgainst</em> is the geometry to sweep against (any geometry type can be used here except <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a>, <a class="reference internal" href="../_api_build/class_px_tetrahedron_mesh_geometry.html#_CPPv425PxTetrahedronMeshGeometry" title="PxTetrahedronMeshGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxTetrahedronMeshGeometry</span></code></a> and <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a>).</p></li>
+<li><p><em>poseSweptAgainst</em> is the pose of the geometry to sweep against.</p></li>
+<li><p><em>hitInfo</em> is the returned result. A sweep will return at most one hit.</p></li>
+<li><p><em>hitFlags</em> determines how the sweep is processed, and which data is returned if an impact is found.</p></li>
+<li><p><em>inflation</em> inflates the first geometry with a shell extending outward from the object surface, making any corners rounded. It can be used to ensure a minimum margin of space is kept around the geometry when using sweeps to test whether movement is possible.</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+<li><p><em>threadContext</em> is a possible per-thread user-data value, which can be useful when using either custom geometries or a custom scene query system.</p></li>
+</ul>
+<p>As with raycasts, fields will be filled in the output structure if the corresponding flags were set in the input hitFlags. The fields of PxGeomSweepHit are as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxVec3</span><span class="w">      </span><span class="n">position</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w">      </span><span class="n">normal</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxF32</span><span class="w">       </span><span class="n">distance</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxHitFlags</span><span class="w">  </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w">       </span><span class="n">faceIndex</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><em>position</em> (<a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a>) is the position of the intersection. When there are multiple impact points, such as two boxes meeting face-to-face, PhysX will select one point arbitrarily. More detailed information for meshes or height fields may be obtained using the functions in <a class="reference internal" href="#meshquery"><span class="std std-ref">PxMeshQuery</span></a>.</p></li>
+<li><p><em>normal</em> (<a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a>) is the surface normal at the point of impact. It is a unit vector, pointing outwards from the hit object and backwards along the sweep direction (in the sense that the dot product between the sweep direction and the impact normal is negative).</p></li>
+<li><p><em>distance</em> is the distance along the ray at which the intersection was found.</p></li>
+<li><p><em>flags</em> specifies which fields of the structure are valid.</p></li>
+<li><p><em>faceIndex</em> is the index of the face hit by the sweep. This is a face from the hit object, not from the swept object. For triangle mesh and height field intersections, it is a triangle index. For convex mesh intersections it is a polygon index. For other shapes it is always set to 0xffffffff. For convex meshes the face index computation is rather expensive. The face index computation can be disabled by not providing the scene query hit flag <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum11eFACE_INDEXE" title="PxHitFlag::eFACE_INDEX"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eFACE_INDEX</span></code></a>. If needed the face index can also be computed externally using the function <a class="reference internal" href="../_api_build/function__px_convex_mesh_ext_8h_1a450abb675b283fd8031caf82e85844e2.html#_CPPv415PxFindFaceIndexRK20PxConvexMeshGeometryRK11PxTransformRK6PxVec3RK6PxVec3" title="PxFindFaceIndex"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxFindFaceIndex()</span></code></a> which is part of the PhysX extensions library.</p></li>
+</ul>
+<p>Unlike raycasts, u,v coordinates are not supported for sweeps.</p>
+<p>For the geometry object swept against:</p>
+<ul class="simple">
+<li><p>A plane is treated as a solid half-space: that is, everything behind the plane is considered part of the volume to sweep against.</p></li>
+<li><p>The same backface-culling rules as for raycasts apply for sweeps, with the notable difference that <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="PxHitFlag::eMESH_MULTIPLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_MULTIPLE</span></code></a> is not supported.</p></li>
+</ul>
+<section id="initial-overlaps">
+<h3>Initial Overlaps<a class="headerlink" href="#initial-overlaps" title="Permalink to this headline"></a></h3>
+<p>Similarly to a raycast starting inside an object, a sweep may start with the two geometries initially intersecting. By default PhysX will detect and report the overlap. Use <em>PxGeomSweepHit::hadInitialOverlap()</em> to see if the hit was generated by an initial overlap.</p>
+<p>For triangle meshes and height fields, backface culling is performed before overlap checks, and thus no initial overlap is reported if a triangle is culled.</p>
+<p>Depending on the value of <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a>, PhysX may also calculate the MTD. If <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> is not set:</p>
+<ul class="simple">
+<li><p>the distance is set to zero.</p></li>
+<li><p>the normal is set to be the opposite of the sweep direction, and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a> flag is set in the <a class="reference internal" href="../_api_build/struct_px_geom_sweep_hit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomSweepHit</span></code></a> result structure.</p></li>
+<li><p>the position is undefined, and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> flag is <em>not</em> set in the <a class="reference internal" href="../_api_build/struct_px_geom_sweep_hit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomSweepHit</span></code></a> result structure.</p></li>
+<li><p>the faceIndex is a face from the second geometry object. For a heightfield or triangle mesh, it is the index of the first overlapping triangle found. For other geometry types, the index is set to 0xffffffff.</p></li>
+</ul>
+<p>If <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> is set, the hit results are defined as follows:</p>
+<ul class="simple">
+<li><p>the distance is set to the penetration depth.</p></li>
+<li><p>the normal is set to the depenetration direction, and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a> flag is set in the <a class="reference internal" href="../_api_build/struct_px_geom_sweep_hit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomSweepHit</span></code></a> result structure.</p></li>
+<li><p>the position is a point on the sweep geometry object (i.e. the first geometry argument) and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a> flag is set in the <a class="reference internal" href="../_api_build/struct_px_geom_sweep_hit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomSweepHit</span></code></a> result structure.</p></li>
+<li><p>the faceIndex is a face from the second geometry object:</p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>For triangle meshes and heightfields it is the last penetrated triangle found during the last iteration of the depenetration algorithm.</p></li>
+<li><p>For other geometry types, the index is set to 0xffffffff.</p></li>
+</ul>
+</div></blockquote>
+<p>This flag will incur additional processing overhead in the case of an initial overlap. In addition, the following restrictions apply:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> is incompatible with <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="PxHitFlag::ePRECISE_SWEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePRECISE_SWEEP</span></code></a> and <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a> (see below). Using <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> in conjunction with either of these flags will result in a warning being issued and the flag(s) that are incompatible with <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> being ignored.</p></li>
+</ul>
+<p>Testing for initial overlaps sometimes uses a specialized code path and incurs a performance penalty. If is it possible to guarantee that geometry objects are not initially overlapping, the check for overlaps can be suppressed with <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a>. There are some restrictions on the use of this flag (also, see <a class="reference internal" href="#sweep-pitfalls"><span class="std std-ref">Pitfalls</span></a>)</p>
+<ul class="simple">
+<li><p>Using <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a> flag when the geometries initially overlap produces undefined behavior.</p></li>
+<li><p><a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a> in combination with zero sweep distance produces a warning and undefined behavior.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>sweeps with <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> use two kinds of backface culling for triangles. First, the triangles are culled based on sweep direction to determine whether there is an overlap. If an overlap is detected, they are further culled by whether the centroid is behind the triangle, and if no triangles are found, the direction will be set opposite to the sweep direction and the distance to 0.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>in most cases, translating the first geometry object by -normal*distance will separate the objects. However, an iterative depenetration algorithm is used to find the MTD for triangle meshes and height fields, and the MTD result may not provide complete depenetration from the mesh in extreme cases. In this case the query should be called a second time after the translation has been applied.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>a known issue in PhysX 3.3 is that the face index for a sweep against a convex mesh is undefined when the eMTD flag is not set.</p>
+</div>
+</section>
+<section id="precise-sweeps">
+<h3>Precise Sweeps<a class="headerlink" href="#precise-sweeps" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="PxHitFlag::ePRECISE_SWEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePRECISE_SWEEP</span></code></a> enables more accurate sweep code (by default a potentially faster but less accurate solution is used). The <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="PxHitFlag::ePRECISE_SWEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePRECISE_SWEEP</span></code></a> flag is not compatible with the inflation parameter, or with the flag <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a>.</p>
+</section>
+<section id="sweeps-against-height-fields">
+<h3>Sweeps against Height Fields<a class="headerlink" href="#sweeps-against-height-fields" title="Permalink to this headline"></a></h3>
+<ul>
+<li><p>Height fields are treated as thin triangle surfaces rather than solid objects.</p></li>
+<li><p>For single-sided height fields the normal of the hit will face in +y local space direction.</p></li>
+<li><p>Height fields are treated as double-sided if either one of eDOUBLE_SIDED or eMESH_BOTH_SIDES flags are used.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The returned hit normal will always face the sweep direction.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>eMESH_ANY flag has no effect.</p></li>
+<li><p>ePRECISE_SWEEP flag has no effect.</p></li>
+</ul>
+</section>
+<section id="pitfalls">
+<span id="sweep-pitfalls"></span><h3>Pitfalls<a class="headerlink" href="#pitfalls" title="Permalink to this headline"></a></h3>
+<p>There are some pitfalls to be aware of when using sweeps:</p>
+<ul class="simple">
+<li><p>Due to numerical precision issues, incorrect results may be returned when the objects have very large size disparities.</p></li>
+<li><p>Due to algorithmic differences, a sweep query may detect a different set of initially overlapping shapes than an overlap query. In particular, it is not sufficient to perform an overlap check in order to determine the safety of the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a> flag. Applications that need consistent overlap/sweep/penetration depth information should use sweep checks with initial overlap testing and the <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum4eMTDE" title="PxHitFlag::eMTD"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMTD</span></code></a> flag.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="additional-pxgeometryquery-functions">
+<h2>Additional PxGeometryQuery functions<a class="headerlink" href="#additional-pxgeometryquery-functions" title="Permalink to this headline"></a></h2>
+<section id="point-distance-query">
+<span id="pointdistancequery"></span><h3>Point-distance query<a class="headerlink" href="#point-distance-query" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomQueryPointDistance.png" src="../_images/GeomQueryPointDistance.png" />
+<p>The following function computes the distance between a point and a geometry object. Only box, sphere, capsule, convex and mesh objects are supported:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">pointDistance</span><span class="p">(</span><span class="n">point</span><span class="p">,</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"> </span><span class="n">closestPoint</span><span class="p">,</span><span class="w"> </span><span class="n">closestIndex</span><span class="p">,</span><span class="w"> </span><span class="n">queryFlags</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><em>closestPoint</em> is an optional output argument which returns the closest point.</p></li>
+<li><p><em>closestIndex</em> is an optional output argument which returns the closest triangle index (when passed geom is a triangle mesh).</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+</ul>
+<img alt="../_images/SnippetPointDistanceQuery.png" src="../_images/SnippetPointDistanceQuery.png" />
+<p>The <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery13pointDistanceERK6PxVec3RK10PxGeometryRK11PxTransformP6PxVec3P5PxU3220PxGeometryQueryFlags" title="PxGeometryQuery::pointDistance"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::pointDistance()</span></code></a> function is demonstrated in <em>SnippetPointDistanceQuery</em>.</p>
+</section>
+<section id="bounds-computation">
+<span id="boundscomputation"></span><h3>Bounds computation<a class="headerlink" href="#bounds-computation" title="Permalink to this headline"></a></h3>
+<img alt="../_images/GeomQueryWorldBounds.png" src="../_images/GeomQueryWorldBounds.png" />
+<p>The following function computes the axis-aligned bounding box (AABB) enclosing a geometry object, given its pose:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxBounds3</span><span class="w"> </span><span class="n">bounds</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxGeometryQuery</span><span class="o">::</span><span class="n">computeGeomBounds</span><span class="p">(</span><span class="n">bounds</span><span class="p">,</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">inflation</span><span class="p">,</span><span class="w"> </span><span class="n">queryFlags</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <em>offset</em> value is added to the bounding box extents. They are then scaled by the <em>inflation</em> value, which defaults to 1.01f if not explicitly specified. The offset and inflation values are used to slightly increase the computed bounds, which is necessary against FPU inaccuracy in various algorithms. Using offset=0 and inflation=1 produces the default bounds around the geometry object.</p>
+<p>All geometry types are supported except <a class="reference internal" href="../_api_build/class_px_particle_system_geometry.html#_CPPv424PxParticleSystemGeometry" title="PxParticleSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxParticleSystemGeometry</span></code></a> and <a class="reference internal" href="../_api_build/class_px_hair_system_geometry.html#_CPPv420PxHairSystemGeometry" title="PxHairSystemGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxHairSystemGeometry</span></code></a></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>for <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a>, the code gets re-routed to the user-defined <a class="reference internal" href="../_api_build/class_px_custom_geometry.html#_CPPv4N16PxCustomGeometry9CallbacksE" title="PxCustomGeometry::Callbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry::Callbacks</span></code></a>. By nature, it is up to users to implement the various geometry queries for custom geometries.</p>
+</div>
+<p>The <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery17computeGeomBoundsER9PxBounds3RK10PxGeometryRK11PxTransformff20PxGeometryQueryFlags" title="PxGeometryQuery::computeGeomBounds"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::computeGeomBounds()</span></code></a> function is demonstrated in a number of snippets, like for example <em>SnippetStandaloneBVH</em>.</p>
+</section>
+<section id="triangle-contacts-generation">
+<h3>Triangle contacts generation<a class="headerlink" href="#triangle-contacts-generation" title="Permalink to this headline"></a></h3>
+<p>The following function generates a set of stable collision contacts between a convex geometry (a capsule, a box or a convex mesh) and a single triangle:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">generateTriangleContacts</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">triangleVertices</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="w"></span>
+<span class="w">                              </span><span class="n">PxU32</span><span class="w"> </span><span class="n">triangleIndex</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="n">PxReal</span><span class="w"> </span><span class="n">meshContactMargin</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"></span>
+<span class="w">                              </span><span class="n">PxContactBuffer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactBuffer</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><strong>geom</strong> is the geometry object. Can be a capsule, a box or a convex mesh</p></li>
+<li><p><strong>pose</strong> is the pose of the geometry object</p></li>
+<li><p><strong>triangleVertices</strong> is the array of triangle vertex positions in local space</p></li>
+<li><p><strong>triangleIndex</strong> is the triangle index</p></li>
+<li><p><strong>contactDistance</strong> is the distance at which contacts begin to be generated</p></li>
+<li><p><strong>meshContactMargin</strong> is the mesh contact margin</p></li>
+<li><p><strong>toleranceLength</strong> is the toleranceLength. Used for scaling distance-based thresholds internally to produce appropriate results given simulations in different units</p></li>
+<li><p><strong>contactBuffer</strong> is the buffer to write contacts to.</p></li>
+</ul>
+<p>The <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery24generateTriangleContactsERK10PxGeometryRK11PxTransformAL3E_K6PxVec35PxU326PxReal6PxReal6PxRealR15PxContactBuffer" title="PxGeometryQuery::generateTriangleContacts"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::generateTriangleContacts()</span></code></a> function may be convenient for implementing the collision contacts generation
+between a custom geometry and a triangle based geometry such as triangle mesh or a height field. An example of the function usage can be found
+in the custom cylinder (<a class="reference internal" href="../_api_build/class_px_custom_geometry_ext.html#_CPPv4N19PxCustomGeometryExt17CylinderCallbacksE" title="PxCustomGeometryExt::CylinderCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::CylinderCallbacks</span></code></a>) or custom cone (<a class="reference internal" href="../_api_build/class_px_custom_geometry_ext.html#_CPPv4N19PxCustomGeometryExt13ConeCallbacksE" title="PxCustomGeometryExt::ConeCallbacks"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometryExt::ConeCallbacks</span></code></a>)
+geometry implementation.</p>
+<hr class="docutils" />
+</section>
+</section>
+<section id="pxmeshquery">
+<span id="meshquery"></span><h2>PxMeshQuery<a class="headerlink" href="#pxmeshquery" title="Permalink to this headline"></a></h2>
+<p>PhysX provides additional functionality for obtaining multiple results for triangle mesh and height field overlaps, and for sweeping against arrays of triangles. Only boxes, spheres and capsules may be tested against meshes or heightfields using these functions.</p>
+<section id="mesh-overlaps">
+<h3>Mesh Overlaps<a class="headerlink" href="#mesh-overlaps" title="Permalink to this headline"></a></h3>
+<p>The following code illustrates how to process the mesh triangles touching a given spherical volume:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="n">triangleIndexBuffer</span><span class="p">[</span><span class="n">bufferSize</span><span class="p">];</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">startIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">bufferOverflowOccured</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">nbTriangles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMeshQuery</span><span class="o">::</span><span class="n">findOverlapTriangleMesh</span><span class="p">(</span><span class="n">sphereGeom</span><span class="p">,</span><span class="w"> </span><span class="n">spherePose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">meshGeom</span><span class="p">,</span><span class="w"> </span><span class="n">meshPose</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">triangleIndexBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">startIndex</span><span class="p">,</span><span class="w"> </span><span class="n">bufferOverflowOccured</span><span class="p">);</span><span class="w"></span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbTriangles</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxTriangle</span><span class="w"> </span><span class="n">tri</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU32</span><span class="w"> </span><span class="n">vertexIndices</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxMeshQuery</span><span class="o">::</span><span class="n">getTriangle</span><span class="p">(</span><span class="n">meshGeom</span><span class="p">,</span><span class="w"> </span><span class="n">meshPose</span><span class="p">,</span><span class="w"> </span><span class="n">triangleIndexBuffer</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">tri</span><span class="p">,</span><span class="w"> </span><span class="n">vertexIndices</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">     </span><span class="p">...</span><span class="w">  </span><span class="c1">// process triangle info</span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="../_api_build/class_px_mesh_query.html#_CPPv4N11PxMeshQuery23findOverlapTriangleMeshERK10PxGeometryRK11PxTransformRK22PxTriangleMeshGeometryRK11PxTransformP5PxU325PxU325PxU32Rb20PxGeometryQueryFlags" title="PxMeshQuery::findOverlapTriangleMesh"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxMeshQuery::findOverlapTriangleMesh()</span></code></a> method is used to extract the indices of the triangles:</p>
+<ul class="simple">
+<li><p><em>sphereGeom</em> and <em>spherePose</em> specify the region to test for overlap.</p></li>
+<li><p><em>meshGeom</em> and <em>meshPose</em> specify the mesh and its pose.</p></li>
+<li><p><em>triangleIndexBuffer</em> and <em>triangleSize</em> specify the output buffer and its size.</p></li>
+<li><p><em>startIndex</em> is used to restart the query if the buffer size is exceeded. In this case, to query for more triangles set this parameter to the number retrieved so far.</p></li>
+<li><p><em>bufferOverflowOccured</em> is set if more triangles would be returned from the query than would fit in the buffer.</p></li>
+</ul>
+<p>Similar query functionality exists for height fields.</p>
+</section>
+<section id="mesh-vs-mesh">
+<h3>Mesh vs mesh<a class="headerlink" href="#mesh-vs-mesh" title="Permalink to this headline"></a></h3>
+<p>A specialized query exists for mesh-vs-mesh overlaps. The previous <em>findOverlapTriangleMesh</em> function cannot be used directly since it only returns a single set of triangle indices that belongs to one of the meshes only. The specialized function below returns pairs of triangle indices that belong to both the first and second input meshes:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxMeshMeshQueryFlags</span><span class="w"> </span><span class="n">meshMeshFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMeshMeshQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">overlapFound</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxMeshQuery</span><span class="o">::</span><span class="n">findOverlapTriangleMesh</span><span class="p">(</span><span class="n">reportCallback</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">meshGeom0</span><span class="p">,</span><span class="w"> </span><span class="n">meshPose0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">meshGeom1</span><span class="p">,</span><span class="w"> </span><span class="n">meshPose1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                         </span><span class="n">queryFlags</span><span class="p">,</span><span class="w"> </span><span class="n">meshMeshFlags</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Where:</p>
+<ul class="simple">
+<li><p><em>reportCallback</em> is a user-defined callback object that will hold the overlap results. Example implementations are available in <em>PxReportCallback.h</em>.</p></li>
+<li><p><em>meshGeom0</em> and <em>meshPose0</em> specify the first mesh and its pose.</p></li>
+<li><p><em>meshGeom1</em> and <em>meshPose1</em> specify the second mesh and its pose.</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+<li><p><em>meshMeshFlags</em> is an optional set of flags to modify the query behavior.</p></li>
+</ul>
+<p>Returned triangle indices can be used with <a class="reference internal" href="../_api_build/class_px_mesh_query.html#_CPPv4N11PxMeshQuery11getTriangleERK22PxTriangleMeshGeometryRK11PxTransform12PxTriangleIDR10PxTriangleP5PxU32P5PxU32" title="PxMeshQuery::getTriangle"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxMeshQuery::getTriangle()</span></code></a> to retrieve the triangle properties.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only implemented for the <a class="reference internal" href="../_api_build/struct_px_mesh_mid_phase.html#_CPPv4N14PxMeshMidPhase4Enum6eBVH34E" title="PxMeshMidPhase::eBVH34"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshMidPhase::eBVH34</span></code></a> data structure.</p>
+</div>
+</section>
+<section id="sweeps-against-triangles">
+<h3>Sweeps against Triangles<a class="headerlink" href="#sweeps-against-triangles" title="Permalink to this headline"></a></h3>
+<p>Sometimes, for example, when using the mesh overlap API, it is convenient to be able to sweep against groups of triangles. PhysX provides a function specifically for this purpose, with the following signature:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">bool</span><span class="w"> </span><span class="nf">sweep</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">distance</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">&amp;</span><span class="w"> </span><span class="n">geom</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pose</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">PxU32</span><span class="w"> </span><span class="n">triangleCount</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxTriangle</span><span class="o">*</span><span class="w"> </span><span class="n">triangles</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">PxGeomSweepHit</span><span class="o">&amp;</span><span class="w"> </span><span class="n">sweepHit</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">hitFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="o">*</span><span class="w"> </span><span class="n">cachedIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="k">const</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">inflation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="kt">bool</span><span class="w"> </span><span class="n">doubleSided</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"></span>
+<span class="w">           </span><span class="n">PxGeometryQueryFlags</span><span class="w"> </span><span class="n">queryFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxGeometryQueryFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The arguments are interpreted as follows:</p>
+<ul class="simple">
+<li><p><em>unitDir</em>, <em>distance</em>, <em>geom</em> and <em>pose</em> function identically to the first four parameters of <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformR14PxGeomSweepHit10PxHitFlagsK6PxReal20PxGeometryQueryFlagsP20PxSweepThreadContext" title="PxGeometryQuery::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::sweep()</span></code></a>. <em>distance</em> is clamped to <a class="reference internal" href="../_api_build/define__px_geometry_query_8h_1addb956623c5bb30dd0ad8ab09b84e73d.html#c.PX_MAX_SWEEP_DISTANCE" title="PX_MAX_SWEEP_DISTANCE"><code class="xref c c-macro docutils literal notranslate"><span class="pre">PX_MAX_SWEEP_DISTANCE</span></code></a>.</p></li>
+<li><p><em>triangleCount</em> is the number of triangles contained in the buffer against which to sweep.</p></li>
+<li><p><em>triangles</em> is the buffer of triangles.</p></li>
+<li><p><em>hitFlags</em> specifies the required information in the output.</p></li>
+<li><p><em>cachedIndex</em>, if set, specifies the index of a triangle to test first. This can be a useful optimization when repeatedly sweeping against the same set of triangles.</p></li>
+<li><p><em>inflation</em> functions identically to the inflation parameter of <a class="reference internal" href="../_api_build/class_px_geometry_query.html#_CPPv4N15PxGeometryQuery5sweepERK6PxVec3K6PxRealRK10PxGeometryRK11PxTransformRK10PxGeometryRK11PxTransformR14PxGeomSweepHit10PxHitFlagsK6PxReal20PxGeometryQueryFlagsP20PxSweepThreadContext" title="PxGeometryQuery::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::sweep()</span></code></a>.</p></li>
+<li><p><em>doubleSided</em> indicates whether the input triangles are double-sided or not. This is equivalent to the <a class="reference internal" href="../_api_build/struct_px_mesh_geometry_flag.html#_CPPv4N18PxMeshGeometryFlag4Enum13eDOUBLE_SIDEDE" title="PxMeshGeometryFlag::eDOUBLE_SIDED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxMeshGeometryFlag::eDOUBLE_SIDED</span></code></a> flag - that is, it suppresses backface culling, and for any hit the returned normal faces opposite to the sweep direction (see <a class="reference internal" href="#raycasts-vs-meshes"><span class="std std-ref">Raycasts against Triangle Meshes</span></a>).</p></li>
+<li><p><em>queryFlags</em> is an optional set of flags to modify the query behavior. (see <a class="reference internal" href="#geometryqueryflags"><span class="std std-ref">PxGeometryQueryFlags</span></a>)</p></li>
+</ul>
+<p>This function has extra limitations compared to the other sweep queries:</p>
+<ul class="simple">
+<li><p>the geometry type must be either a sphere, a capsule or a box. Convex geometry is not supported.</p></li>
+<li><p>the function returns a single hit. Multiple hits (and in particular <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="PxHitFlag::eMESH_MULTIPLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_MULTIPLE</span></code></a>) are not supported.</p></li>
+<li><p>The function always returns the closest hit.</p></li>
+<li><p>The only supported flags are <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum8eDEFAULTE" title="PxHitFlag::eDEFAULT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eDEFAULT</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum26eASSUME_NO_INITIAL_OVERLAPE" title="PxHitFlag::eASSUME_NO_INITIAL_OVERLAP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eASSUME_NO_INITIAL_OVERLAP</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14ePRECISE_SWEEPE" title="PxHitFlag::ePRECISE_SWEEP"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePRECISE_SWEEP</span></code></a>, <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum16eMESH_BOTH_SIDESE" title="PxHitFlag::eMESH_BOTH_SIDES"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_BOTH_SIDES</span></code></a> and <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a>.</p></li>
+</ul>
+<p>The function tests each input triangle in the order they are given. By default, the function will test all triangles and return the closest sweep hit (if a hit has been found). If <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a> is used, the function will return as soon as a hit is found (skipping the remaining untested triangles). This flag can also be used to emulate <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum14eMESH_MULTIPLEE" title="PxHitFlag::eMESH_MULTIPLE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_MULTIPLE</span></code></a>, by calling the function repeatedly with <a class="reference internal" href="../_api_build/struct_px_hit_flag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a>, using as a starting point the previously returned hit triangle (whose index, between 0 and ‘triangleCount’, is available in <a class="reference internal" href="../_api_build/struct_px_geom_sweep_hit.html#_CPPv4N14PxGeomSweepHit9faceIndexE" title="PxGeomSweepHit::faceIndex"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxGeomSweepHit::faceIndex</span></code></a>).</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

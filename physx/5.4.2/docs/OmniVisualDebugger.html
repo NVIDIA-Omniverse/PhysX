@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Omniverse Visual Debugger &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulation Statistics" href="Statistics.html" />
+    <link rel="prev" title="Debug Visualization" href="DebugVisualization.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Omniverse Visual Debugger</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#omnipvd">OmniPVD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#omnipvd-and-pvd-feature-set-comparison">OmniPVD and PVD Feature Set Comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-setup-sdk-side">Basic Setup (SDK Side)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#file-recording-setup">File Recording Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#omnipvd-log-stream">OmniPVD Log Stream</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#omnipvd-viewer">OmniPVD Viewer</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#loading-the-omnipvd-extension">Loading the OmniPVD Extension</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#importing-an-ovd-recording">Importing an OVD Recording</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exploring-the-ovd-object-tree-and-property-widget">Exploring the OVD Object Tree and Property Widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#omnipvd-visualization-gizmos">OmniPVD Visualization Gizmos</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#registering-omnipvd-classes-and-attributes-at-run-time">Registering OmniPVD Classes and Attributes At Run-Time</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Omniverse Visual Debugger</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="omniverse-visual-debugger">
+<span id="omniphysxvisualdebugger"></span><h1>Omniverse Visual Debugger<a class="headerlink" href="#omniverse-visual-debugger" title="Permalink to this headline"></a></h1>
+<section id="omnipvd">
+<h2>OmniPVD<a class="headerlink" href="#omnipvd" title="Permalink to this headline"></a></h2>
+<figure class="align-center">
+<img alt="../_images/omnipvd_selection.png" src="../_images/omnipvd_selection.png" />
+</figure>
+<p>The PhysX Omniverse Visual Debugger (OmniPVD), is the next iteration of PhysX Visual Debugger (PVD), and it consists of a library that is used to both record PhysX simulations as well as to read them back.</p>
+<p>The reason for the Omniverse moniker is that OmniPVD runs its viewer inside Nvidia’s Omniverse Composer environment. The viewer is part of Omniverse Composer as an extension called omni.physx.pvd. Using Omniverse Composer one can import and view PhysX scenes and inspect and visualize variables of many PhysX objects.</p>
+<p>The purpose of OmniPVD is twofold</p>
+<ol class="arabic simple">
+<li><p>To record simulation attributes to gain insight into the PhysX SDK scene and object states and how they evolve from frame to frame</p></li>
+<li><p>To visualize the recorded state to allow for an interactive exploration of the frame-by-frame simulation data</p></li>
+</ol>
+<p>One can record for example to a file stream, into what we have dubbed OVD files. How to set up the PhysX SDK to record into OVD files is described in the section “File Recording Setup”.</p>
+<p>Once the data is recorded one can download Omniverse Composer and install the OmniPVD extension. This extension gives the opportunity to import OVD files and to explore them as animations.</p>
+</section>
+<section id="omnipvd-and-pvd-feature-set-comparison">
+<h2>OmniPVD and PVD Feature Set Comparison<a class="headerlink" href="#omnipvd-and-pvd-feature-set-comparison" title="Permalink to this headline"></a></h2>
+<p>OmniPVD takes inspiration from PVD, but is currently constrained to a subset of its features. This sections sheds some light on which features are covered and which features are not.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Data Stream</dt><dd><ul>
+<li><p>PVD supports streaming of data from a debug session into a viewer application that can view the result as it arrives over TCP/IP</p></li>
+<li><p>OmniPVD supports currently a file stream output where the data is saved into OVD files on disk. These files can be opened and viewed in USD Composer</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Debug Object Serialization</dt><dd><ul>
+<li><p>Both PVD and OmniPVD support the serialization of PhysX objects with inital state and per simulation step updates</p></li>
+<li><p>OmniPVD currently supports the PhysX objects listed below</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>OmniPVD Supported PhysX Classes</dt><dd><ul>
+<li><p>PxPhysics</p></li>
+<li><p>PxGpuDynamicsMemoryConfig</p></li>
+<li><p>PxScene</p></li>
+<li><p>PxBaseMaterial</p></li>
+<li><p>PxMaterial</p></li>
+<li><p>PxFEMSoftBodyMaterial</p></li>
+<li><p>PxFEMClothMaterial</p></li>
+<li><p>PxPBDMaterial</p></li>
+<li><p>PxAggregate</p></li>
+<li><p>PxActor</p></li>
+<li><p>PxRigidActor</p></li>
+<li><p>PxRigidStatic</p></li>
+<li><p>PxRigidBody</p></li>
+<li><p>PxRigidDynamic</p></li>
+<li><p>PxPBDParticleSystem</p></li>
+<li><p>PxArticulationLink</p></li>
+<li><p>PxArticulationReducedCoordinate</p></li>
+<li><p>PxArticulationJointReducedCoordinate</p></li>
+<li><p>PxArticulationMimicJoint</p></li>
+<li><p>PxShape</p></li>
+<li><p>PxGeometry</p></li>
+<li><p>PxSphereGeometry</p></li>
+<li><p>PxCapsuleGeometry</p></li>
+<li><p>PxBoxGeometry</p></li>
+<li><p>PxPlaneGeometry</p></li>
+<li><p>PxConvexMeshGeometry</p></li>
+<li><p>PxConvexMesh</p></li>
+<li><p>PxHeightFieldGeometry</p></li>
+<li><p>PxHeightField</p></li>
+<li><p>PxTriangleMeshGeometry</p></li>
+<li><p>PxTriangleMesh</p></li>
+<li><p>PxTetrahedronMeshGeometry</p></li>
+<li><p>PxTetrahedronMesh</p></li>
+<li><p>PxCustomGeometry</p></li>
+<li><p>PxSoftBodyMesh</p></li>
+<li><p>PxParticleBuffer</p></li>
+<li><p>PxDiffuseParticleParams</p></li>
+<li><p>PxParticleAndDiffuseBuffer</p></li>
+<li><p>PxParticleClothBuffer</p></li>
+<li><p>PxParticleRigidBuffer</p></li>
+<li><p>PxJoint</p></li>
+<li><p>PxFixedJoint</p></li>
+<li><p>PxPrismaticJoint</p></li>
+<li><p>PxRevoluteJoint</p></li>
+<li><p>PxSphericalJoint</p></li>
+<li><p>PxDistanceJoint</p></li>
+<li><p>PxContactJoint</p></li>
+<li><p>PxGearJoint</p></li>
+<li><p>PxRackAndPinionJoint</p></li>
+<li><p>PxD6Joint</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>OmniPVD Supported PhysX Bit Fields</dt><dd><ul>
+<li><p>PxSceneFlag</p></li>
+<li><p>PxMaterialFlag</p></li>
+<li><p>PxActorFlag</p></li>
+<li><p>PxRigidBodyFlag</p></li>
+<li><p>PxArticulationFlag</p></li>
+<li><p>PxRigidDynamicLockFlag</p></li>
+<li><p>PxShapeFlag</p></li>
+<li><p>PxParticleFlag</p></li>
+<li><p>PxParticleLockFlag</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>OmniPVD Supported PhysX Enums</dt><dd><ul>
+<li><p>PxFrictionType</p></li>
+<li><p>PxBroadPhaseType</p></li>
+<li><p>PxSolverType</p></li>
+<li><p>PxPairFilteringMode</p></li>
+<li><p>PxCombineMode</p></li>
+<li><p>PxActorType</p></li>
+<li><p>PxArticulationJointType</p></li>
+<li><p>PxArticulationMotion</p></li>
+<li><p>PxArticulationDriveType</p></li>
+<li><p>PxArticulationAxis</p></li>
+<li><p>PxConstraintFlag</p></li>
+<li><p>PxRevoluteJointFlag</p></li>
+<li><p>PxPrismaticJointFlag</p></li>
+<li><p>PxDistanceJointFlag</p></li>
+<li><p>PxSphericalJointFlag</p></li>
+<li><p>PxD6JointDriveFlag</p></li>
+<li><p>PxJointConcreteType</p></li>
+<li><p>PxD6Motion</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>OmniPVD Specific Export Classes</dt><dd><ul>
+<li><p>PxOmniPvdMetaData</p></li>
+<li><p>PxCustomGeometryExtBaseConvexCallbacks</p></li>
+<li><p>PxCustomGeometryExtCylinderCallbacks</p></li>
+<li><p>PxCustomGeometryExtConeCallbacks</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Data Recording Flags</dt><dd><ul>
+<li><p>PVD allows to define if debug, memory or profiling data is to be recorded or not</p></li>
+<li><p>PVD further allows on a per scene level, to disable or enable the recording of contacts, scene queries and constraints</p></li>
+<li><p>OmniPVD currently streams debug data by default and also all contact data for all scenes</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Memory and Profiling</dt><dd><ul>
+<li><p>PVD allows for the recording of profiling and memory statistics</p></li>
+<li><p>OmniPVD currently neither streams profile zone nor memory statistics</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Simulation Frame Export and Import</dt><dd><ul>
+<li><p>PVD can export a recorded simulation frame into the RepX format, which can be used to initialize a simulation in the PhysX SDK</p></li>
+<li><p>OmniPVD can export a recorded simulation frame into the Physics USD format (only with transforms at the moment) and the Physics USD format can be loaded into USD Composer to partially initialize a PhysX simulation</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Debug Draw Visualization</dt><dd><ul>
+<li><p>PVD allows to write points, lines, triangles and text (per secene) in a way that does not require the creation of a certain PhysX object</p></li>
+<li><p>OmniPVD currently does not support custom rendering commands issued by the user. The data in the OVD stream must contain objects that the OmniPVD extension can turn into USD primitives.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>PhysX SDK Error Stream</dt><dd><ul>
+<li><p>PVD allows the streaming of PhysX SDK error codes through the error callbacks</p></li>
+<li><p>OmniPVD does not support an error stream output except for the OmniPVD API calls</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Direct GPU API Recording</dt><dd><ul>
+<li><p>PVD does not have the ability to record Direct GPU API data changes nor simulation updates</p></li>
+<li><p>OVD allows for recording of data after each simulation step while using the Direct GPU API</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="basic-setup-sdk-side">
+<h2>Basic Setup (SDK Side)<a class="headerlink" href="#basic-setup-sdk-side" title="Permalink to this headline"></a></h2>
+<p>OmniPVD integration is enabled in the debug, checked and profiling configurations of the PhysX SDK. In order to reduce memory footprint, execution overhead (due to the sampling) and code size, it is not enabled in the release configuration.</p>
+<p>The SDK outputs the OmniPVD debugging data in form of a stream. OmniPVD currently supports reading the stream from an OVD file.</p>
+<p>A frame recording in OmniPVD is considered as the full list of actors and scene manipulations leading up to the simulation of the first frame, including the state post simulation of the actors at the end of the first frame. This frame is considered frame 0.</p>
+<p>Subsequent frames contain first the list of user operations that might or might not occur leading up to the simulation of a frame and the subsequent transforms of the objects involved for that frame.</p>
+<p>One can view the stream of incoming operations as commands or operations on a PhysX state which makes the receiving end of the OmniPVD stream a virtual machine of sorts.</p>
+<p>The reader of the OmniPVD stream gets first</p>
+<ol class="arabic simple">
+<li><p>A list of OmniPVD class and attribute registrations</p></li>
+</ol>
+<p>And then receives for each frame</p>
+<ol class="arabic simple">
+<li><p>A list of OmniPVD object creation/destruction and attribute setting operations</p></li>
+<li><p>A list of OmniPVD object transform attribute updates</p></li>
+<li><p>A startFrame command, signalling the start of another frame</p></li>
+</ol>
+<section id="file-recording-setup">
+<h3>File Recording Setup<a class="headerlink" href="#file-recording-setup" title="Permalink to this headline"></a></h3>
+<p>Streaming debug data to a file is the currently well supported stream. It will also continue to be the recommended fall-back in case your platform or system setup does not support a network connection.</p>
+<p>What is important is to make sure to pass the OmniPVD object to the PhysX instance creation function as a parameter and to immediately set the file name.</p>
+<p>OmniPVD streams stored as files can be loaded in the OmniPVD extension in Omniverse Composer:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxFoundation</span><span class="o">*</span><span class="w"> </span><span class="n">foundation</span><span class="p">;</span><span class="w"></span>
+<span class="n">foundation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateFoundation</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="n">mAllocator</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">mErrorCallback</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Create the OmniPVD instance</span>
+<span class="n">PxOmniPvd</span><span class="o">*</span><span class="w"> </span><span class="n">omniPvd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateOmniPvd</span><span class="p">(</span><span class="o">*</span><span class="n">foundation</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">omniPvd</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">OmniPvdWriter</span><span class="o">*</span><span class="w"> </span><span class="n">omniWriter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omniPvd</span><span class="o">-&gt;</span><span class="n">getWriter</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Uncomment for debugging the OmniPvd write stream</span>
+<span class="w">    </span><span class="c1">//omniWriter-&gt;setLogFunction(logFunc);</span>
+<span class="w">    </span><span class="n">OmniPvdFileWriteStream</span><span class="o">*</span><span class="w"> </span><span class="n">omniFileWriteStream</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omniPvd</span><span class="o">-&gt;</span><span class="n">getFileWriteStream</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">omniWriter</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">omniFileWriteStream</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">setWriteStream</span><span class="p">(</span><span class="o">*</span><span class="n">omniFileWriteStream</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// The OmniPVD object has to be passed to the PhysX instance creation function, otherwise no debug data</span>
+<span class="c1">// can be stored in the OVD format, it is the last parameter in the CreatePhysics function</span>
+<span class="n">PxPhysics</span><span class="o">*</span><span class="w"> </span><span class="n">physics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreatePhysics</span><span class="p">(</span><span class="n">PX_PHYSICS_VERSION</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">foundation</span><span class="p">,</span><span class="w"> </span><span class="n">PxTolerancesScale</span><span class="p">(),</span><span class="w"> </span><span class="nb">true</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">omniPvd</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Once the PhysX instance is created with a non-zero OmniPVD object, one can now proced to set the</span>
+<span class="n">omniFileWriteStream</span><span class="o">-&gt;</span><span class="n">setFileName</span><span class="p">(</span><span class="s">&quot;myoutpufile.ovd&quot;</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// If startSampling returns true, the recording was started successfully</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">mOmniPvd</span><span class="o">-&gt;</span><span class="n">startSampling</span><span class="p">())</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error! OVD recording could not start writing into %s&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;myoutpufile.ovd&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="c1">// Now simulation can be recorded</span>
+<span class="c1">// Do your simulation...</span>
+
+<span class="n">physics</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+<span class="c1">//After releasing PxPhysics, release OmniPVD</span>
+<span class="n">mOmniPvd</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="omnipvd-log-stream">
+<h3>OmniPVD Log Stream<a class="headerlink" href="#omnipvd-log-stream" title="Permalink to this headline"></a></h3>
+<p>One can debug the OmniPVD stream directly by attaching a log function to OmniPVD. This is useful to see when for example the PhysX SDK is registring the classes and attributes.:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">OmniPvdWriter</span><span class="o">*</span><span class="w"> </span><span class="n">omniWriter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omniPvd</span><span class="o">-&gt;</span><span class="n">getWriter</span><span class="p">();</span><span class="w"></span>
+<span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">setLogFunction</span><span class="p">(</span><span class="n">logFunc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="omnipvd-viewer">
+<h2>OmniPVD Viewer<a class="headerlink" href="#omnipvd-viewer" title="Permalink to this headline"></a></h2>
+<p>If one downloads Omniverse Composer one can view the exported OVD files.</p>
+<p>The OmniPVD Composer extension (omni.physx.pvd) makes it possible to import a physics recording in OVD format, transforming it seamlessly into a cached USDA format. Once imported one can do time scrubbing and inspection of an OVD file as a USD Stage, which is good for debugging, inspecting and visualizing a recorded physics scene, but it stays a pure animation.</p>
+<p>The OmniPVD gizmos are also then possible to apply to the imported OVD file, for the sake of different visualizations such as collision contacts, bounding box representations, velocities as well as seeing mass and transform reference frames.</p>
+<p>The OmniPVD extension has the option to export of a single specific frame of an OmniPVD USD animated Stage recording into the Physics USD format. This allows one to use the exported frame as an initial state when simulating the scene.</p>
+<p>Lastly OmniPVD has a PhysX baking feature, for the reading of a physics recording in OVD format and the baking of the transforms of objects, onto Omniverse Physics objects in a separate Edit Layer. This makes for the replacement of the simulated objects with a set kinematic path, still allowing other physics simulated objects (added afterwards) to interact with them, but not affecting them.</p>
+<section id="loading-the-omnipvd-extension">
+<h3>Loading the OmniPVD Extension<a class="headerlink" href="#loading-the-omnipvd-extension" title="Permalink to this headline"></a></h3>
+<p>The OmniPVD extension is called omni.physx.pvd and can be found in the extension browser by searching for “pvd”. Just make sure to click on the slider next to “AUTOLOAD” to enable it.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_load_extension.png" src="../_images/omnipvd_load_extension.png" />
+</figure>
+</section>
+<section id="importing-an-ovd-recording">
+<h3>Importing an OVD Recording<a class="headerlink" href="#importing-an-ovd-recording" title="Permalink to this headline"></a></h3>
+<p>Once a simulation is recorded into an OmniPVD OVD file, inside the PhysX SDK or even by Omniverse Composer itself, one can import it which will automatically look for a cached version of a corresponding USD Stage (in the Cache directory) and load that if it’s already created. One can now explore the USD Stage of the imported OVD file in Composer, inspecting the recorded motion and data. By pressing the “Import” button in the file browser, the chosen file goes through the import process. By default the latest OVD recording is chosen and one can then simply click on “Import” to import it quickly.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_import_ovd.png" src="../_images/omnipvd_import_ovd.png" />
+</figure>
+</section>
+<section id="exploring-the-ovd-object-tree-and-property-widget">
+<h3>Exploring the OVD Object Tree and Property Widget<a class="headerlink" href="#exploring-the-ovd-object-tree-and-property-widget" title="Permalink to this headline"></a></h3>
+<p>A recent addition to OmniPVD extension is the OmniPVD Object Tree, while similar to the USD Stage view has some distinct features, namely</p>
+<ul class="simple">
+<li><p>Objects are not required to be displayed with the USD Prim names (which have to follow SDF path rules), instead they can derive the name from the OmniPVD object name (a string set at the object creation call), a PhysX actor name or a combination of the OmniPVD class name and a unique identifier</p></li>
+<li><p>Objects have the OmniPVD type displayed in the type column, not the USD Prim type</p></li>
+</ul>
+<p>The Object Tree also has a search bar, which differs from the USD Stage search bar, in some ways</p>
+<ul class="simple">
+<li><p>The search bar is not displaying the search results in a flat list, instead if expands the matching objects (based on their OVDTree name and UID) and allows for iterating through the results using the Prev/Next buttons</p></li>
+<li><p>It is possible to collapse the view and thus make sure only the root objects in the tree are visible, this is a convenience not to have to collapse all the nodes/objects manually, as every search result accumulates the expansions to the existing ones, for any objects/Prims that match the search criteria</p></li>
+</ul>
+<p>The USD hierarchy in the resulting cached Stage file (that is generated when an OVD file is imported) starts of with a scene, then lists the dynamic rigid bodies, static rigid bodies and then articulations of an OVD recording. For each body, one has an actor or articulation link with accompanying shapes and geometries. Each USD Prim has a set of custom USD attributes, which can be explored in detail and if they change over time, can be scrubbed through the animation and one can see how they are updated.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_stage.png" src="../_images/omnipvd_stage.png" />
+</figure>
+<p>Another view of the Stage is in the OmniPVD Object Tree, which allows for using of a non-SDF compliant name display (as opposed to USD), it mirrors the USD Stage, but displays the Prims with the PhysX derived name, or OmniPVD object name (given at creation time) otherwise with the OmniPVD type. A Unique Identifier (UID) is prepended to all the object, which is connected to the moment an object was created. It follows the creation/removal of objects, so only the objects that are active in the PhysX engine at that specific frame (defined by the timeline interface scrubber) are displayed in the tree. This is to have a more precise visualisation of what was actually simulated in the frame.</p>
+<p>Selection in the viewport will select the Prim geometries but will make sure that selection affects the PxActors that are above the geometries in the OVD Tree. This is to make sure that selection is a smooth and intuitive operation and does not break the existing interaction paradigm of the USD Stage.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_ovd_tree_hierarchy.png" src="../_images/omnipvd_ovd_tree_hierarchy.png" />
+</figure>
+<p>One can also search in the names of the OmniPVD objects or the UID, as opposed to the search bar in the USD Stage (which only allows for search in the Prim path and Prim name), and one also gets the resulting searches expanded and coloured, with the possibility to walk over the results using the Next and Prev buttons. The “Collapse All” button, does what one would expect and collapses all expanded nodes of the tree, which is useful to do if one has done many searches as each search continues to expand nodes each time, resulting ultimately to the expansion of all nodes if one searches for a string that is part of all object names.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_ovd_tree_search.png" src="../_images/omnipvd_ovd_tree_search.png" />
+</figure>
+<p>Below the Object Tree, is the Property window and inside the Physics widget lives the OmniPVD Property widget, which displays the OmniPVD attributes in a pretty printed form. The attributes in the widget get updated with the timeline changes in the USD Stage.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_ovd_properties.png" src="../_images/omnipvd_ovd_properties.png" />
+</figure>
+</section>
+<section id="omnipvd-visualization-gizmos">
+<h3>OmniPVD Visualization Gizmos<a class="headerlink" href="#omnipvd-visualization-gizmos" title="Permalink to this headline"></a></h3>
+<p>There are several ways to augment the imported OVD file with OmniPVD gizmos, they are mainly set to None, All or Selected from the menu below. The drop down menus with the scaling values attached allows to scaled each type of gizmo either independently or together globally. As here below the velocity gizmos are set to Selected and their individual scale to 0.2 while the global scale is 3.8, leading to a combined scaled of 3.8 x 0.2 for the velocities.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_menu.png" src="../_images/omnipvd_gizmos_menu.png" />
+</figure>
+<p>Selection can either done from the viewport, which also ends up selecting them in the Stage and OmniPVD Object Tree windows both. Selection is multi-directional between the viewport, the Stage and the OmniPVD Object Tree. It’s for example possible to see bounding boxes which are the same axis aligned bounding boxes that PhysX uses internally to delineate the actors.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_selection.png" src="../_images/omnipvd_gizmos_selection.png" />
+</figure>
+<p>The contacts with the reference frame along with the mass reference frame are shown for the selected actors below. What is interesting is that the cone has a differently aligned mass reference frame from its transform frame.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_contacts.png" src="../_images/omnipvd_gizmos_contacts.png" />
+</figure>
+<p>One can also view joints (such as D6, distance, gear, prismatic, rack and pinion and others) as for example this rope made out of D6 joints</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_joints_d6_ropes.png" src="../_images/omnipvd_gizmos_joints_d6_ropes.png" />
+</figure>
+<p>Or for example this distance joint.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_joints_distance.png" src="../_images/omnipvd_gizmos_joints_distance.png" />
+</figure>
+<p>Or this gear joint</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_joints_gear.png" src="../_images/omnipvd_gizmos_joints_gear.png" />
+</figure>
+<p>Or this spherical joint.</p>
+<figure class="align-center">
+<img alt="../_images/omnipvd_gizmos_joints_spherical.png" src="../_images/omnipvd_gizmos_joints_spherical.png" />
+</figure>
+<p>Using these gizmos one increases the ability to drill down into debug data.</p>
+</section>
+</section>
+<section id="registering-omnipvd-classes-and-attributes-at-run-time">
+<h2>Registering OmniPVD Classes and Attributes At Run-Time<a class="headerlink" href="#registering-omnipvd-classes-and-attributes-at-run-time" title="Permalink to this headline"></a></h2>
+<p>A way to register new classes and attributes is possible by registering them at run-time, by using the OmniPVD API and directly do the registry calls to the write stream.</p>
+<p>By extending the code in the “File Recording Setup” after the startSampling call with ones own:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Once the PhysX instance is created with a non-zero OmniPVD object, one can now proced to set the</span>
+<span class="n">omniFileWriteStream</span><span class="o">-&gt;</span><span class="n">setFileName</span><span class="p">(</span><span class="s">&quot;myoutpufile.ovd&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="n">mOmniPvd</span><span class="o">-&gt;</span><span class="n">startSampling</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// Get the writer and issue OmniPVD registration calls</span>
+<span class="n">mniPvdWriter</span><span class="o">*</span><span class="w"> </span><span class="n">omniWriter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mOmniPvd</span><span class="o">-&gt;</span><span class="n">getWriter</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// Let&#39;s register an &quot;apple&quot; class</span>
+<span class="n">OmniPvdClassHandle</span><span class="w"> </span><span class="n">appleClassHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">registerClass</span><span class="p">(</span><span class="s">&quot;apple&quot;</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// And add an attribute &quot;tasty&quot; which is a single float value</span>
+<span class="n">OmniPvdAttributeHandle</span><span class="w"> </span><span class="n">appleTasteAttributeHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">registerAttribute</span><span class="p">(</span><span class="n">appleClassHandle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;tasty&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">OmniPvdDataType</span><span class="o">::</span><span class="n">eFLOAT32</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// We can now piggyback on the PhysX SDK simulator to do the frame update for us and in between each simulation loop we can set the tasty attribute for example</span>
+
+<span class="c1">// For that we need to create an instance of the apple class, in this case we don&#39;t care about object grouping so the context can be</span>
+<span class="c1">// set to any value (here 42) and the object handle as long as it&#39;s unique (here 22), the object name is not required to be set.</span>
+<span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">createObject</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="n">appleClassHandle</span><span class="p">,</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;best_apple_ever_01&quot;</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// One can set the context value to any suiting one and the objectHandle to any unique object of the apple class</span>
+<span class="kt">float</span><span class="w"> </span><span class="n">someTaste</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">9000.0f</span><span class="p">;</span><span class="w"></span>
+<span class="n">omniWriter</span><span class="o">-&gt;</span><span class="n">setAttribute</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span><span class="w"> </span><span class="n">appleTasteAttributeHandle</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">someTaste</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">))</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

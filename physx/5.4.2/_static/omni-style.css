@@ -1,0 +1,1387 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ *
+ * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
+ * property and proprietary rights in and to this material, related
+ * documentation and any modifications thereto. Any use, reproduction,
+ * disclosure or distribution of this material and related documentation
+ * without an express license agreement from NVIDIA CORPORATION or
+ * its affiliates is strictly prohibited.
+ */
+
+/* Set up for old browsers*/
+@supports not (font-variation-settings: normal) {
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Lt.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Lt.woff2") format("woff2");
+    font-weight: 300;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Rg.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Rg.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Md.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Md.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "NVIDIA";
+    src: url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Bd.woff") format("woff"),
+    url("https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/NVIDIASans_W_Bd.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+  }
+}
+
+/* Set up for modern browsers, all weights */
+@supports (font-variation-settings: normal) {
+  @font-face {
+    font-family: 'NVIDIA';
+    src: url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_W_Wght.woff2') format('woff2 supports variations'),
+    url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_W_Wght.woff2') format('woff2-variations');
+    font-weight: 100 1000;
+    font-stretch: 25% 151%;
+    font-style: normal;
+  }
+  @font-face{
+    font-family:'NVIDIA';
+    src:url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_Wght_W_Italic.woff2') format('woff2 supports variations'),
+    url('https://images.nvidia.com/etc/designs/nvidiaGDC/clientlibs_base/fonts/nvidia-sans/GLOBAL/var/NVIDIASansVF_Wght_W_Italic.woff2') format('woff2-variations');
+    font-weight:100 1000;
+    font-stretch:25% 151%;
+    font-style:italic;
+  }
+}
+
+:root
+{
+    /* nv branding */
+    --nv-green: #76b900;
+    --nv-green-illuminate: #76d300; /* button state - hover */
+    --nv-black: #000000;
+    --nv-white: #ffffff;
+    --nv-green-2: #004831;
+
+    --nv-success: var(--nv-green);
+    --nv-error: #f44336;
+
+    --nv-font-face: NVIDIA,Arial,Helvetica,Sans-Serif;
+    --nv-font-face-mono: SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,Courier,monospace;
+
+    /* nv branding: light theme */
+    --text: #1a1a1a;
+    --background-default: #ffffff;
+    --background-alternate: #eeeeee;
+    --ui-and-graphics: #999999;
+
+    --white: #ffffff;
+    --gray-1: #f7f7f7;
+    --gray-2: #eeeeee;
+    --gray-3: #dddddd;
+    --gray-4: #cccccc;
+
+    /* nv branding: light theme mobile (closely matches our old font sizes) */
+    --h1-color: var(--nv-green);
+    --h1-font-weight: 100;
+    --h1-letter-spacing: -0.02em;
+    --h1-font-size: 36px;
+    --h1-line-height: 1em;
+    --h1-text-transform: uppercase;
+
+    --h2-color: var(--nv-green);
+    --h2-font-weight: 100;
+    --h2-letter-spacing: -0.02em;
+    --h2-font-size: 24px;
+    --h2-line-height: 1em;
+    --h2-text-transform: uppercase;
+
+    --h3-color: var(--nv-green);
+    --h3-font-weight: 100;
+    --h3-letter-spacing: -0.02em;
+    --h3-font-size: 21px;
+    --h3-line-height: 1em;
+    --h3-text-transform: uppercase;
+
+    --h4-color: var(--nv-green);
+    --h4-font-weight: 100;
+    --h4-letter-spacing: -0.02em;
+    --h4-font-size: 18px;
+    --h4-line-height: 1em;
+    --h4-text-transform: uppercase;
+
+    --h5-color: var(--nv-green);
+    --h5-font-size: var(--body-font-size);
+
+    --h6-color: var(--nv-green);
+    --h6-font-weight: 400;
+
+    --body-font-color: var(--text);
+    --body-font-weight: normal;
+    --body-font-size: 16px;
+    --body-line-height: 1.5em;
+
+    --small-font-color: var(--ui-and-graphics);
+    --small-font-weight: normal;
+    --small-font-size: 12px;
+    --small-line-height: 1.25em;
+
+    --ul-font-color: var(--text);
+    --ul-font-weight: normal;
+    --ul-font-size: 16px;
+    --ul-line-height: 2em;
+    --ul-marker-font-face: FontAwesome;
+    --ul-marker-content: '\f105 \00a0 \00a0';
+
+    --ol-font-color: var(--text);
+    --ol-font-weight: normal;
+    --ol-font-size: 16px;
+    --ol-line-height: 2em;
+    --ol-list-style-type: decimal;
+    --ol-ol-list-style-type: upper-alpha;
+    --ol-ol-ol-list-style-type: decimal; /* not specified in style guide */
+
+    --disabled-font-color: var(--gray-4);
+    --disabled-font-weight: normal;
+    --disabled-font-size: 16px;
+    --disabled-line-height: 1em; /* style guide says 16px */
+
+    --error-font-color: var(--nv-error);
+    --error-font-weight: normal;
+    --error-font-size: 16px;
+    --error-line-height: 1em; /* style guide says 16px */
+
+    --success-font-color: var(--nv-success);
+    --success-font-weight: normal;
+    --success-font-size: 16px;
+    --success-line-height: 1em; /* style guide says 16px */
+
+    /* omni-style */
+    --sidebar-color: #000000;
+    --sidebar-alt-color: #333333;
+    --sidebar-headline-color: var(--nv-green);
+    --sidebar-text-color: #cccccc;
+
+    --table-background-header: var(--nv-black);
+    --table-background-alternate: var(--background-alternate); /* for alternating rows */
+    --table-text: var(--text);
+    --table-border: var(--ui-and-graphics);
+    --table-border-header: var(--gray-3);
+
+    /* this is off-brand, but `uppercase` makes headings with source code look bad. */
+    --h1-text-transform: none;
+    --h2-text-transform: none;
+    --h3-text-transform: none;
+    --h4-text-transform: none;
+
+    --h3-font-weight: normal; /* this is off-brand and overrides the above definition */
+
+    --note-background-color: var(--nv-green);
+    --note-background-alt-color: #cccccc;
+
+    --important-background-color: #f44336;
+    --important-background-alt-color: #cccccc;
+
+    --link-color: var(--nv-green);
+    --link-visited-color: var(--nv-green);
+    --link-hover-color: var(--nv-green-illuminate);
+
+    --background-color: var(--background-default);
+
+    /* template<typenameT> T* tryAcquireInterface(const void* pluginInterface) */
+    --api-member-header-background-color: var(--gray-2);
+    --api-member-header-border-color: var(--sidebar-headline-color);
+    --api-member-header-text-color: var(--text);
+    --api-member-header-link-color: var(--link-color);
+
+    --api-member-background-color: var(--gray-1);
+
+    /* struct carb::Framework */
+    --api-header-text-color: var(--nv-green);
+    --api-header-border-color: var(--ui-and-graphics);
+
+    /* sphinx-design color modifications */
+    --sd-color-tabs-label-active: var(--nv-green);
+    --sd-color-tabs-underline-active: var(--nv-green);
+
+    --sd-color-tabs-label-hover: var(--nv-green-illuminate);
+    --sd-color-tabs-underline-hover: var(--nv-green-illuminate);
+}
+
+/* Width of template */
+.wy-nav-content
+{
+    max-width: 1200px !important;
+    background-color: var(--background-color);
+}
+
+ /* affects search box */
+#rtd-search-form,
+#rtd-search-form > input:nth-child(1)
+{
+    color-scheme: light;
+}
+
+/**********************************************************************************************************************/
+/*                                         Admonitions                                                                */
+/**********************************************************************************************************************/
+
+/* todo, attention, caution, warning body */
+.rst-content .admonition-todo,
+.rst-content .attention,
+.rst-content .caution,
+.rst-content .warning,
+.rst-content .wy-alert-warning.admonition,
+.rst-content .wy-alert-warning.danger,
+.rst-content .wy-alert-warning.error,
+.rst-content .wy-alert-warning.hint,
+.rst-content .wy-alert-warning.important,
+.rst-content .wy-alert-warning.note,
+.rst-content .wy-alert-warning.seealso,
+.rst-content .wy-alert-warning.tip,
+.wy-alert.wy-alert-warning
+{
+    background: rgb(255, 244, 224);
+}
+
+/* todo, attention, caution, warning title */
+.rst-content .admonition-todo .admonition-title,
+.rst-content .admonition-todo .wy-alert-title,
+.rst-content .attention .admonition-title,
+.rst-content .attention .wy-alert-title,
+.rst-content .caution .admonition-title,
+.rst-content .caution .wy-alert-title,
+.rst-content .warning .admonition-title,
+.rst-content .warning .wy-alert-title,
+.rst-content .wy-alert-warning.admonition .admonition-title,
+.rst-content .wy-alert-warning.admonition .wy-alert-title,
+.rst-content .wy-alert-warning.danger .admonition-title,
+.rst-content .wy-alert-warning.danger .wy-alert-title,
+.rst-content .wy-alert-warning.error .admonition-title,
+.rst-content .wy-alert-warning.error .wy-alert-title,
+.rst-content .wy-alert-warning.hint .admonition-title,
+.rst-content .wy-alert-warning.hint .wy-alert-title,
+.rst-content .wy-alert-warning.important .admonition-title,
+.rst-content .wy-alert-warning.important .wy-alert-title,
+.rst-content .wy-alert-warning.note .admonition-title,
+.rst-content .wy-alert-warning.note .wy-alert-title,
+.rst-content .wy-alert-warning.seealso .admonition-title,
+.rst-content .wy-alert-warning.seealso .wy-alert-title,
+.rst-content .wy-alert-warning.tip .admonition-title,
+.rst-content .wy-alert-warning.tip .wy-alert-title,
+.rst-content .wy-alert.wy-alert-warning .admonition-title,
+.wy-alert.wy-alert-warning .rst-content .admonition-title,
+.wy-alert.wy-alert-warning .wy-alert-title
+{
+    background: rgb(241, 169, 47);
+}
+
+/* danger, error body */
+.rst-content .danger,
+.rst-content .error,
+.rst-content .wy-alert-danger.admonition,
+.rst-content .wy-alert-danger.admonition-todo,
+.rst-content .wy-alert-danger.attention,
+.rst-content .wy-alert-danger.caution,
+.rst-content .wy-alert-danger.hint,
+.rst-content .wy-alert-danger.important,
+.rst-content .wy-alert-danger.note,
+.rst-content .wy-alert-danger.seealso,
+.rst-content .wy-alert-danger.tip,
+.rst-content .wy-alert-danger.warning,
+.wy-alert.wy-alert-danger
+{
+    background: rgb(254, 240, 237);
+}
+
+/* danger, error title */
+.rst-content .danger .admonition-title,
+.rst-content .danger .wy-alert-title,
+.rst-content .error .admonition-title,
+.rst-content .error .wy-alert-title,
+.rst-content .wy-alert-danger.admonition-todo .admonition-title,
+.rst-content .wy-alert-danger.admonition-todo .wy-alert-title,
+.rst-content .wy-alert-danger.admonition .admonition-title,
+.rst-content .wy-alert-danger.admonition .wy-alert-title,
+.rst-content .wy-alert-danger.attention .admonition-title,
+.rst-content .wy-alert-danger.attention .wy-alert-title,
+.rst-content .wy-alert-danger.caution .admonition-title,
+.rst-content .wy-alert-danger.caution .wy-alert-title,
+.rst-content .wy-alert-danger.hint .admonition-title,
+.rst-content .wy-alert-danger.hint .wy-alert-title,
+.rst-content .wy-alert-danger.important .admonition-title,
+.rst-content .wy-alert-danger.important .wy-alert-title,
+.rst-content .wy-alert-danger.note .admonition-title,
+.rst-content .wy-alert-danger.note .wy-alert-title,
+.rst-content .wy-alert-danger.seealso .admonition-title,
+.rst-content .wy-alert-danger.seealso .wy-alert-title,
+.rst-content .wy-alert-danger.tip .admonition-title,
+.rst-content .wy-alert-danger.tip .wy-alert-title,
+.rst-content .wy-alert-danger.warning .admonition-title,
+.rst-content .wy-alert-danger.warning .wy-alert-title,
+.rst-content .wy-alert.wy-alert-danger .admonition-title,
+.wy-alert.wy-alert-danger .rst-content .admonition-title,
+.wy-alert.wy-alert-danger .wy-alert-title
+{
+    background: var(--nv-error);
+}
+
+/* hint, important, tip, note, see also body */
+.rst-content .hint,
+.rst-content .important,
+.rst-content .tip,
+.rst-content .wy-alert-success.admonition,
+.rst-content .wy-alert-success.admonition-todo,
+.rst-content .wy-alert-success.attention,
+.rst-content .wy-alert-success.caution,
+.rst-content .wy-alert-success.danger,
+.rst-content .wy-alert-success.error,
+.rst-content .wy-alert-success.note,
+.rst-content .wy-alert-success.seealso,
+.rst-content .wy-alert-success.warning,
+.wy-alert.wy-alert-success,
+.rst-content .note,
+.rst-content .seealso,
+.rst-content .wy-alert-info.admonition,
+.rst-content .wy-alert-info.admonition-todo,
+.rst-content .wy-alert-info.attention,
+.rst-content .wy-alert-info.caution,
+.rst-content .wy-alert-info.danger,
+.rst-content .wy-alert-info.error,
+.rst-content .wy-alert-info.hint,
+.rst-content .wy-alert-info.important,
+.rst-content .wy-alert-info.tip,
+.rst-content .wy-alert-info.warning,
+.wy-alert.wy-alert-info
+{
+    background: rgb(231, 250, 223);
+}
+
+/* hint, important, tip, note, see also title */
+.rst-content .hint .admonition-title,
+.rst-content .hint .wy-alert-title,
+.rst-content .important .admonition-title,
+.rst-content .important .wy-alert-title,
+.rst-content .tip .admonition-title,
+.rst-content .tip .wy-alert-title,
+.rst-content .wy-alert-success.admonition-todo .admonition-title,
+.rst-content .wy-alert-success.admonition-todo .wy-alert-title,
+.rst-content .wy-alert-success.admonition .admonition-title,
+.rst-content .wy-alert-success.admonition .wy-alert-title,
+.rst-content .wy-alert-success.attention .admonition-title,
+.rst-content .wy-alert-success.attention .wy-alert-title,
+.rst-content .wy-alert-success.caution .admonition-title,
+.rst-content .wy-alert-success.caution .wy-alert-title,
+.rst-content .wy-alert-success.danger .admonition-title,
+.rst-content .wy-alert-success.danger .wy-alert-title,
+.rst-content .wy-alert-success.error .admonition-title,
+.rst-content .wy-alert-success.error .wy-alert-title,
+.rst-content .wy-alert-success.note .admonition-title,
+.rst-content .wy-alert-success.note .wy-alert-title,
+.rst-content .wy-alert-success.seealso .admonition-title,
+.rst-content .wy-alert-success.seealso .wy-alert-title,
+.rst-content .wy-alert-success.warning .admonition-title,
+.rst-content .wy-alert-success.warning .wy-alert-title,
+.rst-content .wy-alert.wy-alert-success .admonition-title,
+.wy-alert.wy-alert-success .rst-content .admonition-title,
+.wy-alert.wy-alert-success .wy-alert-title,
+.rst-content .note .admonition-title,
+.rst-content .note .wy-alert-title,
+.rst-content .seealso .admonition-title,
+.rst-content .seealso .wy-alert-title,
+.rst-content .wy-alert-info.admonition-todo .admonition-title,
+.rst-content .wy-alert-info.admonition-todo .wy-alert-title,
+.rst-content .wy-alert-info.admonition .admonition-title,
+.rst-content .wy-alert-info.admonition .wy-alert-title,
+.rst-content .wy-alert-info.attention .admonition-title,
+.rst-content .wy-alert-info.attention .wy-alert-title,
+.rst-content .wy-alert-info.caution .admonition-title,
+.rst-content .wy-alert-info.caution .wy-alert-title,
+.rst-content .wy-alert-info.danger .admonition-title,
+.rst-content .wy-alert-info.danger .wy-alert-title,
+.rst-content .wy-alert-info.error .admonition-title,
+.rst-content .wy-alert-info.error .wy-alert-title,
+.rst-content .wy-alert-info.hint .admonition-title,
+.rst-content .wy-alert-info.hint .wy-alert-title,
+.rst-content .wy-alert-info.important .admonition-title,
+.rst-content .wy-alert-info.important .wy-alert-title,
+.rst-content .wy-alert-info.tip .admonition-title,
+.rst-content .wy-alert-info.tip .wy-alert-title,
+.rst-content .wy-alert-info.warning .admonition-title,
+.rst-content .wy-alert-info.warning .wy-alert-title,
+.rst-content .wy-alert.wy-alert-info .admonition-title,
+.wy-alert.wy-alert-info .rst-content .admonition-title,
+.wy-alert.wy-alert-info .wy-alert-title
+{
+    background: var(--nv-success);
+}
+
+/**********************************************************************************************************************/
+/*                                         Standard Text Formatting                                                   */
+/**********************************************************************************************************************/
+
+
+/* Replace majority of Fonts in RTD with DIN Pro*/
+body
+{
+    font-family: var(--nv-font-face);
+    color: var(--body-font-color);
+    font-weight: var(--body-font-weight);
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+
+/* Headline Formatting */
+h1, p.rubric.rubric-h1
+{
+    color: var(--h1-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h1-font-weight);
+    font-size: var(--h1-font-size);
+    font-style: normal;
+
+    line-height: var(--h1-line-height);
+    margin-top: 0.75em;
+    margin-bottom: 0.75em !important; /* override RTD theme */
+
+    text-transform: var(--h1-text-transform);
+}
+
+h2, p.rubric.rubric-h2
+{
+    color: var(--h2-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h2-font-weight);
+    font-size: var(--h2-font-size);
+    font-style: normal;
+
+    line-height: var(--h2-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
+
+    text-transform: var(--h2-text-transform);
+}
+
+h3, p.rubric.rubric-h3
+{
+    color: var(--h3-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h3-font-weight);
+    font-size: var(--h3-font-size);
+    font-style: normal;
+
+    line-height: var(--h3-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
+
+    text-transform: var(--h3-text-transform);
+}
+
+h4, p.rubric.rubric-h4
+{
+    color: var(--h4-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h4-font-weight);
+    font-size: var(--h4-font-size);
+    font-style: normal;
+
+    line-height: var(--h4-line-height);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em !important; /* override RTD theme */
+
+    text-transform: var(--h4-text-transform);
+}
+
+h5, p.rubric.rubric-h5
+{
+    color: var(--h5-color);
+
+    font-family: var(--nv-font-face);
+    font-size: var(--h5-font-size);
+}
+
+h6, p.rubric.rubric-h6
+{
+    color: var(--h6-color);
+
+    font-family: var(--nv-font-face);
+    font-weight: var(--h6-font-weight);
+}
+
+/* Paragraph Formatting */
+p
+{
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-right: 5px;
+    margin-left: 0px;
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+    color: var(--text);
+}
+
+/* Math should inherit its color */
+span[id*=MathJax-Span]
+{
+    color: inherit;
+}
+
+/* text highlighted by search */
+.rst-content .highlighted
+{
+    background: #f1c40f3b;
+    box-shadow: 0 0 0 1px #f1c40f;
+    display: inline;
+    font-weight: inherit;
+}
+
+/* a local table-of-contents messes with heading colors.  make sure to use the regular heading colors */
+.rst-content .toc-backref
+{
+    color: inherit;
+}
+
+/* make links to function looks like other literals */
+.rst-content code.xref,
+.rst-content tt.xref,
+a .rst-content code,
+a .rst-content tt
+{
+    color: #e74c3c;
+    font-weight: inherit;
+}
+
+/* Link Colors */
+a
+{
+    color: var(--link-color);
+}
+
+a:visited
+{
+    color: var(--link-visited-color);
+}
+
+a:hover
+{
+    color: var(--link-hover-color);
+}
+
+/* follow branding guide for small footer text */
+footer p
+{
+    color: var(--small-font-color);
+    font-weight: var(--small-font-weight);
+    font-size: var(--small-font-size);
+    line-height: var(--small-line-height);
+}
+
+/* add nvidia logo (like www.nvidia.com) */
+footer p:first-child::before
+{
+    content: url(../_static/NVIDIA-LogoBlack.svg);
+    display: block;
+    width: 110px;
+    margin: 0px;
+    position: relative;
+    left: -9px;
+}
+
+/* fun role for self-made footnotes */
+.asterisks
+{
+    color: var(--nv-green);
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+/* :download: role.  without this, download link would be red. */
+.rst-content a code.download,
+.rst-content a tt.download
+{
+    font-family: var(--nv-font-face);
+    color: var(--nv-green);
+    font-weight: var(--body-font-weight);
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/**********************************************************************************************************************/
+/*                                         Tables                                                                     */
+/**********************************************************************************************************************/
+
+/* tables */
+.rst-content table.docutils,
+.wy-table-bordered-all
+{
+    border-color: var(--table-border);
+}
+
+/* tables cells */
+.rst-content table.docutils td,
+.rst-content table.field-list td,
+.wy-table td
+{
+    /* line wrap cells */
+    white-space: normal !important;
+    vertical-align: top;
+
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+
+    border-color: var(--table-border);
+}
+
+/* add left border for cells to the right of merged cells that are therefore the first in the row */
+.rst-content table.docutils td:first-child,
+.rst-content table.docutils th:first-child,
+.rst-content table.field-list td:first-child,
+.rst-content table.field-list th:first-child,
+.wy-table td:first-child,
+.wy-table th:first-child
+{
+    border-left-width: 1px;
+}
+
+/* odd rows have grey background */
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td,
+.wy-table-backed,
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td
+{
+    background-color: var(--table-background-alternate);
+}
+
+/* optional table with no stripes */
+.rst-content table.docutils.table-no-stripes:not(.field-list) tr:nth-child(2n-1) td
+{
+    background-color: var(--table-background);
+}
+
+/* table header is white on black */
+html.writer-html5 .rst-content table.docutils th,
+.rst-content table.docutils thead th,
+.rst-content table.field-list thead th,
+.wy-table thead th,
+.rst-content table.docutils thead th p,
+.rst-content table.field-list thead th p,
+.wy-table thead th p
+{
+    background-color: var(--table-background-header);
+    color: var(--sidebar-text-color);
+    border-color: var(--table-border-header);
+}
+
+/* table header text */
+html.writer-html5 .rst-content table.docutils th>p
+{
+    color: var(--sidebar-text-color);
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/* cell text */
+html.writer-html5 .rst-content table.docutils td>p,
+html.writer-html5 .rst-content table.docutils th>p
+{
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+/* table name caption text */
+.rst-content table.docutils caption,
+.rst-content table.field-list caption,
+.wy-table caption
+{
+    color: var(--text);
+}
+
+/* remove weird top margin in first paragraph of a cell */
+.wy-table td p:first-child,
+.rst-content table.docutils td p:first-child,
+.rst-content table.field-list td p:first-child,
+.wy-table th p:first-child,
+.rst-content table.docutils th p:first-child,
+.rst-content table.field-list th p:first-child
+{
+    margin-top: 0px;
+}
+
+/* remove weird bottom margin in last paragraph of a cell */
+.wy-table td p:last-child,
+.rst-content table.docutils td p:last-child,
+.rst-content table.field-list td p:last-child,
+.wy-table th p:last-child,
+.rst-content table.docutils th p:last-child,
+.rst-content table.field-list th p:last-child
+{
+    margin-bottom: 0px;
+}
+
+/* provide a compact table style */
+.rst-content table.docutils.table-compact td,
+.rst-content table.docutils.table-compact th {
+    padding: 8px;
+}
+
+html.writer-html5 .rst-content table.docutils.table-compact td > p,
+html.writer-html5 .rst-content table.docutils.table-compact th > p {
+    font-size: var(--small-font-size);
+    line-height: var(--small-line-height);
+}
+
+/**********************************************************************************************************************/
+/*                                         Lists                                                                      */
+/**********************************************************************************************************************/
+
+/* unordered list should have a nv-green > */
+.rst-content section ul:not(.treeView):not(.collapsibleList) li:not(.collapsibleListClosed):not(.collapsibleListOpen):not(.lastChild)::marker,
+.rst-content .toctree-wrapper ul li::marker,
+.wy-plain-list-disc li::marker,
+article ul li::marker
+{
+    font-family: var(--ul-marker-font-face);
+    content: var(--ul-marker-content);
+    color: var(--nv-green);
+    font-weight: 600;
+}
+
+/* top-level ordered list should have a nv-green number */
+.rst-content section ol li::marker,
+.rst-content ol.arabic li::marker,
+.wy-plain-list-decimal li::marker,
+article ol li::marker
+{
+    color: var(--nv-green);
+    font-weight: 600;
+    list-style: var(--ol-list-style-type);
+}
+
+/* second-level ordered list should have a nv-green uppercase letter */
+.rst-content section ol ol li,
+.rst-content ol.arabic ol.arabic li,
+.wy-plain-list-decimal ol ol li,
+article ol ol li
+{
+    list-style: var(--ol-ol-list-style-type);
+}
+
+/* third-level ordered lists aren't in the branding guide.  let's use numbers. */
+.rst-content section ol ol ol li,
+.rst-content ol.arabic ol.arabic ol li,
+.wy-plain-list-decimal ol ol ol li,
+article ol ol ol li
+{
+    list-style: var(--ol-ol-ol-list-style-type);
+}
+
+/* start the first paragraph immediately (don't add space at the top) */
+dd p:first-child
+{
+    margin-top: 0px;
+}
+
+/**********************************************************************************************************************/
+/*                                         Sidebar / Log                                                              */
+/**********************************************************************************************************************/
+
+/* logo background */
+.wy-side-nav-search,
+.wy-nav-top
+{
+    background-color: var(--sidebar-color);
+}
+
+/* Remove padding around logo */
+.wy-side-nav-search>a
+{
+    padding: 0px;
+    margin: 0px;
+}
+
+/* remove rounded corner from search box */
+.wy-side-nav-search input[type=text]
+{
+    border-radius: 0px;
+}
+
+/* sidebar color */
+.wy-nav-side
+{
+    color: var(--sidebar-headline-color);
+    background: var(--sidebar-color);
+}
+
+@media screen and (min-width: 1500px)
+{
+    .wy-nav-side
+    {
+        margin-left: calc(0.5*100% - 0.5*1500px);  /* 0.5 * (view width - max width of content) */
+    }
+}
+
+/* remove padding around sidebar logo */
+.wy-side-nav-search,
+.wy-side-nav-search img
+{
+    padding: 0;
+}
+
+/* sidebar headings */
+.wy-menu-vertical p.caption {
+    color: var(--sidebar-headline-color);
+    background-color: var(--sidebar-alt-color);
+}
+
+/* everything is a link in the sidebar, make them not green */
+.wy-menu-vertical a
+{
+    color: var(--sidebar-text-color);
+}
+
+.wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a,
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a,
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a,
+.wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a,
+.wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a,
+.wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a,
+.wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a,
+.wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a,
+.wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a
+{
+    color: #202020;
+    border: none;
+}
+.wy-menu-vertical li.toctree-l1.current li.toctree-l2 > a{background-color: #F0F0F0;}
+.wy-menu-vertical li.toctree-l2.current li.toctree-l3 > a{background-color: #E8E8E8;}
+.wy-menu-vertical li.toctree-l3.current li.toctree-l4 > a{background-color: #E0E0E0;}
+.wy-menu-vertical li.toctree-l4.current li.toctree-l5 > a{background-color: #D8D8D8;}
+.wy-menu-vertical li.toctree-l5.current li.toctree-l6 > a{background-color: #D0D0D0;}
+.wy-menu-vertical li.toctree-l6.current li.toctree-l7 > a{background-color: #C8C8C8;}
+.wy-menu-vertical li.toctree-l7.current li.toctree-l8 > a{background-color: #C0C0C0;}
+.wy-menu-vertical li.toctree-l8.current li.toctree-l9 > a{background-color: #B8B8B8;}
+.wy-menu-vertical li.toctree-l9.current li.toctree-l10 > a{background-color: #B0B0B0;}
+
+.wy-menu-vertical li.toctree-l1.current:hover li.toctree-l2 > a:hover {background-color: #E8E8E8;}
+.wy-menu-vertical li.toctree-l2.current:hover li.toctree-l3 > a:hover {background-color: #E0E0E0;}
+.wy-menu-vertical li.toctree-l3.current:hover li.toctree-l4 > a:hover {background-color: #D8D8D8;}
+.wy-menu-vertical li.toctree-l4.current:hover li.toctree-l5 > a:hover {background-color: #D0D0D0;}
+.wy-menu-vertical li.toctree-l5.current:hover li.toctree-l6 > a:hover {background-color: #C8C8C8;}
+.wy-menu-vertical li.toctree-l6.current:hover li.toctree-l7 > a:hover {background-color: #C0C0C0;}
+.wy-menu-vertical li.toctree-l7.current:hover li.toctree-l8 > a:hover {background-color: #B8B8B8;}
+.wy-menu-vertical li.toctree-l8.current:hover li.toctree-l9 > a:hover {background-color: #B0B0B0;}
+.wy-menu-vertical li.toctree-l9.current:hover li.toctree-l10 > a:hover {background-color: #A8A8A8;}
+
+.wy-menu-vertical li.toctree-l1 a:hover,
+.wy-menu-vertical li.toctree-l2 a:hover,
+.wy-menu-vertical li.toctree-l3 a:hover,
+.wy-menu-vertical li.toctree-l4 a:hover,
+.wy-menu-vertical li.toctree-l5 a:hover,
+.wy-menu-vertical li.toctree-l6 a:hover,
+.wy-menu-vertical li.toctree-l7 a:hover,
+.wy-menu-vertical li.toctree-l8 a:hover,
+.wy-menu-vertical li.toctree-l9 a:hover,
+.wy-menu-vertical li.toctree-l10 a:hover
+{
+    color: #202020;
+    background-color: #DDDDDD;
+}
+
+.wy-menu-vertical .toctree-l1 a:hover,
+.wy-menu-vertical .toctree-l2 a:hover,
+.wy-menu-vertical .toctree-l3 a:hover,
+.wy-menu-vertical .toctree-l4 a:hover,
+.wy-menu-vertical .toctree-l5 a:hover,
+.wy-menu-vertical .toctree-l6 a:hover,
+.wy-menu-vertical .toctree-l7 a:hover,
+.wy-menu-vertical .toctree-l8 a:hover,
+.wy-menu-vertical .toctree-l9 a:hover,
+.wy-menu-vertical .toctree-l10 a:hover
+{
+    color: #000000;
+    background-color: #EEEEEE;
+}
+
+.wy-menu-vertical .toctree-l1.current a:hover,
+.wy-menu-vertical .toctree-l2.current a:hover,
+.wy-menu-vertical .toctree-l3.current a:hover,
+.wy-menu-vertical .toctree-l4.current a:hover,
+.wy-menu-vertical .toctree-l5.current a:hover,
+.wy-menu-vertical .toctree-l6.current a:hover,
+.wy-menu-vertical .toctree-l7.current a:hover,
+.wy-menu-vertical .toctree-l8.current a:hover,
+.wy-menu-vertical .toctree-l9.current a:hover,
+.wy-menu-vertical .toctree-l10.current a:hover
+{
+    color: #202020;
+}
+
+.wy-menu-vertical .toctree-l1.current,
+.wy-menu-vertical .toctree-l2.current,
+.wy-menu-vertical .toctree-l3.current,
+.wy-menu-vertical .toctree-l4.current,
+.wy-menu-vertical .toctree-l5.current,
+.wy-menu-vertical .toctree-l6.current,
+.wy-menu-vertical .toctree-l7.current,
+.wy-menu-vertical .toctree-l8.current,
+.wy-menu-vertical .toctree-l9.current,
+.wy-menu-vertical .toctree-l10.current
+{
+    color: #202020;
+}
+
+/* break these up into shades of grey? at different levels? */
+.wy-menu-vertical .toctree-l1.current a,
+.wy-menu-vertical .toctree-l2.current a,
+.wy-menu-vertical .toctree-l3.current a,
+.wy-menu-vertical .toctree-l4.current a,
+.wy-menu-vertical .toctree-l5.current a,
+.wy-menu-vertical .toctree-l6.current a,
+.wy-menu-vertical .toctree-l7.current a,
+.wy-menu-vertical .toctree-l8.current a,
+.wy-menu-vertical .toctree-l9.current a,
+.wy-menu-vertical .toctree-l10.current a,
+.wy-menu-vertical .toctree-l1.on a,
+.wy-menu-vertical .toctree-l2.on a,
+.wy-menu-vertical .toctree-l3.on a,
+.wy-menu-vertical .toctree-l4.on a,
+.wy-menu-vertical .toctree-l5.on a,
+.wy-menu-vertical .toctree-l6.on a,
+.wy-menu-vertical .toctree-l7.on a,
+.wy-menu-vertical .toctree-l8.on a,
+.wy-menu-vertical .toctree-l9.on a,
+.wy-menu-vertical .toctree-l10.on a
+{
+    color: #202020;
+    background-color: #EEEEEE;
+}
+
+/* plus/minus expansion signs */
+.wy-menu-vertical li span.toctree-expand,
+.wy-menu-vertical li.current > a span.toctree-expand,
+.wy-menu-vertical li.current > a:hover span.toctree-expand,
+.wy-menu-vertical li.current > a button.toctree-expand,
+.wy-menu-vertical li.current > a:hover button.toctree-expand,
+.wy-menu-vertical li.on > a span.toctree-expand,
+.wy-menu-vertical li.on > a:hover span.toctree-expand,
+.wy-menu-vertical li.on a button.toctree-expand
+{
+    color: #202020;
+}
+
+/**********************************************************************************************************************/
+/*                                         API Docs                                                                   */
+/**********************************************************************************************************************/
+
+/* documentation background for a function "block" should pop */
+.cpp.struct .cpp.function,
+.cpp.class .cpp.function,
+.cpp.struct .cpp.enum,
+.cpp.class .cpp.enum,
+.cpp.struct .cpp.var,
+.cpp.class .cpp.var,
+.py.class .py.method
+{
+    background: var(--api-member-background-color);
+}
+
+/**********************************************************************************************************************/
+/*                                         Struct / Class API Docs                                                    */
+/**********************************************************************************************************************/
+
+/* make the class/struct name look like a heading */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.struct>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.type>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.function>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.macro>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.enum>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.class>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).py.function>dt:first-child,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).py.class>dt:first-child
+{
+    color: var(--api-header-text-color);
+    border-color: var(--api-header-border-color) !important;
+    border-top: solid 1px;
+    border-bottom: solid 1px;
+    background-color: transparent;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-right: 0px;
+    margin-left: 0px;
+    font-family: var(--nv-font-face-mono);
+    letter-spacing: -0.5px;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 20px;
+    width: 100%;
+}
+
+dl.py
+{
+    font-style: normal; /* turn off italics, turning back on in api-styles.css for arg defaults*/
+}
+
+dl.py .sig.sig-object.py {
+    font-family: var(--nv-font-face-mono);
+    font-weight: 400;
+}
+dl.py .sig.sig-object.py span.sig-name.descname
+{
+    font-weight: 800;
+}
+
+/* Add newlines-plus-whitespace to params in class/method signatures
+Ensure final line does not receive tabs for final paren / type-annotation
+https://github.com/sphinx-doc/sphinx/issues/1514 */
+
+/* Newlines (\a) and spaces (\20) before each parameter */
+dl.py .sig-param::before {
+    content: "\a\20\20\20\20";
+    white-space: pre;
+}
+/* Newline after the last parameter (so the closing bracket is on a new line) */
+dl.py dt em.sig-param:last-of-type::after {
+    content: "\a";
+    white-space: pre;
+}
+/* To have blue background of width of the block (instead of width of content) */
+dl.class > dt:first-of-type {
+    display: block !important;
+}
+
+.sig-param span.p,
+.sig-param span.o,
+.sig-param span.default_value
+{
+    font-style: normal;
+}
+
+/* controls the text in the header */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.struct>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.type>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.function>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.macro>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.enum>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).cpp.class>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).py.function>dt:first-child code,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).py.class>dt:first-child code
+{
+    color: var(--api-header-text-color);
+    padding: 0px;
+    font-family: var(--nv-font-face-mono);
+}
+
+/* make anchor in class/struct header proper size and color */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt .headerlink
+{
+    color: var(--api-header-text-color);
+    font-size: 14px !important;
+}
+
+/* class/struct fields/members */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt
+{
+    margin-bottom: 6px;
+    border: none;
+    border-bottom: 2px solid var(--api-member-header-border-color) !important;
+    background: var(--api-member-header-background-color);
+    color: var(--api-member-header-text-color);
+    width: 100%;
+    font-size: 100%;
+
+    padding: 6px;
+    margin-top: 0px;
+    margin-bottom: 6px;
+    margin-right: 0px;
+    margin-left: 0px;
+
+    /* proper spacing hack: https://github.com/readthedocs/sphinx_rtd_theme/issues/694 */
+    display: inline-block !important;
+}
+
+
+/* module/class names */
+html.writer-html4 .rst-content dl:not(.docutils) .descclassname, html.writer-html4 .rst-content dl:not(.docutils) .descname, html.writer-html4 .rst-content dl:not(.docutils) .sig-name, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .descclassname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .descname, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .sig-name
+{
+    color: var(--api-member-header-text-color);
+}
+
+/* class/struct fields/members names */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt .sig-name
+{
+    color: var(--api-member-header-text-color);
+}
+
+
+/* class/struct fields/members header link button */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt .headerlink
+{
+    color: var(--api-member-header-link-color);
+}
+
+
+/* function name in fields/members header */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list):not(.simple):not(.enumerator)>dt>code
+{
+    color: var(--api-member-header-text-color);
+}
+
+
+/* Return, Parameters, Notes heading in member description */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl.simple>dt
+{
+    border: none;
+    background: transparent;
+    color: var(--api-member-header-text-color);
+}
+
+/**********************************************************************************************************************/
+/*                                         Globals / Enums / Macros                                                   */
+/**********************************************************************************************************************/
+
+/* members */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt
+{
+    margin-bottom: 6px;
+    border: none;
+    border-bottom: 2px solid var(--api-member-header-border-color);
+    background: var(--api-member-header-background-color);
+    color: var(--api-member-header-text-color);
+    width: 100%;
+    font-size: 100%;
+
+    /* proper spacing hack: https://github.com/readthedocs/sphinx_rtd_theme/issues/694 */
+    display: inline-block !important;
+}
+
+
+/* header link button */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.enumerator)>dt .headerlink
+{
+    color: var(--api-member-header-link-color);
+}
+
+/* function name in fields/members header */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.enumerator)>dt>code
+{
+    color: var(--api-member-header-text-color);
+    font-family: var(--nv-font-face);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple):not(.enumerator)>dt>code>code
+{
+    color: var(--api-member-header-text-color);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl.cpp.enumerator>dt
+{
+    border: none;
+    background: transparent;
+}
+
+/* center all content */
+
+.wy-grid-for-nav
+{
+    max-width: 1500px;
+    margin: 0 auto;
+    position: static;
+    border-left: #c9c9c9 solid 1px;
+    border-right: #c9c9c9 solid 1px;
+    min-height: 100vh; /* ensure black side borders extend the entire length of page */
+    background-color: var(--background-default);
+}
+
+.wy-side-scroll /* the inner container */
+{
+    background-color: var(--sidebar-color);
+}
+
+.wy-nav-content-wrap
+{
+    background-color: var(--background-default); /* default has a silly transparency effect here  */
+}
+
+@media screen and (min-width: 1100px)
+{
+    .wy-nav-content-wrap
+    {
+        background: inherit;
+    }
+}
+
+/* links in extra breadcrumbs do not need padding */
+.wy-breadcrumbs li.wy-breadcrumbs-aside > a
+{
+    padding: 0px;
+}
+
+/* document version selection */
+
+.omni-version
+{
+    position: fixed;
+    bottom: 0;
+    background-color: var(--sidebar-alt-color);
+    width: 300px;
+    line-height: 32px;
+    padding-right: 1.618em;
+    color: var(--sidebar-text-color);
+    text-align:center
+}
+
+.omni-version-content:before /* version icon */
+{
+    font-family: var(--ul-marker-font-face);
+    content: '\f126';
+    padding-left: 10px;
+    padding-right: 3px;
+    color: var(--sidebar-text-color);
+}
+
+div .wy-menu.wy-menu-vertical /* make sure version selector doesn't cover toc */
+{
+    margin-bottom: 2.5em;
+}
+
+.omni-version-select /* version selection box */
+{
+    padding: inherit;
+    background-color: var(--sidebar-alt-color);
+    color: inherit;
+    border: inherit;
+    box-shadow: none;
+    font-size: inherit;
+    font-family: inherit;
+    color: var(--sidebar-text-color);
+}
+
+/* warning dialog when version is not the latest */
+.omni-version-warning-content /* center content in the warning box */
+{
+    padding: 8px;
+    text-align: center;
+    border-radius: 4px;
+    color: #856404;
+    border-color: #ffeeba;
+    border-style: solid;
+    border-width: 1px;
+    background: #fff3cd repeating-linear-gradient(135deg, transparent, transparent 56px, rgba(255, 255, 255, 0.2) 56px, rgba(255, 255, 255, 0.2) 112px );
+    margin: 0 0 24px;
+}
+
+@media screen and (max-width: 768px)
+{
+    .omni-version-warning-content
+    {
+        width: 100%;
+    }
+}
+
+.omni-version-warning-content a /* make links not green */
+{
+    color: #533f03;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.omni-version-warning-content:before /* warning icon */
+{
+    font-family: var(--ul-marker-font-face);
+    content: '\f071';
+    padding-left: 5px;
+}
+
+/* social media icons */
+
+.fa
+{
+    font-family: var(--ul-marker-font-face);
+}
+
+.social-media-icon a,
+.social-media-icon a:visited
+{
+    color: #c9c9c9;
+}
+
+.social-media-icon a:hover
+{
+    color: var(--sidebar-alt-color);
+}
+
+/* dropdown icon */
+
+details.sd-dropdown .sd-summary-up svg,
+details.sd-dropdown .sd-summary-down svg {
+    stroke: var(--nv-green);
+    fill: var(--nv-green);
+    opacity: 1.0;
+    stroke-width: 1.0px;
+}
+
+/* hierarchy styling */
+.rebreather.hierarchy details.sd-dropdown {
+    margin-bottom: 0 !important;
+    border: none;
+}
+
+.rebreather.hierarchy div.rebreather.hierarchy ul,
+.rebreather.hierarchy details.sd-dropdown ul {
+    margin-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown div.sd-summary-content {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown>.sd-card-header {
+    border: none;
+    padding-left: 1.5em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown:not([open])>.sd-card-header {
+    border: none;
+    padding-left: 1.5em;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.rebreather.hierarchy details.sd-dropdown>.sd-summary-title .sd-summary-up {
+    right: unset;
+    left: 0.35em;
+    top: 0.35em;
+    font-size: 0.7em;
+}
+
+.rebreather.hierarchy details.sd-dropdown:not([open])>.sd-summary-title .sd-summary-down {
+    right: unset;
+    left: 0.35em;
+    top: 0.35em;
+    font-size: 0.7em;
+}
+
+/* add : to captions */
+.caption-number:after
+{
+    content: ': ';
+    margin-left: -0.25rem;
+}

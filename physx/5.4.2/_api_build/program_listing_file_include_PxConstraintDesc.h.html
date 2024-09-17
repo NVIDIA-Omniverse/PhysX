@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/PxConstraintDesc.h &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Px1DConstraintFlags" href="typedef__px_constraint_desc_8h_1aa03d6d79255886721c3e1a946b5a805f.html" />
+    <link rel="prev" title="include/PxConstraintDesc.h" href="file_include_PxConstraintDesc.h.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_include.html">include</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActor.h.html">PxActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActorData.h.html">PxActorData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAggregate.h.html">PxAggregate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAnisotropy.h.html">PxAnisotropy.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArrayConverter.h.html">PxArrayConverter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationFlag.h.html">PxArticulationFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationJointReducedCoordinate.h.html">PxArticulationJointReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationLink.h.html">PxArticulationLink.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationMimicJoint.h.html">PxArticulationMimicJoint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html">PxArticulationReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendon.h.html">PxArticulationTendon.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendonData.h.html">PxArticulationTendonData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAttachment.h.html">PxAttachment.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBaseMaterial.h.html">PxBaseMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBroadPhase.h.html">PxBroadPhase.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxClient.h.html">PxClient.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConeLimitedConstraint.h.html">PxConeLimitedConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraint.h.html">PxConstraint.h</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="file_include_PxConstraintDesc.h.html">PxConstraintDesc.h</a><ul class="current">
+<li class="toctree-l6 current"><a class="current reference internal" href="#">Source file</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__px_constraint_desc_8h_1aa03d6d79255886721c3e1a946b5a805f.html">Px1DConstraintFlags</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__px_constraint_desc_8h_1a854b403b6a15bd6dda76b08539e30433.html">PxConstraintSolverPrep</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__px_constraint_desc_8h_1aa85dd505b96db854d4ffdbe24fcb9089.html">PxConstraintVisualize</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContact.h.html">PxContact.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContactModifyCallback.h.html">PxContactModifyCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDeletionListener.h.html">PxDeletionListener.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDirectGPUAPI.h.html">PxDirectGPUAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothFlags.h.html">PxFEMClothFlags.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothMaterial.h.html">PxFEMClothMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMMaterial.h.html">PxFEMMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMParameter.h.html">PxFEMParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMSoftBodyMaterial.h.html">PxFEMSoftBodyMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFiltering.h.html">PxFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxForceMode.h.html">PxForceMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxHairSystemFlag.h.html">PxHairSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxImmediateMode.h.html">PxImmediateMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxIsosurfaceExtraction.h.html">PxIsosurfaceExtraction.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLineStripSkinning.h.html">PxLineStripSkinning.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLockedData.h.html">PxLockedData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxMaterial.h.html">PxMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxNodeIndex.h.html">PxNodeIndex.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDMaterial.h.html">PxPBDMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDParticleSystem.h.html">PxPBDParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleBuffer.h.html">PxParticleBuffer.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleGpu.h.html">PxParticleGpu.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleMaterial.h.html">PxParticleMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleNeighborhoodProvider.h.html">PxParticleNeighborhoodProvider.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSolverType.h.html">PxParticleSolverType.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystem.h.html">PxParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystemFlag.h.html">PxParticleSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysXConfig.h.html">PxPhysXConfig.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysics.h.html">PxPhysics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsAPI.h.html">PxPhysicsAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsSerialization.h.html">PxPhysicsSerialization.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPruningStructure.h.html">PxPruningStructure.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryFiltering.h.html">PxQueryFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryReport.h.html">PxQueryReport.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxResidual.h.html">PxResidual.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidActor.h.html">PxRigidActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidBody.h.html">PxRigidBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidDynamic.h.html">PxRigidDynamic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidStatic.h.html">PxRigidStatic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSDFBuilder.h.html">PxSDFBuilder.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxScene.h.html">PxScene.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneDesc.h.html">PxSceneDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneLock.h.html">PxSceneLock.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQueryDesc.h.html">PxSceneQueryDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html">PxSceneQuerySystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxShape.h.html">PxShape.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationEventCallback.h.html">PxSimulationEventCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationStatistics.h.html">PxSimulationStatistics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSmoothing.h.html">PxSmoothing.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBody.h.html">PxSoftBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBodyFlag.h.html">PxSoftBodyFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSparseGridParams.h.html">PxSparseGridParams.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxVisualizationParameter.h.html">PxVisualizationParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_characterkinematic.html">characterkinematic</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_collision.html">collision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_common.html">common</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cooking.html">cooking</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cudamanager.html">cudamanager</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_extensions.html">extensions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_filebuf.html">filebuf</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_foundation.html">foundation</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geometry.html">geometry</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geomutils.html">geomutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_gpu.html">gpu</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_omnipvd.html">omnipvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_pvd.html">pvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_solver.html">solver</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_task.html">task</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_vehicle2.html">vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_include.html">include</a> &raquo;</li>
+    <li><a href="file_include_PxConstraintDesc.h.html">include/PxConstraintDesc.h</a> &raquo;</li>
+<li>include/PxConstraintDesc.h</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-pxconstraintdesc-h">
+<h1>include/PxConstraintDesc.h<a class="headerlink" href="#include-pxconstraintdesc-h" title="Permalink to this headline"></a></h1>
+<p>File members: <a class="reference internal" href="file_include_PxConstraintDesc.h.html#px-constraint-desc-8h"><span class="std std-ref">include/PxConstraintDesc.h</span></a></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_CONSTRAINT_DESC_H</span>
+<span class="cp">#define PX_CONSTRAINT_DESC_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysXConfig.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxFlags.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxVec3.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;common/PxBase.h&quot;</span><span class="cp"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">pvdsdk</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PvdDataStream</span><span class="p">;</span><span class="w"></span>
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}}</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">Px1DConstraintFlag</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="nf">Px1DConstraintFlag</span><span class="p">(){}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Type</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eSPRING</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eACCELERATION_SPRING</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eRESTITUTION</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eKEEPBIAS</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">3</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eOUTPUT_FORCE</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">4</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eHAS_DRIVE_LIMIT</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">5</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eANGULAR_CONSTRAINT</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">6</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eDEPRECATED_DRIVE_ROW</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">7</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxFlags</span><span class="o">&lt;</span><span class="n">Px1DConstraintFlag</span><span class="o">::</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Px1DConstraintFlags</span><span class="p">;</span><span class="w"></span>
+<span class="n">PX_FLAGS_OPERATORS</span><span class="p">(</span><span class="n">Px1DConstraintFlag</span><span class="o">::</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">PxU16</span><span class="p">)</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintSolveHint</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eNONE</span><span class="w">                   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eACCELERATION1</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eSLERP_SPRING</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mi">258</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eACCELERATION2</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">512</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eACCELERATION3</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mi">768</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eROTATIONAL_EQUALITY</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eROTATIONAL_INEQUALITY</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">1025</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eEQUALITY</span><span class="w">               </span><span class="o">=</span><span class="w"> </span><span class="mi">2048</span><span class="p">,</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">eINEQUALITY</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="mi">2049</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="cm">/***</span>
+<span class="cm">\brief A one-dimensional constraint that constrains the relative motion of two rigid bodies.</span>
+
+<span class="cm">A constraint is expressed as a set of 1-dimensional constraint rows which define the required constraint</span>
+<span class="cm">on the objects&#39; velocities.</span>
+
+<span class="cm">The constraint Jacobian J is specified by the parameters linear0, angular0, linear1, angular1 as follows</span>
+
+<span class="cm">    J = {linear0, angular0, -linear1, -angular1}</span>
+
+<span class="cm">The velocity target of the constraint is specified by Px1DConstraint::velocityTarget and the geometric error of the constraint</span>
+<span class="cm">is specified by Px1DConstraint::geometricError.</span>
+
+<span class="cm">The output of the constraint is a velocity state (sdot = ds/dt with s denoting the constraint state) expressed in the world frame:</span>
+
+<span class="cm">    sdot = {linearVelocity0, angularVelocity0, linearVelocity1, angularVelocity1}</span>
+
+<span class="cm">with linearVelocity0 and angularVelocity0 denoting the linear and angular velocity of body0 of the constraint;</span>
+<span class="cm">and linearVelocity1 and angularVelocity1 denoting the linear and angular velocity of body1 of the constraint.</span>
+
+<span class="cm">The constraint seeks an updated sdot that obeys a simple constraint rule:</span>
+
+<span class="cm">    J*sdot + BaumgarteTerm*geometricError/dt - velocityTarget = 0</span>
+
+<span class="cm">where BaumgarteTerm is a multiplier in range (0, 1). The Baumgarte term is not exposed but is instead internally</span>
+<span class="cm">set according to a simple metric chosen to enhance numerical stability. If the PGS solver is employed then dt is</span>
+<span class="cm">taken from the scene timestep.</span>
+
+<span class="cm">Another way of expressing the constraint rule is as follows:</span>
+
+<span class="cm">    linear0.dot(linearVelocity0) + angular0.dot(angularVelocity0)</span>
+<span class="cm">    - linear1.dot(linearVelocity1) - angular1.dot(angularVelocity1)</span>
+<span class="cm">    + BaumgarteTerm*geometricError/dt - velocityTarget = 0</span>
+
+<span class="cm">The PhysX solver runs two phases: position iterations followed by velocity iterations. Position iterations derive</span>
+<span class="cm">the velocity that is used to integrate the transform of a rigid body. Velocity iterations on the other hand derive</span>
+<span class="cm">the final velocity of a rigid body. The constraint rule presented above only gets applied during position iterations,</span>
+<span class="cm">during velocity iterations the geometricError term is usually ignored and the applied constraint rule is:</span>
+
+<span class="cm">    J*sdot - velocityTarget = 0</span>
+
+<span class="cm">The flag Px1DConstraintFlag::eKEEPBIAS can be used to have velocity iterations apply the same constraint rule as</span>
+<span class="cm">position iterations.</span>
+
+<span class="cm">A 1d constraint may be either a restitution constraint or a hard constraint or a spring constraint.</span>
+
+<span class="cm">Restitution constraints have two modes of operation, depending on the speed of the constraint. These two modes are:</span>
+<span class="cm">a) a bounce mode that employs a restitution value specified by RestitutionModifiers::restitution</span>
+<span class="cm">b) a non-bounce mode that employs zero restitution and ignores RestitutionModifiers::restitution.</span>
+<span class="cm">The constraint speed immediately before the solver begins is computed as follows:</span>
+<span class="cm">    constraintPreSolverSpeed = J * sdotPreSolver</span>
+<span class="cm">with sdotPreSolver denoting the rigid body velocities recorded after applying external forces and torques to the rigid bodies</span>
+<span class="cm">but before the solver begins.</span>
+<span class="cm">If the bounce mode is active, the pre solver velocity is expected to flip direction and have restitution applied:</span>
+<span class="cm">     bounceSpeed = -restitution * constraintPreSolverSpeed</span>
+<span class="cm">Restitution will kick in if the following conditions are met:</span>
+<span class="cm">\li -constraintPreSolverSpeed exceeds the bounce threshold (RestitutionModifiers::velocityThreshold)</span>
+<span class="cm">\li (bounceSpeed * Px1DConstraint::geometricError) &lt;= 0 (bounceSpeed points in the</span>
+<span class="cm">opposite direction of the geometric error)</span>
+<span class="cm">If these hold, then the provided Px1DConstraint::geometricError and Px1DConstraint::velocityTarget parameter will get overriden</span>
+<span class="cm">internally. The former will get set to zero, the latter will get set to bounceSpeed. If restitution does not activate because</span>
+<span class="cm">the listed conditions are not met, then the target velocity will be taken from the value stored in velocityTarget and the</span>
+<span class="cm">geometric error will be taken from the value stored in geometricError.</span>
+<span class="cm">RestitutionModifiers::restitution may be greater than 1 and may be less than 0 ie it is not limited to 0 &lt;= restitution &lt;= 1.</span>
+
+<span class="cm">Hard constraints attempt to find sdot that satisfies the constraint equation:</span>
+
+<span class="cm">    J*sdot + BaumgarteTerm*geometricError/dt - velocityTarget = 0</span>
+
+<span class="cm">Spring constraints are quite different from restitution and hard constraints in that they attempt to compute and apply a spring force as follows:</span>
+
+<span class="cm">    F = stiffness * -geometricError + damping * (velocityTarget - J*sdot)</span>
+
+<span class="cm">where F is the constraint force or acceleration and J*sdot is the instantaneous constraint speed. Springs are</span>
+<span class="cm">implemented with a fully implicit time-stepping scheme: that is, the force or acceleration is a function of the position</span>
+<span class="cm">and velocity after the solve. Note that F gets applied to the first rigid body and -F to the second rigid body.</span>
+
+<span class="cm">All constraints support limits on the minimum or maximum impulse applied.</span>
+<span class="cm">*/</span><span class="w"></span>
+
+<span class="n">PX_ALIGN_PREFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">Px1DConstraint</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">linear0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">geometricError</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">angular0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">velocityTarget</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">linear1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">minImpulse</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxVec3</span><span class="w">          </span><span class="n">angular1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w">          </span><span class="n">maxImpulse</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">SpringModifiers</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxReal</span><span class="w">  </span><span class="n">stiffness</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxReal</span><span class="w">  </span><span class="n">damping</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="n">spring</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">RestitutionModifiers</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxReal</span><span class="w">  </span><span class="n">restitution</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxReal</span><span class="w">  </span><span class="n">velocityThreshold</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="n">bounce</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">mods</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxU16</span><span class="w">           </span><span class="n">solveHint</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PxU32</span><span class="w">           </span><span class="n">pad</span><span class="p">;</span><span class="w">  </span><span class="c1">// for padding only</span>
+<span class="p">}</span><span class="w"></span>
+<span class="n">PX_ALIGN_SUFFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintVisualizationFlag</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">eLOCAL_FRAMES</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">eLIMITS</span><span class="w">         </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">PX_ALIGN_PREFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxConstraintInvMassScale</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">linear0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">angular0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">linear1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">angular1</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxConstraintInvMassScale</span><span class="p">(){}</span><span class="w"></span>
+<span class="w">    </span><span class="n">PX_CUDA_CALLABLE</span><span class="w"> </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="n">PxConstraintInvMassScale</span><span class="p">(</span><span class="n">PxReal</span><span class="w"> </span><span class="n">lin0</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ang0</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lin1</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">ang1</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">linear0</span><span class="p">(</span><span class="n">lin0</span><span class="p">),</span><span class="w"> </span><span class="n">angular0</span><span class="p">(</span><span class="n">ang0</span><span class="p">),</span><span class="w"> </span><span class="n">linear1</span><span class="p">(</span><span class="n">lin1</span><span class="p">),</span><span class="w"> </span><span class="n">angular1</span><span class="p">(</span><span class="n">ang1</span><span class="p">){}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="n">PX_ALIGN_SUFFIX</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">PxConstraintSolverPrep</span><span class="p">)(</span><span class="n">Px1DConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxVec3p</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bodyAWorldOffset</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">maxConstraints</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxConstraintInvMassScale</span><span class="o">&amp;</span><span class="w"> </span><span class="n">invMassScale</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">constantBlock</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bodyAToWorld</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">bodyBToWorld</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="kt">bool</span><span class="w"> </span><span class="n">useExtendedLimits</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxVec3p</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cAtW</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxVec3p</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cBtW</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxConstraintVisualizer</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">protected</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxConstraintVisualizer</span><span class="p">(){}</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">visualizeJointFrames</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">child</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">visualizeLinearLimit</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">visualizeAngularLimit</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t0</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lower</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">upper</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">visualizeLimitCone</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tanQSwingY</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">tanQSwingZ</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">visualizeDoubleCone</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">t</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">angle</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">visualizeLine</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">color</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">PxConstraintVisualize</span><span class="p">)(</span><span class="n">PxConstraintVisualizer</span><span class="o">&amp;</span><span class="w"> </span><span class="n">visualizer</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                      </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">constantBlock</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                      </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body0Transform</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                      </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">body1Transform</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                      </span><span class="n">PxU32</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">PxPvdUpdateType</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="nc">Enum</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">CREATE_INSTANCE</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">RELEASE_INSTANCE</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">UPDATE_ALL_PROPERTIES</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">UPDATE_SIM_PROPERTIES</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PxConstraintConnector</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w">   </span><span class="n">prepareData</span><span class="p">()</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w">    </span><span class="nf">updatePvdProperties</span><span class="p">(</span><span class="n">physx</span><span class="o">::</span><span class="n">pvdsdk</span><span class="o">::</span><span class="n">PvdDataStream</span><span class="o">&amp;</span><span class="w"> </span><span class="n">pvdConnection</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="n">PxConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                        </span><span class="n">PxPvdUpdateType</span><span class="o">::</span><span class="n">Enum</span><span class="w"> </span><span class="n">updateType</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w">    </span><span class="nf">updateOmniPvdProperties</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w">    </span><span class="nf">onConstraintRelease</span><span class="p">()</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w">    </span><span class="nf">onComShift</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">actor</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w">    </span><span class="nf">onOriginShift</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">shift</span><span class="p">)</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w">   </span><span class="nf">getExternalReference</span><span class="p">(</span><span class="n">PxU32</span><span class="o">&amp;</span><span class="w"> </span><span class="n">typeID</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxBase</span><span class="o">*</span><span class="w"> </span><span class="nf">getSerializable</span><span class="p">()</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxConstraintSolverPrep</span><span class="w">  </span><span class="nf">getPrep</span><span class="p">()</span><span class="w">   </span><span class="k">const</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="nf">getConstantBlock</span><span class="p">()</span><span class="w">  </span><span class="k">const</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w">    </span><span class="nf">connectToConstraint</span><span class="p">(</span><span class="n">PxConstraint</span><span class="o">*</span><span class="p">)</span><span class="w">  </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxConstraintConnector</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"> </span><span class="c1">// namespace physx</span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

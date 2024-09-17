@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxVehicleShiftOrigin &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxVehicleTransformFrameToFrame" href="function__px_vehicle_functions_8h_1a0ae9b6a6c04c0a256a33da090464c36d.html" />
+    <link rel="prev" title="PxVehicleComputeTranslation" href="function__px_vehicle_functions_8h_1a6ebf8201283236409cda749cec71673c.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_include.html">include</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActor.h.html">PxActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActorData.h.html">PxActorData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAggregate.h.html">PxAggregate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAnisotropy.h.html">PxAnisotropy.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArrayConverter.h.html">PxArrayConverter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationFlag.h.html">PxArticulationFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationJointReducedCoordinate.h.html">PxArticulationJointReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationLink.h.html">PxArticulationLink.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationMimicJoint.h.html">PxArticulationMimicJoint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html">PxArticulationReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendon.h.html">PxArticulationTendon.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendonData.h.html">PxArticulationTendonData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAttachment.h.html">PxAttachment.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBaseMaterial.h.html">PxBaseMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBroadPhase.h.html">PxBroadPhase.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxClient.h.html">PxClient.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConeLimitedConstraint.h.html">PxConeLimitedConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraint.h.html">PxConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraintDesc.h.html">PxConstraintDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContact.h.html">PxContact.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContactModifyCallback.h.html">PxContactModifyCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDeletionListener.h.html">PxDeletionListener.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDirectGPUAPI.h.html">PxDirectGPUAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothFlags.h.html">PxFEMClothFlags.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothMaterial.h.html">PxFEMClothMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMMaterial.h.html">PxFEMMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMParameter.h.html">PxFEMParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMSoftBodyMaterial.h.html">PxFEMSoftBodyMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFiltering.h.html">PxFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxForceMode.h.html">PxForceMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxHairSystemFlag.h.html">PxHairSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxImmediateMode.h.html">PxImmediateMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxIsosurfaceExtraction.h.html">PxIsosurfaceExtraction.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLineStripSkinning.h.html">PxLineStripSkinning.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLockedData.h.html">PxLockedData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxMaterial.h.html">PxMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxNodeIndex.h.html">PxNodeIndex.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDMaterial.h.html">PxPBDMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDParticleSystem.h.html">PxPBDParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleBuffer.h.html">PxParticleBuffer.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleGpu.h.html">PxParticleGpu.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleMaterial.h.html">PxParticleMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleNeighborhoodProvider.h.html">PxParticleNeighborhoodProvider.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSolverType.h.html">PxParticleSolverType.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystem.h.html">PxParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystemFlag.h.html">PxParticleSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysXConfig.h.html">PxPhysXConfig.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysics.h.html">PxPhysics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsAPI.h.html">PxPhysicsAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsSerialization.h.html">PxPhysicsSerialization.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPruningStructure.h.html">PxPruningStructure.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryFiltering.h.html">PxQueryFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryReport.h.html">PxQueryReport.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxResidual.h.html">PxResidual.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidActor.h.html">PxRigidActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidBody.h.html">PxRigidBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidDynamic.h.html">PxRigidDynamic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidStatic.h.html">PxRigidStatic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSDFBuilder.h.html">PxSDFBuilder.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxScene.h.html">PxScene.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneDesc.h.html">PxSceneDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneLock.h.html">PxSceneLock.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQueryDesc.h.html">PxSceneQueryDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html">PxSceneQuerySystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxShape.h.html">PxShape.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationEventCallback.h.html">PxSimulationEventCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationStatistics.h.html">PxSimulationStatistics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSmoothing.h.html">PxSmoothing.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBody.h.html">PxSoftBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBodyFlag.h.html">PxSoftBodyFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSparseGridParams.h.html">PxSparseGridParams.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxVisualizationParameter.h.html">PxVisualizationParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_characterkinematic.html">characterkinematic</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_collision.html">collision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_common.html">common</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cooking.html">cooking</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cudamanager.html">cudamanager</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_extensions.html">extensions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_filebuf.html">filebuf</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_foundation.html">foundation</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geometry.html">geometry</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geomutils.html">geomutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_gpu.html">gpu</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_omnipvd.html">omnipvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_pvd.html">pvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_solver.html">solver</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_task.html">task</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="dir_include_vehicle2.html">vehicle2</a><ul class="current">
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleAPI.h.html">PxVehicleAPI.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleComponent.h.html">PxVehicleComponent.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleComponentSequence.h.html">PxVehicleComponentSequence.h</a></li>
+<li class="toctree-l6 current"><a class="reference internal" href="file_include_vehicle2_PxVehicleFunctions.h.html">PxVehicleFunctions.h</a><ul class="current">
+<li class="toctree-l7"><a class="reference internal" href="program_listing_file_include_vehicle2_PxVehicleFunctions.h.html">Source file</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a82715b81a6e8889e2383808fd4eddf25.html">PxVehicleComputeRotation</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a00890905dee520f3dd09777bf0b6e305.html">PxVehicleComputeSign</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a6ebf8201283236409cda749cec71673c.html">PxVehicleComputeTranslation</a></li>
+<li class="toctree-l7 current"><a class="current reference internal" href="#">PxVehicleShiftOrigin</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a0ae9b6a6c04c0a256a33da090464c36d.html">PxVehicleTransformFrameToFrame</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a50f8a6d5e2df4d02170f4492f90cb115.html">PxVehicleTransformFrameToFrame</a></li>
+<li class="toctree-l7"><a class="reference internal" href="function__px_vehicle_functions_8h_1a7a9178b32baca7dcfa40a07e02a3589c.html">PxVehicleTransformFrameToFrame</a></li>
+</ul>
+</li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleLimits.h.html">PxVehicleLimits.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleMaths.h.html">PxVehicleMaths.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="file_include_vehicle2_PxVehicleParams.h.html">PxVehicleParams.h</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_braking.html">braking</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_commands.html">commands</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_drivetrain.html">drivetrain</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_physxActor.html">physxActor</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_physxConstraints.html">physxConstraints</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_physxRoadGeometry.html">physxRoadGeometry</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_pvd.html">pvd</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_rigidBody.html">rigidBody</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_roadGeometry.html">roadGeometry</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_steering.html">steering</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_suspension.html">suspension</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_tire.html">tire</a></li>
+<li class="toctree-l6"><a class="reference internal" href="dir_include_vehicle2_wheel.html">wheel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_include.html">include</a> &raquo;</li>
+    <li><a href="dir_include_vehicle2.html">include/vehicle2</a> &raquo;</li>
+    <li><a href="file_include_vehicle2_PxVehicleFunctions.h.html">include/vehicle2/PxVehicleFunctions.h</a> &raquo;</li>
+<li>PxVehicleShiftOrigin</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxvehicleshiftorigin">
+<h1>PxVehicleShiftOrigin<a class="headerlink" href="#pxvehicleshiftorigin" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_vehicle2_PxVehicleFunctions.h.html#px-vehicle-functions-8h"><span class="std std-ref">include/vehicle2/PxVehicleFunctions.h</span></a></p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv420PxVehicleShiftOriginRK24PxVehicleAxleDescriptionRK6PxVec3R23PxVehicleRigidBodyStateP26PxVehicleRoadGeometryStateP19PxVehiclePhysXActorP36PxVehiclePhysXRoadGeometryQueryState">
+<span id="_CPPv320PxVehicleShiftOriginRK24PxVehicleAxleDescriptionRK6PxVec3R23PxVehicleRigidBodyStateP26PxVehicleRoadGeometryStateP19PxVehiclePhysXActorP36PxVehiclePhysXRoadGeometryQueryState"></span><span id="_CPPv220PxVehicleShiftOriginRK24PxVehicleAxleDescriptionRK6PxVec3R23PxVehicleRigidBodyStateP26PxVehicleRoadGeometryStateP19PxVehiclePhysXActorP36PxVehiclePhysXRoadGeometryQueryState"></span><span id="PxVehicleShiftOrigin__PxVehicleAxleDescriptionCR.PxVec3CR.PxVehicleRigidBodyStateR.PxVehicleRoadGeometryStateP.PxVehiclePhysXActorP.PxVehiclePhysXRoadGeometryQueryStateP"></span><span class="target" id="_px_vehicle_functions_8h_1a7ee53218e0d7e2d140e2d2ad68e74630"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxVehicleShiftOrigin</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="struct_px_vehicle_axle_description.html#_CPPv424PxVehicleAxleDescription" title="PxVehicleAxleDescription"><span class="n"><span class="pre">PxVehicleAxleDescription</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">axleDesc</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="typedef__px_vec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">shift</span></span>, <a class="reference internal" href="struct_px_vehicle_rigid_body_state.html#_CPPv423PxVehicleRigidBodyState" title="PxVehicleRigidBodyState"><span class="n"><span class="pre">PxVehicleRigidBodyState</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rigidBodyState</span></span>, <a class="reference internal" href="struct_px_vehicle_road_geometry_state.html#_CPPv426PxVehicleRoadGeometryState" title="PxVehicleRoadGeometryState"><span class="n"><span class="pre">PxVehicleRoadGeometryState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">roadGeometryStates</span></span>, <a class="reference internal" href="struct_px_vehicle_phys_x_actor.html#_CPPv419PxVehiclePhysXActor" title="PxVehiclePhysXActor"><span class="n"><span class="pre">PxVehiclePhysXActor</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">physxActor</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span>, <a class="reference internal" href="struct_px_vehicle_phys_x_road_geometry_query_state.html#_CPPv436PxVehiclePhysXRoadGeometryQueryState" title="PxVehiclePhysXRoadGeometryQueryState"><span class="n"><span class="pre">PxVehiclePhysXRoadGeometryQueryState</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">physxQueryStates</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">NULL</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv420PxVehicleShiftOriginRK24PxVehicleAxleDescriptionRK6PxVec3R23PxVehicleRigidBodyStateP26PxVehicleRoadGeometryStateP19PxVehiclePhysXActorP36PxVehiclePhysXRoadGeometryQueryState" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Shift the origin of a vehicle by the specified vector. </p>
+<p>Call this method to adjust the internal data structures of vehicles to reflect the shifted origin location (the shift vector will get subtracted from all world space spatial data).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is the user’s responsibility to keep track of the summed total origin shift and adjust all input/output to/from the vehicle accordingly. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This call will not automatically shift the PhysX scene and its objects. <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3cb2b6b3b72cefb94fa9e64ca09660f6"><span class="std std-ref">PxScene::shiftOrigin()</span></a> must be called seperately to keep the systems in sync. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If there is no associated <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> then set physxActor to NULL. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If there is an associated <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> and it is already in a <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a> then the complementary call to <a class="reference internal" href="class_px_scene.html#class_px_scene_1a3cb2b6b3b72cefb94fa9e64ca09660f6"><span class="std std-ref">PxScene::shiftOrigin()</span></a> will take care of shifting the associated <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a>. This being the case, set physxActor to NULL. physxActor should be a non-NULL pointer only when there is an associated <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> and it is not part of a <a class="reference internal" href="class_px_scene.html#class_px_scene"><span class="std std-ref">PxScene</span></a>. This can occur if the associated <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> is updated using PhysX immediate mode. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If scene queries are independent of PhysX geometry then set queryStates to NULL. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>axleDesc</strong> – <strong>[in]</strong> is a description of the wheels on the vehicle. </p></li>
+<li><p><strong>shift</strong> – <strong>[in]</strong> is the translation vector used to shift the origin. </p></li>
+<li><p><strong>rigidBodyState</strong> – <strong>[in]</strong> stores the current position of the vehicle </p></li>
+<li><p><strong>roadGeometryStates</strong> – <strong>[in]</strong> stores the hit plane under each wheel. </p></li>
+<li><p><strong>physxActor</strong> – <strong>[in]</strong> stores the <a class="reference internal" href="class_px_rigid_actor.html#class_px_rigid_actor"><span class="std std-ref">PxRigidActor</span></a> that is the vehicle’s PhysX representation. </p></li>
+<li><p><strong>physxQueryStates</strong> – <strong>[in]</strong> stores the hit point of the most recent execution of PxVehiclePhysXRoadGeometryQueryUpdate() for each wheel. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

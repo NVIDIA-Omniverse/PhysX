@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating From PhysX SDK 3.3 to 3.4 &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Migrating From PhysX SDK 3.4 to 4.0" href="MigrationTo40.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 3.2 to 3.3" href="MigrationTo33.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating From PhysX SDK 3.3 to 3.4</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deprecated-apis">Deprecated APIs</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pxrigidactor-createshape">PxRigidActor::createShape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxsceneflag-edeprecated-trigger-trigger-reports">PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#physx-particles">PhysX particles</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#core-physx">Core PhysX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contact-generation">Contact Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-cooking">PhysX Cooking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-counting">Reference Counting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#physx-visual-debugger">PhysX Visual Debugger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scene-queries">Scene queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxextensions">PxExtensions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Migrating From PhysX SDK 3.3 to 3.4</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-from-physx-sdk-3-3-to-3-4">
+<span id="migrationto34"></span><h1>Migrating From PhysX SDK 3.3 to 3.4<a class="headerlink" href="#migrating-from-physx-sdk-3-3-to-3-4" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last dot release.  An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+<li><p>Functionality shared with the APEX SDK was moved into a separate “PxShared” directory outside of the “PhysX” directory. Since the PxFoundation object is part of the  PxShared library, it is versioned separately. PxCreateFoundation now takes PX_FOUNDATION_VERSION as an argument.</p></li>
+</ul>
+<section id="deprecated-apis">
+<h2>Deprecated APIs<a class="headerlink" href="#deprecated-apis" title="Permalink to this headline"></a></h2>
+<section id="pxrigidactor-createshape">
+<h3>PxRigidActor::createShape<a class="headerlink" href="#pxrigidactor-createshape" title="Permalink to this headline"></a></h3>
+<p>PxRigidActor::createShape() is deprecated, and will be removed in PhysX 3.5. PxRigidActorExt::createExclusiveShape() replaces this method.</p>
+</section>
+<section id="pxsceneflag-edeprecated-trigger-trigger-reports">
+<h3>PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS<a class="headerlink" href="#pxsceneflag-edeprecated-trigger-trigger-reports" title="Permalink to this headline"></a></h3>
+<p>PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS is deprecated, and will be removed in PhysX 3.5. More details are mentioned under <a class="reference internal" href="#migration-3-4-core-phsx"><span class="std std-ref">Core PhysX</span></a> further below.</p>
+</section>
+<section id="physx-particles">
+<h3>PhysX particles<a class="headerlink" href="#physx-particles" title="Permalink to this headline"></a></h3>
+<p>The PhysX particle feature has been deprecated in PhysX version 3.4. The standalone library PhysX FleX is an alternative with a richer feature set.</p>
+</section>
+</section>
+<section id="core-physx">
+<span id="migration-3-4-core-phsx"></span><h2>Core PhysX<a class="headerlink" href="#core-physx" title="Permalink to this headline"></a></h2>
+<ul>
+<li><p>PxCreatePhysics now requires a PxFoundation object to be passed. Optionally it receives a pointer to a PxPvd object, used for connecting PhysX with the visual debugger.</p></li>
+<li><p>PxActor::isRigidStatic, isRigidDynamic, isParticleSystem, isParticleFluid, isArticulationLink, isCloth, isRigidActor, isRigidBody, isParticleBase have been removed. Use corresponding PxBase::is() with class template parameter for down casting.</p></li>
+<li><p>PxContactPairFlag::eINTERNAL_HAS_FACE_INDICES is obsolete and has been removed.</p></li>
+<li><p>Trigger shapes will no longer send notification events for interactions with other trigger shapes. For PhysX 3.4 there is the option to re-enable the reports by raising PxSceneFlag::eDEPRECATED_TRIGGER_TRIGGER_REPORTS but this option will no longer be available in PhysX 3.5. It is recommended to not make use of eDEPRECATED_TRIGGER_TRIGGER_REPORTS and instead use a trigger and a non-trigger shape, both with the same geometry and local pose, to emulate getting notifications for overlaps between trigger shapes.</p></li>
+<li><p>Implementations of PxSimulationEventCallback will have to provide an (empty) implementation of the newly added method <em>onAdvance()</em> to avoid compilation errors.</p></li>
+<li><p>The deprecated method PxPhysics::createHeightField(const PxHeightFieldDesc&amp;) has been removed. Please use PxCooking::createHeightField(const PxHeightFieldDesc&amp;, PxPhysicsInsertionCallback&amp;) instead. The insertion callback can be obtained through PxPhysics::getPhysicsInsertionCallback().</p></li>
+<li><p>The deprecated flag PxActorTypeSelectionFlag/PxActorTypeSelectionFlags has been removed. Please use PxActorTypeFlag/PxActorTypeFlags instead.</p></li>
+<li><p>The deprecated class PxFindOverlapTriangleMeshUtil has been removed. Please use PxMeshOverlapUtil instead.</p></li>
+<li><p>The deprecated flag PxConstraintFlag::eREPORTING has been removed. Force reports are now always generated.</p></li>
+<li><p>The deprecated flag PxConstraintFlag::eDEPRECATED_32_COMPATIBILITY has been removed.</p></li>
+<li><p>PxRegisterHeightFields() now registers unified heightfields. To register legacy heightfields, call PxRegisterLegacyHeightFields(). Legacy heightfield collision is deprecated and will be removed in a future PhysX release.</p></li>
+<li><p>The following deprecated simulation event flags have been removed:</p>
+<blockquote>
+<div><ul>
+<li><p>PxContactPairHeaderFlag::eDELETED_ACTOR_0, ::eDELETED_ACTOR_1</p>
+<p>(use PxContactPairHeaderFlag::eREMOVED_ACTOR_0, ::eREMOVED_ACTOR_1 instead)</p>
+</li>
+<li><p>PxContactPairFlag::eDELETED_SHAPE_0, ::eDELETED_SHAPE_1</p>
+<p>(use PxContactPairFlag::eREMOVED_SHAPE_0, ::eREMOVED_SHAPE_1 instead)</p>
+</li>
+<li><p>PxTriggerPairFlag::eDELETED_SHAPE_TRIGGER, ::eDELETED_SHAPE_OTHER</p>
+<p>(use PxTriggerPairFlag::eREMOVED_SHAPE_TRIGGER, ::REMOVED_SHAPE_OTHER instead)</p>
+</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>PxContactPair now reports separate pointers for contactPatches, contactPoints and contactImpulses rather than reporting a single pointer that the PxContactStreamIterator parses. The interface for PxContactStreamIterator has been modified accordingly. See the PxContactPair::extractContacts implementation for further guidance on how to iterate over this contact data if required.</p></li>
+<li><p>PxD6JointDrive::forceLimit and PxRevoluteJoint::setDriveForceLimit() are by default interpreted as an impulse and not a force. To treat the parameters as a force (and thus get the behavior of the previous version back), the flag PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES should be raised.</p></li>
+</ul>
+</section>
+<section id="contact-generation">
+<h2>Contact Generation<a class="headerlink" href="#contact-generation" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PCM contact generation is now used by default. Legacy SAT-based contact generation can be re-enabled by clearing the PxSceneFlag::eENABLE_PCM from PxSceneDesc::flags.</p></li>
+<li><p>Unified heightfields are now the default heightfield collision approach. This approach mirrors the way in which mesh contact gen functions so permits meshes and heightfields to be used interchangeably with negligible behavioral difference. The legacy heightfield collision approach can be used by calling PxRegisterLegacyHeightFields().</p></li>
+<li><p>When unified heightfields are in use, the bounds of heightfield shapes will not be extruded by “thickness”. If legacy heightfield collision is used, the bounds will still be extruded by thickness.</p></li>
+</ul>
+</section>
+<section id="physx-cooking">
+<h2>PhysX Cooking<a class="headerlink" href="#physx-cooking" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The deprecated flags PxMeshPreprocessingFlag::eREMOVE_UNREFERENCED_VERTICES and ::eREMOVE_DUPLICATED_TRIANGLES have been removed. Meshes get cleaned up by default unless PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH is set.</p></li>
+<li><p>PxCookingParams::meshSizePerformanceTradeOff and PxCookingParams::meshCookingHint have been moved to PxBVH33MidphaseDesc, since they only affect the BVH33.</p></li>
+<li><p>The PxGaussMapLimit.h file has been removed. The PxGetGaussMapVertexLimitForPlatform function has been moved to PxCooking.h, but the function is now deprecated, along with the PxPlatform enum. Instead there is now an explicit PxCookingParams::gaussMapLimit parameter. As far as transition to PhysX 3.4 is concerned there is nothing to do other than removing includes of PxGaussMapLimit.h, and perhaps including PxCooking.h instead if needed.</p></li>
+<li><p>Legacy convex hull generator (PxConvexMeshCookingType::eINFLATION_INCREMENTAL_HULL) uses inflation in all cases. To cook a convex mesh without inflation new (default) PxConvexMeshCookingType::eQUICKHULL algorithm must be used. This algorithm does not support inflation.</p></li>
+</ul>
+</section>
+<section id="reference-counting">
+<h2>Reference Counting<a class="headerlink" href="#reference-counting" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>In previous releases, isReleasable() for shareable objects (shapes, triangle meshes, convex meshes, cloth fabrics, materials and heightfields) would return false once release() had been called on the object, which was only allowed once. In 3.4, reference counts can be manually incremented with acquireReference() and decremented with release(), and so the fact that release() has called once is not a reliable indicator of whether it can be called again.</p></li>
+<li><p>As a consequence of the above, applications must ensure they own at least one counted reference to each shareable object in a collection before calling PxCollectionExt::releaseObjects. The main case in which this might be different in 3.4 is when using PxRigidActor::createShape(), since in that case only the actor has a counted reference to the shape. In this specific case, the new parameter releaseExclusiveShapes to PxCollectionExt::releaseObjects may be helpful.</p></li>
+<li><p>Since there is no unique user release for shareable objects, they do not generate USER_RELEASE events when release() is called.</p></li>
+</ul>
+</section>
+<section id="physx-visual-debugger">
+<h2>PhysX Visual Debugger<a class="headerlink" href="#physx-visual-debugger" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxVisualDebugger is deprecated, and the new OmniPVD has been introduced. More details are mentioned in <a class="reference internal" href="OmniVisualDebugger.html#omniphysxvisualdebugger"><span class="std std-ref">Omniverse Visual Debugger</span></a>.</p></li>
+</ul>
+</section>
+<section id="scene-queries">
+<h2>Scene queries<a class="headerlink" href="#scene-queries" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>PxPruningStructure enum has been renamed to PxPruningStructureType</p></li>
+<li><p>Deprecated type PxSceneQueryHit has been removed. Please use PxQueryHit instead.</p></li>
+<li><p>Deprecated type PxSceneQueryFilterData has been removed. Please use PxQueryFilterData instead.</p></li>
+<li><p>Deprecated type PxSceneQueryFilterCallback has been removed. Please use PxQueryFilterCallback instead.</p></li>
+<li><p>Deprecated type PxSceneQueryCache has been removed. Please use PxQueryCache instead.</p></li>
+<li><p>Deprecated types PxSceneQueryFlag(s) has been removed. Please use PxHitFlag(s) instead.</p></li>
+<li><p>Deprecated scene query functions have been removed (e.g. PxScene::raycastAny(), etc). To make the transition easier they are still available in PxSceneQueryExt.h, as part of PhysXExtensions. A previous PxScene::raycastAny(…) call should now either use PxSceneQueryExt::raycastAny(PxScene, …), or PxScene::raycast(…).</p></li>
+<li><p>PxHitFlag::eFACE_INDEX was introduced. In order to receive the face index in sweeps against convex geometry, the flag needs to be set.</p></li>
+<li><p>PxHitFlag::eDISTANCE has been deprecated, since the distance is always needed and its computation cannot be skipped. Please simply avoid using that flag from now on. The flag has no effect and it will be removed in the next version.</p></li>
+<li><p>The “anyHit” parameter of the PxGeometryQuery::raycast() and PxShapeExt::raycast() functions has been removed. Please use PxHitFlag::eMESH_ANY instead.</p></li>
+<li><p>PxMeshQuery::sweep() now respects PxHitFlag::eMESH_BOTH_SIDES. So if you previously used that flag when calling that function, it was ignored, and the upgrade to 3.4 might start generating different results compared to 3.3. If keeping the previous behaviour is important, please disable PxHitFlag::eMESH_BOTH_SIDES in your PxMeshQuery::sweep() calls.</p></li>
+<li><p>Batched scene queries are marked as deprecated and will be replaced by new system in future releases.</p></li>
+<li><p>Volume cache feature is marked as deprecated, it will be removed in future releases.</p></li>
+<li><p>Spatial index feature is marked as deprecated, it will be removed in future releases.</p></li>
+</ul>
+</section>
+<section id="pxextensions">
+<h2>PxExtensions<a class="headerlink" href="#pxextensions" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>The signatures for the PxComputeMeshPenetration and PxComputeHeightFieldPenetration functions have changed. The old functions are still available but they are now deprecated. It is recommended to transition to the new functions (with the same names but a different signature).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

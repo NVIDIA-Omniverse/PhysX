@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>include/PxImmediateMode.h &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxAddArticulationLink" href="function__px_immediate_mode_8h_1acb72c60202f41eb3e70696c567f8445e.html" />
+    <link rel="prev" title="include/PxImmediateMode.h" href="file_include_PxImmediateMode.h.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="classes.html">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="macros.html">Macros</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="directories.html">Directories</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="dir_include.html">include</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActor.h.html">PxActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxActorData.h.html">PxActorData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAggregate.h.html">PxAggregate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAnisotropy.h.html">PxAnisotropy.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArrayConverter.h.html">PxArrayConverter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationFlag.h.html">PxArticulationFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationJointReducedCoordinate.h.html">PxArticulationJointReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationLink.h.html">PxArticulationLink.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationMimicJoint.h.html">PxArticulationMimicJoint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationReducedCoordinate.h.html">PxArticulationReducedCoordinate.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendon.h.html">PxArticulationTendon.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxArticulationTendonData.h.html">PxArticulationTendonData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxAttachment.h.html">PxAttachment.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBaseMaterial.h.html">PxBaseMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxBroadPhase.h.html">PxBroadPhase.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxClient.h.html">PxClient.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConeLimitedConstraint.h.html">PxConeLimitedConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraint.h.html">PxConstraint.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxConstraintDesc.h.html">PxConstraintDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContact.h.html">PxContact.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxContactModifyCallback.h.html">PxContactModifyCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDeletionListener.h.html">PxDeletionListener.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxDirectGPUAPI.h.html">PxDirectGPUAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothFlags.h.html">PxFEMClothFlags.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMClothMaterial.h.html">PxFEMClothMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMMaterial.h.html">PxFEMMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMParameter.h.html">PxFEMParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFEMSoftBodyMaterial.h.html">PxFEMSoftBodyMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxFiltering.h.html">PxFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxForceMode.h.html">PxForceMode.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxHairSystemFlag.h.html">PxHairSystemFlag.h</a></li>
+<li class="toctree-l5 current"><a class="reference internal" href="file_include_PxImmediateMode.h.html">PxImmediateMode.h</a><ul class="current">
+<li class="toctree-l6 current"><a class="current reference internal" href="#">Source file</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1acb72c60202f41eb3e70696c567f8445e.html">PxAddArticulationLink</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a889da0cd2f70b5f822f13c9e9933f1eb.html">PxApplyArticulationCache</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__px_immediate_mode_8h_1aa4d883a28073281912ebad8bfe70d92e.html">PxArticulationCookie</a></li>
+<li class="toctree-l6"><a class="reference internal" href="typedef__px_immediate_mode_8h_1aa6c21f764f6ca3aeed69495b178ceddf.html">PxArticulationHandle</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a87c01c4bc0baefb2365edb1283f5f8dd.html">PxBatchConstraints</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ae508d308d2591a33fe6ec5f373e8c4c5.html">PxBatchConstraintsTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aaaaa186c60c8c046e43f60557ea59435.html">PxBeginCreateArticulationRC</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a57d2b5e6060a9d09da41ac1c5694edf6.html">PxComputeUnconstrainedVelocities</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ad5a366f025ab977b3ef3b988bc9ca78e.html">PxComputeUnconstrainedVelocitiesTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a2d87ae16e8b4cbd9599ce20e716e5e9e.html">PxConstructSolverBodies</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aa12f8d455748f94bee309019e95e18cd.html">PxConstructSolverBodiesTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1abe8ce8848c4667fc886ce7450ba055f0.html">PxConstructStaticSolverBody</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a58b723bc273e6fc5091b2d4c38d4d402.html">PxConstructStaticSolverBodyTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a2d4fc0cc3e4e43045cdd092585f5f2ba.html">PxCopyInternalStateToArticulationCache</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a9a3110b38211ce9bd9c812058151c6af.html">PxCreateArticulationCache</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1abd6e0f1c7038b6110d828ca1dd7d284e.html">PxCreateContactConstraints</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a289e6ce0a128ba6d2896f57d2c41c7fd.html">PxCreateContactConstraintsTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ae3ad8d6dec20b40be904d95fd8d9741a.html">PxCreateJointConstraints</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a513d21da6c652d4d207e149a2f94d59f.html">PxCreateJointConstraintsTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ab94771fd7ea0f6718eb453a710bdb796.html">PxCreateJointConstraintsWithImmediateShaders</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aba3f94d64bf9e17d827ca9be2cc704ae.html">PxCreateJointConstraintsWithImmediateShadersTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a0b1917055213dab3ea8a6c7be51a32df.html">PxCreateJointConstraintsWithShaders</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aef4d972f5de669768e272000fc75da86.html">PxCreateJointConstraintsWithShadersTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ab077d413a14e35fd8f1d4d62765d1ac0.html">PxEndCreateArticulationRC</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a005fa8fe54245ea3fec26d17f14874a9.html">PxGenerateContacts</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aecaec3026d9572d1acedb0f9d63374ea.html">PxGetAllLinkData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a2914ec0e102d3cc1b323f79feec59a51.html">PxGetJointData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1aa02b58f6d6ad01a7dd49038292a40a75.html">PxGetLinkData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a8f922c869ff910965d57ce75990d8703.html">PxGetMutableLinkData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ad78d5260f2eb1ed48462ce824607bf8d.html">PxIntegrateSolverBodies</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a4476532e47c776d7f9b4b9b6d80317e7.html">PxIntegrateSolverBodiesTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1af78e5e9ab34a5d09072c51acd113d00e.html">PxReleaseArticulation</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a8c79435c69aec7dec3e72a2d7bd88d2f.html">PxReleaseArticulationCache</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1ac5a24e6b00bccc9295d1a302ca2fd516.html">PxSetJointData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a94f982ce47ffe8fb20e7888ca8464433.html">PxSetMutableLinkData</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a678fe129329bc654a049bc30d8aa27b9.html">PxSolveConstraints</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a910f7d8e171e89a26885cd32093f23d8.html">PxSolveConstraintsTGS</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a432e1768f55ba0d5c2d6383ed64dd5a8.html">PxUpdateArticulationBodies</a></li>
+<li class="toctree-l6"><a class="reference internal" href="function__px_immediate_mode_8h_1a3d2373491b26cfdc185d91b6acf7f654.html">PxUpdateArticulationBodiesTGS</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxIsosurfaceExtraction.h.html">PxIsosurfaceExtraction.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLineStripSkinning.h.html">PxLineStripSkinning.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxLockedData.h.html">PxLockedData.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxMaterial.h.html">PxMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxNodeIndex.h.html">PxNodeIndex.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDMaterial.h.html">PxPBDMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPBDParticleSystem.h.html">PxPBDParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleBuffer.h.html">PxParticleBuffer.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleGpu.h.html">PxParticleGpu.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleMaterial.h.html">PxParticleMaterial.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleNeighborhoodProvider.h.html">PxParticleNeighborhoodProvider.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSolverType.h.html">PxParticleSolverType.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystem.h.html">PxParticleSystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxParticleSystemFlag.h.html">PxParticleSystemFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysXConfig.h.html">PxPhysXConfig.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysics.h.html">PxPhysics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsAPI.h.html">PxPhysicsAPI.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPhysicsSerialization.h.html">PxPhysicsSerialization.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxPruningStructure.h.html">PxPruningStructure.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryFiltering.h.html">PxQueryFiltering.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxQueryReport.h.html">PxQueryReport.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxResidual.h.html">PxResidual.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidActor.h.html">PxRigidActor.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidBody.h.html">PxRigidBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidDynamic.h.html">PxRigidDynamic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxRigidStatic.h.html">PxRigidStatic.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSDFBuilder.h.html">PxSDFBuilder.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxScene.h.html">PxScene.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneDesc.h.html">PxSceneDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneLock.h.html">PxSceneLock.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQueryDesc.h.html">PxSceneQueryDesc.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSceneQuerySystem.h.html">PxSceneQuerySystem.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxShape.h.html">PxShape.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationEventCallback.h.html">PxSimulationEventCallback.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSimulationStatistics.h.html">PxSimulationStatistics.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSmoothing.h.html">PxSmoothing.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBody.h.html">PxSoftBody.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSoftBodyFlag.h.html">PxSoftBodyFlag.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxSparseGridParams.h.html">PxSparseGridParams.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="file_include_PxVisualizationParameter.h.html">PxVisualizationParameter.h</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_characterkinematic.html">characterkinematic</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_collision.html">collision</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_common.html">common</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cooking.html">cooking</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_cudamanager.html">cudamanager</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_extensions.html">extensions</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_filebuf.html">filebuf</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_foundation.html">foundation</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geometry.html">geometry</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_geomutils.html">geomutils</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_gpu.html">gpu</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_omnipvd.html">omnipvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_pvd.html">pvd</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_solver.html">solver</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_task.html">task</a></li>
+<li class="toctree-l5"><a class="reference internal" href="dir_include_vehicle2.html">vehicle2</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="dir_pvdruntime.html">pvdruntime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="enumerations.html">Enumerations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="namespaces.html">Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pages.html">Pages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="structs.html">Structs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="directories.html">Directories</a> &raquo;</li>
+    <li><a href="dir_include.html">include</a> &raquo;</li>
+    <li><a href="file_include_PxImmediateMode.h.html">include/PxImmediateMode.h</a> &raquo;</li>
+<li>include/PxImmediateMode.h</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="include-pximmediatemode-h">
+<h1>include/PxImmediateMode.h<a class="headerlink" href="#include-pximmediatemode-h" title="Permalink to this headline"></a></h1>
+<p>File members: <a class="reference internal" href="file_include_PxImmediateMode.h.html#px-immediate-mode-8h"><span class="std std-ref">include/PxImmediateMode.h</span></a></p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">// modification, are permitted provided that the following conditions</span>
+<span class="c1">// are met:</span>
+<span class="c1">//  * Redistributions of source code must retain the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer.</span>
+<span class="c1">//  * Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">//    notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">//    documentation and/or other materials provided with the distribution.</span>
+<span class="c1">//  * Neither the name of NVIDIA CORPORATION nor the names of its</span>
+<span class="c1">//    contributors may be used to endorse or promote products derived</span>
+<span class="c1">//    from this software without specific prior written permission.</span>
+<span class="c1">//</span>
+<span class="c1">// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS &#39;&#39;AS IS&#39;&#39; AND ANY</span>
+<span class="c1">// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE</span>
+<span class="c1">// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR</span>
+<span class="c1">// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR</span>
+<span class="c1">// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,</span>
+<span class="c1">// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,</span>
+<span class="c1">// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY</span>
+<span class="c1">// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1">// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1">// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">//</span>
+<span class="c1">// Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.</span>
+<span class="c1">// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.</span>
+
+<span class="cp">#ifndef PX_IMMEDIATE_MODE_H</span>
+<span class="cp">#define PX_IMMEDIATE_MODE_H</span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxPhysXConfig.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;foundation/PxMemory.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;solver/PxSolverDefs.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;collision/PxCollisionDefs.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;PxArticulationReducedCoordinate.h&quot;</span><span class="cp"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxCudaContextManager</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxBaseTask</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxGeometry</span><span class="p">;</span><span class="w"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="k">namespace</span><span class="w"> </span><span class="nn">immediate</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="w">    </span><span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxSpatialVector</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">top</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">pad0</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">bottom</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">pad1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxRigidBodyData</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_ALIGN</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">linearVelocity</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invMass</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">angularVelocity</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxDepenetrationVelocity</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w"> </span><span class="n">invInertia</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxContactImpulse</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">body2World</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">linearDamping</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">angularDamping</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxLinearVelocitySq</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">maxAngularVelocitySq</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w"> </span><span class="n">pad</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">class</span><span class="w"> </span><span class="nc">PxContactRecorder</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">recordContacts</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxContactPoint</span><span class="o">*</span><span class="w"> </span><span class="n">contactPoints</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbContacts</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">index</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">virtual</span><span class="w"> </span><span class="o">~</span><span class="n">PxContactRecorder</span><span class="p">(){}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructSolverBodies</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">inRigidData</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">outSolverBodyData</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">gyroscopicForces</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructStaticSolverBody</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">globalPose</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBodyData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">solverBodyData</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxBatchConstraints</span><span class="p">(</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbConstraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                            </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">outBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">outOrderedConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                            </span><span class="n">PxArticulationHandle</span><span class="o">*</span><span class="w"> </span><span class="n">articulations</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbArticulations</span><span class="o">=</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateContactConstraints</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverContactDesc</span><span class="o">*</span><span class="w"> </span><span class="n">contactDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">bounceThreshold</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">frictionOffsetThreshold</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">correlationDistance</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraints</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithShaders</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraint</span><span class="o">**</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxImmediateConstraint</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxConstraintSolverPrep</span><span class="w">  </span><span class="n">prep</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w">             </span><span class="n">constantBlock</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithImmediateShaders</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxImmediateConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxSolveConstraints</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">linearMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">angularMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPositionIterations</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVelocityIterations</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="o">=</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">invDt</span><span class="o">=</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverArticulations</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="o">*</span><span class="w"> </span><span class="n">solverArticulations</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">deltaV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxIntegrateSolverBodies</span><span class="p">(</span><span class="n">PxSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodyData</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverBody</span><span class="o">*</span><span class="w"> </span><span class="n">solverBody</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">linearMotionVelocity</span><span class="p">,</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">*</span><span class="w"> </span><span class="n">angularMotionState</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodiesToIntegrate</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxGenerateContacts</span><span class="p">(</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">geom0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxGeometry</span><span class="o">*</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">geom1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">pose0</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">pose1</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                            </span><span class="n">PxCache</span><span class="o">*</span><span class="w"> </span><span class="n">contactCache</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPairs</span><span class="p">,</span><span class="w"> </span><span class="n">PxContactRecorder</span><span class="o">&amp;</span><span class="w"> </span><span class="n">contactRecorder</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                            </span><span class="n">PxReal</span><span class="w"> </span><span class="n">contactDistance</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">meshContactMargin</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">toleranceLength</span><span class="p">,</span><span class="w"> </span><span class="n">PxCacheAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationJointDataRC</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxTransform</span><span class="w">                     </span><span class="n">parentPose</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxTransform</span><span class="w">                     </span><span class="n">childPose</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationMotion</span><span class="o">::</span><span class="n">Enum</span><span class="w">      </span><span class="n">motion</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationLimit</span><span class="w">             </span><span class="n">limits</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationDrive</span><span class="w">             </span><span class="n">drives</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">targetPos</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">targetVel</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">armature</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">jointPos</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">jointVel</span><span class="p">[</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">];</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">frictionCoefficient</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxReal</span><span class="w">                          </span><span class="n">maxJointVelocity</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationJointType</span><span class="o">::</span><span class="n">Enum</span><span class="w">   </span><span class="n">type</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">void</span><span class="w">    </span><span class="nf">initData</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">parentPose</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">childPose</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">frictionCoefficient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.05f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">maxJointVelocity</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mf">100.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">type</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationJointType</span><span class="o">::</span><span class="n">eUNDEFINED</span><span class="p">;</span><span class="w">  </span><span class="c1">// For root</span>
+
+<span class="w">            </span><span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">motion</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationMotion</span><span class="o">::</span><span class="n">eLOCKED</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="n">limits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationLimit</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="n">drives</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxArticulationDrive</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="n">armature</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="n">jointPos</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="n">jointVel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxMemSet</span><span class="p">(</span><span class="n">targetPos</span><span class="p">,</span><span class="w"> </span><span class="mh">0xff</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxReal</span><span class="p">)</span><span class="o">*</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxMemSet</span><span class="p">(</span><span class="n">targetVel</span><span class="p">,</span><span class="w"> </span><span class="mh">0xff</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxReal</span><span class="p">)</span><span class="o">*</span><span class="n">PxArticulationAxis</span><span class="o">::</span><span class="n">eCOUNT</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationDataRC</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationFlags</span><span class="w">     </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLinkMutableDataRC</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w">  </span><span class="n">inverseInertia</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">inverseMass</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">linearDamping</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">angularDamping</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">maxLinearVelocitySq</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">maxAngularVelocitySq</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">float</span><span class="w">   </span><span class="n">cfmScale</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="kt">bool</span><span class="w">    </span><span class="n">disableGravity</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">void</span><span class="w">    </span><span class="nf">initData</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">inverseInertia</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">PxVec3</span><span class="p">(</span><span class="mf">1.0f</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">inverseMass</span><span class="w">             </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">linearDamping</span><span class="w">           </span><span class="o">=</span><span class="w"> </span><span class="mf">0.05f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">angularDamping</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="mf">0.05f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">maxLinearVelocitySq</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="mf">100.0f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">100.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">maxAngularVelocitySq</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mf">50.0f</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">50.0f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">cfmScale</span><span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="mf">0.025f</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">disableGravity</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLinkDerivedDataRC</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxTransform</span><span class="w"> </span><span class="n">pose</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w">      </span><span class="n">linearVelocity</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxVec3</span><span class="w">      </span><span class="n">angularVelocity</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLinkDataRC</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxArticulationLinkMutableDataRC</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationLinkDataRC</span><span class="p">()</span><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">PxArticulationLinkDataRC</span><span class="o">::</span><span class="n">initData</span><span class="p">();</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="kt">void</span><span class="w">    </span><span class="n">initData</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">pose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxTransform</span><span class="p">(</span><span class="n">PxIdentity</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">PxArticulationLinkMutableDataRC</span><span class="o">::</span><span class="n">initData</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="n">inboundJoint</span><span class="p">.</span><span class="n">initData</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">PxArticulationJointDataRC</span><span class="w">   </span><span class="n">inboundJoint</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxTransform</span><span class="w">                 </span><span class="n">pose</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">typedef</span><span class="w"> </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">PxArticulationCookie</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLinkCookie</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxArticulationCookie</span><span class="w">    </span><span class="n">articulation</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w">                   </span><span class="n">linkId</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxCreateArticulationLinkCookie</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxArticulationLinkCookie</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_FORCE_INLINE</span><span class="w"> </span><span class="nf">PxCreateArticulationLinkCookie</span><span class="p">(</span><span class="n">PxArticulationCookie</span><span class="w"> </span><span class="n">art</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">id</span><span class="o">=</span><span class="mh">0xffffffff</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">articulation</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">art</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">linkId</span><span class="w">          </span><span class="o">=</span><span class="w"> </span><span class="n">id</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">PxArticulationLinkHandle</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">PX_FORCE_INLINE</span><span class="w">         </span><span class="nf">PxArticulationLinkHandle</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">art</span><span class="o">=</span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">id</span><span class="o">=</span><span class="mh">0xffffffff</span><span class="p">)</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">articulation</span><span class="p">(</span><span class="n">art</span><span class="p">),</span><span class="w"> </span><span class="n">linkId</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+
+<span class="w">        </span><span class="n">PxArticulationHandle</span><span class="w">    </span><span class="n">articulation</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxU32</span><span class="w">                   </span><span class="n">linkId</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxArticulationCookie</span><span class="w"> </span><span class="n">PxBeginCreateArticulationRC</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxArticulationLinkCookie</span><span class="w"> </span><span class="n">PxAddArticulationLink</span><span class="p">(</span><span class="n">PxArticulationCookie</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkCookie</span><span class="o">*</span><span class="w"> </span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">PxEndCreateArticulationRC</span><span class="p">(</span><span class="n">PxArticulationCookie</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">*</span><span class="w"> </span><span class="n">linkHandles</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxReleaseArticulation</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxArticulationCache</span><span class="o">*</span><span class="w"> </span><span class="n">PxCreateArticulationCache</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxCopyInternalStateToArticulationCache</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationCache</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cache</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationCacheFlags</span><span class="w"> </span><span class="n">flag</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxApplyArticulationCache</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationCache</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cache</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationCacheFlags</span><span class="w"> </span><span class="n">flag</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxReleaseArticulationCache</span><span class="p">(</span><span class="n">PxArticulationCache</span><span class="o">&amp;</span><span class="w"> </span><span class="n">cache</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxGetLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">&amp;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLinkDerivedDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxGetAllLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLinkDerivedDataRC</span><span class="o">*</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxGetMutableLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">&amp;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationLinkMutableDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxSetMutableLinkData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">&amp;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkMutableDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxGetJointData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">&amp;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationJointDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxSetJointData</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationLinkHandle</span><span class="o">&amp;</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxArticulationJointDataRC</span><span class="o">&amp;</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeUnconstrainedVelocities</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invLengthScale</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxUpdateArticulationBodies</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxComputeUnconstrainedVelocitiesTGS</span><span class="p">(</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                            </span><span class="n">PxReal</span><span class="w"> </span><span class="n">totalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invTotalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invLengthScale</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxUpdateArticulationBodiesTGS</span><span class="p">(</span><span class="n">PxArticulationHandle</span><span class="w"> </span><span class="n">articulation</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructSolverBodiesTGS</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">inRigidData</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">outSolverBodyVel</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">*</span><span class="w"> </span><span class="n">outSolverBodyTxInertia</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyData</span><span class="o">*</span><span class="w"> </span><span class="n">outSolverBodyData</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxVec3</span><span class="o">&amp;</span><span class="w"> </span><span class="n">gravity</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">gyroscopicForces</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxConstructStaticSolverBodyTGS</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">&amp;</span><span class="w"> </span><span class="n">globalPose</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyVel</span><span class="o">&amp;</span><span class="w"> </span><span class="n">solverBodyVel</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">&amp;</span><span class="w"> </span><span class="n">solverBodyTxInertia</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyData</span><span class="o">&amp;</span><span class="w"> </span><span class="n">solverBodyData</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">PxBatchConstraintsTGS</span><span class="p">(</span><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbConstraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">outBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">outOrderedConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                </span><span class="n">PxArticulationHandle</span><span class="o">*</span><span class="w"> </span><span class="n">articulations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbArticulations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateContactConstraintsTGS</span><span class="p">(</span><span class="w">   </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverContactDesc</span><span class="o">*</span><span class="w"> </span><span class="n">contactDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                        </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invTotalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">bounceThreshold</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                        </span><span class="n">PxReal</span><span class="w"> </span><span class="n">frictionOffsetThreshold</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">correlationDistance</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsTGS</span><span class="p">(</span><span class="w"> </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHeaders</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                    </span><span class="n">PxTGSSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">totalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                    </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invTotalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lengthScale</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithShadersTGS</span><span class="p">(</span><span class="w">  </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraint</span><span class="o">**</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"> </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">totalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invTotalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lengthScale</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">PxCreateJointConstraintsWithImmediateShadersTGS</span><span class="p">(</span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxImmediateConstraint</span><span class="o">*</span><span class="w"> </span><span class="n">constraints</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverConstraintPrepDesc</span><span class="o">*</span><span class="w"> </span><span class="n">jointDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                                        </span><span class="n">PxConstraintAllocator</span><span class="o">&amp;</span><span class="w"> </span><span class="n">allocator</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">totalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">invTotalDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">lengthScale</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxSolveConstraintsTGS</span><span class="p">(</span><span class="w">   </span><span class="k">const</span><span class="w"> </span><span class="n">PxConstraintBatchHeader</span><span class="o">*</span><span class="w"> </span><span class="n">batchHeaders</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBatchHeaders</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxSolverConstraintDesc</span><span class="o">*</span><span class="w"> </span><span class="n">solverConstraintDescs</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                </span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">solverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">*</span><span class="w"> </span><span class="n">txInertias</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverBodies</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbPositionIterations</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbVelocityIterations</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                                </span><span class="kt">float</span><span class="w"> </span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">invDt</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbSolverArticulations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">PxArticulationHandle</span><span class="o">*</span><span class="w"> </span><span class="n">solverArticulations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">PxSpatialVector</span><span class="o">*</span><span class="w"> </span><span class="n">deltaV</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">PX_C_EXPORT</span><span class="w"> </span><span class="n">PX_PHYSX_CORE_API</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">PxIntegrateSolverBodiesTGS</span><span class="p">(</span><span class="n">PxTGSSolverBodyVel</span><span class="o">*</span><span class="w"> </span><span class="n">solverBody</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">PxTGSSolverBodyTxInertia</span><span class="o">*</span><span class="w"> </span><span class="n">txInertia</span><span class="p">,</span><span class="w"> </span><span class="n">PxTransform</span><span class="o">*</span><span class="w"> </span><span class="n">poses</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbBodiesToIntegrate</span><span class="p">,</span><span class="w"> </span><span class="n">PxReal</span><span class="w"> </span><span class="n">dt</span><span class="p">);</span><span class="w"></span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#if !PX_DOXYGEN</span>
+<span class="p">}</span><span class="w"></span>
+<span class="cp">#endif</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

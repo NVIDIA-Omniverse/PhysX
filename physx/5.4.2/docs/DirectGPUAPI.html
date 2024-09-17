@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Direct GPU API &mdash; physx 5.4.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Soft Bodies" href="SoftBodies.html" />
+    <link rel="prev" title="GPU Simulation" href="GPURigidBodies.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Direct GPU API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-direct-gpu-api">Using Direct GPU API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#direct-gpu-api-limitations">Direct GPU API limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="SoftBodies.html">Soft Bodies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Direct GPU API</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="direct-gpu-api">
+<span id="directgpuapi"></span><h1>Direct GPU API<a class="headerlink" href="#direct-gpu-api" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p>The direct GPU API provides a direct access to GPU data of a PhysX scene.
+The functions in this API enable batched direct access to GPU data for PxRigidDynamic, PxArticulationReducedCoordinate
+and PxShape objects.  This allows interoperation with GPU post- and preprocessing
+to implement more efficient CPU-GPU data copying based on the specific needs of the application.</p>
+</section>
+<section id="using-direct-gpu-api">
+<h2>Using Direct GPU API<a class="headerlink" href="#using-direct-gpu-api" title="Permalink to this headline"></a></h2>
+<p>To use this API, <a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum22eENABLE_DIRECT_GPU_APIE" title="PxSceneFlag::eENABLE_DIRECT_GPU_API"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_DIRECT_GPU_API</span></code></a> flag needs to be raised, in combination
+with <a class="reference internal" href="../_api_build/struct_px_scene_flag.html#_CPPv4N11PxSceneFlag4Enum20eENABLE_GPU_DYNAMICSE" title="PxSceneFlag::eENABLE_GPU_DYNAMICS"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneFlag::eENABLE_GPU_DYNAMICS</span></code></a> flag and <a class="reference internal" href="../_api_build/struct_px_broad_phase_type.html#_CPPv4N16PxBroadPhaseType4Enum4eGPUE" title="PxBroadPhaseType::eGPU"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBroadPhaseType::eGPU</span></code></a> broad phase type.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSceneDesc</span><span class="w"> </span><span class="nf">sceneDesc</span><span class="p">(</span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">getTolerancesScale</span><span class="p">());</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxSceneFlag</span><span class="o">::</span><span class="n">eENABLE_DIRECT_GPU_API</span><span class="p">;</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxSceneFlag</span><span class="o">::</span><span class="n">eENABLE_GPU_DYNAMICS</span><span class="p">;</span><span class="w"></span>
+<span class="n">sceneDesc</span><span class="p">.</span><span class="n">broadPhaseType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxBroadPhaseType</span><span class="o">::</span><span class="n">eGPU</span><span class="p">;</span><span class="w"></span>
+<span class="p">...</span><span class="w"></span>
+<span class="n">gScene</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">createScene</span><span class="p">(</span><span class="n">sceneDesc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These options are immutable and cannot be changed after the scene has been created.</p>
+</div>
+<p>To access the scene’s GPU data, the user should retrieve <a class="reference internal" href="../_api_build/class_px_direct_g_p_u_a_p_i.html#_CPPv414PxDirectGPUAPI" title="PxDirectGPUAPI"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDirectGPUAPI</span></code></a> instance, using the <a class="reference internal" href="../_api_build/class_px_scene.html#_CPPv4N7PxScene15getDirectGPUAPIEv" title="PxScene::getDirectGPUAPI"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::getDirectGPUAPI()</span></code></a> function,
+and then call one of <a class="reference internal" href="../_api_build/class_px_direct_g_p_u_a_p_i.html#_CPPv414PxDirectGPUAPI" title="PxDirectGPUAPI"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDirectGPUAPI</span></code></a>’s member functions, specifying the address of a GPU buffer to read from or write to, the indices of the
+actors to visit, and the type of data to set, get, or compute.</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// allocate memory for the indices of all bodies</span>
+<span class="n">CUdeviceptr</span><span class="w"> </span><span class="n">indexDevice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CUdeviceptr</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">indexSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxRigidDynamicGPUIndex</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">;</span><span class="w"></span>
+<span class="n">cuMemAlloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">indexDevice</span><span class="p">,</span><span class="w"> </span><span class="n">indexSize</span><span class="p">);</span><span class="w"></span>
+<span class="n">PxRigidDynamicGPUIndex</span><span class="o">*</span><span class="w"> </span><span class="n">indexHost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="n">cuMemAllocHost</span><span class="p">((</span><span class="kt">void</span><span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">indexHost</span><span class="p">,</span><span class="w"> </span><span class="n">indexSize</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// populate host index data</span>
+<span class="k">for</span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="n">indexHost</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bodies</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">getGPUIndex</span><span class="p">();</span><span class="w"></span>
+
+<span class="c1">// transfer and apply:</span>
+<span class="n">cuMemcpyHtoD</span><span class="p">(</span><span class="n">indexDevice</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">indexHost</span><span class="p">,</span><span class="w"> </span><span class="n">indexSize</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// allocate memory for the bodies&#39; poses</span>
+<span class="n">CUdeviceptr</span><span class="w"> </span><span class="n">poseDataDevice</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CUdeviceptr</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+<span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">poseDataSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbBodies</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxTransform</span><span class="p">);</span><span class="w"></span>
+<span class="n">cuMemAlloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">poseDataDevice</span><span class="p">,</span><span class="w"> </span><span class="n">poseDataSize</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// retrieve the bodies&#39; poses</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">getDirectGPUAPI</span><span class="p">().</span><span class="n">getRigidDynamicData</span><span class="p">((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">poseDataDevice</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRigidDynamicGPUIndex</span><span class="o">*</span><span class="p">)</span><span class="n">indexDevice</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxRigidDynamicGPUAPIReadType</span><span class="o">::</span><span class="n">eGLOBAL_POSE</span><span class="p">,</span><span class="w"> </span><span class="n">nbBodies</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Using this direct GPU API will disable the existing CPU-based API for all the data exposed in the direct GPU API. For any API function that does not have a counterpart in this direct GPU API, the existing API will continue to work.</p>
+</div>
+</section>
+<section id="direct-gpu-api-limitations">
+<h2>Direct GPU API limitations<a class="headerlink" href="#direct-gpu-api-limitations" title="Permalink to this headline"></a></h2>
+<p>Due to the internal architecture of the GPU-accelerated parts of PhysX, using this API comes with caveats:</p>
+<ul>
+<li><p>All GPU-CPU copying for data exposed in this API will be disabled. This means that the existing CPU-based API will return outdated data, and any setters for data exposed in the interface will not work. On the other hand, significant speedups can be achieved because of the reduced amount of GPU-CPU memory copying.</p></li>
+<li><p>Disabled GPU-CPU copying also results in following CPU-only features to not work properly, so they shouldn’t be used</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>All <a class="reference internal" href="Joints.html#joints"><span class="std std-ref">Joints</span></a> except D6 Joint that has a GPU Constraint shader</p></li>
+<li><p><a class="reference internal" href="SceneQueries.html#scenequeries"><span class="std std-ref">Scene Queries</span></a> as it relies of CPU-based API</p></li>
+<li><p><a class="reference internal" href="CustomGeometry.html#customgeometry"><span class="std std-ref">Custom Geometry</span></a> for the same reason</p></li>
+<li><p><a class="reference internal" href="AdvancedCollisionDetection.html#advancedcollisiondetection"><span class="std std-ref">Advanced Collision Detection</span></a> will not report contact points and friction anchors data</p></li>
+<li><p><em>To be continued</em></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Due to the internal architecture of the GPU-accelerated PhysX, this API will only work after a first simulation step has been taken. The reason for this is that the PxScene first needs to know all the actors it will have to simulate, and setup the sizes of the GPU-based structures. For setup, the existing CPU API should be used.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Due to the fact that this API is exposing low-level data, we do reserve the right to change this API without deprecation in case of changes in the internal implementations.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Sep 17, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
