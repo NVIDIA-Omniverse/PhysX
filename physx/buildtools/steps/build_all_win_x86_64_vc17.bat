@@ -1,12 +1,31 @@
-:: Setup VS2022 build environment
+@echo off
+SETLOCAL EnableDelayedExpansion
 
-IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer" SET PATH=%PATH%;%ProgramFiles(x86)%\Microsoft Visual Studio\Installer
-
-for /f "usebackq tokens=*" %%i in (`vswhere  -version "[17.0,18.0)" -latest -property installationPath`) do (
-  SET "COMNTOOLS=%%i\Common7\Tools\"
+:: Locate Visual Studio using vswhere
+IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer" (
+    SET "VS_INSTALLER_DIR=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer"
+    echo VS_INSTALLER_DIR: "!VS_INSTALLER_DIR!"
+    
+    :: Check if VS_INSTALLER_DIR is already in PATH
+    echo !PATH! | findstr /i /c:"!VS_INSTALLER_DIR!" >nul
+    if !errorlevel! neq 0 (
+        SET PATH=!PATH!;!VS_INSTALLER_DIR!
+        echo Updated PATH: !PATH!
+    ) else (
+        echo VS_INSTALLER_DIR is already in PATH
+    )
 )
 
-@call "%COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsx86_amd64.bat"
+:: Use vswhere to locate the latest Visual Studio installation
+for /f "usebackq tokens=*" %%i in (`vswhere -version "[17.0,18.0)" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+    SET "VSINSTALLPATH=%%i"
+    echo VSINSTALLPATH: "!VSINSTALLPATH!"
+)
+
+:: Set COMNTOOLS to point to the correct path
+SET "COMNTOOLS=!VSINSTALLPATH!\VC\Auxiliary\Build\vcvarsx86_amd64.bat"
+echo COMNTOOLS: "!COMNTOOLS!"
+@call "!COMNTOOLS!"
 
 :: When run with no arguments we always perform a rebuild (clean & build)
 @if [%1] == [] (

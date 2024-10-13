@@ -370,9 +370,7 @@ namespace Dy
 		const FloatV unitResponse = FAdd(resp0, resp1);
 
 		const FloatV penetration = FSub(separation, restDistance);
-
 		const BoolV isSeparated = FIsGrtr(penetration, zero);
-
 		const FloatV penetrationInvDt = FMul(penetration, invTotalDt);
 
 		const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
@@ -388,8 +386,7 @@ namespace Dy
 
 		if (FAllGrtr(zero, restitution))
 		{
-			// Note: using totalDt here instead of penetrationInvDt because the latter has a fudge factor if there are velocity iterations
-			const BoolV collidingWithVrel = FIsGrtr(FMul(FNeg(vrel), totalDt), penetration); // true if pen + totalDt*vrel < 0
+			const BoolV collidingWithVrel = FIsGrtr(FNeg(vrel), penetrationInvDt); // true if pen + totalDt*vrel < 0
 			computeCompliantContactCoefficientsTGS(dt, restitution, damping, recipResponse,
 				unitResponse, accelerationSpring, isSeparated, collidingWithVrel, velMultiplier, biasCoeff);
 		}
@@ -867,10 +864,11 @@ namespace Dy
 
 		const FloatV recipResponse = FSel(FIsGrtr(unitResponse, FZero()), FRecip(FAdd(unitResponse, cfm)), zero);
 
+		const FloatV penetrationInvDt = FMul(penetration, invDt);
+
 		if (FAllGrtr(zero, restitution))
 		{
-			// Note: using totalDt here instead of penetrationInvDt because the latter has a fudge factor if there are velocity iterations
-			const BoolV collidingWithVrel = FIsGrtr(FMul(FNeg(vrel), totalDt), penetration); // true if pen + totalDt*vrel < 0
+			const BoolV collidingWithVrel = FIsGrtr(FNeg(vrel), penetrationInvDt); // true if pen + totalDt*vrel < 0
 			computeCompliantContactCoefficientsTGS(dt, restitution, damping, recipResponse, unitResponse,
 													accelerationSpring, isSeparated, collidingWithVrel, velMultiplier,
 													scaledBias);
@@ -880,8 +878,6 @@ namespace Dy
 			velMultiplier = recipResponse;
 			scaledBias = FNeg(FSel(isSeparated, invStepDt, invDtp8));
 		}
-		
-		const FloatV penetrationInvDt = FMul(penetration, invDt);
 
 		const BoolV isGreater2 = BAnd(BAnd(FIsGrtr(restitution, zero), FIsGrtr(bounceThreshold, vrel)), FIsGrtr(FNeg(vrel), penetrationInvDt));
 

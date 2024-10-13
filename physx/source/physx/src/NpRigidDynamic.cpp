@@ -242,6 +242,16 @@ void NpRigidDynamic::setLinearVelocity(const PxVec3& velocity, bool autowake)
 
 	scSetLinearVelocity(velocity);
 
+	if(npScene && npScene->getFlagsFast() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS)
+	{
+		const PxU32 index = getRigidActorArrayIndex();
+
+		if(index>=npScene->mRigidDynamicsAccelerations.size())
+			npScene->mRigidDynamicsAccelerations.resize(index+1);
+
+		npScene->mRigidDynamicsAccelerations[index].mPrevLinVel = velocity;
+	}
+
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, *static_cast<PxRigidBody*>(this), velocity);
 
 	if(npScene)
@@ -259,6 +269,16 @@ void NpRigidDynamic::setAngularVelocity(const PxVec3& velocity, bool autowake)
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_EXCEPT_SPLIT_SIM(npScene, "PxRigidDynamic::setAngularVelocity() not allowed while simulation is running. Call will be ignored.")
 
 	scSetAngularVelocity(velocity);
+
+	if(npScene && npScene->getFlagsFast() & PxSceneFlag::eENABLE_BODY_ACCELERATIONS)
+	{
+		const PxU32 index = getRigidActorArrayIndex();
+
+		if(index>=npScene->mRigidDynamicsAccelerations.size())
+			npScene->mRigidDynamicsAccelerations.resize(index+1);
+
+		npScene->mRigidDynamicsAccelerations[index].mPrevAngVel = velocity;
+	}
 
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, *static_cast<PxRigidBody*>(this), velocity);
 

@@ -291,7 +291,6 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 	const PxReal invDt = params.invDt;
 
 	const PxI32 positionIterations = PxI32(params.positionIterations);
-	const PxI32 velocityIterations = PxI32(params.velocityIterations);
 
 	PxI32* constraintIndex = &params.constraintIndex; // counter for distributing constraints to tasks, incremented before they're solved
 	PxI32* constraintIndexCompleted = &params.constraintIndexCompleted; // counter for completed constraints, incremented after they're solved
@@ -307,9 +306,6 @@ void SolverCoreGeneral::solveVParallelAndWriteBack(SolverIslandParams& params, C
 
 	const PxU32* headersPerPartition = params.headersPerPartition;
 
-	PX_UNUSED(velocityIterations);
-
-	PX_ASSERT(velocityIterations >= 1);
 	PX_ASSERT(positionIterations >= 1);
 
 	PxI32 endIndexCount = UnrollCount;

@@ -269,21 +269,8 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 		{
 			Dy::FeatherstoneArticulation* a = islandSim.getLLArticulation(node1);
 
-			PxU8 type;
-
-			a->fillIndexType(node1.articulationLinkId(), type);
-
-			if (type == PxsIndexedInteraction::eARTICULATION)
-			{
-				desc.articulationA = a;
-				desc.linkIndexA = node1.articulationLinkId();
-			}
-			else
-			{
-				desc.bodyA = &mWorldSolverBody;
-				desc.bodyADataIndex = 0;
-				desc.linkIndexA = PxSolverConstraintDesc::RIGID_BODY;
-			}
+			desc.articulationA = a;
+			desc.linkIndexA = node1.articulationLinkId();
 		}
 		else
 		{
@@ -308,21 +295,9 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 		if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
 		{
 			Dy::FeatherstoneArticulation* b = islandSim.getLLArticulation(node2);
-			PxU8 type;
 
-			b->fillIndexType(node2.articulationLinkId(), type);
-
-			if (type == PxsIndexedInteraction::eARTICULATION)
-			{
-				desc.articulationB = b;
-				desc.linkIndexB = node2.articulationLinkId();
-			}
-			else
-			{
-				desc.bodyB = &mWorldSolverBody;
-				desc.bodyBDataIndex = 0;
-				desc.linkIndexB = PxSolverConstraintDesc::RIGID_BODY;
-			}
+			desc.articulationB = b;
+			desc.linkIndexB = node2.articulationLinkId();
 		}
 		else
 		{
@@ -941,8 +916,7 @@ public:
 							if(node1.getNodeType() == IG::Node::eARTICULATION_TYPE)
 							{
 								indexedManager.articulation0 = nodeIndex1.getInd();
-								const PxU32 linkId = nodeIndex1.articulationLinkId();
-								node1.getArticulation()->fillIndexType(linkId, indexedManager.indexType0);
+								indexedManager.indexType0 = PxsIndexedInteraction::eARTICULATION;
 							}
 							else
 							{
@@ -972,8 +946,7 @@ public:
 							if(node2.getNodeType() == IG::Node::eARTICULATION_TYPE)
 							{
 								indexedManager.articulation1 = nodeIndex2.getInd();
-								const PxU32 linkId = nodeIndex2.articulationLinkId();
-								node2.getArticulation()->fillIndexType(linkId, indexedManager.indexType1);
+								indexedManager.indexType1 = PxsIndexedInteraction::eARTICULATION;
 							}
 							else
 							{
