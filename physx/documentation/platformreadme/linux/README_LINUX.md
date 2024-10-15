@@ -1,4 +1,3 @@
-
 # NVIDIA PhysX SDK for Linux
 
 ## Location of Binaries:
