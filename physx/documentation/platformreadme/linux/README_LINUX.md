@@ -4,22 +4,23 @@
 
 * SDK libraries: bin/linux.clang
 
-
 ## Required packages to generate projects:
 
 * CMake, minimum version 3.14
 * Python, minimum version 3.5
 * curl
-* For linux x86-64: glibc, version 2.31 or higher (Note: GLIBC versions are typically not backwards compatible)
+* Clang for linux x86-64
+* glibc, version 2.31 or higher (Note: GLIBC versions are typically not backwards compatible)
 
-Compilers and C++ Standard:
-  * For linux x86-64 builds we support Ubuntu LTS releases with their respective default compiler versions:
-    * Ubuntu 20.04 LTS with gcc 9 or clang 10
-    * Ubuntu 22.04 LTS with gcc 11 or clang 14 
-    * Note: PhysX may fail to compile with clang versions higher than 14 as they have not been tested
-  * For linux aarch64 builds we support gcc version 9
+### Compilers and C++ Standard:
+  * We support the following Ubuntu LTS releases:
+    * For linux x86-64 (clang only):
+      * Ubuntu 20.04 LTS with clang 10
+      * Ubuntu 22.04 LTS with clang 14 
+      * Note: PhysX may fail to compile with clang versions higher than 14 as they have not been tested.
+    * For linux aarch64 (gcc only):
+      * Ubuntu 20.04 LTS with gcc 9
   * Tested with C++11 standard
-
 
 ## Generating Makefiles:
 
@@ -27,17 +28,15 @@ Compilers and C++ Standard:
 * The script generate_projects.sh expects a preset name as a parameter, if a parameter is not provided it does list the available presets and you can select one.
 * Generated solutions are placed in the folders compiler/linux-debug, compiler/linux-checked, compiler/linux-profile, compiler/linux-release.
 
-
 ## Building SDK:
 
-* Makefiles are in compiler/linux-debug etc
-* Clean solution: make clean
-* Build solution: make
-* Install solution: make install
+* Makefiles are located in compiler/linux-debug, etc.
+* Clean solution: `make clean`
+* Build solution: `make`
+* Install solution: `make install`
 
 Note:
-Compile errors on unsupported compilers or platforms are frequently caused by additional warnings that are treated as errors by default.
-While we cannot offer support in this case we recommend removing all occurences of the `-Werror` flag in the file `physx/source/compiler/cmake/linux/CMakeLists.txt`.
+Compile errors on unsupported compilers or platforms are frequently caused by additional warnings that are treated as errors by default. While we cannot offer support in this case, we recommend removing all occurrences of the `-Werror` flag in the file `physx/source/compiler/cmake/linux/CMakeLists.txt`.
 
 ## PhysX GPU Acceleration:
 
@@ -55,5 +54,4 @@ While we cannot offer support in this case we recommend removing all occurences 
 ## How to select the PhysX GPU Device:
 
 * Set the environment variable PHYSX_GPU_DEVICE to the device ordinal on which GPU PhysX should run. Default is 0.
-* Example: export PHYSX_GPU_DEVICE="1"
-
+* Example: `export PHYSX_GPU_DEVICE="1"`
