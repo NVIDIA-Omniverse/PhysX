@@ -9,17 +9,17 @@
 * CMake, minimum version 3.14
 * Python, minimum version 3.5
 * curl
+* Clang for linux x86-64
 * glibc, version 2.31 or higher (Note: GLIBC versions are typically not backwards compatible)
 
 ### Compilers and C++ Standard:
-  * We support only Ubuntu LTS releases for both x86-64 and aarch64 builds:
-    * For linux x86-64 builds:
-      * clang:
-        * Ubuntu 20.04 LTS with clang 10
-        * Ubuntu 22.04 LTS with clang 14 
+  * We support the following Ubuntu LTS releases:
+    * For linux x86-64 (clang only):
+      * Ubuntu 20.04 LTS with clang 10
+      * Ubuntu 22.04 LTS with clang 14 
       * Note: PhysX may fail to compile with clang versions higher than 14 as they have not been tested.
-    * For linux aarch64 builds:
-      * gcc, version 9
+    * For linux aarch64 (gcc only):
+      * Ubuntu 20.04 LTS with gcc 9
   * Tested with C++11 standard
 
 ## Generating Makefiles:
