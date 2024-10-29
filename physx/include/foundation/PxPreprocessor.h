@@ -111,6 +111,8 @@ Architecture defines, see http://sourceforge.net/p/predef/wiki/Architectures/
 	#define PX_A64 1
 #elif defined(__arm__) || defined(_M_ARM)
 	#define PX_ARM 1
+#elif defined(__loongarch64__) || defined(__loongarch64)
+        #define PX_LOONGARCH64 1
 #elif defined(__ppc__) || defined(_M_PPC) || defined(__CELLOS_LV2__)
 	#define PX_PPC 1
 #else
@@ -171,6 +173,9 @@ define anything not defined on this platform to 0
 #ifndef PX_ARM
 	#define PX_ARM 0
 #endif
+#ifndef PX_LOONGARCH64
+	#define PX_LOONGARCH64 0
+#endif
 #ifndef PX_PPC
 	#define PX_PPC 0
 #endif
@@ -224,7 +229,7 @@ family shortcuts
 // architecture
 #define PX_INTEL_FAMILY (PX_X64 || PX_X86)
 #define PX_ARM_FAMILY (PX_ARM || PX_A64)
-#define PX_P64_FAMILY (PX_X64 || PX_A64) // shortcut for 64-bit architectures
+#define PX_P64_FAMILY (PX_X64 || PX_A64 || PX_LOONGARCH64) // shortcut for 64-bit architectures
 
 /**
 C++ standard library defines
@@ -522,7 +527,7 @@ protected:                  \
 //#define DISABLE_CUDA_PHYSX
 #ifndef DISABLE_CUDA_PHYSX
 	//CUDA is currently supported on x86_64 windows and linux, and ARM_64 linux
-	#define PX_SUPPORT_GPU_PHYSX ((PX_X64 && (PX_WINDOWS_FAMILY || PX_LINUX)) || (PX_A64 && PX_LINUX))
+	#define PX_SUPPORT_GPU_PHYSX ((PX_X64 && (PX_WINDOWS_FAMILY || PX_LINUX)) || (PX_A64 && PX_LINUX) || PX_LOONGARCH64)
 #else
 	#define PX_SUPPORT_GPU_PHYSX 0
 #endif

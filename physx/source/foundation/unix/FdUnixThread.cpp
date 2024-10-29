@@ -269,6 +269,7 @@ void PxThreadImpl::yieldProcessor()
 {
 #if (PX_ARM || PX_A64)
 	__asm__ __volatile__("yield");
+#elif PX_LOONGARCH64
 #else
 	__asm__ __volatile__("pause");
 #endif
