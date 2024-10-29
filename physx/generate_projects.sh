@@ -1,5 +1,10 @@
 #!/bin/bash +x
 
+machine=`uname -m`
+if [ "$machine"x = "loongarch64"x ]; then
+    export PM_PYTHON_EXT="python3"
+fi
+
 if [ -n "${BASH_SOURCE[0]}" ]; then
     SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 else

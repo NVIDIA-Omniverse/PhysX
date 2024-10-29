@@ -62,7 +62,7 @@ class PxScopedPointer : private Alloc
 #if PX_WINDOWS_FAMILY
 	#include <malloc.h>
 	#define PxAlloca(x) _alloca(x)
-#elif PX_LINUX
+#elif PX_LINUX || PX_LOONGARCH64
 	#include <malloc.h>
 	#define PxAlloca(x) alloca(x)
 #elif PX_APPLE_FAMILY

@@ -119,6 +119,8 @@ class CMakePreset:
             return False
         elif self.targetPlatform == 'linuxAarch64':
             return False
+        elif self.targetPlatform == 'linuxLoongarch64':
+            return False
         return True
 
     def getCMakeSwitches(self):
@@ -215,12 +217,24 @@ class CMakePreset:
                 outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=\"' + \
                     cmake_modules_root + '/linux/LinuxAarch64.cmake\"'
             return outString
+        elif self.targetPlatform == 'linuxLoongarch64':
+            outString = outString + ' -DTARGET_BUILD_PLATFORM=linux'
+            outString = outString + ' -DPX_OUTPUT_ARCH=loongarch64'
+            if self.compiler == 'clang':
+                if os.environ.get('PM_clang_PATH') is not None:
+                    outString = outString + ' -DCMAKE_C_COMPILER=' + \
+                        os.environ['PM_clang_PATH'] + '/bin/clang'
+                    outString = outString + ' -DCMAKE_CXX_COMPILER=' + \
+                        os.environ['PM_clang_PATH'] + '/bin/clang++'
+                else:
+                    outString = outString + ' -DCMAKE_C_COMPILER=clang'
+                    outString = outString + ' -DCMAKE_CXX_COMPILER=clang++'
+            return outString
         elif self.targetPlatform == 'mac64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=mac'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
             return outString
         return ''
-
 
 def getCommonParams():
     outString = '--no-warn-unused-cli'
