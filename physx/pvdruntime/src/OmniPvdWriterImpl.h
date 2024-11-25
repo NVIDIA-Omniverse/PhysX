@@ -61,6 +61,8 @@ public:
 	void OMNI_PVD_CALL startFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp);
 	void OMNI_PVD_CALL stopFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp);
 
+	void OMNI_PVD_CALL recordMessage(OmniPvdContextHandle contextHandle, const char* message, const char* file, uint32_t line, uint32_t type, OmniPvdClassHandle handle) override;
+
 	uint32_t OMNI_PVD_CALL getStatus();
 	void OMNI_PVD_CALL clearStatus();
 

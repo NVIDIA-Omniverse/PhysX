@@ -26,24 +26,22 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-
+#include "foundation/PxAlloca.h"
+#include "foundation/PxAtomic.h"
+#include "foundation/PxErrors.h"
 #include "foundation/PxPreprocessor.h"
-#include "PxcNpWorkUnit.h"
-#include "PxvDynamics.h"
+#include "foundation/PxVecMath.h"
+#include "geomutils/PxContactPoint.h"
 
-using namespace physx;
-using namespace Gu;
-
+#include "PxcNpContactPrepShared.h"
+#include "PxcNpThreadContext.h"
 #include "PxsMaterialManager.h"
 #include "PxsMaterialCombiner.h"
 
 #include "PxcNpContactPrepShared.h"
-#include "foundation/PxAtomic.h"
-#include "PxsContactManagerState.h"
 
-#include "foundation/PxVecMath.h"
-#include "foundation/PxErrors.h"
 using namespace physx;
+using namespace Gu;
 using namespace aos;
 
 static PX_FORCE_INLINE void copyContactPoint(PxContact* PX_RESTRICT point, const PxContactPoint* PX_RESTRICT cp)
@@ -182,8 +180,8 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 	const PxU32 patchHeaderSize = sizeof(PxContactPatch) * (isModifiable ? totalContactPoints : totalUniquePatches) + additionalHeaderSize;
 	const PxU32 pointSize = totalContactPoints * (isModifiable ? sizeof(PxModifiableContact) : sizeof(PxContact));
 
-	PxU32 requiredContactSize = pointSize;
-	PxU32 requiredPatchSize = patchHeaderSize;
+	const PxU32 requiredContactSize = pointSize;
+	const PxU32 requiredPatchSize = patchHeaderSize;
 	PxU32 totalRequiredSize;
 
 	PxU8* PX_RESTRICT contactData = NULL;
@@ -193,7 +191,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 
 	// Calculate friction data size
 
-	PxU32 frictionPatchesSize = numPatches * sizeof(PxFrictionPatch);
+	const PxU32 frictionPatchesSize = numPatches * sizeof(PxFrictionPatch);
 
 	PxU8* PX_RESTRICT frictionPatchesData = NULL;
 
@@ -211,7 +209,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		
 		contactData = contactStreamPool->mDataStream + contactStreamPool->mDataStreamSize - contactIndex;
 	
-		PxU32 patchIndex = PxU32(PxAtomicAdd(&patchStreamPool->mSharedDataIndex, PxI32(requiredPatchSize)));
+		const PxU32 patchIndex = PxU32(PxAtomicAdd(&patchStreamPool->mSharedDataIndex, PxI32(requiredPatchSize)));
 		
 		if (patchStreamPool->isOverflown())
 		{
@@ -263,34 +261,31 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		const PxU32 totalSize = alignedRequiredSize + contactForceByteSize + frictionPatchesSize;
 		PxU8* data = manager ? blockStream->reserve(totalSize, *manager) : threadContext->mContactBlockStream.reserve(totalSize);
 
-		patchData = data;
-		contactData = patchData + requiredPatchSize;
-
-		if(contactForceByteSize)
+		if(data)
 		{
-			forceData = reinterpret_cast<PxReal*>((data + alignedRequiredSize));
+			patchData = data;
+			contactData = data + requiredPatchSize;
 
-			if (isMeshType)
-				triangleIndice = reinterpret_cast<PxU32*>(forceData + numContactPoints);
-
-			if(data)
+			if(contactForceByteSize)
 			{
+				forceData = reinterpret_cast<PxReal*>((data + alignedRequiredSize));
+
+				if (isMeshType)
+					triangleIndice = reinterpret_cast<PxU32*>(forceData + numContactPoints);
+
 				PxMemZero(forceData, contactForceByteSize);
-			}
 
-			if (frictionPatchesSize)
-			{
-				frictionPatchesData = data + alignedRequiredSize + contactForceByteSize;
-				PxMemZero(frictionPatchesData, frictionPatchesSize);
+				if (frictionPatchesSize)
+				{
+					frictionPatchesData = data + alignedRequiredSize + contactForceByteSize;
+					PxMemZero(frictionPatchesData, frictionPatchesSize);
+				}
 			}
 		}
 
 		totalRequiredSize = alignedRequiredSize;
 	}
 	
-	PxPrefetchLine(patchData);
-	PxPrefetchLine(contactData);
-
 	if(patchData == NULL)
 	{
 		writtenContactCount = 0;
@@ -303,11 +298,12 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 		return 0;
 	}
 
+	PxPrefetchLine(patchData);
+	PxPrefetchLine(contactData);
+
 #if PX_ENABLE_SIM_STATS
 	if(threadContext)
-	{
 		threadContext->mCompressedCacheSize += totalRequiredSize;
-	}
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
@@ -350,7 +346,7 @@ PxU32 physx::writeCompressedContact(const PxContactPoint* const PX_RESTRICT cont
 			patch->dynamicFriction = dynamicFriction_;
 			patch->staticFriction = staticFriction_;
 			patch->damping = combinedDamping_;
-			patch->startContactIndex = PxTo8(currentIndex);
+			patch->startContactIndex = PxTo16(currentIndex);
 			//KS - we could probably compress this further into the header but the complexity might not be worth it
 			patch->nbContacts = rootPatch.totalCount;
 			patch->materialFlags = PxU8(materialFlags_);

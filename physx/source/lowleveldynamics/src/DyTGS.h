@@ -30,7 +30,6 @@
 #define DY_TGS_H
 
 #include "foundation/PxPreprocessor.h"
-#include "foundation/Px.h"
 
 namespace physx
 {

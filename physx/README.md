@@ -45,6 +45,8 @@ Platform specific environment and build information can be found in [documentati
 
 To begin, clone this repository onto your local drive.  Then change directory to physx/, run ./generate_projects.[bat|sh] and follow on-screen prompts.  This will let you select a platform specific solution to build.  You can then build from the generated solution/make file in the platform- and configuration-specific folders in the ``compiler`` folder.
 
+Note that the PhysX distribution downloads binary content, such as the PhysX GPU binaries, from Amazon CloudFront on demand, using the packman package manager.
+
 ## Acknowledgements
 
 This depot references packages of third party open source software copyright their respective owners.

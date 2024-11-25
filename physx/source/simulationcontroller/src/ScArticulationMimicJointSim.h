@@ -67,6 +67,8 @@ public:
 
 	void setGearRatio(const PxReal gearRatio);
 	void setOffset(const PxReal offset);
+	void setNaturalFrequency(const PxReal naturalFrequency);
+	void setDampingRatio(const PxReal dampingRatio);
 
 	Sc::Scene&							mScene;
 	Sc::ArticulationMimicJointCore&		mCore;

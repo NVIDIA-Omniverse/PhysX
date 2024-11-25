@@ -185,7 +185,7 @@ namespace physx
 
 		\return The string name.
 		*/
-		virtual	const char*						getConcreteTypeName() const { return "PxArticulationAttachment"; }
+		virtual	const char*						getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationAttachment"; }
 
 	protected:
 
@@ -269,7 +269,7 @@ namespace physx
 
 		\return The string name.
 		*/
-		virtual	const char*							getConcreteTypeName() const { return "PxArticulationTendonJoint"; }
+		virtual	const char*							getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationTendonJoint"; }
 
 	protected:
 
@@ -453,7 +453,7 @@ namespace physx
 
 		\return The string name.
 		*/
-		virtual	const char*						getConcreteTypeName() const { return "PxArticulationSpatialTendon"; }
+		virtual	const char*						getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationSpatialTendon"; }
 
 		virtual									~PxArticulationSpatialTendon() {}
 
@@ -569,7 +569,7 @@ namespace physx
 
 		\return The string name.
 		*/
-		virtual	const char*						getConcreteTypeName() const { return "PxArticulationFixedTendon"; }
+		virtual	const char*						getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationFixedTendon"; }
 
 		virtual									~PxArticulationFixedTendon() {}
 

@@ -377,7 +377,7 @@ public:
 	virtual		PxCombineMode::Enum	getDampingCombineMode() const = 0;
 
 	// PxBase
-	virtual		const char*	getConcreteTypeName() const	PX_OVERRIDE	{ return "PxMaterial"; }
+	virtual		const char*	getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxMaterial"; }
 	//~PxBase
 
 protected:

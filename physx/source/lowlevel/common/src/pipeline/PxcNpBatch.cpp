@@ -26,11 +26,9 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
-#include "PxcNpCache.h"
-#include "geometry/PxTriangleMesh.h"
-#include "common/PxProfileZone.h"
-
 #include "PxcNpBatch.h"
+#include "PxcNpCache.h"
+#include "common/PxProfileZone.h"
 #include "PxcNpWorkUnit.h"
 #include "PxcContactCache.h"
 #include "PxcNpContactPrepShared.h"
@@ -39,6 +37,8 @@
 #include "PxsMaterialManager.h"
 #include "PxsTransformCache.h"
 #include "PxsContactManagerState.h"
+#include "PxcNpThreadContext.h"
+#include "PxcMaterialMethodImpl.h"
 
 // PT: use this define to enable detailed analysis of the NP functions.
 //#define LOCAL_PROFILE_ZONE(x, y)	PX_PROFILE_ZONE(x, y)
@@ -206,7 +206,7 @@ static bool copyBuffers(PxsContactManagerOutput& cmOutput, Gu::Cache& cache, Pxc
 		if(forceSize)
 			PxMemZero(forceBuffer, forceSize);
 		
-		cmOutput.contactPatches= contactPatches;
+		cmOutput.contactPatches = contactPatches;
 		cmOutput.contactPoints = contactPoints;
 		cmOutput.frictionPatches = frictionPatches;
 		cmOutput.contactForces = forceBuffer;
@@ -288,15 +288,15 @@ static bool finishContacts(const PxcNpWorkUnit& input, PxsContactManagerOutput& 
 		input.mFlags & PxcNpWorkUnitFlag::eOUTPUT_CONTACTS
 		|| (input.mFlags & PxcNpWorkUnitFlag::eFORCE_THRESHOLD);
 
-	if((!isMeshType && !createReports))
+	if(!isMeshType && !createReports)
 		contactForceByteSize = 0;
 
-	bool res = (writeCompressedContact(buffer.contacts, buffer.count, &threadContext, npOutput.nbContacts, npOutput.contactPatches, npOutput.contactPoints, compressedContactSize,
+	const bool res = writeCompressedContact(buffer.contacts, buffer.count, &threadContext, npOutput.nbContacts, npOutput.contactPatches, npOutput.contactPoints, compressedContactSize,
 		reinterpret_cast<PxReal*&>(npOutput.contactForces), contactForceByteSize, 
 		npOutput.frictionPatches, threadContext.mFrictionPatchStreamPool,
 		threadContext.mMaterialManager, ((input.mFlags & PxcNpWorkUnitFlag::eMODIFIABLE_CONTACT) != 0), 
 		false, pMaterials, npOutput.nbPatches, 0, NULL, NULL, threadContext.mCreateAveragePoint, threadContext.mContactStreamPool, 
-		threadContext.mPatchStreamPool, threadContext.mForceAndIndiceStreamPool, isMeshType) != 0);
+		threadContext.mPatchStreamPool, threadContext.mForceAndIndiceStreamPool, isMeshType) != 0;
 
 	//handle buffer overflow
 	if(!npOutput.nbContacts)
@@ -399,13 +399,12 @@ static PX_FORCE_INLINE void discreteNarrowPhase(PxcNpThreadContext& context, con
 		{
 			//We are using a multi-manifold. This is cached in a reduced npCache...
 			isMultiManifold = true;
-			uintptr_t address = uintptr_t(&cache.getMultipleManifold());
-			manifold.fromBuffer(reinterpret_cast<PxU8*>(address));
+			manifold.fromBuffer(cache.mCachedData);
 			cache.setMultiManifold(&manifold);
 		}
 		else if(cache.isManifold())
 		{
-			void* address = reinterpret_cast<void*>(&cache.getManifold());
+			void* address = cache.mCachedData;
 			PxPrefetch(address);
 			PxPrefetch(address, 128);
 			PxPrefetch(address, 256);

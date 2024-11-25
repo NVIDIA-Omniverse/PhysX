@@ -35,8 +35,8 @@
 #include "foundation/PxHashMap.h"
 #include "GuMeshFactory.h"
 #include "NpMaterial.h"
-#include "NpFEMSoftBodyMaterial.h"
-#include "NpFEMClothMaterial.h"
+#include "NpDeformableSurfaceMaterial.h"
+#include "NpDeformableVolumeMaterial.h"
 #include "NpPBDMaterial.h"
 #include "NpPhysicsInsertionCallback.h"
 #include "NpMaterialManager.h"
@@ -93,15 +93,15 @@ class NpPhysics : public PxPhysics, public PxUserAllocated
 
 	struct NpDelListenerEntry : public PxUserAllocated
 	{
-		NpDelListenerEntry(const PxDeletionEventFlags& de, bool restrictedObjSet)
-			: flags(de)
-			, restrictedObjectSet(restrictedObjSet)
+		NpDelListenerEntry(const PxDeletionEventFlags& de, bool restrictedObjSet) :
+			flags				(de),
+			restrictedObjectSet	(restrictedObjSet)
 		{
 		}
 
-		PxHashSet<const PxBase*> registeredObjects;  // specifically registered objects for deletion events
-		PxDeletionEventFlags flags;
-		bool restrictedObjectSet;
+		PxHashSet<const PxBase*>	registeredObjects;  // specifically registered objects for deletion events
+		PxDeletionEventFlags		flags;
+		const bool					restrictedObjectSet;
 	};
 
 
@@ -138,17 +138,18 @@ public:
 	virtual		PxRigidStatic*						createRigidStatic(const PxTransform&)	PX_OVERRIDE;
 	virtual		PxRigidDynamic*						createRigidDynamic(const PxTransform&)	PX_OVERRIDE;
 	virtual		PxArticulationReducedCoordinate*	createArticulationReducedCoordinate()	PX_OVERRIDE;
-	virtual		PxSoftBody*							createSoftBody(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual		PxHairSystem*						createHairSystem(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
-	virtual		PxFEMCloth*							createFEMCloth(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual		PxDeformableSurface*				createDeformableSurface(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
+	virtual		PxDeformableVolume*					createDeformableVolume(PxCudaContextManager& cudaContextManager)	PX_OVERRIDE;
 	virtual		PxPBDParticleSystem*				createPBDParticleSystem(PxCudaContextManager& cudaContextManager, PxU32 maxNeighborhood, PxReal neighborhoodScale)	PX_OVERRIDE;
 
 	virtual		PxConstraint*				createConstraint(PxRigidActor* actor0, PxRigidActor* actor1, PxConstraintConnector& connector, const PxConstraintShaderTable& shaders, PxU32 dataSize)	PX_OVERRIDE;
 	virtual		PxAggregate*				createAggregate(PxU32 maxActors, PxU32 maxShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE;
+	virtual		PxDeformableAttachment*		createDeformableAttachment(const PxDeformableAttachmentData& data)	PX_OVERRIDE;
+	virtual		PxDeformableElementFilter*	createDeformableElementFilter(const PxDeformableElementFilterData& data)	PX_OVERRIDE;
 
 	virtual		PxShape*					createShape(const PxGeometry&, PxMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
-	virtual		PxShape*					createShape(const PxGeometry&, PxFEMSoftBodyMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
-	virtual		PxShape*					createShape(const PxGeometry&, PxFEMClothMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
+	virtual		PxShape*					createShape(const PxGeometry&, PxDeformableVolumeMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
+	virtual		PxShape*					createShape(const PxGeometry&, PxDeformableSurfaceMaterial*const *, PxU16, bool, PxShapeFlags shapeFlags)	PX_OVERRIDE;
 
 	virtual		PxU32						getNbShapes()	const	PX_OVERRIDE;
 	virtual		PxU32						getShapes(PxShape** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const	PX_OVERRIDE;
@@ -157,13 +158,13 @@ public:
 	virtual		PxU32						getNbMaterials() const	PX_OVERRIDE;
 	virtual		PxU32						getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE;
 
-	virtual		PxFEMSoftBodyMaterial*		createFEMSoftBodyMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)	PX_OVERRIDE;
-	virtual		PxU32						getNbFEMSoftBodyMaterials() const	PX_OVERRIDE;
-	virtual		PxU32						getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
+	virtual		PxDeformableSurfaceMaterial*	createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness, PxReal bendingStiffness, PxReal damping, PxReal bendingDamping)	PX_OVERRIDE;
+	virtual		PxU32							getNbDeformableSurfaceMaterials() const	PX_OVERRIDE;
+	virtual		PxU32							getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
-	virtual		PxFEMClothMaterial*			createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness)	PX_OVERRIDE;
-	virtual		PxU32						getNbFEMClothMaterials() const	PX_OVERRIDE;
-	virtual		PxU32						getFEMClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
+	virtual		PxDeformableVolumeMaterial*		createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)	PX_OVERRIDE;
+	virtual		PxU32							getNbDeformableVolumeMaterials() const	PX_OVERRIDE;
+	virtual		PxU32							getDeformableVolumeMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE;
 
 	virtual		PxPBDMaterial*				createPBDMaterial(PxReal friction, PxReal damping, PxReal adhesion, PxReal viscosity, PxReal vorticityConfinement, PxReal surfaceTension, PxReal cohesion, PxReal lift, PxReal drag, PxReal cflCoefficient, PxReal gravityScale)	PX_OVERRIDE;
 	virtual		PxU32						getNbPBDMaterials() const	PX_OVERRIDE;
@@ -177,7 +178,7 @@ public:
 	virtual		PxU32						getNbTetrahedronMeshes()	const	PX_OVERRIDE;
 	virtual		PxU32						getTetrahedronMeshes(PxTetrahedronMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0)	const	PX_OVERRIDE;
 
-	virtual		PxSoftBodyMesh*				createSoftBodyMesh(PxInputStream&)	PX_OVERRIDE;
+	virtual		PxDeformableVolumeMesh*		createDeformableVolumeMesh(PxInputStream&)	PX_OVERRIDE;
 
 	virtual		PxHeightField*				createHeightField(PxInputStream& stream)	PX_OVERRIDE;
 	virtual		PxU32						getNbHeightFields()	const	PX_OVERRIDE;
@@ -228,30 +229,26 @@ public:
 
 				NpMaterialManager<NpMaterial>&				getMaterialManager()	{	return mMasterMaterialManager;	}
 #if PX_SUPPORT_GPU_PHYSX
-				NpMaterialManager<NpFEMSoftBodyMaterial>&	getFEMSoftBodyMaterialManager()	{ return mMasterFEMSoftBodyMaterialManager; }
-				NpMaterialManager<NpPBDMaterial>&			getPBDMaterialManager()			{ return mMasterPBDMaterialManager; }
-	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-				NpMaterialManager<NpFEMClothMaterial>&		getFEMClothMaterialManager()	{ return mMasterFEMClothMaterialManager; }
-	#endif
+				NpMaterialManager<NpDeformableSurfaceMaterial>&	getDeformableSurfaceMaterialManager()	{ return mMasterDeformableSurfaceMaterialManager; }
+				NpMaterialManager<NpDeformableVolumeMaterial>&	getDeformableVolumeMaterialManager()	{ return mMasterDeformableVolumeMaterialManager; }
+				NpMaterialManager<NpPBDMaterial>&				getPBDMaterialManager()					{ return mMasterPBDMaterialManager; }
 #endif
 				NpMaterial*									addMaterial(NpMaterial* np);
 				void										removeMaterialFromTable(NpMaterial&);
 				void										updateMaterial(NpMaterial&);
 
 #if PX_SUPPORT_GPU_PHYSX
-				NpFEMSoftBodyMaterial*						addMaterial(NpFEMSoftBodyMaterial* np);
-				void										removeMaterialFromTable(NpFEMSoftBodyMaterial&);
-				void										updateMaterial(NpFEMSoftBodyMaterial&);
+				NpDeformableSurfaceMaterial*				addMaterial(NpDeformableSurfaceMaterial* np);
+				void										removeMaterialFromTable(NpDeformableSurfaceMaterial&);
+				void										updateMaterial(NpDeformableSurfaceMaterial&);
+
+				NpDeformableVolumeMaterial*					addMaterial(NpDeformableVolumeMaterial* np);
+				void										removeMaterialFromTable(NpDeformableVolumeMaterial&);
+				void										updateMaterial(NpDeformableVolumeMaterial&);
 
 				NpPBDMaterial*								addMaterial(NpPBDMaterial* np);
 				void										removeMaterialFromTable(NpPBDMaterial&);
 				void										updateMaterial(NpPBDMaterial&);
-
-	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-				NpFEMClothMaterial*							addMaterial(NpFEMClothMaterial* np);
-				void										removeMaterialFromTable(NpFEMClothMaterial&);
-				void										updateMaterial(NpFEMClothMaterial&);
-	#endif
 #endif
 
 				PX_FORCE_INLINE PxMutex& getSceneAndMaterialMutex() { return mSceneAndMaterialMutex; }
@@ -273,7 +270,8 @@ private:
 				Sc::Physics										mPhysics;
 				NpMaterialManager<NpMaterial>					mMasterMaterialManager;
 #if PX_SUPPORT_GPU_PHYSX
-				NpMaterialManager<NpFEMSoftBodyMaterial>		mMasterFEMSoftBodyMaterialManager;
+				NpMaterialManager<NpDeformableSurfaceMaterial>	mMasterDeformableSurfaceMaterialManager;
+				NpMaterialManager<NpDeformableVolumeMaterial>	mMasterDeformableVolumeMaterialManager;
 				NpMaterialManager<NpPBDMaterial>				mMasterPBDMaterialManager;
 #endif
 				NpPhysicsInsertionCallback	mObjectInsertion;
@@ -335,15 +333,6 @@ private:
 	mOmniPvdListener;
 	private:
 #endif
-
-// GW: these must be the last defined members for now.  Otherwise it appears to mess up the offsets
-// expected when linking SDK dlls against unit tests due to differing values of PX_ENABLE_FEATURES_UNDER_CONSTRUCTION...
-// this warrants further investigation and hopefully a better solution
-#if PX_SUPPORT_GPU_PHYSX
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-				NpMaterialManager<NpFEMClothMaterial>			mMasterFEMClothMaterialManager;
-#endif
-#endif
 };
 
 template <> class NpMaterialAccessor<NpMaterial>
@@ -356,12 +345,21 @@ public:
 };
 
 #if PX_SUPPORT_GPU_PHYSX
-template <> class NpMaterialAccessor<NpFEMSoftBodyMaterial>
+template <> class NpMaterialAccessor<NpDeformableSurfaceMaterial>
 {
 public:
-	static NpMaterialManager<NpFEMSoftBodyMaterial>& getMaterialManager(NpPhysics& physics)
+	static NpMaterialManager<NpDeformableSurfaceMaterial>& getMaterialManager(NpPhysics& physics)
 	{
-		return physics.getFEMSoftBodyMaterialManager();
+		return physics.getDeformableSurfaceMaterialManager();
+	}
+};
+
+template <> class NpMaterialAccessor<NpDeformableVolumeMaterial>
+{
+public:
+	static NpMaterialManager<NpDeformableVolumeMaterial>& getMaterialManager(NpPhysics& physics)
+	{
+		return physics.getDeformableVolumeMaterialManager();
 	}
 };
 
@@ -374,17 +372,6 @@ public:
 	}
 };
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-template <> class NpMaterialAccessor<NpFEMClothMaterial>
-{
-public:
-	static NpMaterialManager<NpFEMClothMaterial>& getMaterialManager(NpPhysics& physics)
-	{
-		return physics.getFEMClothMaterialManager();
-	}
-};
-
-#endif
 #endif
 
 #if PX_VC
@@ -392,4 +379,4 @@ public:
 #endif
 }
 
-#endif
+#endif // NP_PHYSICS_H

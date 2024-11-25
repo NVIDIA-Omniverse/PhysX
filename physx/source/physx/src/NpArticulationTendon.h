@@ -94,26 +94,24 @@ public:
 
 	virtual ~NpArticulationAttachment();
 
+	// PxBase
+	virtual		void							release()	PX_OVERRIDE	PX_FINAL;
+	//~PxBase
 
-	virtual		void							setRestLength(const PxReal restLength);
-	virtual		PxReal							getRestLength() const;
-
-	virtual		void							setLimitParameters(const PxArticulationTendonLimit& paramters);
-	virtual		PxArticulationTendonLimit		getLimitParameters() const;
-
-	virtual		void							setRelativeOffset(const PxVec3& offset);
-	virtual		PxVec3							getRelativeOffset() const;
-
-	virtual		void							setCoefficient(const PxReal coefficient);
-	virtual		PxReal							getCoefficient() const;
-
-	virtual		PxArticulationLink*				getLink() const { return mLink; }
-	virtual		PxArticulationAttachment*		getParent() const { return mParent; }
-	virtual		PxArticulationSpatialTendon*	getTendon() const;
-	
-	virtual		bool							isLeaf() const { return mChildren.empty(); }
-
-	virtual		void							release();
+	// PxArticulationAttachment
+	virtual		void							setRestLength(const PxReal restLength)	PX_OVERRIDE	PX_FINAL;
+	virtual		PxReal							getRestLength() const	PX_OVERRIDE	PX_FINAL;
+	virtual		void							setLimitParameters(const PxArticulationTendonLimit& parameters)	PX_OVERRIDE	PX_FINAL;
+	virtual		PxArticulationTendonLimit		getLimitParameters() const	PX_OVERRIDE	PX_FINAL;
+	virtual		void							setRelativeOffset(const PxVec3& offset)	PX_OVERRIDE	PX_FINAL;
+	virtual		PxVec3							getRelativeOffset() const	PX_OVERRIDE	PX_FINAL;
+	virtual		void							setCoefficient(const PxReal coefficient)	PX_OVERRIDE	PX_FINAL;
+	virtual		PxReal							getCoefficient() const	PX_OVERRIDE	PX_FINAL;
+	virtual		PxArticulationLink*				getLink() const	PX_OVERRIDE	PX_FINAL		{ return mLink; }
+	virtual		PxArticulationAttachment*		getParent() const	PX_OVERRIDE	PX_FINAL	{ return mParent; }
+	virtual		bool							isLeaf() const	PX_OVERRIDE	PX_FINAL		{ return mChildren.empty(); }
+	virtual		PxArticulationSpatialTendon*	getTendon() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationAttachment
 
 	PX_FORCE_INLINE NpArticulationAttachment** getChildren() { return mChildren.begin(); }
 	PX_FORCE_INLINE PxU32 getNumChildren() { return mChildren.size(); }
@@ -155,27 +153,29 @@ public:
 
 	virtual ~NpArticulationSpatialTendon();
 
-	virtual		PxArticulationAttachment*		createAttachment(PxArticulationAttachment* parent, const PxReal coefficient, const PxVec3 relativeOffset, PxArticulationLink* link);
+	// PxBase
+	virtual	void							release()	PX_OVERRIDE	PX_FINAL;
+	//~PxBase
+
+	// PxArticulationTendon
+	virtual	void							setStiffness(const PxReal stiffness)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getStiffness() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setDamping(const PxReal damping)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getDamping() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setLimitStiffness(const PxReal stiffness)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getLimitStiffness() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setOffset(const PxReal offset, bool autowake)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getOffset() const	PX_OVERRIDE	PX_FINAL;
+	virtual	PxArticulationReducedCoordinate* getArticulation() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationTendon
+
+	// PxArticulationSpatialTendon
+	virtual	PxArticulationAttachment*	createAttachment(PxArticulationAttachment* parent, const PxReal coefficient, const PxVec3 relativeOffset, PxArticulationLink* link)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxU32						getAttachments(PxArticulationAttachment** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE	PX_FINAL;
+	virtual	PxU32						getNbAttachments() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationSpatialTendon
 
 	NpArticulationAttachment*					getAttachment(const PxU32 index);
-	virtual		PxU32							getAttachments(PxArticulationAttachment** userBuffer, PxU32 bufferSize, PxU32 startIndex) const;
-	PxU32										getNbAttachments() const;
-
-	virtual		void							setStiffness(const PxReal stiffness);
-	virtual		PxReal							getStiffness() const;
-
-	virtual		void							setDamping(const PxReal damping);
-	virtual		PxReal							getDamping() const;
-
-	virtual		void							setLimitStiffness(const PxReal stiffness);
-	virtual		PxReal							getLimitStiffness() const;
-
-	virtual		void							setOffset(const PxReal offset, bool autowake = true);
-	virtual		PxReal							getOffset() const;
-
-	virtual		PxArticulationReducedCoordinate* getArticulation() const;
-
-	virtual		void							release();
 
 	PX_FORCE_INLINE Sc::ArticulationSpatialTendonCore&	getTendonCore() { return mCore; }
 
@@ -211,17 +211,17 @@ public:
 
 	virtual ~NpArticulationTendonJoint(){}
 
-	virtual		PxArticulationLink*					getLink() const { return mLink; }
+	// PxBase
+	virtual	void						release()	PX_OVERRIDE	PX_FINAL;
+	//~PxBase
 
-	virtual		PxArticulationTendonJoint*			getParent() const { return mParent;  }
-
-	virtual		PxArticulationFixedTendon*			getTendon() const;
-
-	virtual		void								setCoefficient(const PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient);
-	virtual		void								getCoefficient(PxArticulationAxis::Enum& axis, PxReal& coefficient, PxReal& recipCoefficient) const;
-
-
-	virtual		void								release();
+	// PxArticulationTendonJoint
+	virtual	void						setCoefficient(const PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient)	PX_OVERRIDE	PX_FINAL;
+	virtual	void						getCoefficient(PxArticulationAxis::Enum& axis, PxReal& coefficient, PxReal& recipCoefficient) const	PX_OVERRIDE	PX_FINAL;
+	virtual	PxArticulationLink*			getLink() const	PX_OVERRIDE	PX_FINAL		{ return mLink; }
+	virtual	PxArticulationTendonJoint*	getParent() const	PX_OVERRIDE	PX_FINAL	{ return mParent;  }
+	virtual	PxArticulationFixedTendon*	getTendon() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationTendonJoint
 
 	PX_FORCE_INLINE NpArticulationTendonJoint** getChildren() { return mChildren.begin(); }
 	PX_FORCE_INLINE PxU32 getNumChildren() { return mChildren.size(); }
@@ -246,7 +246,7 @@ class NpArticulationFixedTendon : public PxArticulationFixedTendon, public NpBas
 {
 public:
 	// PX_SERIALIZATION
-	NpArticulationFixedTendon(PxBaseFlags baseFlags): PxArticulationFixedTendon(baseFlags), NpBase(PxEmpty), mTendonJoints(PxEmpty), mCore(PxEmpty), mHandle(PxEmpty) {}
+	NpArticulationFixedTendon(PxBaseFlags baseFlags) : PxArticulationFixedTendon(baseFlags), NpBase(PxEmpty), mTendonJoints(PxEmpty), mCore(PxEmpty), mHandle(PxEmpty) {}
 	void						preExportDataReset() {}
 	virtual		void			exportExtraData(PxSerializationContext& );
 	void						importExtraData(PxDeserializationContext& );
@@ -261,33 +261,33 @@ public:
 
 	virtual ~NpArticulationFixedTendon();
 
-	virtual		PxArticulationTendonJoint*		createTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, const PxReal scale, const PxReal recipScale, PxArticulationLink* link);
+	// PxBase
+	virtual	void							release()	PX_OVERRIDE	PX_FINAL;
+	//~PxBase
+
+	// PxArticulationTendon
+	virtual	void							setStiffness(const PxReal stiffness)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getStiffness() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setDamping(const PxReal damping)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getDamping() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setLimitStiffness(const PxReal stiffness)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getLimitStiffness() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setOffset(const PxReal offset, bool autowake)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getOffset() const	PX_OVERRIDE	PX_FINAL;
+	virtual	PxArticulationReducedCoordinate* getArticulation() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationTendon
+
+	// PxArticulationFixedTendon
+	virtual	PxArticulationTendonJoint*		createTendonJoint(PxArticulationTendonJoint* parent, PxArticulationAxis::Enum axis, const PxReal coefficient, const PxReal recipCoefficient, PxArticulationLink* link)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxU32							getTendonJoints(PxArticulationTendonJoint** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE	PX_FINAL;
+	virtual	PxU32							getNbTendonJoints() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setRestLength(const PxReal restLength)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxReal							getRestLength() const	PX_OVERRIDE	PX_FINAL;
+	virtual	void							setLimitParameters(const PxArticulationTendonLimit& parameter)	PX_OVERRIDE	PX_FINAL;
+	virtual	PxArticulationTendonLimit		getLimitParameters() const	PX_OVERRIDE	PX_FINAL;
+	//~PxArticulationFixedTendon
 
 	NpArticulationTendonJoint*					getTendonJoint(const PxU32 index);
-	virtual		PxU32							getTendonJoints(PxArticulationTendonJoint** userBuffer, PxU32 bufferSize, PxU32 startIndex) const;
-	virtual		PxU32							getNbTendonJoints(void) const;
-
-	virtual		void							setStiffness(const PxReal stiffness);
-	virtual		PxReal							getStiffness() const;
-
-	virtual		void							setDamping(const PxReal damping);
-	virtual		PxReal							getDamping() const;
-
-	virtual		void							setLimitStiffness(const PxReal damping);
-	virtual		PxReal							getLimitStiffness() const;
-
-	virtual		void							setRestLength(const PxReal restLength);
-	virtual		PxReal							getRestLength() const;
-
-	virtual		void							setLimitParameters(const PxArticulationTendonLimit& paramters);
-	virtual		PxArticulationTendonLimit		getLimitParameters() const;
-
-	virtual		void							setOffset(const PxReal offset, bool autowake = true);
-	virtual		PxReal							getOffset() const;
-
-	virtual		PxArticulationReducedCoordinate* getArticulation() const;
-
-	virtual		void							release();
 
 	PX_FORCE_INLINE ArticulationTendonHandle			getHandle() { return mHandle; }
 	PX_FORCE_INLINE void								setHandle(ArticulationTendonHandle handle) { mHandle = handle; }

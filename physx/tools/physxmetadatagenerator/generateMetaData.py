@@ -135,7 +135,7 @@ includes += includeString(sdkRoot + '/tools/physxmetadatagenerator')
 
 print("platform:", platform.system())
 
-commonFlags = '-DNDEBUG -DPX_GENERATE_META_DATA -DPX_ENABLE_FEATURES_UNDER_CONSTRUCTION=0 -x c++-header -w -Wno-c++11-narrowing -fms-extensions '
+commonFlags = '-DNDEBUG -DPX_GENERATE_META_DATA -x c++-header -w -Wno-c++11-narrowing -fms-extensions '
 
 
 if platform.system() == "Windows":

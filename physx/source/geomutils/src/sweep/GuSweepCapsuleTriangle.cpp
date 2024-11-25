@@ -35,7 +35,7 @@
 
 using namespace physx;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
 #define COLINEARITY_EPSILON 0.00001f
 

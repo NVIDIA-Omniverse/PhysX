@@ -563,7 +563,7 @@ static void solveExtContactCoulomb(const PxSolverConstraintDesc& desc, Dy::Error
 	}
 	else if (desc.linkIndexB == PxSolverConstraintDesc::RIGID_BODY)
 	{
-		//soft body, need to implement
+		//deformable volume, need to implement
 		linVel1 = V3Zero();
 		angVel1 = V3Zero();
 	}

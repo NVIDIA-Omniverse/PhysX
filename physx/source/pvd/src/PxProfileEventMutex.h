@@ -27,7 +27,6 @@
 #ifndef PX_PROFILE_EVENT_MUTEX_H
 #define PX_PROFILE_EVENT_MUTEX_H
 
-#include "foundation/Px.h"
 
 namespace physx { namespace profile {
 	

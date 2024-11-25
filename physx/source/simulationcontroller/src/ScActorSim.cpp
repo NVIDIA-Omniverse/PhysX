@@ -40,25 +40,23 @@ static const PxFilterObjectType::Enum gFilterType[PxActorType::eACTOR_COUNT] =
 	PxFilterObjectType::eRIGID_STATIC,		// PxActorType::eRIGID_STATIC
 	PxFilterObjectType::eRIGID_DYNAMIC,		// PxActorType::eRIGID_DYNAMIC
 	PxFilterObjectType::eARTICULATION,		// PxActorType::eARTICULATION_LINK
-	PxFilterObjectType::eSOFTBODY,			// PxActorType::eSOFTBODY
-	PxFilterObjectType::eFEMCLOTH,			// PxActorType::eFEMCLOTH
+	PxFilterObjectType::eDEFORMABLE_SURFACE,// PxActorType::eDEFORMABLE_SURFACE
+	PxFilterObjectType::eDEFORMABLE_VOLUME,	// PxActorType::eDEFORMABLE_VOLUME
 	PxFilterObjectType::ePARTICLESYSTEM,	// PxActorType::ePBD_PARTICLESYSTEM
-	PxFilterObjectType::eHAIRSYSTEM,		// PxActorType::eHAIRSYSTEM
 };
 
 static const PxU32 gFilterFlagEx[PxActorType::eACTOR_COUNT] =
 {
-	PxFilterObjectFlagEx::eRIGID_STATIC,									// PxActorType::eRIGID_STATIC
-	PxFilterObjectFlagEx::eRIGID_DYNAMIC,									// PxActorType::eRIGID_DYNAMIC
-	PxFilterObjectFlagEx::eRIGID_DYNAMIC,									// PxActorType::eARTICULATION_LINK
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eSOFTBODY,		// PxActorType::eSOFTBODY
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eFEMCLOTH,		// PxActorType::eFEMCLOTH
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::ePARTICLESYSTEM,	// PxActorType::ePBD_PARTICLESYSTEM
-	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eHAIRSYSTEM,		// PxActorType::eHAIRSYSTEM
+	PxFilterObjectFlagEx::eRIGID_STATIC,										// PxActorType::eRIGID_STATIC
+	PxFilterObjectFlagEx::eRIGID_DYNAMIC,										// PxActorType::eRIGID_DYNAMIC
+	PxFilterObjectFlagEx::eRIGID_DYNAMIC,										// PxActorType::eARTICULATION_LINK
+	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eDEFORMABLE_SURFACE,	// PxActorType::eDEFORMABLE_SURFACE
+	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::eDEFORMABLE_VOLUME,	// PxActorType::eDEFORMABLE_VOLUME
+	PxFilterObjectFlagEx::eNON_RIGID|PxFilterObjectFlagEx::ePARTICLESYSTEM,		// PxActorType::ePBD_PARTICLESYSTEM
 };
 
 // PT: if this breaks, you need to update the above table
-PX_COMPILE_TIME_ASSERT(PxActorType::eACTOR_COUNT==7);
+PX_COMPILE_TIME_ASSERT(PxActorType::eACTOR_COUNT==6);
 
 // PT: make sure that the highest flag fits into 16bit
 PX_COMPILE_TIME_ASSERT(PxFilterObjectFlagEx::eLAST<=0xffff);
@@ -78,10 +76,9 @@ Sc::ActorSim::ActorSim(Scene& scene, ActorCore& core) :
 		PX_ASSERT(gFilterType[PxActorType::eRIGID_STATIC] == PxFilterObjectType::eRIGID_STATIC);
 		PX_ASSERT(gFilterType[PxActorType::eRIGID_DYNAMIC] == PxFilterObjectType::eRIGID_DYNAMIC);
 		PX_ASSERT(gFilterType[PxActorType::eARTICULATION_LINK] == PxFilterObjectType::eARTICULATION);
-		PX_ASSERT(gFilterType[PxActorType::eSOFTBODY] == PxFilterObjectType::eSOFTBODY);
-		PX_ASSERT(gFilterType[PxActorType::eFEMCLOTH] == PxFilterObjectType::eFEMCLOTH);
+		PX_ASSERT(gFilterType[PxActorType::eDEFORMABLE_SURFACE] == PxFilterObjectType::eDEFORMABLE_SURFACE);
+		PX_ASSERT(gFilterType[PxActorType::eDEFORMABLE_VOLUME] == PxFilterObjectType::eDEFORMABLE_VOLUME);
 		PX_ASSERT(gFilterType[PxActorType::ePBD_PARTICLESYSTEM] == PxFilterObjectType::ePARTICLESYSTEM);
-		PX_ASSERT(gFilterType[PxActorType::eHAIRSYSTEM] == PxFilterObjectType::eHAIRSYSTEM);
 
 		const PxActorType::Enum actorType = getActorType();
 

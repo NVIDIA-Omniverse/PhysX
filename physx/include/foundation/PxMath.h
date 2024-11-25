@@ -204,7 +204,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE double PxCos(double a)
 //! \brief compute sine and cosine at the same time
 PX_CUDA_CALLABLE PX_FORCE_INLINE void PxSinCos(const PxF32 a, PxF32& sin, PxF32& cos)
 {
-#if defined(__CUDACC__) && __CUDA_ARCH__ >= 350
+#if PX_CUDA_COMPILER && __CUDA_ARCH__ >= 350
 	__sincosf(a, &sin, &cos);
 #else
 	sin = PxSin(a);

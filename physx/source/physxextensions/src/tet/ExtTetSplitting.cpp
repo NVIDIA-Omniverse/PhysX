@@ -28,34 +28,35 @@
 #include "ExtUtilities.h"
 #include "foundation/PxBasicTemplates.h"
 
-namespace physx
-{
-namespace Ext
-{
-	//Last four bits are used
-	//Last bit set stands for A
-	//Second last bit stands for B
-	//Third last bit stands for C
-	//Fourth last bit stands for D
+using namespace physx;
+using namespace Ext;
 
-	typedef PxU32 TetCorner;
-	typedef PxU32 TetEdge;
+//Last four bits are used
+//Last bit set stands for A
+//Second last bit stands for B
+//Third last bit stands for C
+//Fourth last bit stands for D
 
-	static const TetCorner None = 0x00000000;
-	static const TetCorner A = 0x00000001;
-	static const TetCorner B = 0x00000002;
-	static const TetCorner C = 0x00000004;
-	static const TetCorner D = 0x00000008;
+typedef PxU32 TetCorner;
+typedef PxU32 TetEdge;
+
+static const TetCorner None = 0x00000000;
+static const TetCorner A = 0x00000001;
+static const TetCorner B = 0x00000002;
+static const TetCorner C = 0x00000004;
+static const TetCorner D = 0x00000008;
 	 
-	static const TetEdge AB = 0x00000003;
-	static const TetEdge AC = 0x00000005;
-	static const TetEdge AD = 0x00000009;
-	static const TetEdge BC = 0x00000006;
-	static const TetEdge BD = 0x0000000A;
-	static const TetEdge CD = 0x0000000C;
+static const TetEdge AB = 0x00000003;
+static const TetEdge AC = 0x00000005;
+static const TetEdge AD = 0x00000009;
+static const TetEdge BC = 0x00000006;
+static const TetEdge BD = 0x0000000A;
+static const TetEdge CD = 0x0000000C;
 	 
-	static const TetCorner tetCorners[4] = { A, B, C, D };
+static const TetCorner tetCorners[4] = { A, B, C, D };
 
+namespace
+{
 	//Specifies which edges of a tetrahedron should get a point inserted (=split)
 	struct TetSubdivisionInfo
 	{
@@ -87,14 +88,15 @@ namespace Ext
 				cornerToProcess = corner1;
 		}
 
+		// PT: this function seems unused
 		//Helper method for sorting
-		template<typename T>
+		/*template<typename T>
 		void swap(T& a, T& b)
 		{
 			T tmp = a;
 			a = b;
 			b = tmp;
-		}
+		}*/
 
 		//Helper method for sorting
 		bool swap(TetCorner corner1, TetCorner corner2, TetCorner& additionalCornerToProcess1, TetCorner& additionalCornerToProcess2)
@@ -177,517 +179,464 @@ namespace Ext
 			return counter;
 		}
 	};
+}
 
-	//Returns true if the edge is adjacent to the specified corner
-	PX_FORCE_INLINE bool edgeContainsCorner(TetEdge edge, TetCorner corner)
-	{
-		return (edge & corner) != 0;
-	}
+//Returns true if the edge is adjacent to the specified corner
+static PX_FORCE_INLINE bool edgeContainsCorner(TetEdge edge, TetCorner corner)
+{
+	return (edge & corner) != 0;
+}
 
-	//Returns the common point of two edges, will be None if there is no common point
-	PX_FORCE_INLINE TetCorner getCommonPoint(TetEdge edge1, TetEdge edge2)
-	{
-		return edge1 & edge2;
-	}
+//Returns the common point of two edges, will be None if there is no common point
+static PX_FORCE_INLINE TetCorner getCommonPoint(TetEdge edge1, TetEdge edge2)
+{
+	return edge1 & edge2;
+}
 
-	//Extracts the global indices from a tet given a local edge
-	Edge getTetEdge(const Tetrahedron& tet, TetEdge edge)
+//Extracts the global indices from a tet given a local edge
+static Edge getTetEdge(const Tetrahedron& tet, TetEdge edge)
+{
+	switch (edge)
 	{
-		switch (edge)
-		{
-		case AB:
-			return Edge(tet[0], tet[1]);
-		case AC:
-			return Edge(tet[0], tet[2]);
-		case AD:
-			return Edge(tet[0], tet[3]);
-		case BC:
-			return Edge(tet[1], tet[2]);
-		case BD:
-			return Edge(tet[1], tet[3]);
-		case CD:
-			return Edge(tet[2], tet[3]);
-		}
-		return Edge(-1, -1);
+	case AB:
+		return Edge(tet[0], tet[1]);
+	case AC:
+		return Edge(tet[0], tet[2]);
+	case AD:
+		return Edge(tet[0], tet[3]);
+	case BC:
+		return Edge(tet[1], tet[2]);
+	case BD:
+		return Edge(tet[1], tet[3]);
+	case CD:
+		return Edge(tet[2], tet[3]);
 	}
+	return Edge(-1, -1);
+}
 	
-	TetCorner getStart(TetEdge e)
+static TetCorner getStart(TetEdge e)
+{
+	switch (e)
 	{
-		switch (e)
+	case AB:
+		return A;
+	case AC:
+		return A;
+	case AD:
+		return A;
+	case BC:
+		return B;
+	case BD:
+		return B;
+	case CD:
+		return C;
+	}
+	return None;
+}
+
+static TetCorner getEnd(TetEdge e)
+{
+	switch (e)
+	{
+	case AB:
+		return B;
+	case AC:
+		return C;
+	case AD:
+		return D;
+	case BC:
+		return C;
+	case BD:
+		return D;
+	case CD:
+		return D;
+	}
+	return None;
+}
+
+static PX_FORCE_INLINE TetEdge getOppositeEdge(TetEdge edge)
+{
+	return 0x0000000F ^ edge;
+}
+
+//Finds the index of the first instance of value in list
+static PxI32 getIndexOfFirstValue(PxI32 list[4], PxI32 value = 0, PxI32 startAt = 0)
+{
+	for (PxI32 i = startAt; i < 4; ++i)
+		if (list[i] == value)
+			return i;
+
+	PX_ASSERT(false); // we should never reach this line
+	return 0;
+}
+
+//Counts how many times every corner is referenced by the specified set of edges - useful for corner classification
+static void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 cornerAccessCounter[4])
+{
+	for (PxI32 i = 0; i < 4; ++i)
+		cornerAccessCounter[i] = 0;
+
+	for (PxI32 j = 0; j < edgesLength; ++j)
+	{
+		switch (edges[j])
 		{
 		case AB:
-			return A;
+			++cornerAccessCounter[0];
+			++cornerAccessCounter[1];
+			break;
 		case AC:
-			return A;
+			++cornerAccessCounter[0];
+			++cornerAccessCounter[2];
+			break;
 		case AD:
-			return A;
+			++cornerAccessCounter[0];
+			++cornerAccessCounter[3];
+			break;
 		case BC:
-			return B;
+			++cornerAccessCounter[1];
+			++cornerAccessCounter[2];
+			break;
 		case BD:
-			return B;
+			++cornerAccessCounter[1];
+			++cornerAccessCounter[3];
+			break;
 		case CD:
-			return C;
-		}
-		return None;
-	}
-
-	TetCorner getEnd(TetEdge e)
-	{
-		switch (e)
-		{
-		case AB:
-			return B;
-		case AC:
-			return C;
-		case AD:
-			return D;
-		case BC:
-			return C;
-		case BD:
-			return D;
-		case CD:
-			return D;
-		}
-		return None;
-	}
-
-	PX_FORCE_INLINE TetEdge getOppositeEdge(TetEdge edge)
-	{
-		return 0x0000000F ^ edge;
-	}
-
-	//Finds the index of the first instance of value in list
-	PxI32 getIndexOfFirstValue(PxI32 list[4], PxI32 value = 0, PxI32 startAt = 0)
-	{
-		for (PxI32 i = startAt; i < 4; ++i)
-			if (list[i] == value)
-				return i;
-
-		PX_ASSERT(false); // we should never reach this line
-		return 0;
-	}
-
-	//Counts how many times every corner is referenced by the specified set of edges - useful for corner classification
-	void getCornerAccessCounter(TetEdge edges[6], PxI32 edgesLength, PxI32 cornerAccessCounter[4])
-	{
-		for (PxI32 i = 0; i < 4; ++i)
-			cornerAccessCounter[i] = 0;
-
-		for (PxI32 j = 0; j < edgesLength; ++j)
-		{
-			switch (edges[j])
-			{
-			case AB:
-				++cornerAccessCounter[0];
-				++cornerAccessCounter[1];
-				break;
-			case AC:
-				++cornerAccessCounter[0];
-				++cornerAccessCounter[2];
-				break;
-			case AD:
-				++cornerAccessCounter[0];
-				++cornerAccessCounter[3];
-				break;
-			case BC:
-				++cornerAccessCounter[1];
-				++cornerAccessCounter[2];
-				break;
-			case BD:
-				++cornerAccessCounter[1];
-				++cornerAccessCounter[3];
-				break;
-			case CD:
-				++cornerAccessCounter[2];
-				++cornerAccessCounter[3];
-				break;
-			}
+			++cornerAccessCounter[2];
+			++cornerAccessCounter[3];
+			break;
 		}
 	}
+}
 
-	//Returns the tet's edge that does not contain corner1 and neither corner2
-	Edge getRemainingEdge(const Tetrahedron& tet, PxI32 corner1, PxI32 corner2)
+// PT: using static exposed the fact that this function was not used. Expected?
+//Returns the tet's edge that does not contain corner1 and neither corner2
+/*static Edge getRemainingEdge(const Tetrahedron& tet, PxI32 corner1, PxI32 corner2)
+{
+	PxI32 indexer = 0;
+	Edge result(-1, -1);
+	for (PxU32 i = 0; i < 4; ++i) 
 	{
-		PxI32 indexer = 0;
-		Edge result(-1, -1);
-		for (PxU32 i = 0; i < 4; ++i) 
+		if (tet[i] != corner1 && tet[i] != corner2)
 		{
-			if (tet[i] != corner1 && tet[i] != corner2)
-			{
-				if (indexer == 0)
-					result.first = tet[i];
-				else if (indexer == 1)
-					result.second = tet[i];
-				++indexer;
-			}			
+			if (indexer == 0)
+				result.first = tet[i];
+			else if (indexer == 1)
+				result.second = tet[i];
+			++indexer;
+		}			
+	}
+	return result;
+}*/
+
+static PX_FORCE_INLINE TetCorner getOtherCorner(TetEdge edge, TetCorner corner)
+{
+	return edge ^ corner;
+}	
+
+static PX_FORCE_INLINE Tetrahedron flip(bool doFlip, Tetrahedron t)
+{
+	if (doFlip) PxSwap(t[2], t[3]);
+	return t;
+}
+
+//Splits all tets according to the specification in tetSubdivisionInfos. The resulting mesh will be watertight if the tetSubdivisionInfos are specified such
+//that all tets sharing and edge will get the same point inserted on their corresponding edge
+static void split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxArray<TetSubdivisionInfo>& tetSubdivisionInfos)
+{
+	PxU32 originalNumTets = tets.size();
+	for (PxU32 i = 0; i < originalNumTets; ++i)
+	{
+		TetSubdivisionInfo info = tetSubdivisionInfos[i];
+		PxI32 counter = info.sort();
+
+		TetEdge splitEdges[6];
+		PxI32 splitEdgesLength = 0;
+		TetEdge nonSplitEdges[6];
+		PxI32 nonSplitEdgesLength = 0;
+		PxI32 insertionIndices[6];
+		PxI32 insertionIndicesLength = 0;
+		if (info.ab >= 0) { splitEdges[splitEdgesLength++] = AB; insertionIndices[insertionIndicesLength++] = info.ab; }
+		else nonSplitEdges[nonSplitEdgesLength++] = AB;
+		if (info.ac >= 0) { splitEdges[splitEdgesLength++] = AC; insertionIndices[insertionIndicesLength++] = info.ac; }
+		else nonSplitEdges[nonSplitEdgesLength++] = AC;
+		if (info.ad >= 0) { splitEdges[splitEdgesLength++] = AD; insertionIndices[insertionIndicesLength++] = info.ad; }
+		else nonSplitEdges[nonSplitEdgesLength++] = AD;
+
+		if (info.bc >= 0) { splitEdges[splitEdgesLength++] = BC; insertionIndices[insertionIndicesLength++] = info.bc; }
+		else nonSplitEdges[nonSplitEdgesLength++] = BC;
+		if (info.bd >= 0) { splitEdges[splitEdgesLength++] = BD; insertionIndices[insertionIndicesLength++] = info.bd; }
+		else nonSplitEdges[nonSplitEdgesLength++] = BD;
+
+		if (info.cd >= 0) { splitEdges[splitEdgesLength++] = CD; insertionIndices[insertionIndicesLength++] = info.cd; }
+		else nonSplitEdges[nonSplitEdgesLength++] = CD;
+
+		//Depending on how many tet edges get a point inserted, a different topology results. 
+		//The created topology will make sure all neighboring tet faces will be tessellated identically to keep the mesh watertight
+		switch (splitEdgesLength)
+		{
+		case 0:
+			//Nothing to do here
+			break;
+		case 1:
+		{
+			PxI32 pointIndex = insertionIndices[0];
+			Edge splitEdge = getTetEdge(info.tet, splitEdges[0]);
+
+			Edge oppositeEdge = getTetEdge(info.tet, getOppositeEdge(splitEdges[0]));
+
+			tets[i] = Tetrahedron(oppositeEdge.first, oppositeEdge.second, splitEdge.first, pointIndex);
+			tets.pushBack(Tetrahedron(oppositeEdge.first, oppositeEdge.second, pointIndex, splitEdge.second));
+
+			break;
 		}
-		return result;
-	}
-
-	PX_FORCE_INLINE TetCorner getOtherCorner(TetEdge edge, TetCorner corner)
-	{
-		return edge ^ corner;
-	}	
-
-	PX_FORCE_INLINE Tetrahedron flip(bool doFlip, Tetrahedron t)
-	{
-		if (doFlip) PxSwap(t[2], t[3]);
-		return t;
-	}
-
-	//Splits all tets according to the specification in tetSubdivisionInfos. The resulting mesh will be watertight if the tetSubdivisionInfos are specified such
-	//that all tets sharing and edge will get the same point inserted on their corresponding edge
-	void split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxArray<TetSubdivisionInfo>& tetSubdivisionInfos)
-	{
-		PxU32 originalNumTets = tets.size();
-		for (PxU32 i = 0; i < originalNumTets; ++i)
+		case 2:
 		{
-			TetSubdivisionInfo info = tetSubdivisionInfos[i];
-			PxI32 counter = info.sort();
-
-			TetEdge splitEdges[6];
-			PxI32 splitEdgesLength = 0;
-			TetEdge nonSplitEdges[6];
-			PxI32 nonSplitEdgesLength = 0;
-			PxI32 insertionIndices[6];
-			PxI32 insertionIndicesLength = 0;
-			if (info.ab >= 0) { splitEdges[splitEdgesLength++] = AB; insertionIndices[insertionIndicesLength++] = info.ab; }
-			else nonSplitEdges[nonSplitEdgesLength++] = AB;
-			if (info.ac >= 0) { splitEdges[splitEdgesLength++] = AC; insertionIndices[insertionIndicesLength++] = info.ac; }
-			else nonSplitEdges[nonSplitEdgesLength++] = AC;
-			if (info.ad >= 0) { splitEdges[splitEdgesLength++] = AD; insertionIndices[insertionIndicesLength++] = info.ad; }
-			else nonSplitEdges[nonSplitEdgesLength++] = AD;
-
-			if (info.bc >= 0) { splitEdges[splitEdgesLength++] = BC; insertionIndices[insertionIndicesLength++] = info.bc; }
-			else nonSplitEdges[nonSplitEdgesLength++] = BC;
-			if (info.bd >= 0) { splitEdges[splitEdgesLength++] = BD; insertionIndices[insertionIndicesLength++] = info.bd; }
-			else nonSplitEdges[nonSplitEdgesLength++] = BD;
-
-			if (info.cd >= 0) { splitEdges[splitEdgesLength++] = CD; insertionIndices[insertionIndicesLength++] = info.cd; }
-			else nonSplitEdges[nonSplitEdgesLength++] = CD;
-
-			//Depending on how many tet edges get a point inserted, a different topology results. 
-			//The created topology will make sure all neighboring tet faces will be tessellated identically to keep the mesh watertight
-			switch (splitEdgesLength)
+			TetCorner corner = getCommonPoint(splitEdges[0], splitEdges[1]);
+			if (corner != None)
 			{
-			case 0:
-				//Nothing to do here
-				break;
-			case 1:
-			{
-				PxI32 pointIndex = insertionIndices[0];
-				Edge splitEdge = getTetEdge(info.tet, splitEdges[0]);
+				//edges have a common point                  
+				//Rearrange such that common corner is a and first edge is from a to b while second edge is from a to c
+				TetCorner p1 = getOtherCorner(splitEdges[0], corner);
+				TetCorner p2 = getOtherCorner(splitEdges[1], corner);
+				if (info.swap(corner, A, p1, p2)) ++counter;
+				if (info.swap(p1, B, p2)) ++counter;
+				if (info.swap(p2, C)) ++counter;
 
-				Edge oppositeEdge = getTetEdge(info.tet, getOppositeEdge(splitEdges[0]));
+				if (info.tet[1] > info.tet[2]) 
+				{
+					if (info.swap(B, C)) ++counter;
+				}
 
-				tets[i] = Tetrahedron(oppositeEdge.first, oppositeEdge.second, splitEdge.first, pointIndex);
-				tets.pushBack(Tetrahedron(oppositeEdge.first, oppositeEdge.second, pointIndex, splitEdge.second));
+				const bool f = counter % 2 == 1;
 
-				break;
+				tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[3], info.ab, info.ac));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[1], info.ab, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[2], info.tet[1], info.ac)));
 			}
-			case 2:
+			else
 			{
-				TetCorner corner = getCommonPoint(splitEdges[0], splitEdges[1]);
-				if (corner != None)
+				//Edges don't have a common point (opposite edges)
+				TetEdge edge1 = splitEdges[0];
+				//TetEdge edge2 = splitEdges[1];
+
+				//Permute the tetrahedron such that edge1 becomes the edge AB
+				if (info.swap(getStart(edge1), A)) ++counter;
+				if (info.swap(getEnd(edge1), B)) ++counter;
+
+				if (info.tet[0] > info.tet[1]) 
 				{
-					//edges have a common point                  
-					//Rearrange such that common corner is a and first edge is from a to b while second edge is from a to c
-					TetCorner p1 = getOtherCorner(splitEdges[0], corner);
-					TetCorner p2 = getOtherCorner(splitEdges[1], corner);
-					if (info.swap(corner, A, p1, p2)) ++counter;
-					if (info.swap(p1, B, p2)) ++counter;
-					if (info.swap(p2, C)) ++counter;
-
-					if (info.tet[1] > info.tet[2]) 
-					{
-						if (info.swap(B, C)) ++counter;
-					}
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[3], info.ab, info.ac));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[1], info.ab, info.ac)));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[2], info.tet[1], info.ac)));
+					if (info.swap(A, B)) ++counter;
 				}
-				else
+				if (info.tet[2] > info.tet[3]) 
 				{
-					//Edges don't have a common point (opposite edges)
-					TetEdge edge1 = splitEdges[0];
-					//TetEdge edge2 = splitEdges[1];
-
-					//Permute the tetrahedron such that edge1 becomes the edge AB
-					if (info.swap(getStart(edge1), A)) ++counter;
-					if (info.swap(getEnd(edge1), B)) ++counter;
-
-					if (info.tet[0] > info.tet[1]) 
-					{
-						if (info.swap(A, B)) ++counter;
-					}
-					if (info.tet[2] > info.tet[3]) 
-					{
-						if (info.swap(C, D)) ++counter;
-					}
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[0], info.ab, info.tet[2], info.cd));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.cd, info.tet[2])));
-
-					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ab, info.cd, info.tet[3])));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.tet[3], info.cd)));
+					if (info.swap(C, D)) ++counter;
 				}
-				break;
+
+				const bool f = counter % 2 == 1;
+
+				tets[i] = flip(f, Tetrahedron(info.tet[0], info.ab, info.tet[2], info.cd));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.cd, info.tet[2])));
+
+				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ab, info.cd, info.tet[3])));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.tet[3], info.cd)));
 			}
-			case 3:
+			break;
+		}
+		case 3:
+		{
+			//There are three sub cases called a, b and c				
+			TetCorner commonPoint01 = getCommonPoint(splitEdges[0], splitEdges[1]);
+			TetCorner commonPoint02 = getCommonPoint(splitEdges[0], splitEdges[2]);
+			TetCorner commonPoint12 = getCommonPoint(splitEdges[1], splitEdges[2]);
+			if (commonPoint01 == None || commonPoint02 == None || commonPoint12 == None)
 			{
-				//There are three sub cases called a, b and c				
-				TetCorner commonPoint01 = getCommonPoint(splitEdges[0], splitEdges[1]);
-				TetCorner commonPoint02 = getCommonPoint(splitEdges[0], splitEdges[2]);
-				TetCorner commonPoint12 = getCommonPoint(splitEdges[1], splitEdges[2]);
-				if (commonPoint01 == None || commonPoint02 == None || commonPoint12 == None)
+				//The three edges form a non closed strip
+				//The strip's end points are connected by a tet edge - map this edge such that it becomes edge AB
+				//Then sort AB
+
+				PxI32 cnt[4];
+				getCornerAccessCounter(splitEdges, splitEdgesLength, cnt);
+
+				PxI32 index = getIndexOfFirstValue(cnt, 1);
+				TetCorner refStart = tetCorners[index];
+				TetCorner refEnd = tetCorners[getIndexOfFirstValue(cnt, 1, index + 1)];
+
+
+				TetCorner cornerToMapOntoC = None;
+				if (edgeContainsCorner(splitEdges[0], refEnd))
 				{
-					//The three edges form a non closed strip
-					//The strip's end points are connected by a tet edge - map this edge such that it becomes edge AB
-					//Then sort AB
-
-					PxI32 cnt[4];
-					getCornerAccessCounter(splitEdges, splitEdgesLength, cnt);
-
-					PxI32 index = getIndexOfFirstValue(cnt, 1);
-					TetCorner refStart = tetCorners[index];
-					TetCorner refEnd = tetCorners[getIndexOfFirstValue(cnt, 1, index + 1)];
-
-
-					TetCorner cornerToMapOntoC = None;
-					if (edgeContainsCorner(splitEdges[0], refEnd))
-					{
-						cornerToMapOntoC = getOtherCorner(splitEdges[0], refEnd);
-					}
-					else if (edgeContainsCorner(splitEdges[1], refEnd))
-					{
-						cornerToMapOntoC = getOtherCorner(splitEdges[1], refEnd);
-					}
-					else if (edgeContainsCorner(splitEdges[2], refEnd))
-					{
-						cornerToMapOntoC = getOtherCorner(splitEdges[2], refEnd);
-					}
-
-					if (info.swap(refStart, A, refEnd, cornerToMapOntoC)) ++counter;
-					if (info.swap(refEnd, B, cornerToMapOntoC)) ++counter;
-					if (info.swap(cornerToMapOntoC, C)) ++counter;
-
-					if (info.tet[0] > info.tet[1])
-					{
-						if (info.swap(A, B)) ++counter;
-						if (info.swap(C, D)) ++counter;
-					}
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.ad));
-
-					if (info.tet[0] > info.tet[2])
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.cd, info.ad, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.ad, info.bc)));
-					}
-					else 
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.cd, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bc, info.cd)));
-					}
-
-					if (info.tet[1] > info.tet[3])
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.bc, info.ad, info.cd)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[1], info.ad, info.bc)));
-					}
-					else 
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.tet[3], info.cd, info.ad)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.ad, info.cd)));
-					}
+					cornerToMapOntoC = getOtherCorner(splitEdges[0], refEnd);
 				}
-				else if (edgeContainsCorner(splitEdges[2], commonPoint01))
+				else if (edgeContainsCorner(splitEdges[1], refEnd))
 				{
-					//All three edges share one common point
-					//Permute tetrahedron such that the common tip point is a
-					if (info.swap(commonPoint01, A)) ++counter;
-					//Sort the remaining values
-					if (info.tet[1] > info.tet[2]) 
-					{
-						if (info.swap(B, C)) ++counter;
-					}
-					if (info.tet[2] > info.tet[3]) 
-					{
-						if (info.swap(C, D)) ++counter;
-					}
-					if (info.tet[1] > info.tet[2])
-					{
-						if (info.swap(B, C)) ++counter;
-					}
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[0], info.ab, info.ac, info.ad));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.ad, info.ac)));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[1], info.ad, info.ac)));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.tet[2], info.ad, info.tet[3])));
+					cornerToMapOntoC = getOtherCorner(splitEdges[1], refEnd);
 				}
-				else
+				else if (edgeContainsCorner(splitEdges[2], refEnd))
 				{
-					//Edges form a triangle
-					//Rearrange such that point opposite of triangle loop is point d
-					//Triangle loop is a, b and c, make sure they're sorted
-
-					if (!(commonPoint01 == A || commonPoint02 == A || commonPoint12 == A)) 
-					{
-						if (info.swap(A, D)) ++counter;
-					}
-					else if (!(commonPoint01 == B || commonPoint02 == B || commonPoint12 == B)) 
-					{
-						if (info.swap(B, D)) ++counter;
-					}
-					else if (!(commonPoint01 == C || commonPoint02 == C || commonPoint12 == C)) 
-					{
-						if (info.swap(C, D)) ++counter;
-					}
-					else if (!(commonPoint01 == D || commonPoint02 == D || commonPoint12 == D)) 
-					{
-						if (info.swap(D, D)) ++counter;
-					}
-
-					//Sort a,b and c
-					if (info.tet[0] > info.tet[1])
-						if (info.swap(A, B)) ++counter;
-					if (info.tet[1] > info.tet[2])
-						if (info.swap(B, C)) ++counter;
-					if (info.tet[0] > info.tet[1])
-						if (info.swap(A, B)) ++counter;
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[3], info.ab, info.ac, info.bc));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ab, info.ac, info.tet[0])));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ab, info.bc, info.tet[1])));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ac, info.bc, info.tet[2])));
+					cornerToMapOntoC = getOtherCorner(splitEdges[2], refEnd);
 				}
-				break;
+
+				if (info.swap(refStart, A, refEnd, cornerToMapOntoC)) ++counter;
+				if (info.swap(refEnd, B, cornerToMapOntoC)) ++counter;
+				if (info.swap(cornerToMapOntoC, C)) ++counter;
+
+				if (info.tet[0] > info.tet[1])
+				{
+					if (info.swap(A, B)) ++counter;
+					if (info.swap(C, D)) ++counter;
+				}
+
+				const bool f = counter % 2 == 1;
+
+				tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.ad));
+
+				if (info.tet[0] > info.tet[2])
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.cd, info.ad, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.ad, info.bc)));
+				}
+				else 
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.cd, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bc, info.cd)));
+				}
+
+				if (info.tet[1] > info.tet[3])
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.bc, info.ad, info.cd)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.tet[1], info.ad, info.bc)));
+				}
+				else 
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.tet[3], info.cd, info.ad)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.ad, info.cd)));
+				}
 			}
-			case 4:
+			else if (edgeContainsCorner(splitEdges[2], commonPoint01))
 			{
-				TetCorner commonPoint = getCommonPoint(nonSplitEdges[0], nonSplitEdges[1]);
-
-				if (commonPoint != None)
+				//All three edges share one common point
+				//Permute tetrahedron such that the common tip point is a
+				if (info.swap(commonPoint01, A)) ++counter;
+				//Sort the remaining values
+				if (info.tet[1] > info.tet[2]) 
 				{
-					//Three edges form a triangle and the two edges that are not split share a common point
-					TetCorner p1 = getOtherCorner(nonSplitEdges[0], commonPoint);
-					TetCorner p2 = getOtherCorner(nonSplitEdges[1], commonPoint);
-
-					if (info.swap(commonPoint, A, p1, p2)) ++counter;
-
-					if (info.swap(p1, B, p2)) ++counter;
-					if (info.swap(p2, C)) ++counter;
-
-					if (info.tet[1] > info.tet[2])
-						if (info.swap(B, C)) ++counter;
-
-					const bool f = counter % 2 == 0;
-
-					//Tip
-					tets[i] = flip(f, Tetrahedron(info.tet[3], info.ad, info.bd, info.cd));
-
-					//Center
-					tets.pushBack(flip(f, Tetrahedron(info.bd, info.ad, info.bc, info.cd)));
-
-					if (info.tet[0] < info.tet[1] && info.tet[0] < info.tet[2])
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bd, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.bc, info.cd)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.bd, info.ad)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.ad, info.cd)));
-					}
-					else if (info.tet[0] > info.tet[1] && info.tet[0] < info.tet[2])
-					{
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.bc, info.cd)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.ad, info.cd)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.ad, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.bd, info.ad)));
-					}
-					else 
-					{ 
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.ad, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.bd, info.ad)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[0], info.ad, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bc, info.ad, info.cd)));
-					}
+					if (info.swap(B, C)) ++counter;
 				}
-				else
+				if (info.tet[2] > info.tet[3]) 
 				{
-					//All four edges form a loop
-					TetEdge edge1 = nonSplitEdges[0];
-
-					//Permute the tetrahedron such that edge1 becomes the edge AB
-					TetCorner end = getEnd(edge1);
-					if (info.swap(getStart(edge1), A, end)) ++counter;
-					if (info.swap(end, B)) ++counter;
-
-					//Sort
-					if (info.tet[0] > info.tet[1])
-						if (info.swap(A, B)) ++counter;
-					if (info.tet[2] > info.tet[3])
-						if (info.swap(C, D)) ++counter;
-
-					const bool f = counter % 2 == 1;
-
-					tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.bd));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[3], info.ad, info.bd)));
-
-					PxF64 dist1 = (points[info.ad] - points[info.bc]).magnitudeSquared();
-					PxF64 dist2 = (points[info.ac] - points[info.bd]).magnitudeSquared();
-
-					if (dist1 < dist2)
-					{
-						//Diagonal from AD to BC
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bc, info.ac)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bd, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.ad, info.ac, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.ad, info.bc, info.bd)));
-					}
-					else
-					{
-						//Diagonal from AC to BD
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bd, info.ac)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ac, info.bd, info.bc)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bc, info.bd, info.ac)));
-						tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bd, info.ad, info.ac)));
-					}
+					if (info.swap(C, D)) ++counter;
 				}
-				break;
+				if (info.tet[1] > info.tet[2])
+				{
+					if (info.swap(B, C)) ++counter;
+				}
+
+				const bool f = counter % 2 == 1;
+
+				tets[i] = flip(f, Tetrahedron(info.tet[0], info.ab, info.ac, info.ad));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.ab, info.ad, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[1], info.ad, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.tet[2], info.ad, info.tet[3])));
 			}
-			case 5:
+			else
 			{
-				//There is only one edge that does not get split
+				//Edges form a triangle
+				//Rearrange such that point opposite of triangle loop is point d
+				//Triangle loop is a, b and c, make sure they're sorted
 
-				//First create 2 small tetrahedra in every corner that is not an end point of the unsplit edge
-				TetEdge nonSplitEdge;
-				if (info.ab < 0)
-					nonSplitEdge = AB;
-				else if (info.ac < 0)
-					nonSplitEdge = AC;
-				else if (info.ad < 0)
-					nonSplitEdge = AD;
-				else if (info.bc < 0)
-					nonSplitEdge = BC;
-				else if (info.bd < 0)
-					nonSplitEdge = BD;
-				else //if (info.CDPointInsertIndex < 0)
-					nonSplitEdge = CD;
+				if (!(commonPoint01 == A || commonPoint02 == A || commonPoint12 == A)) 
+				{
+					if (info.swap(A, D)) ++counter;
+				}
+				else if (!(commonPoint01 == B || commonPoint02 == B || commonPoint12 == B)) 
+				{
+					if (info.swap(B, D)) ++counter;
+				}
+				else if (!(commonPoint01 == C || commonPoint02 == C || commonPoint12 == C)) 
+				{
+					if (info.swap(C, D)) ++counter;
+				}
+				else if (!(commonPoint01 == D || commonPoint02 == D || commonPoint12 == D)) 
+				{
+					if (info.swap(D, D)) ++counter;
+				}
 
-				TetCorner end = getEnd(nonSplitEdge);
-				if (info.swap(getStart(nonSplitEdge), A, end)) ++counter;
+				//Sort a,b and c
+				if (info.tet[0] > info.tet[1])
+					if (info.swap(A, B)) ++counter;
+				if (info.tet[1] > info.tet[2])
+					if (info.swap(B, C)) ++counter;
+				if (info.tet[0] > info.tet[1])
+					if (info.swap(A, B)) ++counter;
+
+				const bool f = counter % 2 == 1;
+
+				tets[i] = flip(f, Tetrahedron(info.tet[3], info.ab, info.ac, info.bc));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ab, info.ac, info.tet[0])));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ab, info.bc, info.tet[1])));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ac, info.bc, info.tet[2])));
+			}
+			break;
+		}
+		case 4:
+		{
+			TetCorner commonPoint = getCommonPoint(nonSplitEdges[0], nonSplitEdges[1]);
+
+			if (commonPoint != None)
+			{
+				//Three edges form a triangle and the two edges that are not split share a common point
+				TetCorner p1 = getOtherCorner(nonSplitEdges[0], commonPoint);
+				TetCorner p2 = getOtherCorner(nonSplitEdges[1], commonPoint);
+
+				if (info.swap(commonPoint, A, p1, p2)) ++counter;
+
+				if (info.swap(p1, B, p2)) ++counter;
+				if (info.swap(p2, C)) ++counter;
+
+				if (info.tet[1] > info.tet[2])
+					if (info.swap(B, C)) ++counter;
+
+				const bool f = counter % 2 == 0;
+
+				//Tip
+				tets[i] = flip(f, Tetrahedron(info.tet[3], info.ad, info.bd, info.cd));
+
+				//Center
+				tets.pushBack(flip(f, Tetrahedron(info.bd, info.ad, info.bc, info.cd)));
+
+				if (info.tet[0] < info.tet[1] && info.tet[0] < info.tet[2])
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bd, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.bc, info.cd)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.bd, info.ad)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.ad, info.cd)));
+				}
+				else if (info.tet[0] > info.tet[1] && info.tet[0] < info.tet[2])
+				{
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[2], info.bc, info.cd)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bc, info.ad, info.cd)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.ad, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.bd, info.ad)));
+				}
+				else 
+				{ 
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.ad, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[1], info.bc, info.bd, info.ad)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[0], info.ad, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bc, info.ad, info.cd)));
+				}
+			}
+			else
+			{
+				//All four edges form a loop
+				TetEdge edge1 = nonSplitEdges[0];
+
+				//Permute the tetrahedron such that edge1 becomes the edge AB
+				TetCorner end = getEnd(edge1);
+				if (info.swap(getStart(edge1), A, end)) ++counter;
 				if (info.swap(end, B)) ++counter;
 
+				//Sort
 				if (info.tet[0] > info.tet[1])
 					if (info.swap(A, B)) ++counter;
 				if (info.tet[2] > info.tet[3])
@@ -695,110 +644,163 @@ namespace Ext
 
 				const bool f = counter % 2 == 1;
 
-				//Two corner tets at corner C and corner D
-				tets[i] = flip(f, Tetrahedron(info.tet[2], info.ac, info.bc, info.cd));
-				tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ad, info.cd, info.bd)));
+				tets[i] = flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.bd));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.tet[3], info.ad, info.bd)));
 
-				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.bd)));
+				PxF64 dist1 = (points[info.ad] - points[info.bc]).magnitudeSquared();
+				PxF64 dist2 = (points[info.ac] - points[info.bd]).magnitudeSquared();
 
-
-				//There are two possible diagonals -> take the shorter 
-				PxF64 dist1 = (points[info.ac] - points[info.bd]).magnitudeSquared();
-				PxF64 dist2 = (points[info.ad] - points[info.bc]).magnitudeSquared();
 				if (dist1 < dist2)
+				{
+					//Diagonal from AD to BC
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bc, info.ac)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bd, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.ad, info.ac, info.bc)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.ad, info.bc, info.bd)));
+				}
+				else
 				{
 					//Diagonal from AC to BD
 					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bd, info.ac)));
 					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ac, info.bd, info.bc)));
-					//Tip pyramid
-					tets.pushBack(flip(f, Tetrahedron(info.cd, info.bc, info.bd, info.ac)));
-					tets.pushBack(flip(f, Tetrahedron(info.cd, info.bd, info.ad, info.ac)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bc, info.bd, info.ac)));
+					tets.pushBack(flip(f, Tetrahedron(info.tet[2], info.bd, info.ad, info.ac)));
 				}
-				else
-				{
-					//Diagonal from AD to BC
-					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ac, info.ad, info.bc)));
-					tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bd, info.bc, info.ad)));
-					//Tip pyramid
-					tets.pushBack(flip(f, Tetrahedron(info.cd, info.bc, info.ad, info.ac)));
-					tets.pushBack(flip(f, Tetrahedron(info.cd, info.bd, info.ad, info.bc)));
-				}
-				break;
 			}
-			case 6:
-			{
-				//First create a small tetrahedron in every corner
-				const bool f = counter % 2 == 1;
-				if (f)
-					info.swap(A, B);
-						
-				tets[i] = Tetrahedron(info.tet[0], info.ab, info.ac, info.ad);
-				tets.pushBack(Tetrahedron(info.tet[1], info.ab, info.bd, info.bc));
-				tets.pushBack(Tetrahedron(info.tet[2], info.ac, info.bc, info.cd));
-				tets.pushBack(Tetrahedron(info.tet[3], info.ad, info.cd, info.bd));
-
-				//Now fill the remaining octahedron in the middle
-				//An octahedron can be constructed using 4 tetrahedra
-				//There are three diagonal candidates -> pick the shortest diagonal
-				PxF64 dist1 = (points[info.ab] - points[info.cd]).magnitudeSquared();
-				PxF64 dist2 = (points[info.ac] - points[info.bd]).magnitudeSquared();
-				PxF64 dist3 = (points[info.ad] - points[info.bc]).magnitudeSquared();
-
-				if (dist1 <= dist2 && dist1 <= dist3)
-				{
-					tets.pushBack(Tetrahedron(info.ab, info.cd, info.ad, info.bd));
-					tets.pushBack(Tetrahedron(info.ab, info.cd, info.bd, info.bc));
-					tets.pushBack(Tetrahedron(info.ab, info.cd, info.bc, info.ac));
-					tets.pushBack(Tetrahedron(info.ab, info.cd, info.ac, info.ad));
-				}
-				else if (dist2 <= dist1 && dist2 <= dist3)
-				{
-					tets.pushBack(Tetrahedron(info.ac, info.bd, info.cd, info.ad));
-					tets.pushBack(Tetrahedron(info.ac, info.bd, info.ad, info.ab));
-					tets.pushBack(Tetrahedron(info.ac, info.bd, info.ab, info.bc));
-					tets.pushBack(Tetrahedron(info.ac, info.bd, info.bc, info.cd));
-				}
-				else
-				{
-					tets.pushBack(Tetrahedron(info.ad, info.bc, info.bd, info.ab));
-					tets.pushBack(Tetrahedron(info.ad, info.bc, info.cd, info.bd));
-					tets.pushBack(Tetrahedron(info.ad, info.bc, info.ac, info.cd));
-					tets.pushBack(Tetrahedron(info.ad, info.bc, info.ab, info.ac));
-				}
-				break;
-			}
-			}
+			break;
 		}
-	}
-
-	void split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxHashMap<PxU64, PxI32>& edgesToSplit)
-	{
-		PxArray<TetSubdivisionInfo> subdivisionInfos;
-		subdivisionInfos.resize(tets.size());
-		for (PxU32 i = 0; i < tets.size(); ++i)
+		case 5:
 		{
-			const Tetrahedron& tet = tets[i];
-			TetSubdivisionInfo info(tet, -1, -1, -1, -1, -1, -1, i);
+			//There is only one edge that does not get split
 
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[1])))
-				info.ab = ptr->second;
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[2])))
-				info.ac = ptr->second;
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[3])))
-				info.ad = ptr->second;
+			//First create 2 small tetrahedra in every corner that is not an end point of the unsplit edge
+			TetEdge nonSplitEdge;
+			if (info.ab < 0)
+				nonSplitEdge = AB;
+			else if (info.ac < 0)
+				nonSplitEdge = AC;
+			else if (info.ad < 0)
+				nonSplitEdge = AD;
+			else if (info.bc < 0)
+				nonSplitEdge = BC;
+			else if (info.bd < 0)
+				nonSplitEdge = BD;
+			else //if (info.CDPointInsertIndex < 0)
+				nonSplitEdge = CD;
 
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[1], tet[2])))
-				info.bc = ptr->second;
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[1], tet[3])))
-				info.bd = ptr->second;
+			TetCorner end = getEnd(nonSplitEdge);
+			if (info.swap(getStart(nonSplitEdge), A, end)) ++counter;
+			if (info.swap(end, B)) ++counter;
 
-			if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[2], tet[3])))
-				info.cd = ptr->second;
+			if (info.tet[0] > info.tet[1])
+				if (info.swap(A, B)) ++counter;
+			if (info.tet[2] > info.tet[3])
+				if (info.swap(C, D)) ++counter;
 
-			subdivisionInfos[i] = info;
+			const bool f = counter % 2 == 1;
+
+			//Two corner tets at corner C and corner D
+			tets[i] = flip(f, Tetrahedron(info.tet[2], info.ac, info.bc, info.cd));
+			tets.pushBack(flip(f, Tetrahedron(info.tet[3], info.ad, info.cd, info.bd)));
+
+			tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.tet[1], info.bc, info.bd)));
+
+
+			//There are two possible diagonals -> take the shorter 
+			PxF64 dist1 = (points[info.ac] - points[info.bd]).magnitudeSquared();
+			PxF64 dist2 = (points[info.ad] - points[info.bc]).magnitudeSquared();
+			if (dist1 < dist2)
+			{
+				//Diagonal from AC to BD
+				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ad, info.bd, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ac, info.bd, info.bc)));
+				//Tip pyramid
+				tets.pushBack(flip(f, Tetrahedron(info.cd, info.bc, info.bd, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.cd, info.bd, info.ad, info.ac)));
+			}
+			else
+			{
+				//Diagonal from AD to BC
+				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.ac, info.ad, info.bc)));
+				tets.pushBack(flip(f, Tetrahedron(info.tet[0], info.bd, info.bc, info.ad)));
+				//Tip pyramid
+				tets.pushBack(flip(f, Tetrahedron(info.cd, info.bc, info.ad, info.ac)));
+				tets.pushBack(flip(f, Tetrahedron(info.cd, info.bd, info.ad, info.bc)));
+			}
+			break;
 		}
+		case 6:
+		{
+			//First create a small tetrahedron in every corner
+			const bool f = counter % 2 == 1;
+			if (f)
+				info.swap(A, B);
+						
+			tets[i] = Tetrahedron(info.tet[0], info.ab, info.ac, info.ad);
+			tets.pushBack(Tetrahedron(info.tet[1], info.ab, info.bd, info.bc));
+			tets.pushBack(Tetrahedron(info.tet[2], info.ac, info.bc, info.cd));
+			tets.pushBack(Tetrahedron(info.tet[3], info.ad, info.cd, info.bd));
 
-		split(tets, points, subdivisionInfos);
+			//Now fill the remaining octahedron in the middle
+			//An octahedron can be constructed using 4 tetrahedra
+			//There are three diagonal candidates -> pick the shortest diagonal
+			PxF64 dist1 = (points[info.ab] - points[info.cd]).magnitudeSquared();
+			PxF64 dist2 = (points[info.ac] - points[info.bd]).magnitudeSquared();
+			PxF64 dist3 = (points[info.ad] - points[info.bc]).magnitudeSquared();
+
+			if (dist1 <= dist2 && dist1 <= dist3)
+			{
+				tets.pushBack(Tetrahedron(info.ab, info.cd, info.ad, info.bd));
+				tets.pushBack(Tetrahedron(info.ab, info.cd, info.bd, info.bc));
+				tets.pushBack(Tetrahedron(info.ab, info.cd, info.bc, info.ac));
+				tets.pushBack(Tetrahedron(info.ab, info.cd, info.ac, info.ad));
+			}
+			else if (dist2 <= dist1 && dist2 <= dist3)
+			{
+				tets.pushBack(Tetrahedron(info.ac, info.bd, info.cd, info.ad));
+				tets.pushBack(Tetrahedron(info.ac, info.bd, info.ad, info.ab));
+				tets.pushBack(Tetrahedron(info.ac, info.bd, info.ab, info.bc));
+				tets.pushBack(Tetrahedron(info.ac, info.bd, info.bc, info.cd));
+			}
+			else
+			{
+				tets.pushBack(Tetrahedron(info.ad, info.bc, info.bd, info.ab));
+				tets.pushBack(Tetrahedron(info.ad, info.bc, info.cd, info.bd));
+				tets.pushBack(Tetrahedron(info.ad, info.bc, info.ac, info.cd));
+				tets.pushBack(Tetrahedron(info.ad, info.bc, info.ab, info.ac));
+			}
+			break;
+		}
+		}
 	}
 }
+
+void physx::Ext::split(PxArray<Tetrahedron>& tets, const PxArray<PxVec3d>& points, const PxHashMap<PxU64, PxI32>& edgesToSplit)
+{
+	PxArray<TetSubdivisionInfo> subdivisionInfos;
+	subdivisionInfos.resize(tets.size());
+	for (PxU32 i = 0; i < tets.size(); ++i)
+	{
+		const Tetrahedron& tet = tets[i];
+		TetSubdivisionInfo info(tet, -1, -1, -1, -1, -1, -1, i);
+
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[1])))
+			info.ab = ptr->second;
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[2])))
+			info.ac = ptr->second;
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[0], tet[3])))
+			info.ad = ptr->second;
+
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[1], tet[2])))
+			info.bc = ptr->second;
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[1], tet[3])))
+			info.bd = ptr->second;
+
+		if (const PxPair<const PxU64, PxI32>* ptr = edgesToSplit.find(key(tet[2], tet[3])))
+			info.cd = ptr->second;
+
+		subdivisionInfos[i] = info;
+	}
+
+	::split(tets, points, subdivisionInfos);
 }

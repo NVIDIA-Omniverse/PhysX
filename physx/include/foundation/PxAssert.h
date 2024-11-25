@@ -29,9 +29,8 @@
 #ifndef PX_ASSERT_H
 #define PX_ASSERT_H
 
+#include <stdint.h>
 #include "foundation/PxFoundationConfig.h"
-#include "foundation/Px.h"
-
 
 #if !PX_DOXYGEN
 namespace physx

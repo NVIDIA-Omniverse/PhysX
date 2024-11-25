@@ -44,5 +44,8 @@ SET(PVDRUNTIME_COMPILE_DEFS
 SET(PVDRUNTIME_PLATFORM_LINKED_LIBS 
 )
 
-INSTALL(FILES $<TARGET_PDB_FILE:PVDRuntime> 
-		DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
+IF(!CMAKE_CXX_PLATFORM_ID STREQUAL "Linux")
+	# Not run when cross compiling
+	INSTALL(FILES $<TARGET_PDB_FILE:PVDRuntime> 
+			DESTINATION $<$<CONFIG:debug>:${PX_ROOT_LIB_DIR}/debug>$<$<CONFIG:release>:${PX_ROOT_LIB_DIR}/release>$<$<CONFIG:checked>:${PX_ROOT_LIB_DIR}/checked>$<$<CONFIG:profile>:${PX_ROOT_LIB_DIR}/profile> OPTIONAL)
+ENDIF()

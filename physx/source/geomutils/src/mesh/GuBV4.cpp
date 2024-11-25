@@ -36,7 +36,7 @@
 using namespace physx;
 using namespace Gu;
 using namespace Cm;
-using namespace physx::aos;
+using namespace aos;
 
 SourceMeshBase::SourceMeshBase(MeshType meshType) : mNbVerts(0), mVerts(NULL), mType(meshType), mRemap(NULL)
 {

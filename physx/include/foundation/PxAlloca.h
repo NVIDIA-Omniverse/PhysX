@@ -75,12 +75,12 @@ class PxScopedPointer : private Alloc
 
 #define PxAllocaAligned(x, alignment) ((size_t(PxAlloca(x + alignment)) + (alignment - 1)) & ~size_t(alignment - 1))
 
-/*! Stack allocation for \c count instances of \c type. Falling back to temp allocator if using more than 1kB. */
+/*! Stack allocation for \c count instances of \c type. Falling back to temp allocator if using more than 4kB. */
 #define PX_ALLOCA(var, type, count)																	\
 	physx::PxScopedPointer<type> var;																\
 	{																								\
 		const uint32_t size = sizeof(type) * (count);												\
-		var.mOwned = size > 1024;																	\
+		var.mOwned = size > 4096;																	\
 		if(var.mOwned)																				\
 			var.mPointer = reinterpret_cast<type*>(physx::PxTempAllocator().allocate(size, PX_FL));	\
 		else																						\

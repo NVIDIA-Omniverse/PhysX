@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 #include "../snippetrender/SnippetRender.h"
 #include "../snippetrender/SnippetCamera.h"
@@ -40,9 +38,9 @@ extern void initPhysics(bool interactive);
 extern void stepPhysics(bool interactive);	
 extern void cleanupPhysics(bool interactive);
 
-extern std::vector<PxVec3> gContactPositions;
-extern std::vector<PxVec3> gContactImpulses;
-std::vector<PxVec3> gContactVertices;
+extern PxArray<PxVec3> gContactPositions;
+extern PxArray<PxVec3> gContactImpulses;
+PxArray<PxVec3> gContactVertices;
 
 namespace
 {
@@ -59,7 +57,7 @@ void renderCallback()
 	PxU32 nbActors = scene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
 	if(nbActors)
 	{
-		std::vector<PxRigidActor*> actors(nbActors);
+		PxArray<PxRigidActor*> actors(nbActors);
 		scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
 		Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true);
 	}
@@ -69,8 +67,8 @@ void renderCallback()
 		gContactVertices.clear();
 		for(PxU32 i=0;i<gContactPositions.size();i++)
 		{
-			gContactVertices.push_back(gContactPositions[i]);
-			gContactVertices.push_back(gContactPositions[i]+gContactImpulses[i]*0.1f);
+			gContactVertices.pushBack(gContactPositions[i]);
+			gContactVertices.pushBack(gContactPositions[i]+gContactImpulses[i]*0.1f);
 		}
 		glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -82,9 +80,10 @@ void renderCallback()
 	Snippets::finishRender();
 }
 
-void exitCallback(void)
+void exitCallback()
 {
 	delete sCamera;
+	gContactVertices.reset();
 	cleanupPhysics(true);
 }
 }

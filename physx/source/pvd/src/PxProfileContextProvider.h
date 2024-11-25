@@ -27,7 +27,6 @@
 #ifndef PX_PROFILE_CONTEXT_PROVIDER_H
 #define PX_PROFILE_CONTEXT_PROVIDER_H
 
-#include "foundation/Px.h"
 
 namespace physx { namespace profile {
 

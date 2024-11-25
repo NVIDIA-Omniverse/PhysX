@@ -89,6 +89,7 @@ struct PxRigidBodyFlag
 		individual interactions. 
 
 		\note kinematic actors are incompatible with CCD so this flag will be cleared automatically when raised on a kinematic actor
+		\note PxConvexCoreGeometry geometry type only supports eENABLE_SPECULATIVE_CCD at the moment. eENABLE_CCD will be ignored
 		*/
 		eENABLE_CCD	= (1<<2),		//!< Enable CCD for the body.
 

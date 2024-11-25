@@ -18,7 +18,7 @@ Compilers and C++ Standard:
 ## PhysX GPU Acceleration:
 
 * Running GPU-accelerated simulations requires a CUDA toolkit 11.8 compatible display driver. The corresponding driver version can be found [here](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cuda-major-component-versions__table-cuda-toolkit-driver-versions).
-* Pascal, CUDA ARCH 6.0 GPU or higher
+* Volta, CUDA ARCH 7.0 GPU or higher
 * Note that CUDA is not required for building PhysX, it is only a runtime requirement for GPU-accelerated scenes.
 
 ## Generating solutions for Visual Studio:

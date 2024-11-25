@@ -70,7 +70,7 @@ PxU32 NPhaseCore::getDefaultContactReportStreamBufferSize() const
 	return mContactReportBuffer.getDefaultBufferSize();
 }
 
-ElementSimInteraction* NPhaseCore::findInteraction(const ElementSim* element0, const ElementSim* element1)
+ElementSimInteraction* NPhaseCore::findInteraction(const ElementSim* element0, const ElementSim* element1) const
 {
 	const PxHashMap<ElementSimKey, ElementSimInteraction*>::Entry* pair = mElementSimMap.find(ElementSimKey(element0->getElementID(), element1->getElementID()));
 	return pair ? pair->second : NULL;
@@ -526,15 +526,19 @@ static bool findTriggerContacts(TriggerInteraction* tri, bool toBeDeleted, bool 
 		const ActorCore& actorCore1 = s1.getActor().getActorCore();
 
 #if PX_SUPPORT_GPU_PHYSX
-		if (actorCore0.getActorCoreType() == PxActorType::eSOFTBODY)
-			triggerPair.triggerActor = static_cast<const SoftBodyCore&>(actorCore0).getPxActor();
+		if (actorCore0.getActorCoreType() == PxActorType::eDEFORMABLE_VOLUME)
+			triggerPair.triggerActor = static_cast<const DeformableVolumeCore&>(actorCore0).getPxActor();
+		else if (actorCore0.getActorCoreType() == PxActorType::eDEFORMABLE_SURFACE)
+			triggerPair.triggerActor = static_cast<const DeformableSurfaceCore&>(actorCore0).getPxActor();
 		else
 #endif
 			triggerPair.triggerActor = static_cast<const RigidCore&>(actorCore0).getPxActor();
 
 #if PX_SUPPORT_GPU_PHYSX
-		if (actorCore0.getActorCoreType() == PxActorType::eSOFTBODY)
-			triggerPair.otherActor = static_cast<const SoftBodyCore&>(actorCore1).getPxActor();
+		if (actorCore1.getActorCoreType() == PxActorType::eDEFORMABLE_VOLUME)
+			triggerPair.otherActor = static_cast<const DeformableVolumeCore&>(actorCore1).getPxActor();
+		else if (actorCore1.getActorCoreType() == PxActorType::eDEFORMABLE_SURFACE)
+			triggerPair.otherActor = static_cast<const DeformableSurfaceCore&>(actorCore1).getPxActor();
 		else
 #endif
 			triggerPair.otherActor = static_cast<const RigidCore&>(actorCore1).getPxActor();
@@ -761,7 +765,7 @@ void NPhaseCore::concludeTriggerInteractionProcessing(PxBaseTask*)
 
 			// explicitly scheduled overlap test is done (after object creation, teleport, ...). Check if trigger pair should remain active or not.
 
-			if (!tri->onActivate(NULL))
+			if (!tri->onActivate())
 			{
 				PX_ASSERT(tri->readInteractionFlag(InteractionFlag::eIS_ACTIVE));
 				// Why is the assert enough?
@@ -775,81 +779,6 @@ void NPhaseCore::concludeTriggerInteractionProcessing(PxBaseTask*)
 
 	mTriggerProcessingContext.deinitialize(mOwnerScene.getLowLevelContext()->getScratchAllocator());
 }
-
-#ifdef REMOVED
-class ProcessPersistentContactTask : public Cm::Task
-{
-	Sc::NPhaseCore& mCore;
-	ContactReportBuffer& mBuffer;
-	PxMutex& mMutex;
-	ShapeInteraction*const* mPersistentEventPairs;
-	PxU32 mNbPersistentEventPairs;
-	PxsContactManagerOutputIterator mOutputs;
-	PX_NOCOPY(ProcessPersistentContactTask)
-public:
-
-	ProcessPersistentContactTask(Sc::NPhaseCore& core, ContactReportBuffer& buffer, PxMutex& mutex, ShapeInteraction*const* persistentEventPairs,
-		PxU32 nbPersistentEventPairs, PxsContactManagerOutputIterator& outputs) : Cm::Task(0), mCore(core), mBuffer(buffer), mMutex(mutex),
-		mPersistentEventPairs(persistentEventPairs), mNbPersistentEventPairs(nbPersistentEventPairs), mOutputs(outputs)
-	{
-	}
-
-	virtual void runInternal()
-	{
-		PX_PROFILE_ZONE("ProcessPersistentContactTask", mCore.getScene().getContextId());
-		PxU32 size = mNbPersistentEventPairs;
-		ShapeInteraction*const* persistentEventPairs = mPersistentEventPairs;
-		while (size--)
-		{
-			ShapeInteraction* pair = *persistentEventPairs++;
-			if (size)
-			{
-				if (size > 1)
-				{
-					if (size > 2)
-					{
-						ShapeInteraction* nextPair = *(persistentEventPairs + 2);
-						prefetchLine(nextPair);
-					}
-
-					ShapeInteraction* nextPair = *(persistentEventPairs + 1);
-					ActorPair* aPair = nextPair->getActorPair();
-					prefetchLine(aPair);
-
-					prefetchLine(&nextPair->getShape0());
-					prefetchLine(&nextPair->getShape1());
-				}
-				ShapeInteraction* nextPair = *(persistentEventPairs);
-				prefetchLine(&nextPair->getShape0().getActor());
-				prefetchLine(&nextPair->getShape1().getActor());
-			}
-
-			PX_ASSERT(pair->hasTouch());
-			PX_ASSERT(pair->isReportPair());
-
-			const PxU32 pairFlags = pair->getPairFlags();
-			if ((pairFlags & PxU32(PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eDETECT_DISCRETE_CONTACT)) == PxU32(PxPairFlag::eNOTIFY_TOUCH_PERSISTS | PxPairFlag::eDETECT_DISCRETE_CONTACT))
-			{
-				// do not process the pair if only eDETECT_CCD_CONTACT is enabled because at this point CCD did not run yet. Plus the current CCD implementation can not reliably provide eNOTIFY_TOUCH_PERSISTS events
-				// for performance reasons.
-				//KS - filter based on edge activity!
-
-				const ActorSim& bodySim0 = pair->getShape0().getActor();
-				const ActorSim& bodySim1 = pair->getShape1().getActor();
-			
-				if (bodySim0.isActive() || (!bodySim1.isStaticRigid() && bodySim1.isActive()))
-					pair->processUserNotificationAsync(PxPairFlag::eNOTIFY_TOUCH_PERSISTS, 0, false, 0, false, mOutputs/*, &alloc*/);
-			}
-		}
-	}
-
-	virtual const char* getName() const
-	{
-		return "ScNPhaseCore.ProcessPersistentContactTask";
-	}
-
-};
-#endif
 
 void NPhaseCore::processPersistentContactEvents(PxsContactManagerOutputIterator& outputs)
 {

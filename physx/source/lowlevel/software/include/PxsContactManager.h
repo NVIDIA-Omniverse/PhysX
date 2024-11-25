@@ -34,7 +34,6 @@
 
 namespace physx
 {
-class PxsContext;
 class PxsRigidBody;
 
 namespace Dy
@@ -76,7 +75,7 @@ PX_COMPILE_TIME_ASSERT((sizeof(PxsCCDContactHeader) & 0xF) == 0);
 class PxsContactManager
 {
 public:
-											PxsContactManager(PxsContext* context, PxU32 index);
+											PxsContactManager(PxU32 index);
 											~PxsContactManager();
 
 	PX_FORCE_INLINE	void					setDisableStrongFriction(PxU32 d)	{ (!d)	? mNpUnit.mFlags &= ~PxcNpWorkUnitFlag::eDISABLE_STRONG_FRICTION 
@@ -113,6 +112,8 @@ public:
 	PX_FORCE_INLINE	PxcNpWorkUnit&			getWorkUnit()						{ return mNpUnit;	}
 	PX_FORCE_INLINE	const PxcNpWorkUnit&	getWorkUnit()				const	{ return mNpUnit;	}
 
+	PX_FORCE_INLINE	PxsRigidBody*			getRigidBody0()				const	{ return mRigidBody0;		}
+	PX_FORCE_INLINE	PxsRigidBody*			getRigidBody1()				const	{ return mRigidBody1;		}
 	PX_FORCE_INLINE	Sc::ShapeInteraction*	getShapeInteraction()		const	{ return mShapeInteraction; }
 	
 	// Setup solver-constraints
@@ -129,19 +130,15 @@ private:
 					PxU32					mFlags;				//20	//36
 					Sc::ShapeInteraction*	mShapeInteraction;	//16	//32
 
-					friend class PxsContext;
 	// everything required for narrow phase to run
 					PxcNpWorkUnit			mNpUnit;
 	enum
 	{
-		PXS_CM_CHANGEABLE	= (1<<0),
-		PXS_CM_CCD_LINEAR	= (1<<1),
+		PXS_CM_CHANGEABLE	= (1 << 0),
+		PXS_CM_CCD_LINEAR	= (1 << 1),
 		PXS_CM_CCD_CONTACT	= (1 << 2)
 	};
 
-	friend class Dy::DynamicsContext;
-	friend struct PxsCCDPair;
-	friend class PxsCCDContext;
 	friend class Sc::ShapeInteraction;
 };
 

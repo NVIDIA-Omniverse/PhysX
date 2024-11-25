@@ -328,7 +328,7 @@ class PxVec4T
 	*/
 	PX_CUDA_CALLABLE PX_INLINE PxVec4T minimum(const PxVec4T& v) const
 	{
-		return PxVec4(PxMin(x, v.x), PxMin(y, v.y), PxMin(z, v.z), PxMin(w, v.w));
+		return PxVec4T(PxMin(x, v.x), PxMin(y, v.y), PxMin(z, v.z), PxMin(w, v.w));
 	}
 
 	/**

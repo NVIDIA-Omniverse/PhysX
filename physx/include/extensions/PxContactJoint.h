@@ -135,7 +135,7 @@ namespace physx
 		/**
 		\brief Returns string name of PxContactJoint, used for serialization
 		*/
-		virtual	const char*				getConcreteTypeName() const { return "PxContactJoint"; }
+		virtual	const char*				getConcreteTypeName() const	PX_OVERRIDE	{ return "PxContactJoint"; }
 	
 		virtual void computeJacobians(PxJacobianRow* jacobian) const = 0;
 		virtual PxU32 getNbJacobianRows() const = 0;

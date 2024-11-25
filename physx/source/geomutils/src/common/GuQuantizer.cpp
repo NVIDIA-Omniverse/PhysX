@@ -201,7 +201,7 @@ PxU32 kmeans_cluster3d(	const PxVec3* input,		// an array of input 3d data point
 class QuantizerImpl : public Quantizer, public PxUserAllocated
 {
 public:
-	QuantizerImpl(void)
+	QuantizerImpl()
 	{
 		mScale = PxVec3(1.0f, 1.0f, 1.0f);
 		mCenter = PxVec3(0.0f, 0.0f, 0.0f);
@@ -254,17 +254,17 @@ public:
 		return ret;
 	}
 
-	virtual void release(void)
+	virtual void release()
 	{
 		PX_DELETE_THIS;
 	}
 
-	virtual const PxVec3& getDenormalizeScale(void) const 
+	virtual const PxVec3& getDenormalizeScale() const 
 	{
 		return mScale;
 	}
 
-	virtual const PxVec3& getDenormalizeCenter(void) const
+	virtual const PxVec3& getDenormalizeCenter() const
 	{
 		return mCenter;
 	}

@@ -245,6 +245,8 @@ struct PxVisualizationParameter
 
 		/**
 		\brief Renders the simulation mesh instead of the collision mesh (only available for tetmeshes)
+		
+		Deformable visualization is currently not supported.
 		*/
 		eSIMULATION_MESH,
 

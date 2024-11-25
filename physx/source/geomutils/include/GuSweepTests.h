@@ -29,6 +29,7 @@
 #ifndef GU_SWEEP_TESTS_H
 #define GU_SWEEP_TESTS_H
 
+#include "foundation/PxTransform.h"
 #include "geometry/PxGeometry.h"
 #include "geometry/PxGeometryHit.h"
 #include "geometry/PxGeometryQueryContext.h"

@@ -29,7 +29,6 @@
 #ifndef GU_MESH_CLEANER_H
 #define GU_MESH_CLEANER_H
 
-#include "foundation/Px.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx

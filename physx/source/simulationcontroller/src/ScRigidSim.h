@@ -48,8 +48,6 @@ namespace Sc
 
 						void		notifyShapesOfTransformChange();
 
-						void		setBodyNodeIndex(const PxNodeIndex nodeIndex);
-
 		virtual			PxActor*	getPxActor() const { return getRigidCore().getPxActor(); }
 	};
 

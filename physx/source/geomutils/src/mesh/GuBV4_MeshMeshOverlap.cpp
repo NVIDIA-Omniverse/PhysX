@@ -29,7 +29,7 @@
 #include "GuBV4.h"
 using namespace physx;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuBV4_BoxOverlap_Internal.h"
 #include "GuBV4_BoxBoxOverlapTest.h"
@@ -822,6 +822,7 @@ static bool doTriVsTri_Distance(const TriVsTriParams& params,
 	PxU32 currentSize = callback.mSize;
 	PX_ASSERT(currentSize<capacity);
 
+	const bool ignoreCoplanar = params.mIgnoreCoplanar;
 	const bool mustFlip = params.mMustFlip;
 
 	bool foundHit = false;
@@ -842,10 +843,37 @@ static bool doTriVsTri_Distance(const TriVsTriParams& params,
 			const float d = distanceTriangleTriangleSquared(cp, cq, pp, qq);
 			if(d<=toleranceSquared)
 			{
-				foundHit = true;
-				// PT: TODO: this is not enough here
-				if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, mustFlip, abort))
-					return true;
+				bool skip = false;
+				if(d==0.0f && ignoreCoplanar)
+				{
+					// PT: distance queries don't know about coplanarity so we must run an extra test here to discard coplanar hits.
+					const Vec4V tri1_xs = V4LoadA(&data1->mXXX.x);
+					const Vec4V tri1_ys = V4LoadA(&data1->mYYY.x);
+					const Vec4V tri1_zs = V4LoadA(&data1->mZZZ.x);
+					const Vec4V tri0_normal_x = V4Load(data0->mNormal.x);
+					const Vec4V tri0_normal_y = V4Load(data0->mNormal.y);
+					const Vec4V tri0_normal_z = V4Load(data0->mNormal.z);
+
+					Vec4V tri1_dot_N0 = V4Mul(tri1_xs, tri0_normal_x);
+					// PT: TODO: V4MulAdd
+					tri1_dot_N0 = V4Add(tri1_dot_N0, V4Mul(tri1_ys, tri0_normal_y));
+					tri1_dot_N0 = V4Add(tri1_dot_N0, V4Mul(tri1_zs, tri0_normal_z));
+
+					const Vec4V p1ToABC = V4Add(tri1_dot_N0, V4Load(data0->mD));
+					if(V4AllGrtrOrEq3(V4Load(1e-8f), V4Abs(p1ToABC)))
+					{
+						skip = CoplanarTriTri(data0->mNormal,	data0->mV0, data0->mV1, data0->mV2,
+																data1->mV0, data1->mV1, data1->mV2)!=0;
+					}
+				}
+
+				if(!skip)
+				{
+					foundHit = true;
+					// PT: TODO: this is not enough here
+					if(!accumulateResults(callback, dst, capacity, currentSize, startPrim0 + i, startPrim1 + j, mustFlip, abort))
+						return true;
+				}
 			}
 		}
 	}

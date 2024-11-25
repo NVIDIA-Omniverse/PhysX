@@ -65,7 +65,7 @@ public:
 	/**
 	\brief Returns string name of PxFixedJoint, used for serialization
 	*/
-	virtual	const char*			getConcreteTypeName() const { return "PxFixedJoint"; }
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	{ return "PxFixedJoint"; }
 
 protected:
 

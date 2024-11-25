@@ -475,7 +475,7 @@ public:
 	PxVehicleDriveDynData();
 	PxVehicleDriveDynData(const PxEMPTY)  {}
 	PxU32 getNbAnalogInput() const { return eMAX_NB_ANALOG_INPUTS; }
-	PX_FORCE_INLINE void setGearChange(const PxU32 gearChange) { mTargetGear= gearChange; }
+	PX_FORCE_INLINE void setGearChange(const PxU32 gearChange) { mTargetGear = gearChange; }
 	PX_FORCE_INLINE PxU32 getGearChange() const { return mTargetGear; }
 	PX_FORCE_INLINE void setGearSwitchTime(const PxReal switchTime) { mGearSwitchTime = switchTime; }
 	PX_FORCE_INLINE void setAutoBoxSwitchTime(const PxReal autoBoxSwitchTime) { mAutoBoxSwitchTime = autoBoxSwitchTime; }

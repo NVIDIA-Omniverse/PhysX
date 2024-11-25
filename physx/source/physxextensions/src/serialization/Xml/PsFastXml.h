@@ -150,7 +150,7 @@ class FastXml
 	{
 	}
 
-	virtual void release(void) = 0;
+	virtual void release() = 0;
 
   protected:
 	virtual ~FastXml()

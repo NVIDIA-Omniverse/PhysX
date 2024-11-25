@@ -41,18 +41,18 @@ void TetrahedronMesh::onRefCountZero()
 	}
 }
 
-void SoftBodyMesh::onRefCountZero()
+void DeformableVolumeMesh::onRefCountZero()
 {
 	if (mMeshFactory)
 	{
-		::onRefCountZero(this, mMeshFactory, false, "PxSoftBodyMesh::release: double deletion detected!");
+		::onRefCountZero(this, mMeshFactory, false, "PxDeformableVolumeMesh::release: double deletion detected!");
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SoftBodyAuxData::SoftBodyAuxData(SoftBodySimulationData& d, SoftBodyCollisionData& c, CollisionMeshMappingData& e)
-	: PxSoftBodyAuxData(PxType(PxConcreteType::eSOFT_BODY_STATE), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE)
+DeformableVolumeAuxData::DeformableVolumeAuxData(DeformableVolumeSimulationData& d, DeformableVolumeCollisionData& c, CollisionMeshMappingData& e)
+	: PxDeformableVolumeAuxData(PxType(PxConcreteType::eDEFORMABLE_VOLUME_STATE), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE)
 	, mGridModelInvMass(d.mGridModelInvMass)
 	, mGridModelTetraRestPoses(d.mGridModelTetraRestPoses)
 	, mGridModelOrderedTetrahedrons(d.mGridModelOrderedTetrahedrons)
@@ -99,7 +99,7 @@ SoftBodyAuxData::SoftBodyAuxData(SoftBodySimulationData& d, SoftBodyCollisionDat
 	c.mTetraRestPoses = 0;
 }
 
-SoftBodyAuxData::~SoftBodyAuxData()
+DeformableVolumeAuxData::~DeformableVolumeAuxData()
 {
 	PX_FREE(mGridModelInvMass);
 
@@ -177,7 +177,7 @@ TetrahedronMesh::~TetrahedronMesh()
 	PX_FREE(mMaterialIndices);
 }
 
-BVTetrahedronMesh::BVTetrahedronMesh(TetrahedronMeshData& mesh, SoftBodyCollisionData& d, MeshFactory* factory) : TetrahedronMesh(mesh)
+BVTetrahedronMesh::BVTetrahedronMesh(TetrahedronMeshData& mesh, DeformableVolumeCollisionData& d, MeshFactory* factory) : TetrahedronMesh(mesh)
 , mFaceRemap(d.mFaceRemap)
 , mGRB_tetraIndices(d.mGRB_primIndices)
 , mGRB_tetraSurfaceHint(d.mGRB_tetraSurfaceHint)
@@ -222,20 +222,20 @@ BVTetrahedronMesh::BVTetrahedronMesh(TetrahedronMeshData& mesh, SoftBodyCollisio
 	mesh.mTetrahedrons = NULL;
 }
 
-SoftBodyMesh::SoftBodyMesh(MeshFactory* factory, SoftBodyMeshData& d)
-	: PxSoftBodyMesh(PxType(PxConcreteType::eSOFTBODY_MESH), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE)
+DeformableVolumeMesh::DeformableVolumeMesh(MeshFactory* factory, DeformableVolumeMeshData& d)
+	: PxDeformableVolumeMesh(PxType(PxConcreteType::eDEFORMABLE_VOLUME_MESH), PxBaseFlag::eOWNS_MEMORY | PxBaseFlag::eIS_RELEASABLE)
 	, mMeshFactory(factory)
 {
-	mSoftBodyAuxData = PX_NEW(SoftBodyAuxData)(d.mSimulationData, d.mCollisionData, d.mMappingData);
+	mDeformableVolumeAuxData = PX_NEW(DeformableVolumeAuxData)(d.mSimulationData, d.mCollisionData, d.mMappingData);
 	mCollisionMesh = PX_NEW(BVTetrahedronMesh)(d.mCollisionMesh, d.mCollisionData, factory);
 	mSimulationMesh = PX_NEW(TetrahedronMesh)(factory, d.mSimulationMesh);
 }
 
-SoftBodyMesh::~SoftBodyMesh()
+DeformableVolumeMesh::~DeformableVolumeMesh()
 {	
 	if (getBaseFlags() & PxBaseFlag::eOWNS_MEMORY)
 	{
-		PX_DELETE(mSoftBodyAuxData);
+		PX_DELETE(mDeformableVolumeAuxData);
 		PX_DELETE(mCollisionMesh);
 		PX_DELETE(mSimulationMesh);
 	}
@@ -245,7 +245,7 @@ SoftBodyMesh::~SoftBodyMesh()
 
 // PT: used to be automatic but making it manual saves bytes in the internal mesh
 
-void SoftBodyMesh::exportExtraData(PxSerializationContext& stream)
+void DeformableVolumeMesh::exportExtraData(PxSerializationContext& stream)
 {
 	//PX_DEFINE_DYNAMIC_ARRAY(TriangleMesh, mVertices, PxField::eVEC3, mNbVertices, Ps::PxFieldFlag::eSERIALIZE),
 	if (getCollisionMeshFast()->mVertices)
@@ -285,7 +285,7 @@ void SoftBodyMesh::exportExtraData(PxSerializationContext& stream)
 	}
 }
 
-void SoftBodyMesh::importExtraData(PxDeserializationContext& context)
+void DeformableVolumeMesh::importExtraData(PxDeserializationContext& context)
 {
 	// PT: vertices are followed by indices, so it will be safe to V4Load vertices from a deserialized binary file
 	if (getCollisionMeshFast()->mVertices)
@@ -304,21 +304,21 @@ void SoftBodyMesh::importExtraData(PxDeserializationContext& context)
 	getCollisionMeshFast()->mGRB_BV32Tree = NULL;
 }
 
-void SoftBodyMesh::release()
+void DeformableVolumeMesh::release()
 {
 	Cm::RefCountable_decRefCount(*this);
 }
 
 //PxVec3* TetrahedronMesh::getVerticesForModification()
 //{
-//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxSoftBodyMesh::getVerticesForModification() is not currently supported.");
+//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxDeformableVolumeMesh::getVerticesForModification() is not currently supported.");
 //
 //	return NULL;
 //}
 
 //PxBounds3 BVTetrahedronMesh::refitBVH()
 //{
-//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxSoftBodyMesh::refitBVH() is not currently supported.");
+//	PxGetFoundation().error(PxErrorCode::eINVALID_OPERATION, PX_FL, "PxDeformableVolumeMesh::refitBVH() is not currently supported.");
 //
 //	return PxBounds3(mAABB.getMin(), mAABB.getMax());
 //}

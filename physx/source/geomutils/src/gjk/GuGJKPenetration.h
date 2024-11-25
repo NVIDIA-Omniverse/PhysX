@@ -231,7 +231,7 @@ namespace Gu
 				//while the takeCoreShape flag is set to be false
 				if(takeCoreShape)
 				{
-					output.closestA= closA;
+					output.closestA = closA;
 					output.closestB = closB;
 					output.penDep = dist;
 					

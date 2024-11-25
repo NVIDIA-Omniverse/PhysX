@@ -28,7 +28,6 @@
 
 #if PX_SUPPORT_GPU_PHYSX
 
-#include "foundation/Px.h"
 #include "gpu/PxGpu.h"
 #include "cudamanager/PxCudaContextManager.h"
 #include "PxPhysics.h"
@@ -98,6 +97,7 @@ namespace physx
 	typedef physx::PxCudaContextManager* (PxCreateCudaContextManager_FUNC)(physx::PxFoundation& foundation, const physx::PxCudaContextManagerDesc& desc, physx::PxProfilerCallback* profilerCallback, bool launchSynchronous);
 	typedef int (PxGetSuggestedCudaDeviceOrdinal_FUNC)(physx::PxErrorCallback& errc);
 	typedef void (PxSetPhysXGpuProfilerCallback_FUNC)(physx::PxProfilerCallback* cbk);
+	typedef void (PxSetPhysXGpuFoundationInstance_FUNC)(physx::PxFoundation& foundation);
 	typedef void (PxCudaRegisterFunction_FUNC)(int, const char*);
 	typedef void** (PxCudaRegisterFatBinary_FUNC)(void*);
 	typedef physx::PxKernelIndex* (PxGetCudaFunctionTable_FUNC)();
@@ -109,6 +109,7 @@ namespace physx
 	PxCreateCudaContextManager_FUNC* g_PxCreateCudaContextManager_Func = NULL;
 	PxGetSuggestedCudaDeviceOrdinal_FUNC* g_PxGetSuggestedCudaDeviceOrdinal_Func = NULL;
 	PxSetPhysXGpuProfilerCallback_FUNC* g_PxSetPhysXGpuProfilerCallback_Func = NULL;
+	PxSetPhysXGpuFoundationInstance_FUNC* g_PxSetPhysXGpuFoundationInstance_Func = NULL;
 	PxCudaRegisterFunction_FUNC* g_PxCudaRegisterFunction_Func = NULL;
 	PxCudaRegisterFatBinary_FUNC* g_PxCudaRegisterFatBinary_Func = NULL;
 	PxGetCudaFunctionTable_FUNC* g_PxGetCudaFunctionTable_Func = NULL;
@@ -123,6 +124,7 @@ namespace physx
 		g_PxCreateCudaContextManager_Func = NULL;
 		g_PxGetSuggestedCudaDeviceOrdinal_Func = NULL;
 		g_PxSetPhysXGpuProfilerCallback_Func = NULL;
+		g_PxSetPhysXGpuFoundationInstance_Func = NULL;
 		g_PxCudaRegisterFunction_Func = NULL;
 		g_PxCudaRegisterFatBinary_Func = NULL;
 		g_PxGetCudaFunctionTable_Func = NULL;
@@ -156,6 +158,7 @@ namespace physx
 			g_PxCreateCudaContextManager_Func = (PxCreateCudaContextManager_FUNC*)GetProcAddress(s_library, "PxCreateCudaContextManager");
 			g_PxGetSuggestedCudaDeviceOrdinal_Func = (PxGetSuggestedCudaDeviceOrdinal_FUNC*)GetProcAddress(s_library, "PxGetSuggestedCudaDeviceOrdinal");
 			g_PxSetPhysXGpuProfilerCallback_Func = (PxSetPhysXGpuProfilerCallback_FUNC*)GetProcAddress(s_library, "PxSetPhysXGpuProfilerCallback");
+			g_PxSetPhysXGpuFoundationInstance_Func = (PxSetPhysXGpuFoundationInstance_FUNC*)GetProcAddress(s_library, "PxSetPhysXGpuFoundationInstance");
 			g_PxCudaRegisterFunction_Func = (PxCudaRegisterFunction_FUNC*)GetProcAddress(s_library, "PxGpuCudaRegisterFunction");
 			g_PxCudaRegisterFatBinary_Func = (PxCudaRegisterFatBinary_FUNC*)GetProcAddress(s_library, "PxGpuCudaRegisterFatBinary");
 			g_PxGetCudaFunctionTable_Func  = (PxGetCudaFunctionTable_FUNC*)GetProcAddress(s_library, "PxGpuGetCudaFunctionTable");
@@ -172,7 +175,8 @@ namespace physx
 			return;
 		}
 
-		if (g_PxCreatePhysXGpu_Func == NULL || g_PxCreateCudaContextManager_Func == NULL || g_PxGetSuggestedCudaDeviceOrdinal_Func == NULL || g_PxSetPhysXGpuProfilerCallback_Func == NULL)
+		if (g_PxCreatePhysXGpu_Func == NULL || g_PxCreateCudaContextManager_Func == NULL || g_PxGetSuggestedCudaDeviceOrdinal_Func == NULL ||
+			g_PxSetPhysXGpuProfilerCallback_Func == NULL || g_PxSetPhysXGpuFoundationInstance_Func == NULL)
 		{
 			reportError(PX_FL, "PhysXGpu dll is incompatible with this version of PhysX!\n");
 			return;
@@ -209,6 +213,7 @@ namespace physx
 			*reinterpret_cast<void**>(&g_PxCreateCudaContextManager_Func) = dlsym(s_library, "PxCreateCudaContextManager");
 			*reinterpret_cast<void**>(&g_PxGetSuggestedCudaDeviceOrdinal_Func) = dlsym(s_library, "PxGetSuggestedCudaDeviceOrdinal");
 			*reinterpret_cast<void**>(&g_PxSetPhysXGpuProfilerCallback_Func) = dlsym(s_library, "PxSetPhysXGpuProfilerCallback");
+			*reinterpret_cast<void**>(&g_PxSetPhysXGpuFoundationInstance_Func) = dlsym(s_library, "PxSetPhysXGpuFoundationInstance");
 			*reinterpret_cast<void**>(&g_PxCudaRegisterFunction_Func) = dlsym(s_library, "PxGpuCudaRegisterFunction");
 			*reinterpret_cast<void**>(&g_PxCudaRegisterFatBinary_Func) = dlsym(s_library, "PxGpuCudaRegisterFatBinary");
 			*reinterpret_cast<void**>(&g_PxGetCudaFunctionTable_Func)  = dlsym(s_library, "PxGpuGetCudaFunctionTable");

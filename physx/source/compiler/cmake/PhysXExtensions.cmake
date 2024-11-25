@@ -49,7 +49,7 @@ SET(PHYSX_EXTENSIONS_SOURCE
 	${LL_SOURCE_DIR}/ExtPxStringTable.cpp
 	${LL_SOURCE_DIR}/ExtRaycastCCD.cpp
 	${LL_SOURCE_DIR}/ExtRigidBodyExt.cpp
-	${LL_SOURCE_DIR}/ExtRigidActorExt.cpp	
+	${LL_SOURCE_DIR}/ExtRigidActorExt.cpp
 	${LL_SOURCE_DIR}/ExtSceneQueryExt.cpp
 	${LL_SOURCE_DIR}/ExtSceneQuerySystem.cpp
 	${LL_SOURCE_DIR}/ExtCustomSceneQuerySystem.cpp
@@ -59,7 +59,8 @@ SET(PHYSX_EXTENSIONS_SOURCE
 	${LL_SOURCE_DIR}/ExtSqManager.h
 	${LL_SOURCE_DIR}/ExtSimpleFactory.cpp
 	${LL_SOURCE_DIR}/ExtSmoothNormals.cpp
-	${LL_SOURCE_DIR}/ExtSoftBodyExt.cpp
+	${LL_SOURCE_DIR}/ExtDeformableSurfaceExt.cpp
+	${LL_SOURCE_DIR}/ExtDeformableVolumeExt.cpp
 	${LL_SOURCE_DIR}/ExtTriangleMeshExt.cpp
 	${LL_SOURCE_DIR}/ExtTetrahedronMeshExt.cpp
 	${LL_SOURCE_DIR}/ExtRemeshingExt.cpp
@@ -75,16 +76,15 @@ SET(PHYSX_EXTENSIONS_SOURCE
 	${LL_SOURCE_DIR}/ExtTetMakerExt.cpp
 	${LL_SOURCE_DIR}/ExtGjkQueryExt.cpp
 	${LL_SOURCE_DIR}/ExtCustomGeometryExt.cpp
+	${LL_SOURCE_DIR}/ExtConvexCoreExt.cpp
 )
 
 #TODO, create a propper define for whether GPU features are enabled or not!
-IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND (NOT CMAKE_CROSSCOMPILING OR NOT (CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
+if ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND 
+    (NOT (CMAKE_CROSSCOMPILING OR CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
+	LIST(APPEND PHYSX_EXTENSIONS_SOURCE "${LL_SOURCE_DIR}/ExtDeformableSkinning.cpp")
 	LIST(APPEND PHYSX_EXTENSIONS_SOURCE "${LL_SOURCE_DIR}/ExtParticleExt.cpp")
 	LIST(APPEND PHYSX_EXTENSIONS_SOURCE "${LL_SOURCE_DIR}/ExtParticleClothCooker.cpp")
-
-	IF(NOT PX_GENERATE_SOURCE_DISTRO AND NOT PUBLIC_RELEASE)
-		LIST(APPEND PHYSX_EXTENSIONS_SOURCE "${LL_SOURCE_DIR}/ExtFEMClothExt.cpp")
-	ENDIF()
 ENDIF()
 
 SOURCE_GROUP(src FILES ${PHYSX_EXTENSIONS_SOURCE})
@@ -179,6 +179,8 @@ SET(PHYSX_EXTENSIONS_HEADERS
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultErrorCallback.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultSimulationFilterShader.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxDefaultStreams.h
+	${PHYSX_ROOT_DIR}/include/extensions/PxDeformableSurfaceExt.h
+	${PHYSX_ROOT_DIR}/include/extensions/PxDeformableVolumeExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxExtensionsAPI.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxMassProperties.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxRaycastCCD.h
@@ -193,7 +195,7 @@ SET(PHYSX_EXTENSIONS_HEADERS
 	${PHYSX_ROOT_DIR}/include/extensions/PxShapeExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxSimpleFactory.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxSmoothNormals.h
-	${PHYSX_ROOT_DIR}/include/extensions/PxSoftBodyExt.h
+	${PHYSX_ROOT_DIR}/include/extensions/PxSoftBodyExt.h #deprecated
 	${PHYSX_ROOT_DIR}/include/extensions/PxStringTableExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxTriangleMeshExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxTetrahedronMeshExt.h
@@ -204,21 +206,17 @@ SET(PHYSX_EXTENSIONS_HEADERS
 	${PHYSX_ROOT_DIR}/include/extensions/PxGjkQueryExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxCustomGeometryExt.h
 	${PHYSX_ROOT_DIR}/include/extensions/PxSamplingExt.h
+	${PHYSX_ROOT_DIR}/include/extensions/PxConvexCoreExt.h
 )
 
 
 
 #TODO, create a propper define for whether GPU features are enabled or not!
-IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND (NOT CMAKE_CROSSCOMPILING))
+if ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND 
+    (NOT (CMAKE_CROSSCOMPILING OR CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
+	LIST(APPEND PHYSX_EXTENSIONS_HEADERS "${PHYSX_ROOT_DIR}/include/extensions/PxDeformableSkinningExt.h")
 	LIST(APPEND PHYSX_EXTENSIONS_HEADERS "${PHYSX_ROOT_DIR}/include/extensions/PxParticleClothCooker.h")
 	LIST(APPEND PHYSX_EXTENSIONS_HEADERS "${PHYSX_ROOT_DIR}/include/extensions/PxParticleExt.h")
-
-	IF(NOT PX_GENERATE_SOURCE_DISTRO AND NOT PUBLIC_RELEASE)
-	LIST(APPEND PHYSX_EXTENSIONS_HEADERS
-		${PHYSX_ROOT_DIR}/include/extensions/PxFEMClothExt.h
-	)
-ENDIF()
-
 ENDIF()
 
 SOURCE_GROUP(include FILES ${PHYSX_EXTENSIONS_HEADERS})

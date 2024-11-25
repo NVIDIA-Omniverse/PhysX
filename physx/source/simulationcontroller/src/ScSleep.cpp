@@ -29,21 +29,20 @@
 #include "ScScene.h"
 #include "ScArticulationSim.h"
 #include "ScBodySim.h"
-#include "common/PxProfileZone.h"
-
 #include "ScActorSim.h"
-#include "ScArticulationSim.h"
+#include "DyIslandManager.h"
 
 #if PX_SUPPORT_GPU_PHYSX
-	#include "ScSoftBodySim.h"
-	#include "ScFEMClothSim.h"
+	#include "ScDeformableSurfaceSim.h"
+	#include "ScDeformableVolumeSim.h"
 	#include "ScParticleSystemSim.h"
-	#include "ScHairSystemSim.h"
 #endif
 
+#include "common/PxProfileZone.h"
+
 using namespace physx;
-using namespace physx::Cm;
-using namespace physx::Dy;
+using namespace Cm;
+using namespace Dy;
 using namespace Sc;
 
 // PT: "setActive()" moved from ActorSim to BodySim because GPU classes silently re-implement this in a very different way (see below),
@@ -101,21 +100,21 @@ void Sc::ParticleSystemSim::setActive(bool /*active*/, bool /*asPartOfCreation*/
 {
 }
 
-void Sc::FEMClothSim::activate()
+void Sc::DeformableSurfaceSim::activate()
 {
-	mScene.getSimulationController()->activateCloth(mLLFEMCloth);
+	mScene.getSimulationController()->activateCloth(mLLDeformableSurface);
 
 	activateInteractions(*this);
 }
 
-void Sc::FEMClothSim::deactivate()
+void Sc::DeformableSurfaceSim::deactivate()
 {
-	mScene.getSimulationController()->deactivateCloth(mLLFEMCloth);
+	mScene.getSimulationController()->deactivateCloth(mLLDeformableSurface);
 
 	deactivateInteractions(*this);
 }
 
-void Sc::FEMClothSim::setActive(bool active, bool /*asPartOfCreation*/)
+void Sc::DeformableSurfaceSim::setActive(bool active, bool /*asPartOfCreation*/)
 {
 	if(active)
 		activate();
@@ -123,31 +122,23 @@ void Sc::FEMClothSim::setActive(bool active, bool /*asPartOfCreation*/)
 		deactivate();
 }
 
-void Sc::SoftBodySim::setActive(bool active, bool /*asPartOfCreation*/)
+void Sc::DeformableVolumeSim::setActive(bool active, bool /*asPartOfCreation*/)
 {
 	if(active)
-		getScene().getSimulationController()->activateSoftbody(mLLSoftBody);
+		getScene().getSimulationController()->activateSoftbody(mLLDeformableVolume);
 	else
-		getScene().getSimulationController()->deactivateSoftbody(mLLSoftBody);
+		getScene().getSimulationController()->deactivateSoftbody(mLLDeformableVolume);
 }
 
-void Sc::HairSystemSim::setActive(bool active, bool /*asPartOfCreation*/)
-{
-	if(active)
-		getScene().getSimulationController()->activateHairSystem(mLLHairSystem);
-	else
-		getScene().getSimulationController()->deactivateHairSystem(mLLHairSystem);
-}
 #endif
 
 namespace
 {
-struct GetRigidSim		{ static PX_FORCE_INLINE BodySim* getSim(const IG::Node& node)			{ return reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(node.mRigidBody) - BodySim::getRigidBodyOffset());	}	};
-struct GetArticSim		{ static PX_FORCE_INLINE ArticulationSim* getSim(const IG::Node& node)	{ return reinterpret_cast<ArticulationSim*>(node.mLLArticulation->getUserData());								}	};
+struct GetRigidSim	{ static PX_FORCE_INLINE BodySim* getSim(const IG::Node& node)			{ return reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(node.mObject) - BodySim::getRigidBodyOffset());		}	};
+struct GetArticSim	{ static PX_FORCE_INLINE ArticulationSim* getSim(const IG::Node& node)	{ return reinterpret_cast<ArticulationSim*>(getObjectFromIG<FeatherstoneArticulation>(node)->getUserData());	}	};
 #if PX_SUPPORT_GPU_PHYSX
-struct GetSoftBodySim	{ static PX_FORCE_INLINE SoftBodySim* getSim(const IG::Node& node)		{ return node.mLLSoftBody->getSoftBodySim();																	}	};
-struct GetFEMClothSim	{ static PX_FORCE_INLINE FEMClothSim* getSim(const IG::Node& node)		{ return node.mLLFEMCloth->getFEMClothSim();																	}	};
-struct GetHairSystemSim	{ static PX_FORCE_INLINE HairSystemSim* getSim(const IG::Node& node)	{ return node.mLLHairSystem->getHairSystemSim();																}	};
+struct GetDeformableSurfaceSim	{ static PX_FORCE_INLINE DeformableSurfaceSim* getSim(const IG::Node& node)	{ return getObjectFromIG<DeformableSurface>(node)->getSim();	}	};
+struct GetDeformableVolumeSim	{ static PX_FORCE_INLINE DeformableVolumeSim* getSim(const IG::Node& node)	{ return getObjectFromIG<DeformableVolume>(node)->getSim();		}	};
 #endif
 }
 
@@ -282,9 +273,8 @@ void Sc::Scene::putObjectsToSleep()
 	setActive<ArticulationSim, GetArticSim, false>(nbBodiesDeactivated, islandSim, IG::Node::eARTICULATION_TYPE);
 
 #if PX_SUPPORT_GPU_PHYSX
-	setActive<SoftBodySim, GetSoftBodySim, false>(nbBodiesDeactivated, islandSim, IG::Node::eSOFTBODY_TYPE);
-	setActive<FEMClothSim, GetFEMClothSim, false>(nbBodiesDeactivated, islandSim, IG::Node::eFEMCLOTH_TYPE);
-	setActive<HairSystemSim, GetHairSystemSim, false>(nbBodiesDeactivated, islandSim, IG::Node::eHAIRSYSTEM_TYPE);
+	setActive<DeformableSurfaceSim, GetDeformableSurfaceSim, false>(nbBodiesDeactivated, islandSim, IG::Node::eDEFORMABLE_SURFACE_TYPE);
+	setActive<DeformableVolumeSim, GetDeformableVolumeSim, false>(nbBodiesDeactivated, islandSim, IG::Node::eDEFORMABLE_VOLUME_TYPE);
 #endif
 
 	if(nbBodiesDeactivated)
@@ -304,9 +294,8 @@ void Sc::Scene::wakeObjectsUp()
 	setActive<ArticulationSim, GetArticSim, true>(nbBodiesWoken, islandSim, IG::Node::eARTICULATION_TYPE);
 
 #if PX_SUPPORT_GPU_PHYSX
-	setActive<SoftBodySim, GetSoftBodySim, true>(nbBodiesWoken, islandSim, IG::Node::eSOFTBODY_TYPE);
-	setActive<FEMClothSim, GetFEMClothSim, true>(nbBodiesWoken, islandSim, IG::Node::eFEMCLOTH_TYPE);
-	setActive<HairSystemSim, GetHairSystemSim, true>(nbBodiesWoken, islandSim, IG::Node::eHAIRSYSTEM_TYPE);
+	setActive<DeformableSurfaceSim, GetDeformableSurfaceSim, true>(nbBodiesWoken, islandSim, IG::Node::eDEFORMABLE_SURFACE_TYPE);
+	setActive<DeformableVolumeSim, GetDeformableVolumeSim, true>(nbBodiesWoken, islandSim, IG::Node::eDEFORMABLE_VOLUME_TYPE);
 #endif
 
 	if(nbBodiesWoken)

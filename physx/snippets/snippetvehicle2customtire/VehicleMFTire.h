@@ -29,7 +29,6 @@
 #ifndef VEHICLE_MF_TIRE_H
 #define VEHICLE_MF_TIRE_H
 
-#include "foundation/Px.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxMath.h"
 

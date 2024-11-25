@@ -37,7 +37,8 @@
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxSimpleTypes.h"
 #if PX_SUPPORT_GPU_PHYSX
-#include "ScSoftBodySim.h"
+#include "ScDeformableSurfaceSim.h"
+#include "ScDeformableVolumeSim.h"
 #endif
 
 
@@ -227,15 +228,19 @@ PX_FORCE_INLINE void Sc::ActorPairReport::createContactReportData(NPhaseCore& np
 		reportData->mActorBID = mActorB.getActorID();
 
 #if PX_SUPPORT_GPU_PHYSX
-		if (mActorA.getActorType() == PxActorType::eSOFTBODY)
-			reportData->mPxActorA = static_cast<const SoftBodyCore&>(actorCoreA).getPxActor();
+		if (mActorA.getActorType() == PxActorType::eDEFORMABLE_VOLUME)
+			reportData->mPxActorA = static_cast<const DeformableVolumeCore&>(actorCoreA).getPxActor();
+		else if (mActorA.getActorType() == PxActorType::eDEFORMABLE_SURFACE)
+			reportData->mPxActorA = static_cast<const DeformableSurfaceCore&>(actorCoreA).getPxActor();
 		else
 #endif
 			reportData->mPxActorA = static_cast<const RigidCore&>(actorCoreA).getPxActor();
 
 #if PX_SUPPORT_GPU_PHYSX
-		if (mActorA.getActorType() == PxActorType::eSOFTBODY)
-			reportData->mPxActorB = static_cast<const SoftBodyCore&>(actorCoreB).getPxActor();
+		if (mActorB.getActorType() == PxActorType::eDEFORMABLE_VOLUME)
+			reportData->mPxActorB = static_cast<const DeformableVolumeCore&>(actorCoreB).getPxActor();
+		else if (mActorB.getActorType() == PxActorType::eDEFORMABLE_SURFACE)
+			reportData->mPxActorB = static_cast<const DeformableSurfaceCore&>(actorCoreB).getPxActor();
 		else
 #endif
 			reportData->mPxActorB = static_cast<const RigidCore&>(actorCoreB).getPxActor();

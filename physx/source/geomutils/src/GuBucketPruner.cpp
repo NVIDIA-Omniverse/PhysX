@@ -33,9 +33,8 @@
 #include "CmVisualization.h"
 #include "CmRadixSort.h"
 
-using namespace physx::aos;
-
 using namespace physx;
+using namespace aos;
 using namespace Gu;
 
 #define INVALID_HANDLE	0xffffffff

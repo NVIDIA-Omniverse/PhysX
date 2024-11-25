@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<preset name="linux-clang" comment="Linux clang PhysX SDK general settings">
+  <platform targetPlatform="linux" compiler="clang" />
+  <CMakeSwitches>
+    <cmakeSwitch name="PX_BUILDSNIPPETS" value="True" comment="Generate the snippets" />
+    <cmakeSwitch name="PX_BUILDPVDRUNTIME" value="True" comment="Generate the OmniPVD project" />
+    <cmakeSwitch name="PX_GENERATE_STATIC_LIBRARIES" value="True" comment="Generate static libs" />    
+  </CMakeSwitches>
+  <CMakeParams>
+    <cmakeParam name="CMAKE_INSTALL_PREFIX" value="install/linux/PhysX" comment="Install path relative to PhysX SDK root" />
+  </CMakeParams>
+</preset>

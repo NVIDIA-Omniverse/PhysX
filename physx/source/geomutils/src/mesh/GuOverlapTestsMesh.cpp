@@ -42,7 +42,7 @@
 using namespace physx;
 using namespace Cm;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
 bool GeomOverlapCallback_SphereMesh(GU_OVERLAP_FUNC_PARAMS)
 {

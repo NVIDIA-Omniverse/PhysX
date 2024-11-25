@@ -25,7 +25,6 @@
 // Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 #include "DyConstraintPartition.h"
-#include "DySoftBody.h"
 #include "foundation/PxHashMap.h"
 #include "DyFeatherstoneArticulation.h"
 

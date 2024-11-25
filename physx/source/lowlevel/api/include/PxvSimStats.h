@@ -112,11 +112,10 @@ struct PxvSimStats
 	PxU32	mGpuDynamicsFoundLostPairs;
 	PxU32	mGpuDynamicsFoundLostAggregatePairs;
 	PxU32	mGpuDynamicsTotalAggregatePairs;
-	PxU32	mGpuDynamicsSoftbodyContacts;
-	PxU32	mGpuDynamicsFemClothContacts;
+	PxU32	mGpuDynamicsDeformableSurfaceContacts;
+	PxU32	mGpuDynamicsDeformableVolumeContacts;
 	PxU32	mGpuDynamicsParticleContacts; // not implemented
 	PxU32	mGpuDynamicsCollisionStackSize;
-	PxU32	mGpuDynamicsHairContacts;     // not implemented
 
 };
 

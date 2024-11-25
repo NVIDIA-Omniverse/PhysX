@@ -48,7 +48,7 @@ static const bool gDrawTouchedTriangles = false;
 static void outputErrorMessage()
 {
 #if PX_CHECKED
-	PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Dropping contacts in sphere vs mesh: exceeded limit of 64 ");
+	PxGetFoundation().error(PxErrorCode::eINTERNAL_ERROR, PX_FL, "Dropping contacts in sphere vs mesh: exceeded limit of 256 ");
 #endif
 }
 

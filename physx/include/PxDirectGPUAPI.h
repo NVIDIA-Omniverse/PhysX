@@ -130,39 +130,79 @@ class PxArticulationGPUAPIComputeType
 public:
 	enum Enum
 	{
-		eUPDATE_KINEMATIC = 0,				//!< Updates the link state for all the articulations specified in the index list. This operation can be performed
-											//!< by the user to propagate changes made to root transform/root velocities/joint positions/joint velocities to 
-											//!< be reflected in the link transforms/velocities. Performing this operation will clear output values calculated by
-											//!< the simulation, specifically link accelerations, link incoming joint forces, and joint accelerations. Note 
-											//!< that this is only necessary if the user wants to query link state, otherwise it will be performed automatically
-											//!< at the start of the next call to simulate(). The data input parameter will be ignored and can be set to NULL for
-											//!< this operation.
-		eDENSE_JACOBIANS,					//!< Computes the dense Jacobian for the articulation in world space, including the dofs of a potentially floating base.
-											//!< This is the batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeDenseJacobian. The output data
-											//!< buffer is laid out into sequential blocks per articulation, where each block has the size
-											//!< (6 + maxDofs) * (6 + (maxLinks - 1) * 6) * sizeof(float). maxLinks and maxDofs are the maximum link and dof counts
-											//!< across all the articulations in the scene, and can be queried by calling PxDirectGPUAPI::getArticulationGPUAPIMaxCounts().
-											//!< The size of the jacobian can vary by articulation, and will be determined using these formulas:
-											//!< nCols = (fixedBase ? 0 : 6) + dofCount, nRows = (fixedBase ? 0 : 6) + (linkCount - 1) * 6. The matrix is indexed [nCols * row + column].
-		eGENERALIZED_MASS_MATRICES,			//!< Computes the joint-space inertia matrices that maps joint accelerations to joint forces: forces = M * accelerations on the GPU.
-											//!< This is the batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeGeneralizedMassMatrix().
-											//!< The output buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * maxDofs * sizeof(PxReal).
-											//!< maxDofs is the maximum dof count across all the articulations in the scene, and can be queried by calling 
-											//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The size of the matrix can vary by articulation, and will be dofCount * dofCount.
-											//!< The dof indices will be according to the low-level indexing, we refer to the documentation of PxArticulationCache for an explanation.
-		eGENERALIZED_GRAVITY_FORCES,		//!< Computes the joint dof forces required to counteract gravitational forces for the given articulation pose. This is the 
-											//!< batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeGeneralizedGravityForce(). The output data
-											//!< buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * sizeof(float). maxDofs
-											//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling 
-											//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The data layout within each block follows the PxArticulationCache layout,
-											//!< for which we refer to the user guide. There will be 1 PxReal per articulation dof.
-		eCORIOLIS_AND_CENTRIFUGAL_FORCES	//!< Computes the joint dof forces required to counteract coriolis and centrifugal forces for the given articulation pose.
-											//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce(). The output data
-											//!< buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * sizeof(float). maxDofs
-											//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling 
-											//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The data layout within each block follows the PxArticulationCache layout,
-											//!< for which we refer to the user guide. There will be 1 PxReal per articulation dof.
-    };
+		eUPDATE_KINEMATIC = 0,					//!< Updates the link state for all the articulations specified in the index list. This operation can be performed
+												//!< by the user to propagate changes made to root transform/root velocities/joint positions/joint velocities to
+												//!< be reflected in the link transforms/velocities. Performing this operation will clear output values calculated by
+												//!< the simulation, specifically link accelerations, link incoming joint forces, and joint accelerations. Note
+												//!< that this is only necessary if the user wants to query link state, otherwise it will be performed automatically
+												//!< at the start of the next call to simulate(). The data input parameter will be ignored and can be set to NULL for
+												//!< this operation.
+		eDENSE_JACOBIANS,						//!< Computes the dense Jacobian for the articulation in world space, including the dofs of a potentially floating base.
+												//!< This is the batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeDenseJacobian. The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size
+												//!< (6 + maxDofs) * (6 + (maxLinks - 1) * 6) * sizeof(float). maxLinks and maxDofs are the maximum link and dof counts
+												//!< across all the articulations in the scene, and can be queried by calling PxDirectGPUAPI::getArticulationGPUAPIMaxCounts().
+												//!< The size of the jacobian can vary by articulation, and will be determined using these formulas:
+												//!< nCols = (fixedBase ? 0 : 6) + dofCount, nRows = (fixedBase ? 0 : 6) + (linkCount - 1) * 6. The matrix is indexed [nCols * row + column].
+		eGENERALIZED_MASS_MATRICES PX_DEPRECATED, //!< Deprecated, use PxArticulationGPUAPIComputeType::eMASS_MATRICES instead.
+												//!< Computes the joint-space inertia matrices that maps joint accelerations to joint forces: forces = M * accelerations on the GPU.
+												//!< This is the batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeGeneralizedMassMatrix().
+												//!< The output buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * maxDofs * sizeof(float).
+												//!< maxDofs is the maximum dof count across all the articulations in the scene, and can be queried by calling 
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The size of the matrix can vary by articulation, and will be dofCount * dofCount.
+												//!< The dof indices will be according to the low-level indexing, we refer to the documentation of PxArticulationCache for an explanation.
+		eGENERALIZED_GRAVITY_FORCES PX_DEPRECATED,	//!< Deprecated, use PxArticulationGPUAPIComputeType::eGRAVITY_COMPENSATION instead.
+												//!< Computes the joint dof forces required to counteract gravitational forces for the given articulation pose. This is the
+												//!< batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeGeneralizedGravityForce(). The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * sizeof(float). maxDofs
+												//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The data layout within each block follows the PxArticulationCache layout,
+												//!< for which we refer to the user guide. There will be 1 PxReal per articulation dof.
+		eCORIOLIS_AND_CENTRIFUGAL_FORCES PX_DEPRECATED,	//!< Deprecated, use PxArticulationGPUAPIComputeType::eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION instead.
+												//!< Computes the joint dof forces required to counteract Coriolis and centrifugal forces for the given articulation pose.
+												//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeCoriolisAndCentrifugalForce(). The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size maxDofs * sizeof(float). maxDofs
+												//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The data layout within each block follows the PxArticulationCache layout,
+												//!< for which we refer to the user guide. There will be 1 PxReal per articulation dof.
+		eMASS_MATRICES,							//!< Computes the mass matrices that maps accelerations to forces: forces = M * accelerations on the GPU.
+												//!< This is the batched, direct-GPU equivalent of PxArticulationReducedCoordinate::computeMassMatrix(). The output buffer is laid
+												//!< out into sequential blocks per articulation, where each block has the size (maxDofs + 6) * (maxDofs + 6) * sizeof(float).
+												//!< maxDofs is the maximum dof count across all the articulations in the scene, and can be queried by calling
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(), The size of the matrix can vary by articulation, and will be dofCount * dofCount
+												//!< for fixed-base articulations and (dofCount + 6) * (dofCount + 6) for floating-base articulations.
+												//!< We refer to the documentation of PxArticulationCache and PxArticulationReducedCoordinate::computeMassMatrix() for a more detailed explanation.
+		eCORIOLIS_AND_CENTRIFUGAL_COMPENSATION,	//!< Computes the joint dof forces (and root force) required to counteract Coriolis and centrifugal forces for the given articulation pose.
+												//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeCoriolisCompensation(). The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size (maxDofs + 6) * sizeof(float). maxDofs
+												//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The size of the output can vary by articulation, and will be dofCount
+												//!< for fixed-base articulations and (dofCount + 6) for floating-base articulations. We refer to the documentation of
+												//!< PxArticulationCache and PxArticulationReducedCoordinate::computeCoriolisCompensation() for a more detailed explanation.
+		eGRAVITY_COMPENSATION,					//!< Computes the forces required to counteract gravitational forces for the given articulation pose. This is the batched,
+												//!< direct-GPU equivalent of PxArticulationReducedCoordinate::computeGravityCompensation(). The output data buffer is laid out
+												//!< into sequential blocks per articulation, where each block has the size (maxDofs + 6) * sizeof(float). maxDofs
+												//!< is the maximum dof count across all the articulations in the scene, and can be queried by calling
+												//!< PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The size of the output can vary by articulation, and will be dofCount
+												//!< for fixed-base articulations and (dofCount + 6) for floating-base articulations. We refer to the documentation of
+												//!< PxArticulationCache and PxArticulationReducedCoordinate::computeGravityCompensation() for a more detailed explanation.
+		eARTICULATION_COMS_WORLD_FRAME,			//!< Computes the articulation's center of mass in the world frame for the given articulation pose.
+												//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeArticulationCOM(). The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size sizeof(float) * 3.
+        eARTICULATION_COMS_ROOT_FRAME,			//!< Computes the articulation's center of mass in the root frame for the given articulation pose.
+												//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeArticulationCOM(). The output data
+												//!< buffer is laid out into sequential blocks per articulation, where each block has the size sizeof(float) * 3.
+		eCENTROIDAL_MOMENTUM_MATRICES			//!< Computes the centroidal momentum matrix and bias force for a floating-base articulation.
+												//!< This is the batched, direct-GPU equivalent to PxArticulationReducedCoordinate::computeCentroidalMomentumMatrix(). The data buffer is laid
+												//!< out into four main blocks. The two first blocks correspond to the input (mass matrix, Coriolis and Centrifugal compensation force),
+												//!< and the two last blocks correspond to the output (centroidal momentum matrix, bias force). Each block must be organized into sequential
+												//!< subblocks per articulation. The size of the subblock is (maxDofs + 6) * (maxDofs + 6) * sizeof(float) for the mass matrix,
+												//!< (maxDofs + 6) * sizeof(float) for the Coriolis and Centrifugal compensation force, 6 * (maxDofs + 6) * sizeof(float) for the centroidal
+												//!< momentum matrix, and 6 * sizeof(float) for the bias force. maxDofs is the maximum dof count across all the articulations in the scene,
+												//!< and can be queried by calling PxDirectGPUAPI::getArticulationGPUAPIMaxCounts(). The size of the actual data in each subblock can vary by
+												//!< articulation, and will depend on the value of dofCount. The dof indices will be according to the low-level indexing, we refer to
+												//!< the documentation of PxArticulationCache for an explanation.
+	};
 };
 
 /**
@@ -329,19 +369,36 @@ public:
 	virtual bool copyContactData(void* data, PxU32* nbContactPairs, PxU32 maxPairs, CUevent startEvent = NULL, CUevent finishEvent = NULL) const = 0;
 	
 	/**
-	\brief Evaluate sample point distances on SDF shapes
-	\param[out] localGradientAndSDFConcatenated User-provided GPU buffer where the evaluated distances and gradients in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. 
-	\param[in] shapeIndices User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the PxShape objects that are part of this operation. \see PxShape::getGPUIndex(). The size of this buffer needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs.
+	\brief Evaluate sample point distances and gradients on SDF shapes in local space. Local space is the space in which the mesh's raw vertex positions are represented.
+	\param[out] localGradientAndSignedDistanceConcatenated User-provided GPU buffer where the evaluated gradients and distances in SDF local space get stored. It has the same structure as localSamplePointsConcatenated. The PxVec4 elements contain the gradient and the distance (gradX, gradY, gradZ, distance).
+	\param[in] shapeIndices User-provided GPU index buffer containing elements of PxShapeGPUIndex. This buffer contains the GPU indices of the PxShape objects that are part of this operation. \see PxShape::getGPUIndex(). The size of this buffer (in bytes) needs to be nbElements * sizeof(PxShapeGPUIndex). The shapes must be triangle mesh shapes with SDFs.
 	\param[in] localSamplePointsConcatenated User-provided GPU buffer containing the sample point locations for every shape in the shapes' local space. The buffer stride is maxPointCount.
 	\param[in] samplePointCountPerShape User-provided GPU buffer containing the number of sample points for every shape.
 	\param[in] nbElements The number of shapes to be queried.
-	\param[in] maxPointCount The maximum value in the array samplePointCountPerShape
+	\param[in] maxPointCount The maximum value in the array samplePointCountPerShape. Note that the arrays localGradientAndSignedDistanceConcatenated and localSamplePointsConcatenated must have the size (in bytes) nbElements * maxPointCount * sizeof(PxVec4).
 	\param[in] startEvent User-provided CUDA event that is awaited at the start of this function. Defaults to NULL which means the function will dispatch the computation immediately.
 	\param[in] finishEvent User-provided CUDA event that is recorded at the end of this function. Defaults to NULL which means the function will wait for the computation to finish before returning.
 
+	Example: Ten shapes are part of the simulation. Three of them have an SDF (shapeIndices of the SDF meshes are 2, 4 and 6). For the first shape, the SDF distance of 10 sample points should be queried. 20 sample 
+	points for the second mesh and 30 sample points for the third mesh. The slice size (=maxPointCount) is the maximum of sample points required for any shape participating in the query, 30 = max(10, 20, 30) for this example.
+	The buffers required for the method evaluateSDFDistances are constructed as follows (not including optional parameters):
+		* localGradientAndSignedDistanceConcatenated[length: 3 * 30]: 
+			* No initialization needed. It will hold the result after the finishEvent occurred. It has the same structure as localSamplePointsConcatenated, see below.
+			* The format of the written PxVec4 is as follows (gradX, gradY, gradZ, sdfDistance)
+		* shapeIndices[length: 3]
+			* The content is {2, 4, 6} which are the shape indices for this example
+		* localSamplePointsConcatenated[length: 3 * 30]:			
+			* Slice 0...29 has only the first 10 elements set to local sample points (w component is unused) with respect to the coordinate frame of the first shape to be queried
+			* Slice 30...59 has only the first 20 elements set to local sample points (w component is unused) with respect to the coordinate frame of the second shape to be queried
+			* Slice 60...89 has all 30 elements set to local sample points (w component is unused) with respect to the coordinate frame of the third shape to be queried
+		* samplePointCountPerShape[length: 3]
+			* The content is {10, 20, 30} which are the number of samples to evaluate per shape used in this example. Note that the slice size (=maxPointCount) is the maximum value in this list.
+		* nbElements: 3 for this example since 3 shapes are participating in the query
+		* maxPointCount: 30 for this example since 30 is the slice size (= maxPointCount = 30 = max(10, 20, 30))
+
 	\return bool Whether the operation was successful. Note that this might not include asynchronous CUDA errors.
 	*/
-	virtual bool evaluateSDFDistances(PxVec4* localGradientAndSDFConcatenated, const PxShapeGPUIndex* shapeIndices, const PxVec4* localSamplePointsConcatenated, const PxU32* samplePointCountPerShape, PxU32 nbElements, PxU32 maxPointCount, CUevent startEvent = NULL, CUevent finishEvent = NULL) const = 0;
+	virtual bool evaluateSDFDistances(PxVec4* localGradientAndSignedDistanceConcatenated, const PxShapeGPUIndex* shapeIndices, const PxVec4* localSamplePointsConcatenated, const PxU32* samplePointCountPerShape, PxU32 nbElements, PxU32 maxPointCount, CUevent startEvent = NULL, CUevent finishEvent = NULL) const = 0;
 
 	/**
 	\brief Get the maximal articulation index and component counts for a PxScene.

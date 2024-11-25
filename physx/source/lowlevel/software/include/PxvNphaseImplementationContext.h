@@ -36,8 +36,8 @@
 
 // PT: TODO: forward decl don't work easily with templates, to revisit
 #include "PxsMaterialCore.h"
-#include "PxsFEMClothMaterialCore.h"
-#include "PxsFEMSoftBodyMaterialCore.h"
+#include "PxsDeformableSurfaceMaterialCore.h"
+#include "PxsDeformableVolumeMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
 
 namespace physx
@@ -78,7 +78,7 @@ public:
 	{
 	}
 
-	PxsContactManagerOutputIterator(PxU32* offsets, PxU32 nbOffsets, PxsContactManagerOutput* outputs) : mOutputs(outputs)
+	PxsContactManagerOutputIterator(const PxU32* offsets, PxU32 nbOffsets, PxsContactManagerOutput* outputs) : mOutputs(outputs)
 	{
 		PX_ASSERT(nbOffsets <= (1<<PxsContactManagerBase::MaxBucketBits));
 
@@ -88,7 +88,7 @@ public:
 		}
 	}
 
-	PX_FORCE_INLINE PxsContactManagerOutput& getContactManager(PxU32 id)
+	PX_FORCE_INLINE PxsContactManagerOutput& getContactManagerOutput(PxU32 id)
 	{
 		PX_ASSERT((id & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK) == 0);
 		PxU32 bucketId = PxsContactManagerBase::computeBucketIndexFromId(id);
@@ -96,7 +96,7 @@ public:
 		return mOutputs[mOffsets[bucketId] + cmOutId];
 	}
 
-	PxU32 getIndex(PxU32 id)
+	PxU32 getIndex(PxU32 id)	const
 	{
 		PX_ASSERT((id & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK) == 0);
 		PxU32 bucketId = PxsContactManagerBase::computeBucketIndexFromId(id);
@@ -125,8 +125,8 @@ public:
 	virtual void						unregisterContactManager(PxsContactManager* cm) = 0;
 	virtual void						refreshContactManager(PxsContactManager* cm) = 0;
 
-	virtual void						registerShape(const PxNodeIndex& nodeIndex, const PxsShapeCore& shapeCore, const PxU32 transformCacheID, PxActor* actor, const bool isFemCloth = false) = 0;
-	virtual void						unregisterShape(const PxsShapeCore& shapeCore, const PxU32 transformCacheID, const bool isFemCloth = false) = 0;
+	virtual void						registerShape(const PxNodeIndex& nodeIndex, const PxsShapeCore& shapeCore, const PxU32 transformCacheID, PxActor* actor, const bool isDeformableSurface = false) = 0;
+	virtual void						unregisterShape(const PxsShapeCore& shapeCore, const PxU32 transformCacheID, const bool isDeformableSurface = false) = 0;
 
 	virtual void						registerAggregate(const PxU32 transformCacheID) = 0;
 
@@ -134,13 +134,13 @@ public:
 	virtual void						updateMaterial(const PxsMaterialCore& materialCore) = 0;
 	virtual void						unregisterMaterial(const PxsMaterialCore& materialCore) = 0;
 
-	virtual void						registerMaterial(const PxsFEMSoftBodyMaterialCore& materialCore) = 0;
-	virtual void						updateMaterial(const PxsFEMSoftBodyMaterialCore& materialCore) = 0;
-	virtual void						unregisterMaterial(const PxsFEMSoftBodyMaterialCore& materialCore) = 0;
+	virtual void						registerMaterial(const PxsDeformableSurfaceMaterialCore& materialCore) = 0;
+	virtual void						updateMaterial(const PxsDeformableSurfaceMaterialCore& materialCore) = 0;
+	virtual void						unregisterMaterial(const PxsDeformableSurfaceMaterialCore& materialCore) = 0;
 
-	virtual void						registerMaterial(const PxsFEMClothMaterialCore& materialCore) = 0;
-	virtual void						updateMaterial(const PxsFEMClothMaterialCore& materialCore) = 0;
-	virtual void						unregisterMaterial(const PxsFEMClothMaterialCore& materialCore) = 0;
+	virtual void						registerMaterial(const PxsDeformableVolumeMaterialCore& materialCore) = 0;
+	virtual void						updateMaterial(const PxsDeformableVolumeMaterialCore& materialCore) = 0;
+	virtual void						unregisterMaterial(const PxsDeformableVolumeMaterialCore& materialCore) = 0;
 
 	virtual void						registerMaterial(const PxsPBDMaterialCore& materialCore) = 0;
 	virtual void						updateMaterial(const PxsPBDMaterialCore& materialCore) = 0;
@@ -165,9 +165,9 @@ public:
 	virtual	void						lock() = 0;
 	virtual void						unlock() = 0;
 
-	virtual PxsContactManagerOutputCounts*	getFoundPatchOutputCounts() = 0;
-	virtual PxsContactManager**			getFoundPatchManagers() = 0;
-	virtual PxU32						getNbFoundPatchManagers() = 0;		
+	virtual PxsContactManagerOutputCounts*	getLostFoundPatchOutputCounts() = 0;
+	virtual PxsContactManager**			getLostFoundPatchManagers() = 0;
+	virtual PxU32						getNbLostFoundPatchManagers() = 0;		
 
 	//GPU-specific buffers. Return null for CPU narrow phase
 
@@ -177,55 +177,28 @@ public:
 	virtual PxsTorsionalFrictionData*	getGPUTorsionalData() = 0;
 };
 
-class PxvNphaseImplementationFallback
+class PxvNphaseImplementationFallback: public PxvNphaseImplementationContext
 {
-											PX_NOCOPY(PxvNphaseImplementationFallback)
+												PX_NOCOPY(PxvNphaseImplementationFallback)
 public:
-											PxvNphaseImplementationFallback()	{}
-	virtual									~PxvNphaseImplementationFallback()	{}
+												PxvNphaseImplementationFallback(PxsContext& context) : PxvNphaseImplementationContext(context)	{}
+	virtual										~PxvNphaseImplementationFallback() {}
 
-	virtual void							processContactManager(PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation) = 0;
-	virtual void							processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation) = 0;
+	virtual void								unregisterContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
 
-	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?! Should be "registerContactManagerFallback"...
-	virtual void							registerContactManager(PxsContactManager* cm, const Sc::ShapeInteraction* shapeInteraction, PxI32 touching, PxU32 numPatches) = 0;
-	virtual void							unregisterContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
+	virtual void								processContactManager(PxReal dt, PxsContactManagerOutput* cmOutputs, PxBaseTask* continuation) = 0;
+	virtual void								processContactManagerSecondPass(PxReal dt, PxBaseTask* continuation) = 0;
 
-	virtual void							refreshContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
-
-	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?!
-	virtual PxsContactManagerOutput&		getNewContactManagerOutput(PxU32 npId) = 0;
-
-	virtual void							appendContactManagersFallback(PxsContactManagerOutput* outputs) = 0;
-
-	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?!
-	virtual void							setContactModifyCallback(PxContactModifyCallback* callback) = 0;
-
-	virtual void							removeContactManagersFallback(PxsContactManagerOutput* cmOutputs) = 0;
-
-	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?!
-	virtual void							lock() = 0;
-	virtual void							unlock() = 0;
-
-	// PT: TODO: this one is already defined in PxvNphaseImplementationContext ?!
-	virtual PxsContactManagerOutputCounts*	getFoundPatchOutputCounts() = 0;
-	virtual PxsContactManager**				getFoundPatchManagers() = 0;
-	virtual PxU32							getNbFoundPatchManagers() = 0;
+	virtual void								refreshContactManagerFallback(PxsContactManager* cm, PxsContactManagerOutput* cmOutputs) = 0;
+	virtual void								appendContactManagersFallback(PxsContactManagerOutput* outputs) = 0;
+	virtual void								removeContactManagersFallback(PxsContactManagerOutput* cmOutputs) = 0;
 
 	virtual const Sc::ShapeInteraction*const*	getShapeInteractionsGPU()	const	= 0;
 	virtual const PxReal*						getRestDistancesGPU()		const	= 0;
 	virtual const PxsTorsionalFrictionData*		getTorsionalDataGPU()		const	= 0;
 };
 
-class PxvNphaseImplementationContextUsableAsFallback: public PxvNphaseImplementationContext, public PxvNphaseImplementationFallback
-{
-												PX_NOCOPY(PxvNphaseImplementationContextUsableAsFallback)
-public:
-	PxvNphaseImplementationContextUsableAsFallback(PxsContext& context) : PxvNphaseImplementationContext(context)	{}
-	virtual ~PxvNphaseImplementationContextUsableAsFallback() {}
-};
-
-PxvNphaseImplementationContextUsableAsFallback* createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics);
+PxvNphaseImplementationFallback* createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics);
 
 }
 

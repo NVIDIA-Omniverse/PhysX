@@ -105,9 +105,9 @@ namespace Sc
 
 						void						commonInit() const;
 
-						void						computeGeneralizedGravityForce(PxArticulationCache& cache) const;
+						void						computeGeneralizedGravityForce(PxArticulationCache& cache, const bool rootMotion) const;
 
-						void						computeCoriolisAndCentrifugalForce(PxArticulationCache& cache) const;
+						void						computeCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion) const;
 
 						void						computeGeneralizedExternalForce(PxArticulationCache& cache) const;
 
@@ -121,7 +121,11 @@ namespace Sc
 
 						bool						computeLambda(PxArticulationCache& cache, PxArticulationCache& rollBackCache, const PxReal* const jointTorque, const PxVec3 gravity, const PxU32 maxIter) const;
 
-						void						computeGeneralizedMassMatrix(PxArticulationCache& cache) const;
+						void						computeGeneralizedMassMatrix(PxArticulationCache& cache, const bool rootMotion) const;
+
+						PxVec3						computeArticulationCOM(const bool rootFrame) const;
+
+						void						computeCentroidalMomentumMatrix(PxArticulationCache& cache) const;
 
 						PxU32						getCoefficientMatrixSize() const;
 

@@ -31,6 +31,7 @@
 
 
 #include "foundation/PxFlags.h"
+#include "foundation/PxVec3.h"
 
 #if !PX_DOXYGEN
 namespace physx

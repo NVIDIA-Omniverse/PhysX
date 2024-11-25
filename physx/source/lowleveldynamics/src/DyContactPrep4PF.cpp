@@ -26,6 +26,7 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
+#include "PxSceneDesc.h"
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
 #include "PxcNpWorkUnit.h"
@@ -37,7 +38,6 @@
 #include "DyContactPrepShared.h"
 #include "DyAllocator.h"
 
-using namespace physx::Gu;
 using namespace physx::aos;
 
 namespace physx

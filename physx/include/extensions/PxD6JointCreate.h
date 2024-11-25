@@ -30,6 +30,7 @@
 #define PX_D6_JOINT_CREATE_H
 
 #include "common/PxPhysXCommonConfig.h"
+#include "foundation/PxVec3.h"
 
 
 #if !PX_DOXYGEN

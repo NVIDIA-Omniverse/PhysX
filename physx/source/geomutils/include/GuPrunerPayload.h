@@ -30,7 +30,7 @@
 #define GU_PRUNER_PAYLOAD_H
 
 #include "foundation/PxSimpleTypes.h"
-#include "foundation/Px.h"
+#include "foundation/PxTransform.h"
 
 namespace physx
 {

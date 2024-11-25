@@ -369,7 +369,7 @@ static void generatedContacts(const PolygonalData& polyData0, const PolygonalDat
 	Vec3V nmax = V3Neg(max); 
 
 	//transform reference polygon to 2d, calculate min and max
-	Vec3V rPolygonMin= max;
+	Vec3V rPolygonMin = max;
 	Vec3V rPolygonMax = nmax;
 	for(PxU32 i=0; i<referencePolygon.mNbVerts; ++i)
 	{
@@ -384,7 +384,7 @@ static void generatedContacts(const PolygonalData& polyData0, const PolygonalDat
 	const FloatV d = V3GetZ(points0In0[0]);
 	const FloatV rd = FAdd(d, contactDist);
 
-	Vec3V iPolygonMin= max; 
+	Vec3V iPolygonMin = max; 
 	Vec3V iPolygonMax = nmax;
 
 	PxU32 inside = 0;

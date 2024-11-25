@@ -176,45 +176,35 @@ void PvdPhysicsClient::destroyPvdInstance(const PxMaterial* mat)
 {
 	mMetaDataBinding.destroyInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
-
-void PvdPhysicsClient::createPvdInstance(const PxFEMSoftBodyMaterial* mat)
+#if PX_SUPPORT_GPU_PHYSX
+void PvdPhysicsClient::createPvdInstance(const PxDeformableSurfaceMaterial* mat)
 {
 	mMetaDataBinding.createInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
 
-void PvdPhysicsClient::updatePvdProperties(const PxFEMSoftBodyMaterial* mat)
+void PvdPhysicsClient::updatePvdProperties(const PxDeformableSurfaceMaterial* mat)
 {
 	mMetaDataBinding.sendAllProperties(*mPvdDataStream, *mat);
 }
 
-void PvdPhysicsClient::destroyPvdInstance(const PxFEMSoftBodyMaterial* mat)
+void PvdPhysicsClient::destroyPvdInstance(const PxDeformableSurfaceMaterial* mat)
 {
 	mMetaDataBinding.destroyInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
 
-
-void PvdPhysicsClient::createPvdInstance(const PxFEMClothMaterial* /*mat*/)
+void PvdPhysicsClient::createPvdInstance(const PxDeformableVolumeMaterial* mat)
 {
-	// jcarius: Commented-out until FEMCloth is not under construction anymore
-	PX_ASSERT(0);
-
-	// mMetaDataBinding.createInstance(*mPvdDataStream, *mat, PxGetPhysics());
+	mMetaDataBinding.createInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
 
-void PvdPhysicsClient::updatePvdProperties(const PxFEMClothMaterial* /*mat*/)
+void PvdPhysicsClient::updatePvdProperties(const PxDeformableVolumeMaterial* mat)
 {
-	// jcarius: Commented-out until FEMCloth is not under construction anymore
-	PX_ASSERT(0);
-
-	// mMetaDataBinding.sendAllProperties(*mPvdDataStream, *mat);
+	mMetaDataBinding.sendAllProperties(*mPvdDataStream, *mat);
 }
 
-void PvdPhysicsClient::destroyPvdInstance(const PxFEMClothMaterial* /*mat*/)
+void PvdPhysicsClient::destroyPvdInstance(const PxDeformableVolumeMaterial* mat)
 {
-	// jcarius: Commented-out until FEMCloth is not under construction anymore
-	PX_ASSERT(0);
-
-	// mMetaDataBinding.destroyInstance(*mPvdDataStream, *mat, PxGetPhysics());
+	mMetaDataBinding.destroyInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
 
 void PvdPhysicsClient::createPvdInstance(const PxPBDMaterial* mat)
@@ -231,6 +221,7 @@ void PvdPhysicsClient::destroyPvdInstance(const PxPBDMaterial* mat)
 {
 	mMetaDataBinding.destroyInstance(*mPvdDataStream, *mat, PxGetPhysics());
 }
+#endif
 
 void PvdPhysicsClient::onMeshFactoryBufferRelease(const PxBase* object, PxType typeID)
 {

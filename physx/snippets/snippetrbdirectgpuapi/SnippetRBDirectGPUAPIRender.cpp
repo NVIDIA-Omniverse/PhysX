@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 
 #include "../snippetrender/SnippetRender.h"
@@ -68,7 +66,7 @@ namespace
 		cleanupPhysics(true);
 	}
 
-	void exitCallback(void)
+	void exitCallback()
 	{
 	}
 }

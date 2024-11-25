@@ -29,7 +29,6 @@
 #ifndef PX_SLIST_H
 #define PX_SLIST_H
 
-#include "foundation/Px.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxAlignedMalloc.h"
 

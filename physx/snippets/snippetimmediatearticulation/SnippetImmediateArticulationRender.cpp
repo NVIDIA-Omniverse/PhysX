@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 #include "PxImmediateMode.h"
 
@@ -134,7 +132,7 @@ void renderCallback()
 	Snippets::finishRender();
 }
 
-void exitCallback(void)
+void exitCallback()
 {
 	delete sCamera;
 	cleanupPhysics(true);

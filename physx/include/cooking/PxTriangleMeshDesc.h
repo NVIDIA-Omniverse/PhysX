@@ -68,10 +68,11 @@ public:
 
 	\see materialIndexStride
 	*/
-	PxTypedStridedData<PxMaterialTableIndex> materialIndices;
+	PxTypedStridedData<const PxMaterialTableIndex> materialIndices;
 
 	/**
-	\brief SDF descriptor. When this descriptor is set, signed distance field is calculated for this convex mesh.
+	\brief SDF descriptor. When this descriptor is set, a signed distance field (SDF) is calculated. SDF collisions only 
+	work when the GPU solver is used to run the simulation. The GPU solver is enabled by setting the flag PxSceneFlag::eENABLE_GPU_DYNAMICS in the scene description.
 
 	<b>Default:</b> NULL
 	*/

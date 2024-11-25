@@ -329,9 +329,9 @@ public:
 	virtual     PxCudaContextManager*	getCudaContextManager() const = 0;
 
 	/**
-	\brief Set the rest offset for the collision between particles and rigids or soft bodies.
+	\brief Set the rest offset for the collision between particles and rigids or deformable bodies.
 
-	A particle and a rigid or soft body will come to rest at a distance equal to the sum of their restOffset values.
+	A particle and a rigid or deformable body will come to rest at a distance equal to the sum of their restOffset values.
 
 	\param[in] restOffset <b>Range:</b> (0, contactOffset)
 	*/
@@ -349,7 +349,7 @@ public:
 	\brief Set the contact offset for the collision between particles and rigids or soft bodies
 
 	The contact offset needs to be larger than the rest offset.
-	Contact constraints are generated for a particle and a rigid or softbody below the distance equal to the sum of their contacOffset values.
+	Contact constraints are generated for a particle and a rigid or deformable below the distance equal to the sum of their contacOffset values.
 
 	\param[in] contactOffset <b>Range:</b> (restOffset, PX_MAX_F32)
 	*/
@@ -632,7 +632,7 @@ public:
 	virtual     PxU32                    getGridSizeZ() const = 0;
 
 
-	virtual     const char*             getConcreteTypeName() const PX_OVERRIDE { return "PxPBDParticleSystem"; }
+	virtual     const char*             getConcreteTypeName() const PX_OVERRIDE	PX_FINAL { return "PxPBDParticleSystem"; }
 
 protected:
 	PX_INLINE                           PxPBDParticleSystem(PxType concreteType, PxBaseFlags baseFlags) : PxActor(concreteType, baseFlags) {}

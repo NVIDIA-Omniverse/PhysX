@@ -7,12 +7,6 @@ import subprocess
 import xml.etree.ElementTree
 
 
-def packmanExt():
-    if sys.platform == 'win32':
-        return 'cmd'
-    return 'sh'
-
-
 def cmakeExt():
     if sys.platform == 'win32':
         return '.exe'
@@ -22,10 +16,10 @@ def cmakeExt():
 def filterPreset(presetName):
     winPresetFilter = ['win','switch','crosscompile']
     if sys.platform == 'win32':
-        if any(presetName.find(elem) != -1 for elem in winPresetFilter):
+        if any((presetName.find(elem) != -1 and 'windows-crosscompile' not in presetName) for elem in winPresetFilter):
             return True
     else:
-        if all(presetName.find(elem) == -1 for elem in winPresetFilter):
+        if all((presetName.find(elem) == -1 or 'windows-crosscompile' in presetName) for elem in winPresetFilter):
             return True
     return False
 
@@ -119,6 +113,8 @@ class CMakePreset:
             return False
         elif self.targetPlatform == 'linuxAarch64':
             return False
+        elif self.compiler == 'x86_64-w64-mingw32-g++':
+            return False
         return True
 
     def getCMakeSwitches(self):
@@ -162,6 +158,9 @@ class CMakePreset:
         if self.compiler in vs_versions:
             generator = '-G \"Ninja Multi-Config\"' if self.generator == 'ninja' else '-G ' + vs_versions[self.compiler]
             outString += generator
+        # Windows crosscompile
+        elif self.compiler == 'x86_64-w64-mingw32-g++':
+            outString = outString + '-G \"Ninja\"'
         # mac
         elif self.compiler == 'xcode':
             outString = outString + '-G Xcode'
@@ -178,6 +177,9 @@ class CMakePreset:
                 outString = outString + ' -Ax64'
             outString = outString + ' -DTARGET_BUILD_PLATFORM=windows'
             outString = outString + ' -DPX_OUTPUT_ARCH=x86'
+            if self.compiler == 'x86_64-w64-mingw32-g++':
+                outString = outString + ' -DCMAKE_TOOLCHAIN_FILE=' + \
+                    cmake_modules_root + '/linux/WindowsCrossToolchain.linux-unknown-x86_64.cmake'
             return outString
         elif self.targetPlatform == 'switch64':
             outString = outString + ' -DTARGET_BUILD_PLATFORM=switch'

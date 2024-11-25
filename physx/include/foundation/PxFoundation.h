@@ -30,10 +30,9 @@
 #define PX_FOUNDATION_H
 
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxErrors.h"
 #include "foundation/PxFoundationConfig.h"
-#include "foundation/PxErrors.h"
 
 #include <stdarg.h>
 
@@ -44,6 +43,7 @@ namespace physx
 
 class PxAllocationListener;
 class PxErrorCallback;
+class PxAllocatorCallback;
 
 /**
 \brief Foundation SDK singleton class.

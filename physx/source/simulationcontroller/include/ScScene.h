@@ -46,7 +46,6 @@
 #include "ScBodyCore.h"
 #include "PxAggregate.h"
 #include "PxsContext.h"
-#include "PxsIslandSim.h"
 #include "GuPrunerTypedef.h"
 #include "DyContext.h"
 #include "ScFiltering.h"
@@ -77,7 +76,6 @@ class PxsHeapMemoryAllocatorManager;
 namespace IG
 {
 	class SimpleIslandManager;
-	class NodeIndex;
 	typedef PxU32 EdgeIndex;
 }
 
@@ -100,10 +98,9 @@ namespace Dy
 	class FeatherstoneArticulation;
 	class Context;
 #if PX_SUPPORT_GPU_PHYSX
-	class SoftBody;
-	class FEMCloth;
+	class DeformableSurface;
+	class DeformableVolume;
 	class ParticleSystem;
-	class HairSystem;
 #endif
 }
 
@@ -122,16 +119,14 @@ namespace Sc
 	class ArticulationMimicJointCore;
 	class LLArticulationPool;
 	class LLArticulationRCPool;
-	class LLSoftBodyPool;
-	class LLFEMClothPool;
+	class LLDeformableSurfacePool;
+	class LLDeformableVolumePool;
 	class LLParticleSystemPool;
-	class LLHairSystemPool;
 
 	class BodyCore;
-	class SoftBodyCore;
-	class FEMClothCore;
+	class DeformableSurfaceCore;
+	class DeformableVolumeCore;
 	class ParticleSystemCore;
-	class HairSystemCore;
 
 	class NPhaseCore;
 	class ConstraintInteraction;
@@ -149,13 +144,10 @@ namespace Sc
 	class ShapeInteraction;
 	class ElementInteractionMarker;
 	class ArticulationSim;
-	class SoftBodySim;
-	class FEMClothSim;
+	class DeformableSurfaceSim;
+	class DeformableVolumeSim;
 	class ParticleSystemSim;
-	class HairSystemSim;
-
 	class SimStats;
-
 	struct SimStateData;
 
 	struct BatchInsertionState
@@ -306,6 +298,9 @@ namespace Sc
 
 	PX_FORCE_INLINE	void						setContactModifyCallback(PxContactModifyCallback* callback)	{ mLLContext->setContactModifyCallback(callback);	}
 	PX_FORCE_INLINE	PxContactModifyCallback*	getContactModifyCallback()							const	{ return mLLContext->getContactModifyCallback();	}
+
+	PX_FORCE_INLINE	void						setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* callback) { mSimulationController->setDeformableSurfaceGpuPostSolveCallback(callback); }
+	PX_FORCE_INLINE	void						setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* callback) { mSimulationController->setDeformableVolumeGpuPostSolveCallback(callback); }
 
 	PX_FORCE_INLINE	void						setVisualizationParameter(PxVisualizationParameter::Enum param, PxReal value)
 												{
@@ -524,7 +519,7 @@ namespace Sc
 
 					void						addToLostTouchList(ActorSim& body1, ActorSim& body2);
 
-					PxU32						createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint);
+					PxU32						createAggregate(void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID);
 
 					void						deleteAggregate(PxU32 id);
 
@@ -533,16 +528,15 @@ namespace Sc
 
 		PX_FORCE_INLINE	PxPool<ConstraintInteraction>*	getConstraintInteractionPool()			const	{ return mConstraintInteractionPool;	}
 	public:
-		PX_FORCE_INLINE	const PxsMaterialManager&			getMaterialManager()				const	{ return mMaterialManager;			}
-		PX_FORCE_INLINE	PxsMaterialManager&					getMaterialManager()						{ return mMaterialManager;			}
+		PX_FORCE_INLINE	const PxsMaterialManager&	getMaterialManager()				const	{ return mMaterialManager;			}
+		PX_FORCE_INLINE	PxsMaterialManager&			getMaterialManager()						{ return mMaterialManager;			}
 
-		PX_FORCE_INLINE	const BroadphaseManager&			getBroadphaseManager()				const	{ return mBroadphaseManager;			}
-		PX_FORCE_INLINE	BroadphaseManager&					getBroadphaseManager()						{ return mBroadphaseManager;			}
-		PX_FORCE_INLINE	bool								fireOutOfBoundsCallbacks()
-															{
-																return mBroadphaseManager.fireOutOfBoundsCallbacks(mAABBManager, *mElementIDPool);
-															}
-
+		PX_FORCE_INLINE	const BroadphaseManager&	getBroadphaseManager()				const	{ return mBroadphaseManager;			}
+		PX_FORCE_INLINE	BroadphaseManager&			getBroadphaseManager()						{ return mBroadphaseManager;			}
+		PX_FORCE_INLINE	bool						fireOutOfBoundsCallbacks()
+													{
+														return mBroadphaseManager.fireOutOfBoundsCallbacks(mAABBManager, *mElementIDPool, mContextId);
+													}
 		// Collision filtering
 						void						setFilterShaderData(const void* data, PxU32 dataSize);
 		PX_FORCE_INLINE	const void*					getFilterShaderDataFast()				const	{ return mFilterShaderData;				}
@@ -622,7 +616,7 @@ namespace Sc
 
 		//internal private methods:
 	private:
-					void						activateEdgesInternal(const IG::EdgeIndex* activatingEdges, const PxU32 nbActivatingEdges);
+					void						activateEdgesInternal(IG::Edge::EdgeType type);
 					void						releaseConstraints(bool endOfScene);
 		PX_INLINE	void						clearBrokenConstraintBuffer()	{ mBrokenConstraints.clear();	}
 
@@ -634,10 +628,8 @@ namespace Sc
 		// subroutines of collideStep/solveStep:
 					void						kinematicsSetup(PxBaseTask* continuation);
 					void						stepSetupSolve(PxBaseTask* continuation);
-					//void						stepSetupSimulate();
 
-					void						processNarrowPhaseTouchEvents();
-					void						processNarrowPhaseTouchEventsStage2(PxBaseTask*);
+					void						processNarrowPhaseTouchEvents(PxBaseTask*);
 					void						setEdgesConnected(PxBaseTask*);
 					void						processNarrowPhaseLostTouchEvents(PxBaseTask*);
 					void						processNarrowPhaseLostTouchEventsIslands(PxBaseTask*);
@@ -653,7 +645,7 @@ namespace Sc
 
 					void						collectPostSolverVelocitiesBeforeCCD();
 
-					void						clearSleepWakeBodies(void);
+					void						clearSleepWakeBodies();
 		PX_INLINE	void						cleanUpSleepBodies();
 		PX_INLINE	void						cleanUpWokenBodies();
 		PX_INLINE	void						cleanUpSleepOrWokenBodies(PxCoalescedHashSet<BodyCore*>& bodyList, PxU32 removeFlag, bool& validMarker);
@@ -859,8 +851,7 @@ namespace Sc
 					void						rigidBodyNarrowPhase(PxBaseTask* continuation);
 					void						unblockNarrowPhase(PxBaseTask* continuation);
 					void						islandGen(PxBaseTask* continuation);
-					void						processLostSolverPatches(PxBaseTask* continuation);
-					void						processFoundSolverPatches(PxBaseTask* continuation);
+					void						processSolverPatches(PxBaseTask* continuation);
 					void						postIslandGen(PxBaseTask* continuation);
 					void						solver(PxBaseTask* continuation);
 					void						updateBodies(PxBaseTask* continuation);
@@ -875,7 +866,6 @@ namespace Sc
 					void						unregisterInteractions(PxBaseTask*);
 					void						postThirdPassIslandGen(PxBaseTask*);
 					void						postSolver(PxBaseTask* continuation);
-					void						constraintProjection(PxBaseTask* continuation);
 					void						afterIntegration(PxBaseTask* continuation);  // performs sleep check, for instance
 					void						postCCDPass(PxBaseTask* continuation);
 					void						ccdBroadPhaseAABB(PxBaseTask* continuation);
@@ -897,8 +887,8 @@ namespace Sc
 					void						updateDirtyShapes(PxBaseTask* continuation);
 
 					Cm::DelegateTask<Scene, &Scene::secondPassNarrowPhase>		mSecondPassNarrowPhase;
-					Cm::DelegateFanoutTask<Scene, &Scene::postNarrowPhase>		mPostNarrowPhase;
-					Cm::DelegateFanoutTask<Scene, &Scene::finalizationPhase>	mFinalizationPhase;
+					Cm::DelegateTask<Scene, &Scene::postNarrowPhase>			mPostNarrowPhase;
+					Cm::DelegateTask<Scene, &Scene::finalizationPhase>			mFinalizationPhase;
 					Cm::DelegateTask<Scene, &Scene::updateCCDMultiPass>			mUpdateCCDMultiPass;
 
 					//multi-pass ccd stuff
@@ -931,8 +921,7 @@ namespace Sc
 					Cm::DelegateTask<Scene, &Scene::islandGen>							mIslandGen;
 					Cm::DelegateTask<Scene, &Scene::preRigidBodyNarrowPhase>			mPreRigidBodyNarrowPhase;
 					Cm::DelegateTask<Scene, &Scene::setEdgesConnected>					mSetEdgesConnectedTask;
-					Cm::DelegateTask<Scene, &Scene::processLostSolverPatches>			mProcessLostPatchesTask;
-					Cm::DelegateTask<Scene, &Scene::processFoundSolverPatches>			mProcessFoundPatchesTask;
+					Cm::DelegateTask<Scene, &Scene::processSolverPatches>				mProcessPatchesTask;
 					Cm::DelegateFanoutTask<Scene, &Scene::updateBoundsAndShapes>		mUpdateBoundAndShapeTask;
 					Cm::DelegateTask<Scene, &Scene::rigidBodyNarrowPhase>				mRigidBodyNarrowPhase;
 					Cm::DelegateTask<Scene, &Scene::unblockNarrowPhase>					mRigidBodyNPhaseUnlock;
@@ -951,13 +940,13 @@ namespace Sc
 					Cm::DelegateTask<Scene, &Scene::broadPhaseFirstPass>				mBpFirstPass;
 					Cm::DelegateTask<Scene, &Scene::broadPhaseSecondPass>				mBpSecondPass;
 					Cm::DelegateTask<Scene, &Scene::updateBroadPhase>					mBpUpdate;
-					Cm::DelegateTask<Scene, &Scene::preIntegrate>	                    mPreIntegrate;
+					Cm::DelegateTask<Scene, &Scene::preIntegrate>						mPreIntegrate;
 
 					Cm::FlushPool														mTaskPool;
 					PxTaskManager*														mTaskManager;
 					PxCudaContextManager*												mCudaContextManager;
 
-					bool																mContactReportsNeedPostSolverVelocity;			
+					bool																mContactReportsNeedPostSolverVelocity;
 					bool																mUseGpuDynamics;
 					bool																mUseGpuBp;
 					bool																mCCDBp;
@@ -1004,189 +993,147 @@ namespace Sc
 					void								gpu_releasePools();
 					void								gpu_release();
 
-					void								addSoftBody(SoftBodyCore&);
-					void								removeSoftBody(SoftBodyCore&);
-					void								addFEMCloth(FEMClothCore&);
-					void								removeFEMCloth(FEMClothCore&);
+					void								addDeformableSurface(DeformableSurfaceCore&);
+					void								removeDeformableSurface(DeformableSurfaceCore&);
+					void								addDeformableVolume(DeformableVolumeCore&);
+					void								removeDeformableVolume(DeformableVolumeCore&);
 					void								addParticleSystem(ParticleSystemCore&);
 					void								removeParticleSystem(ParticleSystemCore&);
-					void								addHairSystem(HairSystemCore&);
-					void								removeHairSystem(HairSystemCore&);
 
-	PX_FORCE_INLINE	PxU32								getNbSoftBodies()	const	{ return mSoftBodies.size();		}
-	PX_FORCE_INLINE	SoftBodyCore* const*				getSoftBodies()				{ return mSoftBodies.getEntries();	}
+	PX_FORCE_INLINE	PxU32								getNbDeformableSurfaces()	const	{ return mDeformableSurfaces.size();		}
+	PX_FORCE_INLINE	DeformableSurfaceCore* const*		getDeformableSurfaces()				{ return mDeformableSurfaces.getEntries();	}
 
-	PX_FORCE_INLINE	PxU32								getNbFEMCloths()	const	{ return mFEMCloths.size();			}
-	PX_FORCE_INLINE	FEMClothCore* const*				getFEMCloths()				{ return mFEMCloths.getEntries();	}
+	PX_FORCE_INLINE	PxU32								getNbDeformableVolumes()	const	{ return mDeformableVolumes.size();	}
+	PX_FORCE_INLINE	DeformableVolumeCore* const*		getDeformableVolumes()				{ return mDeformableVolumes.getEntries();	}
 
 	PX_FORCE_INLINE	PxU32								getNbParticleSystems()	const	{ return mParticleSystems.size();		}
 	PX_FORCE_INLINE	ParticleSystemCore* const*			getParticleSystems()			{ return mParticleSystems.getEntries();	}
 
-	PX_FORCE_INLINE	PxU32								getNbHairSystems()	const	{ return mHairSystems.size(); }
-	PX_FORCE_INLINE	HairSystemCore* const*				getHairSystems()			{ return mHairSystems.getEntries(); }
-
-	PX_FORCE_INLINE	SoftBodyCore*const*					getActiveSoftBodiesArray() const { return mActiveSoftBodies.begin(); }
-	PX_FORCE_INLINE	PxU32								getNumActiveSoftBodies() const { return mActiveSoftBodies.size(); }
-
-	PX_FORCE_INLINE	FEMClothCore*const*					getActiveFEMClothsArray() const { return mActiveFEMCloths.begin(); }
-	PX_FORCE_INLINE	PxU32								getNumActiveFEMCloths() const { return mActiveFEMCloths.size(); }
-	
-	PX_FORCE_INLINE HairSystemCore*const*				getActiveHairSystemsArray() const { return mActiveHairSystems.begin(); }
-	PX_FORCE_INLINE	PxU32								getNumActiveHairSystems() const { return mActiveHairSystems.size(); }
+	// PT: redundant?
+	// Get the active deformable surface actors
+	PX_FORCE_INLINE	DeformableSurfaceCore*const*		getActiveDeformableSurfacesArray()	const { return mActiveDeformableSurfaces.begin(); }
+	PX_FORCE_INLINE	PxU32								getNumActiveDeformableSurfaces()	const { return mActiveDeformableSurfaces.size(); }
 
 	// PT: redundant?
-	// Get the active soft body actors
-	PX_FORCE_INLINE	SoftBodyCore*const*					getActiveSoftBodies() const { return mActiveSoftBodies.begin(); }
+	// Get the active deformable surface actors
+	PX_FORCE_INLINE	DeformableVolumeCore*const*			getActiveDeformableVolumesArray()	const { return mActiveDeformableVolumes.begin(); }
+	PX_FORCE_INLINE	PxU32								getNumActiveDeformableVolumes()		const { return mActiveDeformableVolumes.size(); }
 
-	PX_FORCE_INLINE SoftBodyCore*const*					getSleepSoftBodiesArray(PxU32& count)		{ count = mSleepSoftBodies.size(); return mSleepSoftBodies.getEntries(); }
+	PX_FORCE_INLINE	const PxsDeformableSurfaceMaterialManager&	getDeformableSurfaceMaterialManager()	const	{ return mDeformableSurfaceMaterialManager;	}
+	PX_FORCE_INLINE	PxsDeformableSurfaceMaterialManager&		getDeformableSurfaceMaterialManager()			{ return mDeformableSurfaceMaterialManager;	}
 
-	// PT: redundant?
-	// Get the active FEM-cloth actors
-	PX_FORCE_INLINE	FEMClothCore*const*					getActiveFEMCloths() const { return mActiveFEMCloths.begin(); }
-
-	PX_FORCE_INLINE	const PxsFEMMaterialManager&		getFEMMaterialManager()				const	{ return mFEMMaterialManager;		}
-	PX_FORCE_INLINE	PxsFEMMaterialManager&				getFEMMaterialManager()						{ return mFEMMaterialManager;		}
-
-	PX_FORCE_INLINE	const PxsFEMClothMaterialManager&	getFEMClothMaterialManager()		const	{ return mFEMClothMaterialManager;	}
-	PX_FORCE_INLINE	PxsFEMClothMaterialManager&			getFEMClothMaterialManager()				{ return mFEMClothMaterialManager;	}
+	PX_FORCE_INLINE	const PxsDeformableVolumeMaterialManager&	getDeformableVolumeMaterialManager()	const	{ return mDeformableVolumeMaterialManager;	}
+	PX_FORCE_INLINE	PxsDeformableVolumeMaterialManager&			getDeformableVolumeMaterialManager()			{ return mDeformableVolumeMaterialManager;	}
 
 	PX_FORCE_INLINE	const PxsPBDMaterialManager&		getPBDMaterialManager()				const	{ return mPBDMaterialManager;		}
 	PX_FORCE_INLINE	PxsPBDMaterialManager&				getPBDMaterialManager()						{ return mPBDMaterialManager;		}
 
-					Dy::SoftBody*						createLLSoftBody(SoftBodySim* sim);
-					void								destroyLLSoftBody(Dy::SoftBody& softBody);
+					Dy::DeformableSurface*				createLLDeformableSurface(DeformableSurfaceSim* sim);
+					void								destroyLLDeformableSurface(Dy::DeformableSurface& femCloth);
 
-					Dy::FEMCloth*						createLLFEMCloth(FEMClothSim* sim);
-					void								destroyLLFEMCloth(Dy::FEMCloth& femCloth);
+					Dy::DeformableVolume*				createLLDeformableVolume(DeformableVolumeSim* sim);
+					void								destroyLLDeformableVolume(Dy::DeformableVolume& deformableVolume);
 
 					Dy::ParticleSystem*					createLLParticleSystem(ParticleSystemSim* sim);
 					void								destroyLLParticleSystem(Dy::ParticleSystem& softBody);
 
-					Dy::HairSystem*						createLLHairSystem(HairSystemSim* sim);
-					void								destroyLLHairSystem(Dy::HairSystem& hairSystem);
+					void								cleanUpSleepDeformableVolumes();
+					void								cleanUpWokenDeformableVolumes();
+					void								cleanUpSleepOrWokenDeformableVolumes(PxCoalescedHashSet<DeformableVolumeCore*>& bodyList, PxU32 removeFlag, bool& validMarker);
 
-		// PT: TODO: why inline these ones?
-		PX_INLINE	void								cleanUpSleepSoftBodies();
-		PX_INLINE	void								cleanUpWokenSoftBodies();
-		PX_INLINE	void								cleanUpSleepOrWokenSoftBodies(PxCoalescedHashSet<SoftBodyCore*>& bodyList, PxU32 removeFlag, bool& validMarker);
-
-		PX_INLINE	void								cleanUpSleepHairSystems();
-		PX_INLINE	void								cleanUpWokenHairSystems();
-		PX_INLINE	void								cleanUpSleepOrWokenHairSystems(PxCoalescedHashSet<HairSystemCore*>& bodyList, PxU32 removeFlag, bool& validMarker);
-
-					void								addSoftBodySimControl(SoftBodyCore& core);
-					void								removeSoftBodySimControl(SoftBodyCore& core);
-					void								addFEMClothSimControl(FEMClothCore& core);
-					void								removeFEMClothSimControl(FEMClothCore& core);
+					void								addDeformableSurfaceSimControl(DeformableSurfaceCore& core);
+					void								removeDeformableSurfaceSimControl(DeformableSurfaceCore& core);
+					void								addDeformableVolumeSimControl(DeformableVolumeCore& core);
+					void								removeDeformableVolumeSimControl(DeformableVolumeCore& core);
 					void								addParticleSystemSimControl(ParticleSystemCore& core);
 					void								removeParticleSystemSimControl(ParticleSystemCore& core);
-					void								addHairSystemSimControl(HairSystemCore& core);
-					void								removeHairSystemSimControl(HairSystemCore& core);
 
-					void								addParticleFilter(Sc::ParticleSystemCore* core, SoftBodySim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
-					void								removeParticleFilter(Sc::ParticleSystemCore* core, SoftBodySim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
+					void								addParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
+					void								removeParticleFilter(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId);
 
-					PxU32								addParticleAttachment(Sc::ParticleSystemCore* core, SoftBodySim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric);
-					void								removeParticleAttachment(Sc::ParticleSystemCore* core, SoftBodySim& sim, PxU32 handle);
+					PxU32								addParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 particleId, PxU32 userBufferId, PxU32 tetId, const PxVec4& barycentric);
+					void								removeParticleAttachment(Sc::ParticleSystemCore* core, DeformableVolumeSim& sim, PxU32 handle);
 
-					void								addRigidFilter(BodyCore* core, SoftBodySim& sim, PxU32 vertId);
-					void								removeRigidFilter(BodyCore* core, SoftBodySim& sim, PxU32 vertId);
+					void								addRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId);
+					void								removeRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId);
 
-					PxU32								addRigidAttachment(BodyCore* core, SoftBodySim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
-					void								removeRigidAttachment(BodyCore* core, SoftBodySim& sim, PxU32 handle);
+					PxU32								addRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion);
+					void								removeRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 handle);
 						
-					void								addTetRigidFilter(BodyCore* core, SoftBodySim& sim, PxU32 tetIdx);
-					void								removeTetRigidFilter(BodyCore* core, SoftBodySim& sim, PxU32 tetIdx);
+					void								addTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
+					void								removeTetRigidFilter(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx);
 
-					PxU32								addTetRigidAttachment(BodyCore* core, SoftBodySim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+					PxU32								addTetRigidAttachment(BodyCore* core, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint, bool doConversion);
 						
-					void								addSoftBodyFilter(SoftBodyCore& core, PxU32 tetIdx0, SoftBodySim& sim, PxU32 tetIdx1);
-					void								removeSoftBodyFilter(SoftBodyCore& core, PxU32 tetIdx0, SoftBodySim& sim, PxU32 tetIdx1);
-					void								addSoftBodyFilters(SoftBodyCore& core, SoftBodySim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
-					void								removeSoftBodyFilters(SoftBodyCore& core, SoftBodySim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
+					void								addSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
+					void								removeSoftBodyFilter(DeformableVolumeCore& core, PxU32 tetIdx0, DeformableVolumeSim& sim, PxU32 tetIdx1);
+					void								addSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
+					void								removeSoftBodyFilters(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32* tetIndices0, PxU32* tetIndices1, PxU32 tetIndicesSize);
 
-					PxU32								addSoftBodyAttachment(SoftBodyCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, SoftBodySim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1, PxConeLimitedConstraint* constraint, PxReal constraintOffset);
-					void								removeSoftBodyAttachment(SoftBodyCore& core, SoftBodySim& sim, PxU32 handle);
+					PxU32								addSoftBodyAttachment(DeformableVolumeCore& core, PxU32 tetIdx0, const PxVec4& triBarycentric0, DeformableVolumeSim& sim, PxU32 tetIdx1, const PxVec4& tetBarycentric1, PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+					void								removeSoftBodyAttachment(DeformableVolumeCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
-					void								addClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
-					void								removeClothFilter(Sc::FEMClothCore& core, PxU32 triIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
+					void								addClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
+					void								removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx, Sc::DeformableVolumeSim& sim, PxU32 tetIdx);
 
-					void								addVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
-					void								removeVertClothFilter(Sc::FEMClothCore& core, PxU32 vertIdx, Sc::SoftBodySim& sim, PxU32 tetIdx);
+					PxU32								addClothAttachment(DeformableSurfaceCore& core, PxU32 triIdx, const PxVec4& triBarycentric, DeformableVolumeSim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint, PxReal constraintOffset, bool doConversion);
+					void								removeClothAttachment(DeformableSurfaceCore& core, DeformableVolumeSim& sim, PxU32 handle);
 
-					PxU32								addClothAttachment(FEMClothCore& core, PxU32 triIdx, const PxVec4& triBarycentric, SoftBodySim& sim, PxU32 tetIdx, const PxVec4& tetBarycentric, PxConeLimitedConstraint* constraint, PxReal constraintOffset);
-					void								removeClothAttachment(FEMClothCore& core, SoftBodySim& sim, PxU32 handle);
+					PxU32								addRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+					void								removeRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
 
-					void								addRigidFilter(BodyCore* core, FEMClothSim& sim, PxU32 vertId);
-					void								removeRigidFilter(BodyCore* core, FEMClothSim& sim, PxU32 vertId);
+					void								addClothFilter(DeformableSurfaceCore& core0, PxU32 triIdx0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1);
+					void								removeClothFilter(DeformableSurfaceCore& core, PxU32 triIdx0, DeformableSurfaceSim& sim1, PxU32 triIdx1);
 
-					PxU32								addRigidAttachment(BodyCore* core, FEMClothSim& sim, PxU32 vertId, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
-					void								removeRigidAttachment(BodyCore* core, FEMClothSim& sim, PxU32 handle);
+					PxU32								addTriClothAttachment(DeformableSurfaceCore& core0, PxU32 triIdx0, const PxVec4& barycentric0, Sc::DeformableSurfaceSim& sim1, PxU32 triIdx1, const PxVec4& barycentric1);
+					void								removeTriClothAttachment(DeformableSurfaceCore& core, DeformableSurfaceSim& sim1, PxU32 handle);
 
-					void								addClothFilter(FEMClothCore& core0, PxU32 triIdx0, Sc::FEMClothSim& sim1, PxU32 triIdx1);
-					void								removeClothFilter(FEMClothCore& core, PxU32 triIdx0, FEMClothSim& sim1, PxU32 triIdx1);
+					void								addTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
+					void								removeTriRigidFilter(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx);
 
-					PxU32								addTriClothAttachment(FEMClothCore& core0, PxU32 triIdx0, const PxVec4& barycentric0, Sc::FEMClothSim& sim1, PxU32 triIdx1, const PxVec4& barycentric1);
-					void								removeTriClothAttachment(FEMClothCore& core, FEMClothSim& sim1, PxU32 handle);
-
-					void								addTriRigidFilter(BodyCore* core, FEMClothSim& sim, PxU32 triIdx);
-					void								removeTriRigidFilter(BodyCore* core, FEMClothSim& sim, PxU32 triIdx);
-
-					PxU32								addTriRigidAttachment(BodyCore* core, FEMClothSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
-					void								removeTriRigidAttachment(BodyCore* core, FEMClothSim& sim, PxU32 handle);
+					PxU32								addTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 triIdx, const PxVec4& barycentric, const PxVec3& actorSpacePose, PxConeLimitedConstraint* constraint);
+					void								removeTriRigidAttachment(BodyCore* core, DeformableSurfaceSim& sim, PxU32 handle);
 
 					void								addRigidAttachment(BodyCore* core, ParticleSystemSim& sim);
 					void								removeRigidAttachment(BodyCore* core, ParticleSystemSim& sim);
 
-					void								addAttachment(const BodySim& bodySim, const HairSystemSim& hairSim);
-					void								addAttachment(const SoftBodySim& sbSim, const HairSystemSim& hairSim);
-					void								removeAttachment(const BodySim& bodySim, const HairSystemSim& hairSim);
-					void								removeAttachment(const SoftBodySim& sbSim, const HairSystemSim& hairSim);
+					PxActor**							getActiveDeformableVolumeActors(PxU32& nbActorsOut);
+					void								setActiveDeformableVolumeActors(PxActor** actors, PxU32 nbActors);
 
-					PxActor**							getActiveSoftBodyActors(PxU32& nbActorsOut);
-					void								setActiveSoftBodyActors(PxActor** actors, PxU32 nbActors);
+					//PxActor**							getActiveDeformableSurfaceActors(PxU32& nbActorsOut);
+					//void								setActiveDeformableSurfaceActors(PxActor** actors, PxU32 nbActors);
 
-					//PxActor**							getActiveFEMClothActors(PxU32& nbActorsOut);
-					//void								setActiveFEMClothActors(PxActor** actors, PxU32 nbActors);
+					PxU64								mPadding[3];
+					PX_ALIGN(16, PxsDeformableSurfaceMaterialManager	mDeformableSurfaceMaterialManager);
+					PX_ALIGN(16, PxsDeformableVolumeMaterialManager		mDeformableVolumeMaterialManager);
+					PX_ALIGN(16, PxsPBDMaterialManager		mPBDMaterialManager);
 
-					PX_ALIGN(16, PxsFEMMaterialManager	mFEMMaterialManager);
-					PX_ALIGN(16, PxsFEMClothMaterialManager	mFEMClothMaterialManager);
-					PX_ALIGN(16, PxsPBDMaterialManager	mPBDMaterialManager);
-
-					PxArray<SoftBodyCore*>				mActiveSoftBodies;
-					PxArray<FEMClothCore*>				mActiveFEMCloths;
+					PxArray<DeformableSurfaceCore*>		mActiveDeformableSurfaces;
+					PxArray<DeformableVolumeCore*>		mActiveDeformableVolumes;
 					PxArray<ParticleSystemCore*>		mActiveParticleSystems;
-					PxArray<HairSystemCore*>			mActiveHairSystems;
 
-					PxCoalescedHashSet<SoftBodyCore*>	mSoftBodies;
-					PxCoalescedHashSet<FEMClothCore*>	mFEMCloths;
-					PxCoalescedHashSet<ParticleSystemCore*> mParticleSystems;
-					PxCoalescedHashSet<HairSystemCore*>	mHairSystems;
+					PxCoalescedHashSet<DeformableSurfaceCore*>	mDeformableSurfaces;
+					PxCoalescedHashSet<DeformableVolumeCore*>	mDeformableVolumes;
+					PxCoalescedHashSet<ParticleSystemCore*>		mParticleSystems;
 
-					PxCoalescedHashSet<SoftBodyCore*>	mSleepSoftBodies;
-					PxCoalescedHashSet<SoftBodyCore*>	mWokeSoftBodies;
-					PxCoalescedHashSet<HairSystemCore*> mSleepHairSystems;
-					PxCoalescedHashSet<HairSystemCore*> mWokeHairSystems;
+					PxCoalescedHashSet<DeformableVolumeCore*>	mSleepDeformableVolumes;
+					PxCoalescedHashSet<DeformableVolumeCore*>	mWokeDeformableVolumes;
 
-					PxArray<PxActor*>					mActiveSoftBodyActors;
-					PxArray<PxActor*>					mActiveFEMClothActors;
-					PxArray<PxActor*>					mActiveHairSystemActors;
+					PxArray<PxActor*>					mActiveDeformableSurfaceActors;
+					PxArray<PxActor*>					mActiveDeformableVolumeActors;
 
-					LLSoftBodyPool*						mLLSoftBodyPool;
-					LLFEMClothPool*						mLLFEMClothPool;
+					LLDeformableSurfacePool*			mLLDeformableSurfacePool;
+					LLDeformableVolumePool*				mLLDeformableVolumePool;
 					LLParticleSystemPool*				mLLParticleSystemPool;
-					LLHairSystemPool*					mLLHairSystemPool;
 
 					PxHashMap<PxPair<PxU32, PxU32>, ParticleOrSoftBodyRigidInteraction> mParticleOrSoftBodyRigidInteractionMap;
 
-					bool								mWokeSoftBodyListValid;
-					bool								mSleepSoftBodyListValid;
-					bool								mWokeHairSystemListValid;
-					bool								mSleepHairSystemListValid;
+					bool								mWokeDeformableVolumeListValid;
+					bool								mSleepDeformableVolumeListValid;
 #endif
 	};
 
-	bool	activateInteraction(Interaction* interaction, void* data);
+	bool	activateInteraction(Interaction* interaction);
 	void	activateInteractions(Sc::ActorSim& actorSim);
 	void	deactivateInteractions(Sc::ActorSim& actorSim);
 

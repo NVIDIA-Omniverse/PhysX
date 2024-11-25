@@ -41,7 +41,7 @@ Sc::ArticulationJointSim::ArticulationJointSim(ArticulationJointCore& joint, Act
 	mCore		(joint)
 {
 	{
-		onActivate(NULL);
+		onActivate();
 		registerInActors();
 	}
 
@@ -74,7 +74,7 @@ Sc::BodySim& Sc::ArticulationJointSim::getChild() const
 	return static_cast<BodySim&>(getActorSim1());
 }
 
-bool Sc::ArticulationJointSim::onActivate(void*)
+bool Sc::ArticulationJointSim::onActivate()
 {
 	if(!(getParent().isActive() && getChild().isActive()))
 		return false;

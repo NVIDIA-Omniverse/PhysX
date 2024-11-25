@@ -88,7 +88,8 @@ namespace Dy
 	SpatialMatrix FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc
 	(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
 	 const Cm::UnAlignedSpatialVector* jointMotionMatricesW, const Cm::SpatialVectorF* jointISW, 	
-	 const PxReal* jointTargetArmatures, const PxReal* jointExternalForces, 
+	 const PxReal* jointTargetArmatures,
+	 const PxU8* dofIds, const PxReal* jointExternalForces, 
 	 const SpatialMatrix& linkArticulatedInertiaW, 
 	 const Cm::SpatialVectorF& linkZExtW, const Cm::SpatialVectorF& linkZIntIcW, 
 	 InvStIs& linkInvStISW, Cm::SpatialVectorF* jointDofISInvStISW, 
@@ -153,7 +154,8 @@ namespace Dy
 			//Mirtich equivalent: 1/[s_i^T * I_i^A * s_i]
 			PxReal invStIS;
 			{
-				const PxReal stIs = (sa.innerProduct(Is) + jointTargetArmatures[0]);
+				PxU32 dofId = dofIds[0];
+				const PxReal stIs = (sa.innerProduct(Is) + jointTargetArmatures[dofId]);
 				invStIS = ((stIs > 0.f) ? (1.f / stIs) : 0.f);
 			}
 			linkInvStISW.invStIs[0][0] = invStIS;
@@ -230,7 +232,8 @@ namespace Dy
 				
 					D[ind][ind2] = sa.innerProduct(jointISW[ind]);
 				}
-				D[ind][ind] += jointTargetArmatures[ind];
+				PxU32 dofId = dofIds[ind];
+				D[ind][ind] += jointTargetArmatures[dofId];
 				
 			}
 
@@ -316,7 +319,8 @@ namespace Dy
 	SpatialMatrix FeatherstoneArticulation::computePropagateSpatialInertia_ZA_ZIc_NonSeparated
 		(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
 		 const Cm::UnAlignedSpatialVector* jointMotionMatrices, const Cm::SpatialVectorF* jointIs, 
-		 const PxReal* jointTargetArmatures, const PxReal* jointExternalForces,  // also take care of NULL here? when is this function used?
+		 const PxReal* jointTargetArmatures,
+		 const PxU8* dofIds, const PxReal* jointExternalForces, // also take care of NULL here? when is this function used?
 		 const SpatialMatrix& articulatedInertia, 
 		 const Cm::SpatialVectorF& ZIc, 
 		 InvStIs& invStIs, Cm::SpatialVectorF* isInvD, 
@@ -370,7 +374,8 @@ namespace Dy
 			//Mirtich equivalent: 1/[s_i^T * I_i^A * s_i]
 			PxReal iStIs;
 			{
-				const PxReal stIs = (sa.innerProduct(Is) + jointTargetArmatures[0]);
+				PxU32 dofId = dofIds[0];
+				const PxReal stIs = (sa.innerProduct(Is) + jointTargetArmatures[dofId]);
 				iStIs = (stIs > 1e-10f) ? (1.f / stIs) : 0.f;
 			}
 			invStIs.invStIs[0][0] = iStIs;
@@ -439,7 +444,8 @@ namespace Dy
 
 					D[ind][ind2] = sa.innerProduct(jointIs[ind]);
 				}
-				D[ind][ind] += jointTargetArmatures[ind];
+				PxU32 dofId = dofIds[ind];
+				D[ind][ind] += jointTargetArmatures[dofId];
 				//D[ind][ind] *= 10.f;
 			}
 
@@ -666,9 +672,10 @@ namespace Dy
 		for (PxU32 linkID = startIndex; linkID > 0; --linkID)
 		{
 			const ArticulationLink& link = links[linkID];
+			const ArticulationJointCore* joint = link.inboundJoint;
 			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
-			const PxU8 nbDofs = jointDatum.dof;
+			const PxU8 nbDofs = jointDatum.nbDof;
 
 			for (PxU8 ind = 0; ind < nbDofs; ++ind)
 			{
@@ -692,9 +699,9 @@ namespace Dy
 				//us some round-trips to memory!
 				spatialInertiaW = 
 					computePropagateSpatialInertia_ZA_ZIc(
-						PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.dof, 
+						PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.nbDof, 
 						&jointDofMotionMatricesW[jointOffset], &jointDofISW[jointOffset], 
-						&jointDatum.armature[0], jointDofForces ? &jointDofForces[jointOffset] : NULL,
+						&joint->armature[0], &joint->dofIds[0], jointDofForces ? &jointDofForces[jointOffset] : NULL,
 						linkSpatialArticulatedInertiaW[linkID], 
 						linkZW, linkZIntIcW, 
 						linkInvStISW[linkID], &jointDofISInvStISW[jointOffset],
@@ -753,10 +760,10 @@ namespace Dy
 		for (PxU32 linkID = startIndex; linkID > 0; --linkID)
 		{
 			const ArticulationLink& link = links[linkID];
-
+			const ArticulationJointCore* joint = link.inboundJoint; //todo: check for & and const
 			ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
-			const PxU8 nbDofs = jointDatum.dof;
+			const PxU8 nbDofs = jointDatum.nbDof;
 
 			for (PxU8 ind = 0; ind < nbDofs; ++ind)
 			{
@@ -776,9 +783,11 @@ namespace Dy
 				//KS - we also bury Articulated ZA force and ZIc force computation in here because that saves
 				//us some round-trips to memory!
 				spatialInertiaW = computePropagateSpatialInertia_ZA_ZIc_NonSeparated(
-					PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.dof, 
+					PxArticulationJointType::Enum(link.inboundJoint->jointType), jointDatum.nbDof, 
 					&motionMatrix[jointDatum.jointOffset], &Is[jointDatum.jointOffset], 
-					&jointDatum.armature[0], &scratchData.jointForces[jointDatum.jointOffset], // AD what's the difference between the scratch and the articulation data?
+					&joint->armature[0], &joint->dofIds[0],
+					&scratchData.jointForces[jointDatum.jointOffset], // AD what's the difference between the scratch and the articulation
+																	  // data?
 					spatialArticulatedInertia[linkID], 
 					Z,
 					invStIs[linkID], &IsInvDW[jointDatum.jointOffset],
@@ -818,7 +827,7 @@ namespace Dy
 			const ArticulationLink& link = links[linkID];
 			const ArticulationJointCoreData& jointDatum = jointData[linkID];
 			const PxU32 jointOffset = jointDatum.jointOffset;
-			const PxU8 nbDofs = jointDatum.dof;
+			const PxU8 nbDofs = jointDatum.nbDof;
 
 			for (PxU8 ind = 0; ind < nbDofs; ++ind)
 			{
@@ -828,11 +837,9 @@ namespace Dy
 			}
 
 			//(I - Is*Inv(sIs)*sI)
-			//KS - we also bury Articulated ZA force and ZIc force computation in here because that saves
-			//us some round-trips to memory!
 			SpatialMatrix spatialInertiaW = computePropagateSpatialInertia(
 				PxArticulationJointType::Enum(link.inboundJoint->jointType),
-				jointDatum.dof, spatialArticulatedInertia[linkID], &motionMatrix[jointOffset],
+				jointDatum.nbDof, spatialArticulatedInertia[linkID], &motionMatrix[jointOffset],
 				&Is[jointOffset], 
 				invStIs[linkID], &IsInvDW[jointOffset]);
 
@@ -901,7 +908,7 @@ namespace Dy
 		{
 			const PxVec3& parentLinkToChildLink = linkRsW[linkID];		//childLinkPos - parentLinkPos
 			const PxU32 jointOffset = jointData[linkID].jointOffset;
-			const PxU8 dofCount = jointData[linkID].dof;
+			const PxU8 dofCount = jointData[linkID].nbDof;
 			const PxU32 parentLinkId = links[linkID].parent;
 
 			for (PxU32 i = 0; i < 6; ++i)
@@ -960,7 +967,7 @@ namespace Dy
 			const PxReal* jF = &jointForces[jointDatum.jointOffset];
 			
 			Cm::SpatialVectorF ZA = ZIc;
-			for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
+			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
 				const Cm::UnAlignedSpatialVector& sa = data.mWorldMotionMatrix[jointDatum.jointOffset + ind];
 				const PxReal stZ = sa.innerProduct(ZIc);
@@ -1066,7 +1073,7 @@ namespace Dy
 			//calculate jointAcceleration
 			PxReal* jA = &jointDofAccelerations[jointDatum.jointOffset];
 			const InvStIs& invStIs = linkInvStIs[linkID];
-			computeJointAccelerationW(jointDatum.dof, pMotionAcceleration, &jointDofIsWs[jointDatum.jointOffset], invStIs,
+			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &jointDofIsWs[jointDatum.jointOffset], invStIs,
 				&jointDofQstZics[jointDatum.jointOffset], jA);
 
 			Cm::SpatialVectorF motionAcceleration = pMotionAcceleration;
@@ -1075,7 +1082,7 @@ namespace Dy
 			PxReal* jointVelocity = &jointDofVelocities[jointDatum.jointOffset];
 			PxReal* jointNewVelocity = &jointDofNewVelocities[jointDatum.jointOffset];
 
-			for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
+			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
 				const PxReal accel = jA[ind];
 				PxReal jVel = jointVelocity[ind] + accel * dt;
@@ -1099,10 +1106,120 @@ namespace Dy
 		}
 	}
 
+	/**
+	\brief Compute the contribution of a single rigid body to the moment of inertia of a collection
+	of rigid bodies.
+	\param[in] IiW is the moment of inertia of the ith rigid body in the world frame
+	\param[in] mi is the mass of the ith rigid body
+	\param[in] riMinusComW has value (ri - rcom) with ri denoting the position of the rigid body in the world frame
+	and rcom the position of the centre of mass of the collection of rigid bodies in the world frame.
+	*/	 
+	PxMat33 computeContributionToEnsembleMomentOfInertia(const PxMat33& IiW, const PxReal mi, const PxVec3& riMinusComW)
+	{
+		//We compute the 3x3 matrix R from riMinusComW and then return [IiW +  mi * (R^T * R)]
+		//This can be computed in fewer steps than R^T * R because the outcome contains only a few repeated terms.
+		const PxReal ax = riMinusComW.x;
+		const PxReal ay = riMinusComW.y;
+		const PxReal az = riMinusComW.z;
+		const PxReal ax2 = ax*ax;
+		const PxReal ay2 = ay*ay;
+		const PxReal az2 = az*az;
+		const PxReal negAxAy = -ax*ay;
+		const PxReal negAxAz = -ax*az;
+		const PxReal negAyAz = -ay*az;
+		const PxVec3 col0(ay2 + az2, negAxAy, negAxAz);
+		const PxVec3 col1(negAxAy, ax2 + az2, negAyAz);
+		const PxVec3 col2(negAxAz, negAyAz, ax2 + ay2);
+		const PxMat33 IContribution(IiW.column0 + col0*mi, IiW.column1 + col1*mi, IiW.column2 + col2*mi);
+		return IContribution;
+	}
+
+	/**
+	\brief Compute the linear and angular momentum of an articulation
+	\param[in] rcomW is the position of the centre of mass of the articulation in the world frame 
+	\param[in] recipMass is the reciprocal of the total mass of all links of the articulation
+	\param[in] linkCount is the number of links of the articulation.
+	\param[in] linkMasses is the mass of each link of the articulation
+	\param[in] linkIsolatedSpatialArticulatedInertiasW is the isolated inertia in the world frame of each link of the articulation 
+	\param[in] linkAccumulatedPosesW is the pose in the world frame of each link of the articulation
+	\param[in] linkMotionVelocitiesW is the spatial velocity in the world frame of each link of the articulation
+	\param[out] linMomentumW is the linear momentum in the world frame of the articulation
+	\param[out] angMomentumW is the angular momentum in the world frame of the articulation
+	\param[out] compoundInertiaW is an optional inertia in the world frame of the articulation
+	\note linkMotionVelocitiesW must store the linear velocity of the ith link in linkMotionVelocitiesW[i].bottom 
+	and the angular velocity of the ith link in linkMotionVelocitiesW[i].top	
+	\note This is a template function that optionally computes the compound moment of inertia of the collection of
+	rigid bodies.  compoundInertiaW must be non-NUll if computeCompoundInertia is true. compoundInertiaW
+	may have any value if computeCompoundInertia is false because it will be ignored.
+	*/
+	template<bool computeCompoundInertia>
+	void computeMomentum(
+		const PxVec3& rcomW, const PxReal recipMass,
+		const PxU32 linkCount, 
+		const PxReal* linkMasses, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
+		const PxTransform* linkAccumulatedPosesW, const Cm::SpatialVectorF* linkMotionVelocitiesW,
+		PxVec3& linMomentumW, PxVec3& angMomentumW, PxMat33* compoundInertiaW)
+	{
+		//m_i is the mass of the ith rigid body
+		//I_i is the moment of inertia of the ith rigid body
+		//r_i is the position of the ith rigid body 
+		//v_i is the linear velocity of the ith rigid body
+		//w_i is the angular velocity of the ith rigid body
+		//p_i is the linear momentum of the ith rigid body
+		//M is the total mass of all bodies
+		//rcom is the position of the centre of mass of the ensemble of bodies
+		//vcom is the velocity of the centre of mass of the ensemble of bodies
+		//We introduce rprime_i:  r_i = rcom + rprime_i
+		//We introduce vprime_i:  v_i = vcom + vprime_i
+		//Total angular momentum is
+		//L =  sum { I_i w_i} + sum { r_i X p_i } 
+		//We can rewrite the 2nd term above using rprime_i, vprime_i, m_i
+		//L = + sum { I_i w_i} + sum { m_i * (rcom + rprime_i)  X (vcom + vprime_i) } 
+		//The 2nd term above expands out to four terms. 
+		//Two terms have the following form:
+		//rcom X sum {m_i * vprime_i }
+		//sum {m_i * rprime_i } X vcom
+		//But sum {m_i * rprime_i } and sum {m_i * vprime_i } are 0 by definition.
+		//We are left with 
+		//L =  sum { I_i w_i} + sum { rprime_i X m_i * vprime_i} + M * (rcom X vcom)
+		//Rewrite using r_i and rcom etc
+		//L =  sum { I_i w_i} + sum { (r_i - rcom} X m_i * (v_i - vcom} + M * (rcom X vcom)
+		//For reasons unknown we do not account for M * (rcom X vcom)
+
+		//sum { m_i * v_i }
+		linMomentumW = PxVec3(0.0f, 0.0f, 0.0f);
+		for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
+		{
+			const PxVec3& vi = linkMotionVelocitiesW[linkID].bottom;
+			const PxReal mi = linkMasses[linkID];
+			const PxVec3 pi = vi * mi;
+			linMomentumW += pi;
+		}
+
+		//sum { I_i * w_i} + sum { m_i *(r_i - rcom) X (v_i - vcom)
+		const PxVec3 vcomW = linMomentumW * recipMass;
+		angMomentumW = PxVec3(0.0f, 0.0f, 0.0f);
+		for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
+		{
+			const PxReal mi = linkMasses[linkID];
+			const PxMat33& Ii = linkIsolatedSpatialArticulatedInertiasW[linkID];
+			const PxVec3& vi = linkMotionVelocitiesW[linkID].bottom;
+			const PxVec3& wi = linkMotionVelocitiesW[linkID].top;
+			const PxVec3& ri = linkAccumulatedPosesW[linkID].p;
+			const PxVec3 riMinusrComW = ri - rcomW;
+			const PxVec3 viMinusvComW = vi - vcomW; 
+			const PxVec3 angMomi = (Ii * wi) + (riMinusrComW * mi).cross(viMinusvComW); //  + (rcom .cross(vcom))*mass
+			angMomentumW += angMomi;
+
+			if(computeCompoundInertia)	
+				*compoundInertiaW += computeContributionToEnsembleMomentOfInertia(Ii, mi, riMinusrComW);
+		}
+	}			
+
 	void FeatherstoneArticulation::computeLinkInternalAcceleration
 	(	const PxReal dt,
 		const bool fixBase,
-		const PxVec3& com, const PxReal invSumMass, const PxReal maxLinearVelocity, const PxReal maxAngularVelocity, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
+		const PxVec3& rcom, const PxReal recipMass, const PxReal maxLinearVelocity, const PxReal maxAngularVelocity, const PxMat33* linkIsolatedSpatialArticulatedInertiasW, 
 		const SpatialMatrix& baseInvSpatialArticulatedInertiaW,
 		const ArticulationLink* links, const PxU32 linkCount, 
 		const PxReal* linkMasses, const PxVec3* linkRsW, const PxTransform* linkAccumulatedPosesW,
@@ -1114,27 +1231,17 @@ namespace Dy
 	{
 		//we have initialized motionVelocity and motionAcceleration to be zero in the root link if
 		//fix based flag is raised
-		Cm::SpatialVectorF momentum0(PxVec3(0,0,0), PxVec3(0,0,0));
-		{
-			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-			{
-				const Cm::SpatialVectorF& vel = linkMotionVelocitiesW[linkID];
-				const PxReal mass = linkMasses[linkID];
-				momentum0.top += vel.bottom*mass;
-			}
 
-			const PxVec3 comVel = momentum0.top * invSumMass;
-			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-			{
-				const PxReal mass = linkMasses[linkID];
-				const Cm::SpatialVectorF& vel = linkMotionVelocitiesW[linkID];
-				const PxVec3 offsetMass = (linkAccumulatedPosesW[linkID].p - com)*mass;
-
-				const PxVec3 angMom = linkIsolatedSpatialArticulatedInertiasW[linkID] * vel.top + offsetMass.cross(linkMotionVelocitiesW[linkID].bottom - comVel);
-				momentum0.bottom += angMom;
-			}
+		//We only attempt to conserve momentum if we have a floating base articulation.
+		PxVec3 linMomentum0(PxZero);
+		PxVec3 angMomentum0(PxZero);
+		if(!fixBase)
+		{		
+			computeMomentum<false>(
+				rcom, recipMass, 
+				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW, 
+				linMomentum0, angMomentum0, NULL);
 		}
-
 		
 		if (!fixBase)
 		{
@@ -1175,7 +1282,7 @@ namespace Dy
 
 			//calculate jointAcceleration
 			PxReal* jIntAccel = &jointDofInternalAccelerations[jointDatum.jointOffset];
-			computeJointAccelerationW(jointDatum.dof, pMotionAcceleration, &jointDofISW[jointDatum.jointOffset], linkInvStISW[linkID],
+			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &jointDofISW[jointDatum.jointOffset], linkInvStISW[linkID],
 				&jointDofQStZIntIcW[jointDatum.jointOffset], jIntAccel);
 			//printf("jA %f\n", jA[0]);
 
@@ -1185,7 +1292,7 @@ namespace Dy
 			PxReal* jointNewVelocity = &jointDofNewVelocities[jointDatum.jointOffset];
 
 			PxReal* jA = &jointDofAccelerations[jointDatum.jointOffset];
-			for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
+			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
 				const PxReal accel = jIntAccel[ind];
 				PxReal jVel = jointVelocity[ind] + accel * dt;
@@ -1208,40 +1315,33 @@ namespace Dy
 
 		if (!fixBase)
 		{
+			PxVec3 linMomentum1(PxZero);
+			PxVec3 angMomentum1(PxZero);
+			PxMat33 compoundInertia(PxZero);
+			computeMomentum<true>(
+				rcom,  recipMass, 
+				linkCount, linkMasses, linkIsolatedSpatialArticulatedInertiasW, linkAccumulatedPosesW, linkMotionVelocitiesW, 
+				linMomentum1, angMomentum1, &compoundInertia);
 
-			PxVec3 angMomentum1(0.f);
-			PxMat33 inertia(PxZero);
+			const PxMat33 invCompoundInertia = compoundInertia.getInverse();
 
-			PxVec3 sumLinMomentum(0.f);
-
-			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
+			//Compute the ratio of old angular momentum and new angular momentum.
+			PxReal angRatio;
 			{
-				PxReal mass = linkMasses[linkID];
-				sumLinMomentum += linkMotionVelocitiesW[linkID].bottom * mass;
+				const PxReal numerator = angMomentum0.magnitude();
+				const PxReal denominator = angMomentum1.magnitude();
+				angRatio = denominator == 0.0f ? 1.0f : numerator / denominator;
 			}
+			
+			//Compute the delta angular momentum from the ratio 
+			//delta = (angMomentum1 * (angMomentum0/angMomentum1 - 1.0f) = angMomentum0 - angMomentum1
+			const PxVec3 deltaAngMom = angMomentum1 * (angRatio - 1.0f);
 
-			const PxVec3 comVel = sumLinMomentum * invSumMass;
-
-			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-			{
-				PxReal mass = linkMasses[linkID];
-				const PxVec3 offset = linkAccumulatedPosesW[linkID].p - com;
-				inertia += translateInertia(linkIsolatedSpatialArticulatedInertiasW[linkID], mass, offset);
-
-				angMomentum1 += linkIsolatedSpatialArticulatedInertiasW[linkID] * linkMotionVelocitiesW[linkID].top 
-					+ offset.cross(linkMotionVelocitiesW[linkID].bottom - comVel) * mass;
-			}
-
-			PxMat33 invCompoundInertia = inertia.getInverse();
-
-			PxReal denom0 = angMomentum1.magnitude();
-			PxReal num = momentum0.bottom.magnitude();
-			PxReal angRatio = denom0 == 0.f ? 1.f : num / denom0;
-
-			PxVec3 deltaAngMom = angMomentum1 * (angRatio - 1.f);
-
+			//Compute the delta angular velocity.
 			PxVec3 deltaAng = invCompoundInertia * deltaAngMom;
 
+			//If we are above the max angular velocity then work out a new delta angular velocity
+			//that would be required to brings us back to the max.
 			if (maxAngularVelocity > 0.0f)
 			{
 				const PxReal maxAng = maxAngularVelocity;
@@ -1254,49 +1354,23 @@ namespace Dy
 				}
 			}
 
-
-#if 1
 			for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
 			{
-				const PxVec3 offset = (linkAccumulatedPosesW[linkID].p - com);
+				const PxVec3 offset = (linkAccumulatedPosesW[linkID].p - rcom);
 				Cm::SpatialVectorF velChange(deltaAng, -offset.cross(deltaAng));
 				linkMotionVelocitiesW[linkID] += velChange;
 				const PxReal mass = linkMasses[linkID];
-				sumLinMomentum += velChange.bottom * mass;
+				linMomentum1 += velChange.bottom * mass;
 			}
-#else
-			motionVelocities[0].top += deltaAng;
-			motionAccelerations[0] = Cm::SpatialVectorF(deltaAng, PxVec3(0.f));
-			//sumLinMomentum = motionVelocities[0].bottom * data.mMasses[0];
-			for (PxU32 linkID = 1; linkID < linkCount; ++linkID)
-			{
-				Cm::SpatialVectorF velChange = Dy::FeatherstoneArticulation::translateSpatialVector(-data.getRw(linkID), motionAccelerations[data.getLink(linkID).parent]);
-				motionVelocities[linkID] += velChange;
-				motionAccelerations[linkID] = velChange;
 
-				PxReal mass = data.mMasses[linkID];
-				//sumLinMomentum += motionVelocities[linkID].bottom * mass;
-				sumLinMomentum += velChange.bottom * mass;
-			}
-#endif
-
-#if 0
-			PxReal denom1 = sumLinMomentum.magnitude();
-			PxReal linRatio = PxMin(10.f, denom1 == 0.f ? 1.f : momentum0.top.magnitude() / denom1);
-
-			PxVec3 deltaLinMom = sumLinMomentum * (linRatio - 1.f);
-
-
-#else
-			PxVec3 deltaLinMom = momentum0.top - sumLinMomentum;
-#endif
-			PxVec3 deltaLin = deltaLinMom * invSumMass;
+			const PxVec3 deltaLinMom = linMomentum0 - linMomentum1;
+			PxVec3 deltaLin = deltaLinMom * recipMass;
 
 			if (maxLinearVelocity >= 0.0f)
 			{
 				const PxReal maxLin = maxLinearVelocity;
 				const PxReal maxLinSq = maxLin * maxLin;
-				PxVec3 lin = (sumLinMomentum * invSumMass) + deltaLin;
+				PxVec3 lin = (linMomentum1 * recipMass) + deltaLin;
 				if (lin.magnitudeSquared() > maxLinSq)
 				{
 					PxReal ratio = maxLin / lin.magnitude();
@@ -1308,42 +1382,7 @@ namespace Dy
 			{
 				linkMotionVelocitiesW[linkID].bottom += deltaLin;
 			}
-
-#if PX_DEBUG && 0
-
-			const bool validateMomentum = false;
-			if (validateMomentum)
-			{
-
-				Cm::SpatialVectorF momentum2(PxVec3(0.f), PxVec3(0.f));
-				for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-				{
-					const PxReal mass = data.mMasses[linkID];
-					momentum2.top += motionVelocities[linkID].bottom * mass;
-				}
-				rootVel = momentum2.top * sumInvMass;
-				for (PxU32 linkID = 0; linkID < linkCount; ++linkID)
-				{
-					const PxReal mass = data.mMasses[linkID];
-					const PxVec3 angMom = data.mWorldIsolatedSpatialArticulatedInertia[linkID] * motionVelocities[linkID].top +
-						(data.getAccumulatedPoses()[linkID].p - COM).cross(motionVelocities[linkID].bottom - rootVel) * mass;
-					momentum2.bottom += angMom;
-				}
-
-				static PxU32 count = 0;
-				count++;
-
-				printf("LinMom0 = %f, LinMom1 = %f, LinMom2 = %f\n", momentum0.top.magnitude(), sumLinMomentum.magnitude(), momentum2.top.magnitude());
-				printf("AngMom0 = %f, AngMom1 = %f, AngMom2 = %f\n", momentum0.bottom.magnitude(), angMomentum1.magnitude(), momentum2.bottom.magnitude());
-
-				printf("%i: Angular Momentum0 (%f, %f, %f), angularMomentum1 (%f, %f, %f), angularMomFinal (%f, %f, %f)\n",
-					count, momentum0.bottom.x, momentum0.bottom.y, momentum0.bottom.z, angMomentum1.x, angMomentum1.y, angMomentum1.z,
-					momentum2.bottom.x, momentum2.bottom.y, momentum2.bottom.z);
-			}
-
-#endif
 		}
-
 	}
 
 	void FeatherstoneArticulation::computeLinkIncomingJointForce(
@@ -1934,7 +1973,7 @@ namespace Dy
 				ArticulationLink& pLink = links[link.parent];
 				//const PxTransform pBody2World = pLink.bodyCore->body2World;
 
-				const PxU32 dof = jointDatum.dof;
+				const PxU32 dof = jointDatum.nbDof;
 
 				computeSphericalJointPositions(data.mRelativeQuat[linkID], link.bodyCore->body2World.q,
 					pLink.bodyCore->body2World.q, jPositions, &data.getMotionMatrix(jointDatum.jointOffset), dof);
@@ -2202,7 +2241,7 @@ namespace Dy
 					PxVec3 axis; PxReal angle;
 					jointRotation.toRadiansAndUnitAxis(angle, axis);
 					axis *= angle;
-					for (PxU32 i = 0; i < jointDatum.dof; ++i)
+					for (PxU32 i = 0; i < jointDatum.nbDof; ++i)
 					{
 						PxVec3 sa = mArticulationData.getMotionMatrix(jointDatum.jointOffset + i).top;
 						PxReal ang = -sa.dot(axis);
@@ -2353,7 +2392,7 @@ namespace Dy
 
 				Cm::SpatialVectorF vel = FeatherstoneArticulation::translateSpatialVector(-rw, data.mMotionVelocities[parent]);
 				Cm::UnAlignedSpatialVector deltaV = Cm::UnAlignedSpatialVector::Zero();
-				for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
+				for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 				{
 					PxReal jVel = jVelocity[ind];
 					//deltaV += data.mWorldMotionMatrix[jointDatum.jointOffset + ind] * jVel;
@@ -2397,7 +2436,7 @@ namespace Dy
 #if PX_DEBUG
 				data.mWorldIsolatedSpatialArticulatedInertia[linkID] = inertia;
 #endif
-				sumInertia += translateInertia(inertia, mass, offset);
+				sumInertia += computeContributionToEnsembleMomentOfInertia(inertia, mass, offset);
 				sumAngMom += inertia * motionVelocities[linkID].top;
 				sumAngMom += offsetMass.cross(motionVelocities[linkID].bottom - rootLinVel);
 			}
@@ -2607,12 +2646,12 @@ namespace Dy
 			//calculate jointAcceleration
 			PxReal* jA = &jointAccelerations[jointDatum.jointOffset];
 			const InvStIs& invStIs = mArticulationData.mInvStIs[linkID];
-			computeJointAccelerationW(jointDatum.dof, pMotionAcceleration, &mArticulationData.mIsW[jointDatum.jointOffset], invStIs,
+			computeJointAccelerationW(jointDatum.nbDof, pMotionAcceleration, &mArticulationData.mIsW[jointDatum.jointOffset], invStIs,
 				&mArticulationData.qstZIc[jointDatum.jointOffset], jA);
 
 			Cm::SpatialVectorF motionAcceleration(PxVec3(0.f), PxVec3(0.f));
 
-			for (PxU32 ind = 0; ind < jointDatum.dof; ++ind)
+			for (PxU32 ind = 0; ind < jointDatum.nbDof; ++ind)
 			{
 				motionAcceleration.top += mArticulationData.mWorldMotionMatrix[jointDatum.jointOffset + ind].top * jA[ind];
 				motionAcceleration.bottom += mArticulationData.mWorldMotionMatrix[jointDatum.jointOffset + ind].bottom * jA[ind];

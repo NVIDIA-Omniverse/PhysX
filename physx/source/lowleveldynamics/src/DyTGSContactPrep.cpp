@@ -38,7 +38,6 @@
 #include "DyAllocator.h"
 
 using namespace physx;
-using namespace Gu;
 
 #include "PxsMaterialManager.h"
 #include "DyContactPrepShared.h"

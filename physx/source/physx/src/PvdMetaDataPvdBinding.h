@@ -92,14 +92,13 @@ class PvdMetaDataBinding
 	void sendAllProperties(PvdDataStream& inStream, const PxMaterial& inMaterial);
 	void destroyInstance(PvdDataStream& inStream, const PxMaterial& inMaterial, const PxPhysics& ownerPhysics);
 
-	void createInstance(PvdDataStream& inStream, const PxFEMSoftBodyMaterial& inMaterial, const PxPhysics& ownerPhysics);
-	void sendAllProperties(PvdDataStream& inStream, const PxFEMSoftBodyMaterial& inMaterial);
-	void destroyInstance(PvdDataStream& inStream, const PxFEMSoftBodyMaterial& inMaterial, const PxPhysics& ownerPhysics);
+	void createInstance(PvdDataStream& inStream, const PxDeformableSurfaceMaterial& inMaterial, const PxPhysics& ownerPhysics);
+	void sendAllProperties(PvdDataStream& inStream, const PxDeformableSurfaceMaterial& inMaterial);
+	void destroyInstance(PvdDataStream& inStream, const PxDeformableSurfaceMaterial& inMaterial, const PxPhysics& ownerPhysics);
 
-	// jcarius: Commented-out until FEMCloth is not under construction anymore
-	// void createInstance(PvdDataStream& inStream, const PxFEMClothMaterial& inMaterial, const PxPhysics& ownerPhysics);
-	// void sendAllProperties(PvdDataStream& inStream, const PxFEMClothMaterial& inMaterial);
-	// void destroyInstance(PvdDataStream& inStream, const PxFEMClothMaterial& inMaterial, const PxPhysics& ownerPhysics);
+	void createInstance(PvdDataStream& inStream, const PxDeformableVolumeMaterial& inMaterial, const PxPhysics& ownerPhysics);
+	void sendAllProperties(PvdDataStream& inStream, const PxDeformableVolumeMaterial& inMaterial);
+	void destroyInstance(PvdDataStream& inStream, const PxDeformableVolumeMaterial& inMaterial, const PxPhysics& ownerPhysics);
 
 	void createInstance(PvdDataStream& inStream, const PxPBDMaterial& inMaterial, const PxPhysics& ownerPhysics);
 	void sendAllProperties(PvdDataStream& inStream, const PxPBDMaterial& inMaterial);
@@ -126,21 +125,17 @@ class PvdMetaDataBinding
 	void sendAllProperties(PvdDataStream& inStream, const PxRigidDynamic& inObj);
 	void destroyInstance(PvdDataStream& inStream, const PxRigidDynamic& inObj, const PxScene& ownerScene);
 
-	void createInstance(PvdDataStream& inStream, const PxSoftBody& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
-	void sendAllProperties(PvdDataStream& inStream, const PxSoftBody& inObj);
-	void destroyInstance(PvdDataStream& inStream, const PxSoftBody& inObj, const PxScene& ownerScene);
+	void createInstance(PvdDataStream& inStream, const PxDeformableSurface& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
+	void sendAllProperties(PvdDataStream& inStream, const PxDeformableSurface& inObj);
+	void destroyInstance(PvdDataStream& inStream, const PxDeformableSurface& inObj, const PxScene& ownerScene);
 
-	void createInstance(PvdDataStream& inStream, const PxFEMCloth& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
-	void sendAllProperties(PvdDataStream& inStream, const PxFEMCloth& inObj);
-	void destroyInstance(PvdDataStream& inStream, const PxFEMCloth& inObj, const PxScene& ownerScene);
+	void createInstance(PvdDataStream& inStream, const PxDeformableVolume& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
+	void sendAllProperties(PvdDataStream& inStream, const PxDeformableVolume& inObj);
+	void destroyInstance(PvdDataStream& inStream, const PxDeformableVolume& inObj, const PxScene& ownerScene);
 
 	void createInstance(PvdDataStream& inStream, const PxPBDParticleSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
 	void sendAllProperties(PvdDataStream& inStream, const PxPBDParticleSystem& inObj);
 	void destroyInstance(PvdDataStream& inStream, const PxPBDParticleSystem& inObj, const PxScene& ownerScene);
-
-	void createInstance(PvdDataStream& inStream, const PxHairSystem& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
-	void sendAllProperties(PvdDataStream& inStream, const PxHairSystem& inObj);
-	void destroyInstance(PvdDataStream& inStream, const PxHairSystem& inObj, const PxScene& ownerScene);
 
 	void createInstance(PvdDataStream& inStream, const PxArticulationReducedCoordinate& inObj, const PxScene& ownerScene, const PxPhysics& ownerPhysics, PsPvd* pvd);
 	void sendAllProperties(PvdDataStream& inStream, const PxArticulationReducedCoordinate& inObj);

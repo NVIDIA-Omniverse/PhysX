@@ -34,11 +34,10 @@
 #include "NpAggregate.h"
 #include "ScScene.h"
 #if PX_SUPPORT_GPU_PHYSX
-	#include "NpSoftBody.h"
 	#include "NpPBDParticleSystem.h"
 	#include "NpParticleBuffer.h"
-	#include "NpFEMCloth.h"
-	#include "NpHairSystem.h"
+	#include "NpDeformableSurface.h"
+	#include "NpDeformableVolume.h"
 	#include "cudamanager/PxCudaContextManager.h"
 	#include "cudamanager/PxCudaContext.h"	
 #endif
@@ -463,9 +462,9 @@ bool NpScene::fetchResults(bool block, PxU32* errorState)
 
 			}
 
-			//end frame
-			omniPvdSampler->sampleScene(this);
-
+			NpOmniPvdSceneClient& ovdClient = getSceneOvdClientInternal();
+			ovdClient.resetForces();
+			ovdClient.incrementFrame(*pvdWriter, true);
 			OMNI_PVD_WRITE_SCOPE_END
 		}
 #endif
@@ -510,32 +509,54 @@ bool NpScene::fetchResultsStart(const PxContactPairHeader*& contactPairs, PxU32&
 	return true;
 }
 
-void NpContactCallbackTask::setData(NpScene* scene, const PxContactPairHeader* contactPairHeaders, const uint32_t nbContactPairHeaders)
+namespace
 {
-	mScene = scene;
-	mContactPairHeaders = contactPairHeaders;
-	mNbContactPairHeaders = nbContactPairHeaders;
-}
-
-void NpContactCallbackTask::run()
-{
-	PxSimulationEventCallback* callback = mScene->getSimulationEventCallback();
-	if (!callback)
-		return;
-
-	mScene->lockRead();
-	for (uint32_t i = 0; i<mNbContactPairHeaders; ++i)
+	class NpContactCallbackTask : public physx::PxLightCpuTask
 	{
-		const PxContactPairHeader& pairHeader = mContactPairHeaders[i];
-		callback->onContact(pairHeader, pairHeader.pairs, pairHeader.nbPairs);
-	}
-	mScene->unlockRead();
+		NpScene*					mScene;
+		const PxContactPairHeader*	mContactPairHeaders;
+		const PxU32					mNbContactPairHeaders;
+	public:
+
+		PX_FORCE_INLINE	NpContactCallbackTask(NpScene* scene, const PxContactPairHeader* contactPairHeaders, PxU64 contextID, PxU32 nbContactPairHeaders) :
+			mScene					(scene),
+			mContactPairHeaders		(contactPairHeaders),
+			mNbContactPairHeaders	(nbContactPairHeaders)
+		{
+			setContextId(contextID);
+		}
+
+		virtual void run()	PX_OVERRIDE PX_FINAL
+		{
+			PxSimulationEventCallback* callback = mScene->getSimulationEventCallback();
+			if (!callback)
+				return;
+
+			mScene->lockRead();
+			{
+				PX_PROFILE_ZONE("USERCODE - PxSimulationEventCallback::onContact", getContextId());
+				PxU32 nb = mNbContactPairHeaders;
+				for(PxU32 i=0; i<nb; i++)
+				{
+					const PxContactPairHeader& pairHeader = mContactPairHeaders[i];
+					callback->onContact(pairHeader, pairHeader.pairs, pairHeader.nbPairs);
+				}
+			}
+			mScene->unlockRead();
+		}
+
+		virtual const char* getName() const	PX_OVERRIDE PX_FINAL
+		{
+			return "NpContactCallbackTask";
+		}
+	};
 }
 
 void NpScene::processCallbacks(PxBaseTask* continuation)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.processCallbacks", getContextId());
 	PX_PROFILE_ZONE("Sim.processCallbacks", getContextId());
+
 	//ML: because Apex destruction callback isn't thread safe so that we make this run single thread first
 	const PxArray<PxContactPairHeader>& pairs = mScene.getQueuedContactPairHeaders();
 	const PxU32 nbPairs = pairs.size();
@@ -546,8 +567,7 @@ void NpScene::processCallbacks(PxBaseTask* continuation)
 
 	for (PxU32 i = 0; i < nbPairs; i += nbToProcess)
 	{
-		NpContactCallbackTask* task = PX_PLACEMENT_NEW(flushPool->allocate(sizeof(NpContactCallbackTask)), NpContactCallbackTask)();
-		task->setData(this, contactPairs+i, PxMin(nbToProcess, nbPairs - i));
+		NpContactCallbackTask* task = PX_PLACEMENT_NEW(flushPool->allocate(sizeof(NpContactCallbackTask)), NpContactCallbackTask)(this, contactPairs+i, getContextId(), PxMin(nbToProcess, nbPairs - i));
 		task->setContinuation(continuation);
 		task->removeReference();
 	}
@@ -579,7 +599,13 @@ void NpScene::fetchResultsFinish(PxU32* errorState)
 		OmniPvdPxSampler* omniPvdSampler = NpPhysics::getInstance().mOmniPvdSampler;
 		if (omniPvdSampler && omniPvdSampler->isSampling())
 		{
-			omniPvdSampler->sampleScene(this);
+			OMNI_PVD_GET_WRITER(pvdWriter)
+			if (pvdWriter)
+			{
+				NpOmniPvdSceneClient& ovdClient = getSceneOvdClientInternal();
+				ovdClient.resetForces();
+				ovdClient.incrementFrame(*pvdWriter, true);
+			}
 		}
 #endif
 	}

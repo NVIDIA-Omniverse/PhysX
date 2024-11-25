@@ -2,7 +2,9 @@
 
 ## Location of Binaries:
 
-* SDK libraries: bin/linux.clang
+* SDK libraries: 
+  * For Linux x86-64: bin/linux.x86_64
+  * For Linux aarch64: bin/linux.aarch64
 
 ## Required packages to generate projects:
 
@@ -13,13 +15,13 @@
 * glibc, version 2.31 or higher (Note: GLIBC versions are typically not backwards compatible)
 
 ### Compilers and C++ Standard:
-  * We support the following Ubuntu LTS releases:
-    * For linux x86-64 (clang only):
-      * Ubuntu 20.04 LTS with clang 10
-      * Ubuntu 22.04 LTS with clang 14 
-      * Note: PhysX may fail to compile with clang versions higher than 14 as they have not been tested.
-    * For linux aarch64 (gcc only):
-      * Ubuntu 20.04 LTS with gcc 9
+  * We support the following Ubuntu LTS releases and compilers:
+    * For linux x86-64 (tested with Clang and GCC):
+      * Ubuntu 20.04 LTS: Clang 10, GCC 9.4.0
+      * Ubuntu 22.04 LTS: Clang 14, GCC 11.4.0
+      * Ubuntu 24.04 LTS: Clang 18, GCC 13.2.0
+    * For linux aarch64 (tested with GCC only):
+      * Ubuntu 20.04 LTS: GCC 9.4.0
   * Tested with C++11 standard
 
 ## Generating Makefiles:

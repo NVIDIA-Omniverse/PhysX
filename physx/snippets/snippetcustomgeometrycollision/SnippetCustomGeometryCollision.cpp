@@ -32,7 +32,6 @@
 // ****************************************************************************
 
 #include <ctype.h>
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "PxImmediateMode.h"
 #include "geomutils/PxContactBuffer.h"

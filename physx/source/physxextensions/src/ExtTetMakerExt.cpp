@@ -39,7 +39,7 @@
 
 using namespace physx;
 
-PX_FORCE_INLINE PxReal computeTetrahedronVolume(const PxVec3& x0, const PxVec3& x1, const PxVec3& x2, const PxVec3& x3)
+static PX_FORCE_INLINE PxReal computeTetrahedronVolume(const PxVec3& x0, const PxVec3& x1, const PxVec3& x2, const PxVec3& x3)
 {
 	const PxVec3 u1 = x1 - x0;
 	const PxVec3 u2 = x2 - x0;
@@ -54,7 +54,7 @@ PX_FORCE_INLINE PxReal computeTetrahedronVolume(const PxVec3& x0, const PxVec3& 
 }
 
 //Remove tets with small volume
-void removeSmallVolumeTetrahedra(PxArray<::physx::PxVec3>& vertices, PxArray<PxU32>& indices, PxReal volumeThreshold = 1e-8f)
+static void removeSmallVolumeTetrahedra(PxArray<::physx::PxVec3>& vertices, PxArray<PxU32>& indices, PxReal volumeThreshold = 1e-8f)
 {
 	uint32_t indexer = 0;
 
@@ -78,7 +78,7 @@ void removeSmallVolumeTetrahedra(PxArray<::physx::PxVec3>& vertices, PxArray<PxU
 }
 
 //Removes vertices not referenced by any tetrahedron and maps the tet's indices to match the compacted vertex list
-void removeUnusedVertices(PxArray<::physx::PxVec3>& vertices, PxArray<PxU32>& tets, PxU32 numPointsToKeepAtBeginning = 0)
+static void removeUnusedVertices(PxArray<::physx::PxVec3>& vertices, PxArray<PxU32>& tets, PxU32 numPointsToKeepAtBeginning = 0)
 {
 	PxArray<PxI32> compressorMap;
 	compressorMap.resize(vertices.size());
@@ -125,8 +125,7 @@ void removeUnusedVertices(PxArray<::physx::PxVec3>& vertices, PxArray<PxU32>& te
 		vertices.removeRange(indexer, vertices.size() - indexer);
 }
 
-
-PX_FORCE_INLINE PxU64 buildKey(PxI32 a, PxI32 b)
+static PX_FORCE_INLINE PxU64 buildKey(PxI32 a, PxI32 b)
 {
 	if (a < b)
 		return ((PxU64(a)) << 32) | (PxU64(b));
@@ -170,6 +169,7 @@ static void buildTriangleNeighborhood(const PxI32* tris, PxU32 numTris, PxArray<
 		}
 	}
 }
+
 void PxTetMaker::detectTriangleIslands(const PxI32* triangles, PxU32 numTriangles, PxArray<PxU32>& islandIndexPerTriangle)
 {
 	//Detect islands
@@ -380,5 +380,4 @@ void PxTetMaker::createRelaxedVoxelTetrahedralMesh(const PxArray<PxVec3>& inputV
 	vt.createTetMesh(inputVertices, inputIndices, resolution, numRelaxationIters, relMinTetVolume);
 	vt.readBack(outputVertices, outputIndices);
 }
-
 

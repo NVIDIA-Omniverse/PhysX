@@ -36,11 +36,10 @@
 #include "PxShape.h"
 #include "PxAggregate.h"
 #include "PxParticleSystem.h"
+#include "PxDeformableSurface.h"
+#include "PxDeformableAttachment.h"
+#include "PxDeformableElementFilter.h"
 #include "foundation/PxPreprocessor.h"
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-#include "PxFEMCloth.h"
-#include "PxHairSystem.h"
-#endif
 
 #if !PX_DOXYGEN
 namespace physx
@@ -67,7 +66,9 @@ class PxBVH;
 class PxParticleClothBuffer;
 class PxParticleRigidBuffer;
 
-class PxSoftBodyMesh;
+class PxDeformableVolumeMesh;
+
+class PxInputStream;
 
 /**
 \brief Abstract singleton factory class used for instancing objects in the Physics SDK.
@@ -207,14 +208,23 @@ public:
 	virtual PxTetrahedronMesh* createTetrahedronMesh(PxInputStream& stream) = 0;
 
 	/**
-	\brief Creates a softbody mesh object.
+	\brief Creates a deformable volume mesh object.
 
-	\param[in] stream The softbody mesh stream.
-	\return The new softbody mesh.
+	\param[in] stream The deformable volume mesh stream.
+	\return The new deformable volume mesh.
 
 	\see createTetrahedronMesh
 	*/
-	virtual PxSoftBodyMesh* createSoftBodyMesh(PxInputStream& stream) = 0;
+	virtual PxDeformableVolumeMesh* createDeformableVolumeMesh(PxInputStream& stream) = 0;
+
+	/**
+	\brief Deprecated
+	\see createDeformableVolumeMesh
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolumeMesh* createSoftBodyMesh(PxInputStream& stream)
+	{
+		return createDeformableVolumeMesh(stream);
+	}
 
 	/**
 	\brief Return the number of tetrahedron meshes that currently exist.
@@ -463,7 +473,7 @@ public:
 	}
 
 	/**
-	\brief Creates a shape which may be attached to one or more softbody actors
+	\brief Creates a shape which may be attached to exactly one deformable volume actor
 
 	The shape will be created with a reference count of 1.
 
@@ -478,17 +488,16 @@ public:
 	\see PxShape
 	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
-											const PxFEMSoftBodyMaterial& material,
+											const PxDeformableVolumeMaterial& material,
 											bool isExclusive = false,
 											PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE)
 	{
-		PxFEMSoftBodyMaterial* materialPtr = const_cast<PxFEMSoftBodyMaterial*>(&material);
+		PxDeformableVolumeMaterial* materialPtr = const_cast<PxDeformableVolumeMaterial*>(&material);
 		return createShape(geometry, &materialPtr, 1, isExclusive, shapeFlags);
 	}
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	/**
-	\brief Creates a shape which may be attached to one or more FEMCloth actors
+	\brief Creates a shape which may be attached to exactly one deformable surface actor
 
 	The shape will be created with a reference count of 1.
 
@@ -503,14 +512,13 @@ public:
 	\see PxShape
 	*/
 	PX_FORCE_INLINE	PxShape* createShape(	const PxGeometry& geometry,
-											const PxFEMClothMaterial& material,
+											const PxDeformableSurfaceMaterial& material,
 											bool isExclusive = false,
 											PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE)
 	{
-		PxFEMClothMaterial* materialPtr = const_cast<PxFEMClothMaterial*>(&material);
+		PxDeformableSurfaceMaterial* materialPtr = const_cast<PxDeformableSurfaceMaterial*>(&material);
 		return createShape(geometry, &materialPtr, 1, isExclusive, shapeFlags);
 	}
-#endif
 
 	/**
 	\brief Creates a shape which may be attached to multiple actors
@@ -536,13 +544,13 @@ public:
 									PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE) = 0;
 
 	virtual PxShape* createShape(	const PxGeometry& geometry,
-									PxFEMSoftBodyMaterial*const * materials,
+									PxDeformableSurfaceMaterial*const * materials,
 									PxU16 materialCount,
 									bool isExclusive = false,
 									PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE) = 0;
 
 	virtual PxShape* createShape(	const PxGeometry& geometry,
-									PxFEMClothMaterial*const * materials,
+									PxDeformableVolumeMaterial*const * materials,
 									PxU16 materialCount,
 									bool isExclusive = false,
 									PxShapeFlags shapeFlags = PxShapeFlag::eVISUALIZATION | PxShapeFlag::eSCENE_QUERY_SHAPE | PxShapeFlag::eSIMULATION_SHAPE) = 0;
@@ -604,38 +612,62 @@ public:
 	*/
 	virtual PxArticulationReducedCoordinate* createArticulationReducedCoordinate() = 0;
 
+	/**
+	\brief Creates an attachment between two actors, based on the provided PxDeformableAttachmentData. At least one of the actors must be a deformable.
+
+	An attachment is a collection of one or more positional constraints between a point on one actor and a point on another actor.
+	Attachments between two rigid objects are not permitted, use joints instead.
+
+	\note The attachment is only active when both actors are added to the same scene or one of the actors is NULL.
+
+	\param[in] data Attachment data.
+	\return The PxDeformableAttachment created if successful, NULL otherwise.
+	\see PxDeformableAttachmentData, PxDeformableAttachment
+	*/
+	virtual PxDeformableAttachment* createDeformableAttachment(const PxDeformableAttachmentData& data) = 0;
 
 	/**
-	\brief Creates a FEM-based cloth with all fields initialized to their default values.
-	\warning Feature under development, only for internal usage.
+	\brief Creates an element-level collision filter between two actors, based on the provided PxDeformableElementFilterData. At least one of the actors must be a deformable.
 
-	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\return the new FEM-cloth
+	Element filters define how parts of deformable actors are excluded from collisions.
+	They are usually added to avoid conflicting attachment and contact constraints.
 
-	\see PxFEMCloth
+	\note The element filter is only active when both actors are added to the same scene or one of the actors is NULL.
+
+	\param[in] data Element filter data.
+	\return The PxDeformableElementFilter created if successful, NULL otherwise.
+	\see PxDeformableElementFilterData, PxDeformableElementFilter
 	*/
-	virtual PxFEMCloth* createFEMCloth(PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxDeformableElementFilter* createDeformableElementFilter(const PxDeformableElementFilterData& data) = 0;
 
 	/**
-	\brief Creates a FEM-based soft body with all fields initialized to their default values.
+	\brief Creates a deformable surface with all fields initialized to their default values.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\return the new soft body
+	\return the new deformable surface
 
-	\see PxSoftBody
+	\see PxDeformableSurface
 	*/
-	virtual PxSoftBody* createSoftBody(PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxDeformableSurface* createDeformableSurface(PxCudaContextManager& cudaContextManager) = 0;
 
 	/**
-	\brief Creates a hair system with all fields initialized to their default values.
-	\warning Feature under development, only for internal usage.
+	\brief Creates a FEM-based deformable volume with all fields initialized to their default values.
 
 	\param[in] cudaContextManager The PxCudaContextManager this instance is tied to.
-	\return the new hair system
+	\return the new deformable volume
 
-	\see PxHairSystem
+	\see PxDeformableVolume
 	*/
-	virtual PxHairSystem* createHairSystem(PxCudaContextManager& cudaContextManager) = 0;
+	virtual PxDeformableVolume* createDeformableVolume(PxCudaContextManager& cudaContextManager) = 0;
+
+	/**
+	\brief Deprecated
+	\see createDeformableVolume
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolume* createSoftBody(PxCudaContextManager& cudaContextManager)
+	{
+		return createDeformableVolume(cudaContextManager);
+	}
 
 	/**
 	\brief Creates a particle system with a position-based dynamics (PBD) solver.
@@ -760,29 +792,34 @@ public:
 	virtual PxU32 getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
-	\brief Creates a new FEM soft body material with certain default properties.
+	\brief Creates a new surface deformable material with certain default properties.
 
-	\return The new FEM material.
+	\return The new surface deformable material.
 
 	\param	[in] youngs					The young's modulus
 	\param	[in] poissons				The poissons's ratio
 	\param	[in] dynamicFriction		The dynamic friction coefficient
+	\param	[in] thickness				The thickness of the surface
+	\param	[in] bendingStiffness		The bending stiffness of the surface
+	\param	[in] damping				The damping of the surface with respect to stretch and shear
+	\param	[in] bendingDamping			The damping of the surface with respect to bending
 
-	\see PxFEMSoftBodyMaterial
+	\see PxDeformableSurfaceMaterial
 	*/
-	virtual PxFEMSoftBodyMaterial* createFEMSoftBodyMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
+	virtual PxDeformableSurfaceMaterial* createDeformableSurfaceMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, 
+		PxReal thickness = 0.001f, PxReal bendingStiffness = 0.0f, PxReal damping = 0.0f, PxReal bendingDamping = 0.0f) = 0;
 
 	/**
-	\brief Return the number of FEM soft body materials that currently exist.
+	\brief Return the number of deformable surface materials that currently exist.
 
-	\return Number of FEM materials.
+	\return Number of deformable surface materials.
 
-	\see getFEMSoftBodyMaterials()
+	\see getDeformableSurfaceMaterials()
 	*/
-	virtual PxU32 getNbFEMSoftBodyMaterials() const = 0;
+	virtual PxU32 getNbDeformableSurfaceMaterials() const = 0;
 
 	/**
-	\brief Writes the array of FEM soft body material pointers to a user buffer.
+	\brief Writes the array of deformable surface material pointers to a user buffer.
 
 	Returns the number of pointers written.
 
@@ -793,36 +830,52 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	\see getNbFEMSoftBodyMaterials() PxFEMSoftBodyMaterial
+	\see getNbDeformableSurfaceMaterials() PxDeformableSurfaceMaterial
 	*/
-	virtual PxU32 getFEMSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+	virtual PxU32 getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
-	\brief Creates a new FEM cloth material with certain default properties.
-	\warning Feature under development, only for internal usage.
+	\brief Creates a new deformable volume material with certain default properties.
 
-	\return The new FEM material.
+	\return The new deformable volume material.
 
 	\param	[in] youngs					The young's modulus
 	\param	[in] poissons				The poissons's ratio
 	\param	[in] dynamicFriction		The dynamic friction coefficient
-	\param	[in] thickness				The cloth's thickness
 
-	\see PxFEMClothMaterial
+	\see PxDeformableVolumeMaterial
 	*/
-	virtual PxFEMClothMaterial* createFEMClothMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction, PxReal thickness = 0.001f) = 0;
+	virtual PxDeformableVolumeMaterial* createDeformableVolumeMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction) = 0;
 
 	/**
-	\brief Return the number of FEM cloth materials that currently exist.
-
-	\return Number of FEM cloth materials.
-
-	\see getFEMClothMaterials()
+	\brief Deprecated
+	\see createDeformableVolumeMaterial
 	*/
-	virtual PxU32 getNbFEMClothMaterials() const = 0;
+	PX_DEPRECATED PX_FORCE_INLINE PxDeformableVolumeMaterial* createFEMSoftBodyMaterial(PxReal youngs, PxReal poissons, PxReal dynamicFriction)
+	{
+		return createDeformableVolumeMaterial(youngs, poissons, dynamicFriction);
+	}
 
 	/**
-	\brief Writes the array of FEM cloth material pointers to a user buffer.
+	\brief Return the number of deformable volume materials that currently exist.
+
+	\return Number of materials.
+
+	\see getDeformableVolumeMaterials()
+	*/
+	virtual PxU32 getNbDeformableVolumeMaterials() const = 0;
+
+	/**
+	\brief Deprecated
+	\see getNbDeformableVolumeMaterials
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxU32 getNbFEMSoftBodyMaterials() const
+	{
+		return getNbDeformableVolumeMaterials();
+	}
+
+	/**
+	\brief Writes the array of deformable volume material pointers to a user buffer.
 
 	Returns the number of pointers written.
 
@@ -833,9 +886,18 @@ public:
 	\param	[in]  startIndex	Index of first material pointer to be retrieved.
 	\return The number of material pointers written to userBuffer, this should be less or equal to bufferSize.
 
-	\see getNbFEMClothMaterials() PxFEMClothMaterial
+	\see getNbDeformableVolumeMaterials() PxDeformableVolumeMaterial
 	*/
-	virtual PxU32 getFEMClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+	virtual PxU32 getDeformableVolumeMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	/**
+	\brief Deprecated
+	\see getDeformableVolumeMaterials
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxU32 getFEMSoftBodyMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
+	{
+		return getDeformableVolumeMaterials(userBuffer, bufferSize, startIndex);
+	}
 
 	/**
 	\brief Creates a new PBD material with certain default properties.

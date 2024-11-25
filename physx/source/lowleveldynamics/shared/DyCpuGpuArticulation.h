@@ -218,6 +218,8 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 	const PxReal nextErrHigh = errorHigh - futureDeltaJointP;
 
 	bool limited = false;
+	bool newLow = false;
+	bool newHigh = false;
 
 	const PxReal tolerance = 0.f;
 
@@ -245,6 +247,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 		const PxReal deltaV = newJointV - jointV;
 		deltaF = PxMax(lowImpulse + deltaV * recipResponse, 0.f) - lowImpulse; // accumulated limit impulse must be repulsive
 		lowImpulse += deltaF;
+		newLow = true;
 	}
 	else if (currErrHigh < tolerance || nextErrHigh < tolerance)
 	{
@@ -261,6 +264,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 		const PxReal deltaV = newJointV - jointV;
 		deltaF = PxMin(highImpulse + deltaV * recipResponse, 0.f) - highImpulse;
 		highImpulse += deltaF;
+		newHigh = true;
 	}
 
 	if (!limited)
@@ -277,19 +281,22 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeLimitImpulse
 		{
 			deltaF = PxMax(impulseForZeroVel, -lowImpulse);
 			lowImpulse += deltaF;
-				
+			newLow = true;
 		}
 		else // moving away from the higher limit
 		{
 			deltaF = PxMin(impulseForZeroVel, -highImpulse);
 			highImpulse += deltaF;
+			newHigh = true;
 		}
 	}
 
 	jointV += deltaF * response;
 
-	lowImpulse_ = lowImpulse;
-	highImpulse_ = highImpulse;
+	if(newLow)
+		lowImpulse_ = lowImpulse;
+	if(newHigh)
+		highImpulse_ = highImpulse;
 	jointV_ = jointV;
 
 	return deltaF;
@@ -428,7 +435,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE  Cm::SpatialVectorF propagateAccelerationW(
 }
 
 /**
-\brief Compute the equivalent of 1/(J * M^-1 * J^T) for a mimic joint.
+\brief Compute the equivalent of (J * M^-1 * J^T) for a mimic joint.
 \param[in] rAA is the deltaQDot arising at joint A/dof A as a consequence of a unit joint impulse applied to joint A/dofA.
 \param[in] rAB is the deltaQDot arising at joint A/dof A as a consequence of a unit joint impulse applied to joint B/dofB.
 \param[in] rBB is the deltaQDot arising at joint B/dof B as a consequence of a unit joint impulse applied to joint B/dofB.
@@ -439,18 +446,19 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE  Cm::SpatialVectorF propagateAccelerationW(
 rAA, rAB, rBA, rBB play the role of an inverse mass matrix as follows:
 	M^-1 = [rAA rAB]
 		   [rBA rBB]
-\return  1/(J * M^-1 * J^T) for a mimic joint.
+\return  (J * M^-1 * J^T) for a mimic joint.
 */
-PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeMimicJointEffectiveInertia
+PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal computeRecipMimicJointEffectiveInertia
 (const PxReal rAA, const PxReal rAB, const PxReal rBB, const PxReal rBA, const PxReal gearRatio)
 {
-	return (1.0f/(rAA  + gearRatio*(rAB + rBA) + gearRatio*gearRatio*rBB));
+	return (rAA + gearRatio*(rAB + rBA) + gearRatio*gearRatio*rBB);
 }
 
 /*
 \brief Compute the impulses to apply to jointA/dofA and jointB dofB that
 satisfy the requirements of a mimimic joint.
-\param[in] erp is the Baumarte constant.
+\param[in] biasCoefficient is the Baumarte constant.
+\param[in] dt is the timestep of the simulation.
 \param[in] invDt is the reciprocal of dt used to forward integrate the joint positions.
 \param[in] qA is the position of jointA/dofA
 \param[in] qB is the position of jointB/dofB
@@ -458,34 +466,111 @@ satisfy the requirements of a mimimic joint.
 \param[in] qBDot is speed of jointB/dofB
 \param[in] gearRatio is a constant of the mimic joint constraint: qA + gearRatio*qB + offset = 0
 \param[in] offset is a constant of the mimic joint constraint: qA + gearRatio*qB + offset = 0
-\param[in] mimicJointEffectiveInertia is a constant derived from the mass matrix of the mimic joint. 
+\param[in] naturalFrequency is the oscillation frequency of the mimic joint's compliance (s^-1)
+\param[in] dampingRatio is the damping ratio of the mimic joint's compliance.
+\param[in] r is a constant derived from the mass matrix of the mimic joint. 
 \param[in] isVelocityIteration is true if we are computing the impulse during a velocity iteration
  and false if we are computing the impulse during a position iteration.
 \param[out] jointImpA is the joint impulse to apply to jointA/dofA to enforce the mimic constraint.
 \param[out] jointImpB is the joint impulse to apply to jointB/dofB to enforce the mimic constraint.
-\note mimicJointEffectiveInertia has value 1/[J * M^-1 * J^T] with J the jacobian [1, beta] and 
-M^-1 = 2x2 mass matrix describing deltaQDot effect of impulse applied to jointA/dofA and jointB/dofB
+\note r has value [J * M^-1 * J^T] with J the jacobian [1, beta] and 
+M^-1 = 2x2 mass matrix describing deltaQDot effect of unit impulse applied to jointA/dofA and jointB/dofB
 \note The impulses are computed with a zero constraint bias during velocity iterations.
-\note mimicJointEffectiveInertia is pre-computed with computeMimicJointEffectiveInertia()
+\note r is pre-computed with computeRecipMimicJointEffectiveInertia()
+\note If naturalFrequency < 0 the mimic joint is treated as a hard constraint with no compliance.
+\note If dampingRatio < 0 the mimic joint is treated as a hard constraint with no compliance.
+\note biasCoefficient is ignored if the mimic joint is compliant (when naturalFrequency > 0 and dampingRatio > 0).
+When this is the case, biasCoefficient is replaced with a value that reflects the compliance of the mimic joint.
 */
 PX_CUDA_CALLABLE PX_FORCE_INLINE void computeMimicJointImpulses
-(const PxReal erp, const PxReal invDt,
+(const PxReal biasCoefficient, const PxReal dt, const PxReal invDt,
  const PxReal qA, const PxReal qB, const PxReal qADot, const PxReal qBDot, 
  const PxReal gearRatio, const PxReal offset,
- const PxReal mimicJointEffectiveInertia,
+ const PxReal naturalFrequency, const PxReal dampingRatio,
+ const PxReal r,
  const bool isVelocityIteration,
  PxReal& jointImpA, PxReal& jointImpB)
 {
-	//lambdaprime = dt*lambda =  -[ b + J * v(t-dt) ] / [ J * M^-1 * J^T]
-	//b = erp*C/dt
-	//J * v(t-dt) = qADot + gearRatio*qBDot
-	//1/ [ J * M^-1 * J^T] = mimicJointEffectiveInertia
-	//lambdaprime = -(b + qADot + gearRatio*qBDot) * mimicJointConstant;
-	const PxReal b = isVelocityIteration ? 0.0f : erp*(qA + gearRatio*qB + offset)*invDt;
-	const PxReal lambdaPrime = -(b + qADot + gearRatio*qBDot) * mimicJointEffectiveInertia;
+	//For velocity iterations we have erp = 0.
+	//But erp = dt*kp/(dt*kp + kd). If it is 0
+	//then kd >> dt*kp.  If this is true then 
+	//cfm =  1/[dt*(dt*kp + kd)] = 1/(dt*kd) = 0.
+	
+	PxReal erp = 0.0f;
+	PxReal cfm = 0.0f;
+	if(naturalFrequency <= 0 || dampingRatio <= 0 || isVelocityIteration)
+	{
+		erp = isVelocityIteration ? 0.0f : biasCoefficient;
+		cfm = 0.0f;
+	}
+	else
+	{
+		//Note:
+		//cfm has units velocity per unit impulse = kg^-1 for linear constraints 
+		//erp is dimensionless
 
-	jointImpA = lambdaPrime;
-	jointImpB = gearRatio*lambdaPrime;
+		//Governing equation is:
+		//Jv + (r + cfm)*lambda + (erp/dt)* C = 0
+		//with 
+		//C = qA + G*qB + offset
+		//r = rAA + G*(rAB + rBA) + rBB
+		//and dt the timestep
+
+		//Solve for lambda:   
+		//lambda	= -(1/(cfm + r)] * (erp*C/dt + Jv)
+		//			= -[1/(1 + r/cfm)] * [ C*(erp/(dt*cfm)) + v0*(1/cfm) ] 
+		//with v0 = Jv
+
+		//Now compare with spring
+		//lambda = -[1/(1 + r*dt*(dt*kp + kd)][ C*dt*kp + v0*dt*(dt*kp + kd) ]
+
+		//Solve for cfm by comparing terms.
+		//1/cfm = dt*(dt*kp + kd)
+		//cfm = 1/[dt*(dt*kp + kd)]
+
+		//Solve for erp by comparing terms.
+		//erp/(dt*cfm) = dt*kp
+		//erp = dt*dt*kp*cfm = dt*kp/(dt*kp + kd)
+
+		//Summarise results for cfm, erp.
+		// cfm = 1/[dt*(dt*kp + kd)]
+		// erp = dt*kp/(dt*kp + kd)
+
+		//Now express cfm and erp in terms of natural frequency mu and damping ratio zeta
+		//Start with computing kp from mu.
+		//Remember that r plays role of reciprocal mass
+		//kp = mu^2 / r
+		//kd = 2 * (mu / r) * zeta
+
+		//Summarise:
+		//Given mu and zeta and r we have
+		//kp = mu^2 / r
+		//kd = 2 * (mu / r) * zeta
+		//cfm = 1/[dt*(dt*kp + kd)]
+		//erp = dt*kp/(dt*kp + kd)
+		//lambda = -(1/(cfm + r)] * (erp*C/dt + Jv)
+
+		//Compute cfm, erp from mu, zeta, r.
+		const PxReal mu = naturalFrequency;
+		const PxReal zeta = dampingRatio;
+		const PxReal kp = mu * mu / r;
+		const PxReal kd = 2.0f * mu * zeta / r;
+		cfm = 1.0f / (dt * (dt * kp + kd));
+		erp = (dt * kp) / (dt * kp + kd);
+	}
+
+	//Comute lambda
+	//lambda =  -[ (erp * C/ dt) + Jv ] / [r + cfm]
+	//C = qA + gearRatio* qB + offset
+	//b = erp*C/dt
+	//JV = qADot + gearRatio*qBDot
+	const PxReal C = qA + gearRatio * qB + offset; 
+	const PxReal b = erp * C * invDt;
+	const PxReal Jv = qADot + gearRatio * qBDot;
+	const PxReal effectiveInertia = 1.0f / (r + cfm);
+	const PxReal lambda = -(b + Jv) * effectiveInertia;
+	jointImpA = lambda;
+	jointImpB = gearRatio * lambda;
 }
 
 

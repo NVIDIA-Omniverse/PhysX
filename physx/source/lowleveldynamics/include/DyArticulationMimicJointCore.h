@@ -46,7 +46,8 @@ struct ArticulationMimicJointCore
 	PxU32 axisB; //PxArticulationAxis::Enum
 	PxReal gearRatio;
 	PxReal offset;
-	PxU32 pad[2];
+	PxReal naturalFrequency;
+	PxReal dampingRatio;
 };
 PX_COMPILE_TIME_ASSERT(32 == sizeof(ArticulationMimicJointCore));
 

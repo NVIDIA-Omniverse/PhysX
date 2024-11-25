@@ -80,12 +80,16 @@ namespace Bp
 
 			PX_FORCE_INLINE bool operator==(const Pair& p) const
 			{
-				return (p.mID0 == mID0) && (p.mID1 == mID1);
+				const PxU64 value0 = *reinterpret_cast<const PxU64*>(this);
+				const PxU64 value1 = *reinterpret_cast<const PxU64*>(&p);
+				return value0 == value1;
 			}
 
 			PX_FORCE_INLINE bool operator!=(const Pair& p) const
 			{
-				return (p.mID0 != mID0) || (p.mID1 != mID1);
+				const PxU64 value0 = *reinterpret_cast<const PxU64*>(this);
+				const PxU64 value1 = *reinterpret_cast<const PxU64*>(&p);
+				return value0 != value1;
 			}
 
 		PxU32	mID0;
@@ -135,9 +139,9 @@ namespace Bp
 
 		// AABBManagerBase
 		virtual			void							destroy()	PX_OVERRIDE	PX_FINAL;
-		virtual			AggregateHandle					createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint)	PX_OVERRIDE	PX_FINAL;
+		virtual			AggregateHandle					createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 maxNumShapes, PxAggregateFilterHint filterHint, PxU32 envID)	PX_OVERRIDE	PX_FINAL;
 		virtual			bool							destroyAggregate(BoundsIndex& index, Bp::FilterGroup::Enum& group, AggregateHandle aggregateHandle)	PX_OVERRIDE	PX_FINAL;
-		virtual			bool							addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userdata, AggregateHandle aggregateHandle, ElementType::Enum volumeType)	PX_OVERRIDE	PX_FINAL;
+		virtual			bool							addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userdata, AggregateHandle aggregateHandle, ElementType::Enum volumeType, PxU32 envID)	PX_OVERRIDE	PX_FINAL;
 		virtual			bool							removeBounds(BoundsIndex index)	PX_OVERRIDE	PX_FINAL;
 		virtual			void							updateBPFirstPass(PxU32 numCpuTasks, Cm::FlushPool& flushPool, bool hasContactDistanceUpdated, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;
 		virtual			void							updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBaseTask* continuation)	PX_OVERRIDE	PX_FINAL;

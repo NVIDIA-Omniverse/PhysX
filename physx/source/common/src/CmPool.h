@@ -44,20 +44,19 @@ Allocator for pools of data structures
 Also decodes indices (which can be computed from handles) into objects. To make this
 faster, the EltsPerSlab must be a power of two
 */
-template <class T, class ArgumentType> 
+template <class T> 
 class PoolList : public PxAllocatorTraits<T>::Type
 {
 	typedef typename PxAllocatorTraits<T>::Type Alloc;
 	PX_NOCOPY(PoolList)
 public:
-	PX_INLINE PoolList(const Alloc& alloc, ArgumentType* argument, PxU32 eltsPerSlab)
+	PX_INLINE PoolList(const Alloc& alloc, PxU32 eltsPerSlab)
 		: Alloc(alloc),
 		mEltsPerSlab(eltsPerSlab), 
 		mSlabCount(0),
 		mFreeList(0), 
 		mFreeCount(0), 
-		mSlabs(NULL),
-		mArgument(argument)
+		mSlabs(NULL)
 	{
 		PX_ASSERT(mEltsPerSlab>0);
 		PX_ASSERT((mEltsPerSlab & (mEltsPerSlab-1)) == 0);
@@ -162,14 +161,14 @@ public:
 
 				for (; idx >= PxI32(nbToAllocate); --idx)
 				{
-					mFreeList[freeCount++] = PX_PLACEMENT_NEW(mAddr + idx, T(mArgument, baseIndex + idx));
+					mFreeList[freeCount++] = PX_PLACEMENT_NEW(mAddr + idx, T(baseIndex + idx));
 				}
 
 				PxU32 origElements = nbElements;
 				T** writeIdx = elements + nbElements;
 				for (; idx >= 0; --idx)
 				{
-					writeIdx[idx] = PX_PLACEMENT_NEW(mAddr + idx, T(mArgument, baseIndex + idx));
+					writeIdx[idx] = PX_PLACEMENT_NEW(mAddr + idx, T(baseIndex + idx));
 					nbElements++;
 				}
 
@@ -263,7 +262,7 @@ public:
 		PxU32 baseIndex = (mSlabCount-1) * mEltsPerSlab;
 		PxU32 freeCount = mFreeCount;
 		for(PxI32 i=PxI32(mEltsPerSlab-1);i>=0;i--)
-			mFreeList[freeCount++] = PX_PLACEMENT_NEW(mAddr+i, T(mArgument, baseIndex+ i));
+			mFreeList[freeCount++] = PX_PLACEMENT_NEW(mAddr+i, T(baseIndex+ i));
 
 		mFreeCount = freeCount;
 
@@ -287,7 +286,6 @@ private:
 	T**						mFreeList;
 	PxU32					mFreeCount;
 	T**						mSlabs;
-	ArgumentType*			mArgument;
 	PxBitMap				mUseBitmap;
 };
 

@@ -32,10 +32,6 @@ IF (NOT DEFINED PHYSX_CXX_FLAGS)
 	MESSAGE(FATAL ERROR "Snippets uses the PhysX CXX flags, and they're not defined when they need to be.")
 ENDIF()
 
-IF(NOT DEFINED TINYXML2_PATH)
-    SET(TINYXML2_PATH $ENV{PM_tinyxml2_PATH} CACHE INTERNAL "Path to tinyxml2")
-ENDIF()
-
 # Get the CXX Flags from the Cached variables set by the PhysX CMakeLists
 SET(CMAKE_CXX_FLAGS "${PHYSX_CXX_FLAGS}")
 

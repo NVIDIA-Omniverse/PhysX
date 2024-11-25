@@ -55,6 +55,11 @@
 	#include "NpPvdSceneClient.h"
 #endif
 
+#if PX_SUPPORT_OMNI_PVD
+	#include "omnipvd/OmniPvdPxSampler.h"
+#endif
+
+
 #include "ScScene.h"
 
 namespace physx
@@ -93,32 +98,39 @@ class NpShape;
 class NpPhysics;
 
 #if PX_SUPPORT_GPU_PHYSX
-class NpSoftBody;
-class NpFEMCloth;
-class NpHairSystem;
-
+class NpDeformableSurface;
+class NpDeformableVolume;
 class NpPBDParticleSystem;
-class NpFEMSoftBodyMaterial;
-class NpFEMClothMaterial;
+class NpDeformableSurfaceMaterial;
+class NpDeformableVolumeMaterial;
 class NpPBDMaterial;
 #endif
 
-class NpContactCallbackTask : public physx::PxLightCpuTask
+struct NpInternalAttachmentType
 {
-	NpScene*	mScene;
-	const PxContactPairHeader* mContactPairHeaders;
-	uint32_t mNbContactPairHeaders;
-
-public:
-
-	void setData(NpScene* scene, const PxContactPairHeader* contactPairHeaders, const uint32_t nbContactPairHeaders);
-
-	virtual void run()	PX_OVERRIDE PX_FINAL;
-
-	virtual const char* getName() const	PX_OVERRIDE PX_FINAL
+	enum Enum
 	{
-		return "NpContactCallbackTask";
-	}
+		eUNDEFINED,
+		eSURFACE_TYPE = 0x10000000,
+		eSURFACE_TRI_RIGID_BODY,
+		eSURFACE_TRI_GLOBAL_POSE,
+		eSURFACE_TRI_SURFACE_TRI,
+		eSURFACE_TRI_SURFACE_VTX,	// Not Implemented
+		eSURFACE_VTX_RIGID_BODY,
+		eSURFACE_VTX_GLOBAL_POSE,
+		eSURFACE_VTX_SURFACE_VTX,	// Not Implemented
+		eVOLUME_TYPE = 0x20000000,
+		eVOLUME_TET_RIGID_BODY,
+		eVOLUME_TET_GLOBAL_POSE,
+		eVOLUME_TET_VOLUME_TET,
+		eVOLUME_TET_VOLUME_VTX,		// Not Implemented
+		eVOLUME_TET_SURFACE_TRI,
+		eVOLUME_TET_SURFACE_VTX,	// Not Implemented
+		eVOLUME_VTX_RIGID_BODY,
+		eVOLUME_VTX_GLOBAL_POSE,
+		eVOLUME_VTX_VOLUME_VTX,		// Not Implemented
+		eVOLUME_VTX_SURFACE_VTX,	// Not Implemented
+	};
 };
 
 // returns an error if scene state is corrupted due to GPU errors.
@@ -168,20 +180,17 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	virtual			PxU32							getNbArticulations() const	PX_OVERRIDE PX_FINAL;
 	virtual			PxU32							getArticulations(PxArticulationReducedCoordinate** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const	PX_OVERRIDE PX_FINAL;
 
-	virtual			PxU32							getNbSoftBodies() const	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getSoftBodies(PxSoftBody** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getNbDeformableSurfaces() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getDeformableSurfaces(PxDeformableSurface** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
+
+	virtual			PxU32							getNbDeformableVolumes() const	PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getDeformableVolumes(PxDeformableVolume** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
 	virtual			PxU32							getNbPBDParticleSystems() const	PX_OVERRIDE PX_FINAL;
 	virtual			PxU32							getPBDParticleSystems(PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
 	virtual			PxU32							getNbParticleSystems(PxParticleSolverType::Enum type) const	PX_OVERRIDE PX_FINAL;
 	virtual			PxU32							getParticleSystems(PxParticleSolverType::Enum type, PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
-
-	virtual			PxU32							getNbFEMCloths() const	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
-
-	virtual			PxU32							getNbHairSystems() const	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const	PX_OVERRIDE PX_FINAL;
 
 	// Aggregates
     virtual			bool							addAggregate(PxAggregate&)	PX_OVERRIDE PX_FINAL;
@@ -257,10 +266,10 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	virtual			const PxRenderBuffer&			getRenderBuffer()	PX_OVERRIDE PX_FINAL;
 
 	virtual			void							setSolverBatchSize(PxU32 solverBatchSize)	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getSolverBatchSize(void) const				PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getSolverBatchSize() const					PX_OVERRIDE PX_FINAL;
 
 	virtual			void							setSolverArticulationBatchSize(PxU32 solverBatchSize)	PX_OVERRIDE PX_FINAL;
-	virtual			PxU32							getSolverArticulationBatchSize(void) const				PX_OVERRIDE PX_FINAL;
+	virtual			PxU32							getSolverArticulationBatchSize() const					PX_OVERRIDE PX_FINAL;
 
 	virtual			bool							setVisualizationParameter(PxVisualizationParameter::Enum param, PxReal value)	PX_OVERRIDE PX_FINAL;
 	virtual			PxReal							getVisualizationParameter(PxVisualizationParameter::Enum param) const			PX_OVERRIDE PX_FINAL;
@@ -323,6 +332,9 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	PX_DEPRECATED	virtual	void					computeGeneralizedGravityForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
 	PX_DEPRECATED	virtual	void					computeCoriolisAndCentrifugalForces(const PxIndexDataPair* indices, PxU32 nbIndices, CUevent computeEvent)	PX_OVERRIDE	PX_FINAL;
 	PX_DEPRECATED	virtual	void					applyParticleBufferData(const PxU32* indices, const PxGpuParticleBufferIndexPair* bufferIndexPairs, const PxParticleBufferFlags* flags, PxU32 nbUpdatedBuffers, CUevent waitEvent, CUevent signalEvent)	PX_OVERRIDE	PX_FINAL;
+
+	virtual	void									setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)	PX_OVERRIDE	PX_FINAL;
+	virtual	void									setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback)	PX_OVERRIDE	PX_FINAL;
 
 	virtual			PxSolverType::Enum				getSolverType()	const	PX_OVERRIDE PX_FINAL;
 
@@ -401,14 +413,14 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							updateMaterial(const NpMaterial& mat);
 					void							removeMaterial(const NpMaterial& mat);
 #if PX_SUPPORT_GPU_PHYSX
-					void							addMaterial(const NpFEMSoftBodyMaterial& mat);
-					void							updateMaterial(const NpFEMSoftBodyMaterial& mat);
-					void							removeMaterial(const NpFEMSoftBodyMaterial& mat);
+					void							addMaterial(const NpDeformableSurfaceMaterial& mat);
+					void							updateMaterial(const NpDeformableSurfaceMaterial& mat);
+					void							removeMaterial(const NpDeformableSurfaceMaterial& mat);
 
-					void							addMaterial(const NpFEMClothMaterial& mat);
-					void							updateMaterial(const NpFEMClothMaterial& mat);
-					void							removeMaterial(const NpFEMClothMaterial& mat);
-					
+					void							addMaterial(const NpDeformableVolumeMaterial& mat);
+					void							updateMaterial(const NpDeformableVolumeMaterial& mat);
+					void							removeMaterial(const NpDeformableVolumeMaterial& mat);
+
 					void							addMaterial(const NpPBDMaterial& mat);
 					void							updateMaterial(const NpPBDMaterial& mat);
 					void							removeMaterial(const NpPBDMaterial& mat);
@@ -426,10 +438,9 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							removeFromRigidDynamicList(NpRigidDynamic&);
 					void							removeFromRigidStaticList(NpRigidStatic&);
 	PX_FORCE_INLINE	void							removeFromArticulationList(PxArticulationReducedCoordinate&);
-	PX_FORCE_INLINE	void							removeFromSoftBodyList(PxSoftBody&);
-	PX_FORCE_INLINE	void							removeFromFEMClothList(PxFEMCloth&);
+	PX_FORCE_INLINE	void							removeFromDeformableSurfaceList(PxDeformableSurface&);
+	PX_FORCE_INLINE	void							removeFromDeformableVolumeList(PxDeformableVolume&);
 	PX_FORCE_INLINE	void							removeFromParticleSystemList(PxPBDParticleSystem&);
-	PX_FORCE_INLINE	void							removeFromHairSystemList(PxHairSystem&);
 	PX_FORCE_INLINE	void							removeFromAggregateList(PxAggregate&);
 
 #ifdef NEW_DIRTY_SHADERS_CODE
@@ -485,6 +496,11 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 	PX_FORCE_INLINE	Vd::PvdSceneClient&				getScenePvdClientInternal()					{ return mScenePvdClient;			}
 	PX_FORCE_INLINE	const Vd::PvdSceneClient&		getScenePvdClientInternal()			const	{ return mScenePvdClient;			}
 #endif
+
+#if PX_SUPPORT_OMNI_PVD
+	PX_FORCE_INLINE	NpOmniPvdSceneClient&			getSceneOvdClientInternal()					{ return mSceneOvdClient;			}
+#endif
+
 	PX_FORCE_INLINE bool							isAPIReadForbidden()				const	{ return mIsAPIReadForbidden;		}
 	PX_FORCE_INLINE void							setAPIReadToForbidden()						{ mIsAPIReadForbidden = true;		}
 	PX_FORCE_INLINE void							setAPIReadToAllowed()						{ mIsAPIReadForbidden = false;		}
@@ -515,17 +531,20 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void 							scRemoveActor(NpArticulationLink&, bool wakeOnLostTouch, bool noSim);
 
 #if PX_SUPPORT_GPU_PHYSX
-					void							scAddSoftBody(NpSoftBody&);
-					void							scRemoveSoftBody(NpSoftBody&);
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-					void							scAddFEMCloth(NpScene* npScene, NpFEMCloth&);
-					void							scRemoveFEMCloth(NpFEMCloth&);
-#endif
+					void							scAddDeformableSurface(NpScene* npScene, NpDeformableSurface&);
+					void							scRemoveDeformableSurface(NpDeformableSurface&);
+
+					void							scAddDeformableVolume(NpDeformableVolume&);
+					void							scRemoveDeformableVolume(NpDeformableVolume&);
+
 					void							scAddParticleSystem(NpPBDParticleSystem&);
 					void							scRemoveParticleSystem(NpPBDParticleSystem&);
 
-					void							scAddHairSystem(NpHairSystem&);
-					void							scRemoveHairSystem(NpHairSystem&);
+					void							addToAttachmentList(PxDeformableAttachment&);
+					void							removeFromAttachmentList(PxDeformableAttachment&);
+
+					void							addToElementFilterList(PxDeformableElementFilter&);
+					void							removeFromElementFilterList(PxDeformableElementFilter&);
 #endif
 					void							scAddArticulation(NpArticulationReducedCoordinate&);
 					void							scRemoveArticulation(NpArticulationReducedCoordinate&);
@@ -542,7 +561,10 @@ class NpScene : public NpSceneAccessor, public PxUserAllocated
 					void							scAddArticulationMimicJoint(NpArticulationMimicJoint&);
 					void							scRemoveArticulationMimicJoint(NpArticulationMimicJoint&);
 
+#if PX_SUPPORT_OMNI_PVD
 					void							createInOmniPVD(const PxSceneDesc& desc);
+#endif
+
 	PX_FORCE_INLINE	void							updatePvdProperties()
 													{
 #if PX_SUPPORT_PVD
@@ -569,18 +591,15 @@ private:
 					bool							addRigidDynamic(NpRigidDynamic& , const Gu::BVH* bvh, const Sq::PruningStructure* ps = NULL);
 					void							removeRigidDynamic(NpRigidDynamic&, bool wakeOnLostTouch, bool removeFromAggregate);
 
-					bool							addSoftBody(PxSoftBody&);
-					void							removeSoftBody(PxSoftBody&, bool wakeOnLostTouch);
+					bool							addDeformableSurface(PxDeformableSurface&);
+					void							removeDeformableSurface(PxDeformableSurface&, bool wakeOnLostTouch);
+
+					bool							addDeformableVolume(PxDeformableVolume&);
+					void							removeDeformableVolume(PxDeformableVolume&, bool wakeOnLostTouch);
 
 					bool							addParticleSystem(PxPBDParticleSystem& particleSystem);
 					void							removeParticleSystem(PxPBDParticleSystem& particleSystem, bool wakeOnLostTouch);
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-					bool							addFEMCloth(PxFEMCloth&);
-					void							removeFEMCloth(PxFEMCloth&, bool wakeOnLostTouch);
 
-					bool							addHairSystem(PxHairSystem&);
-					void							removeHairSystem(PxHairSystem&, bool wakeOnLostTouch);
-#endif
 					void							visualize();
 
 					void							updateDirtyShaders();
@@ -623,10 +642,9 @@ private:
 					PxArray<NpRigidDynamic*>								mRigidDynamics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
 					PxArray<NpRigidStatic*>									mRigidStatics;	// no hash set used because it would be quite a bit slower when adding a large number of actors
 					PxCoalescedHashSet<PxArticulationReducedCoordinate*>	mArticulations;
-					PxCoalescedHashSet<PxSoftBody*>							mSoftBodies;
-					PxCoalescedHashSet<PxFEMCloth*>							mFEMCloths;
+					PxCoalescedHashSet<PxDeformableSurface*>				mDeformableSurfaces;
+					PxCoalescedHashSet<PxDeformableVolume*>					mDeformableVolumes;
 					PxCoalescedHashSet<PxPBDParticleSystem*>				mPBDParticleSystems;
-					PxCoalescedHashSet<PxHairSystem*>						mHairSystems;
 					PxCoalescedHashSet<PxAggregate*>						mAggregates;
 	public:
 					PxArray<Acceleration>									mRigidDynamicsAccelerations;
@@ -738,13 +756,17 @@ private:
 					};
 	private:
 					PxArray<MaterialEvent>		mSceneMaterialBuffer;
-					PxArray<MaterialEvent>		mSceneFEMSoftBodyMaterialBuffer;
-					PxArray<MaterialEvent>		mSceneFEMClothMaterialBuffer;
+					PxArray<MaterialEvent>		mSceneDeformableSurfaceMaterialBuffer;
+					PxArray<MaterialEvent>		mSceneDeformableVolumeMaterialBuffer;
 					PxArray<MaterialEvent>		mScenePBDMaterialBuffer;
 					Sc::Scene					mScene;
 					NpDirectGPUAPI*				mDirectGPUAPI;
 #if PX_SUPPORT_PVD
 					Vd::PvdSceneClient			mScenePvdClient;
+#endif
+
+#if PX_SUPPORT_OMNI_PVD
+					NpOmniPvdSceneClient		mSceneOvdClient;
 #endif
 					const PxReal				mWakeCounterResetValue;
 
@@ -773,16 +795,16 @@ PX_FORCE_INLINE void NpScene::removeFromArticulationList(PxArticulationReducedCo
 	PX_UNUSED(exists);
 }
 
-PX_FORCE_INLINE	void NpScene::removeFromSoftBodyList(PxSoftBody& softBody)
+PX_FORCE_INLINE	void NpScene::removeFromDeformableSurfaceList(PxDeformableSurface& deformableSurface)
 {
-	const bool exists = mSoftBodies.erase(&softBody);
+	const bool exists = mDeformableSurfaces.erase(&deformableSurface);
 	PX_ASSERT(exists);
 	PX_UNUSED(exists);
 }
 
-PX_FORCE_INLINE	void NpScene::removeFromFEMClothList(PxFEMCloth& femCloth)
+PX_FORCE_INLINE	void NpScene::removeFromDeformableVolumeList(PxDeformableVolume& deformableVolume)
 {
-	const bool exists = mFEMCloths.erase(&femCloth);
+	const bool exists = mDeformableVolumes.erase(&deformableVolume);
 	PX_ASSERT(exists);
 	PX_UNUSED(exists);
 }
@@ -790,13 +812,6 @@ PX_FORCE_INLINE	void NpScene::removeFromFEMClothList(PxFEMCloth& femCloth)
 PX_FORCE_INLINE	void NpScene::removeFromParticleSystemList(PxPBDParticleSystem& particleSystem)
 {
 	const bool exists = mPBDParticleSystems.erase(&particleSystem);
-	PX_ASSERT(exists);
-	PX_UNUSED(exists);
-}
-
-PX_FORCE_INLINE void NpScene::removeFromHairSystemList(PxHairSystem& hairSystem)
-{
-	const bool exists = mHairSystems.erase(&hairSystem);
 	PX_ASSERT(exists);
 	PX_UNUSED(exists);
 }
@@ -815,4 +830,4 @@ PX_FORCE_INLINE void NpScene::removeFromAggregateList(PxAggregate& aggregate)
 
 }
 
-#endif
+#endif // NP_SCENE_H

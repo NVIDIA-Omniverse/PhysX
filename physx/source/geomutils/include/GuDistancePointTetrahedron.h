@@ -123,7 +123,7 @@ namespace physx
 		PX_INLINE PX_CUDA_CALLABLE PxVec3 closestPtPointTetrahedronWithInsideCheck(const PxVec3& p, const PxVec3& a, const PxVec3& b, const PxVec3& c, const PxVec3& d, const PxReal eps = 0)
 		{
 			PxVec4 tmpBarycentric;
-			computeBarycentric(a, b, c, d, p, tmpBarycentric);
+			PxComputeBarycentric(a, b, c, d, p, tmpBarycentric);
 			if ((tmpBarycentric.x >= -eps && tmpBarycentric.x <= 1.f + eps) && (tmpBarycentric.y >= -eps && tmpBarycentric.y <= 1.f + eps) &&
 				(tmpBarycentric.z >= -eps && tmpBarycentric.z <= 1.f + eps) && (tmpBarycentric.w >= -eps && tmpBarycentric.w <= 1.f + eps))
 				return p;

@@ -36,6 +36,8 @@ namespace physx
 {
 #endif
 
+template<class Type> class PxMat33T;
+
 /**
 \brief This is a quaternion class. For more information on quaternion mathematics
 consult a mathematics source on complex numbers.

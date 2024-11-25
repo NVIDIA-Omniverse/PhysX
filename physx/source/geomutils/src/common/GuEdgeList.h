@@ -31,8 +31,8 @@
 
 #include "foundation/PxSimpleTypes.h"
 #include "common/PxPhysXCommonConfig.h"
-
-#include "foundation/Px.h"
+#include "foundation/PxIO.h"
+#include "foundation/PxVec3.h"
 #include "foundation/PxUserAllocated.h"
 
 namespace physx

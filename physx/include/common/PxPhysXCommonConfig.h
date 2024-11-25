@@ -29,7 +29,7 @@
 #ifndef PX_PHYSX_COMMON_CONFIG_H
 #define PX_PHYSX_COMMON_CONFIG_H
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 
 //Fills almost all allocated (host and device memory) with 0xcdcdcdcd (=3452816845)
 #define PX_STOMP_ALLOCATED_MEMORY 0
@@ -83,7 +83,7 @@ https://developercommunity.visualstudio.com/content/problem/66047/possible-compi
 #if defined PX_PHYSX_STATIC_LIB
 	#define PX_PHYSX_COMMON_API
 #else
-	#if PX_WINDOWS_FAMILY && !defined(__CUDACC__)
+	#if PX_WINDOWS_FAMILY && !PX_CUDA_COMPILER
 		#if defined PX_PHYSX_COMMON_EXPORTS
 			#define PX_PHYSX_COMMON_API __declspec(dllexport)
 		#else
@@ -116,7 +116,8 @@ namespace physx
 #endif
 	typedef PxU32 PxTriangleID;
 	typedef PxU16 PxMaterialTableIndex;
-	typedef PxU16 PxFEMMaterialTableIndex;
+	typedef PxU16 PxDeformableMaterialTableIndex;
+	typedef PX_DEPRECATED PxU16 PxFEMMaterialTableIndex;
 
 #if !PX_DOXYGEN
 } // namespace physx

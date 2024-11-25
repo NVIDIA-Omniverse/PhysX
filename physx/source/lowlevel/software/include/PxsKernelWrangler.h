@@ -29,21 +29,21 @@
 #ifndef PXS_KERNEL_WRANGLER_H
 #define PXS_KERNEL_WRANGLER_H
 
-#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxUserAllocated.h"
 
 namespace physx
 {
 	class PxCudaContextManager;
 	class KernelWrangler;
-	class PxErrorCallback;
 
 	class PxsKernelWranglerManager : public PxUserAllocated
 	{
 	public:
-		virtual ~PxsKernelWranglerManager(){}
-		virtual KernelWrangler* getKernelWrangler() = 0;
-		virtual PxCudaContextManager* getCudaContextManager() = 0;
+		PX_FORCE_INLINE	KernelWrangler*			getKernelWrangler()		{ return mKernelWrangler;		}
+		PX_FORCE_INLINE	PxCudaContextManager*	getCudaContextManager()	{ return mCudaContextManager;	}
+
+						KernelWrangler*			mKernelWrangler;
+						PxCudaContextManager*	mCudaContextManager;
 	};
 }
 #endif

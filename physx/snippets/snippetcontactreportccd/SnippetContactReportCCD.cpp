@@ -42,7 +42,6 @@
 // 
 // ****************************************************************************
 
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "../snippetcommon/SnippetPrint.h"
@@ -63,9 +62,9 @@ static PxRigidDynamic*			gSphereActor		= NULL;
 static PxPvd*					gPvd                = NULL;
 static PxU32					gSimStepCount		= 0;
 
-std::vector<PxVec3> gContactPositions;
-std::vector<PxVec3> gContactImpulses;
-std::vector<PxVec3> gContactSphereActorPositions;
+PxArray<PxVec3> gContactPositions;
+PxArray<PxVec3> gContactImpulses;
+PxArray<PxVec3> gContactSphereActorPositions;
 
 static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attributes0, PxFilterData filterData0, 
 												PxFilterObjectAttributes attributes1, PxFilterData filterData1,
@@ -102,7 +101,7 @@ class ContactReportCallback: public PxSimulationEventCallback
 	void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32) {}
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
 	{
-		std::vector<PxContactPairPoint> contactPoints;
+		PxArray<PxContactPairPoint> contactPoints;
 
 		PxTransform spherePose(PxIdentity);
 		PxU32 nextPairIndex = 0xffffffff;
@@ -124,7 +123,7 @@ class ContactReportCallback: public PxSimulationEventCallback
 				else
 					spherePose = iter.eventPose->globalPose[1];
 
-				gContactSphereActorPositions.push_back(spherePose.p);
+				gContactSphereActorPositions.pushBack(spherePose.p);
 
 				hasItemSet = iter.nextItemSet();
 				if (hasItemSet)
@@ -143,8 +142,8 @@ class ContactReportCallback: public PxSimulationEventCallback
 
 				for(PxU32 j=0; j < contactCount; j++)
 				{
-					gContactPositions.push_back(contactPoints[j].position);
-					gContactImpulses.push_back(contactPoints[j].impulse);
+					gContactPositions.pushBack(contactPoints[j].position);
+					gContactImpulses.pushBack(contactPoints[j].impulse);
 				}
 			}
 		}
@@ -215,7 +214,7 @@ static void initScene()
 	//
 
 	PxTransform spherePose(PxVec3(0.0f, 5.0f, 1.0f));
-	gContactSphereActorPositions.push_back(spherePose.p);
+	gContactSphereActorPositions.pushBack(spherePose.p);
 	gSphereActor = gPhysics->createRigidDynamic(spherePose);
 	gSphereActor->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_CCD, true);
 
@@ -279,7 +278,7 @@ void stepPhysics(bool /*interactive*/)
 		printf("%d contact points\n", PxU32(gContactPositions.size()));
 
 		if (gSphereActor)
-			gContactSphereActorPositions.push_back(gSphereActor->getGlobalPose().p);
+			gContactSphereActorPositions.pushBack(gSphereActor->getGlobalPose().p);
 
 		gSimStepCount = 1;
 	}
@@ -287,6 +286,10 @@ void stepPhysics(bool /*interactive*/)
 
 void cleanupPhysics(bool /*interactive*/)
 {
+	gContactPositions.reset();
+	gContactImpulses.reset();
+	gContactSphereActorPositions.reset();
+
 	PX_RELEASE(gSphereActor);
 	PX_RELEASE(gTriangleMeshActor);
 	PX_RELEASE(gTriangleMesh);

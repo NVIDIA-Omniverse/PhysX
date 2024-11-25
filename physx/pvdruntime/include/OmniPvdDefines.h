@@ -32,12 +32,14 @@
 #define OMNI_PVD_INVALID_HANDLE 0
 
 #define OMNI_PVD_VERSION_MAJOR 0
-#define OMNI_PVD_VERSION_MINOR 3
+#define OMNI_PVD_VERSION_MINOR 4
 #define OMNI_PVD_VERSION_PATCH 0
 
 ////////////////////////////////////////////////////////////////////////////////
 // Versions so far : (major, minor, patch), top one is newest
 //
+// [0, 4,  0]
+//   add new eRECORD_MESSAGE command to record messages in the OVD stream.
 // [0, 3,  0]
 //   writes/read out the base class handle in the class registration call
 //   backwards compatible with [0, 2, 0] and [0, 1, 42]

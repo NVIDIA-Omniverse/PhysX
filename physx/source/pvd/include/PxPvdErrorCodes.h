@@ -28,7 +28,6 @@
 #define PX_PVD_ERROR_CODES_H
 
 
-#include "foundation/Px.h"
 
 #if !PX_DOXYGEN
 namespace physx

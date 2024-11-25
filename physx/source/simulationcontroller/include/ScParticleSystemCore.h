@@ -125,11 +125,9 @@ namespace physx
 
 			PxVec3						getWind() const { return mShapeCore.getLLCore().mWind; }
 
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 			PxSparseGridParams			getSparseGridParams() const { return mShapeCore.getLLCore().sparseGridParams; }
 			void						setSparseGridParams(const PxSparseGridParams& params) { mShapeCore.getLLCore().sparseGridParams = params; }
-#endif
-			
+
 			void						addRigidAttachment(Sc::BodyCore* core);
 
 			void						removeRigidAttachment(Sc::BodyCore* core);

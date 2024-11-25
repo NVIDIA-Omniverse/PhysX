@@ -29,7 +29,6 @@
 #ifndef CM_ID_POOL_H
 #define CM_ID_POOL_H
 
-#include "foundation/Px.h"
 #include "foundation/PxArray.h"
 #include "foundation/PxUserAllocated.h"
 

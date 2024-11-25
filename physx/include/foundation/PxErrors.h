@@ -29,7 +29,7 @@
 #ifndef PX_ERRORS_H
 #define PX_ERRORS_H
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 
 #if !PX_DOXYGEN
 namespace physx

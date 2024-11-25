@@ -33,11 +33,11 @@
 #include "PxcNpWorkUnit.h"
 #include "DyThreadContext.h"
 #include "PxcNpContactPrepShared.h"
+#include "PxSceneDesc.h"
 #include "PxsMaterialManager.h"
 #include "DyContactPrepShared.h"
 #include "DyAllocator.h"
 
-using namespace physx::Gu;
 using namespace physx::aos;
 
 namespace physx

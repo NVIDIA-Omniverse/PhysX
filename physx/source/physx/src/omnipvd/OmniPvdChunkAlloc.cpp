@@ -168,7 +168,7 @@ OmniPvdChunk* OmniPvdChunkPool::getChunk()
 	OmniPvdChunk* chunk=mFreeChunks.removeFirst();
 	if (!chunk)
 	{
-		chunk= PX_NEW(OmniPvdChunk);
+		chunk = PX_NEW(OmniPvdChunk);
 		mNbrAllocatedChunks++;
 	}
 	chunk->resetChunk(mChunkSize);

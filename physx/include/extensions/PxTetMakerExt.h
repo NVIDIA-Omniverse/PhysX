@@ -43,7 +43,7 @@ namespace physx
 
 class PxTriangleMesh;
 class PxTetrahedronMeshDesc;
-class PxSoftBodySimulationDataDesc;
+class PxDeformableVolumeSimulationDataDesc;
 struct PxTetMakerData;
 class PxSimpleTriangleMesh;
 
@@ -108,7 +108,7 @@ public:
 	static PxTriangleMeshAnalysisResults validateTriangleMesh(const PxSimpleTriangleMesh& triangleMesh, const PxReal minVolumeThreshold = 1e-6f, const PxReal minTriangleAngleRadians = 10.0f*3.1415926535898f / 180.0f);
 
 	/**
-	\brief Analyzes the tetrahedron mesh to get a report about deficiencies. Some deficiencies can be handled by the softbody cooker, others cannot.
+	\brief Analyzes the tetrahedron mesh to get a report about deficiencies. Some deficiencies can be handled by the deformable volume cooker, others cannot.
 
 	\param[in] points The mesh's points
 	\param[in] tetrahedra The mesh's tetrahedra (index buffer)

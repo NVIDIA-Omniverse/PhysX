@@ -230,123 +230,7 @@ namespace Gu
 	private:
 		PX_NOCOPY(LineSegmentTrimeshIntersectionTraversalController)
 	};
-
-	class ClosestDistanceToTrimeshTraversalController
-	{
-	private:
-		PxReal mClosestDistanceSquared;
-		const PxU32* mTriangles;
-		const PxVec3* mPoints;
-		const Gu::BVHNode* mNodes;
-		PxVec3 mQueryPoint;
-		PxVec3 mClosestPoint;
-		PxI32 mClosestTriId;
-
-	public:
-		PX_FORCE_INLINE ClosestDistanceToTrimeshTraversalController(){}
-
-		PX_FORCE_INLINE ClosestDistanceToTrimeshTraversalController(const PxU32* triangles, const PxVec3* points, Gu::BVHNode* nodes) :
-			mTriangles(triangles), mPoints(points), mNodes(nodes), mQueryPoint(0.0f), mClosestPoint(0.0f), mClosestTriId(-1)
-		{
-			initialize(triangles, points, nodes);
-		}
-
-		void initialize(const PxU32* triangles, const PxVec3* points, Gu::BVHNode* nodes)
-		{
-			mTriangles = triangles;
-			mPoints = points;
-			mNodes = nodes;
-			mQueryPoint = PxVec3(0.0f);
-			mClosestPoint = PxVec3(0.0f);
-			mClosestTriId = -1;
-			mClosestDistanceSquared = PX_MAX_F32;
-		}
-
-		PX_FORCE_INLINE void setQueryPoint(const PxVec3& queryPoint)
-		{
-			this->mQueryPoint = queryPoint;
-			mClosestDistanceSquared = FLT_MAX;
-			mClosestPoint = PxVec3(0.0f);
-			mClosestTriId = -1;
-		}
-
-		PX_FORCE_INLINE const PxVec3& getClosestPoint() const
-		{
-			return mClosestPoint;
-		}
-
-		PX_FORCE_INLINE PxReal distancePointBoxSquared(const PxBounds3& box, const PxVec3& point)
-		{
-			PxVec3 closestPt = box.minimum.maximum(box.maximum.minimum(point));
-
-			return (closestPt - point).magnitudeSquared();
-		}
-
-		PX_FORCE_INLINE Gu::TraversalControl::Enum analyze(const Gu::BVHNode& node, PxI32)
-		{
-			if (distancePointBoxSquared(node.mBV, mQueryPoint) >= mClosestDistanceSquared)
-				return Gu::TraversalControl::eDontGoDeeper;
-
-			if (node.isLeaf())
-			{
-				const PxI32 j = node.getPrimitiveIndex();
-				const PxU32* tri = &mTriangles[3 * j];
-				
-
-				aos::FloatV t1, t2;
-				aos::Vec3V q = V3LoadU(mQueryPoint);
-				aos::Vec3V a = V3LoadU(mPoints[tri[0]]);
-				aos::Vec3V b = V3LoadU(mPoints[tri[1]]);
-				aos::Vec3V c = V3LoadU(mPoints[tri[2]]);
-				aos::Vec3V cp;
-				aos::FloatV d = Gu::distancePointTriangleSquared2UnitBox(q, a, b, c, t1, t2, cp);
-				PxReal d2;
-				FStore(d, &d2);
-				PxVec3 closest;
-				V3StoreU(cp, closest);
-
-				//const PxVec3 closest = closestPtPointTriangle2UnitBox(mQueryPoint, mPoints[tri[0]], mPoints[tri[1]], mPoints[tri[2]]);
-				//PxReal d2 = (closest - mQueryPoint).magnitudeSquared();
-				if (d2 < mClosestDistanceSquared)
-				{
-					mClosestDistanceSquared = d2;
-					mClosestTriId = j;
-					mClosestPoint = closest;
-				}
-				return Gu::TraversalControl::eDontGoDeeper;
-			}
-
-			const Gu::BVHNode& nodePos = mNodes[node.getPosIndex()];
-			const PxReal distSquaredPos = distancePointBoxSquared(nodePos.mBV, mQueryPoint);
-			const Gu::BVHNode& nodeNeg = mNodes[node.getNegIndex()];
-			const PxReal distSquaredNeg = distancePointBoxSquared(nodeNeg.mBV, mQueryPoint);
-
-			if (distSquaredPos < distSquaredNeg)
-			{
-				if (distSquaredPos < mClosestDistanceSquared)
-					return Gu::TraversalControl::eGoDeeper;
-			}
-			else
-			{
-				if (distSquaredNeg < mClosestDistanceSquared)
-					return Gu::TraversalControl::eGoDeeperNegFirst;
-			}
-			return Gu::TraversalControl::eDontGoDeeper;
-		}
-
-		PxI32 getClosestTriId() const { return mClosestTriId; }
-
-		void setClosestStart(const PxReal closestDistanceSquared, PxI32 closestTriangle, const PxVec3& closestPoint) 
-		{ 
-			mClosestDistanceSquared = closestDistanceSquared; 
-			mClosestTriId = closestTriangle;
-			mClosestPoint = closestPoint;
-		}
-
-	private:
-		PX_NOCOPY(ClosestDistanceToTrimeshTraversalController)
-	};
-
+	
 	class PointOntoTriangleMeshProjector : public PxPointOntoTriangleMeshProjector, public PxUserAllocated
 	{
 		PxArray<Gu::BVHNode> mNodes;
@@ -1277,7 +1161,7 @@ namespace Gu
 		PX_UNUSED(debug2);
 
 		PxU32 size = valuesPerSubgrid * numSubgridsX * numSubgridsY * numSubgridsZ;
-		PxReal placeholder = 1234567;
+		PxReal placeholder = FLT_MAX;
 		subgrids3DTexFormat.resize(size, placeholder);
 
 		PxU32 w = width / cellsPerSubgrid;
@@ -1315,23 +1199,6 @@ namespace Gu
 			}
 		}
 	}
-
-	struct Interval
-	{
-		PxReal min;
-		PxReal max;
-
-		PX_CUDA_CALLABLE Interval() : min(FLT_MAX), max(-FLT_MAX)
-		{}
-
-		PX_CUDA_CALLABLE Interval(PxReal min_, PxReal max_) : min(min_), max(max_)
-		{}
-
-		PX_FORCE_INLINE PX_CUDA_CALLABLE bool overlaps(const Interval& i)
-		{
-			return  !(min > i.max || i.min > max);
-		}
-	};
 
 	void SDFUsingWindingNumbersSparse(const PxVec3* vertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		const PxVec3& minExtents, const PxVec3& maxExtents, PxReal narrowBandThickness, PxU32 cellsPerSubgrid,
@@ -1469,19 +1336,23 @@ namespace Gu
 		}
 	}
 
-	PX_INLINE PxReal decodeSparse2(const SDF& sdf, PxI32 xx, PxI32 yy, PxI32 zz)
+	// legal for 0 <= xx <= mDims.x; y and z analogously
+	static PX_INLINE PxReal decodeSparse2(const SDF& sdf, PxI32 xx, PxI32 yy, PxI32 zz)
 	{
 		if (xx < 0 || yy < 0 || zz < 0 || xx > PxI32(sdf.mDims.x) || yy > PxI32(sdf.mDims.y) || zz > PxI32(sdf.mDims.z))
 			return 1.0f; //Return a value >0 that counts as outside
 
+		// Background SDF dimensions
 		const PxU32 nbX = sdf.mDims.x / sdf.mSubgridSize;
 		const PxU32 nbY = sdf.mDims.y / sdf.mSubgridSize;
 		const PxU32 nbZ = sdf.mDims.z / sdf.mSubgridSize;
 		
+		// Floor sample index of background SDF
 		PxU32 xBase = xx / sdf.mSubgridSize;
 		PxU32 yBase = yy / sdf.mSubgridSize;
 		PxU32 zBase = zz / sdf.mSubgridSize;
 
+		// Position within subgrid SDF
 		PxU32 x = xx % sdf.mSubgridSize;
 		PxU32 y = yy % sdf.mSubgridSize;
 		PxU32 z = zz % sdf.mSubgridSize;
@@ -2101,10 +1972,24 @@ namespace Gu
 	
 	void extractIsosurfaceFromSDF(const Gu::SDF& sdf, PxArray<PxVec3>& isosurfaceVertices, PxArray<PxU32>& isosurfaceTriangleIndices, PxU32 numThreads)
 	{
+		//### DEFENSIVE coding for OM-122453 and OM-112365
+		if (!sdf.mSdf)
+		{
+			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "No distance data available (null pointer) when evaluating an SDF.");
+			return;
+		}
+
 		if (sdf.mSubgridSize == 0)
 		{
 			//Handle dense SDFs using the serial fallback
 			extractIsosurfaceFromSDFSerial(sdf, isosurfaceVertices, isosurfaceTriangleIndices);
+			return;
+		}
+		
+		//### DEFENSIVE coding for OM-122453 and OM-112365
+		if (!sdf.mSubgridSdf || !sdf.mSubgridStartSlots)
+		{
+			PxGetFoundation().error(::physx::PxErrorCode::eINTERNAL_ERROR, PX_FL, "No sparse grid data available (null pointer) when evaluating an SDF.");
 			return;
 		}
 

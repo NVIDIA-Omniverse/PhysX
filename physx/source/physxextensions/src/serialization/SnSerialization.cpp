@@ -133,10 +133,9 @@ bool PxSerialization::isSerializable(PxCollection& collection, PxSerializationRe
 				if(object && (object != &s))
 				{					
 					subordinateCollection->release();					
-					PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
-						"PxSerialization::isSerializable: Reference id %" PX_PRIu64 " used both in current collection and in externalReferences. "
+					return PxGetFoundation().error(physx::PxErrorCode::eINVALID_PARAMETER, PX_FL, 
+						"PxSerialization::isSerializable: Reference id %llu used both in current collection and in externalReferences. "
 						"Please use unique identifiers.", id);	
-					return false;
 				}
 			}
 		}		

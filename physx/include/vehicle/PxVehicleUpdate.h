@@ -544,7 +544,7 @@ namespace physx
 
 	\note It is the user's responsibility to keep track of the summed total origin shift and adjust all input/output to/from PhysXVehicle accordingly.
 
-	\note This call will not automatically shift the PhysX scene and its objects. You need to call PxScene::shiftOrigin() seperately to keep the systems in sync.
+	\note This call will not automatically shift the PhysX scene and its objects. You need to call PxScene::shiftOrigin() separately to keep the systems in sync.
 
 	\param[in] shift is the translation vector to shift the origin by.
 

@@ -128,8 +128,6 @@ void RigidCore::onShapeChange(ShapeCore& shape, ShapeChangeNotifyFlags notifyFla
 
 	if(notifyFlags & ShapeChangeNotifyFlag::eGEOMETRY)
 		s->onVolumeOrTransformChange();
-	if(notifyFlags & ShapeChangeNotifyFlag::eMATERIAL)
-		s->onMaterialChange();
 	if(notifyFlags & ShapeChangeNotifyFlag::eRESET_FILTERING)
 		s->onResetFiltering();
 	if(notifyFlags & ShapeChangeNotifyFlag::eSHAPE2BODY)

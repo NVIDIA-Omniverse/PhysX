@@ -57,7 +57,7 @@ namespace Gu
 	{
 		
 		using namespace aos;
-		const Vec3V extents= V3Mul(V3LoadU_SafeReadW(hullData->mInternal.mInternalExtents), scale);
+		const Vec3V extents = V3Mul(V3LoadU_SafeReadW(hullData->mInternal.mInternalExtents), scale);
 		const FloatV min = V3ExtractMin(extents);
 		const FloatV toleranceMargin = FLoad(toleranceLength * toleranceRatio);
 		//ML: 25% of the minimum extents of the internal AABB as this convex hull's margin
@@ -439,10 +439,10 @@ namespace Gu
 
 			if(data)
 			{
-				const PxU32 maxIndex= hillClimbing(dir);
-				const PxU32 minIndex= hillClimbing(V3Neg(dir));
-				const Vec3V maxPoint= M33MulV3(vertex2Shape, V3LoadU_SafeReadW(verts[maxIndex]));	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
-				const Vec3V minPoint= M33MulV3(vertex2Shape, V3LoadU_SafeReadW(verts[minIndex]));	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
+				const PxU32 maxIndex = hillClimbing(dir);
+				const PxU32 minIndex = hillClimbing(V3Neg(dir));
+				const Vec3V maxPoint = M33MulV3(vertex2Shape, V3LoadU_SafeReadW(verts[maxIndex]));	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
+				const Vec3V minPoint = M33MulV3(vertex2Shape, V3LoadU_SafeReadW(verts[minIndex]));	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
 				min = V3Dot(_dir, minPoint);
 				max = V3Dot(_dir, maxPoint);
 			}

@@ -51,23 +51,6 @@ namespace physx
 			PxReal					maxLinearVelocity;
 			PxReal					maxAngularVelocity;
 		};
-
-		struct ArticulationJointCoreDirtyFlag
-		{
-			enum Enum
-			{
-				eNONE = 0,
-				eMOTION = 1 << 0,
-				eFRAME = 1 << 1,
-				eTARGETPOSE = 1 << 2,
-				eTARGETVELOCITY = 1 << 3,
-				eARMATURE = 1 << 4,
-				eALL = eMOTION | eFRAME | eTARGETPOSE | eTARGETVELOCITY | eARMATURE
-			};
-		};
-
-		typedef PxFlags<ArticulationJointCoreDirtyFlag::Enum, PxU8> ArticulationJointCoreDirtyFlags;
-		PX_FLAGS_OPERATORS(ArticulationJointCoreDirtyFlag::Enum, PxU8)
 	}
 }
 

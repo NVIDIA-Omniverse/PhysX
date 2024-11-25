@@ -38,6 +38,7 @@ The reason for this is GJK support cannot be evaluated near infinity. A viable a
 #define PX_MAX_SWEEP_DISTANCE 1e8f
 
 
+#include "foundation/PxTransform.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "geometry/PxGeometryHit.h"
 #include "geometry/PxGeometryQueryFlags.h"
@@ -50,6 +51,7 @@ namespace physx
 
 class PxGeometry;
 class PxContactBuffer;
+class PxBounds3;
 
 /**
 \brief Collection of geometry object queries (sweeps, raycasts, overlaps, ...).
@@ -61,7 +63,7 @@ public:
 	/**
 	\brief Raycast test against a geometry object.
 
-	All geometry types are supported except PxParticleSystemGeometry, PxTetrahedronMeshGeometry and PxHairSystemGeometry.
+	All geometry types are supported except PxParticleSystemGeometry and PxTetrahedronMeshGeometry.
 
 	\param[in] origin			The origin of the ray to test the geometry object against
 	\param[in] unitDir			Normalized direction of the ray to test the geometry object against
@@ -92,7 +94,7 @@ public:
 	\li PxPlaneGeometry vs. {PxPlaneGeometry, PxTriangleMeshGeometry, PxHeightFieldGeometry}
 	\li PxTriangleMeshGeometry vs. PxHeightFieldGeometry
 	\li PxHeightFieldGeometry vs. PxHeightFieldGeometry
-	\li Anything involving PxParticleSystemGeometry, PxTetrahedronMeshGeometry or PxHairSystemGeometry.
+	\li Anything involving PxParticleSystemGeometry, PxTetrahedronMeshGeometry, or PxConvexCoreGeometry
 
 	\param[in] geom0			The first geometry object
 	\param[in] pose0			Pose of the first geometry object
@@ -152,7 +154,7 @@ public:
 	- mesh/mesh
 	- mesh/heightfield
 	- heightfield/heightfield
-	- anything involving PxParticleSystemGeometry, PxTetrahedronMeshGeometry or PxHairSystemGeometry
+	- anything involving PxParticleSystemGeometry, PxTetrahedronMeshGeometry, or PxConvexCoreGeometry
 
 	The function returns a unit vector ('direction') and a penetration depth ('depth').
 

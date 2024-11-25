@@ -33,7 +33,6 @@
 #include "DyFeatherstoneArticulation.h"
 
 using namespace physx;
-using namespace Gu;
 
 // constraint-gen only, since these use getVelocityFast methods
 // which aren't valid during the solver phase

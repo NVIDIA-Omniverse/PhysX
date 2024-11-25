@@ -28,7 +28,7 @@
        
 #include "PxsContext.h"
 #include "CmFlushPool.h"
-#include "PxsSimpleIslandManager.h"
+#include "PxsPartitionEdge.h"
 #include "common/PxProfileZone.h"
 
 #if PX_SUPPORT_GPU_PHYSX
@@ -189,7 +189,10 @@ public:
 				}
 			}
 	
-			mCallback->onContactModify(mModifiablePairArray, nbModifiableManagers);
+			{
+				PX_PROFILE_ZONE("USERCODE - PxContactModifyCallback::onContactModify", mContext->getContextId());
+				mCallback->onContactModify(mModifiablePairArray, nbModifiableManagers);
+			}
 		}
 	
 		for(PxU32 i = 0; i < nbModifiableManagers; ++i)
@@ -303,7 +306,7 @@ public:
 					isOverflown = true;
 				}
 							
-				PxU8* contactAddress = threadContext.mContactStreamPool->mDataStream  + threadContext.mContactStreamPool->mDataStreamSize - contactIndex;
+				PxU8* contactAddress = threadContext.mContactStreamPool->mDataStream + threadContext.mContactStreamPool->mDataStreamSize - contactIndex;
 	
 				const PxI32 patchIncrement = PxI32(patchSize);
 				const PxI32 patchIndex = PxAtomicAdd(&threadContext.mPatchStreamPool->mSharedDataIndex, patchIncrement);
@@ -845,8 +848,6 @@ void PxsNphaseImplementationContext::appendContactManagers()
 		PxMemCopy(mNarrowPhasePairs.mTorsionalPropertiesGPU.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalPropertiesGPU.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
 	}
 
-	PxU32* edgeNodeIndices = mIslandSim->getEdgeNodeIndexPtr();
-
 	for(PxU32 a = 0; a < mNewNarrowPhasePairs.mContactManagerMapping.size(); ++a)
 	{
 		PxsContactManager* cm = mNewNarrowPhasePairs.mContactManagerMapping[a];
@@ -856,16 +857,8 @@ void PxsNphaseImplementationContext::appendContactManagers()
 		if(unit.mStatusFlags & PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH)
 		{
 			unit.mStatusFlags &= (~PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH);
-			if(!(unit.mFlags & PxcNpWorkUnitFlag::eDISABLE_RESPONSE))
-			{
-				PartitionEdge* partitionEdge = mIslandSim->getFirstPartitionEdge(unit.mEdgeIndex);
 
-				while(partitionEdge)
-				{
-					edgeNodeIndices[partitionEdge->mUniqueIndex] = unit.mNpIndex;
-					partitionEdge = partitionEdge->mNextPatch;
-				}
-			}
+			processPartitionEdges(mIslandSim->mGpuData, unit);
 		}
 	}
 
@@ -916,8 +909,6 @@ void PxsNphaseImplementationContext::appendContactManagersFallback(PxsContactMan
 		PxMemCopy(mNarrowPhasePairs.mTorsionalPropertiesGPU.begin() + existingSize, mNewNarrowPhasePairs.mTorsionalPropertiesGPU.begin(), sizeof(PxsTorsionalFrictionData)*nbToAdd);
 	}
 
-	PxU32* edgeNodeIndices = mIslandSim->getEdgeNodeIndexPtr();
-
 	for(PxU32 a = 0; a < mNewNarrowPhasePairs.mContactManagerMapping.size(); ++a)
 	{
 		PxsContactManager* cm = mNewNarrowPhasePairs.mContactManagerMapping[a];
@@ -927,16 +918,8 @@ void PxsNphaseImplementationContext::appendContactManagersFallback(PxsContactMan
 		if(unit.mStatusFlags & PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH)
 		{
 			unit.mStatusFlags &= (~PxcNpWorkUnitStatusFlag::eREFRESHED_WITH_TOUCH);
-			if(!(unit.mFlags & PxcNpWorkUnitFlag::eDISABLE_RESPONSE))
-			{
-				PartitionEdge* partitionEdge = mIslandSim->getFirstPartitionEdge(unit.mEdgeIndex);
 
-				while(partitionEdge)
-				{
-					edgeNodeIndices[partitionEdge->mUniqueIndex] = unit.mNpIndex;
-					partitionEdge = partitionEdge->mNextPatch;
-				}
-			}
+			processPartitionEdges(mIslandSim->mGpuData, unit);
 		}
 	}
 
@@ -1012,20 +995,9 @@ void PxsNphaseImplementationContext::unregisterContactManagerInternal(PxU32 npIn
 	
 	PxcNpWorkUnit& replaceUnit = replaceManager->getWorkUnit();
 	replaceUnit.mNpIndex = npIndex;
-	if(replaceUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
-	{
-		if(!(replaceUnit.mFlags & PxcNpWorkUnitFlag::eDISABLE_RESPONSE))
-		{
-			PxU32* edgeNodeIndices = mIslandSim->getEdgeNodeIndexPtr();
 
-			PartitionEdge* partitionEdge = mIslandSim->getFirstPartitionEdge(replaceUnit.mEdgeIndex);
-			while(partitionEdge)
-			{
-				edgeNodeIndices[partitionEdge->mUniqueIndex] = replaceUnit.mNpIndex;
-				partitionEdge = partitionEdge->mNextPatch;
-			}
-		}
-	}
+	if(replaceUnit.mStatusFlags & PxcNpWorkUnitStatusFlag::eHAS_TOUCH)
+		processPartitionEdges(mIslandSim->mGpuData, replaceUnit);
 
 	managers.mContactManagerMapping.forceSize_Unsafe(replaceIndex);
 	managers.mCaches.forceSize_Unsafe(replaceIndex);
@@ -1049,7 +1021,7 @@ PxsContactManagerOutputIterator PxsNphaseImplementationContext::getContactManage
 	return PxsContactManagerOutputIterator(offsets, 1, mNarrowPhasePairs.mOutputContactManagers.begin());
 }
 
-PxvNphaseImplementationContextUsableAsFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics)
+PxvNphaseImplementationFallback* physx::createNphaseImplementationContext(PxsContext& context, IG::IslandSim* islandSim, PxVirtualAllocatorCallback* allocator, bool gpuDynamics)
 {
 	// PT: TODO: remove useless placement new
 

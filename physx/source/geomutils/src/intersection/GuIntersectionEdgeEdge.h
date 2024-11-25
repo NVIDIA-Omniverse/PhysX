@@ -29,6 +29,7 @@
 #ifndef GU_INTERSECTION_EDGE_EDGE_H
 #define GU_INTERSECTION_EDGE_EDGE_H
 
+#include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx

@@ -52,6 +52,8 @@ static bool isDynamicGeometry(PxGeometryType::Enum type)
 	return type == PxGeometryType::eBOX 
 		|| type == PxGeometryType::eSPHERE
 		|| type == PxGeometryType::eCAPSULE
+		|| type == PxGeometryType::eCONVEXCORE
+		|| type == PxGeometryType::eCUSTOM
 		|| type == PxGeometryType::eCONVEXMESH;
 }
 
@@ -249,6 +251,7 @@ static void copyStaticProperties(PxPhysics& physics, PxRigidActor& to, const PxR
 	to.setActorFlags(from.getActorFlags());
 	to.setOwnerClient(from.getOwnerClient());
 	to.setDominanceGroup(from.getDominanceGroup());
+	to.setEnvironmentID(from.getEnvironmentID());
 }
 
 PxRigidStatic* PxCloneStatic(PxPhysics& physicsSDK, 

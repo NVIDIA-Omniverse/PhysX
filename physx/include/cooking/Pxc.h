@@ -29,7 +29,7 @@
 #ifndef PXC_H
 #define PXC_H
 
-#include "foundation/Px.h"
+#include "foundation/PxPreprocessor.h"
 
 // define API function declaration
 #if !defined PX_PHYSX_STATIC_LIB 

@@ -60,6 +60,13 @@ public:
 
 					void					removeConstraints(PxRigidActor& owner);
 					void					removeFromAggregate(PxActor& owner);
+#if PX_SUPPORT_GPU_PHYSX
+					void					removeAttachments(PxActor& owner, bool removeConnectors);
+					void					addAttachments(PxActor& owner);
+
+					void					removeElementFilters(PxActor& owner, bool removeConnectors);
+					void					addElementFilters(PxActor& owner);
+#endif
 
 					NpAggregate*			getNpAggregate(PxU32& index)	const;
 					void					setAggregate(NpAggregate* np, PxActor& owner);

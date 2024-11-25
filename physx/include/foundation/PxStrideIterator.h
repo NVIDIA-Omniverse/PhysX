@@ -29,7 +29,6 @@
 #ifndef PX_STRIDE_ITERATOR_H
 #define PX_STRIDE_ITERATOR_H
 
-#include "foundation/Px.h"
 #include "foundation/PxAssert.h"
 
 

@@ -113,7 +113,7 @@ namespace Gu
 		{
 
 			using namespace aos;
-			const Vec3V n= V3Merge(nx, ny, nz);
+			const Vec3V n = V3Merge(nx, ny, nz);
 			nd = V4SetW(Vec4V_From_Vec3V(n), _d);
 			return *this;
 		}
@@ -140,7 +140,7 @@ namespace Gu
 			return	*this;
 		}
 
-		/***
+		/**
 		\brief Computes distance, assuming plane is normalized
 		\sa normalize
 		*/

@@ -39,8 +39,6 @@
 using namespace physx;
 using namespace Gu;
 
-namespace
-{
 // PT: TODO: get rid of this copy
 static const PxReal gFatBoxEdgeCoeff = 0.01f;
 
@@ -90,8 +88,6 @@ static void computeBoxWorldEdgeNormal(const Box& box, PxU32 edgeIndex, PxVec3& w
 {
 	PX_ASSERT(edgeIndex<12);
 	worldNormal = box.rotate(getBoxLocalEdgeNormals()[edgeIndex]);
-}
-
 }
 
 // ### optimize! and refactor. And optimize for aabbs

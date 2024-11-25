@@ -79,9 +79,9 @@ namespace physx
 		PxU16 flags;						//Not really part of outputs, but we have 4 bytes of padding, so why not?
 		PxU8 pad[8];
 
-		PX_FORCE_INLINE PxU32* getInternalFaceIndice()
+		PX_FORCE_INLINE PxU32* getInternalFaceIndice()	const
 		{
-			return reinterpret_cast<PxU32*>(contactForces + nbContacts);
+			return contactForces ? reinterpret_cast<PxU32*>(contactForces + nbContacts) : NULL;
 		}
 	} 
 	PX_ALIGN_SUFFIX(16);

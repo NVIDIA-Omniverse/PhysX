@@ -54,7 +54,7 @@ Instances of this class are created by calling #PxPhysics::createRigidStatic() a
 class PxRigidStatic : public PxRigidActor
 {
 public:
-	virtual		const char*		getConcreteTypeName() const { return "PxRigidStatic"; }
+	virtual		const char*		getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxRigidStatic"; }
 
 protected:
 	PX_INLINE					PxRigidStatic(PxType concreteType, PxBaseFlags baseFlags) : PxRigidActor(concreteType, baseFlags) {}

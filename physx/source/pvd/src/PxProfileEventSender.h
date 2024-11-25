@@ -27,7 +27,6 @@
 #ifndef PX_PROFILE_EVENT_SENDER_H
 #define PX_PROFILE_EVENT_SENDER_H
 
-#include "foundation/Px.h"
 
 namespace physx { namespace profile {
 

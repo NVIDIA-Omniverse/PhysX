@@ -35,6 +35,7 @@ namespace physx
 	class PxTriangleMeshGeometry;
 	class PxGeometry;
 	class PxHeightFieldGeometry;
+	class PxPlane;
 
 namespace Gu
 {

@@ -708,7 +708,7 @@ PxReal simDt, PxReal recipSimDt)
 		}
 		else
 		{
-			//this is articulation/soft body
+			//this is articulation/deformable volume
 			init(s, c.linear0, c.linear1, c.angular0, c.angular1, minImpulse, maxImpulse);
 			SolverConstraint1DExt& e = static_cast<SolverConstraint1DExt&>(s);
 

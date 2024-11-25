@@ -29,7 +29,6 @@
 #ifndef PX_PROFILE_SCOPED_MUTEX_LOCK_H
 #define PX_PROFILE_SCOPED_MUTEX_LOCK_H
 
-#include "foundation/Px.h"
 
 namespace physx { namespace profile {
 

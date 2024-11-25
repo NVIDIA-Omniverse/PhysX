@@ -31,7 +31,6 @@
 // ****************************************************************************
 
 #include <ctype.h>
-#include <vector>
 #include "PxPhysicsAPI.h"
 
 // temporary disable this snippet, cannot work without rendering we cannot include GL directly
@@ -229,22 +228,22 @@ void debugRender()
 	pts[6] = c + PxVec3( e.x,  e.y, -e.z);
 	pts[7] = c + PxVec3( e.x, -e.y, -e.z);
 
-	std::vector<PxVec3> gContactVertices;
+	PxArray<PxVec3> gContactVertices;
 	struct AddQuad
 	{
-		static void func(std::vector<PxVec3>& v, const PxVec3* pts_, PxU32 index0, PxU32 index1, PxU32 index2, PxU32 index3)
+		static void func(PxArray<PxVec3>& v, const PxVec3* pts_, PxU32 index0, PxU32 index1, PxU32 index2, PxU32 index3)
 		{
-			v.push_back(pts_[index0]);
-			v.push_back(pts_[index1]);
+			v.pushBack(pts_[index0]);
+			v.pushBack(pts_[index1]);
 
-			v.push_back(pts_[index1]);
-			v.push_back(pts_[index2]);
+			v.pushBack(pts_[index1]);
+			v.pushBack(pts_[index2]);
 
-			v.push_back(pts_[index2]);
-			v.push_back(pts_[index3]);
+			v.pushBack(pts_[index2]);
+			v.pushBack(pts_[index3]);
 
-			v.push_back(pts_[index3]);
-			v.push_back(pts_[index0]);
+			v.pushBack(pts_[index3]);
+			v.pushBack(pts_[index0]);
 		}
 	};
 

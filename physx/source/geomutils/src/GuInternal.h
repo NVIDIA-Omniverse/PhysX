@@ -41,6 +41,7 @@
 
 namespace physx
 {
+class PxBounds3;
 namespace Gu
 {
 	class Box;

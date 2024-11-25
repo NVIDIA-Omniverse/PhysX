@@ -49,13 +49,12 @@ class PxTriangleMeshGeometry;
 class PxTetrahedronMeshGeometry;
 class PxHeightFieldGeometry;
 class PxParticleSystemGeometry;
-class PxHairSystemGeometry;
 class PxRigidActor;
 struct PxFilterData;
 class PxBaseMaterial;
 class PxMaterial;
-class PxFEMSoftBodyMaterial;
-class PxFEMClothMaterial;
+class PxDeformableSurfaceMaterial;
+class PxDeformableVolumeMaterial;
 
 /**
 \brief Flags which affect the behavior of PxShapes.
@@ -283,29 +282,37 @@ public:
 	virtual		void	setMaterials(PxMaterial*const* materials, PxU16 materialCount) = 0;
 
 	/**
-	\brief Assigns FEM soft body material(s) to the shape. Will remove existing materials from the shape.
+	\brief Assigns surface deformable material(s) to the shape. Will remove existing materials from the shape.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake the associated actor up automatically.
 
-	\param[in] materials List of material pointers to assign to the shape. See #PxFEMSoftBodyMaterial
+	\param[in] materials List of material pointers to assign to the shape. See #PxDeformableSurfaceMaterial
 	\param[in] materialCount The number of materials provided.
 
-	\see PxPhysics.createFEMSoftBodyMaterial() getSoftBodyMaterials() 
+	\see PxPhysics.createDeformableSurfaceMaterial() getDeformableSurfaceMaterials() 
 	*/
-	virtual		void	setSoftBodyMaterials(PxFEMSoftBodyMaterial*const* materials, PxU16 materialCount) = 0;
+	virtual		void	setDeformableSurfaceMaterials(PxDeformableSurfaceMaterial*const* materials, PxU16 materialCount) = 0;
 
 	/**
-	\brief Assigns FEM cloth material(s) to the shape. Will remove existing materials from the shape.
-	\warning Feature under development, only for internal usage.
+	\brief Assigns deformable volume material(s) to the shape. Will remove existing materials from the shape.
 
 	<b>Sleeping:</b> Does <b>NOT</b> wake the associated actor up automatically.
 
-	\param[in] materials List of material pointers to assign to the shape. See #PxFEMClothMaterial
+	\param[in] materials List of material pointers to assign to the shape. See #PxDeformableVolumeMaterial
 	\param[in] materialCount The number of materials provided.
 
-	\see PxPhysics.createFEMClothMaterial() getClothMaterials() 
+	\see PxPhysics.createDeformableVolumeMaterial() getDeformableVolumeMaterials()
 	*/
-	virtual		void	setClothMaterials(PxFEMClothMaterial*const* materials, PxU16 materialCount) = 0;
+	virtual		void	setDeformableVolumeMaterials(PxDeformableVolumeMaterial* const* materials, PxU16 materialCount) = 0;
+
+	/**
+	\brief Deprecated
+	\see setDeformableVolumeMaterials
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE void setSoftBodyMaterials(PxDeformableVolumeMaterial* const* materials, PxU16 materialCount)
+	{
+		setDeformableVolumeMaterials(materials, materialCount);
+	}
 
 	/**
 	\brief Returns the number of materials assigned to the shape.
@@ -335,7 +342,7 @@ public:
 	virtual		PxU32	getMaterials(PxMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex=0) const = 0;
 
 	/**
-	\brief Retrieve all the FEM soft body material pointers associated with the shape.
+	\brief Retrieve all the surface deformable material pointers associated with the shape.
 
 	You can retrieve the number of material pointers by calling #getNbMaterials()
 
@@ -346,13 +353,12 @@ public:
 	\param[in] startIndex Index of first material pointer to be retrieved
 	\return Number of material pointers written to the buffer.
 
-	\see PxFEMSoftBodyMaterial getNbMaterials() PxMaterial::release()
+	\see PxDeformableSurfaceMaterial getNbMaterials() PxMaterial::release()
 	*/
-	virtual		PxU32	getSoftBodyMaterials(PxFEMSoftBodyMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+	virtual		PxU32	getDeformableSurfaceMaterials(PxDeformableSurfaceMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
-	\brief Retrieve all the FEM cloth material pointers associated with the shape.
-	\warning Feature under development, only for internal usage.
+	\brief Retrieve all the deformable volume material pointers associated with the shape.
 
 	You can retrieve the number of material pointers by calling #getNbMaterials()
 
@@ -363,9 +369,18 @@ public:
 	\param[in] startIndex Index of first material pointer to be retrieved
 	\return Number of material pointers written to the buffer.
 
-	\see PxFEMClothMaterial getNbMaterials() PxMaterial::release()
+	\see PxDeformableVolumeMaterial getNbMaterials() PxMaterial::release()
 	*/
-	virtual		PxU32	getClothMaterials(PxFEMClothMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+	virtual		PxU32	getDeformableVolumeMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	/**
+	\brief Deprecated
+	\see getDeformableVolumeMaterials
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxU32 getSoftBodyMaterials(PxDeformableVolumeMaterial** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
+	{
+		return getDeformableVolumeMaterials(userBuffer, bufferSize, startIndex);
+	}
 
 	/**
 	\brief Retrieve material from given triangle index.
@@ -604,7 +619,7 @@ public:
 	virtual		const char*	getName()			const	= 0;
 
 
-	virtual		const char*	getConcreteTypeName() const	{ return "PxShape"; }
+	virtual		const char*	getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxShape"; }
 
 /************************************************************************************************/
 

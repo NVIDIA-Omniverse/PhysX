@@ -46,16 +46,6 @@ SET(SNIPPET_PLATFORM_SOURCES
 SET(SNIPPET_PLATFORM_INCLUDES
 )
 
-IF(${SNIPPET_NAME} STREQUAL "ArticulationLoader")
-	LIST(APPEND SNIPPET_PLATFORM_SOURCES
-		${TINYXML2_PATH}/tinyxml2.h
-		${TINYXML2_PATH}/tinyxml2.cpp
-	)
-	LIST(APPEND SNIPPET_PLATFORM_INCLUDES
-		${TINYXML2_PATH}
-	)
-ENDIF()
-
 # gwoolery: aarch64 requires glut library to be lower case, for whatever reason
 IF(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
 	SET(GLUT_LIB "glut")

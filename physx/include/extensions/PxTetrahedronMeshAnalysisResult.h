@@ -37,7 +37,7 @@ namespace physx
 #endif
 
 	/**
-	\brief These flags indicate what kind of deficiencies a tetrahedron mesh has and describe if the mesh is considered ok, problematic or invalid for softbody cooking
+	\brief These flags indicate what kind of deficiencies a tetrahedron mesh has and describe if the mesh is considered ok, problematic or invalid for deformable volume cooking
 	*/
 	class PxTetrahedronMeshAnalysisResult
 	{

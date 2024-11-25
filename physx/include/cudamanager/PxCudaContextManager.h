@@ -122,6 +122,16 @@ public:
 	void*	graphicsDevice;
 
 	/**
+	 * \brief CUDA device ordinal
+	 *
+	 * Only applicable when ctx is NULL, thus forcing a new context to be created based on the CUDA device ordinal.
+	 * The first CUDA device will have an ordinal value of 0 and so on.
+	 * If the CUDA device ordinal is -1, the device selected will be queried from PhysX settings in the NVIDIA Control Panel.
+	 * Note: The NVIDIA Control Panel is only supported on Windows.
+	 */
+	PxI32 deviceOrdinal;
+
+	/**
 	  * \brief Application-specific GUID
 	  *
 	  * If your application employs PhysX modules that use CUDA you need to use a GUID 
@@ -142,6 +152,7 @@ public:
 	PX_INLINE PxCudaContextManagerDesc() :
 		ctx				(NULL),
 		graphicsDevice	(NULL),
+		deviceOrdinal	(-1),
 		appGUID			(NULL),
 		deviceAllocator	(NULL)
 	{

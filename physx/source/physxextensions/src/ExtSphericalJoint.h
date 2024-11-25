@@ -65,7 +65,7 @@ namespace Ext
 		virtual	PxJointLimitCone		getLimitCone() const	PX_OVERRIDE;
 		virtual	void					setSphericalJointFlags(PxSphericalJointFlags flags)	PX_OVERRIDE;
 		virtual	void					setSphericalJointFlag(PxSphericalJointFlag::Enum flag, bool value)	PX_OVERRIDE;
-		virtual	PxSphericalJointFlags	getSphericalJointFlags(void) const	PX_OVERRIDE;
+		virtual	PxSphericalJointFlags	getSphericalJointFlags() const	PX_OVERRIDE;
 		virtual PxReal					getSwingYAngle() const	PX_OVERRIDE;
 		virtual PxReal					getSwingZAngle() const	PX_OVERRIDE;
 		//~PxSphericalJoint

@@ -41,13 +41,11 @@
 #include "omnipvd/NpOmniPvdSetData.h"
 
 #if PX_SUPPORT_GPU_PHYSX
-#include "NpSoftBody.h"
 #include "NpPBDParticleSystem.h"
-
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-#include "NpHairSystem.h"
-#include "NpFEMCloth.h"
-#endif
+#include "NpDeformableAttachment.h"
+#include "NpDeformableElementFilter.h"
+#include "NpDeformableSurface.h"
+#include "NpDeformableVolume.h"
 #endif
 
 using namespace physx;
@@ -193,6 +191,106 @@ void NpActor::removeConstraints(PxRigidActor& owner)
 		}
 	}
 }
+
+#if PX_SUPPORT_GPU_PHYSX
+void NpActor::removeAttachments(PxActor& owner, bool removeConnectors)
+{
+	if (mConnectorArray)
+	{
+		PxU32 nbConnectors = mConnectorArray->size();
+		PxU32 currentIndex = 0;
+		while (nbConnectors--)
+		{
+			NpConnector& connector = (*mConnectorArray)[currentIndex];
+			if (connector.mType == NpConnectorType::eAttachment)
+			{
+				NpDeformableAttachment* c = static_cast<NpDeformableAttachment*>(connector.mObject);
+
+				NpScene* s = c->getNpScene();
+				if (s)
+					s->removeFromAttachmentList(*c);
+
+				if (removeConnectors)
+					removeConnector(owner, currentIndex);
+				else
+					currentIndex++;
+			}
+			else
+				currentIndex++;
+		}
+	}
+}
+
+void NpActor::addAttachments(PxActor& owner)
+{
+	PX_UNUSED(owner);
+
+	if (mConnectorArray)
+	{
+		for (PxU32 currentIndex = 0; currentIndex < mConnectorArray->size(); currentIndex++)
+		{
+			NpConnector& connector = (*mConnectorArray)[currentIndex];
+			if (connector.mType == NpConnectorType::eAttachment)
+			{
+				NpDeformableAttachment* c = static_cast<NpDeformableAttachment*>(connector.mObject);
+
+				NpScene* s = c->getSceneFromActors();
+				if (s)
+					s->addToAttachmentList(*c);
+			}
+		}
+	}
+}
+
+void NpActor::removeElementFilters(PxActor& owner, bool removeConnectors)
+{
+	if (mConnectorArray)
+	{
+		PxU32 nbConnectors = mConnectorArray->size();
+		PxU32 currentIndex = 0;
+		while (nbConnectors--)
+		{
+			NpConnector& connector = (*mConnectorArray)[currentIndex];
+			if (connector.mType == NpConnectorType::eElementFilter)
+			{
+				NpDeformableElementFilter* c = static_cast<NpDeformableElementFilter*>(connector.mObject);
+
+				NpScene* s = c->getNpScene();
+				if (s)
+					s->removeFromElementFilterList(*c);
+
+				if (removeConnectors)
+					removeConnector(owner, currentIndex);
+				else
+					currentIndex++;
+			}
+			else
+				currentIndex++;
+		}
+	}
+}
+
+void NpActor::addElementFilters(PxActor& owner)
+{
+	PX_UNUSED(owner);
+
+	if (mConnectorArray)
+	{
+		for (PxU32 currentIndex = 0; currentIndex < mConnectorArray->size(); currentIndex++)
+		{
+			NpConnector& connector = (*mConnectorArray)[currentIndex];
+			if (connector.mType == NpConnectorType::eElementFilter)
+			{
+				NpDeformableElementFilter* c = static_cast<NpDeformableElementFilter*>(connector.mObject);
+
+				NpScene* s = c->getSceneFromActors();
+				if (s)
+					s->addToElementFilterList(*c);
+			}
+		}
+	}
+}
+#endif
 
 void NpActor::removeFromAggregate(PxActor& owner)
 {
@@ -410,58 +508,52 @@ void NpActor::onActorRelease(PxActor* actor)
 	NpFactory::getInstance().onActorRelease(actor);
 }
 
-void	NpActor::scSetDominanceGroup(PxDominanceGroup v)
-		{
-			PX_ASSERT(!isAPIWriteForbidden());
-			getActorCore().setDominanceGroup(v);
-			UPDATE_PVD_PROPERTY
-			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, dominance, *getPxActor(), v)
-		}
+void NpActor::scSetDominanceGroup(PxDominanceGroup v)
+{
+	PX_ASSERT(!isAPIWriteForbidden());
+	getActorCore().setDominanceGroup(v);
+	UPDATE_PVD_PROPERTY
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, dominance, *getPxActor(), v)
+}
 
-void	NpActor::scSetOwnerClient(PxClientID inId)
-		{
-			//This call is only valid if we aren't in a scene.
-			PX_ASSERT(!isAPIWriteForbidden());
-			getActorCore().setOwnerClient(inId);
-			UPDATE_PVD_PROPERTY
-			OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, ownerClient, *getPxActor(), inId)
-		}
+void NpActor::scSetOwnerClient(PxClientID inId)
+{
+	//This call is only valid if we aren't in a scene.
+	PX_ASSERT(!isAPIWriteForbidden());
+	getActorCore().setOwnerClient(inId);
+	UPDATE_PVD_PROPERTY
+	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxActor, ownerClient, *getPxActor(), inId)
+}
 
 const PxActor* NpActor::getPxActor() const
-		{
-			const PxActorType::Enum type = getActorCore().getActorCoreType();
-			switch (type)
-			{
-			case PxActorType::eRIGID_DYNAMIC:
-				return static_cast<const NpRigidDynamic*>(this);
-			case PxActorType::eRIGID_STATIC:
-				return static_cast<const NpRigidStatic*>(this);
-			case PxActorType::eARTICULATION_LINK:
-				return static_cast<const NpArticulationLink*>(this);
-#if PX_SUPPORT_GPU_PHYSX
-			case PxActorType::ePBD_PARTICLESYSTEM:
-				return static_cast<const NpPBDParticleSystem*>(this);
-			case PxActorType::eSOFTBODY:
-				return static_cast<const NpSoftBody*>(this);
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-			case PxActorType::eFEMCLOTH:
-				return static_cast<const NpFEMCloth*>(this);
-			case PxActorType::eHAIRSYSTEM:
-				return static_cast<const NpHairSystem*>(this);
-#endif
-#endif // PX_SUPPORT_GPU_PHYSX
-			default:
-				PX_ASSERT(0);
-				return NULL;
-			}
-		}
-
-namespace
 {
-	template <typename N> NpActor* pxToNpActor(PxActor *p) 
-	{  
-		return static_cast<NpActor*>(static_cast<N*>(p));
+	const PxActorType::Enum type = getActorCore().getActorCoreType();
+	switch (type)
+	{
+	case PxActorType::eRIGID_DYNAMIC:
+		return static_cast<const NpRigidDynamic*>(this);
+	case PxActorType::eRIGID_STATIC:
+		return static_cast<const NpRigidStatic*>(this);
+	case PxActorType::eARTICULATION_LINK:
+		return static_cast<const NpArticulationLink*>(this);
+#if PX_SUPPORT_GPU_PHYSX
+	case PxActorType::ePBD_PARTICLESYSTEM:
+		return static_cast<const NpPBDParticleSystem*>(this);
+	case PxActorType::eDEFORMABLE_SURFACE:
+		return static_cast<const NpDeformableSurface*>(this);
+	case PxActorType::eDEFORMABLE_VOLUME:
+		return static_cast<const NpDeformableVolume*>(this);
+#endif // PX_SUPPORT_GPU_PHYSX
+	default:
+		PX_ASSERT(0);
+		return NULL;
 	}
+}
+
+template <typename N>
+static NpActor* pxToNpActor(PxActor *p) 
+{  
+	return static_cast<NpActor*>(static_cast<N*>(p));
 }
 
 NpActor::Offsets::Offsets()
@@ -475,12 +567,9 @@ NpActor::Offsets::Offsets()
 	pxActorToNpActor[PxConcreteType::eARTICULATION_LINK]	= size_t(pxToNpActor<NpArticulationLink>(n)) - addr;
 
 #if PX_SUPPORT_GPU_PHYSX
-	pxActorToNpActor[PxConcreteType::eSOFT_BODY]							= size_t(pxToNpActor<NpSoftBody>(n)) - addr;
-	pxActorToNpActor[PxConcreteType::ePBD_PARTICLESYSTEM]					= size_t(pxToNpActor<NpPBDParticleSystem>(n)) - addr;
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	pxActorToNpActor[PxConcreteType::eFEM_CLOTH]							= size_t(pxToNpActor<NpFEMCloth>(n)) - addr;
-	pxActorToNpActor[PxConcreteType::eHAIR_SYSTEM]							= size_t(pxToNpActor<NpHairSystem>(n)) - addr;
-#endif
+	pxActorToNpActor[PxConcreteType::eDEFORMABLE_SURFACE]	= size_t(pxToNpActor<NpDeformableSurface>(n)) - addr;
+	pxActorToNpActor[PxConcreteType::eDEFORMABLE_VOLUME]	= size_t(pxToNpActor<NpDeformableVolume>(n)) - addr;
+	pxActorToNpActor[PxConcreteType::ePBD_PARTICLESYSTEM]	= size_t(pxToNpActor<NpPBDParticleSystem>(n)) - addr;
 #endif
 }
 
@@ -513,20 +602,18 @@ NpActor::NpOffsets::NpOffsets()
 #if PX_SUPPORT_GPU_PHYSX
 	{
 		size_t addr = 0x100;	// casting the null ptr takes a special-case code path, which we don't want
-		NpSoftBody* n = reinterpret_cast<NpSoftBody*>(addr);
+		NpDeformableSurface* n = reinterpret_cast<NpDeformableSurface*>(addr);
 		const size_t npOffset = size_t(static_cast<NpActor*>(n)) - addr;
-		const size_t bodyOffset = NpSoftBody::getCoreOffset() - npOffset;
-		npToSc[NpType::eSOFTBODY] = bodyOffset;
+		const size_t bodyOffset = NpDeformableSurface::getCoreOffset() - npOffset;
+		npToSc[NpType::eDEFORMABLE_SURFACE] = bodyOffset;
 	}
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
 	{
 		size_t addr = 0x100;	// casting the null ptr takes a special-case code path, which we don't want
-		NpFEMCloth* n = reinterpret_cast<NpFEMCloth*>(addr);
+		NpDeformableVolume* n = reinterpret_cast<NpDeformableVolume*>(addr);
 		const size_t npOffset = size_t(static_cast<NpActor*>(n)) - addr;
-		const size_t bodyOffset = NpFEMCloth::getCoreOffset() - npOffset;
-		npToSc[NpType::eFEMCLOTH] = bodyOffset;
+		const size_t bodyOffset = NpDeformableVolume::getCoreOffset() - npOffset;
+		npToSc[NpType::eDEFORMABLE_VOLUME] = bodyOffset;
 	}
-#endif
 	{
 		size_t addr = 0x100;	// casting the null ptr takes a special-case code path, which we don't want
 		NpPBDParticleSystem* n = reinterpret_cast<NpPBDParticleSystem*>(addr);
@@ -534,15 +621,6 @@ NpActor::NpOffsets::NpOffsets()
 		const size_t bodyOffset = NpPBDParticleSystem::getCoreOffset() - npOffset;
 		npToSc[NpType::ePBD_PARTICLESYSTEM] = bodyOffset;
 	}
-#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-	{
-		size_t addr = 0x100;	// casting the null ptr takes a special-case code path, which we don't want
-		NpHairSystem* n = reinterpret_cast<NpHairSystem*>(addr);
-		const size_t npOffset = size_t(static_cast<NpActor*>(n)) - addr;
-		const size_t bodyOffset = NpHairSystem::getCoreOffset() - npOffset;
-		npToSc[NpType::eHAIRSYSTEM] = bodyOffset;
-	}
-#endif
 #endif
 }
 

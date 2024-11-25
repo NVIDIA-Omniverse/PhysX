@@ -69,6 +69,8 @@ namespace physx
 		class ArticulationFixedTendon;
 		class ArticulationTendonJoint;
 
+		typedef PxU64 ArticulationBitField;
+
 		struct ArticulationLoopConstraint
 		{
 		public:
@@ -79,12 +81,8 @@ namespace physx
 
 #define DY_ARTICULATION_LINK_NONE 0xffffffff
 
-		typedef PxU64 ArticulationBitField;
-
 		struct ArticulationLink
 		{
-			ArticulationBitField		children;		// child bitmap
-			ArticulationBitField		pathToRoot;		// path to root, including link and root
 			PxU32						mPathToRootStartIndex;
 			PxU32						mChildrenStartIndex;
 			PxU16						mPathToRootCount;

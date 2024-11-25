@@ -29,7 +29,6 @@
 #ifndef VEHICLE_MF_TIRE_DATA_H
 #define VEHICLE_MF_TIRE_DATA_H
 
-#include "foundation/Px.h"
 #include "foundation/PxMath.h"
 #include "foundation/PxFlags.h"
 

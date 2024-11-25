@@ -38,7 +38,6 @@
 // ****************************************************************************
 
 #include <ctype.h>
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "extensions/PxCollectionExt.h"
 #include "../snippetcommon/SnippetPrint.h"
@@ -97,7 +96,7 @@ void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 // the query shapes into the AABB tree.
 void createStackWithRuntimePrunerStructure(const PxTransform& t, PxU32 size, PxReal halfExtent)
 {
-	std::vector<PxRigidActor*> actors;
+	PxArray<PxRigidActor*> actors;
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
 	for (PxU32 i = 0; i < size; i++)
 	{
@@ -108,7 +107,7 @@ void createStackWithRuntimePrunerStructure(const PxTransform& t, PxU32 size, PxR
 			body->attachShape(*shape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 			// store the actors, will be added later
-			actors.push_back(body);
+			actors.pushBack(body);
 		}
 	}
 	shape->release();
@@ -128,7 +127,7 @@ void createStackWithSerializedPrunerStructure(const PxTransform& t, PxU32 size, 
 	PxCollection* collection = PxCreateCollection();		// collection for all the objects
 	PxSerializationRegistry* sr = PxSerialization::createSerializationRegistry(*gPhysics);
 
-	std::vector<PxRigidActor*> actors;
+	PxArray<PxRigidActor*> actors;
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
 	for (PxU32 i = 0; i < size; i++)
 	{
@@ -139,7 +138,7 @@ void createStackWithSerializedPrunerStructure(const PxTransform& t, PxU32 size, 
 			body->attachShape(*shape);
 			PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
 			// store the actors, will be added later
-			actors.push_back(body);
+			actors.pushBack(body);
 		}
 	}
 	collection->add(*shape);	
@@ -158,7 +157,7 @@ void createStackWithSerializedPrunerStructure(const PxTransform& t, PxU32 size, 
 
 	// Release the used items added to the collection.
 	ps->release();
-	for (size_t i = 0; i < actors.size(); i++)
+	for (PxU32 i = 0; i < actors.size(); i++)
 	{
 		actors[i]->release();
 	}	

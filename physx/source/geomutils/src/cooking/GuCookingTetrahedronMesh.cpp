@@ -64,7 +64,7 @@ using namespace physx;
 
 }*/
 
-void TetrahedronMeshBuilder::recordTetrahedronIndices(const TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, bool buildGPUData)
+void TetrahedronMeshBuilder::recordTetrahedronIndices(const TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, bool buildGPUData)
 {
 	if (buildGPUData)
 	{
@@ -176,7 +176,7 @@ bool checkInputFloats(PxU32 nb, const float* values, const char* file, PxU32 lin
 #endif
 
 bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMeshDesc, const PxCookingParams& params, 
-	TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, bool validateMesh)
+	TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, bool validateMesh)
 {
 	PX_UNUSED(validateMesh);
 	//convert and clean the input mesh
@@ -236,7 +236,7 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 	//copy the material index list if any:
 	if (collisionMeshDesc.materialIndices.data)
 	{
-		PxFEMMaterialTableIndex* materials = collisionMesh.allocateMaterials();
+		PxDeformableMaterialTableIndex* materials = collisionMesh.allocateMaterials();
 		immediateCooking::gatherStrided(collisionMeshDesc.materialIndices.data, materials, collisionMesh.mNbTetrahedrons, sizeof(PxMaterialTableIndex), collisionMeshDesc.materialIndices.stride);
 
 		// Check material indices
@@ -255,7 +255,7 @@ bool TetrahedronMeshBuilder::importMesh(const PxTetrahedronMeshDesc& collisionMe
 	return true;
 }
 
-bool TetrahedronMeshBuilder::createGRBMidPhaseAndData(const PxU32 originalTetrahedronCount, TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, const PxCookingParams& params)
+bool TetrahedronMeshBuilder::createGRBMidPhaseAndData(const PxU32 originalTetrahedronCount, TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, const PxCookingParams& params)
 {
 	PX_UNUSED(originalTetrahedronCount);
 	if (params.buildGPUData)
@@ -571,7 +571,7 @@ void writeTetrahedrons(const TetrahedronT<PxU32>* tets, const PxU32 numTets, con
 	}
 }
 
-PxU32* computeGridModelTetrahedronPartitions(const TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData)
+PxU32* computeGridModelTetrahedronPartitions(const TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData)
 {
 	const PxU32 numTets = simulationMesh.mNbTetrahedrons;
 	const PxU32 numVerts = simulationMesh.mNbVertices;
@@ -628,7 +628,7 @@ PxU32* computeGridModelTetrahedronPartitions(const TetrahedronMeshData& simulati
 }
 
 // 8 partition GS + 1 extra jacobi partition for duplicated voxels (if any).
-PxU32* computeGridModelVoxelPartitions(const TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData)
+PxU32* computeGridModelVoxelPartitions(const TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData)
 {
 	// following the structure of "computeGridModelTetrahedronPartitions"
 	const PxU32 numTets = simulationMesh.mNbTetrahedrons;
@@ -987,7 +987,7 @@ PxU32 setBit(PxU32 value, PxU32 bitLocation, bool bitState)
 		return value & (~(1 << bitLocation));
 }
 
-void combineGridModelPartitions(const TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData, PxU32** accumulatedTetrahedronPerPartitions)
+void combineGridModelPartitions(const TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData, PxU32** accumulatedTetrahedronPerPartitions)
 {
 const PxU32 numTets = simulationMesh.mNbTetrahedrons;
 const PxU32 numVerts = simulationMesh.mNbVertices;
@@ -1168,7 +1168,7 @@ PX_FREE(tempRemapTablePerVert);
 PX_FREE(lastRef);
 }
 
-void combineGridModelPartitionsHexMesh(const TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData, 
+void combineGridModelPartitionsHexMesh(const TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData,
 	PxU32** accumulatedTetrahedronPerPartitions, PxU32 numTetsPerElement)
 {
 //const PxU32 numTets = simulationMesh.mNbTetrahedrons;
@@ -1369,8 +1369,8 @@ PX_FREE(lastRef);
 
 // simplified version of "combineGridModelPartitionsHexMesh" where we don't combine multiple partitions.
 void combineGridModelPartitionsHexMesh_parallelGS(const TetrahedronMeshData& simulationMesh,
-                                                  SoftBodySimulationData& simulationData,
-                                                  PxU32** accumulatedTetrahedronPerPartitions)
+												  DeformableVolumeSimulationData& simulationData,
+												  PxU32** accumulatedTetrahedronPerPartitions)
 {
 	const PxU32 numTetsPerElement = simulationData.mNumTetsPerElement;
 	const PxU32 numElements = simulationMesh.mNbTetrahedrons / numTetsPerElement;
@@ -1673,7 +1673,7 @@ static bool gOverlapCallback(const AABBTreeNode* current, PxU32 /*depth*/, void*
 	return true;
 }
 
-void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshData& collisionMesh, const SoftBodyCollisionData& collisionData, CollisionMeshMappingData& mappingData)
+void TetrahedronMeshBuilder::createCollisionModelMapping(const TetrahedronMeshData& collisionMesh, const DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData)
 {
 	const PxU32 nbVerts = collisionMesh.mNbVertices;
 
@@ -1906,7 +1906,7 @@ void writeTets(const char* path, const PxVec3* tetPoints, PxU32 numPoints, const
 }*/
 
 void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulationMesh,
-	const TetrahedronMeshData& collisionMesh, const SoftBodyCollisionData& collisionData, 
+	const TetrahedronMeshData& collisionMesh, const DeformableVolumeCollisionData& collisionData,
 	CollisionMeshMappingData& mappingData, bool buildGPUData, const PxBoundedData* vertexToTet)
 {
 	createCollisionModelMapping(collisionMesh, collisionData, mappingData);
@@ -1969,7 +1969,7 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 				const PxVec3& d = gridModelVertices[tetra.mRef[3]];
 
 				PxVec4 bary;
-				computeBarycentric(a, b, c, d, p, bary);
+				PxComputeBarycentric(a, b, c, d, p, bary);
 
 #if PX_DEBUG
 				const PxReal eps = 1e-4f;
@@ -2010,7 +2010,7 @@ void TetrahedronMeshBuilder::computeModelsMapping(TetrahedronMeshData& simulatio
 				const PxVec3& d = gridModelVertices[tetra.mRef[3]];
 
 				PxVec4 bary;
-				computeBarycentric(a, b, c, d, result.mOriginalVert, bary);
+				PxComputeBarycentric(a, b, c, d, result.mOriginalVert, bary);
 
 #if PX_DEBUG
 				const PxReal eps = 1e-4f;
@@ -2231,7 +2231,7 @@ void smoothMassRatiosWhilePreservingTotalMass( PxReal* massPerNode, PxU32 numNod
 	//printf("%i", counter);
 }
 
-void TetrahedronMeshBuilder::computeSimData(const PxTetrahedronMeshDesc& desc, TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData, const PxCookingParams& params)
+void TetrahedronMeshBuilder::computeSimData(const PxTetrahedronMeshDesc& desc, TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData, const PxCookingParams& params)
 {
 	const PxU32 simTetMeshNbPoints = desc.points.count;
 	const PxU32 simTetMeshNbTets = desc.tetrahedrons.count;
@@ -2313,7 +2313,7 @@ void TetrahedronMeshBuilder::computeSimData(const PxTetrahedronMeshDesc& desc, T
 	}
 }
 
-bool TetrahedronMeshBuilder::computeCollisionData(const PxTetrahedronMeshDesc& collisionMeshDesc, TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData,
+bool TetrahedronMeshBuilder::computeCollisionData(const PxTetrahedronMeshDesc& collisionMeshDesc, TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData,
 	const PxCookingParams&	params, bool validateMesh)
 {
 	const PxU32 originalTetrahedronCount = collisionMeshDesc.tetrahedrons.count;
@@ -2373,10 +2373,10 @@ bool TetrahedronMeshBuilder::computeCollisionData(const PxTetrahedronMeshDesc& c
 }
 
 bool TetrahedronMeshBuilder::loadFromDesc(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-	PxSoftBodySimulationDataDesc softbodyDataDesc, TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData, 
-	TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, CollisionMeshMappingData& mappingData, const PxCookingParams&	params, bool validateMesh)
+	PxDeformableVolumeSimulationDataDesc deformableVolumeDataDesc, TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData,
+	TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData, const PxCookingParams&	params, bool validateMesh)
 {		
-	if (!simulationMeshDesc.isValid() || !collisionMeshDesc.isValid() || !softbodyDataDesc.isValid())
+	if (!simulationMeshDesc.isValid() || !collisionMeshDesc.isValid() || !deformableVolumeDataDesc.isValid())
 		return PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "TetrahedronMesh::loadFromDesc: desc.isValid() failed!");
 
 	// verify the mesh params
@@ -2388,7 +2388,7 @@ bool TetrahedronMeshBuilder::loadFromDesc(const PxTetrahedronMeshDesc& simulatio
 
 	computeSimData(simulationMeshDesc, simulationMesh, simulationData, params);
 
-	computeModelsMapping(simulationMesh, collisionMesh, collisionData, mappingData, params.buildGPUData, &softbodyDataDesc.vertexToTet);
+	computeModelsMapping(simulationMesh, collisionMesh, collisionData, mappingData, params.buildGPUData, &deformableVolumeDataDesc.vertexToTet);
 
 #if PX_DEBUG
 	for (PxU32 i = 0; i < collisionMesh.mNbVertices; ++i) {
@@ -2473,12 +2473,12 @@ bool TetrahedronMeshBuilder::saveTetrahedronMeshData(PxOutputStream& stream, boo
 	return true;
 }
 	   
-bool TetrahedronMeshBuilder::saveSoftBodyMeshData(PxOutputStream& stream, bool platformMismatch, const PxCookingParams& params, 
-	const TetrahedronMeshData& simulationMesh, const SoftBodySimulationData& simulationData, const TetrahedronMeshData& collisionMesh, 
-	const SoftBodyCollisionData& collisionData, const CollisionMeshMappingData& mappingData)
+bool TetrahedronMeshBuilder::saveDeformableVolumeMeshData(PxOutputStream& stream, bool platformMismatch, const PxCookingParams& params, 
+	const TetrahedronMeshData& simulationMesh, const DeformableVolumeSimulationData& simulationData, const TetrahedronMeshData& collisionMesh, 
+	const DeformableVolumeCollisionData& collisionData, const CollisionMeshMappingData& mappingData)
 {
 	// Export header
-	if (!writeHeader('S', 'O', 'M', 'E', PX_SOFTBODY_MESH_VERSION, platformMismatch, stream))
+	if (!writeHeader('D', 'V', 'M', 'E', PX_DEFORMABLE_VOLUME_MESH_VERSION, platformMismatch, stream))
 		return false;
 
 	// Export serialization flags
@@ -2641,7 +2641,7 @@ bool TetrahedronMeshBuilder::saveSoftBodyMeshData(PxOutputStream& stream, bool p
 	return true;
 }
 
-bool TetrahedronMeshBuilder::createMidPhaseStructure(TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, const PxCookingParams& params)
+bool TetrahedronMeshBuilder::createMidPhaseStructure(TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, const PxCookingParams& params)
 {
 	const PxReal gBoxEpsilon = 2e-4f;
 
@@ -2679,7 +2679,7 @@ bool TetrahedronMeshBuilder::createMidPhaseStructure(TetrahedronMeshData& collis
 	return true;
 }
 
-void TetrahedronMeshBuilder::saveMidPhaseStructure(PxOutputStream& stream, bool mismatch, const SoftBodyCollisionData& collisionData)
+void TetrahedronMeshBuilder::saveMidPhaseStructure(PxOutputStream& stream, bool mismatch, const DeformableVolumeCollisionData& collisionData)
 {
 	// PT: in version 1 we defined "mismatch" as:
 	// const bool mismatch = (littleEndian() == 1);
@@ -2721,7 +2721,7 @@ void TetrahedronMeshBuilder::saveMidPhaseStructure(PxOutputStream& stream, bool 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool BV32TetrahedronMeshBuilder::createMidPhaseStructure(const PxCookingParams& params, TetrahedronMeshData& collisionMesh, BV32Tree& bv32Tree, SoftBodyCollisionData& collisionData)
+bool BV32TetrahedronMeshBuilder::createMidPhaseStructure(const PxCookingParams& params, TetrahedronMeshData& collisionMesh, BV32Tree& bv32Tree, DeformableVolumeCollisionData& collisionData)
 {
 	PX_UNUSED(params);
 	PX_UNUSED(collisionMesh);
@@ -2752,7 +2752,7 @@ bool BV32TetrahedronMeshBuilder::createMidPhaseStructure(const PxCookingParams& 
 
 	if (collisionMesh.mMaterialIndices)
 	{
-		PxFEMMaterialTableIndex* newMat = PX_ALLOCATE(PxFEMMaterialTableIndex, collisionMesh.mNbTetrahedrons, "mMaterialIndices");
+		PxDeformableMaterialTableIndex* newMat = PX_ALLOCATE(PxDeformableMaterialTableIndex, collisionMesh.mNbTetrahedrons, "mMaterialIndices");
 		for (PxU32 i = 0; i < collisionMesh.mNbTetrahedrons; i++)
 			newMat[i] = collisionMesh.mMaterialIndices[order[i]];
 		PX_FREE(collisionMesh.mMaterialIndices);
@@ -2837,26 +2837,26 @@ PxTetrahedronMesh* immediateCooking::createTetrahedronMesh(const PxCookingParams
 	return tetMesh;
 }
 
-bool immediateCooking::cookSoftBodyMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-											const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxOutputStream& stream)
+bool immediateCooking::cookDeformableVolumeMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
+												const PxDeformableVolumeSimulationDataDesc& softbodyDataDesc, PxOutputStream& stream)
 {
 	PX_FPU_GUARD;
 
 	TetrahedronMeshData simulationMesh;
-	SoftBodySimulationData simulationData;
+	DeformableVolumeSimulationData simulationData;
 	TetrahedronMeshData collisionMesh;
-	SoftBodyCollisionData collisionData;
+	DeformableVolumeCollisionData collisionData;
 	CollisionMeshMappingData mappingData;
-	SoftBodyMeshData data(simulationMesh, simulationData, collisionMesh, collisionData, mappingData);
+	DeformableVolumeMeshData data(simulationMesh, simulationData, collisionMesh, collisionData, mappingData);
 	if(!TetrahedronMeshBuilder::loadFromDesc(simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, data.mSimulationMesh, data.mSimulationData, data.mCollisionMesh, data.mCollisionData, data.mMappingData, params, false))
 		return false;
 
-	TetrahedronMeshBuilder::saveSoftBodyMeshData(stream, platformMismatch(), params, data.mSimulationMesh, data.mSimulationData, data.mCollisionMesh, data.mCollisionData, data.mMappingData);
+	TetrahedronMeshBuilder::saveDeformableVolumeMeshData(stream, platformMismatch(), params, data.mSimulationMesh, data.mSimulationData, data.mCollisionMesh, data.mCollisionData, data.mMappingData);
 	return true;
 }
 
-PxSoftBodyMesh* immediateCooking::createSoftBodyMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-													 const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxInsertionCallback& insertionCallback)
+PxDeformableVolumeMesh* immediateCooking::createDeformableVolumeMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
+																	 const PxDeformableVolumeSimulationDataDesc& softbodyDataDesc, PxInsertionCallback& insertionCallback)
 {
 	PX_UNUSED(simulationMeshDesc);
 	PX_UNUSED(collisionMeshDesc);
@@ -2867,33 +2867,33 @@ PxSoftBodyMesh* immediateCooking::createSoftBodyMesh(const PxCookingParams& para
 	PX_FPU_GUARD;
 
 	TetrahedronMeshData simulationMesh;
-	SoftBodySimulationData simulationData;
+	DeformableVolumeSimulationData simulationData;
 	TetrahedronMeshData collisionMesh;
-	SoftBodyCollisionData collisionData;
+	DeformableVolumeCollisionData collisionData;
 	CollisionMeshMappingData mappingData;
-	SoftBodyMeshData data(simulationMesh, simulationData, collisionMesh, collisionData, mappingData);
+	DeformableVolumeMeshData data(simulationMesh, simulationData, collisionMesh, collisionData, mappingData);
 	if(!TetrahedronMeshBuilder::loadFromDesc(simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, data.mSimulationMesh, data.mSimulationData, data.mCollisionMesh, data.mCollisionData, data.mMappingData, params, false))
 		return NULL;
 
-	PxConcreteType::Enum type = PxConcreteType::eSOFTBODY_MESH; 
-	PxSoftBodyMesh* tetMesh = static_cast<PxSoftBodyMesh*>(insertionCallback.buildObjectFromData(type, &data));
+	PxConcreteType::Enum type = PxConcreteType::eDEFORMABLE_VOLUME_MESH;
+	PxDeformableVolumeMesh* tetMesh = static_cast<PxDeformableVolumeMesh*>(insertionCallback.buildObjectFromData(type, &data));
 	
 	/*SoftbodySimulationTetrahedronMesh simulationMesh(data.simulationMesh, data.simulationData);
 	SoftbodyCollisionTetrahedronMesh collisionMesh(data.collisionMesh, data.collisionData);
 	SoftbodyShapeMapping embedding(data.mappingData);
 
-	SoftBodyMesh* tetMesh = NULL;
-	PX_NEW_SERIALIZED(tetMesh, SoftBodyMesh)(simulationMesh, collisionMesh, embedding);*/
+	DeformableVolumeMesh* tetMesh = NULL;
+	PX_NEW_SERIALIZED(tetMesh, DeformableVolumeMesh)(simulationMesh, collisionMesh, embedding);*/
 
 	return tetMesh;
 }
 
 PxCollisionMeshMappingData* immediateCooking::computeModelsMapping(const PxCookingParams& params, PxTetrahedronMeshData& simulationMesh, const PxTetrahedronMeshData& collisionMesh, 
-																				const PxSoftBodyCollisionData& collisionData, const PxBoundedData* vertexToTet)
+																				const PxDeformableVolumeCollisionData& collisionData, const PxBoundedData* vertexToTet)
 {
 	CollisionMeshMappingData* mappingData = PX_NEW(CollisionMeshMappingData);
 	TetrahedronMeshBuilder::computeModelsMapping(*static_cast<TetrahedronMeshData*>(&simulationMesh),
-		*static_cast<const TetrahedronMeshData*>(&collisionMesh), *static_cast<const SoftBodyCollisionData*>(&collisionData), *mappingData, params.buildGPUData, vertexToTet);
+		*static_cast<const TetrahedronMeshData*>(&collisionMesh), *static_cast<const DeformableVolumeCollisionData*>(&collisionData), *mappingData, params.buildGPUData, vertexToTet);
 	return mappingData;
 }
 	
@@ -2902,7 +2902,7 @@ PxCollisionTetrahedronMeshData* immediateCooking::computeCollisionData(const PxC
 	PX_UNUSED(collisionMeshDesc);
 
 	TetrahedronMeshData* mesh = PX_NEW(TetrahedronMeshData);
-	SoftBodyCollisionData* collisionData = PX_NEW(SoftBodyCollisionData);
+	DeformableVolumeCollisionData* collisionData = PX_NEW(DeformableVolumeCollisionData);
 
 	if(!TetrahedronMeshBuilder::computeCollisionData(collisionMeshDesc, *mesh, *collisionData, params, false)) {
 		PX_FREE(mesh);
@@ -2918,7 +2918,7 @@ PxCollisionTetrahedronMeshData* immediateCooking::computeCollisionData(const PxC
 PxSimulationTetrahedronMeshData* immediateCooking::computeSimulationData(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc)
 {
 	TetrahedronMeshData* mesh = PX_NEW(TetrahedronMeshData);
-	SoftBodySimulationData* simulationData = PX_NEW(SoftBodySimulationData);
+	DeformableVolumeSimulationData* simulationData = PX_NEW(DeformableVolumeSimulationData);
 	//KS - This really needs the collision mesh as well. 
 	TetrahedronMeshBuilder::computeSimData(simulationMeshDesc, *mesh, *simulationData, params);
 	SimulationTetrahedronMeshData* data = PX_NEW(SimulationTetrahedronMeshData);
@@ -2927,23 +2927,18 @@ PxSimulationTetrahedronMeshData* immediateCooking::computeSimulationData(const P
 	return data;
 }
 
-PxSoftBodyMesh*	immediateCooking::assembleSoftBodyMesh(PxTetrahedronMeshData& simulationMesh, PxSoftBodySimulationData& simulationData, PxTetrahedronMeshData& collisionMesh,
-																	PxSoftBodyCollisionData& collisionData, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback)
+PxDeformableVolumeMesh*	immediateCooking::assembleDeformableVolumeMesh(PxTetrahedronMeshData& simulationMesh, PxDeformableVolumeSimulationData& simulationData, PxTetrahedronMeshData& collisionMesh,
+	PxDeformableVolumeCollisionData& collisionData, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback)
 {
-	SoftBodyMeshData data(static_cast<TetrahedronMeshData&>(simulationMesh),
-		static_cast<SoftBodySimulationData&>(simulationData),
+	DeformableVolumeMeshData data(static_cast<TetrahedronMeshData&>(simulationMesh),
+		static_cast<DeformableVolumeSimulationData&>(simulationData),
 		static_cast<TetrahedronMeshData&>(collisionMesh),
-		static_cast<SoftBodyCollisionData&>(collisionData),
+		static_cast<DeformableVolumeCollisionData&>(collisionData),
 		static_cast<CollisionMeshMappingData&>(mappingData));
 
-	PxConcreteType::Enum type = PxConcreteType::eSOFTBODY_MESH;
-	PxSoftBodyMesh* tetMesh = static_cast<PxSoftBodyMesh*>(insertionCallback.buildObjectFromData(type, &data));
+	PxConcreteType::Enum type = PxConcreteType::eDEFORMABLE_VOLUME_MESH;
+	PxDeformableVolumeMesh* tetMesh = static_cast<PxDeformableVolumeMesh*>(insertionCallback.buildObjectFromData(type, &data));
 
 	return tetMesh;
 }
-	
-PxSoftBodyMesh*	immediateCooking::assembleSoftBodyMesh_Sim(PxSimulationTetrahedronMeshData& simulationMesh, PxCollisionTetrahedronMeshData& collisionMesh, 
-															PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback)
-{
-	return assembleSoftBodyMesh(*simulationMesh.getMesh(), *simulationMesh.getData(), *collisionMesh.getMesh(), *collisionMesh.getData(), mappingData, insertionCallback);
-}
+

@@ -29,94 +29,28 @@
 #ifndef PX_FEM_SOFT_BODY_MATERIAL_H
 #define PX_FEM_SOFT_BODY_MATERIAL_H
 
-#include "PxFEMMaterial.h"
+#include "PxDeformableVolumeMaterial.h"
+#include "PxFEMMaterial.h" // deprecated
 
 #if !PX_DOXYGEN
 namespace physx
 {
 #endif
 
-	struct PxFEMSoftBodyMaterialModel
-	{
-		enum Enum
-		{
-			eCO_ROTATIONAL,   //!< Default model. Well suited for high stiffness. Does need tetrahedra with good shapes (no extreme slivers) in the rest pose.
-			eNEO_HOOKEAN      //!< Well suited for lower stiffness. Robust to any tetrahedron shape.
-		};
-	};
+/**
+\brief Deprecated
+\see PxDeformableVolumeMaterialModel
+*/
+typedef PX_DEPRECATED PxDeformableVolumeMaterialModel PxFEMSoftBodyMaterialModel;
 
-	class PxScene;
-	/**
-	\brief Material class to represent a set of softbody FEM material properties.
-
-	\see PxPhysics.createFEMSoftBodyMaterial
-	*/
-	class PxFEMSoftBodyMaterial : public PxFEMMaterial
-	{
-	public:
-
-		/**
-		\brief Sets material velocity damping term
-
-		\param[in] damping Material velocity damping term. <b>Range:</b> [0, PX_MAX_F32)<br>		
-
-		\see getDamping
-		*/
-		virtual		void	setDamping(PxReal damping) = 0;
-
-		/**
-		\brief Retrieves velocity damping
-		\return The velocity damping.
-
-		\see setDamping()
-		*/
-		virtual		PxReal	getDamping() const = 0;
-
-		/**
-		\brief Sets material damping scale. A scale of 1 corresponds to default damping, a value of 0 will only apply damping to certain motions leading to special effects that look similar to water filled softbodies.
-
-		\param[in] scale Damping scale term. <b>Default:</b> 1 <b>Range:</b> [0, 1]
-
-		\see getDampingScale
-		*/
-		virtual		void	setDampingScale(PxReal scale) = 0;
-
-		/**
-		\brief Retrieves material damping scale.
-		\return The damping scale term.
-
-		\see setDamping()
-		*/
-		virtual		PxReal	getDampingScale() const = 0;
-
-		/**
-		\brief Sets the material model.
-
-		\param[in] model The material model
-
-		\see getMaterialModel
-		*/
-		virtual		void	setMaterialModel(PxFEMSoftBodyMaterialModel::Enum model) = 0;
-		
-		/**
-		\brief Retrieves the material model.
-		\return The material model.
-
-		\see setMaterialModel()
-		*/
-		virtual		PxFEMSoftBodyMaterialModel::Enum getMaterialModel() const = 0;
-
-		virtual		const char*		getConcreteTypeName() const { return "PxFEMSoftBodyMaterial"; }
-
-	protected:
-		PX_INLINE			PxFEMSoftBodyMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxFEMMaterial(concreteType, baseFlags) {}
-		PX_INLINE			PxFEMSoftBodyMaterial(PxBaseFlags baseFlags) : PxFEMMaterial(baseFlags) {}
-		virtual				~PxFEMSoftBodyMaterial() {}
-		virtual		bool	isKindOf(const char* name) const { PX_IS_KIND_OF(name, "PxFEMSoftBodyMaterial", PxFEMMaterial); }
-	};
+/**
+\brief Deprecated
+\see PxDeformableVolumeMaterial
+*/
+typedef PX_DEPRECATED PxDeformableVolumeMaterial PxFEMSoftBodyMaterial;
 
 #if !PX_DOXYGEN
 } // namespace physx
 #endif
 
-#endif
+#endif // PX_FEM_SOFT_BODY_MATERIAL_H

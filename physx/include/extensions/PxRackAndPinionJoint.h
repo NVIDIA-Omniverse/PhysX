@@ -122,7 +122,7 @@ namespace physx
 		*/
 		virtual	bool		setData(PxU32 nbRackTeeth, PxU32 nbPinionTeeth, float rackLength)	= 0;
 
-		virtual	const char*	getConcreteTypeName() const { return "PxRackAndPinionJoint"; }
+		virtual	const char*	getConcreteTypeName() const	PX_OVERRIDE	{ return "PxRackAndPinionJoint"; }
 
 	protected:
 

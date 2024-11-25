@@ -30,7 +30,6 @@
 #define PX_INTRINSICS_H
 
 #include "foundation/PxPreprocessor.h"
-
 #if PX_WINDOWS_FAMILY
 #include "windows/PxWindowsIntrinsics.h"
 #elif(PX_LINUX || PX_APPLE_FAMILY)
@@ -41,10 +40,5 @@
 #error "Platform not supported!"
 #endif
 
-#if PX_WINDOWS_FAMILY
-#pragma intrinsic(memcmp)
-#pragma intrinsic(memcpy)
-#pragma intrinsic(memset)
-#endif
 
 #endif // #ifndef PX_INTRINSICS_H

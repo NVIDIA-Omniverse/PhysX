@@ -29,7 +29,6 @@
 #ifndef GU_COOKING_VOLUME_INTEGRATION_H
 #define GU_COOKING_VOLUME_INTEGRATION_H
 
-#include "foundation/Px.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxMat33.h"
 
@@ -79,7 +78,7 @@ struct PxIntegrals
 			}
 		}
 	}
-	};
+};
 
 	bool computeVolumeIntegrals(const PxSimpleTriangleMesh& mesh, PxReal density, PxIntegrals& integrals);
 

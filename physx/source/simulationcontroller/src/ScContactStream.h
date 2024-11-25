@@ -29,7 +29,6 @@
 #ifndef SC_CONTACT_STREAM_H
 #define SC_CONTACT_STREAM_H
 
-#include "foundation/Px.h"
 #include "PxSimulationEventCallback.h"
 #include "ScObjectIDTracker.h"
 #include "ScRigidSim.h"

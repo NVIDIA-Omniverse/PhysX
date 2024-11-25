@@ -30,6 +30,7 @@
 #define PXS_CONTEXT_H
 
 #include "foundation/PxPinnedArray.h"
+#include "foundation/PxPool.h"
 #include "PxVisualizationParameter.h"
 #include "PxSceneDesc.h"
 
@@ -51,6 +52,7 @@
 
 #include "PxsTransformCache.h"
 #include "GuPersistentContactManifold.h"
+#include "PxcNpThreadContext.h"
 
 #if PX_SUPPORT_GPU_PHYSX
 namespace physx
@@ -75,7 +77,6 @@ namespace Cm
 
 namespace IG
 {
-	class SimpleIslandManager;
 	typedef PxU32 EdgeIndex;
 }
 
@@ -124,11 +125,11 @@ public:
 					void						resetThreadContexts();
 
 	// Manager status change
-					bool						getManagerTouchEventCount(int* newTouch, int* lostTouch, int* ccdTouch) const;
+					bool						getManagerTouchEventCount(PxU32* newTouch, PxU32* lostTouch, PxU32* ccdTouch) const;
 					bool						fillManagerTouchEvents(
-													PxvContactManagerTouchEvent* newTouch, PxI32& newTouchCount,
-													PxvContactManagerTouchEvent* lostTouch, PxI32& lostTouchCount,
-													PxvContactManagerTouchEvent* ccdTouch, PxI32& ccdTouchCount);
+													PxvContactManagerTouchEvent* newTouch, PxU32& newTouchCount,
+													PxvContactManagerTouchEvent* lostTouch, PxU32& lostTouchCount,
+													PxvContactManagerTouchEvent* ccdTouch, PxU32& ccdTouchCount);
 
 					void						beginUpdate();
 
@@ -204,9 +205,9 @@ public:
 
 	PX_FORCE_INLINE	void						clearManagerTouchEvents();
 
-	PX_FORCE_INLINE Cm::PoolList<PxsContactManager, PxsContext>& getContactManagerPool()
+	PX_FORCE_INLINE Cm::PoolList<PxsContactManager>& getContactManagerPool()
 	{
-		return this->mContactManagerPool;
+		return mContactManagerPool;
 	}
 
 	PX_FORCE_INLINE void setActiveContactManager(const PxsContactManager* manager, PxIntBool useCCD)
@@ -240,9 +241,9 @@ private:
 												mNpThreadContextPool;
 
 	// Contact managers
-	Cm::PoolList<PxsContactManager, PxsContext>		mContactManagerPool;
-	PxPool<Gu::LargePersistentContactManifold>		mManifoldPool;
-	PxPool<Gu::SpherePersistentContactManifold>		mSphereManifoldPool;
+	Cm::PoolList<PxsContactManager>				mContactManagerPool;
+	PxPool<Gu::LargePersistentContactManifold>	mManifoldPool;
+	PxPool<Gu::SpherePersistentContactManifold>	mSphereManifoldPool;
 	
 //	PxBitMap				mActiveContactManager;
 	PxBitMap				mActiveContactManagersWithCCD; //KS - adding to filter any pairs that had a touch

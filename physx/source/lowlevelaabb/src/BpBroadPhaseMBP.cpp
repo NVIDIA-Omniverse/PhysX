@@ -37,8 +37,6 @@
 #include "CmRadixSort.h"
 #include "CmUtils.h"
 
-using namespace physx::aos;
-
 //#define CHECK_NB_OVERLAPS
 #define USE_FULLY_INSIDE_FLAG
 //#define MBP_USE_NO_CMP_OVERLAP_3D	// Seems slower
@@ -47,6 +45,7 @@ using namespace physx::aos;
 #define HWSCAN
 
 using namespace physx;
+using namespace aos;
 using namespace Bp;
 using namespace Cm;
 
@@ -2235,9 +2234,11 @@ PX_FORCE_INLINE RegionHandle* MBP::getHandles(MBP_Object& currentObject, PxU32 n
 		handles = &currentObject.mHandle;
 	else
 	{
+		if(!nbHandles)
+			return NULL;
 		const PxU32 handlesIndex = currentObject.mHandlesIndex;
 		PxArray<PxU32>& c = mHandles[nbHandles];
-		handles = reinterpret_cast<RegionHandle*>(c.begin()+handlesIndex);
+		handles = reinterpret_cast<RegionHandle*>(c.begin() + handlesIndex);
 	}
 	return handles;
 }

@@ -32,9 +32,8 @@ namespace physx
 namespace Gu
 {
 
-void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, const SoftBodyAuxData& simState,
-                                           const BVTetrahedronMesh& collisionMesh, PxU32 inTetId,
-                                           const PxVec4& inTetBarycentric, PxU32& outTetId, PxVec4& outTetBarycentric)
+void convertDeformableVolumeCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, const DeformableVolumeAuxData& simState, const BVTetrahedronMesh& collisionMesh,
+												   PxU32 inTetId, const PxVec4& inTetBarycentric, PxU32& outTetId, PxVec4& outTetBarycentric, bool bClampToClosestPoint)
 {
 	if (inTetId == 0xFFFFFFFF)
 	{
@@ -54,8 +53,7 @@ void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, con
 
 	typedef PxVec4T<unsigned int> uint4;
 
-	const uint4* const collInds =
-	    reinterpret_cast<const uint4*>(collisionMesh.mGRB_tetraIndices /*collisionMesh->mTetrahedrons*/);
+	const uint4* const collInds = reinterpret_cast<const uint4*>(collisionMesh.mGRB_tetraIndices /*collisionMesh->mTetrahedrons*/);
 	const uint4* const simInds = reinterpret_cast<const uint4*>(simMesh.getTetrahedrons());
 
 	const PxVec3* const collVerts = collisionMesh.mVertices;
@@ -68,7 +66,7 @@ void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, con
 
 	PxReal currDist = PX_MAX_F32;
 
-	for(PxU32 i = startIdx; i < endIdx; ++i)
+	for (PxU32 i = startIdx; i < endIdx; ++i)
 	{
 		const PxU32 simTet = tetRemapColToSim[i];
 
@@ -82,14 +80,19 @@ void convertSoftbodyCollisionToSimMeshTets(const PxTetrahedronMesh& simMesh, con
 		const PxVec3 tmpClosest = closestPtPointTetrahedronWithInsideCheck(point, a, b, c, d);
 		const PxVec3 v = point - tmpClosest;
 		const PxReal tmpDist = v.dot(v);
-		if(tmpDist < currDist)
+		if (tmpDist < currDist)
 		{
 			PxVec4 tmpBarycentric;
-			computeBarycentric(a, b, c, d, tmpClosest, tmpBarycentric);
+			if (bClampToClosestPoint)
+				PxComputeBarycentric(a, b, c, d, tmpClosest, tmpBarycentric);
+			else
+				PxComputeBarycentric(a, b, c, d, point, tmpBarycentric);
+
 			currDist = tmpDist;
 			outTetId = simTet;
 			outTetBarycentric = tmpBarycentric;
-			if(tmpDist < 1e-6f)
+
+			if (tmpDist < 1e-6f)
 				break;
 		}
 	}
@@ -122,7 +125,7 @@ PxVec4 addAxisToSimMeshBarycentric(const PxTetrahedronMesh& simMesh, const PxU32
 	const PxVec3 offsetPoint = simPoint + axis;
 
 	PxVec4 offsetBary;
-	computeBarycentric(tetVerts[0], tetVerts[1], tetVerts[2], tetVerts[3], offsetPoint, offsetBary);
+	PxComputeBarycentric(tetVerts[0], tetVerts[1], tetVerts[2], tetVerts[3], offsetPoint, offsetBary);
 	return offsetBary;
 }
 

@@ -29,12 +29,14 @@
 #ifndef CM_PTR_TABLE_H
 #define CM_PTR_TABLE_H
 
+#include "foundation/PxConstructor.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx
 {
 class PxSerializationContext;
 class PxDeserializationContext;
+class PxOutputStream;
 
 namespace Cm
 {

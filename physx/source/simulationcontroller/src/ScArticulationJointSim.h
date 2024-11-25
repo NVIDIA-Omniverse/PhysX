@@ -46,7 +46,7 @@ public:
 											ArticulationJointSim(ArticulationJointCore& joint, ActorSim& parent, ActorSim& child);
 											~ArticulationJointSim();
 
-					bool					onActivate(void*);
+					bool					onActivate();
 					bool					onDeactivate();
 
 	PX_FORCE_INLINE	ArticulationJointCore&	getCore()	const	{ return mCore; }

@@ -267,7 +267,7 @@ void BV32Tree::createSOAformatNode(BV32DataPacked& packedData,
 
 bool BV32Tree::refit(float epsilon)
 {
-	using namespace physx::aos;
+	using namespace aos;
 
 	if (!mPackedNodes)
 	{

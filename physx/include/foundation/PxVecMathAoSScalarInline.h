@@ -1933,12 +1933,12 @@ PX_FORCE_INLINE VecU32V V4IsGrtrV32u(const Vec4V a, const Vec4V b)
 	               a.w > b.w ? 0xFFFFffff : 0);
 }
 
-PX_FORCE_INLINE VecU16V V4U16LoadAligned(VecU16V* addr)
+PX_FORCE_INLINE VecU16V V4U16LoadAligned(const VecU16V* addr)
 {
 	return *addr;
 }
 
-PX_FORCE_INLINE VecU16V V4U16LoadUnaligned(VecU16V* addr)
+PX_FORCE_INLINE VecU16V V4U16LoadUnaligned(const VecU16V* addr)
 {
 	return *addr;
 }

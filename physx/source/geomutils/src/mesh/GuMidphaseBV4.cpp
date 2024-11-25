@@ -33,7 +33,7 @@ using namespace physx;
 using namespace Gu;
 
 #include "foundation/PxVecMath.h"
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuSweepMesh.h"
 #include "GuBV4Build.h"
@@ -54,8 +54,6 @@ using namespace physx::aos;
 
 // PT: TODO: revisit/inline static sweep functions (TA34704)
 
-using namespace physx;
-using namespace Gu;
 using namespace Cm;
 
 PxIntBool	BV4_RaycastSingle		(const PxVec3& origin, const PxVec3& dir, const BV4Tree& tree, const PxMat44* PX_RESTRICT worldm_Aligned, PxGeomRaycastHit* PX_RESTRICT hit, float maxDist, float geomEpsilon, PxU32 flags, PxHitFlags hitFlags);

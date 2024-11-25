@@ -154,10 +154,9 @@ OMNI_PVD_ENUM_BEGIN		(PxActorType)
 OMNI_PVD_ENUM_VALUE		(PxActorType, eRIGID_STATIC)
 OMNI_PVD_ENUM_VALUE		(PxActorType, eRIGID_DYNAMIC)
 OMNI_PVD_ENUM_VALUE		(PxActorType, eARTICULATION_LINK)
-OMNI_PVD_ENUM_VALUE		(PxActorType, eSOFTBODY)
-OMNI_PVD_ENUM_VALUE		(PxActorType, eFEMCLOTH)
+OMNI_PVD_ENUM_VALUE		(PxActorType, eDEFORMABLE_SURFACE)
+OMNI_PVD_ENUM_VALUE		(PxActorType, eDEFORMABLE_VOLUME)
 OMNI_PVD_ENUM_VALUE		(PxActorType, ePBD_PARTICLESYSTEM)
-OMNI_PVD_ENUM_VALUE		(PxActorType, eHAIRSYSTEM)
 OMNI_PVD_ENUM_END		(PxActorType)
 
 OMNI_PVD_ENUM_BEGIN		(PxArticulationJointType)
@@ -192,6 +191,17 @@ OMNI_PVD_ENUM_VALUE		(PxArticulationAxis, eY)
 OMNI_PVD_ENUM_VALUE		(PxArticulationAxis, eZ)
 OMNI_PVD_ENUM_END		(PxArticulationAxis)
 
+OMNI_PVD_ENUM_BEGIN(PxErrorCode)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eNO_ERROR)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eDEBUG_INFO)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eDEBUG_WARNING)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eINVALID_PARAMETER)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eINVALID_OPERATION)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eOUT_OF_MEMORY)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eINTERNAL_ERROR)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, eABORT)
+OMNI_PVD_ENUM_VALUE(PxErrorCode, ePERF_WARNING)
+OMNI_PVD_ENUM_END(PxErrorCode)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes
@@ -212,26 +222,26 @@ OMNI_PVD_CLASS_END   (PxOmniPvdMetaData)
 // PxPhysics
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_BEGIN				(PxPhysics)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, scenes,				PxScene)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, constraints,		PxConstraint)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, heightFields,		PxHeightField)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, convexMeshes,		PxConvexMesh)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, triangleMeshes,		PxTriangleMesh)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, tetrahedronMeshes,	PxTetrahedronMesh)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, softBodyMeshes,		PxSoftBodyMesh)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, shapes,				PxShape)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, bvhs,				PxBVH)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, materials,			PxMaterial)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, FEMSoftBodyMaterials,	PxFEMSoftBodyMaterial)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, FEMClothMaterials,	PxFEMClothMaterial)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, PBDMaterials,		PxPBDMaterial)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, rigidDynamics,		PxActor)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, rigidStatics,		PxActor)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, pbdParticleSystems,  PxActor)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, particleBuffers,	PxParticleBuffer)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, aggregates,			PxAggregate)
-OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, articulations,		PxArticulationReducedCoordinate)
-OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxPhysics, tolerancesScale,    PxTolerancesScale, OmniPvdDataType::eFLOAT32, 2)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, scenes,						PxScene)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, constraints,				PxConstraint)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, heightFields,				PxHeightField)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, convexMeshes,				PxConvexMesh)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, triangleMeshes,				PxTriangleMesh)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, tetrahedronMeshes,			PxTetrahedronMesh)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, deformableVolumeMeshes,		PxDeformableVolumeMesh)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, shapes,						PxShape)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, bvhs,						PxBVH)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, materials,					PxMaterial)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, deformableSurfaceMaterials,	PxDeformableSurfaceMaterial)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, deformableVolumeMaterials,	PxDeformableVolumeMaterial)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, PBDMaterials,				PxPBDMaterial)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, rigidDynamics,				PxActor)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, rigidStatics,				PxActor)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, pbdParticleSystems,			PxActor)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, particleBuffers,			PxParticleBuffer)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, aggregates,					PxAggregate)
+OMNI_PVD_ATTRIBUTE_UNIQUE_LIST		(PxPhysics, articulations,				PxArticulationReducedCoordinate)
+OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxPhysics, tolerancesScale,			PxTolerancesScale, OmniPvdDataType::eFLOAT32, 2)
 OMNI_PVD_CLASS_END					(PxPhysics)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -245,11 +255,10 @@ OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		heapCapacity,						PxU32,		Omni
 OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		foundLostPairsCapacity,				PxU32,		OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		foundLostAggregatePairsCapacity,	PxU32,		OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		totalAggregatePairsCapacity,		PxU32,		OmniPvdDataType::eUINT32)
-OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxSoftBodyContacts,				PxU32,		OmniPvdDataType::eUINT32)
-OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxFemClothContacts,				PxU32,		OmniPvdDataType::eUINT32)
+OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxDeformableSurfaceContacts,		PxU32,		OmniPvdDataType::eUINT32)
+OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxDeformableVolumeContacts,		PxU32,		OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxParticleContacts,				PxU32,		OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		collisionStackSize,					PxU32,		OmniPvdDataType::eUINT32)
-OMNI_PVD_ATTRIBUTE		(PxGpuDynamicsMemoryConfig,		maxHairContacts,					PxU32,		OmniPvdDataType::eUINT32)
 OMNI_PVD_CLASS_END		(PxGpuDynamicsMemoryConfig)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,6 +322,11 @@ OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsContactNormals,		PxReal,	
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsContactSeparations,	PxReal,			OmniPvdDataType::eFLOAT32) // 1 for each contact
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsContactShapes,			PxShape*,		OmniPvdDataType::eOBJECT_HANDLE) // 2 for each contact
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsContactFacesIndices,	PxU32,			OmniPvdDataType::eUINT32) // 2 for each contact
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsContactImpulses,		PxReal,			OmniPvdDataType::eFLOAT32) // 1 for each contact
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsFrictionAnchorCounts,		PxU32,			OmniPvdDataType::eUINT32) // 1 for each pair
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsFrictionAnchorPositions,	PxReal,			OmniPvdDataType::eFLOAT32) // 3 for each friction anchor
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsFrictionAnchorNormals,		PxReal,			OmniPvdDataType::eFLOAT32) // 3 for each friction anchor
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxScene,		pairsFrictionAnchorImpulses,	PxReal,			OmniPvdDataType::eFLOAT32) // 3 for each friction anchor
 OMNI_PVD_CLASS_END						(PxScene)
 
 
@@ -337,16 +351,16 @@ OMNI_PVD_ATTRIBUTE				(PxMaterial, damping,				PxReal,		OmniPvdDataType::eFLOAT3
 OMNI_PVD_CLASS_END				(PxMaterial)
 
 ////////////////////////////////////////////////////////////////////////////////
-// PxFEMSoftBodyMaterial
+// PxDeformableSurfaceMaterial
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_DERIVED_BEGIN	(PxFEMSoftBodyMaterial, PxBaseMaterial)
-OMNI_PVD_CLASS_END              (PxFEMSoftBodyMaterial)
+OMNI_PVD_CLASS_DERIVED_BEGIN	(PxDeformableSurfaceMaterial, PxBaseMaterial)
+OMNI_PVD_CLASS_END              (PxDeformableSurfaceMaterial)
 
 ////////////////////////////////////////////////////////////////////////////////
-// PxFEMClothMaterial
+// PxDeformableVolumeMaterial
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_DERIVED_BEGIN	(PxFEMClothMaterial, PxBaseMaterial)
-OMNI_PVD_CLASS_END              (PxFEMClothMaterial)
+OMNI_PVD_CLASS_DERIVED_BEGIN	(PxDeformableVolumeMaterial, PxBaseMaterial)
+OMNI_PVD_CLASS_END              (PxDeformableVolumeMaterial)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxPBDMaterial
@@ -374,6 +388,7 @@ OMNI_PVD_CLASS_END              (PxPBDMaterial)
 OMNI_PVD_CLASS_BEGIN			(PxAggregate)
 OMNI_PVD_ATTRIBUTE_UNIQUE_LIST	(PxAggregate, actors,			PxActor)
 OMNI_PVD_ATTRIBUTE				(PxAggregate, selfCollision,	bool, OmniPvdDataType::eUINT8)
+OMNI_PVD_ATTRIBUTE				(PxAggregate, environmentID,	PxU32, OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE				(PxAggregate, maxNbShapes,		PxU32, OmniPvdDataType::eUINT32)
 OMNI_PVD_ATTRIBUTE				(PxAggregate, scene,			PxScene* const, OmniPvdDataType::eOBJECT_HANDLE)
 OMNI_PVD_CLASS_END              (PxAggregate)
@@ -400,6 +415,7 @@ OMNI_PVD_ATTRIBUTE_STRING				(PxActor, name)
 OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE		(PxActor, worldBounds,			PxBounds3,			OmniPvdDataType::eFLOAT32,	6)
 OMNI_PVD_ATTRIBUTE						(PxActor, dominance,			PxDominanceGroup,	OmniPvdDataType::eUINT8)
 OMNI_PVD_ATTRIBUTE						(PxActor, ownerClient,			PxClientID,			OmniPvdDataType::eUINT8)
+OMNI_PVD_ATTRIBUTE						(PxActor, environmentID,		PxU32,				OmniPvdDataType::eUINT32)
 OMNI_PVD_CLASS_END						(PxActor)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -443,6 +459,8 @@ OMNI_PVD_ATTRIBUTE					(PxRigidBody, minAdvancedCCDCoefficient, PxReal, OmniPvdD
 OMNI_PVD_ATTRIBUTE					(PxRigidBody, maxDepenetrationVelocity, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE					(PxRigidBody, maxContactImpulse, PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE					(PxRigidBody, contactSlopCoefficient, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxRigidBody, force, PxVec3, OmniPvdDataType::eFLOAT32, 3)
+OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE	(PxRigidBody, torque, PxVec3, OmniPvdDataType::eFLOAT32, 3)
 OMNI_PVD_CLASS_END					(PxRigidBody)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -536,6 +554,7 @@ OMNI_PVD_ATTRIBUTE						(PxArticulationJointReducedCoordinate, frictionCoefficie
 OMNI_PVD_ATTRIBUTE						(PxArticulationJointReducedCoordinate, maxJointVelocity,		PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, jointPosition,			PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, jointVelocity,			PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, jointForce,				PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_STRING				(PxArticulationJointReducedCoordinate, concreteTypeName)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, limitLow,				PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE_ARRAY_VARIABLE_SIZE	(PxArticulationJointReducedCoordinate, limitHigh,				PxReal, OmniPvdDataType::eFLOAT32)
@@ -558,6 +577,8 @@ OMNI_PVD_ATTRIBUTE_FLAG					(PxArticulationMimicJoint,			   axisA,					PxArticul
 OMNI_PVD_ATTRIBUTE_FLAG					(PxArticulationMimicJoint,			   axisB,					PxArticulationAxis::Enum, PxArticulationAxis)
 OMNI_PVD_ATTRIBUTE						(PxArticulationMimicJoint,			   gearRatio,				PxReal,	OmniPvdDataType::eFLOAT32)
 OMNI_PVD_ATTRIBUTE						(PxArticulationMimicJoint,			   offset,					PxReal,	OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE						(PxArticulationMimicJoint,			   naturalFrequency,		PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE						(PxArticulationMimicJoint,			   dampingRatio,			PxReal, OmniPvdDataType::eFLOAT32)
 OMNI_PVD_CLASS_END						(PxArticulationMimicJoint)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -612,6 +633,57 @@ OMNI_PVD_CLASS_END					(PxBoxGeometry)
 ////////////////////////////////////////////////////////////////////////////////
 OMNI_PVD_CLASS_DERIVED_BEGIN	(PxPlaneGeometry, PxGeometry)
 OMNI_PVD_CLASS_END				(PxPlaneGeometry)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreGeometry
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_DERIVED_BEGIN	(PxConvexCoreGeometry, PxGeometry)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreGeometry, core, void* const, OmniPvdDataType::eOBJECT_HANDLE)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreGeometry, margin, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_CLASS_END				(PxConvexCoreGeometry)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCorePoint
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCorePoint)
+OMNI_PVD_CLASS_END				(PxConvexCorePoint)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreSegment
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCoreSegment)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreSegment, length, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_CLASS_END				(PxConvexCoreSegment)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreBox
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCoreBox)
+OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE(PxConvexCoreBox, extents, PxVec3, OmniPvdDataType::eFLOAT32, 3)
+OMNI_PVD_CLASS_END				(PxConvexCoreBox)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreEllipsoid
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCoreEllipsoid)
+OMNI_PVD_ATTRIBUTE_ARRAY_FIXED_SIZE(PxConvexCoreEllipsoid, radii, PxVec3, OmniPvdDataType::eFLOAT32, 3)
+OMNI_PVD_CLASS_END				(PxConvexCoreEllipsoid)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreCylinder
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCoreCylinder)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreCylinder, height, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreCylinder, radius, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_CLASS_END				(PxConvexCoreCylinder)
+
+////////////////////////////////////////////////////////////////////////////////
+// PxConvexCoreCone
+////////////////////////////////////////////////////////////////////////////////
+OMNI_PVD_CLASS_BEGIN			(PxConvexCoreCone)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreCone, height, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_ATTRIBUTE				(PxConvexCoreCone, radius, PxReal, OmniPvdDataType::eFLOAT32)
+OMNI_PVD_CLASS_END				(PxConvexCoreCone)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxConvexMeshGeometry
@@ -684,12 +756,12 @@ OMNI_PVD_ATTRIBUTE				(PxCustomGeometry, callbacks,	PxCustomGeometry::Callbacks*
 OMNI_PVD_CLASS_END				(PxCustomGeometry)
 
 ////////////////////////////////////////////////////////////////////////////////
-// PxSoftBodyMesh
+// PxDeformableVolumeMesh
 ////////////////////////////////////////////////////////////////////////////////
-OMNI_PVD_CLASS_BEGIN	(PxSoftBodyMesh)
-OMNI_PVD_ATTRIBUTE		(PxSoftBodyMesh, collisionMesh,	PxTetrahedronMesh* const, OmniPvdDataType::eOBJECT_HANDLE)
-OMNI_PVD_ATTRIBUTE		(PxSoftBodyMesh, simulationMesh,PxTetrahedronMesh* const,	OmniPvdDataType::eOBJECT_HANDLE)
-OMNI_PVD_CLASS_END		(PxSoftBodyMesh)
+OMNI_PVD_CLASS_BEGIN	(PxDeformableVolumeMesh)
+OMNI_PVD_ATTRIBUTE		(PxDeformableVolumeMesh, collisionMesh,	PxTetrahedronMesh* const, OmniPvdDataType::eOBJECT_HANDLE)
+OMNI_PVD_ATTRIBUTE		(PxDeformableVolumeMesh, simulationMesh,PxTetrahedronMesh* const,	OmniPvdDataType::eOBJECT_HANDLE)
+OMNI_PVD_CLASS_END		(PxDeformableVolumeMesh)
 
 ////////////////////////////////////////////////////////////////////////////////
 // PxBVH

@@ -70,6 +70,7 @@ OMNI_PVD_ENUM_END		(PxSphericalJointFlag)
 
 OMNI_PVD_ENUM_BEGIN		(PxD6JointDriveFlag)
 OMNI_PVD_ENUM_VALUE		(PxD6JointDriveFlag,		eACCELERATION)
+OMNI_PVD_ENUM_VALUE		(PxD6JointDriveFlag,		eOUTPUT_FORCE)
 OMNI_PVD_ENUM_END		(PxD6JointDriveFlag)
 
 OMNI_PVD_ENUM_BEGIN		(PxJointConcreteType)

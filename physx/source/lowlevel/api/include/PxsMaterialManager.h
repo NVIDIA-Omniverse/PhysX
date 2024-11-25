@@ -30,8 +30,8 @@
 #define PXS_MATERIAL_MANAGER_H
 
 #include "PxsMaterialCore.h"
-#include "PxsFEMSoftBodyMaterialCore.h"
-#include "PxsFEMClothMaterialCore.h"
+#include "PxsDeformableSurfaceMaterialCore.h"
+#include "PxsDeformableVolumeMaterialCore.h"
 #include "PxsPBDMaterialCore.h"
 #include "foundation/PxAlignedMalloc.h"
 
@@ -124,11 +124,11 @@ namespace physx
 	{
 	};
 
-	class PxsFEMMaterialManager : public PxsMaterialManagerT<PxsFEMSoftBodyMaterialCore>
+	class PxsDeformableSurfaceMaterialManager : public PxsMaterialManagerT<PxsDeformableSurfaceMaterialCore>
 	{
 	};
 
-	class PxsFEMClothMaterialManager : public PxsMaterialManagerT<PxsFEMClothMaterialCore>
+	class PxsDeformableVolumeMaterialManager : public PxsMaterialManagerT<PxsDeformableVolumeMaterialCore>
 	{
 	};
 

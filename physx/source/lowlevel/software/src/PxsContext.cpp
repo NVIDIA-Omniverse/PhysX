@@ -55,7 +55,7 @@ using namespace physx;
 
 PxsContext::PxsContext(const PxSceneDesc& desc, PxTaskManager* taskManager, Cm::FlushPool& taskPool, PxCudaContextManager* cudaContextManager, PxU32 poolSlabSize, PxU64 contextID) :
 	mNpThreadContextPool			(this),
-	mContactManagerPool				("mContactManagerPool", this, poolSlabSize),
+	mContactManagerPool				("mContactManagerPool", poolSlabSize),
 	mManifoldPool					("mManifoldPool", poolSlabSize),
 	mSphereManifoldPool				("mSphereManifoldPool", poolSlabSize),
 	mContactModifyCallback			(NULL),
@@ -94,12 +94,12 @@ namespace physx
 			false,				//ePLANE
 			false,				//eCAPSULE
 			false,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			true,				//eTRIANGLEMESH
 			true,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		},
 
@@ -109,12 +109,12 @@ namespace physx
 			false,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			false,				//eTRIANGLEMESH
 			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		},
 
@@ -124,12 +124,12 @@ namespace physx
 			true,				//ePLANE
 			false,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			true,				//eTRIANGLEMESH
 			true,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		},
 
@@ -139,13 +139,28 @@ namespace physx
 			true,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			true,				//eTRIANGLEMESH
 			true,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
+		},
+
+		//eCONVEX,
+		{
+			false,				//eSPHERE
+			false,				//ePLANE
+			false,				//eCAPSULE
+			false,				//eBOX
+			false,				//eCONVEX
+			false,				//eCONVEXMESH
+			false,				//ePARTICLESYSTEM
+			false,				//eSOFTBODY,
+			false,				//eTRIANGLEMESH
+			false,				//eHEIGHTFIELD
+			false,				//eCUSTOM
 		},
 
 		//eCONVEXMESH,
@@ -154,12 +169,12 @@ namespace physx
 			true,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			true,				//eTRIANGLEMESH
 			true,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		},
 
@@ -169,12 +184,12 @@ namespace physx
 			false,				//ePLANE
 			false,				//eCAPSULE
 			false,				//eBOX
+			false,				//eCONVEX
 			false,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			false,				//eSOFTBODY,
 			false,				//eTRIANGLEMESH
 			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			false,				//eCUSTOM
 		},
 
@@ -184,12 +199,12 @@ namespace physx
 			false,				//ePLANE
 			false,				//eCAPSULE
 			false,				//eBOX
+			false,				//eCONVEX
 			false,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			false,				//eSOFTBODY,
 			false,				//eTRIANGLEMESH
 			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			false,				//eCUSTOM
 		},
 
@@ -199,12 +214,12 @@ namespace physx
 			false,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			false,				//eTRIANGLEMESH
 			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		},
 
@@ -214,28 +229,13 @@ namespace physx
 			false,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			true,				//eSOFTBODY,
 			false,				//eTRIANGLEMESH
 			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
-		},
-
-		//eHAIRSYSTEM
-		{
-			false,				//eSPHERE
-			false,				//ePLANE
-			false,				//eCAPSULE
-			false,				//eBOX
-			false,				//eCONVEXMESH
-			false,				//ePARTICLESYSTEM
-			false,				//eSOFTBODY,
-			false,				//eTRIANGLEMESH
-			false,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
-			false,				//eCUSTOM
 		},
 
 		//eCUSTOM,
@@ -244,12 +244,12 @@ namespace physx
 			true,				//ePLANE
 			true,				//eCAPSULE
 			true,				//eBOX
+			false,				//eCONVEX
 			true,				//eCONVEXMESH
 			false,				//ePARTICLESYSTEM
 			false,				//eSOFTBODY,
 			true,				//eTRIANGLEMESH
 			true,				//eHEIGHTFIELD
-			false,				//eHAIRSYSTEM
 			true,				//eCUSTOM
 		}
 	};
@@ -432,7 +432,7 @@ void PxsContext::mergeCMDiscreteUpdateResults(PxBaseTask* /*continuation*/)
 {
 	PX_PROFILE_ZONE("Sim.narrowPhaseMerge", mContextID);
 
-	this->mNpImplementationContext->appendContactManagers();
+	mNpImplementationContext->appendContactManagers();
 
 	//Note: the iterator extracts all the items and returns them to the cache on destruction(for thread safety).
 	PxcThreadCoherentCacheIterator<PxcNpThreadContext, PxcNpContext> threadContextIt(mNpThreadContextPool);
@@ -511,23 +511,26 @@ void PxsContext::resetThreadContexts()
 	}
 }
 
-bool PxsContext::getManagerTouchEventCount(int* newTouch, int* lostTouch, int* ccdTouch) const
+bool PxsContext::getManagerTouchEventCount(PxU32* newTouch, PxU32* lostTouch, PxU32* ccdTouch) const
 {
 	if(newTouch)
-		*newTouch = int(mCMTouchEventCount[PXS_NEW_TOUCH_COUNT]);
+		*newTouch = mCMTouchEventCount[PXS_NEW_TOUCH_COUNT];
 
 	if(lostTouch)
-		*lostTouch = int(mCMTouchEventCount[PXS_LOST_TOUCH_COUNT]);
+		*lostTouch = mCMTouchEventCount[PXS_LOST_TOUCH_COUNT];
 
 	if(ccdTouch)
-		*ccdTouch = int(mCMTouchEventCount[PXS_CCD_RETOUCH_COUNT]);
+		*ccdTouch = mCMTouchEventCount[PXS_CCD_RETOUCH_COUNT];
 
 	return true;
 }
 
-bool PxsContext::fillManagerTouchEvents(PxvContactManagerTouchEvent* newTouch, PxI32& newTouchCount, PxvContactManagerTouchEvent* lostTouch, PxI32& lostTouchCount,
-										 PxvContactManagerTouchEvent* ccdTouch, PxI32& ccdTouchCount)
+bool PxsContext::fillManagerTouchEvents(PxvContactManagerTouchEvent* newTouch, PxU32& newTouchCount,
+										PxvContactManagerTouchEvent* lostTouch, PxU32& lostTouchCount,
+										PxvContactManagerTouchEvent* ccdTouch, PxU32& ccdTouchCount)
 {
+	PX_PROFILE_ZONE("PxsContext::fillManagerTouchEvents", mContextID);
+
 	const PxvContactManagerTouchEvent* newTouchStart = newTouch;
 	const PxvContactManagerTouchEvent* lostTouchStart = lostTouch;
 	const PxvContactManagerTouchEvent* ccdTouchStart = ccdTouch;
@@ -539,42 +542,50 @@ bool PxsContext::fillManagerTouchEvents(PxvContactManagerTouchEvent* newTouch, P
 	PX_UNUSED(newTouchEnd);
 	PX_UNUSED(lostTouchEnd);
 	PX_UNUSED(ccdTouchEnd);
-	
-	PxU32 index;
-	PxBitMap::Iterator it(mContactManagerTouchEvent);
 
-	while((index = it.getNext()) != PxBitMap::Iterator::DONE)
+	const PxU32* bits = mContactManagerTouchEvent.getWords();
+	if(bits)
 	{
-		PxsContactManager* cm = mContactManagerPool.findByIndexFast(index);
+		// PT: ### bitmap iterator pattern
+		const PxU32 lastSetBit = mContactManagerTouchEvent.findLast();
+		for(PxU32 w = 0; w <= lastSetBit >> 5; ++w)
+		{
+			for(PxU32 b = bits[w]; b; b &= b-1)
+			{
+				const PxU32 index = PxU32(w<<5|PxLowestSetBit(b));
 
-		if(cm->getTouchStatus())
-		{
-			if(!cm->getHasCCDRetouch())
-			{
-				PX_ASSERT(newTouch < newTouchEnd);
-				newTouch->setCMTouchEventUserData(cm->getShapeInteraction());
-				newTouch++;
+				PxsContactManager* cm = mContactManagerPool.findByIndexFast(index);
+
+				if(cm->getTouchStatus())
+				{
+					if(!cm->getHasCCDRetouch())
+					{
+						PX_ASSERT(newTouch < newTouchEnd);
+						newTouch->setCMTouchEventUserData(cm->getShapeInteraction());
+						newTouch++;
+					}
+					else
+					{
+						PX_ASSERT(ccdTouch);
+						PX_ASSERT(ccdTouch < ccdTouchEnd);
+						ccdTouch->setCMTouchEventUserData(cm->getShapeInteraction());
+						cm->clearCCDRetouch();
+						ccdTouch++;
+					}
+				}
+				else
+				{
+					PX_ASSERT(lostTouch < lostTouchEnd);
+					lostTouch->setCMTouchEventUserData(cm->getShapeInteraction());
+					lostTouch++;
+				}
 			}
-			else
-			{
-				PX_ASSERT(ccdTouch);
-				PX_ASSERT(ccdTouch < ccdTouchEnd);
-				ccdTouch->setCMTouchEventUserData(cm->getShapeInteraction());
-				cm->clearCCDRetouch();
-				ccdTouch++;
-			}
-		}
-		else
-		{
-			PX_ASSERT(lostTouch < lostTouchEnd);
-			lostTouch->setCMTouchEventUserData(cm->getShapeInteraction());
-			lostTouch++;
 		}
 	}
 
-	newTouchCount = PxI32(newTouch - newTouchStart);
-	lostTouchCount = PxI32(lostTouch - lostTouchStart);
-	ccdTouchCount = PxI32(ccdTouch - ccdTouchStart);
+	newTouchCount = PxU32(newTouch - newTouchStart);
+	lostTouchCount = PxU32(lostTouch - lostTouchStart);
+	ccdTouchCount = PxU32(ccdTouch - ccdTouchStart);
 	return true;
 }
 

@@ -30,6 +30,7 @@
 #define PX_TETRAHEDRON_MESH_EXT_H
 
 #include "foundation/PxVec3.h"
+#include "foundation/PxVec4.h"
 #include "foundation/PxArray.h"
 
 
@@ -51,7 +52,7 @@ namespace physx
 		\param[in] point The point to find the enclosing tetrahedron for
 		\param[in] bary The barycentric coordinates of the point inside the enclosing tetrahedron
 		\param[in] tolerance Tolerance value used classify points as inside if they lie exactly a tetrahedron's surface
-		\return The index of the tetrahedon containing the point, -1 if not tetrahedron contains the opoint
+		\return The index of the tetrahedron containing the point, -1 if not tetrahedron contains the opoint
 		*/
 		static PxI32 findTetrahedronContainingPoint(const PxTetrahedronMesh* mesh, const PxVec3& point, PxVec4& bary, PxReal tolerance = 1e-6f);
 
@@ -60,7 +61,7 @@ namespace physx
 		\param[in] mesh The tetmesh
 		\param[in] point The point to find the closest tetrahedron for
 		\param[out] bary The barycentric coordinates of the point in the tetrahedron
-		\return The index of the tetrahedon closest to the point
+		\return The index of the tetrahedron closest to the point
 		*/
 		static PxI32 findTetrahedronClosestToPoint(const PxTetrahedronMesh* mesh, const PxVec3& point, PxVec4& bary);
 

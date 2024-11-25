@@ -29,7 +29,8 @@
 #ifndef PX_BIT_AND_DATA_H
 #define PX_BIT_AND_DATA_H
 
-#include "foundation/Px.h"
+#include "foundation/PxIO.h"
+#include "foundation/PxSimpleTypes.h"
 
 #if !PX_DOXYGEN
 namespace physx

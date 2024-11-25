@@ -35,6 +35,7 @@
 #if !PX_DOXYGEN
 namespace physx
 {
+class PxBounds3;
 #endif
 
 class PxBroadPhaseExt

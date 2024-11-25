@@ -29,16 +29,19 @@
 #ifndef DY_SOLVER_CONSTRAINT_1D_STEP_H
 #define DY_SOLVER_CONSTRAINT_1D_STEP_H
 
+#include "CmSpatialVector.h"
 #include "foundation/PxVec3.h"
-#include "PxvConfig.h"
 #include "DySolverConstraintTypes.h"
-#include "DySolverBody.h"
 #include "PxConstraintDesc.h"
-#include "DySolverConstraintDesc.h"
+#include "DyCpuGpu1dConstraint.h"
 
 
 namespace physx
 {
+	namespace Sc
+	{
+		class ShapeInteraction;
+	}
 	namespace Dy
 	{
 		struct SolverContactHeaderStep

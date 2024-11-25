@@ -37,7 +37,7 @@ namespace physx
 namespace Cm
 {
 
-#ifndef __CUDACC__
+#if !PX_CUDA_COMPILER
 // PT: similar to PxMat33Padded
 class Matrix34FromTransform : public PxMat34
 {

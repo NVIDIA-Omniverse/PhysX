@@ -142,7 +142,7 @@ static void PxcGetMaterialSoftBodyMesh(const PxsShapeCore* shape0, const PxsShap
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PxU32 GetMaterialIndex(const Gu::HeightFieldData* hfData, PxU32 triangleIndex)
+static PxU32 getMaterialIndex(const Gu::HeightFieldData* hfData, PxU32 triangleIndex)
 {
 	const PxU32 sampleIndex = triangleIndex >> 1;
 	const bool isFirstTriangle = (triangleIndex & 0x1) == 0;
@@ -170,7 +170,7 @@ static void PxcGetMaterialHeightField(const PxsShapeCore* shape, const PxU32 ind
 		for(PxU32 i=0; i<count; i++)
 		{
 			const PxContactPoint& contact = contactBuffer.contacts[i];
-			const PxU32 localMaterialIndex = GetMaterialIndex(hf, contact.internalFaceIndex1);
+			const PxU32 localMaterialIndex = getMaterialIndex(hf, contact.internalFaceIndex1);
 			(&materialInfo[i].mMaterialIndex0)[index] = materialIndices[localMaterialIndex];
 		}
 	}
@@ -195,7 +195,7 @@ static void PxcGetMaterialShapeHeightField(const PxsShapeCore* shape0, const Pxs
 			const PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = shape0->mMaterialIndex;
 			//contact.featureIndex0 = shape0->materialIndex;
-			const PxU32 localMaterialIndex = GetMaterialIndex(hf, contact.internalFaceIndex1);
+			const PxU32 localMaterialIndex = getMaterialIndex(hf, contact.internalFaceIndex1);
 			//contact.featureIndex1 = materialIndices[localMaterialIndex];
 			PX_ASSERT(localMaterialIndex<hfGeom.materialsLL.numIndices);
 			materialInfo[i].mMaterialIndex1 = materialIndices[localMaterialIndex];
@@ -222,7 +222,7 @@ static void PxcGetMaterialSoftBodyHeightField(const PxsShapeCore* shape0, const 
 			const PxContactPoint& contact = contactBuffer.contacts[i];
 			materialInfo[i].mMaterialIndex0 = shape0->mMaterialIndex;
 			//contact.featureIndex0 = shape0->materialIndex;
-			const PxU32 localMaterialIndex = GetMaterialIndex(hf, contact.internalFaceIndex1);
+			const PxU32 localMaterialIndex = getMaterialIndex(hf, contact.internalFaceIndex1);
 			//contact.featureIndex1 = materialIndices[localMaterialIndex];
 			PX_ASSERT(localMaterialIndex<hfGeom.materialsLL.numIndices);
 			materialInfo[i].mMaterialIndex1 = materialIndices[localMaterialIndex];
@@ -259,12 +259,12 @@ PxcGetSingleMaterialMethod g_GetSingleMaterialMethodTable[] =
 	PxcGetMaterialShape,		//PxGeometryType::ePLANE
 	PxcGetMaterialShape,		//PxGeometryType::eCAPSULE
 	PxcGetMaterialShape,		//PxGeometryType::eBOX
+	PxcGetMaterialShape,		//PxGeometryType::eCONVEXCORE
 	PxcGetMaterialShape,		//PxGeometryType::eCONVEXMESH
 	PxcGetMaterialSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 	PxcGetMaterialSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 	PxcGetMaterialMesh,			//PxGeometryType::eTRIANGLEMESH	//not used: mesh always uses swept method for midphase.
 	PxcGetMaterialHeightField,	//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
-	PxcGetMaterialSoftBody,		//PxGeometryType::eHAIRSYSTEM
 	PxcGetMaterialShape,		//PxGeometryType::eCUSTOM
 };
 PX_COMPILE_TIME_ASSERT(sizeof(g_GetSingleMaterialMethodTable) / sizeof(g_GetSingleMaterialMethodTable[0]) == PxGeometryType::eGEOMETRY_COUNT);
@@ -279,12 +279,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		PxcGetMaterialShapeShape,			//PxGeometryType::ePLANE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCAPSULE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eBOX
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXCORE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH	//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialShapeHeightField,		//PxGeometryType::eHEIGHTFIELD	//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -294,12 +294,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCAPSULE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eBOX
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXCORE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
-		0,									//PxGeometryType::eTRIANGLEMESH
+		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH
 		0,									//PxGeometryType::eHEIGHTFIELD
-		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -309,12 +309,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCAPSULE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eBOX
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXCORE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialShapeHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -324,12 +324,27 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eBOX
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXCORE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialShapeHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eHAIRSYSTEM
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
+	},
+
+	//PxGeometryType::eCONVEX
+	{
+		0,									//PxGeometryType::eSPHERE
+		0,									//PxGeometryType::ePLANE
+		0,									//PxGeometryType::eCAPSULE
+		0,									//PxGeometryType::eBOX
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXCORE
+		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
+		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
+		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
+		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
+		PxcGetMaterialShapeHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -339,12 +354,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialShapeMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialShapeHeightField,		//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeSoftBody,		//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -354,12 +369,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		PxcGetMaterialSoftBodySoftBody,		//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialSoftBodySoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialSoftBodyMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialSoftBodyHeightField,	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeShape,			//PxGeometryType::eHAIRYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -369,12 +384,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		0,									//PxGeometryType::ePARTICLESYSTEM
 		PxcGetMaterialSoftBodySoftBody,		//PxGeometryType::eTETRAHEDRONMESH
 		PxcGetMaterialSoftBodyMesh,			//PxGeometryType::eTRIANGLEMESH		//not used: mesh always uses swept method for midphase.
 		PxcGetMaterialSoftBodyHeightField,	//PxGeometryType::eHEIGHTFIELD		//TODO: make HF midphase that will mask this
-		PxcGetMaterialShapeShape,			//PxGeometryType::eHAIRYSTEM
 		PxcGetMaterialShapeShape,			//PxGeometryType::eCUSTOM
 	},
 
@@ -384,12 +399,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,								//PxGeometryType::ePLANE
 		0,								//PxGeometryType::eCAPSULE
 		0,								//PxGeometryType::eBOX
+		0,								//PxGeometryType::eCONVEXCORE
 		0,								//PxGeometryType::eCONVEXMESH
 		0,								//PxGeometryType::ePARTICLESYSTEM
 		0,								//PxGeometryType::eTETRAHEDRONMESH
-		0,								//PxGeometryType::eTRIANGLEMESH
+		PxcGetMaterialShapeShape,		//PxGeometryType::eTRIANGLEMESH	   // mesh-mesh via SDF (single material)
 		0,								//PxGeometryType::eHEIGHTFIELD
-		PxcGetMaterialShapeShape,		//PxGeometryType::eHAIRYSTEM
 		PxcGetMaterialShapeShape,		//PxGeometryType::eCUSTOM
 	},
 
@@ -399,27 +414,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,								//PxGeometryType::ePLANE
 		0,								//PxGeometryType::eCAPSULE
 		0,								//PxGeometryType::eBOX
+		0,								//PxGeometryType::eCONVEXCORE
 		0,								//PxGeometryType::eCONVEXMESH
 		0,								//PxGeometryType::ePARTICLESYSTEM
 		0,								//PxGeometryType::eTETRAHEDRONMESH
 		0,								//PxGeometryType::eTRIANGLEMESH
 		0,								//PxGeometryType::eHEIGHTFIELD
-		PxcGetMaterialShapeShape,		//PxGeometryType::eHAIRYSTEM
-		PxcGetMaterialShapeShape,		//PxGeometryType::eCUSTOM
-	},
-
-	//PxGeometryType::eHAIRSYSTEM
-	{
-		0,								//PxGeometryType::eSPHERE
-		0,								//PxGeometryType::ePLANE
-		0,								//PxGeometryType::eCAPSULE
-		0,								//PxGeometryType::eBOX
-		0,								//PxGeometryType::eCONVEXMESH
-		0,								//PxGeometryType::ePARTICLESYSTEM
-		0,								//PxGeometryType::eTETRAHEDRONMESH
-		0,								//PxGeometryType::eTRIANGLEMESH
-		0,								//PxGeometryType::eHEIGHTFIELD
-		0,								//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,		//PxGeometryType::eCUSTOM
 	},
 
@@ -429,12 +429,12 @@ PxcGetMaterialMethod g_GetMaterialMethodTable[][PxGeometryType::eGEOMETRY_COUNT]
 		0,								//PxGeometryType::ePLANE
 		0,								//PxGeometryType::eCAPSULE
 		0,								//PxGeometryType::eBOX
+		0,								//PxGeometryType::eCONVEXCORE
 		0,								//PxGeometryType::eCONVEXMESH
 		0,								//PxGeometryType::ePARTICLESYSTEM
 		0,								//PxGeometryType::eTETRAHEDRONMESH
 		0,								//PxGeometryType::eTRIANGLEMESH
 		0,								//PxGeometryType::eHEIGHTFIELD
-		0,								//PxGeometryType::eHAIRSYSTEM
 		PxcGetMaterialShapeShape,		//PxGeometryType::eCUSTOM
 	},
 

@@ -81,15 +81,15 @@ Sc::ShapeInteraction::ShapeInteraction(ShapeSimBase& s1, ShapeSimBase& s2, PxPai
 
 	if(contactManager == NULL)
 	{
-		PxNodeIndex indexA, indexB;
+		PxNodeIndex index0, index1;
 		//if(bs0)  // the first shape always belongs to a dynamic body (we assert for this above)
 		{
-			indexA = bs0.getNodeIndex();
+			index0 = bs0.getNodeIndex();
 			bs0.registerCountedInteraction();
 		}
 		if(!bs1.isStaticRigid())
 		{
-			indexB = bs1.getNodeIndex();
+			index1 = bs1.getNodeIndex();
 			bs1.registerCountedInteraction();
 		}
 
@@ -97,18 +97,9 @@ Sc::ShapeInteraction::ShapeInteraction(ShapeSimBase& s1, ShapeSimBase& s2, PxPai
 
 		const PxActorType::Enum actorTypeLargest = PxMax(bs0.getActorType(), bs1.getActorType());
 
-		IG::Edge::EdgeType type = IG::Edge::eCONTACT_MANAGER;
-#if PX_SUPPORT_GPU_PHYSX
-		if (actorTypeLargest == PxActorType::eSOFTBODY)
-			type = IG::Edge::eSOFT_BODY_CONTACT;
-		else if (actorTypeLargest == PxActorType::eFEMCLOTH)
-			type = IG::Edge::eFEM_CLOTH_CONTACT;
-		else if (actorTypeLargest == PxActorType::ePBD_PARTICLESYSTEM)
-			type = IG::Edge::ePARTICLE_SYSTEM_CONTACT;
-		else if (actorTypeLargest == PxActorType::eHAIRSYSTEM)
-			type = IG::Edge::eHAIR_SYSTEM_CONTACT;
-#endif
-		mEdgeIndex = simpleIslandManager->addContactManager(NULL, indexA, indexB, this, type);
+		const IG::Edge::EdgeType type = getInteractionEdgeType(actorTypeLargest);
+
+		mEdgeIndex = simpleIslandManager->addContactManager(NULL, index0, index1, this, type);
 
 		{
 			const bool active = onActivate(contactManager);
@@ -116,7 +107,7 @@ Sc::ShapeInteraction::ShapeInteraction(ShapeSimBase& s1, ShapeSimBase& s2, PxPai
 			scene.registerInteraction(this, active);
 		}
 
-		//If it is a soft body or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
+		//If it is a deformable volume or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
 		if (actorTypeLargest > PxActorType::eARTICULATION_LINK)
 			simpleIslandManager->setEdgeConnected(mEdgeIndex, type);
 	}
@@ -454,11 +445,11 @@ void Sc::ShapeInteraction::processUserNotificationAsync(PxU32 contactEvent, PxU1
 	if((getPairFlags() & PxPairFlag::eNOTIFY_CONTACT_POINTS) && mManager && (!cp->contactPatches) && !(contactEvent & PxU32(PxPairFlag::eNOTIFY_TOUCH_LOST | PxPairFlag::eNOTIFY_THRESHOLD_FORCE_LOST)))
 	{
 		const PxcNpWorkUnit& workUnit = mManager->getWorkUnit();
-		PxsContactManagerOutput* output = NULL;
+		const PxsContactManagerOutput* output = NULL;
 		if(workUnit.mNpIndex & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK)
 			output = &getScene().getLowLevelContext()->getNphaseImplementationContext()->getNewContactManagerOutput(workUnit.mNpIndex);
 		else
-			output = &outputs.getContactManager(workUnit.mNpIndex);
+			output = &outputs.getContactManagerOutput(workUnit.mNpIndex);
 
 		const PxsCCDContactHeader* ccdContactData = reinterpret_cast<const PxsCCDContactHeader*>(workUnit.mCCDContacts);
 
@@ -586,12 +577,11 @@ PxU32 Sc::ShapeInteraction::getContactPointData(const void*& contactPatches, con
 	{
 		const PxcNpWorkUnit& workUnit = mManager->getWorkUnit();
 
-		PxsContactManagerOutput* output = NULL;
-		
+		const PxsContactManagerOutput* output = NULL;
 		if(workUnit.mNpIndex & PxsContactManagerBase::NEW_CONTACT_MANAGER_MASK)
 			output = &getScene().getLowLevelContext()->getNphaseImplementationContext()->getNewContactManagerOutput(workUnit.mNpIndex);
 		else
-			output = &outputs.getContactManager(workUnit.mNpIndex);
+			output = &outputs.getContactManagerOutput(workUnit.mNpIndex);
 
 		/*const void* dcdContactPatches;
 		const void* dcdContactPoints;
@@ -763,7 +753,7 @@ bool Sc::ShapeInteraction::managerLostTouch(PxU32 ccdPass, bool adjustCounters, 
 
 PX_FORCE_INLINE void Sc::ShapeInteraction::updateFlags(const Sc::Scene& scene, const Sc::ActorSim& bs0, const Sc::ActorSim& bs1, const PxU32 pairFlags)
 {
-	// the first shape always belongs to a dynamic body/ a soft body
+	// the first shape always belongs to a dynamic body/ a deformable volume
 
 	bool enabled = true;
 	if (bs0.isDynamicRigid())
@@ -785,13 +775,16 @@ PX_FORCE_INLINE void Sc::ShapeInteraction::updateFlags(const Sc::Scene& scene, c
 	// Check if contact points needed
 	setFlag(CONTACTS_COLLECT_POINTS, (	(pairFlags & PxPairFlag::eNOTIFY_CONTACT_POINTS) ||
 										(pairFlags & PxPairFlag::eMODIFY_CONTACTS) || 
+#if PX_SUPPORT_GPU_PHYSX
+										scene.getSimulationController()->getEnableOVDCollisionReadback() ||
+#endif
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_ERROR) ||
-										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_IMPULSE)) ||
+										scene.getVisualizationParameter(PxVisualizationParameter::eCONTACT_IMPULSE) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_POINT) ||
 										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_NORMAL) ||
-										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_IMPULSE) );
+										scene.getVisualizationParameter(PxVisualizationParameter::eFRICTION_IMPULSE)	) );
 }
 
 PX_INLINE PxReal ScGetRestOffset(const Sc::ShapeSimBase& shapeSim)
@@ -928,7 +921,7 @@ void Sc::ShapeInteraction::updateState(const PxU8 externalDirtyFlags)
 	}
 }
 
-bool Sc::ShapeInteraction::onActivate(void* contactManager)
+bool Sc::ShapeInteraction::onActivate(PxsContactManager* contactManager)
 {
 	if(isReportPair())
 	{
@@ -1011,7 +1004,7 @@ bool Sc::ShapeInteraction::onDeactivate()
 	}
 }
 
-void Sc::ShapeInteraction::createManager(void* contactManager)
+void Sc::ShapeInteraction::createManager(PxsContactManager* contactManager)
 {
 	//PX_PROFILE_ZONE("ShapeInteraction.createManager", 0);
 
@@ -1106,10 +1099,10 @@ void Sc::ShapeInteraction::createManager(void* contactManager)
 		wuflags |= PxcNpWorkUnitFlag::eDYNAMIC_BODY1;
 
 #if PX_SUPPORT_GPU_PHYSX
-	if (type0 == PxActorType::eSOFTBODY)
+	if (type0 == PxActorType::eDEFORMABLE_VOLUME)
 		wuflags |= PxcNpWorkUnitFlag::eSOFT_BODY;
 
-	if (type1 == PxActorType::eSOFTBODY)
+	if (type1 == PxActorType::eDEFORMABLE_VOLUME)
 		wuflags |= PxcNpWorkUnitFlag::eSOFT_BODY;
 #endif
 	if(!disableResponse && !contactChangeable)
@@ -1174,7 +1167,7 @@ void Sc::ShapeInteraction::onShapeChangeWhileSleeping(bool shapeOfDynamicChanged
 	{
 		Scene& scene = getScene();
 
-		//soft body/dynamic before static
+		//deformable volume/dynamic before static
 		ActorSim& body0 = getShape0().getActor();
 	
 		if(shapeOfDynamicChanged && !readFlag(TOUCH_KNOWN))

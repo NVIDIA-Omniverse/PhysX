@@ -37,8 +37,6 @@ namespace physx
 {
 struct PxsCCDBody;
 
-#define PX_INTERNAL_LOCK_FLAG_START 8
-
 PX_ALIGN_PREFIX(16)
 class PxsRigidBody
 {
@@ -57,15 +55,9 @@ class PxsRigidBody
 		eDISABLE_GRAVITY_GPU	=	1 << 5,
 		eSPECULATIVE_CCD		=	1 << 6,
 		eENABLE_GYROSCOPIC		=	1 << 7,
-		//KS - copied here for GPU simulation to avoid needing to pass another set of flags around.
-		eLOCK_LINEAR_X			=	1 << (PX_INTERNAL_LOCK_FLAG_START),
-		eLOCK_LINEAR_Y			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 1),
-		eLOCK_LINEAR_Z			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 2),
-		eLOCK_ANGULAR_X			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 3),
-		eLOCK_ANGULAR_Y			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 4),
-		eLOCK_ANGULAR_Z			=	1 << (PX_INTERNAL_LOCK_FLAG_START + 5),
-		eRETAIN_ACCELERATION	=	1 << 14,
-		eFIRST_BODY_COPY_GPU    =   1 << 15  // Flag to raise to indicate that the body is DMA'd to the GPU for the first time
+		eRETAIN_ACCELERATION	=	1 << 8,
+		eFIRST_BODY_COPY_GPU	=	1 << 9, // Flag to raise to indicate that the body is DMA'd to the GPU for the first time
+		eVELOCITY_COPY_GPU		=	1 << 10	 // Flag to raise to indicate that linear and angular velocities should be  DMA'd to the GPU
 	};
 
 	PX_FORCE_INLINE						PxsRigidBody(PxsBodyCore* core, PxReal freeze_count) :
@@ -132,22 +124,20 @@ class PxsRigidBody
 //					PxTransform			getAdvancedTransform(PxReal toi) const;
 					Cm::SpatialVector	getPreSolverVelocities() const;
 
-					PxTransform			mLastTransform;			//28 (28)
+					PxTransform			mLastTransform;			//28
 
-					PxU16				mInternalFlags;			//30 (30)
-					PxU16				mSolverIterationCounts;	//32 (32)
+					PxU16				mInternalFlags;			//30
+					PxU16				mSolverIterationCounts;	//32
 
-					PxsCCDBody*			mCCD;					//36 (40)	// only valid during CCD	
+					PxsCCDBody*			mCCD;					//40	// only valid during CCD	
 
-					PxsBodyCore*		mCore;					//40 (48)
-#if !PX_P64_FAMILY
-					PxU32				mAlignmentPad[2];		//48 (48)
-#endif
-					PxVec3				mSleepLinVelAcc;		//60 (60)
-					PxReal				mFreezeCount;			//64 (64)
+					PxsBodyCore*		mCore;					//48
+
+					PxVec3				mSleepLinVelAcc;		//60
+					PxReal				mFreezeCount;			//64
 	   
-					PxVec3				mSleepAngVelAcc;		//76 (76)
-					PxReal				mAccelScale;			//80 (80)
+					PxVec3				mSleepAngVelAcc;		//76
+					PxReal				mAccelScale;			//80
 }
 PX_ALIGN_SUFFIX(16);
 PX_COMPILE_TIME_ASSERT(0 == (sizeof(PxsRigidBody) & 0x0f));

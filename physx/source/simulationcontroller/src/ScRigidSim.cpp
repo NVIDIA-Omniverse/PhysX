@@ -69,14 +69,3 @@ void RigidSim::notifyShapesOfTransformChange()
 	notifyActorInteractionsOfTransformChange(*this);
 }
 
-void RigidSim::setBodyNodeIndex(const PxNodeIndex nodeIndex)
-{
-	PxU32 nbElems = getNbElements();
-	ElementSim** elems = getElements();
-	while (nbElems--)
-	{
-		ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
-		getScene().getSimulationController()->updateShape(sim->getLLShapeSim(), nodeIndex);
-	}
-}
-

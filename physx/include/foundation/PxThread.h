@@ -249,7 +249,7 @@ class PxThreadT : protected Alloc, public PxUserAllocated, public PxRunnable
 	run in the new thread. Called in the context of the spawned thread.
 	*/
 
-	virtual void execute(void)
+	virtual void execute()
 	{
 	}
 

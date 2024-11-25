@@ -236,7 +236,7 @@ public:
 	/**
 	\brief Returns string name of PxRevoluteJoint, used for serialization
 	*/
-	virtual	const char*			getConcreteTypeName() const { return "PxRevoluteJoint"; }
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	{ return "PxRevoluteJoint"; }
 
 protected:
 

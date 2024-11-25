@@ -46,6 +46,7 @@ namespace physx
 
 	class PxBroadPhaseCallback;
 	class PxCudaContextManager;
+	class PxPostSolveCallback;
 
 /**
 \brief Enum for selecting the friction algorithm used for simulation.
@@ -300,8 +301,9 @@ struct PxSceneFlag
 		faster.
 		
 		\note Enabling the direct-GPU API will disable the readback of simulation state from GPU to CPU. Simulation outputs
-		can only be accessed using the direct-GPU API functions in PxScene (PxScene::copyBodyData(), PxScene::copyArticulationData(),
-		PxScene::copySoftbodyData(), PxScene::copyContactData()), and reading state directly from the actor is not allowed.
+		can only be accessed using the direct-GPU API functions in PxDirectGPUAPI (PxDirectGPUAPI::getRigidDynamicData(),
+		PxDirectGPUAPI::getArticulationData(), PxDirectGPUAPI::copyContactData()), and reading state directly from the actor
+		is not allowed.
 
 		\note This flag is not mutable and must be set in PxSceneDesc at scene creation.
 		\see PxScene::getDirectGPUAPI() PxDirectGPUAPI
@@ -434,11 +436,12 @@ struct PxGpuDynamicsMemoryConfig
 	PxU32 foundLostPairsCapacity;			//!< Capacity of found and lost buffers allocated in GPU global memory. This is used for the found/lost pair reports in the BP. 
 	PxU32 foundLostAggregatePairsCapacity;	//!< Capacity of found and lost buffers in aggregate system allocated in GPU global memory. This is used for the found/lost pair reports in AABB manager.
 	PxU32 totalAggregatePairsCapacity;		//!< Capacity of aggregate pair buffer allocated in GPU global memory.
-	PxU32 maxSoftBodyContacts;				//!< Capacity of softbody contact buffer allocated in GPU global memory.
-	PxU32 maxFemClothContacts;				//!< Capacity of femCloth contact buffer allocated in GPU global memory.
+	PxU32 maxDeformableSurfaceContacts;		//!< Capacity of deformable surface contact buffer allocated in GPU global memory.
+	PX_DEPRECATED PxU32 maxFemClothContacts;//!< Deprecated, replace with maxDeformableSurfaceContacts.
+	PxU32 maxDeformableVolumeContacts;		//!< Capacity of deformable volume contact buffer allocated in GPU global memory.
+	PX_DEPRECATED PxU32 maxSoftBodyContacts;//!< Deprecated, replace with maxDeformableVolumeContacts.
 	PxU32 maxParticleContacts;				//!< Capacity of particle contact buffer allocated in GPU global memory.
 	PxU32 collisionStackSize;				//!< Capacity of the collision stack buffer, used as scratch space during narrowphase collision detection.
-	PxU32 maxHairContacts;					//!< Capacity of hair system contact buffer allocated in GPU global memory.
 
 	PxGpuDynamicsMemoryConfig() :
 		tempBufferCapacity(16 * 1024 * 1024),
@@ -448,11 +451,12 @@ struct PxGpuDynamicsMemoryConfig
 		foundLostPairsCapacity(256 * 1024),
 		foundLostAggregatePairsCapacity(1024),
 		totalAggregatePairsCapacity(1024),
-		maxSoftBodyContacts(1 * 1024 * 1024),
-		maxFemClothContacts(1 * 1024 * 1024),
+		maxDeformableSurfaceContacts(1 * 1024 * 1024),
+		maxFemClothContacts(0), // deprecated, if > 0, used instead of maxDeformableSurfaceContacts
+		maxDeformableVolumeContacts(1 * 1024 * 1024),
+		maxSoftBodyContacts(0), // deprecated, if > 0, used instead of maxDeformableVolumeContacts
 		maxParticleContacts(1*1024*1024),
-		collisionStackSize(64*1024*1024),
-		maxHairContacts(1 * 1024 * 1024)
+		collisionStackSize(64*1024*1024)
 	{
 	}
 
@@ -516,6 +520,25 @@ public:
 	\see PxContactModifyCallback PxScene.setContactModifyCallback() PxScene.getContactModifyCallback()
 	*/
 	PxCCDContactModifyCallback*	ccdContactModifyCallback;
+
+	/**
+	\brief Possible asynchronous callback for post-solve operations on deformable surfaces.
+
+	<b>Default:</b> NULL
+
+	\see PxPostSolveCallback
+	*/
+	PxPostSolveCallback* deformableSurfacePostSolveCallback;
+
+	/**
+	\brief Possible asynchronous callback for post-solve operations on deformable volumes.
+
+	<b>Default:</b> NULL
+
+	\see PxPostSolveCallback
+	*/
+	PxPostSolveCallback* deformableVolumePostSolveCallback;
+
 
 	/**
 	\brief Shared global filter data which will get passed into the filter shader.
@@ -965,6 +988,8 @@ PX_INLINE PxSceneDesc::PxSceneDesc(const PxTolerancesScale& scale):
 	simulationEventCallback			(NULL),
 	contactModifyCallback			(NULL),
 	ccdContactModifyCallback		(NULL),
+	deformableSurfacePostSolveCallback(NULL),
+	deformableVolumePostSolveCallback(NULL),
 
 	filterShaderData				(NULL),
 	filterShaderDataSize			(0),

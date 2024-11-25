@@ -128,7 +128,7 @@ void RevoluteJoint::setDriveGearRatio(PxReal gearRatio)
 	OMNI_PVD_SET(OMNI_PVD_CONTEXT_HANDLE, PxRevoluteJoint, driveGearRatio, static_cast<PxRevoluteJoint&>(*this), gearRatio)
 }
 
-PxRevoluteJointFlags RevoluteJoint::getRevoluteJointFlags(void)	const
+PxRevoluteJointFlags RevoluteJoint::getRevoluteJointFlags()	const
 { 
 	return data().jointFlags; 
 }

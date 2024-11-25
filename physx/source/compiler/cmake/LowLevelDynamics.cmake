@@ -39,15 +39,14 @@ SET(LLDYNAMICS_BASE_DIR ${PHYSX_ROOT_DIR}/source/lowleveldynamics)
 
 SET(LLDYNAMICS_INCLUDES
 	${LLDYNAMICS_BASE_DIR}/include/DyArticulationCore.h
-	${LLDYNAMICS_BASE_DIR}/include/DyVArticulation.h		
+	${LLDYNAMICS_BASE_DIR}/include/DyVArticulation.h
 	${LLDYNAMICS_BASE_DIR}/include/DyArticulationTendon.h
 	${LLDYNAMICS_BASE_DIR}/include/DyArticulationMimicJointCore.h
-	${LLDYNAMICS_BASE_DIR}/include/DySoftBodyCore.h
-	${LLDYNAMICS_BASE_DIR}/include/DySoftBody.h
-	${LLDYNAMICS_BASE_DIR}/include/DyFEMClothCore.h
-	${LLDYNAMICS_BASE_DIR}/include/DyFEMCloth.h
-    ${LLDYNAMICS_BASE_DIR}/include/DyHairSystemCore.h
-	${LLDYNAMICS_BASE_DIR}/include/DyHairSystem.h
+	${LLDYNAMICS_BASE_DIR}/include/DyDeformableBodyCore.h
+	${LLDYNAMICS_BASE_DIR}/include/DyDeformableSurface.h
+	${LLDYNAMICS_BASE_DIR}/include/DyDeformableSurfaceCore.h
+	${LLDYNAMICS_BASE_DIR}/include/DyDeformableVolume.h
+	${LLDYNAMICS_BASE_DIR}/include/DyDeformableVolumeCore.h
 	${LLDYNAMICS_BASE_DIR}/include/DyFeatherstoneArticulation.h
 	${LLDYNAMICS_BASE_DIR}/include/DyFeatherstoneArticulationJointData.h
 	${LLDYNAMICS_BASE_DIR}/include/DyFeatherstoneArticulationUtils.h
@@ -60,6 +59,7 @@ SET(LLDYNAMICS_INCLUDES
 	${LLDYNAMICS_BASE_DIR}/include/DyParticleSystemCore.h
 	${LLDYNAMICS_BASE_DIR}/include/DyParticleSystem.h
 	${LLDYNAMICS_BASE_DIR}/include/DyResidualAccumulator.h
+	${LLDYNAMICS_BASE_DIR}/include/DyIslandManager.h
 )
 SOURCE_GROUP("include" FILES ${LLDYNAMICS_INCLUDES})
 

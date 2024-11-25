@@ -122,7 +122,7 @@ PxReal DistanceJoint::getDamping() const
 	return data().damping;
 }
 
-PxDistanceJointFlags DistanceJoint::getDistanceJointFlags(void) const
+PxDistanceJointFlags DistanceJoint::getDistanceJointFlags() const
 { 
 	return data().jointFlags;		
 }
@@ -188,7 +188,7 @@ static PX_FORCE_INLINE void setupConstraint(Px1DConstraint& c, const PxVec3& dir
 	if(data.jointFlags & PxDistanceJointFlag::eSPRING_ENABLED)
 	{
 		c.flags |= Px1DConstraintFlag::eSPRING;
-		c.mods.spring.stiffness= data.stiffness;
+		c.mods.spring.stiffness = data.stiffness;
 		c.mods.spring.damping	= data.damping;
 	}
 }

@@ -29,7 +29,6 @@
 #ifndef GU_MESH_ANALYSIS_H
 #define GU_MESH_ANALYSIS_H
 
-#include "foundation/Px.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "GuTriangle.h"
 #include "foundation/PxHashMap.h"

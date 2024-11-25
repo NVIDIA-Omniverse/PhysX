@@ -28,19 +28,15 @@
      
 #include "foundation/PxPreprocessor.h"
 #include "foundation/PxVecMath.h"
-#include "PxcNpWorkUnit.h"
 #include "DyThreadContext.h"
 #include "PxcNpContactPrepShared.h"
 #include "DyConstraintPrep.h"
 #include "DyAllocator.h"
 
 using namespace physx;
-using namespace Gu;
 
-#include "PxsMaterialManager.h"
 #include "DyContactPrepShared.h"
 
-#include "DyCpuGpu1dConstraint.h"
 #include "DySolverConstraint1DStep.h"
 
 using namespace aos;

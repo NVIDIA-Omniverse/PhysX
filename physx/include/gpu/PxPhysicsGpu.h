@@ -56,9 +56,8 @@ namespace physx
 	class PxParticleNeighborhoodProvider;
 
 	class PxArrayConverter;
-	class PxLineStripSkinning;
-	class PxSoftBodyEmbedding;
 	class PxSDFBuilder;
+	class PxDeformableSkinning;
 
 	struct PxIsosurfaceParams;
 	struct PxSparseGridParams;
@@ -135,15 +134,6 @@ namespace physx
 		virtual PxArrayConverter* createArrayConverter(PxCudaContextManager* cudaContextManager) = 0;
 
 		/**
-		\brief Creates an line strip embedding helper. If not used anymore, the caller needs to delete the returned pointer.
-
-		\param[in] cudaContextManager A cuda context manager
-
-		\return Pointer to a new instance of a PxLineStripSkinning
-		*/
-		virtual PxLineStripSkinning* createLineStripSkinning(PxCudaContextManager* cudaContextManager) = 0;
-
-		/**
 		\brief Creates sdf builder to construct sdfs quickly on the GPU. If not used anymore, the caller needs to delete the returned pointer.
 
 		\param[in] cudaContextManager A cuda context manager
@@ -153,21 +143,13 @@ namespace physx
 		virtual PxSDFBuilder* createSDFBuilder(PxCudaContextManager* cudaContextManager) = 0;
 
 		/**
-		\brief Estimates the amount of GPU memory needed to create a scene for the given descriptor.
+		\brief Creates a deformable skinning instance to perform skinning operations on the GPU. If not used anymore, the caller needs to delete the returned pointer.
 
-		\deprecated This function is deprecated, creating a PxPhyics::createScene will return a null pointer if scene creation fails
-		due to low GPU memory availability.
+		\param[in] cudaContextManager A cuda context manager
 
-		\param[in] sceneDesc a valid scene desriptor
-
-		\note While this is a conservative estimate, scene allocation may still fail even though there is
-		enough memory - this function does not contain the potential overhead coming from the CUDA allocator.
-		Additionally, there may be fragmentation issues. Generally, this is not an issue for 
-		scene allocation sizes < 500Mb, but may become problematic for larger scenes.
-
-		\return A conservative estimate for the amount of GPU memory needed to create a scene for the given descriptor.
-	 	*/
-		PX_DEPRECATED virtual PxU64 estimateSceneCreationGpuMemoryRequirements(const PxSceneDesc& sceneDesc) = 0;
+		\return Pointer to a new instance of a PxDeformableSkinning
+		*/
+		virtual PxDeformableSkinning* createDeformableSkinning(PxCudaContextManager* cudaContextManager) = 0;
 
 		virtual void release() = 0;
 

@@ -50,6 +50,23 @@ namespace physx
 		}   
 	}
 
+	PX_CUDA_CALLABLE PX_FORCE_INLINE PxReal PxsCombinePxReal(PxReal val0, PxReal val1, PxI32 combineMode)
+	{
+		switch (combineMode)
+		{
+		case PxCombineMode::eAVERAGE:
+			return 0.5f * (val0 + val1);			
+		case PxCombineMode::eMIN:
+			return PxMin(val0, val1);			
+		case PxCombineMode::eMULTIPLY:
+			return (val0 * val1);			
+		case PxCombineMode::eMAX:
+			return PxMax(val0, val1);
+		}
+		return 0.0f;
+	}
+
+
 	PX_CUDA_CALLABLE PX_FORCE_INLINE void PxsCombineMaterials(const PxsMaterialData& mat0Data, const PxsMaterialData& mat1Data,
 		PxReal& combinedStaticFriction, PxReal& combinedDynamicFriction, 
 		PxReal& combinedRestitution, PxU32& combinedMaterialFlags, PxReal& combinedDamping)
@@ -117,7 +134,10 @@ namespace physx
 				PxReal dynFriction = 0.0f;
 				PxReal staFriction = 0.0f;
 
-				switch (fictionCombineMode)
+				dynFriction = PxsCombinePxReal(mat0Data.dynamicFriction, mat1Data.dynamicFriction, fictionCombineMode);
+				staFriction = PxsCombinePxReal(mat0Data.staticFriction, mat1Data.staticFriction, fictionCombineMode);
+
+				/*switch (fictionCombineMode)
 				{
 				case PxCombineMode::eAVERAGE:
 					dynFriction = 0.5f * (mat0Data.dynamicFriction + mat1Data.dynamicFriction);
@@ -135,12 +155,12 @@ namespace physx
 					dynFriction = PxMax(mat0Data.dynamicFriction, mat1Data.dynamicFriction);
 					staFriction = PxMax(mat0Data.staticFriction, mat1Data.staticFriction);
 					break;
-				}   
+				}   */
 
 				//isotropic case
 				const PxReal fDynFriction = PxMax(dynFriction, 0.0f);
 
-#ifdef __CUDACC__
+#if PX_CUDA_COMPILER
 				const PxReal fStaFriction = (staFriction - fDynFriction) >= 0 ? staFriction : fDynFriction;
 #else
 				const PxReal fStaFriction = physx::intrinsics::fsel(staFriction - fDynFriction, staFriction, fDynFriction);

@@ -30,7 +30,7 @@
 #define PX_MEMORY_H
 
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxMathIntrinsics.h"
 #include "foundation/PxSimpleTypes.h"
 
@@ -49,7 +49,8 @@ namespace physx
 	*/
 	PX_FORCE_INLINE void* PxMemZero(void* dest, PxU32 count)
 	{
-		return physx::intrinsics::memZero(dest, count);
+		// This is to avoid undefined behavior
+		return (count != 0) ? physx::intrinsics::memZero(dest, count) : NULL;
 	}
 
 	/**
@@ -63,7 +64,8 @@ namespace physx
 	*/
 	PX_FORCE_INLINE void* PxMemSet(void* dest, PxI32 c, PxU32 count)
 	{
-		return physx::intrinsics::memSet(dest, c, count);
+		// This is to avoid undefined behavior
+		return (count != 0) ? physx::intrinsics::memSet(dest, c, count) : NULL;
 	}
 
 	/**
@@ -79,7 +81,8 @@ namespace physx
 	*/
 	PX_FORCE_INLINE void* PxMemCopy(void* dest, const void* src, PxU32 count)
 	{
-		return physx::intrinsics::memCopy(dest, src, count);
+		// This is to avoid undefined behavior
+		return (count != 0) ? physx::intrinsics::memCopy(dest, src, count) : NULL;
 	}
 
 	/**

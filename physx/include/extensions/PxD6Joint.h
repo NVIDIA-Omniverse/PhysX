@@ -111,9 +111,9 @@ struct PxD6Drive
 		eX			= 0,	//!< drive along the X-axis
 		eY			= 1,	//!< drive along the Y-axis
 		eZ			= 2,	//!< drive along the Z-axis
-		eSWING		= 3,	//!< drive of displacement from the X-axis
-		eTWIST		= 4,	//!< drive of the displacement around the X-axis
-		eSLERP		= 5,	//!< drive of all three angular degrees along a SLERP-path
+		eSWING		= 3,	//!< rotational drive around the Y- and Z-axis
+		eTWIST		= 4,	//!< rotational drive around the X-axis
+		eSLERP		= 5,	//!< drive of all three angular degrees along a SLERP-path (note: takes precedence over eSWING/eTWIST)
 		eCOUNT		= 6
 	};
 };
@@ -127,7 +127,20 @@ struct PxD6JointDriveFlag
 {
 	enum Enum
 	{
-		eACCELERATION	= 1	//!< drive spring is for the acceleration at the joint (rather than the force) 
+		eACCELERATION	= (1 << 0),	//!< drive spring is for the acceleration at the joint (rather than the force) 
+
+		/**
+		\brief Add drive force/torque to the joint force/torque total.
+
+		If this flag is raised, the force/torque value from this drive constraint will be accumulated
+		in the force/torque total that is reported for the underlying PxConstraint object. Note that
+		because the force/torque total changes, the joint break behavior will change too.
+
+		<b>Default:</b> False
+
+		\see PxConstraint::getForce()
+		*/
+		eOUTPUT_FORCE	= (1 << 1)
 	};
 };
 typedef PxFlags<PxD6JointDriveFlag::Enum, PxU32> PxD6JointDriveFlags;
@@ -459,7 +472,7 @@ public:
 	/**
 	\brief Returns string name of PxD6Joint, used for serialization
 	*/
-	virtual	const char*			getConcreteTypeName() const { return "PxD6Joint"; }
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	{ return "PxD6Joint"; }
 
 protected:
 

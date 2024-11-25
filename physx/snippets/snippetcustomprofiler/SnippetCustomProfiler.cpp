@@ -120,6 +120,16 @@ public:
 		printf("end: %s\n", eventName);
 	}
 
+	virtual void recordData(int32_t value, const char* valueName, uint64_t contextId)
+	{
+		printf("data: %s (context ID %llu) = %d\n", valueName, (unsigned long long)contextId, value);
+	}
+
+	virtual void recordData(float value, const char* valueName, uint64_t contextId)
+	{
+		printf("data: %s (context ID %llu) = %f\n", valueName, (unsigned long long)contextId, (double)value);
+	}
+
 }gCustomProfilerCallback;
 
 void initPhysics(bool interactive)

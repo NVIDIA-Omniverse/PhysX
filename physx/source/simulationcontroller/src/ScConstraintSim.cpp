@@ -166,7 +166,7 @@ void Sc::ConstraintSim::setBodies(RigidCore* r0, RigidCore* r1)
 void Sc::ConstraintSim::getForce(PxVec3& lin, PxVec3& ang)
 {
 	const PxReal recipDt = mScene.getOneOverDt();
-	Dy::ConstraintWriteback& solverOutput= mScene.getDynamicsContext()->getConstraintWriteBackPool()[mLowLevelConstraint.index];
+	Dy::ConstraintWriteback& solverOutput = mScene.getDynamicsContext()->getConstraintWriteBackPool()[mLowLevelConstraint.index];
 	lin = solverOutput.linearImpulse * recipDt;
 	ang = solverOutput.angularImpulse * recipDt;
 }

@@ -31,7 +31,6 @@
 // ****************************************************************************
 
 #include <ctype.h>
-#include <vector>
 #include "PxPhysicsAPI.h"
 
 // temporary disable this snippet, cannot work without rendering we cannot include GL directly

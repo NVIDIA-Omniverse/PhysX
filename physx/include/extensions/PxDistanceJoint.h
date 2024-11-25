@@ -233,7 +233,7 @@ public:
 	/**
 	\brief Returns string name of PxDistanceJoint, used for serialization
 	*/
-	virtual	const char*				getConcreteTypeName() const { return "PxDistanceJoint"; }
+	virtual	const char*				getConcreteTypeName() const	PX_OVERRIDE	{ return "PxDistanceJoint"; }
 
 protected:
 

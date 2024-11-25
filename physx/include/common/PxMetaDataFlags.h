@@ -29,7 +29,7 @@
 #ifndef PX_METADATA_FLAGS_H
 #define PX_METADATA_FLAGS_H
 
-#include "foundation/Px.h"
+#include "foundation/PxPreprocessor.h"
 
 #if !PX_DOXYGEN
 namespace physx

@@ -29,6 +29,7 @@
 #include "foundation/PxAssert.h"
 #include "foundation/PxString.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #if PX_WINDOWS_FAMILY
 #include <crtdbg.h>

@@ -44,7 +44,6 @@
 // 
 // ****************************************************************************
 
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "../snippetcommon/SnippetPrint.h"
@@ -63,10 +62,10 @@ static PxScene*					gScene		= NULL;
 static PxMaterial*				gMaterial	= NULL;
 static PxPvd*					gPvd        = NULL;
 
-std::vector<PxVec3> gContactPositions;
-std::vector<PxVec3> gContactImpulses;
-std::vector<PxVec3> gContactLinearImpulses[2];
-std::vector<PxVec3> gContactAngularImpulses[2];
+PxArray<PxVec3> gContactPositions;
+PxArray<PxVec3> gContactImpulses;
+PxArray<PxVec3> gContactLinearImpulses[2];
+PxArray<PxVec3> gContactAngularImpulses[2];
 
 static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attributes0, PxFilterData filterData0, 
 												PxFilterObjectAttributes attributes1, PxFilterData filterData1,
@@ -208,7 +207,7 @@ class ContactReportCallback: public PxSimulationEventCallback
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
 	{
 		PX_UNUSED((pairHeader));
-		std::vector<PxContactPairPoint> contactPoints;
+		PxArray<PxContactPairPoint> contactPoints;
 	
 
 		for(PxU32 i=0;i<nbPairs;i++)
@@ -222,9 +221,9 @@ class ContactReportCallback: public PxSimulationEventCallback
 
 				for(PxU32 j=0;j<contactCount;j++)
 				{
-					gContactPositions.push_back(contactPoints[j].position);
+					gContactPositions.pushBack(contactPoints[j].position);
 					//Push back reported contact impulses
-					gContactImpulses.push_back(contactPoints[j].impulse);
+					gContactImpulses.pushBack(contactPoints[j].impulse);
 
 					//Compute the effective linear/angular impulses for each body.
 					//Note that the local mass scaling permits separate scales for invMass and invInertia.
@@ -237,8 +236,8 @@ class ContactReportCallback: public PxSimulationEventCallback
 							PxRigidBodyExt::computeLinearAngularImpulse(*dynamic, dynamic->getGlobalPose(), contactPoints[j].position, 
 								k == 0 ? contactPoints[j].impulse : -contactPoints[j].impulse, invMassScale[k], invMassScale[k], linImpulse, angImpulse);
 						}
-						gContactLinearImpulses[k].push_back(linImpulse);
-						gContactAngularImpulses[k].push_back(angImpulse);
+						gContactLinearImpulses[k].pushBack(linImpulse);
+						gContactAngularImpulses[k].pushBack(angImpulse);
 					}
 				}
 			}
@@ -307,6 +306,13 @@ void stepPhysics(bool /*interactive*/)
 	
 void cleanupPhysics(bool /*interactive*/)
 {
+    gContactPositions.reset();
+    gContactImpulses.reset();
+    gContactLinearImpulses[0].reset();
+    gContactAngularImpulses[0].reset();
+    gContactLinearImpulses[1].reset();
+    gContactAngularImpulses[1].reset();
+    
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PxCloseExtensions();

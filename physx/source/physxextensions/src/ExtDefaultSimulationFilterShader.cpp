@@ -30,8 +30,8 @@
 #include "extensions/PxDefaultSimulationFilterShader.h"
 #include "PxRigidActor.h"
 #include "PxShape.h"
-#include "PxSoftBody.h"
-
+#include "PxDeformableSurface.h"
+#include "PxDeformableVolume.h"
 #include "foundation/PxIntrinsics.h"
 #include "foundation/PxAllocator.h"
 #include "foundation/PxInlineArray.h"
@@ -201,10 +201,9 @@ namespace
 				}
 			}
 			break;
-			case PxActorType::eSOFTBODY:
+			case PxActorType::eDEFORMABLE_SURFACE:
 			{
-				PxSoftBody& sActor = static_cast<PxSoftBody&>(actor);
-
+				PxDeformableSurface& sActor = static_cast<PxDeformableSurface&>(actor);
 				PxShape* shape = sActor.getShape();
 
 				// retrieve current group mask
@@ -216,6 +215,19 @@ namespace
 				shape->setSimulationFilterData(resultFd);				
 			}
 			break;
+			case PxActorType::eDEFORMABLE_VOLUME:
+			{
+				PxDeformableVolume& sActor = static_cast<PxDeformableVolume&>(actor);
+				PxShape* shape = sActor.getShape();
+
+				// retrieve current group mask
+				PxFilterData resultFd = shape->getSimulationFilterData();
+
+				adjustFilterData(TGroupsMask, fd, resultFd);
+
+				// set new filter data
+				shape->setSimulationFilterData(resultFd);
+			}
 			break;			
 			default:
 			break;

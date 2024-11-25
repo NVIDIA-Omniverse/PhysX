@@ -249,7 +249,7 @@ public:
 	*/
 	virtual	void				setConstraintFunctions(PxConstraintConnector& connector, const PxConstraintShaderTable& shaders)	= 0;
 
-	virtual	const char*			getConcreteTypeName() const PX_OVERRIDE { return "PxConstraint"; }
+	virtual	const char*			getConcreteTypeName() const PX_OVERRIDE	PX_FINAL { return "PxConstraint"; }
 
 	/**
 	\brief Returns the residual for this constraint.

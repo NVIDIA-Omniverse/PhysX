@@ -39,6 +39,7 @@ namespace physx
 
 	class PxBaseTask;
 	class PxCudaContextManager;
+	class PxAllocatorCallback;
 
 	/**
 	\brief Broad phase algorithm used in the simulation
@@ -105,7 +106,7 @@ namespace physx
 	*/
 	struct PxBroadPhaseRegion
 	{
-		PxBounds3	mBounds;		//!< Region's bounds
+		PxBounds3	mBounds;	//!< Region's bounds
 		void*		mUserData;	//!< Region's user-provided data
 	};
 
@@ -523,7 +524,22 @@ namespace physx
 		\param	updateData	[in] The update data
 		\see	PxBroadPhaseUpdateData PxBroadPhaseResults
 		*/
-		PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results, const PxBroadPhaseUpdateData& updateData)
+		PX_FORCE_INLINE	void	updateAndFetchResults(PxBroadPhaseResults& results, const PxBroadPhaseUpdateData& updateData)
+		{
+			update(updateData);
+			fetchResults(results);
+		}
+
+		/**
+		\brief Helper for single-threaded updates.
+
+		This short helper function performs a single-theaded update and reports the results in a single call.
+
+		\param	results		[out] The broadphase results
+		\param	updateData	[in] The update data
+		\see	PxBroadPhaseUpdateData PxBroadPhaseResults
+		*/
+		PX_DEPRECATED	PX_FORCE_INLINE	void	update(PxBroadPhaseResults& results, const PxBroadPhaseUpdateData& updateData)
 		{
 			update(updateData);
 			fetchResults(results);

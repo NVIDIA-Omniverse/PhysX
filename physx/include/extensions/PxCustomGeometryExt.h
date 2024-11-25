@@ -29,8 +29,8 @@
 #ifndef PX_CUSTOM_GEOMETRY_EXT_H
 #define PX_CUSTOM_GEOMETRY_EXT_H
 
-#include <geometry/PxCustomGeometry.h>
-#include <geometry/PxGjkQuery.h>
+#include "geometry/PxCustomGeometry.h"
+#include "geometry/PxGjkQuery.h"
 
 #if !PX_DOXYGEN
 namespace physx

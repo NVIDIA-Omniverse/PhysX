@@ -454,7 +454,12 @@ void Sc::BodyCore::setFlags(PxRigidBodyFlags f)
 		}
 
 		if(switchToKinematic)
+		{
+			if (sim)
+				sim->getLowLevelBody().mInternalFlags |= PxsRigidBody::eVELOCITY_COPY_GPU;	
 			putToSleep();
+
+		}
 
 		if(sim)
 		{
@@ -542,7 +547,7 @@ void Sc::BodyCore::onOriginShift(const PxVec3& shift)
 		b->onOriginShift(shift, getFlags() & PxRigidBodyFlag::eKINEMATIC);  // BodySim might not exist if actor has simulation disabled (PxActorFlag::eDISABLE_SIMULATION)
 }
 
-// PT: TODO: why do we test againt NULL everywhere but not in 'isFrozen' ?
+// PT: TODO: why do we test against NULL everywhere but not in 'isFrozen' ?
 PxIntBool Sc::BodyCore::isFrozen() const
 {
 	return getSim()->isFrozen();

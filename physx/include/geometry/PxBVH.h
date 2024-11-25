@@ -41,6 +41,7 @@ namespace physx
 #endif
 
 class PxGeometry;
+class PxPlane;
 
 /**
 \brief Class representing a bounding volume hierarchy.
@@ -249,7 +250,7 @@ public:
 	*/
 	virtual	bool				traverse(TraversalCallback& cb)	const	= 0;
 
-	virtual	const char*			getConcreteTypeName() const	{ return "PxBVH";	}
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxBVH";	}
 protected:
 	PX_INLINE					PxBVH(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags)	{}
 	PX_INLINE					PxBVH(PxBaseFlags baseFlags) : PxBase(baseFlags)									{}

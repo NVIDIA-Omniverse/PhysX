@@ -34,6 +34,7 @@
 #include "foundation/PxAllocator.h"
 #include "foundation/PxBasicTemplates.h"
 #include "foundation/PxMemory.h"
+#include "foundation/PxIO.h"
 
 namespace physx
 {

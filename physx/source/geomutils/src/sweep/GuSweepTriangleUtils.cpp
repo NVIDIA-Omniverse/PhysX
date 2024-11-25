@@ -37,7 +37,7 @@
 
 using namespace physx;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
 #define GU_SAFE_DISTANCE_FOR_NORMAL_COMPUTATION 0.1f
 

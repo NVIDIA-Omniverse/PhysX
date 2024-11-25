@@ -303,7 +303,7 @@ namespace physx
 		*/
 		virtual		PxReal	getParticleAdhesionScale() const = 0;
 
-		virtual		const char*		getConcreteTypeName() const { return "PxPBDMaterial"; }
+		virtual		const char*		getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxPBDMaterial"; }
 
 	protected:
 		PX_INLINE			PxPBDMaterial(PxType concreteType, PxBaseFlags baseFlags) : PxBaseMaterial(concreteType, baseFlags) {}

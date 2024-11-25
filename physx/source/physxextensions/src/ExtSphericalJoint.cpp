@@ -68,7 +68,7 @@ PxJointLimitCone SphericalJoint::getLimitCone() const
 	return data().limit; 
 }
 
-PxSphericalJointFlags SphericalJoint::getSphericalJointFlags(void) const
+PxSphericalJointFlags SphericalJoint::getSphericalJointFlags() const
 { 
 	return data().jointFlags; 
 }

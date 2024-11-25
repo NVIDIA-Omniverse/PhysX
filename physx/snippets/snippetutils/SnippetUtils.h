@@ -24,8 +24,9 @@
 //
 // Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
-#include "foundation/Px.h"
 #include "foundation/PxSimpleTypes.h"
+#include "foundation/PxVec3.h"
+#include "foundation/PxQuat.h"
 
 namespace physx
 {

@@ -54,24 +54,24 @@ struct PxGpuDynamicsMemoryConfigStatistics
 	PxU32	foundLostPairs;				//!< actual number of lost/found pairs needed - see PxGpuDynamicsMemoryConfig::foundLostPairsCapacity.
 	PxU32	foundLostAggregatePairs;	//!< actual number of lost/found aggregate pairs needed - see PxGpuDynamicsMemoryConfig::foundLostAggregatePairsCapacity.
 	PxU32	totalAggregatePairs;		//!< actual number of aggregate pairs needed - see PxGpuDynamicsMemoryConfig::totalAggregatePairsCapacity.
-	PxU32	softbodyContacts;			//!< actual number of soft body contact needed - see PxGpuDynamicsMemoryConfig::maxSoftBodyContacts.
-	PxU32	femClothContacts;			//!< actual number of FEM cloth contacts needed - see PxGpuDynamicsMemoryConfig::maxFemClothContacts.
+	PxU32	deformableSurfaceContacts;	//!< actual number of  deformable surface contacts needed - see PxGpuDynamicsMemoryConfig::maxDeformableSurfaceContacts.
+	PxU32	deformableVolumeContacts;	//!< actual number of deformable volume contact needed - see PxGpuDynamicsMemoryConfig::maxDeformableVolumeContacts.
+	PxU32	softbodyContacts;			//!< deprecated, use deformableVolumeContacts.
 	PxU32	particleContacts;			//!< actual number of particle contacts needed - see PxGpuDynamicsMemoryConfig::maxParticleContacts.
 	PxU32	collisionStackSize;			//!< actual size (bytes) needed for the collision stack - see PxGpuDynamicsMemoryConfig::collisionStackSize.
-	PxU32	hairContacts;				//!< actual number of hair contacts needed - NOTE not implemented right now.
 
 	PxGpuDynamicsMemoryConfigStatistics() :
-		tempBufferCapacity		(0),
-		rigidContactCount		(0),
-		rigidPatchCount			(0),
-		foundLostPairs			(0),
-		foundLostAggregatePairs	(0),
-		totalAggregatePairs		(0),
-		softbodyContacts		(0),
-		femClothContacts		(0),
-		particleContacts		(0),
-		collisionStackSize		(0),
-		hairContacts			(0)
+		tempBufferCapacity			(0),
+		rigidContactCount			(0),
+		rigidPatchCount				(0),
+		foundLostPairs				(0),
+		foundLostAggregatePairs		(0),
+		totalAggregatePairs			(0),
+		deformableSurfaceContacts	(0),
+		deformableVolumeContacts	(0),
+		softbodyContacts			(0), // deprecated
+		particleContacts			(0),
+		collisionStackSize			(0)
 	{ }
 };
 
@@ -312,19 +312,20 @@ public:
 	PxU64	gpuMemParticles;
 
 	/**
-	\brief GPU device memory in bytes allocated for FEM-based soft body state accessible through API
+	\brief GPU device memory in bytes allocated for deformable surface state accessible through API
 	*/
-	PxU64	gpuMemSoftBodies;
+	PxU64	gpuMemDeformableSurfaces;
 
 	/**
-	\brief GPU device memory in bytes allocated for FEM-based cloth state accessible through API
+	\brief GPU device memory in bytes allocated for deformable volume state accessible through API
 	*/
-	PxU64	gpuMemFEMCloths;
+	PxU64	gpuMemDeformableVolumes;
 
 	/**
-	\brief GPU device memory in bytes allocated for hairsystem state accessible through API
+	\brief Deprecated
+	\see gpuMemDeformableVolumes
 	*/
-	PxU64	gpuMemHairSystems;
+	PX_DEPRECATED PxU64	gpuMemSoftBodies;
 
 	/**
 	\brief GPU device memory in bytes allocated for internal heap allocation
@@ -367,19 +368,20 @@ public:
 	PxU64	gpuMemHeapSimulationParticles;
 
 	/**
-	\brief GPU device heap memory used for soft bodies in the simulation pipeline in bytes
+	\brief GPU device heap memory used for deformable surfaces in the simulation pipeline in bytes
 	*/
-	PxU64	gpuMemHeapSimulationSoftBody;
+	PxU64	gpuMemHeapSimulationDeformableSurface;
 
 	/**
-	\brief GPU device heap memory used for FEM-cloth in the simulation pipeline in bytes
+	\brief GPU device heap memory used for deformable volumes in the simulation pipeline in bytes
 	*/
-	PxU64	gpuMemHeapSimulationFEMCloth;
+	PxU64	gpuMemHeapSimulationDeformableVolume;
 
 	/**
-	\brief GPU device heap memory used for hairsystem in the simulation pipeline in bytes
+	\brief Deprecated
+	\see gpuMemHeapSimulationDeformableVolume
 	*/
-	PxU64	gpuMemHeapSimulationHairSystem;
+	PX_DEPRECATED PxU64	gpuMemHeapSimulationSoftBody;
 
 	/**
 	\brief GPU device heap memory used for shared buffers in the particles pipeline in bytes
@@ -387,19 +389,20 @@ public:
 	PxU64	gpuMemHeapParticles;
 
 	/**
-	\brief GPU device heap memory used for shared buffers in the FEM-based soft body pipeline in bytes
+	\brief GPU device heap memory used for shared buffers in the deformable surface pipeline in bytes
 	*/
-	PxU64	gpuMemHeapSoftBodies;
+	PxU64	gpuMemHeapDeformableSurfaces;
 
 	/**
-	\brief GPU device heap memory used for shared buffers in the FEM-based cloth pipeline in bytes
+	\brief GPU device heap memory used for shared buffers in the deformable volume pipeline in bytes
 	*/
-	PxU64	gpuMemHeapFEMCloths;
-	
+	PxU64	gpuMemHeapDeformableVolumes;
+
 	/**
-	\brief GPU device heap memory used for shared buffers in the hairsystem pipeline in bytes
+	\brief Deprecated
+	\see gpuMemHeapDeformableVolumes
 	*/
-	PxU64	gpuMemHeapHairSystems;
+	PX_DEPRECATED PxU64	gpuMemHeapSoftBodies;
 
 	/**
 	\brief GPU device heap memory not covered by other stats in bytes
@@ -413,46 +416,46 @@ public:
 
 
 	PxSimulationStatistics() :
-		nbActiveConstraints					(0),
-		nbActiveDynamicBodies				(0),
-		nbActiveKinematicBodies				(0),
-		nbStaticBodies						(0),
-		nbDynamicBodies						(0),
-		nbKinematicBodies					(0),
-		nbAggregates						(0),
-		nbArticulations						(0),
-		nbAxisSolverConstraints				(0),
-		compressedContactSize				(0),
-		requiredContactConstraintMemory		(0),
-		peakConstraintMemory				(0),
-		nbDiscreteContactPairsTotal			(0),
-		nbDiscreteContactPairsWithCacheHits	(0),
-		nbDiscreteContactPairsWithContacts	(0),
-		nbNewPairs							(0),
-		nbLostPairs							(0),
-		nbNewTouches						(0),
-		nbLostTouches						(0),
-		nbPartitions						(0),
-		gpuMemParticles						(0),
-		gpuMemSoftBodies					(0),
-		gpuMemFEMCloths                     (0),
-		gpuMemHairSystems					(0),
-		gpuMemHeap							(0),
-		gpuMemHeapBroadPhase				(0),
-		gpuMemHeapNarrowPhase				(0),
-		gpuMemHeapSolver					(0),
-		gpuMemHeapArticulation				(0),
-		gpuMemHeapSimulation				(0),
-		gpuMemHeapSimulationArticulation	(0),
-		gpuMemHeapSimulationParticles		(0),
-		gpuMemHeapSimulationSoftBody		(0),
-		gpuMemHeapSimulationFEMCloth        (0),
-		gpuMemHeapSimulationHairSystem		(0),
-		gpuMemHeapParticles					(0),
-		gpuMemHeapSoftBodies				(0),
-		gpuMemHeapFEMCloths                 (0), 
-		gpuMemHeapHairSystems				(0),
-		gpuMemHeapOther						(0)
+		nbActiveConstraints						(0),
+		nbActiveDynamicBodies					(0),
+		nbActiveKinematicBodies					(0),
+		nbStaticBodies							(0),
+		nbDynamicBodies							(0),
+		nbKinematicBodies						(0),
+		nbAggregates							(0),
+		nbArticulations							(0),
+		nbAxisSolverConstraints					(0),
+		compressedContactSize					(0),
+		requiredContactConstraintMemory			(0),
+		peakConstraintMemory					(0),
+		nbDiscreteContactPairsTotal				(0),
+		nbDiscreteContactPairsWithCacheHits		(0),
+		nbDiscreteContactPairsWithContacts		(0),
+		nbNewPairs								(0),
+		nbLostPairs								(0),
+		nbNewTouches							(0),
+		nbLostTouches							(0),
+		nbPartitions							(0),
+		gpuMemParticles							(0),
+		gpuMemDeformableSurfaces				(0),
+		gpuMemDeformableVolumes					(0),
+		gpuMemSoftBodies						(0), // deprecated
+		gpuMemHeap								(0),
+		gpuMemHeapBroadPhase					(0),
+		gpuMemHeapNarrowPhase					(0),
+		gpuMemHeapSolver						(0),
+		gpuMemHeapArticulation					(0),
+		gpuMemHeapSimulation					(0),
+		gpuMemHeapSimulationArticulation		(0),
+		gpuMemHeapSimulationParticles			(0),
+		gpuMemHeapSimulationDeformableSurface	(0),
+		gpuMemHeapSimulationDeformableVolume	(0),
+		gpuMemHeapSimulationSoftBody			(0), // deprecated
+		gpuMemHeapParticles						(0),
+		gpuMemHeapDeformableSurfaces			(0), 
+		gpuMemHeapDeformableVolumes				(0),
+		gpuMemHeapSoftBodies					(0), // deprecated
+		gpuMemHeapOther							(0)
 	{
 		nbBroadPhaseAdds = 0;
 		nbBroadPhaseRemoves = 0;

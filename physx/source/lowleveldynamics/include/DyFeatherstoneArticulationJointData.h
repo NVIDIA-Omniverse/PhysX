@@ -48,11 +48,11 @@ namespace physx
 		{
 		public:
 
-			ArticulationJointCoreData() : jointOffset(0xffffffff), dofInternalConstraintMask(0)
+			ArticulationJointCoreData() : jointOffset(0xffffffff), dofConstraintMask(0)
 			{
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE PxU8 computeJointDofs(ArticulationJointCore* joint) const
+			PX_CUDA_CALLABLE PX_FORCE_INLINE PxU8 countJointDofs(ArticulationJointCore* joint) const
 			{
 				PxU8 tDof = 0;
 
@@ -67,27 +67,10 @@ namespace physx
 				return tDof;
 			}
 
-			PX_CUDA_CALLABLE PX_FORCE_INLINE void computeJointAxis(const ArticulationJointCore* joint, Cm::UnAlignedSpatialVector* jointAxis)
+			PX_FORCE_INLINE PxU8 configureJointDofs(ArticulationJointCore* joint, Cm::UnAlignedSpatialVector* jointAxis)
 			{
-				for (PxU32 i = 0; i < dof; ++i)
-				{
-					PxU32 ind = joint->dofIds[i];
-
-					Cm::UnAlignedSpatialVector axis = Cm::UnAlignedSpatialVector::Zero();
-					//axis is in the local space of joint
-					axis[ind] = 1.f;
-
-					jointAxis[i] = axis;
-				}
-			}
-
-			PX_FORCE_INLINE PxU32 computeJointDof(ArticulationJointCore* joint, Cm::UnAlignedSpatialVector* jointAxis)
-			{
-				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eMOTION)
-				{
-
-					dof = 0;
-					limitMask = 0;
+					nbDof = 0;
+					dofLimitMask = 0;
 
 					//KS - no need to zero memory here.
 					//PxMemZero(jointAxis, sizeof(jointAxis));
@@ -100,44 +83,26 @@ namespace physx
 							//axis is in the local space of joint
 							axis[i] = 1.f;
 
-							jointAxis[dof] = axis;
+							jointAxis[nbDof] = axis;
 
-							joint->invDofIds[i] = dof;
-							joint->dofIds[dof] = i;
+							joint->invDofIds[i] = nbDof;
+							joint->dofIds[nbDof] = i;
 
 							if (joint->motion[i] == PxArticulationMotion::eLIMITED)
-								limitMask |= 1 << dof;
+								dofLimitMask |= 1 << nbDof;
 
-							dof++;
+							nbDof++;
 						}
 					}
-				}
-
-				return dof;
-
+			
+				return nbDof;
 			}
 
-			PX_FORCE_INLINE void setArmature(ArticulationJointCore* joint)
-			{
-				if (joint->jointDirtyFlag & ArticulationJointCoreDirtyFlag::eARMATURE)
-				{
-
-					for (PxU32 i = 0; i < dof; ++i)
-					{
-						PxU32 ind = joint->dofIds[i];
-						armature[i] = joint->armature[ind];
-					}
-
-					joint->jointDirtyFlag &= ~ArticulationJointCoreDirtyFlag::eARMATURE;
-				}
-			}
-
-			PxU32								jointOffset;					//4
-			PxReal								armature[3];					// indexed by internal dof id.
+			PxU32	jointOffset;				//4
 			//degree of freedom
-			PxU8								dof;							//1
-			PxU8								dofInternalConstraintMask;		//1
-			PxU8								limitMask;						//1	
+			PxU8	nbDof;						//1
+			PxU8	dofConstraintMask;	//1
+			PxU8	dofLimitMask;					//1	
 
 		};
 

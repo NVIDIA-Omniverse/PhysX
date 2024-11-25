@@ -141,9 +141,9 @@ namespace Sc
 
 					void					commonInit();
 
-					void					computeGeneralizedGravityForce(PxArticulationCache& cache);
+					void					computeGeneralizedGravityForce(PxArticulationCache& cache, const bool rootMotion);
 
-					void					computeCoriolisAndCentrifugalForce(PxArticulationCache& cache);
+					void					computeCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion);
 
 					void					computeGeneralizedExternalForce(PxArticulationCache& cache);
 
@@ -159,7 +159,11 @@ namespace Sc
 
 					bool					computeLambda(PxArticulationCache& cache, PxArticulationCache& rollBackCache, const PxReal* jointTorque, const PxVec3 gravity, const PxU32 maxIter);
 
-					void					computeGeneralizedMassMatrix(PxArticulationCache& cache);
+					void					computeGeneralizedMassMatrix(PxArticulationCache& cache, const bool rootMotion);
+
+					PxVec3					computeArticulationCOM(const bool rootFrame);
+
+					void					computeCentroidalMomentumMatrix(PxArticulationCache& cache);
 
 					PxU32					getCoefficientMatrixSize() const;
 
@@ -196,8 +200,7 @@ namespace Sc
 
 					void					copyJointStatus(const PxU32 linkIndex);
 
-	PX_FORCE_INLINE void					getLLArticulationInitialized(bool val) { mIsLLArticulationInitialized = val; }
-	PX_FORCE_INLINE	bool					getLLArticulationInitialized() { return mIsLLArticulationInitialized; }
+	PX_FORCE_INLINE	bool					isLLArticulationInitialized()	const	{ return mIsLLArticulationInitialized; }
 	private:
 					Dy::FeatherstoneArticulation*					mLLArticulation;
 					Scene&											mScene;
@@ -215,6 +218,8 @@ namespace Sc
 					bool											mIsLLArticulationInitialized;
 					ArticulationSimDirtyFlags						mDirtyFlags;
 	};
+
+	ArticulationSim* getArticulationSim(const IG::IslandSim& islandSim, PxNodeIndex nodeIndex);
 
 } // namespace Sc
 

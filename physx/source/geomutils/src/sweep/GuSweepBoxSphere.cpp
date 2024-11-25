@@ -40,8 +40,6 @@
 using namespace physx;
 using namespace Gu;
 
-namespace
-{
 // PT: TODO: get rid of this copy
 static const PxVec3 gNearPlaneNormal[] = 
 {
@@ -52,8 +50,6 @@ static const PxVec3 gNearPlaneNormal[] =
 	PxVec3(0.0f, -1.0f, 0.0f),
 	PxVec3(0.0f, 0.0f, -1.0f)
 };
-
-}
 
 bool Gu::sweepBoxSphere(const Box& box, PxReal sphereRadius, const PxVec3& spherePos, const PxVec3& dir, PxReal length, PxReal& min_dist, PxVec3& normal, PxHitFlags hitFlags)
 {

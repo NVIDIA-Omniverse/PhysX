@@ -29,6 +29,7 @@
 #ifndef SC_NPHASE_CORE_H
 #define SC_NPHASE_CORE_H
 
+#include "PxSceneDesc.h"
 #include "foundation/PxHash.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxHashSet.h"
@@ -222,7 +223,7 @@ namespace Sc
 		NPhaseCore(Scene& scene, const PxSceneDesc& desc);
 		~NPhaseCore();
 
-		ElementSimInteraction* findInteraction(const ElementSim* element0, const ElementSim* element1);
+		ElementSimInteraction* findInteraction(const ElementSim* element0, const ElementSim* element1)	const;
 
 		void	onTriggerOverlapCreated(const Bp::AABBOverlap* PX_RESTRICT pairs, PxU32 pairCount);
 
@@ -381,7 +382,8 @@ namespace Sc
 			mFilterShaderDataSize	(scene.getFilterShaderDataSizeFast()),
 			mFilterCallback			(scene.getFilterCallbackFast()),
 			mKineKineFilteringMode	(scene.getKineKineFilteringMode()),
-			mStaticKineFilteringMode(scene.getStaticKineFilteringMode())
+			mStaticKineFilteringMode(scene.getStaticKineFilteringMode()),
+			mIsDirectGPU			(scene.getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
 		{
 		}
 
@@ -391,6 +393,7 @@ namespace Sc
 		PxSimulationFilterCallback*			mFilterCallback;
 		const PxPairFilteringMode::Enum		mKineKineFilteringMode;
 		const PxPairFilteringMode::Enum		mStaticKineFilteringMode;
+		const bool 							mIsDirectGPU;
 	};
 
 } // namespace Sc

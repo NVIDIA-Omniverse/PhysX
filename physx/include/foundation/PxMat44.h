@@ -345,7 +345,7 @@ class PxMat44T
 		column3 *= p.w;
 	}
 
-	PX_CUDA_CALLABLE PX_INLINE const PxMat44T inverseRT(void) const
+	PX_CUDA_CALLABLE PX_INLINE const PxMat44T inverseRT() const
 	{
 		const PxVec3T<Type> r0(column0.x, column1.x, column2.x);
 		const PxVec3T<Type> r1(column0.y, column1.y, column2.y);

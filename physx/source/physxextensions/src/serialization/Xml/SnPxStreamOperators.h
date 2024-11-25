@@ -73,7 +73,7 @@ namespace physx // ADL requires we put the operators in the same namespace as th
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU8 inData ) {	return toStream( ioStream, "%u", PxU32(inData) ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, char inData ) {	return toStream( ioStream, "%c", inData ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU32 inData ) {	return toStream( ioStream, "%u", inData ); }
-	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU64 inData ) {	return toStream( ioStream, "%" PX_PRIu64, inData ); }
+	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxU64 inData ) {	return toStream( ioStream, "%llu", inData ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, const void* inData ) { return ioStream << static_cast<uint64_t>(size_t(inData)); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxF32 inData ) { return toStream( ioStream, "%g", PxF64(inData) ); }
 	inline PxOutputStream& operator << ( PxOutputStream& ioStream, PxF64 inData ) { return toStream( ioStream, "%g", inData ); }

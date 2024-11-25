@@ -77,6 +77,12 @@ void GeometryUnion::set(const PxGeometry& g)
 		}
 		break;
 
+		case PxGeometryType::eCONVEXCORE:
+		{
+			reinterpret_cast<PxConvexCoreGeometry&>(mGeometry) = static_cast<const PxConvexCoreGeometry&>(g);
+		}
+		break;
+
 		case PxGeometryType::eCONVEXMESH:
 		{
 			reinterpret_cast<PxConvexMeshGeometry&>(mGeometry) = static_cast<const PxConvexMeshGeometry&>(g);
@@ -109,12 +115,6 @@ void GeometryUnion::set(const PxGeometry& g)
 		{
 			reinterpret_cast<PxHeightFieldGeometry&>(mGeometry) = static_cast<const PxHeightFieldGeometry&>(g);
 			reinterpret_cast<PxHeightFieldGeometryLL&>(mGeometry).materialsLL = MaterialIndicesStruct();
-		}
-		break;
-
-		case PxGeometryType::eHAIRSYSTEM:
-		{
-			reinterpret_cast<PxHairSystemGeometry&>(mGeometry) = static_cast<const PxHairSystemGeometry&>(g);
 		}
 		break;
 
@@ -380,7 +380,6 @@ void ShapeCore::resolveReferences(PxDeserializationContext& context)
 	break;
 	case PxGeometryType::eTETRAHEDRONMESH:
 	case PxGeometryType::ePARTICLESYSTEM:
-	case PxGeometryType::eHAIRSYSTEM:
 	case PxGeometryType::eCUSTOM:
 	{
 		// implement
@@ -391,6 +390,7 @@ void ShapeCore::resolveReferences(PxDeserializationContext& context)
 	case PxGeometryType::ePLANE:
 	case PxGeometryType::eCAPSULE:
 	case PxGeometryType::eBOX:
+	case PxGeometryType::eCONVEXCORE:
 	case PxGeometryType::eGEOMETRY_COUNT:
 	case PxGeometryType::eINVALID:
 	break;

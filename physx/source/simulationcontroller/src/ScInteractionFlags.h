@@ -29,7 +29,6 @@
 #ifndef SC_INTERACTION_FLAGS_H
 #define SC_INTERACTION_FLAGS_H
 
-#include "foundation/Px.h"
 
 namespace physx
 {
@@ -54,11 +53,10 @@ namespace Sc
 		enum Enum
 		{
 			eFILTER_STATE		= (1 << 0), // All changes filtering related
-			eMATERIAL			= (1 << 1),
-			eBODY_KINEMATIC		= (1 << 2) | eFILTER_STATE,  // A transition between dynamic and kinematic (and vice versa) require a refiltering
-			eDOMINANCE			= (1 << 3),
-			eREST_OFFSET		= (1 << 4),
-			eVISUALIZATION		= (1 << 5)
+			eBODY_KINEMATIC		= (1 << 1) | eFILTER_STATE,  // A transition between dynamic and kinematic (and vice versa) require a refiltering
+			eDOMINANCE			= (1 << 2),
+			eREST_OFFSET		= (1 << 3),
+			eVISUALIZATION		= (1 << 4)
 		};
 	};
 

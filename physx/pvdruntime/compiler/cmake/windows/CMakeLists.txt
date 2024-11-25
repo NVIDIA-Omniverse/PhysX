@@ -25,11 +25,11 @@
 ## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
 IF(NOT DEFINED PHYSX_WINDOWS_COMPILE_DEFS)
-	MESSAGE(FATAL ERROR "Cloud uses the PhysX compile defs, and they're not defined when they need to be.")
+	MESSAGE(FATAL ERROR "PVDRuntime uses the PhysX compile defs, and they're not defined when they need to be.")
 ENDIF()
 
 IF (NOT DEFINED PHYSX_CXX_FLAGS)
-	MESSAGE(FATAL ERROR "Cloud uses the PhysX CXX flags, and they're not defined when they need to be.")
+	MESSAGE(FATAL ERROR "PVDRuntime uses the PhysX CXX flags, and they're not defined when they need to be.")
 ENDIF()
 
 # Get the CXX Flags from the Cached variables set by the PhysX CMakeLists

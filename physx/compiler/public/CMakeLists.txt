@@ -24,7 +24,7 @@
 ##
 ## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.16)
 
 IF(NOT DEFINED PHYSX_CMAKE_MODULES_PATH OR PHYSX_CMAKE_MODULES_PATH STREQUAL "")
 	IF(DEFINED ENV{PM_cmake_PATH} AND NOT "$ENV{PM_cmake_PATH}" STREQUAL "")
@@ -83,8 +83,3 @@ IF(PX_BUILDSNIPPETS)
 	MESSAGE("Added Snippets")
 ENDIF()
 
-
-IF(TARGET_BUILD_PLATFORM STREQUAL "switch")
-	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ALL_BUILD.vcxproj.user" INPUT  "${PHYSX_ROOT_DIR}/source/compiler/cmake/modules/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
-	FILE(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/INSTALL.vcxproj.user" INPUT  "${PHYSX_ROOT_DIR}/source/compiler/cmake/modules/switch/Microsoft.Cpp.${NX_TARGET_DEVKIT}.user.props" CONDITION  1)
-ENDIF()

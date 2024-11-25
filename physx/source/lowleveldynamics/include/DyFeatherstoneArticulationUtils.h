@@ -46,7 +46,7 @@ namespace Dy
 		static const PxU32 MaxColumns = 3;
 	public:
 
-#ifndef __CUDACC__
+#if !PX_CUDA_COMPILER
 		PX_CUDA_CALLABLE PX_FORCE_INLINE SpatialSubspaceMatrix() :numColumns(0)
 		{
 			//PxMemZero(columns, sizeof(Cm::SpatialVectorF) * 6);
@@ -196,22 +196,6 @@ namespace Dy
 			ret.T = T.getTranspose();
 			return ret;
 			
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::SpatialVectorF transposeTransform(const Cm::SpatialVectorF& s) const
-		{
-			const PxVec3 top1 = q.rotateInv(s.top);
-			const PxVec3 bottom1 = T.transformTranspose(s.top) + q.rotateInv(s.bottom);
-
-			return Cm::SpatialVectorF(top1, bottom1);
-		}
-
-		PX_CUDA_CALLABLE PX_FORCE_INLINE Cm::UnAlignedSpatialVector transposeTransform(const Cm::UnAlignedSpatialVector& s) const
-		{
-			const PxVec3 top1 = q.rotateInv(s.top);
-			const PxVec3 bottom1 = T.transformTranspose(s.top) + q.rotateInv(s.bottom);
-
-			return Cm::UnAlignedSpatialVector(top1, bottom1);
 		}
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE void operator =(SpatialTransform& other)

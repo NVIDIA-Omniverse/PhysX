@@ -28,6 +28,12 @@
 #define PX_PVD_OBJECT_MODEL_BASE_TYPES_H
 
 #include "foundation/PxAssert.h"
+#include "foundation/PxVec2.h"
+#include "foundation/PxVec3.h"
+#include "foundation/PxVec4.h"
+#include "foundation/PxQuat.h"
+#include "foundation/PxMat44.h"
+#include "foundation/PxBounds3.h"
 
 #if !PX_DOXYGEN
 namespace physx

@@ -29,6 +29,7 @@
 #include "ScBroadphase.h"
 #include "BpAABBManagerBase.h"
 #include "ScShapeSim.h"
+#include "common/PxProfileZone.h"
 
 using namespace physx;
 using namespace Sc;
@@ -67,8 +68,10 @@ void BroadphaseManager::prepareOutOfBoundsCallbacks(AABBManagerBase* aabbManager
 	}
 }
 
-bool BroadphaseManager::fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManager, const ObjectIDTracker& tracker)
+bool BroadphaseManager::fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManager, const ObjectIDTracker& tracker, PxU64 contextID)
 {
+	PX_UNUSED(contextID);
+
 	AABBManagerBase::OutOfBoundsData data;
 	if(!aabbManager->getOutOfBoundsObjects(data))
 		return false;
@@ -95,6 +98,7 @@ bool BroadphaseManager::fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManage
 
 			if(cb)
 			{
+				PX_PROFILE_ZONE("USERCODE - PxBroadPhaseCallback::onObjectOutOfBounds", contextID);
 				ActorSim& actor = volume->getActor();
 				RigidSim& rigidSim = static_cast<RigidSim&>(actor);
 				PxActor* pxActor = rigidSim.getPxActor();
@@ -115,7 +119,10 @@ bool BroadphaseManager::fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManage
 		{
 			PxAggregate* px = reinterpret_cast<PxAggregate*>(outAgg[i]);
 			if(cb)
+			{
+				PX_PROFILE_ZONE("USERCODE - PxBroadPhaseCallback::onObjectOutOfBounds", contextID);
 				cb->onObjectOutOfBounds(*px);
+			}
 			else
 				outputWarning = true;
 		}

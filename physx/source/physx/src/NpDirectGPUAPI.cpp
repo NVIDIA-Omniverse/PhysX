@@ -38,7 +38,23 @@ PX_IMPLEMENT_OUTPUT_ERROR
 
 NpDirectGPUAPI::NpDirectGPUAPI(NpScene& scene) :
 	mNpScene(scene)
+#if PX_SUPPORT_OMNI_PVD
+	,mOvdCallback(scene)
+#endif
 {
+#if PX_SUPPORT_OMNI_PVD	
+	// if DirectGPU API is on for the scene set the OVDCallback for the data extraction
+	// This is basically a redundant test as supposedly the NpDirectGPUAPI is only set for Direct GPU API enabled scenes, this is just being ultra cautious
+	PxSceneFlags flags = mNpScene.getFlags();
+	if( (flags & PxSceneFlag::eENABLE_DIRECT_GPU_API) && (flags & PxSceneFlag::eENABLE_GPU_DYNAMICS) && (mNpScene.getBroadPhaseType() == PxBroadPhaseType::eGPU) )
+	{
+		PxsSimulationController* controller = mNpScene.getScScene().getSimulationController();
+		if (controller->getEnableOVDReadback())
+		{		
+			controller->setOVDCallbacks(mOvdCallback);
+		}
+	}
+#endif
 }
 
 bool NpDirectGPUAPI::getRigidDynamicData(void* PX_RESTRICT data, const PxRigidDynamicGPUIndex* PX_RESTRICT gpuIndices, PxRigidDynamicGPUAPIReadType::Enum dataType, PxU32 nbElements, CUevent startEvent, CUevent finishEvent) const
@@ -68,7 +84,7 @@ bool NpDirectGPUAPI::setRigidDynamicData(const void* PX_RESTRICT data, const PxR
 
 	if (!data || !gpuIndices)
 		return outputError<PxErrorCode::eINVALID_OPERATION>(__LINE__, "PxDirectGPUAPI::setRigidDynamicData(): data and/or gpuIndices has to be valid pointer.");
-
+	
 	return mNpScene.getScScene().getSimulationController()->setRigidDynamicData(data, gpuIndices, dataType, nbElements, startEvent, finishEvent);
 }
 

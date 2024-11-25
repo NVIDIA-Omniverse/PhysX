@@ -78,7 +78,7 @@ struct PxVehicleSuspensionParams
 		const PxVehicleFrame& srcFrame, const PxVehicleFrame& trgFrame, const PxVehicleScale& srcScale, const PxVehicleScale& trgScale) const
 	{
 		PxVehicleSuspensionParams r = *this;
-		r.suspensionAttachment= PxVehicleTransformFrameToFrame(srcFrame, trgFrame, srcScale, trgScale, suspensionAttachment);
+		r.suspensionAttachment = PxVehicleTransformFrameToFrame(srcFrame, trgFrame, srcScale, trgScale, suspensionAttachment);
 		r.suspensionTravelDir = PxVehicleTransformFrameToFrame(srcFrame, trgFrame, suspensionTravelDir);
 		r.suspensionTravelDist *= (trgScale.scale/srcScale.scale);
 		r.wheelAttachment = PxVehicleTransformFrameToFrame(srcFrame, trgFrame, srcScale, trgScale, wheelAttachment);

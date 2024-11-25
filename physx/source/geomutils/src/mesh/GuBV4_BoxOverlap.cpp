@@ -29,7 +29,7 @@
 #include "GuBV4.h"
 using namespace physx;
 using namespace Gu;
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuInternal.h"
 #include "GuDistancePointSegment.h"

@@ -29,7 +29,9 @@
 #ifndef PX_MATH_INTRINSICS_H
 #define PX_MATH_INTRINSICS_H
 
+#include <string.h>
 #include "foundation/PxPreprocessor.h"
+#include "foundation/PxSimpleTypes.h"
 
 #if PX_WINDOWS_FAMILY
 #include "foundation/windows/PxWindowsMathIntrinsics.h"

@@ -172,6 +172,14 @@ static bool computeMassAndInertia(Ext::InertiaTensorComputer& inertiaComp, bool 
 			}
 			break;
 
+		case PxGeometryType::eCONVEXCORE:
+			{
+				PxMassProperties mp(shapes[i]->getGeometry());
+				it = Ext::InertiaTensorComputer(mp.inertiaTensor, mp.centerOfMass, mp.mass);
+				it.transform(shapes[i]->getLocalPose());
+			}
+			break;
+
 		case PxGeometryType::eCONVEXMESH : 
 			{
 				const PxConvexMeshGeometry& g = static_cast<const PxConvexMeshGeometry&>(geom);

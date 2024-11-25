@@ -60,7 +60,7 @@ namespace Dy
 		PxI32 mCounter;
 		PxReal mMaxError;
 		
-#if !__CUDACC__
+#if !PX_CUDA_COMPILER
 		PX_FORCE_INLINE ErrorAccumulator() : mErrorSumOfSquares(0.0f), mCounter(0), mMaxError(0.0f)
 		{ }
 #endif

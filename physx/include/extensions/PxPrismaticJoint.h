@@ -144,7 +144,7 @@ public:
 	/**
 	\brief Returns string name of PxPrismaticJoint, used for serialization
 	*/
-	virtual	const char*		getConcreteTypeName() const { return "PxPrismaticJoint"; }
+	virtual	const char*		getConcreteTypeName() const	PX_OVERRIDE	{ return "PxPrismaticJoint"; }
 
 protected:
 	//serialization

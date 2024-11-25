@@ -125,6 +125,10 @@ void Sc::Scene::fireBrokenConstraintCallbacks()
 		PX_CHECK_MSG(typeID != 0xffffffff, "onConstraintBreak: Invalid constraint type ID.");
 
 		PxConstraintInfo constraintInfo(c->getPxConstraint(), externalRef, typeID);
-		mSimulationEventCallback->onConstraintBreak(&constraintInfo, 1);
+		{
+			// PT: TODO: batch data and call this only once
+			PX_PROFILE_ZONE("USERCODE - PxSimulationEventCallback::onConstraintBreak", mContextId);
+			mSimulationEventCallback->onConstraintBreak(&constraintInfo, 1);
+		}
 	}
 }

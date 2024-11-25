@@ -45,6 +45,8 @@ Sc::ArticulationMimicJointSim::ArticulationMimicJointSim(ArticulationMimicJointC
 	mLLMimicJoint.axisB = mimicJointCore.mAxisB;
 	mLLMimicJoint.gearRatio = mimicJointCore.mGearRatio;
 	mLLMimicJoint.offset = mimicJointCore.mOffset;
+	mLLMimicJoint.naturalFrequency = mimicJointCore.mNaturalFrequency;
+	mLLMimicJoint.dampingRatio = mimicJointCore.mDampingRatio;
 }
 
 Sc::ArticulationMimicJointSim::~ArticulationMimicJointSim()
@@ -63,6 +65,19 @@ void Sc::ArticulationMimicJointSim::setOffset(const PxReal offset)
 	mLLMimicJoint.offset = offset;
 	mArticulationSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_MIMIC_JOINT);
 }
+
+void Sc::ArticulationMimicJointSim::setNaturalFrequency(const PxReal naturalFrequency)
+{
+	mLLMimicJoint.naturalFrequency = naturalFrequency;
+	mArticulationSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_MIMIC_JOINT);
+}
+
+void Sc::ArticulationMimicJointSim::setDampingRatio(const PxReal dampingRatio)
+{
+	mLLMimicJoint.dampingRatio = dampingRatio;
+	mArticulationSim->setArticulationDirty(Dy::ArticulationDirtyFlag::eDIRTY_MIMIC_JOINT);
+}
+
 
 }
 

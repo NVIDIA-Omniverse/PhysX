@@ -60,7 +60,7 @@ static void initConvexHullData(ConvexHullData& data)
 	data.mPolygons = NULL;
 	data.mBigConvexRawData = NULL;
 	data.mInternal.mInternalExtents = PxVec3(0.0f);
-	data.mInternal.mInternalRadius= 0.0f;
+	data.mInternal.mInternalRadius = 0.0f;
 }
 
 ConvexMesh::ConvexMesh(MeshFactory* factory) :

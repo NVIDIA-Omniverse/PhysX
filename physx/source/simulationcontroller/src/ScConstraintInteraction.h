@@ -44,18 +44,18 @@ namespace Sc
 										ConstraintInteraction(ConstraintSim* shader, RigidSim& r0, RigidSim& r1);
 										~ConstraintInteraction();
 
-						bool			onActivate(void* data);
+						bool			onActivate();
 						bool			onDeactivate();
 
 						void			updateState();
 						void			destroy();  // disables the interaction and unregisters from the system. Does NOT delete the object. This is used on destruction but also when a constraint breaks.
 
 		PX_FORCE_INLINE	ConstraintSim*	getConstraint()			{ return mConstraint;	}
-		PX_FORCE_INLINE	PxU32			getEdgeIndex()	const	{ return mEdgeIndex;	}
+		PX_FORCE_INLINE	IG::EdgeIndex	getEdgeIndex()	const	{ return mEdgeIndex;	}
 
 	private:
 						ConstraintSim*	mConstraint;
-						PxU32			mEdgeIndex;
+						IG::EdgeIndex	mEdgeIndex;
 	};
 
 } // namespace Sc

@@ -47,6 +47,7 @@ class PxRepXSerializer;
 class PxSerializer;
 class PxPhysics;
 class PxCollection;
+class PxOutputStream;
 
 //! Default serialization alignment
 #define PX_SERIAL_ALIGN	16

@@ -452,7 +452,7 @@ public:
 	*/
 	virtual 	PxRigidDynamicGPUIndex	getGPUIndex() const = 0;
 
-	virtual		const char*			getConcreteTypeName() const { return "PxRigidDynamic"; }
+	virtual		const char*			getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxRigidDynamic"; }
 
 protected:
 	PX_INLINE						PxRigidDynamic(PxType concreteType, PxBaseFlags baseFlags) : PxRigidBody(concreteType, baseFlags) { }

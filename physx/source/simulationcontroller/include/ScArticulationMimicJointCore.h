@@ -65,6 +65,8 @@ public:
 	PxU32 mAxisB;
 	PxReal mGearRatio;
 	PxReal mOffset;
+	PxReal mNaturalFrequency;
+	PxReal mDampingRatio;
 };
 }//namespace Sc
 }//namespace physx

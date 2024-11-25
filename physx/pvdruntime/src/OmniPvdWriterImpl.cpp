@@ -333,6 +333,46 @@ void OMNI_PVD_CALL OmniPvdWriterImpl::stopFrame(OmniPvdContextHandle contextHand
 	}
 }
 
+void OMNI_PVD_CALL OmniPvdWriterImpl::recordMessage(OmniPvdContextHandle contextHandle, const char* message, const char* file, uint32_t line, uint32_t type, OmniPvdClassHandle handle)
+{
+	setVersionHelper();
+	if (mStream)
+	{
+		writeCommand(OmniPvdCommand::eRECORD_MESSAGE);
+		writeWithStatus((const uint8_t*)&contextHandle, sizeof(OmniPvdContextHandle));
+
+		int messageLength = 0;
+
+		if (message)
+		{
+			messageLength = (int)strlen(message);
+			writeWithStatus((const uint8_t*)&messageLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)message, messageLength);
+		}
+		else
+		{
+			writeWithStatus((const uint8_t*)&messageLength, sizeof(uint16_t));
+		}
+
+		int filenameLength = 0;
+
+		if (file)
+		{
+			filenameLength = (int)strlen(file);
+			writeWithStatus((const uint8_t*)&filenameLength, sizeof(uint16_t));
+			writeWithStatus((const uint8_t*)file, filenameLength);
+		}
+		else
+		{
+			writeWithStatus((const uint8_t*)&filenameLength, sizeof(uint16_t));
+		}
+
+		writeWithStatus((const uint8_t*)&line, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&type, sizeof(uint32_t));
+		writeWithStatus((const uint8_t*)&handle, sizeof(OmniPvdClassHandle));
+	}
+}
+
 uint32_t OMNI_PVD_CALL OmniPvdWriterImpl::getStatus() 
 {
 	return mStatusFlags;

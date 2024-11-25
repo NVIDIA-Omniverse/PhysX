@@ -355,10 +355,29 @@ public:
 	 * \param contextHandle The user-defined context handle for grouping objects
 	 * \param timeStamp The timestamp of the frame stop event
 	 */
+
 	virtual void OMNI_PVD_CALL stopFrame(OmniPvdContextHandle contextHandle, uint64_t timeStamp) = 0;
 
 	/**
-	 * \brief Gets the status of the writer
+	 * \brief Record a message
+	 * 
+	 * Record a message in the OVD stream. The file, line and type parameters can help locate 
+	 * the source of the message when debugging.
+	 *
+	 * \param contextHandle The user-defined context handle for grouping objects
+	 * \param message A character string text message.
+	 * \param file A character string containing the name of the source file where the message originated from. 
+	 *        NULL is a valid value if a file name is not needed.
+	 * \param line The line number in the source file where the message originated from.
+	 * \param type An enumerated type describing the message type. If unneeded, any value can be set.
+	 * \param handle A handle to an Omni PVD enumerated type that contains all values for the previous type parameter. 
+	 *        Setting OMNI_PVD_INVALID_HANDLE will cause this parameter to be ignored. 
+	 *        See #registerEnumValue()
+	 */
+	virtual void OMNI_PVD_CALL recordMessage(OmniPvdContextHandle contextHandle, const char* message, const char* file, uint32_t line, uint32_t type, OmniPvdClassHandle handle = OMNI_PVD_INVALID_HANDLE) = 0;
+
+	/**
+	 * @brief Gets the status of the writer
 	 *
 	 * \return The current status flags of the writer, held in a 32 bit unsigned integer with the flag bits defined by OmniPvdWriterStatusFlag
      *

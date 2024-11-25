@@ -33,8 +33,6 @@
 #include "DyCpuGpuArticulation.h"
 #include "DyFeatherstoneArticulation.h"
 
-using namespace physx::Gu;
-
 namespace physx
 {
 

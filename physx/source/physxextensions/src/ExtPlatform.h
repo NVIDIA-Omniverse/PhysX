@@ -30,7 +30,6 @@
 #define PLATFORM_H
 
 #include <assert.h>
-#include "foundation/Px.h"
 #include "foundation/PxThread.h"
 
 #endif

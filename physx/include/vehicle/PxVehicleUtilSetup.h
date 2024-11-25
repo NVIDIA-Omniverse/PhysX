@@ -30,6 +30,7 @@
 #define PX_VEHICLE_UTIL_SETUP_H
 
 #include "foundation/PxSimpleTypes.h"
+#include "foundation/PxTransform.h"
 #include "vehicle/PxVehicleSDK.h"
 
 #if !PX_DOXYGEN

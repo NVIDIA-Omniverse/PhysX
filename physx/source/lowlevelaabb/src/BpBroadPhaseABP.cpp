@@ -43,8 +43,8 @@
 #include "foundation/PxSync.h"
 #include "task/PxTask.h"
 
-using namespace physx::aos;
 using namespace physx;
+using namespace aos;
 using namespace Bp;
 using namespace Cm;
 

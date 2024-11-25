@@ -177,9 +177,9 @@ public:
 	virtual PxsSimulationController* createGpuSimulationController(PxsKernelWranglerManager* gpuWranglerManagers, 
 		PxCudaContextManager* cudaContextManager,
 		Dy::Context* dynamicContext, PxvNphaseImplementationContext* npContext, Bp::BroadPhase* bp, 
-		bool useGpuBroadphase, IG::SimpleIslandManager* simpleIslandSim,
+		bool useGpuBroadphase,
 		PxsSimulationControllerCallback* callback, PxU32 gpuComputeVersion, PxsHeapMemoryAllocatorManager* heapMemoryManager,
-		PxU32 maxSoftBodyContacts, PxU32 maxFemClothContacts, PxU32 maxParticleContacts, PxU32 maxHairContacts,
+		PxU32 maxSoftBodyContacts, PxU32 maxDeformableSurfaceContacts, PxU32 maxParticleContacts,
 		PxU32 collisionStackSizeBytes, bool enableBodyAccelerations) = 0;
 
 	/**
@@ -187,7 +187,7 @@ public:
 	*/
 	virtual Dy::Context* createGpuDynamicsContext(Cm::FlushPool& taskPool, PxsKernelWranglerManager* gpuKernelWragler, 
 		PxCudaContextManager* cudaContextManager, 
-		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager* islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
+		const PxGpuDynamicsMemoryConfig& config, IG::SimpleIslandManager& islandManager, PxU32 maxNumPartitions, PxU32 maxNumStaticPartitions,
 		bool enableStabilization, bool useEnhancedDeterminism, PxReal maxBiasCoefficient,
 		PxU32 gpuComputeVersion, PxvSimStats& simStats, PxsHeapMemoryAllocatorManager* heapMemoryManager,
 		bool frictionEveryIteration, bool externalForcesEveryTgsIterationEnabled, PxSolverType::Enum solverType,
@@ -210,6 +210,11 @@ PX_C_EXPORT PX_PHYSX_GPU_API physx::PxCudaContextManager* PX_CALL_CONV PxCreateC
 Set profiler callback.
 */
 PX_C_EXPORT PX_PHYSX_GPU_API void PX_CALL_CONV PxSetPhysXGpuProfilerCallback(physx::PxProfilerCallback* profilerCallback);
+
+/**
+Set PhysXFoundation instance.
+*/
+PX_C_EXPORT PX_PHYSX_GPU_API void PX_CALL_CONV PxSetPhysXGpuFoundationInstance(physx::PxFoundation& foundation);
 
 /**
 Query the device ordinal - depends on control panel settings.

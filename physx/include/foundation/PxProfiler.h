@@ -27,7 +27,7 @@
 #ifndef PX_PROFILER_H
 #define PX_PROFILER_H
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -67,6 +67,46 @@ public:
 	\note eventName plus contextId can be used to uniquely match up start and end of a zone.
 	*/
 	virtual void zoneEnd(void* profilerData, const char* eventName, bool detached, uint64_t contextId) = 0;
+
+    /**
+    \brief Record integer data to be displayed in the profiler.
+    \param[in] value	    The integer data point to be recorded.
+    \param[in] valueName	The name of the data being recorded. Must be a persistent const char *
+    \param[in] contextId	The context of this data.
+    */
+    virtual void recordData(int32_t value, const char* valueName, uint64_t contextId) 
+	{ 
+		PX_UNUSED(value);
+		PX_UNUSED(valueName);
+		PX_UNUSED(contextId);
+	}
+
+	/**
+	\brief Record float data to be displayed in the profiler.
+	\param[in] value	    The floating point data to be recorded.
+	\param[in] valueName	The name of the data being recorded. Must be a persistent const char *
+	\param[in] contextId	The context of this data.
+	*/
+	virtual void recordData(float value, const char* valueName, uint64_t contextId)
+	{
+		PX_UNUSED(value);
+		PX_UNUSED(valueName);
+		PX_UNUSED(contextId);
+	}
+
+	/**
+	\brief Record a frame marker to be displayed in the profiler. 
+
+	Markers that have identical names will be displayed in the profiler
+	along with the time between each of the markers. A frame counter will display the frame marker count.
+	\param[in] name			The name of the frame. Must be a persistent const char *
+	\param[in] contextId	The context of the frame.
+	*/
+	virtual void recordFrame(const char* name, uint64_t contextId)
+	{
+		PX_UNUSED(name);
+		PX_UNUSED(contextId);
+	}
 };
 
 class PxProfileScoped

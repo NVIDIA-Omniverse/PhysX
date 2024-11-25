@@ -32,6 +32,10 @@
 #include "PxDirectGPUAPI.h"
 #include "foundation/PxUserAllocated.h"
 
+#if PX_SUPPORT_OMNI_PVD
+#include "omnipvd/NpOmniPvdSimulationControllerCallbacks.h"
+#endif
+
 namespace physx
 {
 
@@ -39,7 +43,6 @@ class NpScene;
 
 class NpDirectGPUAPI : public PxDirectGPUAPI, public PxUserAllocated
 {
-
 public:
 	NpDirectGPUAPI(NpScene& scene);
 	virtual ~NpDirectGPUAPI() { }
@@ -59,6 +62,9 @@ public:
 	//~PxDirectGPUAPI
 
 	NpScene& mNpScene;
+#if PX_SUPPORT_OMNI_PVD
+	NpOmniPvdSimulationControllerCallbacks mOvdCallback;
+#endif
 };
 
 }

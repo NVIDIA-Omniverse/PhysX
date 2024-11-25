@@ -27,7 +27,7 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 // ****************************************************************************
-// NOTE: Particle cloth has been DEPRECATED. Please use PxFEMCloth instead.
+// NOTE: Particle cloth has been DEPRECATED. Please use PxDeformableSurface instead.
 // This snippet illustrates cloth simulation using position-based dynamics
 // particle simulation. It creates a piece of cloth that drops onto a rotating
 // sphere. 

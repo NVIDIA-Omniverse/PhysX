@@ -24,7 +24,7 @@
 ##
 ## Copyright (c) 2008-2024 NVIDIA Corporation. All rights reserved.
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.16)
 project(Snippets C CXX)
 
 # This is required to be defined by external callers!
@@ -77,17 +77,12 @@ LIST(APPEND SNIPPETS_LIST ${PLATFORM_SNIPPETS_LIST})
 # These are separate because we don't ship CUDA in the public release yet.
 # To be changed if we decide otherwise.
 SET(GPU_SNIPPET_LIST
-	HelloGRB SoftBody SoftBodyAttachment KinematicSoftBody SDF PBF PBFMultiMat PBDCloth PBDInflatable Isosurface
+	HelloGRB DeformableSurface DeformableVolume DeformableVolumeAttachment DeformableVolumeKinematic DeformableSurfaceSkinning DeformableVolumeSkinning SDF PBF PBFMultiMat PBDCloth PBDInflatable Isosurface
 	RBDirectGPUAPI DirectGPUAPIArticulation)
 
-# Add snippets of GPU features that are under development
-IF(NOT PUBLIC_RELEASE AND NOT PX_GENERATE_SOURCE_DISTRO)
-	LIST(APPEND GPU_SNIPPET_LIST
-		BigHairSystem FEMCloth HairSystem)
-ENDIF()
-
 #TODO, create a propper define for whether GPU features are enabled or not!
-IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND (NOT CMAKE_CROSSCOMPILING OR NOT (CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
+IF ((PUBLIC_RELEASE OR PX_GENERATE_GPU_PROJECTS) AND 
+    (NOT (CMAKE_CROSSCOMPILING OR CMAKE_GENERATOR_PLATFORM STREQUAL "NX64")))
     LIST(APPEND SNIPPETS_LIST ${GPU_SNIPPET_LIST})
 ENDIF()
 	

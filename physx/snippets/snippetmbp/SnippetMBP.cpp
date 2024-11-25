@@ -38,7 +38,6 @@
 // ****************************************************************************
 
 #include <ctype.h>
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "../snippetcommon/SnippetPrint.h"
@@ -87,7 +86,7 @@ static void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 
 class SnippetMBPBroadPhaseCallback : public physx::PxBroadPhaseCallback
 {
-	std::vector<PxActor*> outOfBoundsActors;
+	PxArray<PxActor*> outOfBoundsActors;
 public:
 	virtual void onObjectOutOfBounds(PxShape& /*shape*/, PxActor& actor)
 	{
@@ -99,7 +98,7 @@ public:
 		}
 		if(i == outOfBoundsActors.size())
 		{
-			outOfBoundsActors.push_back(&actor);
+			outOfBoundsActors.pushBack(&actor);
 		}
 	}
 
@@ -116,6 +115,11 @@ public:
 		}
 		outOfBoundsActors.clear();
 	}
+    
+    void release()
+    {
+        outOfBoundsActors.reset();
+    }
 } gBroadPhaseCallback;
 
 
@@ -180,6 +184,8 @@ void stepPhysics(bool /*interactive*/)
 	
 void cleanupPhysics(bool /*interactive*/)
 {
+    gBroadPhaseCallback.release();
+    
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PX_RELEASE(gPhysics);

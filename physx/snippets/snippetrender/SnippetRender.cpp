@@ -119,7 +119,7 @@ static void releaseVertexBuffer()
 	}
 }
 
-static void renderSoftBodyGeometry(const PxTetrahedronMesh& mesh, const PxVec4* deformedPositionsInvMass)
+static void renderDeformableVolumeGeometry(const PxTetrahedronMesh& mesh, const PxVec4* deformedPositionsInvMass)
 {
 	const int tetFaces[4][3] = { {0,2,1}, {0,1,3}, {0,3,2}, {1,2,3} };
 
@@ -761,9 +761,9 @@ void print(const char* text)
 const PxVec3 shadowDir(0.0f, -0.7071067f, -0.7071067f);
 const PxReal shadowMat[] = { 1,0,0,0, -shadowDir.x / shadowDir.y,0,-shadowDir.z / shadowDir.y,0, 0,0,1,0, 0,0,0,1 };
 
-void renderSoftBody(PxSoftBody* softBody, const PxVec4* deformedPositionsInvMass, bool shadows, const PxVec3& color)
+void renderDeformableVolume(PxDeformableVolume* deformableVolume, const PxVec4* deformedPositionsInvMass, bool shadows, const PxVec3& color)
 {
-	PxShape* shape = softBody->getShape();
+	PxShape* shape = deformableVolume->getShape();
 
 	const PxMat44 shapePose(PxIdentity); // (PxShapeExt::getGlobalPose(*shapes[j], *actors[i]));
 	const PxGeometry& geom = shape->getGeometry();
@@ -775,7 +775,7 @@ void renderSoftBody(PxSoftBody* softBody, const PxVec4* deformedPositionsInvMass
 	glPushMatrix();
 	glMultMatrixf(&shapePose.column0.x);
 	glColor4f(color.x, color.y, color.z, 1.0f);
-	renderSoftBodyGeometry(mesh, deformedPositionsInvMass);
+	renderDeformableVolumeGeometry(mesh, deformedPositionsInvMass);
 	glPopMatrix();
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -788,60 +788,12 @@ void renderSoftBody(PxSoftBody* softBody, const PxVec4* deformedPositionsInvMass
 		glDisable(GL_LIGHTING);
 		//glColor4f(0.1f, 0.2f, 0.3f, 1.0f);
 		glColor4f(0.1f, 0.1f, 0.1f, 1.0f);
-		renderSoftBodyGeometry(mesh, deformedPositionsInvMass);
+		renderDeformableVolumeGeometry(mesh, deformedPositionsInvMass);
 		glEnable(GL_LIGHTING);
 		glPopMatrix();
 	}
 }
 
-
-void renderHairSystem(physx::PxHairSystem* /*hairSystem*/, const physx::PxVec4* vertexPositionInvMass, PxU32 numVertices)
-{
-	const PxVec3 color{ 1.0f, 0.0f, 0.0f };
-	const PxSphereGeometry geom(0.05f);
-
-	// draw the volume
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	for(PxU32 j=0;j<numVertices;j++)
-	{
-		const PxMat44 shapePose(PxTransform(reinterpret_cast<const PxVec3&>(vertexPositionInvMass[j])));
-
-		glPushMatrix();						
-		glMultMatrixf(&shapePose.column0.x);
-		glColor4f(color.x, color.y, color.z, 1.0f);
-		renderGeometry(geom);
-		glPopMatrix();
-	}
-
-	// draw the cage lines
-	const GLdouble aspect = GLdouble(glutGet(GLUT_WINDOW_WIDTH)) / GLdouble(glutGet(GLUT_WINDOW_HEIGHT));
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, aspect, GLdouble(gNearClip * 1.005f), GLdouble(gFarClip));
-	glMatrixMode(GL_MODELVIEW);
-
-	glDisable(GL_LIGHTING);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-
-	for (PxU32 j = 0; j < numVertices; j++)
-	{
-		const PxMat44 shapePose(PxTransform(reinterpret_cast<const PxVec3&>(vertexPositionInvMass[j])));
-
-		glPushMatrix();
-		glMultMatrixf(&shapePose.column0.x);
-		renderGeometry(geom);
-		glPopMatrix();
-	}
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glEnable(GL_LIGHTING);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(60.0, aspect, GLdouble(gNearClip), GLdouble(gFarClip));
-	glMatrixMode(GL_MODELVIEW);
-}
 
 void renderActors(PxRigidActor** actors, const PxU32 numActors, bool shadows, const PxVec3& color, TriggerRender* cb,
 	bool changeColorForSleepingActors, bool wireframePass)

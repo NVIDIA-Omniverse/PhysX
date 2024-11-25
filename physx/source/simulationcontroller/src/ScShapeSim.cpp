@@ -41,7 +41,7 @@ ShapeSim::ShapeSim(RigidSim& owner, ShapeCore& core) : ShapeSimBase(owner, &core
 
 ShapeSim::~ShapeSim()
 {
-	Sc::ShapeCore::getCore(*mLLShape.mShapeCore).setExclusiveSim(NULL);
+	Sc::ShapeCore::getCore(*mShapeCore).setExclusiveSim(NULL);
 	Scene& scScene = getScene();
 	resetElementID(scScene, *this);
 }

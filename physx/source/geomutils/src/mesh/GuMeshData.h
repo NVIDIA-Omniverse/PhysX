@@ -65,7 +65,7 @@ namespace Gu {
 
 #define PX_MESH_VERSION 16
 #define PX_TET_MESH_VERSION 1
-#define PX_SOFTBODY_MESH_VERSION 3 // 3: parallel GS + new linear corotated model.
+#define PX_DEFORMABLE_VOLUME_MESH_VERSION 3 // 3: parallel GS + new linear corotated model.
 
 // these flags are used to indicate/validate the contents of a cooked mesh file
 enum InternalMeshSerialFlag
@@ -78,7 +78,7 @@ enum InternalMeshSerialFlag
 	IMSF_GRB_DATA		=	(1<<5),	//!< if set, the cooked mesh file contains GRB data structures
 	IMSF_SDF			=	(1<<6),	//!< if set, the cooked mesh file contains SDF data structures
 	IMSF_VERT_MAPPING	=   (1<<7), //!< if set, the cooked mesh file contains vertex mapping information
-	IMSF_GRB_INV_REMAP	=	(1<<8),	//!< if set, the cooked mesh file contains vertex inv mapping information. Required for cloth
+	IMSF_GRB_INV_REMAP	=	(1<<8),	//!< if set, the cooked mesh file contains vertex inv mapping information. Required for deformable surfaces
 	IMSF_INERTIA		=	(1<<9)	//!< if set, the cooked mesh file contains inertia tensor for the mesh
 };
 
@@ -113,7 +113,7 @@ enum InternalMeshSerialFlag
 		// SDF data
 		SDF						mSdfData;
 
-		//Cloth data : each vert has a list of associated triangles in the mesh, this is for attachement constraints to enable default filtering
+		// Deformable surface data : each vert has a list of associated triangles in the mesh, this is for attachement constraints to enable default filtering
 		PxU32*					mAccumulatedTrianglesRef;//runsum
 		PxU32*					mTrianglesReferences;
 		PxU32					mNbTrianglesReferences;
@@ -279,7 +279,7 @@ enum InternalMeshSerialFlag
 				Gu::BV4Tree		mBV4Tree;
 	};
 
-	// PT: TODO: the following classes should probably be in their own specific files (e.g. GuTetrahedronMeshData.h, GuSoftBodyMeshData.h)
+	// PT: TODO: the following classes should probably be in their own specific files (e.g. GuTetrahedronMeshData.h, GuDeformableVolumeMeshData.h)
 
 	class TetrahedronMeshData : public PxTetrahedronMeshData
 	{
@@ -361,7 +361,7 @@ enum InternalMeshSerialFlag
 		}
 	};
 
-	class SoftBodyCollisionData : public PxSoftBodyCollisionData
+	class DeformableVolumeCollisionData : public PxDeformableVolumeCollisionData
 	{
 	public:
 		PxU32*					mFaceRemap;
@@ -381,7 +381,7 @@ enum InternalMeshSerialFlag
 		PxMat33*				mTetraRestPoses;
 
 
-		SoftBodyCollisionData() : 
+		DeformableVolumeCollisionData() :
 			mFaceRemap(NULL),
 			mGRB_primIndices(NULL),
 			mGRB_faceRemap(NULL),
@@ -391,7 +391,7 @@ enum InternalMeshSerialFlag
 			mTetraRestPoses(NULL)
 		{}
 
-		virtual ~SoftBodyCollisionData()
+		virtual ~DeformableVolumeCollisionData()
 		{
 			PX_FREE(mGRB_tetraSurfaceHint);
 			PX_DELETE(mGRB_BV32Tree);
@@ -498,7 +498,7 @@ enum InternalMeshSerialFlag
 		}
 	};	
 
-	class SoftBodySimulationData : public PxSoftBodySimulationData
+	class DeformableVolumeSimulationData : public PxDeformableVolumeSimulationData
 	{
 	public:
 		PxReal*					mGridModelInvMass;
@@ -520,7 +520,7 @@ enum InternalMeshSerialFlag
 
 		PxU32					mNumTetsPerElement;
 
-		SoftBodySimulationData() :
+		DeformableVolumeSimulationData() :
 			mGridModelInvMass(NULL),
 			mGridModelTetraRestPoses(NULL),
 			mGridModelNbPartitions(0),
@@ -532,7 +532,7 @@ enum InternalMeshSerialFlag
 			mGMPullIndices(NULL)
 		{}
 
-		virtual ~SoftBodySimulationData()
+		virtual ~DeformableVolumeSimulationData()
 		{
 			PX_FREE(mGridModelInvMass);
 			PX_FREE(mGridModelTetraRestPoses);
@@ -577,12 +577,12 @@ enum InternalMeshSerialFlag
 	{
 	public:
 		TetrahedronMeshData* mMesh;
-		SoftBodyCollisionData* mCollisionData;
+		DeformableVolumeCollisionData* mCollisionData;
 
 		virtual PxTetrahedronMeshData* getMesh() { return mMesh; }
 		virtual const PxTetrahedronMeshData* getMesh() const { return mMesh; }
-		virtual PxSoftBodyCollisionData* getData() { return mCollisionData; }
-		virtual const PxSoftBodyCollisionData* getData() const { return mCollisionData; }
+		virtual PxDeformableVolumeCollisionData* getData() { return mCollisionData; }
+		virtual const PxDeformableVolumeCollisionData* getData() const { return mCollisionData; }
 
 		virtual ~CollisionTetrahedronMeshData()
 		{
@@ -600,10 +600,10 @@ enum InternalMeshSerialFlag
 	{
 	public:
 		TetrahedronMeshData* mMesh;
-		SoftBodySimulationData* mSimulationData;
+		DeformableVolumeSimulationData* mSimulationData;
 
 		virtual PxTetrahedronMeshData* getMesh() { return mMesh; }
-		virtual PxSoftBodySimulationData* getData() { return mSimulationData; }
+		virtual PxDeformableVolumeSimulationData* getData() { return mSimulationData; }
 
 		virtual ~SimulationTetrahedronMeshData()
 		{
@@ -617,18 +617,18 @@ enum InternalMeshSerialFlag
 		}
 	};
 
-	class SoftBodyMeshData : public PxUserAllocated
+	class DeformableVolumeMeshData : public PxUserAllocated
 	{
-		PX_NOCOPY(SoftBodyMeshData)
+		PX_NOCOPY(DeformableVolumeMeshData)
 	public:	
 		TetrahedronMeshData& mSimulationMesh;
-		SoftBodySimulationData& mSimulationData;
+		DeformableVolumeSimulationData& mSimulationData;
 		TetrahedronMeshData& mCollisionMesh;
-		SoftBodyCollisionData& mCollisionData;	
+		DeformableVolumeCollisionData& mCollisionData;
 		CollisionMeshMappingData& mMappingData;
 
-		SoftBodyMeshData(TetrahedronMeshData& simulationMesh, SoftBodySimulationData& simulationData, 
-			TetrahedronMeshData& collisionMesh, SoftBodyCollisionData& collisionData, CollisionMeshMappingData& mappingData) :
+		DeformableVolumeMeshData(TetrahedronMeshData& simulationMesh, DeformableVolumeSimulationData& simulationData,
+			TetrahedronMeshData& collisionMesh, DeformableVolumeCollisionData& collisionData, CollisionMeshMappingData& mappingData) :
 			mSimulationMesh(simulationMesh),
 			mSimulationData(simulationData),
 			mCollisionMesh(collisionMesh),

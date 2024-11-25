@@ -34,7 +34,6 @@
 #include "DyAllocator.h"
 
 using namespace physx;
-using namespace Gu;
 using namespace aos;
 
 namespace physx

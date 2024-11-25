@@ -33,6 +33,7 @@
 #include "foundation/PxVec4.h"
 #include "foundation/PxBounds3.h"
 #include "foundation/PxAssert.h"
+#include "foundation/PxIO.h"
 #include "common/PxSerialFramework.h"
 #include "geometry/PxTriangleMesh.h"
 

@@ -148,4 +148,24 @@ PxI64 PxAtomicExchange(volatile PxI64* val, PxI64 val2)
 	return oldVal;
 }
 
+PxI32 PxAtomicOr(volatile PxI32* val, PxI32 mask)
+{
+	return __sync_or_and_fetch(val, mask);
+}
+
+PxI64 PxAtomicOr(volatile PxI64* val, PxI64 mask)
+{
+	return __sync_or_and_fetch(val, mask);
+}
+
+PxI32 PxAtomicAnd(volatile PxI32* val, PxI32 mask)
+{
+	return __sync_and_and_fetch(val, mask);
+}
+
+PxI64 PxAtomicAnd(volatile PxI64* val, PxI64 mask)
+{
+	return __sync_and_and_fetch(val, mask);
+}
+
 } // namespace physx

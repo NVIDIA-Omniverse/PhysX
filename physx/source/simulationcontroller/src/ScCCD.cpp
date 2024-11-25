@@ -31,6 +31,7 @@
 #include "ScShapeSim.h"
 #include "ScArticulationSim.h"
 #include "ScScene.h"
+#include "DyIslandManager.h"
 
 using namespace physx;
 using namespace Sc;
@@ -205,7 +206,7 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 		PxU32 index;
 		while((index = speculativeCCDIter.getNext()) != PxBitMap::Iterator::DONE)
 		{
-			PxsRigidBody* rigidBody = islandSim.getRigidBody(PxNodeIndex(index));
+			PxsRigidBody* rigidBody = getRigidBodyFromIG(islandSim, PxNodeIndex(index));
 			BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(rigidBody)-bodyOffset);
 			if(bodySim)
 			{
@@ -273,7 +274,7 @@ void Sc::Scene::updateContactDistances(PxBaseTask* continuation)
 		PxU32 index;
 		while((index = articulateCCDIter.getNext()) != PxBitMap::Iterator::DONE)
 		{
-			ArticulationSim* articulationSim = islandSim.getArticulationSim(PxNodeIndex(index));
+			ArticulationSim* articulationSim = getArticulationSim(islandSim, PxNodeIndex(index));
 			if(articulationSim)
 			{
 				hasContactDistanceChanged = true;
@@ -663,7 +664,7 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 	PxU32 currentPass = mCCDContext->getCurrentCCDPass();
 	PX_ASSERT(currentPass > 0); // to make sure changes to the CCD pass counting get noticed. For contact reports, 0 means discrete collision phase.
 
-	int newTouchCount, lostTouchCount, ccdTouchCount;
+	PxU32 newTouchCount, lostTouchCount, ccdTouchCount;
 	mLLContext->getManagerTouchEventCount(&newTouchCount, &lostTouchCount, &ccdTouchCount);
 	PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
 	PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
@@ -674,7 +675,7 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 	// Note: For contact notifications it is important that the new touch pairs get processed before the lost touch pairs.
 	//       This allows to know for sure if a pair of actors lost all touch (see eACTOR_PAIR_LOST_TOUCH).
 	mLLContext->fillManagerTouchEvents(newTouches, newTouchCount, lostTouches, lostTouchCount, ccdTouches, ccdTouchCount);
-	for(PxI32 i=0; i<newTouchCount; ++i)
+	for(PxU32 i=0; i<newTouchCount; ++i)
 	{
 		ShapeInteraction* si = getSI(newTouches[i]);
 		PX_ASSERT(si);
@@ -685,7 +686,7 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 			mSimpleIslandManager->setEdgeConnected(si->getEdgeIndex(), IG::Edge::eCONTACT_MANAGER);
 		}
 	}
-	for(PxI32 i=0; i<lostTouchCount; ++i)
+	for(PxU32 i=0; i<lostTouchCount; ++i)
 	{
 		ShapeInteraction* si = getSI(lostTouches[i]);
 		PX_ASSERT(si);
@@ -694,7 +695,7 @@ void Sc::Scene::postCCDPass(PxBaseTask* /*continuation*/)
 
 		mSimpleIslandManager->setEdgeDisconnected(si->getEdgeIndex());
 	}
-	for(PxI32 i=0; i<ccdTouchCount; ++i)
+	for(PxU32 i=0; i<ccdTouchCount; ++i)
 	{
 		ShapeInteraction* si = getSI(ccdTouches[i]);
 		PX_ASSERT(si);

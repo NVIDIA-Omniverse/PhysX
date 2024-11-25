@@ -83,6 +83,7 @@ namespace Dy
 	struct SpatialTransform;
 	struct Constraint;
 	class ThreadContext;
+	struct InternalConstraintSolverData;
 
 	struct ArticulationInternalTendonConstraint
 	{
@@ -140,13 +141,10 @@ namespace Dy
 		PxReal driveMaxForce;					
 		PxReal driveForce;						
 
-		PxReal frictionForceCoefficient;
 		PxReal frictionMaxForce;				
 		PxReal frictionForce;
 
 		bool isLinearConstraint;
-
-		PxReal padding[3];
 
 		void setImplicitDriveDesc(const ArticulationImplicitDriveDesc& driveDesc)
 		{
@@ -170,10 +168,13 @@ namespace Dy
 		PxReal gearRatio;
 		PxReal offset;
 
-		//Cache effectiveInertia = 1/[J * M^-1 * J^T]  =  1/[rAA + gearRatio*(rAB + rBA) + gearRatio*gearRatio*rBB]
-		//Impulse = [1, gearRatio]^T * [-b + J*v] / [J * M^-1 * J^T]
-		//Impulse = [1, gearRatio]^T * [-b + J*v] * effectiveInertia;
-		PxReal effectiveInertia;
+		PxReal naturalFrequency;
+		PxReal dampingRatio;
+
+		//Impulse = [1, gearRatio]^T * [-C*erp/dt + J*v] / [J * M^-1 * J^T + cfm]
+		//Cache recipEffectiveInertia = [J * M^-1 * J^T] so we can later compute:
+		//Impulse = [1, gearRatio]^T * [-b + J*v] /[recipEffectiveInertia + cfm];
+		PxReal recipEffectiveInertia;		
 	};
 
 
@@ -501,30 +502,6 @@ namespace Dy
 		PxReal*				jointFrictionForces;
 	};
 
-	struct InternalConstraintSolverData
-	{
-		const PxReal dt;
-		const PxReal invDt;
-		const PxReal elapsedTime;
-		const PxReal erp;
-		const bool isVelIter;
-		const bool isTGS;
-		PxU32 dofId;
-		PxU32 complexId;
-		PxU32 limitId;
-		PxU32 articId;
-
-		InternalConstraintSolverData(const PxReal dt_, const PxReal invDt_, const PxReal elapsedTime_,
-			const PxReal erp_, bool velocityIteration_, bool isTGS_) :
-			dt(dt_), invDt(invDt_), elapsedTime(elapsedTime_),
-			erp(erp_), isVelIter(velocityIteration_),
-			isTGS(isTGS_), dofId(0), complexId(0), limitId(0)
-		{
-		}
-
-		PX_NOCOPY(InternalConstraintSolverData)
-	};
-
 	struct FixedTendonSolveData
 	{
 		ArticulationLink* links;
@@ -646,10 +623,10 @@ namespace Dy
 		void		initializeCommonData();
 
 		//gravity as input, joint force as output
-		void		getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache);
+		void		getGeneralizedGravityForce(const PxVec3& gravity, PxArticulationCache& cache, const bool rootMotion);
 
 		//joint velocity as input, generalised force(coriolis and centrigugal force) as output
-		void		getCoriolisAndCentrifugalForce(PxArticulationCache& cache);
+		void		getCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion);
 
 		//external force as input, joint force as output
 		void		getGeneralizedExternalForce(PxArticulationCache& /*cache*/);
@@ -663,7 +640,7 @@ namespace Dy
 		void		getDenseJacobian(PxArticulationCache& cache, PxU32 & nRows, PxU32 & nCols);
 
 		//These two functions are for closed loop system
-		void				getKMatrix(ArticulationJointCore* loopJoint, const PxU32 parentIndex, const PxU32 childIndex, PxArticulationCache& cache);
+		void		getKMatrix(ArticulationJointCore* loopJoint, const PxU32 parentIndex, const PxU32 childIndex, PxArticulationCache& cache);
 
 		void		getCoefficientMatrix(const PxReal dt, const PxU32 linkID, const PxContactJoint* contactJoints, const PxU32 nbContacts, PxArticulationCache& cache);
 
@@ -674,7 +651,11 @@ namespace Dy
 
 		void		getGeneralizedMassMatrix(PxArticulationCache& cache);
 
-		void		getGeneralizedMassMatrixCRB(PxArticulationCache& cache);
+		void		getGeneralizedMassMatrixCRB(PxArticulationCache& cache, const bool rootMotion);
+
+		PxVec3		getArticulationCOM(const bool rootFrame);
+
+		void		getCentroidalMomentumMatrix(PxArticulationCache& cache);
 
 		bool storeStaticConstraint(const PxSolverConstraintDesc& desc);
 
@@ -880,7 +861,9 @@ namespace Dy
 		//copy joint data from fromJointData to toJointData
 		void copyJointData(const ArticulationData& data, PxReal* toJointData, const PxReal* fromJointData);
 
-		PxU32 computeDofs();
+		PxU32 countDofs();
+		void  configureDofs();
+
 		//this function calculates motion subspace matrix(s) for all tree joint
 		template<bool immediateMode = false>
 		void jcalc(ArticulationData& data);
@@ -903,8 +886,8 @@ namespace Dy
 			bool velocityIteration, bool isTGS, const PxReal elapsedTime, const PxReal biasCoefficient, bool residualReportingActive);
 
 	private:
-		Cm::SpatialVectorF solveInternalJointConstraintRecursive(InternalConstraintSolverData& data, const PxU32 linkID,
-			const Cm::SpatialVectorF& parentDeltaV, const bool isTGS, const bool isVelIter, const bool residualReportingActive);
+		Cm::SpatialVectorF solveInternalJointConstraintRecursive(const InternalConstraintSolverData& data, const PxU32 linkID,
+			const Cm::SpatialVectorF& parentDeltaV, PxU32& dofId, PxU32& limitId);
 	public:
 		void solveInternalSpatialTendonConstraints(bool isTGS);
 
@@ -1012,7 +995,8 @@ namespace Dy
 		\param[in] nbJointDofs is the number of dofs supported by the joint.
 		\param[in] jointMotionMatricesW is an array of motion matrices with one entry per dof.
 		\param[in] jointISW is a cached term linkArticulatedInertia*jointDofMotionMatrix with one entry per dof.
-		\param[in] jointTargetArmatures is an array of armature values with one entry per dof.
+		\param[in] jointTargetArmatures is an array of armature values with one entry per axis.
+		\param[in] dofIds is a mapping array which allows to pick out the armature for each joint dof.
 		\param[in] jointExternalForces is an array of user-applied external forces applied to the joint with one entry per dof. Can be NULL, in which case zero forces are assumed.
 		\param[in] linkArticulatedInertiaW is the articulated inertia of the link.
 		\param[in] linkZExtW is the external articulated z.a. force of the link.
@@ -1028,7 +1012,7 @@ namespace Dy
 		static SpatialMatrix computePropagateSpatialInertia_ZA_ZIc
 			(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs,
 			 const Cm::UnAlignedSpatialVector* jointMotionMatricesW, const Cm::SpatialVectorF* jointISW, 	
-			 const PxReal* jointTargetArmatures, const PxReal* jointExternalForces, 
+			 const PxReal* jointTargetArmatures, const PxU8* dofIds, const PxReal* jointExternalForces, 
 			 const SpatialMatrix& linkArticulatedInertiaW, 
 			 const Cm::SpatialVectorF& linkZExtW, const Cm::SpatialVectorF& linkZIntIcW, 
 			 InvStIs& linkInvStISW, Cm::SpatialVectorF* jointDofISInvStISW, 
@@ -1048,7 +1032,8 @@ namespace Dy
 		\param[in] nbJointDofs is the number of dofs supported by the joint.
 		\param[in] jointMotionMatrices is an array of motion matrices with one entry per dof.
 		\param[in] jointIs is a cached term linkArticulatedInertia*jointDofMotionMatrix with one entry per dof.
-		\param[in] jointTargetArmatures is an array of armature values with one entry per dof.
+		\param[in] jointTargetArmatures is an array of armature values with one entry per axis.
+		\param[in] dofIds is a mapping array which allows to pick out the armature for each joint dof.
 		\param[in] jointExternalForces is an array of user-applied external forces applied to the joint with one entry per dof.			
 		\param[in] linkArticulatedInertia is the articulated inertia of the link.
 		\param[in] ZIc is the sum of the z.a force of the link and linkArticulatedInertia*coriolisForce.
@@ -1061,7 +1046,8 @@ namespace Dy
 		static SpatialMatrix computePropagateSpatialInertia_ZA_ZIc_NonSeparated
 			(const PxArticulationJointType::Enum jointType, const PxU8 nbJointDofs, 
 			 const Cm::UnAlignedSpatialVector* jointMotionMatrices, const Cm::SpatialVectorF* jointIs, 
-			 const PxReal* jointTargetArmatures, const PxReal* jointExternalForces, 
+			 const PxReal* jointTargetArmatures, const PxU8* dofIds,
+			 const PxReal* jointExternalForces, 
 			 const SpatialMatrix& linkArticulatedInertia, 
  			 const Cm::SpatialVectorF& ZIc, 
 			 InvStIs& invStIs, Cm::SpatialVectorF* isInvD, 
@@ -1092,8 +1078,6 @@ namespace Dy
 		static void transformInertia(const SpatialTransform& sTod, SpatialMatrix& inertia);
 
 		static void translateInertia(const PxMat33& offset, SpatialMatrix& inertia);
-
-		static PxMat33 translateInertia(const PxMat33& inertia, const PxReal mass, const PxVec3& t);
 
 		/*
 		\brief Propagate articulated spatial inertia and articulated z.a. spatial force from tip to root.
@@ -1336,14 +1320,14 @@ namespace Dy
 			ScratchData& scratchData, bool computeCoriolis);
 
 		void inverseDynamicFloatingBase(ArticulationData& data, const PxVec3& gravity,
-			ScratchData& scratchData, bool computeCoriolis);
+			ScratchData& scratchData, bool computeCoriolis, const bool rootMotion = false);
 
 		//compute link body force with motion velocity and acceleration
 		void computeZAForceInv(ArticulationData& data, ScratchData& scratchData);
 		void initCompositeSpatialInertia(ArticulationData& data, Dy::SpatialMatrix* compositeSpatialInertia);
 		void computeCompositeSpatialInertiaAndZAForceInv(ArticulationData& data, ScratchData& scratchData);
 
-		void computeRelativeGeneralizedForceInv(ArticulationData& data, ScratchData& scratchData);
+		void computeRelativeGeneralizedForceInv(ArticulationData& data, ScratchData& scratchData, const bool coriolisFloatingBase = false);
 
 		//compute link acceleration due to external forces, applied external accelerations and Coriolis force
 		void computeLinkAccelerationInv(ArticulationData& data, ScratchData& scratchData);
@@ -1354,7 +1338,7 @@ namespace Dy
 
 		void calculateHFixBase(PxArticulationCache& cache);
 
-		void calculateHFloatingBase(PxArticulationCache& cache);
+		void calculateHFloatingBase(PxArticulationCache& cache, const bool rootMotion);
 
 		//joint limits
 		static void enforcePrismaticLimits(PxReal& jPosition, ArticulationJointCore* joint);
@@ -1391,6 +1375,7 @@ namespace Dy
 			PX_FORCE_INLINE void					setDyContext(Dy::Context* context)					{ mContext = context;			}
 
 			void	setupLinks(PxU32 nbLinks, Dy::ArticulationLink* links);
+			void	setupDofs();
 			void	allocatePathToRootElements(const PxU32 totalPathToRootElements);
 			void	initPathToRoot();
 			

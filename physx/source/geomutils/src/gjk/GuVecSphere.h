@@ -136,7 +136,7 @@ namespace Gu
 		{
 			using namespace aos;
 			
-			const Vec3V centerDif= V3Sub(center, sphere.center);
+			const Vec3V centerDif = V3Sub(center, sphere.center);
 			const FloatV radiusDif = FSub(radius, sphere.radius);
 			const FloatV cc = V3Dot(centerDif, centerDif);
 			const FloatV rr = FMul(radiusDif, radiusDif); 

@@ -46,6 +46,7 @@
 namespace physx
 {
 class PxHeightFieldDesc;
+class PxInputStream;
 
 namespace Gu
 {
@@ -232,9 +233,7 @@ public:
 																		PX_ASSERT(isValidVertex(vertexIndex));
 																		return mData.samples[vertexIndex];
 																	}
-#ifdef __CUDACC__
-	PX_CUDA_CALLABLE					void						setSamplePtr(PxHeightFieldSample* s) { mData.samples = s; }
-#endif
+
 										Gu::HeightFieldData			mData;
 										PxU32						mSampleStride;
 										PxU32						mNbSamples;	// PT: added for platform conversion. Try to remove later.

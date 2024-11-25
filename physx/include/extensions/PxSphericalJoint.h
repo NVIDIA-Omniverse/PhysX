@@ -150,7 +150,7 @@ public:
 	/**
 	\brief Returns string name of PxSphericalJoint, used for serialization
 	*/
-	virtual	const char*			getConcreteTypeName() const { return "PxSphericalJoint"; }
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	{ return "PxSphericalJoint"; }
 
 protected:
 

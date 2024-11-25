@@ -40,7 +40,7 @@ using namespace physx;
 using namespace Gu;
 
 #include "foundation/PxVecMath.h"
-using namespace physx::aos;
+using namespace aos;
 
 #define GU_BV4_USE_NODE_POOLS
 

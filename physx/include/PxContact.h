@@ -807,7 +807,7 @@ private:
 
 	const PxContactPatch* mContactPatches;
 	const PxFrictionPatch* mFrictionPatches;
-	const PxU32 mPatchCount;
+	PxU32 mPatchCount;
 	PxI32 mFrictionAnchorIndex;
 	PxI32 mPatchIndex;
 };

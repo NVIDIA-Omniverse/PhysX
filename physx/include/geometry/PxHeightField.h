@@ -29,6 +29,7 @@
 #ifndef PX_HEIGHTFIELD_H
 #define PX_HEIGHTFIELD_H
 
+#include "foundation/PxVec3.h"
 #include "geometry/PxHeightFieldFlag.h"
 #include "geometry/PxHeightFieldSample.h"
 #include "common/PxBase.h"
@@ -223,7 +224,7 @@ class PxHeightField : public PxRefCounted
 	*/
 	virtual		PxU32	getTimestamp()	const	= 0;
 
-	virtual	const char*	getConcreteTypeName() const { return "PxHeightField"; }
+	virtual	const char*	getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxHeightField"; }
 
 protected:
 	PX_INLINE			PxHeightField(PxType concreteType, PxBaseFlags baseFlags) : PxRefCounted(concreteType, baseFlags) {}

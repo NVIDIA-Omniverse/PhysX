@@ -292,6 +292,9 @@ namespace physx { namespace Sn {
 					case PxGeometryType::eBOX :
 						static_cast<PxBoxGeometry*>(geometry)->~PxBoxGeometry();
 						break;
+					case PxGeometryType::eCONVEXCORE:
+						static_cast<PxConvexCoreGeometry*>(geometry)->~PxConvexCoreGeometry();
+						break;
 					case PxGeometryType::eCONVEXMESH :
 						static_cast<PxConvexMeshGeometry*>(geometry)->~PxConvexMeshGeometry();
 						break;
@@ -306,9 +309,6 @@ namespace physx { namespace Sn {
 						break;
 					case PxGeometryType::ePARTICLESYSTEM:
 						static_cast<PxParticleSystemGeometry*>(geometry)->~PxParticleSystemGeometry();
-						break;
-					case PxGeometryType::eHAIRSYSTEM:
-						static_cast<PxHairSystemGeometry*>(geometry)->~PxHairSystemGeometry();
 						break;
 					case PxGeometryType::eCUSTOM :
 						static_cast<PxCustomGeometry*>(geometry)->~PxCustomGeometry();

@@ -30,14 +30,11 @@
 #include "foundation/PxSort.h"
 #include "foundation/PxUtilities.h"
 #include "common/PxProfileZone.h"
-#include "DyFeatherstoneArticulation.h"
-
-#define IG_SANITY_CHECKS 0
 
 using namespace physx;
 using namespace IG;
 
-IslandSim::IslandSim(PxArray<PartitionEdge*>* firstPartitionEdges, Cm::BlockArray<PxNodeIndex>& edgeNodeIndices, PxArray<PartitionEdge*>* destroyedPartitionEdges, PxU64 contextID) :
+IslandSim::IslandSim(const CPUExternalData& cpuData, GPUExternalData* gpuData, PxU64 contextID) :
 	mNodes					("IslandSim::mNodes"),
 	mActiveNodeIndex		("IslandSim::mActiveNodeIndex"),
 	mIslands				("IslandSim::mIslands"),
@@ -47,17 +44,16 @@ IslandSim::IslandSim(PxArray<PartitionEdge*>* firstPartitionEdges, Cm::BlockArra
 	mFastRoute				("IslandSim::mFastRoute"),
 	mIslandIds				("IslandSim::mIslandIds"),
 	mActiveIslands			("IslandSim::mActiveIslands"),
+#if IG_LIMIT_DIRTY_NODES
 	mLastMapIndex			(0),
+#endif
 	mActivatingNodes		("IslandSim::mActivatingNodes"),
 	mDestroyedEdges			("IslandSim::mDestroyedEdges"),
-	mTempIslandIds			("IslandSim::mTempIslandIds"),
 	mVisitedNodes			("IslandSim::mVisitedNodes"),
-	mFirstPartitionEdges	(firstPartitionEdges),
-	mEdgeNodeIndices		(edgeNodeIndices),
-	mDestroyedPartitionEdges(destroyedPartitionEdges),
+	mCpuData				(cpuData),
+	mGpuData				(gpuData),
 	mContextId				(contextID)
 {
-	mNpIndexPtr = NULL;
 	for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
 	{
 		mInitialActiveNodeCount[i] = 0;
@@ -78,36 +74,28 @@ static bool contains(PxArray<Thing>& arr, const Thing& thing)
 }
 #endif
 
-/*void IslandSim::resize(const PxU32 nbNodes, const PxU32 nbContactManagers, const PxU32 nbConstraints)
-{
-	PxU32 totalEdges = nbContactManagers + nbConstraints;
-	mNodes.reserve(nbNodes);
-	mIslandIds.reserve(nbNodes);
-	mEdges.reserve(totalEdges);
-	mActiveContactEdges.resize(totalEdges);
-	mEdgeInstances.reserve(totalEdges*2);
-}*/
-
-void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, PxNodeIndex nodeIndex)
+void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, PxNodeIndex nodeIndex, void* object)
 {
 	// PT: the nodeIndex is assigned by the SimpleIslandManager one level higher.
 	const PxU32 handle = nodeIndex.index();
-	if(handle == mNodes.capacity())
 	{
-		const PxU32 newCapacity = PxMax(2*mNodes.capacity(), 256u);
-		mNodes.reserve(newCapacity);
-		mIslandIds.reserve(newCapacity);
-		mFastRoute.reserve(newCapacity);
-		mHopCounts.reserve(newCapacity);
-		mActiveNodeIndex.reserve(newCapacity);
-	}
+		if(handle == mNodes.capacity())
+		{
+			const PxU32 newCapacity = PxMax(2*mNodes.capacity(), 256u);
+			mNodes.reserve(newCapacity);
+			mIslandIds.reserve(newCapacity);
+			mFastRoute.reserve(newCapacity);
+			mHopCounts.reserve(newCapacity);
+			mActiveNodeIndex.reserve(newCapacity);
+		}
 
-	const PxU32 newSize = PxMax(handle+1, mNodes.size());
-	mNodes.resize(newSize);
-	mIslandIds.resize(newSize);
-	mFastRoute.resize(newSize);
-	mHopCounts.resize(newSize);
-	mActiveNodeIndex.resize(newSize);
+		const PxU32 newSize = PxMax(handle+1, mNodes.size());
+		mNodes.resize(newSize);
+		mIslandIds.resize(newSize);
+		mFastRoute.resize(newSize);
+		mHopCounts.resize(newSize);
+		mActiveNodeIndex.resize(newSize);
+	}
 
 	mActiveNodeIndex[handle] = PX_INVALID_NODE;
 
@@ -116,7 +104,7 @@ void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, Px
 	//Ensure that the node is not currently being used.
 	PX_ASSERT(node.isDeleted());
 
-	PxU8 flags = PxU16(isActive ? 0 : Node::eREADY_FOR_SLEEPING);
+	PxU8 flags = PxU8(isActive ? 0 : Node::eREADY_FOR_SLEEPING);
 	if(isKinematic)
 		flags |= Node::eKINEMATIC;
 	node.mFlags = flags;
@@ -135,9 +123,11 @@ void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, Px
 			mIslandAwake.resize(newCapacity);
 			mIslandStaticTouchCount.reserve(newCapacity);
 		}
-		mIslands.resize(PxMax(islandHandle+1, mIslands.size()));
-		mIslandStaticTouchCount.resize(PxMax(islandHandle+1, mIslands.size()));
-		mIslandAwake.growAndReset(PxMax(islandHandle+1, mIslands.size()));
+		const PxU32 newSize = PxMax(islandHandle+1, mIslands.size());
+		mIslands.resize(newSize);
+		mIslandStaticTouchCount.resize(newSize);
+		mIslandAwake.growAndReset(newSize);
+
 		Island& island = mIslands[islandHandle];
 		island.mLastNode = island.mRootNode = nodeIndex;
 		island.mNodeCount[type] = 1;
@@ -147,56 +137,8 @@ void IslandSim::addNode(bool isActive, bool isKinematic, Node::NodeType type, Px
 
 	if(isActive)
 		activateNode(nodeIndex);
-}
 
-void IslandSim::addRigidBody(PxsRigidBody* body, bool isKinematic, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, isKinematic, Node::eRIGID_BODY_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mRigidBody = body;
-}
-
-void IslandSim::addArticulation(Dy::FeatherstoneArticulation* llArtic, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, false, Node::eARTICULATION_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mLLArticulation = llArtic;
-}
-
-#if PX_SUPPORT_GPU_PHYSX
-void IslandSim::addSoftBody(Dy::SoftBody* llSoftBody, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, false, Node::eSOFTBODY_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mLLSoftBody = llSoftBody;
-}
-
-void IslandSim::addFEMCloth(Dy::FEMCloth* llFEMCloth, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, false, Node::eFEMCLOTH_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mLLFEMCloth = llFEMCloth;
-}
-
-void IslandSim::addParticleSystem(Dy::ParticleSystem* llParticleSystem, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, false, Node::ePARTICLESYSTEM_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mLLParticleSystem = llParticleSystem;
-}
-
-void IslandSim::addHairSystem(Dy::HairSystem* llHairSystem, bool isActive, PxNodeIndex nodeIndex)
-{
-	addNode(isActive, false, Node::eHAIRSYSTEM_TYPE, nodeIndex);
-	Node& node = mNodes[nodeIndex.index()];
-	node.mLLHairSystem = llHairSystem;
-}
-#endif
-
-Sc::ArticulationSim* IslandSim::getArticulationSim(PxNodeIndex nodeIndex) const
-{
-	void* userData = getLLArticulation(nodeIndex)->getUserData();
-	return reinterpret_cast<Sc::ArticulationSim*>(userData);
+	node.mObject = object;
 }
 
 void IslandSim::connectEdge(EdgeInstance& instance, EdgeInstanceIndex edgeIndex, Node& source, PxNodeIndex /*destination*/)
@@ -223,13 +165,15 @@ void IslandSim::addConnection(PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, 
 	PX_UNUSED(nodeHandle2);
 	if(handle >= mEdges.capacity())
 	{
-		PX_PROFILE_ZONE("ReserveIslandEdges", getContextId());
+		PX_PROFILE_ZONE("ReserveIslandEdges", mContextId);
 		const PxU32 newSize = handle + 2048;
 		mEdges.reserve(newSize);
-		mActiveContactEdges.resize(mEdges.capacity());
+		if(mGpuData)
+			mGpuData->mActiveContactEdges.resize(mEdges.capacity());
 	}
 	mEdges.resize(PxMax(mEdges.size(), handle+1));
-	mActiveContactEdges.reset(handle);
+	if(mGpuData)
+		mGpuData->mActiveContactEdges.reset(handle);
 
 	Edge& edge = mEdges[handle];
 
@@ -242,8 +186,8 @@ void IslandSim::addConnection(PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, 
 
 	if(edge.isInDirtyList())
 	{
-		PX_ASSERT(mEdgeNodeIndices[handle * 2].index() == nodeHandle1.index());
-		PX_ASSERT(mEdgeNodeIndices[handle * 2 + 1].index() == nodeHandle2.index());
+		PX_ASSERT(mCpuData.mEdgeNodeIndices[handle * 2].index() == nodeHandle1.index());
+		PX_ASSERT(mCpuData.mEdgeNodeIndices[handle * 2 + 1].index() == nodeHandle2.index());
 		PX_ASSERT(edge.mEdgeType == edgeType);
 		return;
 	}
@@ -294,8 +238,8 @@ void IslandSim::addConnectionToGraph(EdgeIndex handle)
 	bool activeEdge = false;
 	bool kinematicKinematicEdge = true;
 
-	const PxNodeIndex nodeIndex1 = mEdgeNodeIndices[instanceHandle];
-	const PxNodeIndex nodeIndex2 = mEdgeNodeIndices[instanceHandle+1];
+	const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[instanceHandle];
+	const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[instanceHandle+1];
 
 	if(nodeIndex1.index() != PX_INVALID_NODE)
 	{
@@ -322,8 +266,8 @@ void IslandSim::addConnectionToGraph(EdgeIndex handle)
 
 void IslandSim::removeConnectionFromGraph(EdgeIndex edgeIndex)
 {
-	const PxNodeIndex nodeIndex1 = mEdgeNodeIndices[2 * edgeIndex];
-	const PxNodeIndex nodeIndex2 = mEdgeNodeIndices[2 * edgeIndex+1];
+	const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[2 * edgeIndex];
+	const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[2 * edgeIndex+1];
 	if (nodeIndex1.index() != PX_INVALID_NODE)
 	{
 		Node& node = mNodes[nodeIndex1.index()];
@@ -397,24 +341,14 @@ void IslandSim::removeConnectionInternal(EdgeIndex edgeIndex)
 {
 	PX_ASSERT(edgeIndex != IG_INVALID_EDGE);
 	const EdgeInstanceIndex edgeInstanceBase = edgeIndex*2;
-	const PxNodeIndex nodeIndex1 = mEdgeNodeIndices[edgeIndex * 2];
-	const PxNodeIndex nodeIndex2 = mEdgeNodeIndices[edgeIndex * 2 + 1];
+	const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[edgeIndex * 2];
+	const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[edgeIndex * 2 + 1];
 
 	if (nodeIndex1.index() != PX_INVALID_NODE)
 		disconnectEdge(mEdgeInstances[edgeInstanceBase], edgeInstanceBase, mNodes[nodeIndex1.index()]);
 
 	if (nodeIndex2.index() != PX_INVALID_NODE && nodeIndex1.index() != nodeIndex2.index())
 		disconnectEdge(mEdgeInstances[edgeInstanceBase+1], edgeInstanceBase+1, mNodes[nodeIndex2.index()]);
-}
-
-/*void IslandSim::addContactManager(PxsContactManager*, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, EdgeIndex handle)
-{
-	addConnection(nodeHandle1, nodeHandle2, Edge::eCONTACT_MANAGER, handle);
-}*/
-
-void IslandSim::addConstraint(Dy::Constraint* /*constraint*/, PxNodeIndex nodeHandle1, PxNodeIndex nodeHandle2, EdgeIndex handle)
-{
-	addConnection(nodeHandle1, nodeHandle2, Edge::eCONSTRAINT, handle);
 }
 
 void IslandSim::activateNode(PxNodeIndex nodeIndex)
@@ -497,6 +431,21 @@ void IslandSim::putNodeToSleep(PxNodeIndex nodeIndex)
 		deactivateNode(nodeIndex);
 }
 
+PX_FORCE_INLINE void IslandSim::makeEdgeActive(EdgeInstanceIndex index, bool testEdgeType)
+{
+	const EdgeIndex idx = index / 2;
+	Edge& edge = mEdges[idx];
+	if (!edge.isActive() && (!testEdgeType || (edge.getEdgeType() != IG::Edge::eCONSTRAINT)))
+	{
+		//Make the edge active...
+		PX_ASSERT(mCpuData.mEdgeNodeIndices[idx * 2].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[idx * 2].index()].isActive() || mNodes[mCpuData.mEdgeNodeIndices[idx * 2].index()].isKinematic());
+		PX_ASSERT(mCpuData.mEdgeNodeIndices[idx * 2 + 1].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[idx * 2 + 1].index()].isActive() || mNodes[mCpuData.mEdgeNodeIndices[idx * 2 + 1].index()].isKinematic());
+
+		markEdgeActive(idx);
+		edge.activateEdge();
+	}
+}
+
 void IslandSim::activateNodeInternal(PxNodeIndex nodeIndex)
 {
 	//This method should activate the node, then activate all the connections involving this node
@@ -512,17 +461,8 @@ void IslandSim::activateNodeInternal(PxNodeIndex nodeIndex)
 
 		while(index != IG_INVALID_EDGE)
 		{
-			const EdgeIndex idx = index/2;
-			Edge& edge = mEdges[idx]; //InstanceIndex/2 = edgeIndex
-			if(!edge.isActive())
-			{
-				//Make the edge active...
-				PX_ASSERT(mEdgeNodeIndices[idx * 2].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2].index()].isKinematic());
-				PX_ASSERT(mEdgeNodeIndices[idx * 2 + 1].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isKinematic());
+			makeEdgeActive(index, false);
 
-				markEdgeActive(idx);
-				edge.activateEdge();
-			}
 			index = mEdgeInstances[index].mNextEdge;
 		}
 
@@ -558,7 +498,7 @@ void IslandSim::deactivateNodeInternal(PxNodeIndex nodeIndex)
 		{
 			const EdgeInstance& instance = mEdgeInstances[index];
 
-			const PxNodeIndex outboundNode = mEdgeNodeIndices[index ^ 1];
+			const PxNodeIndex outboundNode = mCpuData.mEdgeNodeIndices[index ^ 1];
 			if(outboundNode.index() == PX_INVALID_NODE || 
 				!mNodes[outboundNode.index()].isActive())
 			{
@@ -566,8 +506,8 @@ void IslandSim::deactivateNodeInternal(PxNodeIndex nodeIndex)
 				Edge& edge = mEdges[idx]; //InstanceIndex/2 = edgeIndex
 				//PX_ASSERT(edge.isActive()); //The edge must currently be inactive because the node was active
 				//Deactivate the edge if both nodes connected are inactive OR if one node is static/kinematic and the other is inactive...
-				PX_ASSERT(mEdgeNodeIndices[index & (~1)].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[index & (~1)].index()].isActive());
-				PX_ASSERT(mEdgeNodeIndices[index | 1].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[index | 1].index()].isActive());
+				PX_ASSERT(mCpuData.mEdgeNodeIndices[index & (~1)].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[index & (~1)].index()].isActive());
+				PX_ASSERT(mCpuData.mEdgeNodeIndices[index | 1].index() == PX_INVALID_NODE || !mNodes[mCpuData.mEdgeNodeIndices[index | 1].index()].isActive());
 				if(edge.isActive())
 				{
 					edge.deactivateEdge();
@@ -581,6 +521,7 @@ void IslandSim::deactivateNodeInternal(PxNodeIndex nodeIndex)
 	}
 }
 
+#if IG_SANITY_CHECKS
 bool IslandSim::canFindRoot(PxNodeIndex startNode, PxNodeIndex targetNode, PxArray<PxNodeIndex>* visitedNodes)
 {
 	if(visitedNodes)
@@ -606,7 +547,7 @@ bool IslandSim::canFindRoot(PxNodeIndex startNode, PxNodeIndex targetNode, PxArr
 		while(currentEdge != IG_INVALID_EDGE)
 		{
 			const EdgeInstance& edge = mEdgeInstances[currentEdge];
-			const PxNodeIndex outboundNode = mEdgeNodeIndices[currentEdge ^ 1];
+			const PxNodeIndex outboundNode = mCpuData.mEdgeNodeIndices[currentEdge ^ 1];
 			if(outboundNode.index() != PX_INVALID_NODE && !mNodes[outboundNode.index()].isKinematic() && !visitedState.test(outboundNode.index()))
 			{
 				if(outboundNode.index() == targetNode.index())
@@ -625,6 +566,7 @@ bool IslandSim::canFindRoot(PxNodeIndex startNode, PxNodeIndex targetNode, PxArr
 
 	return false;
 }
+#endif
 
 void IslandSim::unwindRoute(PxU32 traversalIndex, PxNodeIndex lastNode, PxU32 hopCount, IslandId id)
 {
@@ -645,18 +587,24 @@ void IslandSim::unwindRoute(PxU32 traversalIndex, PxNodeIndex lastNode, PxU32 ho
 	while(currIndex != PX_INVALID_NODE);
 }
 
-void IslandSim::activateIsland(IslandId islandId)
+void IslandSim::activateIslandInternal(const Island& island)
 {
-	Island& island = mIslands[islandId];
-	PX_ASSERT(!mIslandAwake.test(islandId));
-	PX_ASSERT(island.mActiveIndex == IG_INVALID_ISLAND);
-	
 	PxNodeIndex currentNode = island.mRootNode;
 	while(currentNode.index() != PX_INVALID_NODE)
 	{
 		activateNodeInternal(currentNode);
 		currentNode = mNodes[currentNode.index()].mNextNode;
 	}
+}
+
+void IslandSim::activateIsland(IslandId islandId)
+{
+	Island& island = mIslands[islandId];
+	PX_ASSERT(!mIslandAwake.test(islandId));
+	PX_ASSERT(island.mActiveIndex == IG_INVALID_ISLAND);
+	
+	activateIslandInternal(island);
+
 	markIslandActive(islandId);
 }
 
@@ -678,31 +626,29 @@ void IslandSim::deactivateIsland(IslandId islandId)
 	markIslandInactive(islandId);
 }
 
-void IslandSim::wakeIslands()
+void IslandSim::wakeIslandsInternal(bool flag)
 {
-	PX_PROFILE_ZONE("Basic.wakeIslands", getContextId());
-
 	//(1) Iterate over activating nodes and activate them
 
 	const PxU32 originalActiveIslands = mActiveIslands.size();
 
-	for (PxU32 a = 0; a < Edge::eEDGE_TYPE_COUNT; ++a)
+	if(flag)
 	{
-		for (PxU32 i = 0, count = mActivatedEdges[a].size(); i < count; ++i)
+		for (PxU32 a = 0; a < Edge::eEDGE_TYPE_COUNT; ++a)
 		{
-			IG::Edge& edge = mEdges[mActivatedEdges[a][i]];
-			edge.mEdgeState &= (~Edge::eACTIVATING);
+			for (PxU32 i = 0, count = mActivatedEdges[a].size(); i < count; ++i)
+			{
+				IG::Edge& edge = mEdges[mActivatedEdges[a][i]];
+				edge.mEdgeState &= (~Edge::eACTIVATING);
+			}
+
+			mActivatedEdges[a].forceSize_Unsafe(0);
 		}
 
-		mActivatedEdges[a].forceSize_Unsafe(0);
-	}
-
-	/*mInitialActiveEdgeCount[0] = mActiveEdges[0].size();
-	mInitialActiveEdgeCount[1] = mActiveEdges[1].size();*/
-
-	for (PxU32 a = 0; a < Edge::eEDGE_TYPE_COUNT; ++a)
-	{
-		mInitialActiveNodeCount[a] = mActiveNodes[a].size();
+		for (PxU32 a = 0; a < Edge::eEDGE_TYPE_COUNT; ++a)
+		{
+			mInitialActiveNodeCount[a] = mActiveNodes[a].size();
+		}
 	}
 
 	for(PxU32 a = 0; a < mActivatingNodes.size(); ++a)
@@ -735,7 +681,7 @@ void IslandSim::wakeIslands()
 			{
 				const EdgeInstance& edgeInstance = mEdgeInstances[index];
 
-				const PxNodeIndex outboundNode = mEdgeNodeIndices[index ^ 1];
+				const PxNodeIndex outboundNode = mCpuData.mEdgeNodeIndices[index ^ 1];
 				//Edge& edge = mEdges[index/2];
 				//if(edge.isConnected()) //Only wake up if the edge is not connected...
 				const PxNodeIndex nodeIndex = outboundNode;
@@ -743,17 +689,7 @@ void IslandSim::wakeIslands()
 				if (nodeIndex.isStaticBody() || mIslandIds[nodeIndex.index()] == IG_INVALID_ISLAND)
 				{
 					//If the edge connects to a static body *or* it connects to a node which is not part of an island (i.e. a kinematic), then activate the edge
-					const EdgeIndex idx = index / 2;
-					Edge& edge = mEdges[idx];
-					if (!edge.isActive() && edge.getEdgeType() != IG::Edge::eCONSTRAINT)
-					{
-						//Make the edge active...
-						PX_ASSERT(mEdgeNodeIndices[idx * 2].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2].index()].isKinematic());
-						PX_ASSERT(mEdgeNodeIndices[idx * 2 + 1].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isKinematic());
-
-						markEdgeActive(idx);
-						edge.activateEdge();
-					}
+					makeEdgeActive(index, true);
 				}
 				else
 				{
@@ -769,109 +705,28 @@ void IslandSim::wakeIslands()
 			}
 		}
 	}
-	
+
 	mActivatingNodes.forceSize_Unsafe(0);
 
 	for(PxU32 a = originalActiveIslands; a < mActiveIslands.size(); ++a)
-	{
-		const Island& island = mIslands[mActiveIslands[a]];
-	
-		PxNodeIndex currentNode = island.mRootNode;
-		while(currentNode.index() != PX_INVALID_NODE)
-		{
-			activateNodeInternal(currentNode);
-			currentNode = mNodes[currentNode.index()].mNextNode;
-		}
-	}
+		activateIslandInternal(mIslands[mActiveIslands[a]]);
+}
+
+void IslandSim::wakeIslands()
+{
+	PX_PROFILE_ZONE("Basic.wakeIslands", mContextId);
+	wakeIslandsInternal(true);
 }
 
 void IslandSim::wakeIslands2()
 {
-	const PxU32 originalActiveIslands = mActiveIslands.size();
-
-	for (PxU32 a = 0; a < mActivatingNodes.size(); ++a)
-	{
-		const PxNodeIndex wakeNode = mActivatingNodes[a];
-
-		const IslandId islandId = mIslandIds[wakeNode.index()];
-
-		Node& node = mNodes[wakeNode.index()];
-		node.clearActivating();
-		if (islandId != IG_INVALID_ISLAND)
-		{
-			if (!mIslandAwake.test(islandId))
-				markIslandActive(islandId);
-
-			mActiveNodeIndex[wakeNode.index()] = PX_INVALID_NODE; //Mark active node as invalid.
-			activateNodeInternal(wakeNode);
-		}
-		else
-		{
-			PX_ASSERT(node.isKinematic());
-			node.setActive();
-			PX_ASSERT(mActiveNodeIndex[wakeNode.index()] == a);
-			mActiveNodeIndex[wakeNode.index()] = mActiveKinematicNodes.size();
-			mActiveKinematicNodes.pushBack(wakeNode);
-
-			//Wake up the islands connected to this waking kinematic!
-			EdgeInstanceIndex index = node.mFirstEdgeIndex;
-			while (index != IG_INVALID_EDGE)
-			{
-				const EdgeInstance& edgeInstance = mEdgeInstances[index];
-
-				const PxNodeIndex outboundNode = mEdgeNodeIndices[index ^ 1];
-				//Edge& edge = mEdges[index/2];
-				//if(edge.isConnected()) //Only wake up if the edge is not connected...
-				const PxNodeIndex nodeIndex = outboundNode;
-
-				if (nodeIndex.isStaticBody() || mIslandIds[nodeIndex.index()] == IG_INVALID_ISLAND)
-				{
-					//If the edge connects to a static body *or* it connects to a node which is not part of an island (i.e. a kinematic), then activate the edge
-					const EdgeIndex idx = index / 2;
-					Edge& edge = mEdges[idx];
-					if (!edge.isActive() && edge.getEdgeType() != IG::Edge::eCONSTRAINT)
-					{
-						//Make the edge active...
-						PX_ASSERT(mEdgeNodeIndices[idx * 2].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2].index()].isKinematic());
-						PX_ASSERT(mEdgeNodeIndices[idx * 2 + 1].index() == PX_INVALID_NODE || !mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isActive() || mNodes[mEdgeNodeIndices[idx * 2 + 1].index()].isKinematic());
-
-						markEdgeActive(idx);
-						edge.activateEdge();
-					}
-				}
-				else
-				{
-					IslandId connectedIslandId = mIslandIds[nodeIndex.index()];
-					if (!mIslandAwake.test(connectedIslandId))
-					{
-						//Wake up that island
-						markIslandActive(connectedIslandId);
-					}
-				}
-
-				index = edgeInstance.mNextEdge;
-			}
-		}
-	}
-
-	mActivatingNodes.forceSize_Unsafe(0);
-
-	for (PxU32 a = originalActiveIslands; a < mActiveIslands.size(); ++a)
-	{
-		const Island& island = mIslands[mActiveIslands[a]];
-
-		PxNodeIndex currentNode = island.mRootNode;
-		while (currentNode.index() != PX_INVALID_NODE)
-		{
-			activateNodeInternal(currentNode);
-			currentNode = mNodes[currentNode.index()].mNextNode;
-		}
-	}
+	PX_PROFILE_ZONE("Basic.wakeIslands2", mContextId);
+	wakeIslandsInternal(false);
 }
 
 void IslandSim::insertNewEdges()
 {
-	PX_PROFILE_ZONE("Basic.insertNewEdges", getContextId());
+	PX_PROFILE_ZONE("Basic.insertNewEdges", mContextId);
 
 	mEdgeInstances.reserve(mEdges.capacity()*2);
 	
@@ -898,7 +753,7 @@ void IslandSim::insertNewEdges()
 
 void IslandSim::removeDestroyedEdges()
 {
-	PX_PROFILE_ZONE("Basic.removeDestroyedEdges", getContextId());
+	PX_PROFILE_ZONE("Basic.removeDestroyedEdges", mContextId);
 
 	for(PxU32 a = 0; a < mDestroyedEdges.size(); ++a)
 	{
@@ -920,9 +775,67 @@ void IslandSim::removeDestroyedEdges()
 	}		
 }
 
+IslandId IslandSim::addNodeToIsland(PxNodeIndex nodeIndex1, PxNodeIndex nodeIndex2, IslandId islandId2, bool active1, bool active2)
+{
+	PX_ASSERT(islandId2 != IG_INVALID_ISLAND);
+	if (nodeIndex1.index() != PX_INVALID_NODE)
+	{
+		if (!mNodes[nodeIndex1.index()].isKinematic())
+		{
+			//We need to add node 1 to island2
+			PX_ASSERT(mNodes[nodeIndex1.index()].mNextNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
+			PX_ASSERT(mNodes[nodeIndex1.index()].mPrevNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
+							
+			Island& island = mIslands[islandId2];
+
+			Node& lastNode = mNodes[island.mLastNode.index()];
+
+			PX_ASSERT(lastNode.mNextNode.index() == PX_INVALID_NODE);
+
+			Node& node = mNodes[nodeIndex1.index()];
+			lastNode.mNextNode = nodeIndex1;
+			node.mPrevNode = island.mLastNode;
+			island.mLastNode = nodeIndex1;
+			island.mNodeCount[node.mType]++;
+			mIslandIds[nodeIndex1.index()] = islandId2;
+			mHopCounts[nodeIndex1.index()] = mHopCounts[nodeIndex2.index()] + 1;
+			mFastRoute[nodeIndex1.index()] = nodeIndex2;
+
+			if(active1 || active2)
+			{
+				if(!mIslandAwake.test(islandId2))
+				{
+					//This island wasn't already awake, so need to wake the whole island up
+					activateIsland(islandId2);
+				}
+				if(!active1)
+				{
+					//Wake up this node...
+					activateNodeInternal(nodeIndex1);
+				}
+			}
+		}
+		else if(active1 && !active2)
+		{
+			//Active kinematic object -> wake island!
+			activateIsland(islandId2);
+		}
+	}
+	else
+	{
+		//A new touch with a static body...
+		Node& node = mNodes[nodeIndex2.index()];
+		node.mStaticTouchCount++; //Increment static touch counter on the body
+		//Island& island = mIslands[islandId2];
+		//island.mStaticTouchCount++; //Increment static touch counter on the island
+		mIslandStaticTouchCount[islandId2]++;
+	}
+	return islandId2;
+}
+
 void IslandSim::processNewEdges()
 {
-	PX_PROFILE_ZONE("Basic.processNewEdges", getContextId());
+	PX_PROFILE_ZONE("Basic.processNewEdges", mContextId);
 	//Stage 1: we process the list of new pairs. To do this, we need to first sort them based on a predicate...
 
 	insertNewEdges();
@@ -953,8 +866,8 @@ void IslandSim::processNewEdges()
 				//(3)	One body is already in an island and the other isn't, so we just add the new body to the existing island.
 				//(4)	Both bodies are in different islands. In that case, we merge the islands
 
-				const PxNodeIndex nodeIndex1 = mEdgeNodeIndices[2 * edgeIndex];
-				const PxNodeIndex nodeIndex2 = mEdgeNodeIndices[2 * edgeIndex+1];
+				const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[2 * edgeIndex];
+				const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[2 * edgeIndex+1];
 
 				const IslandId islandId1 = nodeIndex1.index() == PX_INVALID_NODE ? IG_INVALID_ISLAND : mIslandIds[nodeIndex1.index()];
 				const IslandId islandId2 = nodeIndex2.index() == PX_INVALID_NODE ? IG_INVALID_ISLAND : mIslandIds[nodeIndex2.index()];
@@ -1002,116 +915,11 @@ void IslandSim::processNewEdges()
 				}
 				else if(islandId1 == IG_INVALID_ISLAND)
 				{
-					islandId = islandId2;
-					if (nodeIndex1.index() != PX_INVALID_NODE)
-					{
-						if (!mNodes[nodeIndex1.index()].isKinematic())
-						{
-							PX_ASSERT(islandId2 != IG_INVALID_ISLAND);
-							//We need to add node 1 to island2
-							PX_ASSERT(mNodes[nodeIndex1.index()].mNextNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
-							PX_ASSERT(mNodes[nodeIndex1.index()].mPrevNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
-							
-							Island& island = mIslands[islandId2];
-
-							Node& lastNode = mNodes[island.mLastNode.index()];
-
-							PX_ASSERT(lastNode.mNextNode.index() == PX_INVALID_NODE);
-
-							Node& node = mNodes[nodeIndex1.index()];
-							lastNode.mNextNode = nodeIndex1;
-							node.mPrevNode = island.mLastNode;
-							island.mLastNode = nodeIndex1;
-							island.mNodeCount[node.mType]++;
-							mIslandIds[nodeIndex1.index()] = islandId2;
-							mHopCounts[nodeIndex1.index()] = mHopCounts[nodeIndex2.index()] + 1;
-							mFastRoute[nodeIndex1.index()] = nodeIndex2;
-
-							if(active1 || active2)
-							{
-								if(!mIslandAwake.test(islandId2))
-								{
-									//This island wasn't already awake, so need to wake the whole island up
-									activateIsland(islandId2);
-								}
-								if(!active1)
-								{
-									//Wake up this node...
-									activateNodeInternal(nodeIndex1);
-								}
-							}
-						}
-						else if(active1 && !active2)
-						{
-							//Active kinematic object -> wake island!
-							activateIsland(islandId2);
-						}
-					}
-					else
-					{
-						//A new touch with a static body...
-						Node& node = mNodes[nodeIndex2.index()];
-						node.mStaticTouchCount++; //Increment static touch counter on the body
-						//Island& island = mIslands[islandId2];
-						//island.mStaticTouchCount++; //Increment static touch counter on the island
-						mIslandStaticTouchCount[islandId2]++;
-					}
+					islandId = addNodeToIsland(nodeIndex1, nodeIndex2, islandId2, active1, active2);
 				}
 				else if (islandId2 == IG_INVALID_ISLAND)
 				{
-					islandId = islandId1;
-					if (nodeIndex2.index() != PX_INVALID_NODE)
-					{ 
-						if (!mNodes[nodeIndex2.index()].isKinematic())
-						{
-							PX_ASSERT(islandId1 != PX_INVALID_NODE);
-							//We need to add node 1 to island2
-							PX_ASSERT(mNodes[nodeIndex2.index()].mNextNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
-							PX_ASSERT(mNodes[nodeIndex2.index()].mPrevNode.index() == PX_INVALID_NODE); //Ensure that this node is not in any other island
-							
-							Island& island = mIslands[islandId1];
-
-							Node& lastNode = mNodes[island.mLastNode.index()];
-							PX_ASSERT(lastNode.mNextNode.index() == PX_INVALID_NODE);
-							Node& node = mNodes[nodeIndex2.index()];
-							lastNode.mNextNode = nodeIndex2;
-							node.mPrevNode = island.mLastNode;
-							island.mLastNode = nodeIndex2;
-							island.mNodeCount[node.mType]++;
-							mIslandIds[nodeIndex2.index()] = islandId1;
-							mHopCounts[nodeIndex2.index()] = mHopCounts[nodeIndex1.index()] + 1;
-							mFastRoute[nodeIndex2.index()] = nodeIndex1;
-
-							if(active1 || active2)
-							{
-								if(!mIslandAwake.test(islandId1))
-								{
-									//This island wasn't already awake, so need to wake the whole island up
-									activateIsland(islandId1);
-								}
-								if(!active1)
-								{
-									//Wake up this node...
-									activateNodeInternal(nodeIndex2);
-								}
-							}
-						}
-						else if(active2 && !active1)
-						{
-							//Active kinematic object -> wake island!
-							activateIsland(islandId1);
-						}
-					}
-					else
-					{
-						//New static touch 
-						//A new touch with a static body...
-						Node& node = mNodes[nodeIndex1.index()];
-						node.mStaticTouchCount++; //Increment static touch counter on the body
-						//Island& island = mIslands[islandId1];
-						mIslandStaticTouchCount[islandId1]++;
-						//island.mStaticTouchCount++; //Increment static touch counter on the island
-					}
+					islandId = addNodeToIsland(nodeIndex2, nodeIndex1, islandId1, active2, active1);
 				}
 				else
 				{
@@ -1157,7 +965,7 @@ bool IslandSim::isPathTo(PxNodeIndex startNode, PxNodeIndex targetNode) const
 	while(index != IG_INVALID_EDGE)
 	{
 		const EdgeInstance& instance = mEdgeInstances[index];
-		if(/*mEdges[index/2].isConnected() &&*/ mEdgeNodeIndices[index^1].index() == targetNode.index())
+		if(/*mEdges[index/2].isConnected() &&*/ mCpuData.mEdgeNodeIndices[index^1].index() == targetNode.index())
 			return true;
 		index = instance.mNextEdge;
 	}
@@ -1265,7 +1073,7 @@ bool IslandSim::findRoute(PxNodeIndex startNode, PxNodeIndex targetNode, IslandI
 			{
 				const EdgeInstance& instance = mEdgeInstances[edge];
 				{
-					const PxNodeIndex nextIndex = mEdgeNodeIndices[edge ^ 1];
+					const PxNodeIndex nextIndex = mCpuData.mEdgeNodeIndices[edge ^ 1];
 
 					//Static or kinematic nodes don't connect islands.
 					if(nextIndex.index() != PX_INVALID_NODE && !mNodes[nextIndex.index()].isKinematic())
@@ -1316,12 +1124,10 @@ bool IslandSim::findRoute(PxNodeIndex startNode, PxNodeIndex targetNode, IslandI
 	}
 }
 
-#define IG_LIMIT_DIRTY_NODES 0
-
-void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allowDeactivation, bool permitKinematicDeactivation, PxU32 dirtyNodeLimit)
+void IslandSim::processLostEdges(const PxArray<PxNodeIndex>& destroyedNodes, bool allowDeactivation, bool permitKinematicDeactivation, PxU32 dirtyNodeLimit)
 {
 	PX_UNUSED(dirtyNodeLimit);
-	PX_PROFILE_ZONE("Basic.processLostEdges", getContextId());
+	PX_PROFILE_ZONE("Basic.processLostEdges", mContextId);
 	//At this point, all nodes and edges are activated. 
 
 	//Bit map for visited
@@ -1338,7 +1144,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 	const PxU32 nbDestroyedEdges = mDestroyedEdges.size();
 	PX_UNUSED(nbDestroyedEdges);
 	{
-		PX_PROFILE_ZONE("Basic.removeEdgesFromIslands", getContextId());
+		PX_PROFILE_ZONE("Basic.removeEdgesFromIslands", mContextId);
 		for (PxU32 a = 0; a < mDestroyedEdges.size(); ++a)
 		{
 			const EdgeIndex lostIndex = mDestroyedEdges[a];
@@ -1349,8 +1155,8 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 				//Process this edge...
 				if (!lostEdge.isReportOnlyDestroy() && lostEdge.isInserted())
 				{
-					const PxU32 index1 = mEdgeNodeIndices[mDestroyedEdges[a] * 2].index();
-					const PxU32 index2 = mEdgeNodeIndices[mDestroyedEdges[a] * 2 + 1].index();
+					const PxU32 index1 = mCpuData.mEdgeNodeIndices[mDestroyedEdges[a] * 2].index();
+					const PxU32 index2 = mCpuData.mEdgeNodeIndices[mDestroyedEdges[a] * 2 + 1].index();
 
 					IslandId islandId = IG_INVALID_ISLAND;
 					if (index1 != PX_INVALID_NODE && index2 != PX_INVALID_NODE)
@@ -1401,7 +1207,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 
 	if (allowDeactivation)
 	{
-		PX_PROFILE_ZONE("Basic.findPathsAndBreakIslands", getContextId());
+		PX_PROFILE_ZONE("Basic.findPathsAndBreakIslands", mContextId);
 
 		//KS - process only this many dirty nodes, deferring future dirty nodes to subsequent frames. 
 		//This means that it may take several frames for broken edges to trigger islands to completely break but this is better
@@ -1551,7 +1357,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 								const Edge& edge = mEdges[edgeIndex];
 
 								//Only split the island if we're processing the first node or if the first node is infinte-mass
-								if (!(idx & 1) || (mEdgeNodeIndices[idx & (~1)].index() == PX_INVALID_NODE || mNodes[mEdgeNodeIndices[idx & (~1)].index()].isKinematic()))
+								if (!(idx & 1) || (mCpuData.mEdgeNodeIndices[idx & (~1)].index() == PX_INVALID_NODE || mNodes[mCpuData.mEdgeNodeIndices[idx & (~1)].index()].isKinematic()))
 								{
 									//We will remove this edge from the island...
 									mIslandSplitEdges[edge.mEdgeType].pushBack(edgeIndex);
@@ -1674,7 +1480,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 	}
 
 	{
-		PX_PROFILE_ZONE("Basic.clearDestroyedEdges", getContextId());
+		PX_PROFILE_ZONE("Basic.clearDestroyedEdges", mContextId);
 		//Now process the lost edges...
 		for (PxU32 a = 0; a < mDestroyedEdges.size(); ++a)
 		{
@@ -1684,12 +1490,11 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 			Edge& edge = mEdges[index];
 			if (edge.isPendingDestroyed())
 			{
-				//if(edge.mFirstPartitionEdge)
-				PartitionEdge* pEdge = mFirstPartitionEdges ? (*mFirstPartitionEdges)[index] : NULL;
+				PartitionEdge* pEdge = mGpuData ? mGpuData->mFirstPartitionEdges[index] : NULL;
 				if (pEdge)
 				{
-					mDestroyedPartitionEdges->pushBack(pEdge);
-					(*mFirstPartitionEdges)[index] = NULL; //Force first partition edge to NULL to ensure we don't have a clash
+					mGpuData->mDestroyedPartitionEdges.pushBack(pEdge);
+					mGpuData->mFirstPartitionEdges[index] = NULL; //Force first partition edge to NULL to ensure we don't have a clash
 				}
 				if (edge.isActive())
 				{
@@ -1698,7 +1503,8 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 				}
 
 				edge = Edge(); //Reset edge
-				mActiveContactEdges.growAndReset(index);
+				if(mGpuData)
+					mGpuData->mActiveContactEdges.growAndReset(index);
 			}
 		}
 
@@ -1706,7 +1512,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 	}
 
 	{
-		PX_PROFILE_ZONE("Basic.clearDestroyedNodes", getContextId());
+		PX_PROFILE_ZONE("Basic.clearDestroyedNodes", mContextId);
 
 		for (PxU32 a = 0; a < destroyedNodes.size(); ++a)
 		{
@@ -1775,7 +1581,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 
 	if (allowDeactivation)
 	{
-		PX_PROFILE_ZONE("Basic.deactivation", getContextId());
+		PX_PROFILE_ZONE("Basic.deactivation", mContextId);
 		for (PxU32 a = 0; a < mActiveIslands.size(); a++)
 		{
 			const IslandId islandId = mActiveIslands[a];
@@ -1804,12 +1610,12 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 				EdgeInstanceIndex edgeId = kinematicNode.mFirstEdgeIndex;
 				while (edgeId != IG_INVALID_EDGE)
 				{
-					EdgeInstance& instance = mEdgeInstances[edgeId];
+					const EdgeInstance& instance = mEdgeInstances[edgeId];
 					//Edge& edge = mEdges[edgeId/2];
 					//Only wake up islands if a connection was present
 					//if(edge.isConnected())
 					{
-						PxNodeIndex outNode = mEdgeNodeIndices[edgeId ^ 1];
+						PxNodeIndex outNode = mCpuData.mEdgeNodeIndices[edgeId ^ 1];
 						if (outNode.index() != PX_INVALID_NODE)
 						{
 							IslandId islandId = mIslandIds[outNode.index()];
@@ -1860,7 +1666,7 @@ void IslandSim::processLostEdges(PxArray<PxNodeIndex>& destroyedNodes, bool allo
 	}
 
 	{
-		PX_PROFILE_ZONE("Basic.resetDirtyEdges", getContextId());
+		PX_PROFILE_ZONE("Basic.resetDirtyEdges", mContextId);
 		for (PxU32 i = 0; i < Edge::eEDGE_TYPE_COUNT; ++i)
 		{
 			for (PxU32 a = 0; a < mDirtyEdges[i].size(); ++a)
@@ -2068,23 +1874,17 @@ void IslandSim::removeEdgeFromActivatingList(EdgeIndex index)
 		edge.mEdgeState &= (~Edge::eACTIVATING);
 	}
 
-	const PxNodeIndex nodeIndex1 = mEdgeNodeIndices[index * 2];
-	const PxNodeIndex nodeIndex2 = mEdgeNodeIndices[index * 2 + 1];
+	const PxNodeIndex nodeIndex1 = mCpuData.mEdgeNodeIndices[index * 2];
+	const PxNodeIndex nodeIndex2 = mCpuData.mEdgeNodeIndices[index * 2 + 1];
 
 	if (nodeIndex1.isValid() && nodeIndex2.isValid())
 	{
-		{
-			Node& node = mNodes[nodeIndex1.index()];
-			node.mActiveRefCount--;
-		}
-		{
-			Node& node = mNodes[nodeIndex2.index()];
-			node.mActiveRefCount--;
-		}
+		mNodes[nodeIndex1.index()].mActiveRefCount--;
+		mNodes[nodeIndex2.index()].mActiveRefCount--;
 	}
 
-	if(edge.mEdgeType == Edge::eCONTACT_MANAGER)
-		mActiveContactEdges.reset(index);
+	if(mGpuData && edge.mEdgeType == Edge::eCONTACT_MANAGER)
+		mGpuData->mActiveContactEdges.reset(index);
 }
 
 void IslandSim::setKinematic(PxNodeIndex nodeIndex)
@@ -2237,7 +2037,7 @@ void IslandSim::setDynamic(PxNodeIndex nodeIndex)
 			const EdgeInstance& instance = mEdgeInstances[edgeId];
 			const EdgeInstanceIndex nextId = instance.mNextEdge;
 
-			const PxNodeIndex otherNode = mEdgeNodeIndices[edgeId^1];
+			const PxNodeIndex otherNode = mCpuData.mEdgeNodeIndices[edgeId^1];
 
 			const PxU32 idx = edgeId/2;
 			IG::Edge& edge = mEdges[edgeId/2];
@@ -2280,7 +2080,7 @@ void IslandSim::setDynamic(PxNodeIndex nodeIndex)
 		if(!node.isActivating() && mActiveNodeIndex[nodeIndex.index()] != PX_INVALID_NODE)
 		{
 			//Remove from active kinematic list, add to active dynamic list
-			PxU32 oldRefCount = node.mActiveRefCount;
+			const PxU32 oldRefCount = node.mActiveRefCount;
 			node.mActiveRefCount = 0;
 			markKinematicInactive(nodeIndex);
 			node.mActiveRefCount = oldRefCount;
@@ -2291,7 +2091,7 @@ void IslandSim::setDynamic(PxNodeIndex nodeIndex)
 		//Create an island for this node. If there are any edges affecting this node, they will have been marked as 
 		//"new" and will be processed next island update.
 		{
-			IslandId islandHandle = mIslandHandles.getHandle();
+			const IslandId islandHandle = mIslandHandles.getHandle();
 			
 			if(islandHandle == mIslands.capacity())
 			{

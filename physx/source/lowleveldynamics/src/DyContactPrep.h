@@ -29,9 +29,8 @@
 #ifndef DY_CONTACT_PREP_H
 #define DY_CONTACT_PREP_H
 
+#include "CmSpatialVector.h"
 #include "DySolverConstraintDesc.h"
-#include "PxSceneDesc.h"
-#include "DySolverContact4.h"
 
 namespace physx
 {

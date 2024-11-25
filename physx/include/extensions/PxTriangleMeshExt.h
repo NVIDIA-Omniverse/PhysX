@@ -32,6 +32,7 @@
 #include "PxPhysXConfig.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "foundation/PxArray.h"
+#include "foundation/PxTransform.h"
 
 #if !PX_DOXYGEN
 namespace physx

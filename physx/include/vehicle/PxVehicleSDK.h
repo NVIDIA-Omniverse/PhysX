@@ -29,7 +29,6 @@
 #ifndef PX_VEHICLE_SDK_H
 #define PX_VEHICLE_SDK_H
 
-#include "foundation/Px.h"
 #include "foundation/PxVec3.h"
 #include "common/PxTypeInfo.h"
 

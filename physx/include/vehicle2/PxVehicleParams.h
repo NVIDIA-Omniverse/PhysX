@@ -268,7 +268,7 @@ struct PxVehicleArrayData
 	*/
 	PX_FORCE_INLINE void setData(T*const* data)
 	{
-		arrayOfPointers= data;
+		arrayOfPointers = data;
 		dataFormat = eARRAY_OF_POINTERS;
 	}
 

@@ -42,7 +42,7 @@ using namespace Gu;
 #include "GuIntersectionRayTriangle.h"
 
 #include "foundation/PxVecMath.h"
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuBV4_Common.h"
 

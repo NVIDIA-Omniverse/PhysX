@@ -33,6 +33,7 @@
 
 namespace physx
 {
+class PxBounds3;
 namespace Gu
 {
 	class PX_PHYSX_COMMON_API AABBTreeBounds

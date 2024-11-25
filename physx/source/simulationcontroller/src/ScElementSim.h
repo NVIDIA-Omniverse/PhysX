@@ -96,6 +96,12 @@ namespace Sc
 		PX_FORCE_INLINE bool					isInBroadPhase()			const	{ return mInBroadPhase;	}
 
 						void					addToAABBMgr(PxReal contactDistance, Bp::FilterGroup::Enum group, Bp::ElementType::Enum type);
+		PX_FORCE_INLINE	void					addToAABBMgr(PxReal contactOffset, Bp::FilterType::Enum type)
+												{
+													const PxU32 group = Bp::FilterGroup::eDYNAMICS_BASE + mActor.getActorID();
+													addToAABBMgr(contactOffset, Bp::FilterGroup::Enum((group << BP_FILTERING_TYPE_SHIFT_BIT) | type), Bp::ElementType::eSHAPE);
+												}
+
 						bool					removeFromAABBMgr();
 
 		PX_FORCE_INLINE	void					initID()

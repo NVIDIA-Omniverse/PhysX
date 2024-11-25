@@ -42,7 +42,7 @@ namespace physx
 	{
 	public:
 
-		static const PxU32 MAX_CONTACTS = 64;
+		static const PxU32 MAX_CONTACTS = 256;
 
 		PxContactPoint	contacts[MAX_CONTACTS];
 		PxU32			count;

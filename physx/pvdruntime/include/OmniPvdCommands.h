@@ -45,7 +45,8 @@ struct OmniPvdCommand
 		eCREATE_OBJECT,
 		eDESTROY_OBJECT,
 		eSTART_FRAME,
-		eSTOP_FRAME
+		eSTOP_FRAME,
+		eRECORD_MESSAGE
 	};
 };
 

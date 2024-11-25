@@ -29,7 +29,6 @@
 #ifndef PX_PROFILE_DATA_PARSING_H
 #define PX_PROFILE_DATA_PARSING_H
 
-#include "foundation/Px.h"
 
 namespace physx { namespace profile {
 

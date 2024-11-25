@@ -143,10 +143,10 @@ namespace Gu
 
 			if(data)
 			{
-				const PxU32 maxIndex= hillClimbing(dir);
-				const PxU32 minIndex= hillClimbing(V3Neg(dir));
-				const Vec3V maxPoint= V3LoadU_SafeReadW(verts[maxIndex]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
-				const Vec3V minPoint= V3LoadU_SafeReadW(verts[minIndex]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
+				const PxU32 maxIndex = hillClimbing(dir);
+				const PxU32 minIndex = hillClimbing(V3Neg(dir));
+				const Vec3V maxPoint = V3LoadU_SafeReadW(verts[maxIndex]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
+				const Vec3V minPoint = V3LoadU_SafeReadW(verts[minIndex]);	// PT: safe because of the way vertex memory is allocated in ConvexHullData (and 'verts' is initialized with ConvexHullData::getHullVertices())
 				min = V3Dot(dir, minPoint);
 				max = V3Dot(dir, maxPoint);
 			}

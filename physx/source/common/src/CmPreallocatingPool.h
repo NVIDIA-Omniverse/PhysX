@@ -29,7 +29,6 @@
 #ifndef CM_PREALLOCATING_POOL_H
 #define CM_PREALLOCATING_POOL_H
 
-#include "foundation/Px.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxSort.h"
 #include "foundation/PxArray.h"

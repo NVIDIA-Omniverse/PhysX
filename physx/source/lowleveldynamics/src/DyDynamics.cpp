@@ -44,7 +44,6 @@
 
 #include "DyConstraintPrep.h"
 #include "DyConstraintPartition.h"
-#include "DySoftBody.h"
 
 #include "CmFlushPool.h"
 #include "DyArticulationPImpl.h"
@@ -62,6 +61,7 @@
 #include "PxsContactManagerState.h"
 #include "DyContactPrepShared.h"
 #include "DySleep.h"
+#include "DyIslandManager.h"
 
 //KS - used to turn on/off batched SIMD constraints.
 #define DY_BATCH_CONSTRAINTS 1
@@ -72,12 +72,12 @@ namespace physx
 {
 namespace Dy
 {
+// PT: TODO: what is const and what is not?
 struct SolverIslandObjects
 {
 	PxsRigidBody**				bodies;	
 	FeatherstoneArticulation**	articulations;
-	PxsIndexedContactManager*	contactManagers;
-	//PxsIndexedConstraint*		constraints;
+	PxsIndexedContactManager*	contactManagers;	// PT: points to DynamicsContext::mContactList
 
 	const IG::IslandId*			islandIds;
 	PxU32						numIslands;
@@ -100,7 +100,7 @@ struct SolverIslandObjects
 
 Context* createDynamicsContext(	PxcNpMemBlockPool* memBlockPool, PxcScratchAllocator& scratchAllocator, Cm::FlushPool& taskPool,
 								PxvSimStats& simStats, PxTaskManager* taskManager, PxVirtualAllocatorCallback* allocatorCallback, 
-								PxsMaterialManager* materialManager, IG::SimpleIslandManager* islandManager, PxU64 contextID,
+								PxsMaterialManager* materialManager, IG::SimpleIslandManager& islandManager, PxU64 contextID,
 								bool enableStabilization, bool useEnhancedDeterminism,
 								PxReal maxBiasCoefficient, bool frictionEveryIteration, PxReal lengthScale, bool isResidualReportingEnabled)
 {
@@ -135,7 +135,7 @@ DynamicsContext::DynamicsContext(	PxcNpMemBlockPool* memBlockPool,
 									PxTaskManager* taskManager,
 									PxVirtualAllocatorCallback* allocatorCallback,
 									PxsMaterialManager* materialManager,
-									IG::SimpleIslandManager* islandManager,
+									IG::SimpleIslandManager& islandManager,
 									PxU64 contextID,
 									bool enableStabilization,
 									bool useEnhancedDeterminism,
@@ -212,7 +212,7 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, const IG:
 	{
 		const PxNodeIndex& nodeIndex0 = reinterpret_cast<const PxNodeIndex&>(constraint.articulation0);
 		const IG::Node& node0 = islandSim.getNode(nodeIndex0);
-		desc.articulationA = node0.getArticulation();
+		desc.articulationA = node0.mObject;
 		desc.linkIndexA = nodeIndex0.articulationLinkId();
 	}
 	else
@@ -234,7 +234,7 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, const IG:
 	{
 		const PxNodeIndex& nodeIndex1 = reinterpret_cast<const PxNodeIndex&>(constraint.articulation1);
 		const IG::Node& node1 = islandSim.getNode(nodeIndex1);
-		desc.articulationB = node1.getArticulation();
+		desc.articulationB = node1.mObject;
 		desc.linkIndexB = nodeIndex1.articulationLinkId();// PxTo8(getLinkIndex(constraint.articulation1));
 	}
 	else
@@ -255,7 +255,7 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 
 	const IG::IslandSim& islandSim = islandManager.getAccurateIslandSim();
 
-	PxNodeIndex node1 = islandSim.getNodeIndex1(edgeIndex);
+	const PxNodeIndex node1 = islandSim.mCpuData.getNodeIndex1(edgeIndex);
 	if (node1.isStaticBody())
 	{
 		desc.bodyA = &mWorldSolverBody;
@@ -267,22 +267,22 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 		const IG::Node& node = islandSim.getNode(node1);
 		if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
 		{
-			Dy::FeatherstoneArticulation* a = islandSim.getLLArticulation(node1);
+			Dy::FeatherstoneArticulation* a = getArticulationFromIG(islandSim, node1);
 
 			desc.articulationA = a;
 			desc.linkIndexA = node1.articulationLinkId();
 		}
 		else
 		{
-			PxU32 activeIndex = islandSim.getActiveNodeIndex(node1);
-			PxU32 index = node.isKinematic() ? activeIndex : bodyRemap[activeIndex] + solverBodyOffset;
+			const PxU32 activeIndex = islandSim.getActiveNodeIndex(node1);
+			const PxU32 index = node.isKinematic() ? activeIndex : bodyRemap[activeIndex] + solverBodyOffset;
 			desc.bodyA = &mSolverBodyPool[index];
 			desc.bodyADataIndex = index + 1;
 			desc.linkIndexA = PxSolverConstraintDesc::RIGID_BODY;
 		}
 	}
 
-	PxNodeIndex node2 = islandSim.getNodeIndex2(edgeIndex);
+	const PxNodeIndex node2 = islandSim.mCpuData.getNodeIndex2(edgeIndex);
 	if (node2.isStaticBody())
 	{
 		desc.bodyB = &mWorldSolverBody;
@@ -294,15 +294,15 @@ void DynamicsContext::setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeI
 		const IG::Node& node = islandSim.getNode(node2);
 		if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
 		{
-			Dy::FeatherstoneArticulation* b = islandSim.getLLArticulation(node2);
+			Dy::FeatherstoneArticulation* b = getArticulationFromIG(islandSim, node2);
 
 			desc.articulationB = b;
 			desc.linkIndexB = node2.articulationLinkId();
 		}
 		else
 		{
-			PxU32 activeIndex = islandSim.getActiveNodeIndex(node2);
-			PxU32 index = node.isKinematic() ? activeIndex : bodyRemap[activeIndex] + solverBodyOffset;
+			const PxU32 activeIndex = islandSim.getActiveNodeIndex(node2);
+			const PxU32 index = node.isKinematic() ? activeIndex : bodyRemap[activeIndex] + solverBodyOffset;
 			desc.bodyB = &mSolverBodyPool[index];
 			desc.bodyBDataIndex = index + 1;
 			desc.linkIndexB = PxSolverConstraintDesc::RIGID_BODY;
@@ -425,7 +425,7 @@ public:
 		{
 			PxsContactManager* manager = mThreadContext.orderedContactList[a+header.mStartIndex]->contactManager;
 			PxcNpWorkUnit& unit = manager->getWorkUnit();
-			PxsContactManagerOutput& output = mOutputs.getContactManager(unit.mNpIndex);
+			const PxsContactManagerOutput& output = mOutputs.getContactManagerOutput(unit.mNpIndex);
 			PxContactStreamIterator iter(output.contactPatches, output.contactPoints, output.getInternalFaceIndice(), output.nbPatches, output.nbContacts);
 
 			PxU32 origSize = size;
@@ -462,7 +462,7 @@ public:
 
 		PxU32 origSize = size;
 #if PX_CONTACT_REDUCTION
-		ContactReduction<6> reduction(buffer.contacts, materialInfo, size);
+		ContactReduction<6, 6> reduction(buffer.contacts, materialInfo, size);
 		reduction.reduceContacts();
 		//OK, now we write back the contacts...
 
@@ -472,7 +472,7 @@ public:
 		size = 0;
 		for(PxU32 a = 0; a < reduction.mNumPatches; ++a)
 		{
-			ReducedContactPatch& patch = reduction.mPatches[a];
+			ReducedContactPatch<6>& patch = reduction.mPatches[a];
 			for(PxU32 b = 0; b < patch.numContactPoints; ++b)
 			{
 				histo[patch.contactPoints[b]] = 1;
@@ -511,7 +511,7 @@ public:
 
 		PxU32 contactForceByteSize = size * sizeof(PxReal);
 
-		PxsContactManagerOutput& output = mOutputs.getContactManager(header.unit->mNpIndex);
+		PxsContactManagerOutput& output = mOutputs.getContactManagerOutput(header.unit->mNpIndex);
 
 		PxU16 compressedContactSize;
 
@@ -805,7 +805,6 @@ public:
 			mThreadContext.mMaxSolverPositionIterations = 0;
 			mThreadContext.mMaxSolverVelocityIterations = 0;
 			mThreadContext.mAxisConstraintCount = 0;
-			mThreadContext.mContactDescPtr = mThreadContext.contactConstraintDescArray;
 			mThreadContext.mFrictionDescPtr = mThreadContext.frictionConstraintDescArray.begin();
 			mThreadContext.mNumDifferentBodyConstraints = 0;
 			mThreadContext.mNumStaticConstraints = 0;
@@ -858,7 +857,7 @@ public:
 
 					if (node.getNodeType() == IG::Node::eARTICULATION_TYPE)
 					{
-						articulationPtr[articIndex++] = node.getArticulation();
+						articulationPtr[articIndex++] = getObjectFromIG<FeatherstoneArticulation>(node);
 					}
 					else
 					{
@@ -877,9 +876,8 @@ public:
 
 			for (PxU32 a = 0; a < bodyIndex; ++a)
 			{
-				PxNodeIndex currentIndex(nodeIndexArray[a]);
-				const IG::Node& node = islandSim.getNode(currentIndex);
-				PxsRigidBody* rigid = node.getRigidBody();
+				const PxNodeIndex currentIndex(nodeIndexArray[a]);
+				PxsRigidBody* rigid = getRigidBodyFromIG(islandSim, currentIndex);
 				rigidBodyPtr[a] = rigid;
 				bodyArrayPtr[a] = &rigid->getCore();
 				bodyRemapTable[islandSim.getActiveNodeIndex(currentIndex)] = a;
@@ -902,8 +900,8 @@ public:
 
 					if(contactManager)
 					{
-						const PxNodeIndex nodeIndex1 = islandSim.getNodeIndex1(contactEdgeIndex);
-						const PxNodeIndex nodeIndex2 = islandSim.getNodeIndex2(contactEdgeIndex);
+						const PxNodeIndex nodeIndex1 = islandSim.mCpuData.getNodeIndex1(contactEdgeIndex);
+						const PxNodeIndex nodeIndex2 = islandSim.mCpuData.getNodeIndex2(contactEdgeIndex);
 
 						PxsIndexedContactManager& indexedManager = indexedManagers[currentContactIndex++];
 						indexedManager.contactManager = contactManager;
@@ -1190,7 +1188,7 @@ public:
 			startDesc->constraint = reinterpret_cast<PxU8*>(constraints[0]->contactManager);
 			startDesc->constraintType = DY_SC_TYPE_RB_CONTACT;
 
-			PxsContactManagerOutput* startManagerOutput = &mOutputs.getContactManager(constraints[0]->contactManager->getWorkUnit().mNpIndex);
+			PxsContactManagerOutput* startManagerOutput = &mOutputs.getContactManagerOutput(constraints[0]->contactManager->getWorkUnit().mNpIndex);
 			PxU32 contactCount = startManagerOutput->nbContacts;
 			PxU32 startIndex = 0;
 			PxU32 numHeaders = 0;
@@ -1203,7 +1201,7 @@ public:
 				mContext.setDescFromIndices(desc, islandSim, *constraints[a], mSolverBodyOffset);
 
 				PxsContactManager* manager = constraints[a]->contactManager;
-				PxsContactManagerOutput& output = mOutputs.getContactManager(manager->getWorkUnit().mNpIndex);
+				PxsContactManagerOutput& output = mOutputs.getContactManagerOutput(manager->getWorkUnit().mNpIndex);
 
 				desc.constraint = reinterpret_cast<PxU8*>(constraints[a]->contactManager);
 				desc.constraintType = DY_SC_TYPE_RB_CONTACT;
@@ -1236,7 +1234,7 @@ public:
 							PxsContactManager* manager1 = constraints[startIndex]->contactManager;
 							PxcNpWorkUnit& unit = manager1->getWorkUnit();
 
-							PX_ASSERT(startManagerOutput == &mOutputs.getContactManager(unit.mNpIndex));
+							PX_ASSERT(startManagerOutput == &mOutputs.getContactManagerOutput(unit.mNpIndex));
 
 							header.unit = &unit;
 							header.cmOutput = startManagerOutput;
@@ -1832,7 +1830,7 @@ public:
 				{
 					PxU32 index = manager.forceBufferList[a];
 					PxsContactManager* pManager = mThreadContext.orderedContactList[currentManagerIndex]->contactManager;
-					PxsContactManagerOutput* output = &mOutputs.getContactManager(pManager->getWorkUnit().mNpIndex);
+					const PxsContactManagerOutput* output = &mOutputs.getContactManagerOutput(pManager->getWorkUnit().mNpIndex);
 					while(currentContactIndex < index || output->nbContacts == 0)
 					{
 						//Step forwards...first in this manager...
@@ -1845,7 +1843,7 @@ public:
 							currentManagerIndex++;
 							currentManagerContactIndex = 0;
 							pManager = mThreadContext.orderedContactList[currentManagerIndex]->contactManager;
-							output = &mOutputs.getContactManager(pManager->getWorkUnit().mNpIndex);
+							output = &mOutputs.getContactManagerOutput(pManager->getWorkUnit().mNpIndex);
 						}
 					}
 					if(output->nbContacts > 0 && output->contactForces)
@@ -2001,7 +1999,7 @@ public:
 	{
 		for (PxU32 i = 0; i<mNbKinematics; i++)
 		{
-			PxsRigidBody* rigidBody = mIslandSim.getRigidBody(mKinematicIndices[i]);
+			PxsRigidBody* rigidBody = getRigidBodyFromIG(mIslandSim, mKinematicIndices[i]);
 			const PxsBodyCore& core = rigidBody->getCore();
 			copyToSolverBodyData(core.linearVelocity, core.angularVelocity, core.inverseMass, core.inverseInertia, core.body2World, core.maxPenBias,
 				core.maxContactImpulse, mKinematicIndices[i].index(), core.contactReportThreshold, mBodyData[i + 1], core.lockFlags, 0.f,
@@ -2012,7 +2010,7 @@ public:
 };
 }
 
-void DynamicsContext::update(IG::SimpleIslandManager& simpleIslandManager, PxBaseTask* continuation, PxBaseTask* lostTouchTask,
+void DynamicsContext::update(PxBaseTask* continuation, PxBaseTask* lostTouchTask,
 	PxvNphaseImplementationContext* nphase, PxU32 /*maxPatches*/, PxU32 maxArticulationLinks,
 	PxReal dt, const PxVec3& gravity, PxBitMapPinned& /*changedHandleMap*/)
 {
@@ -2024,7 +2022,7 @@ void DynamicsContext::update(IG::SimpleIslandManager& simpleIslandManager, PxBas
 	mInvDt = dt == 0.0f ? 0.0f : 1.0f / dt;
 	mGravity = gravity;
 
-	const IG::IslandSim& islandSim = simpleIslandManager.getAccurateIslandSim();
+	const IG::IslandSim& islandSim = mIslandManager.getAccurateIslandSim();
 
 	const PxU32 islandCount = islandSim.getNbActiveIslands();
 
@@ -2033,7 +2031,7 @@ void DynamicsContext::update(IG::SimpleIslandManager& simpleIslandManager, PxBas
 
 	for (PxU32 a = 0; a < activatedContactCount; ++a)
 	{
-		PxsContactManager* cm = simpleIslandManager.getContactManager(activatingEdges[a]);
+		PxsContactManager* cm = mIslandManager.getContactManager(activatingEdges[a]);
 		if (cm)
 			cm->getWorkUnit().mFrictionPatchCount = 0; //KS - zero the friction patch count on any activating edges
 	}
@@ -2067,7 +2065,7 @@ void DynamicsContext::update(IG::SimpleIslandManager& simpleIslandManager, PxBas
 	lostTouchTask->addReference();
 
 	UpdateContinuationTask* task = PX_PLACEMENT_NEW(mTaskPool.allocate(sizeof(UpdateContinuationTask)), UpdateContinuationTask)
-		(*this, simpleIslandManager, lostTouchTask, mContextID, maxArticulationLinks);
+		(*this, mIslandManager, lostTouchTask, mContextID, maxArticulationLinks);
 
 	task->setContinuation(continuation);
 
@@ -2210,13 +2208,13 @@ void DynamicsContext::updatePostKinematic(IG::SimpleIslandManager& simpleIslandM
 	PxU32 currentBodyIndex = 0;
 	PxU32 currentArticulation = 0;
 	PxU32 currentContact = 0;
-	//while(start<sentinel)
+
 	while(currentIsland < islandCount)
 	{
 		SolverIslandObjects objectStarts;
-		objectStarts.articulations				= mArticulationArray.begin()+ currentArticulation;
-		objectStarts.bodies						= mRigidBodyArray.begin()	+ currentBodyIndex;
-		objectStarts.contactManagers			= mContactList.begin()	+ currentContact;
+		objectStarts.articulations				= mArticulationArray.begin() + currentArticulation;
+		objectStarts.bodies						= mRigidBodyArray.begin() + currentBodyIndex;
+		objectStarts.contactManagers			= mContactList.begin() + currentContact;
 		objectStarts.constraintDescs			= mSolverConstraintDescPool.begin() + constraintIndex;
 		objectStarts.orderedConstraintDescs		= mOrderedSolverConstraintDescPool.begin() + constraintIndex;
 		objectStarts.tempConstraintDescs		= mTempSolverConstraintDescPool.begin() + constraintIndex;
@@ -2556,7 +2554,7 @@ static PxU32 createFinalizeContacts_Parallel(PxSolverBodyData* solverBodyData, T
 
 				PxcNpWorkUnit& unit = cm->getWorkUnit();
 
-				cmOutputs[i] = &outputs.getContactManager(unit.mNpIndex);
+				cmOutputs[i] = &outputs.getContactManagerOutput(unit.mNpIndex);
 
 				PxSolverBodyData& data0 = desc.linkIndexA != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyADataIndex];
 				PxSolverBodyData& data1 = desc.linkIndexB != PxSolverConstraintDesc::RIGID_BODY ? solverBodyData[0] : solverBodyData[desc.bodyBDataIndex];

@@ -67,12 +67,13 @@ namespace physx
 	{
 		struct SolverContext;
 
+		// PT: TODO: what is const and what is not?
 		struct SolverIslandObjectsStep
 		{
 			PxsRigidBody**				bodies;
 			FeatherstoneArticulation**	articulations;
 			FeatherstoneArticulation**	articulationOwners;
-			PxsIndexedContactManager*	contactManagers;
+			PxsIndexedContactManager*	contactManagers;	// PT: points to DynamicsTGSContext::mContactList
 
 			const IG::IslandId*			islandIds;
 			PxU32						numIslands;
@@ -118,8 +119,6 @@ namespace physx
 			PxI32				mGravityIntegratedCount;
 		};
 
-		struct SolverIslandObjectsStep;
-
 		class SolverBodyVelDataPool : public PxArray<PxTGSSolverBodyVel, PxAlignedAllocator<128, PxReflectionAllocator<PxTGSSolverBodyVel> > >
 		{
 			PX_NOCOPY(SolverBodyVelDataPool)
@@ -164,7 +163,7 @@ public:
 										PxTaskManager* taskManager,
 										PxVirtualAllocatorCallback* allocator,
 										PxsMaterialManager* materialManager,
-										IG::SimpleIslandManager* islandManager,
+										IG::SimpleIslandManager& islandManager,
 										PxU64 contextID,
 										bool enableStabilization,
 										bool useEnhancedDeterminism,
@@ -177,7 +176,7 @@ public:
 
 	// Context
 	virtual	void						destroy()	PX_OVERRIDE;
-	virtual void						update(IG::SimpleIslandManager& simpleIslandManager, PxBaseTask* continuation, PxBaseTask* lostTouchTask,
+	virtual void						update(PxBaseTask* continuation, PxBaseTask* lostTouchTask,
 										PxvNphaseImplementationContext* nphase, PxU32 maxPatchesPerCM, PxU32 maxArticulationLinks, PxReal dt, const PxVec3& gravity, PxBitMapPinned& changedHandleMap)	PX_OVERRIDE;
 	virtual void						mergeResults()	PX_OVERRIDE;
 	virtual void						setSimulationController(PxsSimulationController* simulationController)	PX_OVERRIDE	{ mSimulationController = simulationController; }
@@ -230,7 +229,6 @@ protected:
 
 			void								setDescFromIndices(PxSolverConstraintDesc& desc, IG::EdgeIndex edgeIndex,
 				const IG::SimpleIslandManager& islandManager, PxU32* bodyRemapTable, PxU32 solverBodyOffset, PxTGSSolverBodyVel* solverBodies);
-
 
 			void solveIsland(const SolverIslandObjectsStep& objects,
 				const PxsIslandIndices& counts,
@@ -374,7 +372,7 @@ protected:
 			/**
 			\brief Array of articulationpointers for all articulations in the scene.
 			*/
-			PxArray<FeatherstoneArticulation*> mArticulationArray;
+			PxArray<FeatherstoneArticulation*>	mArticulationArray;
 
 			SolverBodyVelDataPool				mSolverBodyVelPool;
 
@@ -390,7 +388,7 @@ protected:
 
 			PxArray<PxU32>						mNodeIndexArray;					//island node index
 
-			PxArray<PxsIndexedContactManager> mContactList;
+			PxArray<PxsIndexedContactManager>	mContactList;
 
 			/**
 			\brief The total number of kinematic bodies in the scene

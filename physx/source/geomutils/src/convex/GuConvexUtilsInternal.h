@@ -29,7 +29,8 @@
 #ifndef GU_CONVEX_UTILS_INTERNALS_H
 #define GU_CONVEX_UTILS_INTERNALS_H
 
-#include "foundation/Px.h"
+#include "foundation/PxMat34.h"
+#include "foundation/PxBounds3.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx

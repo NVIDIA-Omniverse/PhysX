@@ -2041,13 +2041,13 @@ void PxVehicleComputeTireForceDefault
 	const PxF32 fx = -nu*TEff*FBar*FZero;
 	//TODO: pneumatic trail.
 	const PxF32 pneumaticTrail=1.0f;
-	const PxF32	fMy= nu * pneumaticTrail * TEff * MBar * FZero;
+	const PxF32	fMy = nu * pneumaticTrail * TEff * MBar * FZero;
 
 	//We can add the torque to the wheel.
-	wheelTorque=-fz*wheelRadius;
-	tireLongForceMag=fz;
-	tireLatForceMag=fx;
-	tireAlignMoment=fMy;
+	wheelTorque = -fz*wheelRadius;
+	tireLongForceMag = fz;
+	tireLatForceMag = fx;
+	tireAlignMoment = fMy;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -5182,7 +5182,7 @@ VehicleTelemetryDataContext* vehTelemetryDataContext, const PxVehicleContext& co
 		for(PxU32 j=1;j<numWheels4;j++)
 		{
 			//We already computed the steer angles above.
-			PxF32* extraWheelSteerAngles= steerAngles + 4*j;
+			PxF32* extraWheelSteerAngles = steerAngles + 4*j;
 
 			//Only the driven wheels are connected to the diff.
 			PxF32 extraWheelsDiffTorqueRatios[4]={0.0f,0.0f,0.0f,0.0f};
@@ -7155,7 +7155,7 @@ static const PxRaycastBuffer* vehicleWheels4SuspensionRaycasts
 		computeSuspensionRaycast(carChassisTrnsfm,bodySpaceWheelCentreOffset,bodySpaceSuspTravelDir,radius,maxBounce,suspLineStart,suspLineDir);
 
 		//Total length from top of wheel at max compression to bottom of wheel at max droop.
-		PxF32 suspLineLength=radius + maxBounce  + maxDroop + radius;
+		PxF32 suspLineLength=radius + maxBounce + maxDroop + radius;
 		//Add another radius on for good measure.
 		suspLineLength+=radius;
 

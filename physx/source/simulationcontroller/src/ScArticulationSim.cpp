@@ -44,9 +44,18 @@
 #include "PxsSimpleIslandManager.h"
 #include "ScShapeSim.h"
 #include "PxsSimulationController.h"
+#include "DyIslandManager.h"
 
 using namespace physx;
-using namespace physx::Dy;
+using namespace Dy;
+using namespace Sc;
+using namespace IG;
+
+ArticulationSim* Sc::getArticulationSim(const IslandSim& islandSim, PxNodeIndex nodeIndex)
+{
+	void* userData = getArticulationFromIG(islandSim, nodeIndex)->getUserData();
+	return reinterpret_cast<ArticulationSim*>(userData);
+}
 
 Sc::ArticulationSim::ArticulationSim(ArticulationCore& core, Scene& scene, BodyCore& root) : 
 	mLLArticulation				(NULL),
@@ -64,7 +73,7 @@ Sc::ArticulationSim::ArticulationSim(ArticulationCore& core, Scene& scene, BodyC
 
 	mLLArticulation = mScene.createLLArticulation(this);
 	
-	mIslandNodeIndex = scene.getSimpleIslandManager()->addArticulation(mLLArticulation, false);
+	mIslandNodeIndex = scene.getSimpleIslandManager()->addNode(false, false, IG::Node::eARTICULATION_TYPE, mLLArticulation);
 
 	if(!mLLArticulation)
 	{
@@ -180,7 +189,6 @@ void Sc::ArticulationSim::addBody(BodySim& body, BodySim* parent, ArticulationJo
 	ArticulationLink& link = mLinks.insert();
 
 	link.bodyCore	= &body.getBodyCore().getCore();
-	link.children	= 0;
 	link.mPathToRootStartIndex = 0;
 	link.mPathToRootCount = 0;
 	link.mChildrenStartIndex = 0xffffffff;
@@ -198,9 +206,7 @@ void Sc::ArticulationSim::addBody(BodySim& body, BodySim* parent, ArticulationJo
 		PxU32 parentIndex = findBodyIndex(*parent);
 		link.parent = parentIndex;
 		ArticulationLink& parentLink = mLinks[parentIndex];
-		link.pathToRoot = parentLink.pathToRoot | ArticulationBitField(1)<<index;
 		link.inboundJoint = &joint->getCore().getCore();
-		parentLink.children |= ArticulationBitField(1)<<index;
 		
 		if (parentLink.mChildrenStartIndex == 0xffffffff)
 			parentLink.mChildrenStartIndex = index;
@@ -214,7 +220,6 @@ void Sc::ArticulationSim::addBody(BodySim& body, BodySim* parent, ArticulationJo
 		shouldSleep = currentlyAsleep && bodyReadyForSleep;
 
 		link.parent = DY_ARTICULATION_LINK_NONE;
-		link.pathToRoot = 1;
 		link.inboundJoint = NULL;
 	}
 	
@@ -318,7 +323,7 @@ void Sc::ArticulationSim::initializeConfiguration()
 		PxReal* jTargetPositions = &jointTargetPositions[jointDatum.jointOffset];
 		PxReal* jTargetVelocities = &jointTargetVelocities[jointDatum.jointOffset];
 
-		for (PxU8 i = 0; i < jointDatum.dof; ++i)
+		for (PxU8 i = 0; i < jointDatum.nbDof; ++i)
 		{
 			const PxU32 dofId = joint->dofIds[i];
 			jPositions[i] = joint->jointPos[dofId];
@@ -377,7 +382,7 @@ void Sc::ArticulationSim::copyJointStatus(const PxU32 linkID)
 	PxReal* jVelocities = &jointVelocites[jointDatum.jointOffset];
 	PxReal* jPositions = &jointPositions[jointDatum.jointOffset];
 
-	for(PxU8 i = 0; i < jointDatum.dof; ++i)
+	for(PxU8 i = 0; i < jointDatum.nbDof; ++i)
 	{
 		const PxU32 dofId = joint->dofIds[i];
 		joint->jointPos[dofId] = jPositions[i];
@@ -654,14 +659,14 @@ void Sc::ArticulationSim::commonInit()
 	mLLArticulation->initializeCommonData();
 }
 
-void Sc::ArticulationSim::computeGeneralizedGravityForce(PxArticulationCache& cache)
+void Sc::ArticulationSim::computeGeneralizedGravityForce(PxArticulationCache& cache, const bool rootMotion)
 {
-	mLLArticulation->getGeneralizedGravityForce(mScene.getGravity(), cache);
+	mLLArticulation->getGeneralizedGravityForce(mScene.getGravity(), cache, rootMotion);
 }
 
-void Sc::ArticulationSim::computeCoriolisAndCentrifugalForce(PxArticulationCache& cache)
+void Sc::ArticulationSim::computeCoriolisAndCentrifugalForce(PxArticulationCache& cache, const bool rootMotion)
 {
-	mLLArticulation->getCoriolisAndCentrifugalForce(cache);
+	mLLArticulation->getCoriolisAndCentrifugalForce(cache, rootMotion);
 }
 
 void Sc::ArticulationSim::computeGeneralizedExternalForce(PxArticulationCache& cache)
@@ -696,9 +701,9 @@ bool Sc::ArticulationSim::computeLambda(PxArticulationCache& cache, PxArticulati
 	return mLLArticulation->getLambda(mLoopConstraints.begin(), mLoopConstraints.size(), cache, initialState, jointTorque, gravity, maxIter, invLengthScale);
 }
 
-void Sc::ArticulationSim::computeGeneralizedMassMatrix(PxArticulationCache& cache)
+void Sc::ArticulationSim::computeGeneralizedMassMatrix(PxArticulationCache& cache, const bool rootMotion)
 {
-	mLLArticulation->getGeneralizedMassMatrixCRB(cache);
+	mLLArticulation->getGeneralizedMassMatrixCRB(cache, rootMotion);
 
 	/*const PxU32 totalDofs = mLLArticulation->getDofs();
 
@@ -720,6 +725,16 @@ void Sc::ArticulationSim::computeGeneralizedMassMatrix(PxArticulationCache& cach
 	}
 
 	PX_FREE(massMatrix);*/
+}
+
+PxVec3 Sc::ArticulationSim::computeArticulationCOM(const bool rootFrame)
+{
+	return mLLArticulation->getArticulationCOM(rootFrame);
+}
+
+void Sc::ArticulationSim::computeCentroidalMomentumMatrix(PxArticulationCache& cache)
+{
+	mLLArticulation->getCentroidalMomentumMatrix(cache);
 }
 
 PxU32 Sc::ArticulationSim::getCoefficientMatrixSize() const

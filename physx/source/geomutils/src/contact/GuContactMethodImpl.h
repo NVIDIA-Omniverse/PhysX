@@ -162,7 +162,14 @@ namespace Gu
 	PX_PHYSX_COMMON_API bool contactSpherePlane(GU_CONTACT_METHOD_ARGS);
 	PX_PHYSX_COMMON_API bool contactPlaneBox(GU_CONTACT_METHOD_ARGS);
 	PX_PHYSX_COMMON_API bool contactPlaneCapsule(GU_CONTACT_METHOD_ARGS);
+	PX_PHYSX_COMMON_API bool contactPlaneConvexCore(GU_CONTACT_METHOD_ARGS);
 	PX_PHYSX_COMMON_API bool contactPlaneConvex(GU_CONTACT_METHOD_ARGS);
+	PX_PHYSX_COMMON_API bool contactPlaneMesh(GU_CONTACT_METHOD_ARGS);
+	PX_PHYSX_COMMON_API bool contactMeshMesh(GU_CONTACT_METHOD_ARGS);
+
+	PX_PHYSX_COMMON_API bool contactConvexCoreConvex(GU_CONTACT_METHOD_ARGS);
+	PX_PHYSX_COMMON_API bool contactConvexCoreTrimesh(GU_CONTACT_METHOD_ARGS);
+	PX_PHYSX_COMMON_API bool contactConvexCoreHeightfield(GU_CONTACT_METHOD_ARGS);
 
 	PX_PHYSX_COMMON_API bool contactCustomGeometryGeometry(GU_CONTACT_METHOD_ARGS);
 	PX_PHYSX_COMMON_API bool contactGeometryCustomGeometry(GU_CONTACT_METHOD_ARGS);

@@ -37,6 +37,12 @@ namespace physx
 {
 #endif
 
+/** enum for empty constructor tag*/
+enum PxEMPTY
+{
+	PxEmpty
+};
+
 /**
 \brief Input stream class for I/O.
 

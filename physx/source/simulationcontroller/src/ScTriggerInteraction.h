@@ -72,7 +72,7 @@ namespace Sc
 
 		PX_FORCE_INLINE void				forceProcessingThisFrame(Sc::Scene& scene);
 
-						bool				onActivate(void*);
+						bool				onActivate();
 						bool				onDeactivate();
 
 	protected:

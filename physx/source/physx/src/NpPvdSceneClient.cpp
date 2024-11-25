@@ -46,9 +46,8 @@
 #include "NpRigidStatic.h"
 #include "NpRigidDynamic.h"
 #include "NpArticulationLink.h"
-#include "NpSoftBody.h"
-//#include "NpFEMCloth.h"
-#include "NpHairSystem.h"
+#include "NpDeformableSurface.h"
+#include "NpDeformableVolume.h"
 #include "NpAggregate.h"
 #include "NpScene.h"
 #include "NpArticulationJointReducedCoordinate.h"
@@ -165,19 +164,21 @@ namespace
 		case PxActorType::eARTICULATION_LINK:
 			op(*static_cast<const PxArticulationLink*>(actor));
 			break;
-		case PxActorType::eSOFTBODY:
 #if PX_SUPPORT_GPU_PHYSX
-			op(*static_cast<const PxSoftBody*>(actor));
+		case PxActorType::eDEFORMABLE_SURFACE:
+			op(*static_cast<const PxDeformableSurface*>(actor));
+			break;
+		case PxActorType::eDEFORMABLE_VOLUME:
+			op(*static_cast<const PxDeformableVolume*>(actor));
+			break;
+#else
+		case PxActorType::eDEFORMABLE_SURFACE:
+		case PxActorType::eDEFORMABLE_VOLUME:
+			PX_ASSERT(false);
+			break;
 #endif
-			break;
-		case PxActorType::eFEMCLOTH:
-			//op(*static_cast<const PxFEMCloth*>(actor));
-			break;
 		case PxActorType::ePBD_PARTICLESYSTEM:
 			op(*static_cast<const PxPBDParticleSystem*>(actor));
-			break;
-		case PxActorType::eHAIRSYSTEM:
-			//op(*static_cast<const PxHairSystem*>(actor));
 			break;
 		case PxActorType::eACTOR_COUNT:
 		case PxActorType::eACTOR_FORCE_DWORD:
@@ -706,23 +707,23 @@ void PvdSceneClient::releasePvdInstance(const PxsMaterialCore* materialCore)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void PvdSceneClient::createPvdInstance(const PxsFEMSoftBodyMaterialCore* materialCore)
+void PvdSceneClient::createPvdInstance(const PxsDeformableSurfaceMaterialCore* materialCore)
 {
 	if (checkPvdDebugFlag())
 	{
-		const PxFEMSoftBodyMaterial* theMaterial = materialCore->mMaterial;
+		const PxDeformableSurfaceMaterial* theMaterial = materialCore->mMaterial;
 		if (mPvd->registerObject(theMaterial))
 			mMetaDataBinding.createInstance(*mPvdDataStream, *theMaterial, PxGetPhysics());
 	}
 }
 
-void PvdSceneClient::updatePvdProperties(const PxsFEMSoftBodyMaterialCore* materialCore)
+void PvdSceneClient::updatePvdProperties(const PxsDeformableSurfaceMaterialCore* materialCore)
 {
 	if (checkPvdDebugFlag())
 		mMetaDataBinding.sendAllProperties(*mPvdDataStream, *materialCore->mMaterial);
 }
 
-void PvdSceneClient::releasePvdInstance(const PxsFEMSoftBodyMaterialCore* materialCore)
+void PvdSceneClient::releasePvdInstance(const PxsDeformableSurfaceMaterialCore* materialCore)
 {
 	if (checkPvdDebugFlag() && mPvd->unRegisterObject(materialCore->mMaterial))
 		mMetaDataBinding.destroyInstance(*mPvdDataStream, *materialCore->mMaterial, PxGetPhysics());
@@ -730,19 +731,26 @@ void PvdSceneClient::releasePvdInstance(const PxsFEMSoftBodyMaterialCore* materi
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void PvdSceneClient::createPvdInstance(const PxsFEMClothMaterialCore*)
+void PvdSceneClient::createPvdInstance(const PxsDeformableVolumeMaterialCore* materialCore)
 {
-	// no PVD support but method is "needed" since macro code is shared among all material types
+	if (checkPvdDebugFlag())
+	{
+		const PxDeformableVolumeMaterial* theMaterial = materialCore->mMaterial;
+		if (mPvd->registerObject(theMaterial))
+			mMetaDataBinding.createInstance(*mPvdDataStream, *theMaterial, PxGetPhysics());
+	}
 }
 
-void PvdSceneClient::updatePvdProperties(const PxsFEMClothMaterialCore*)
+void PvdSceneClient::updatePvdProperties(const PxsDeformableVolumeMaterialCore* materialCore)
 {
-	// no PVD support but method is "needed" since macro code is shared among all material types
+	if (checkPvdDebugFlag())
+		mMetaDataBinding.sendAllProperties(*mPvdDataStream, *materialCore->mMaterial);
 }
 
-void PvdSceneClient::releasePvdInstance(const PxsFEMClothMaterialCore*)
+void PvdSceneClient::releasePvdInstance(const PxsDeformableVolumeMaterialCore* materialCore)
 {
-	// no PVD support but method is "needed" since macro code is shared among all material types
+	if (checkPvdDebugFlag() && mPvd->unRegisterObject(materialCore->mMaterial))
+		mMetaDataBinding.destroyInstance(*mPvdDataStream, *materialCore->mMaterial, PxGetPhysics());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -943,67 +951,67 @@ void PvdSceneClient::releasePvdInstance(const NpAggregate* npAggregate)
 ///////////////////////////////////////////////////////////////////////////////
 
 #if PX_SUPPORT_GPU_PHYSX
-void PvdSceneClient::createPvdInstance(const NpSoftBody* softBody)
+void PvdSceneClient::createPvdInstance(const NpDeformableVolume* deformableVolume)
 {
-	PX_UNUSED(softBody);
+	PX_UNUSED(deformableVolume);
 	//Todo
 }
 
-void PvdSceneClient::updatePvdProperties(const NpSoftBody* softBody)
+void PvdSceneClient::updatePvdProperties(const NpDeformableVolume* deformableVolume)
 {
-	PX_UNUSED(softBody);
+	PX_UNUSED(deformableVolume);
 	//Todo
 }
 
-void PvdSceneClient::attachAggregateActor(const NpSoftBody* softBody, NpActor* actor)
+void PvdSceneClient::attachAggregateActor(const NpDeformableVolume* deformableVolume, NpActor* actor)
 {
-	PX_UNUSED(softBody);
+	PX_UNUSED(deformableVolume);
 	PX_UNUSED(actor);
 	//Todo
 }
 
-void PvdSceneClient::detachAggregateActor(const NpSoftBody* softBody, NpActor* actor)
+void PvdSceneClient::detachAggregateActor(const NpDeformableVolume* deformableVolume, NpActor* actor)
 {
-	PX_UNUSED(softBody);
+	PX_UNUSED(deformableVolume);
 	PX_UNUSED(actor);
 	//Todo
 }
 
-void PvdSceneClient::releasePvdInstance(const NpSoftBody* softBody)
+void PvdSceneClient::releasePvdInstance(const NpDeformableVolume* deformableVolume)
 {
-	PX_UNUSED(softBody);
+	PX_UNUSED(deformableVolume);
 	//Todo
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PvdSceneClient::createPvdInstance(const NpFEMCloth* femCloth)
+void PvdSceneClient::createPvdInstance(const NpDeformableSurface* femCloth)
 {
 	PX_UNUSED(femCloth);
 	//Todo
 }
 
-void PvdSceneClient::updatePvdProperties(const NpFEMCloth* femCloth)
+void PvdSceneClient::updatePvdProperties(const NpDeformableSurface* femCloth)
 {
 	PX_UNUSED(femCloth);
 	//Todo
 }
 
-void PvdSceneClient::attachAggregateActor(const NpFEMCloth* femCloth, NpActor* actor)
-{
-	PX_UNUSED(femCloth);
-	PX_UNUSED(actor);
-	//Todo
-}
-
-void PvdSceneClient::detachAggregateActor(const NpFEMCloth* femCloth, NpActor* actor)
+void PvdSceneClient::attachAggregateActor(const NpDeformableSurface* femCloth, NpActor* actor)
 {
 	PX_UNUSED(femCloth);
 	PX_UNUSED(actor);
 	//Todo
 }
 
-void PvdSceneClient::releasePvdInstance(const NpFEMCloth* femCloth)
+void PvdSceneClient::detachAggregateActor(const NpDeformableSurface* femCloth, NpActor* actor)
+{
+	PX_UNUSED(femCloth);
+	PX_UNUSED(actor);
+	//Todo
+}
+
+void PvdSceneClient::releasePvdInstance(const NpDeformableSurface* femCloth)
 {
 	PX_UNUSED(femCloth);
 	//Todo
@@ -1042,37 +1050,69 @@ void PvdSceneClient::releasePvdInstance(const NpPBDParticleSystem* particleSyste
 	//Todo
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PvdSceneClient::createPvdInstance(const NpHairSystem* hairSystem)
+void PvdSceneClient::createPvdInstance(const NpDeformableAttachment* attachment)
 {
-	PX_UNUSED(hairSystem);
+	PX_UNUSED(attachment);
 	//Todo
 }
 
-void PvdSceneClient::updatePvdProperties(const NpHairSystem* hairSystem)
+void PvdSceneClient::updatePvdProperties(const NpDeformableAttachment* attachment)
 {
-	PX_UNUSED(hairSystem);
+	PX_UNUSED(attachment);
 	//Todo
 }
 
-void PvdSceneClient::attachAggregateActor(const NpHairSystem* hairSystem, NpActor* actor)
+void PvdSceneClient::attachAggregateActor(const NpDeformableAttachment* attachment, NpActor* actor)
 {
-	PX_UNUSED(hairSystem);
+	PX_UNUSED(attachment);
 	PX_UNUSED(actor);
 	//Todo
 }
 
-void PvdSceneClient::detachAggregateActor(const NpHairSystem* hairSystem, NpActor* actor)
+void PvdSceneClient::detachAggregateActor(const NpDeformableAttachment* attachment, NpActor* actor)
 {
-	PX_UNUSED(hairSystem);
+	PX_UNUSED(attachment);
 	PX_UNUSED(actor);
 	//Todo
 }
 
-void PvdSceneClient::releasePvdInstance(const NpHairSystem* hairSystem)
+void PvdSceneClient::releasePvdInstance(const NpDeformableAttachment* attachment)
 {
-	PX_UNUSED(hairSystem);
+	PX_UNUSED(attachment);
+	//Todo
+}
+
+void PvdSceneClient::createPvdInstance(const NpDeformableElementFilter* elementFilter)
+{
+	PX_UNUSED(elementFilter);
+	//Todo
+}
+
+void PvdSceneClient::updatePvdProperties(const NpDeformableElementFilter* elementFilter)
+{
+	PX_UNUSED(elementFilter);
+	//Todo
+}
+
+void PvdSceneClient::attachAggregateActor(const NpDeformableElementFilter* elementFilter, NpActor* actor)
+{
+	PX_UNUSED(elementFilter);
+	PX_UNUSED(actor);
+	//Todo
+}
+
+void PvdSceneClient::detachAggregateActor(const NpDeformableElementFilter* elementFilter, NpActor* actor)
+{
+	PX_UNUSED(elementFilter);
+	PX_UNUSED(actor);
+	//Todo
+}
+
+void PvdSceneClient::releasePvdInstance(const NpDeformableElementFilter* elementFilter)
+{
+	PX_UNUSED(elementFilter);
 	//Todo
 }
 

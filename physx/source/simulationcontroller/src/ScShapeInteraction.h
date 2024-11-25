@@ -47,6 +47,21 @@ class PxsContactManagerOutputIterator;
 namespace Sc
 {
 	class ContactReportAllocationManager;
+
+	PX_FORCE_INLINE IG::Edge::EdgeType getInteractionEdgeType(PxActorType::Enum actorTypeLargest)
+	{
+		IG::Edge::EdgeType type = IG::Edge::eCONTACT_MANAGER;
+#if PX_SUPPORT_GPU_PHYSX
+		if(actorTypeLargest == PxActorType::eDEFORMABLE_VOLUME)
+			type = IG::Edge::eSOFT_BODY_CONTACT;
+		else if(actorTypeLargest == PxActorType::eDEFORMABLE_SURFACE)
+			type = IG::Edge::eFEM_CLOTH_CONTACT;
+		else if(actorTypeLargest == PxActorType::ePBD_PARTICLESYSTEM)
+			type = IG::Edge::ePARTICLE_SYSTEM_CONTACT;
+#endif
+		return type;
+	}
+
 	/*
 	Description: A ShapeInteraction represents a pair of objects which _may_ have contacts. Created by the broadphase
 	and processed by the NPhaseCore.
@@ -133,7 +148,7 @@ namespace Sc
 
 		PX_FORCE_INLINE	PxIntBool				hasKnownTouchState() const;
 
-						bool					onActivate(void* data);
+						bool					onActivate(PxsContactManager* contactManager);
 						bool					onDeactivate();
 
 						void					updateState(const PxU8 externalDirtyFlags);
@@ -142,7 +157,7 @@ namespace Sc
 
 						void					clearIslandGenData();
 
-		PX_FORCE_INLINE PxU32					getEdgeIndex() const { return mEdgeIndex;  }
+		PX_FORCE_INLINE IG::EdgeIndex			getEdgeIndex() const { return mEdgeIndex;  }
 
 		PX_FORCE_INLINE	Sc::ShapeSimBase&		getShape0()	const { return static_cast<ShapeSimBase&>(getElement0()); }
 		PX_FORCE_INLINE	Sc::ShapeSimBase&		getShape1()	const { return static_cast<ShapeSimBase&>(getElement1()); }
@@ -152,11 +167,11 @@ namespace Sc
 						PxsContactManager*		mManager;
 						PxU32					mContactReportStamp;
 						PxU32					mReportPairIndex;	// Owned by NPhaseCore for its report pair list
-						PxU32					mEdgeIndex;
+						IG::EdgeIndex			mEdgeIndex;
 						PxU32					mReportStreamIndex;  // position of this pair in the contact report stream
 
-						void					createManager(void* contactManager);
-		PX_INLINE		bool					updateManager(void* contactManager);
+						void					createManager(PxsContactManager* contactManager);
+		PX_INLINE		bool					updateManager(PxsContactManager* contactManager);
 		PX_INLINE		void					destroyManager();
 		PX_FORCE_INLINE	bool					activeManagerAllowed() const;
 		PX_FORCE_INLINE	PxU32					getManagerContactState()		const	{ return mFlags & LL_MANAGER_RECREATE_EVENT; }
@@ -235,7 +250,7 @@ PX_FORCE_INLINE	void Sc::ShapeInteraction::removeFromReportPairList()
 	}
 }
 
-PX_INLINE bool Sc::ShapeInteraction::updateManager(void* contactManager)
+PX_INLINE bool Sc::ShapeInteraction::updateManager(PxsContactManager* contactManager)
 {
 	if (activeManagerAllowed())
 	{
@@ -272,9 +287,9 @@ PX_FORCE_INLINE bool Sc::ShapeInteraction::activeManagerAllowed() const
 	ActorSim& bodySim0 = shape0.getActor();
 	ActorSim& bodySim1 = shape1.getActor();
 
-	// the first shape always belongs to a dynamic body or soft body
+	// the first shape always belongs to a dynamic body or deformable volume
 #if PX_SUPPORT_GPU_PHYSX
-	PX_ASSERT(bodySim0.isDynamicRigid() || bodySim0.isSoftBody() || bodySim0.isFEMCloth() || bodySim0.isParticleSystem() || bodySim0.isHairSystem());
+	PX_ASSERT(bodySim0.isDynamicRigid() || bodySim0.isDeformableSurface() || bodySim0.isDeformableVolume() || bodySim0.isParticleSystem());
 #else
 	PX_ASSERT(bodySim0.isDynamicRigid());
 #endif

@@ -45,6 +45,8 @@ namespace physx
 {
 	class PxSerializationContext;
 	class PxDeserializationContext;
+	class PxOutputStream;
+	class PxInputStream;
 
 namespace Gu
 {

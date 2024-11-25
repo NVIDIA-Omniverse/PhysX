@@ -63,6 +63,13 @@ namespace Sc
 		bool normalForceAvailable;
 	};
 
+	struct FrictionAnchor
+	{
+		PxVec3 normal;
+		PxVec3 point;
+		PxVec3 impulse;
+	};
+
 	class ContactIterator
 	{
 		public:		
@@ -70,9 +77,10 @@ namespace Sc
 			class Pair
 			{
 			public:
-				Pair() : mIter(NULL, NULL, NULL, 0, 0) {}
-				Pair(const void*& contactPatches, const void*& contactPoints, const PxU32 /*contactDataSize*/, const PxReal*& forces, PxU32 numContacts, PxU32 numPatches, ShapeSimBase& shape0, ShapeSimBase& shape1, ActorSim* actor0, ActorSim* actor1);
+				Pair() : mIter(NULL, NULL, NULL, 0, 0), mAnchorIter(NULL, NULL, 0) {}
+				Pair(const void*& contactPatches, const void*& contactPoints, const void*& frictionPatches, const PxU32 /*contactDataSize*/, const PxReal*& forces, PxU32 numContacts, PxU32 numPatches, ShapeSimBase& shape0, ShapeSimBase& shape1, ActorSim* actor0, ActorSim* actor1);
 				Contact* getNextContact();
+				FrictionAnchor* getNextFrictionAnchor();
 				PxActor* getActor0() { return mActor0; }
 				PxActor* getActor1() { return mActor1; }
 
@@ -80,8 +88,10 @@ namespace Sc
 				PxU32						mIndex;
 				PxU32						mNumContacts;
 				PxContactStreamIterator		mIter;
+				PxFrictionAnchorStreamIterator	mAnchorIter;
 				const PxReal*				mForces;
 				Contact						mCurrentContact;
+				FrictionAnchor				mCurrentAnchor;
 				PxActor*					mActor0;
 				PxActor*					mActor1;
 			};

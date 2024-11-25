@@ -29,18 +29,19 @@
 #ifndef DY_CONTACT_REDUCTION_H
 #define DY_CONTACT_REDUCTION_H
 
-#include "geomutils/PxContactPoint.h"
+#include "foundation/PxMemory.h"
+#include "foundation/PxSort.h"
 #include "PxsMaterialManager.h"
+#include "geomutils/PxContactPoint.h"
+#include "geomutils/PxContactBuffer.h"
 
 namespace physx
 {
-
-
 namespace Dy
 {
 
 //KS - might be OK with 4 but 5 guarantees the deepest + 4 contacts that contribute to largest surface area
-#define CONTACT_REDUCTION_MAX_CONTACTS 6
+// #define CONTACT_REDUCTION_MAX_CONTACTS 6 // Replaced by template argument MaxContactsPerPatch
 #define CONTACT_REDUCTION_MAX_PATCHES 32
 #define PXS_NORMAL_TOLERANCE 0.995f
 #define PXS_SEPARATION_TOLERANCE 0.001f
@@ -48,10 +49,11 @@ namespace Dy
 
 	//A patch contains a normal, pair of material indices and a list of indices. These indices are 
 	//used to index into the PxContact array that's passed by the user
+	template <PxU32 MaxContactsPerPatch>
 	struct ReducedContactPatch
 	{
 		PxU32 numContactPoints;
-		PxU32 contactPoints[CONTACT_REDUCTION_MAX_CONTACTS];	
+		PxU32 contactPoints[MaxContactsPerPatch];
 	};
 
 	struct ContactPatch
@@ -75,11 +77,11 @@ namespace Dy
 
 
 
-	template <PxU32 MaxPatches>
+	template <PxU32 MaxPatches, PxU32 MaxContactsPerPatch>
 	class ContactReduction
 	{
 	public:
-		ReducedContactPatch mPatches[MaxPatches];
+		ReducedContactPatch<MaxContactsPerPatch> mPatches[MaxPatches];
 		PxU32 mNumPatches;
 		ContactPatch mIntermediatePatches[CONTACT_REDUCTION_MAX_PATCHES];
 		ContactPatch* mIntermediatePatchesPtrs[CONTACT_REDUCTION_MAX_PATCHES];
@@ -174,7 +176,7 @@ namespace Dy
 					if(numReducedPatches == MaxPatches)
 						break;
 
-					ReducedContactPatch& reducedPatch = mPatches[numReducedPatches++];
+					ReducedContactPatch<MaxContactsPerPatch>& reducedPatch = mPatches[numReducedPatches++];
 					//OK, now we need to work out if we have to reduce patches...
 					PxU32 contactCount = 0;
 					{
@@ -187,7 +189,7 @@ namespace Dy
 						}
 					}
 
-					if(contactCount <= CONTACT_REDUCTION_MAX_CONTACTS)
+					if(contactCount <= MaxContactsPerPatch)
 					{
 						//Just add the contacts...
 						ContactPatch* tmpPatch = mIntermediatePatchesPtrs[a];
@@ -307,8 +309,8 @@ namespace Dy
 						//Now, we iterate through all the points, and cluster the points. From this, we establish the deepest point that's within a 
 						//tolerance of this point and keep that point
 
-						PxReal separation[CONTACT_REDUCTION_MAX_CONTACTS];
-						PxU32 deepestInd[CONTACT_REDUCTION_MAX_CONTACTS];
+						PxReal separation[MaxContactsPerPatch];
+						PxU32 deepestInd[MaxContactsPerPatch];
 						for(PxU32 i = 0; i < 4; ++i)
 						{
 							PxU32 index = reducedPatch.contactPoints[i];
@@ -345,7 +347,7 @@ namespace Dy
 							tmpPatch = tmpPatch->mNextPatch;
 						}
 
-						bool chosen[64];
+						bool chosen[PxContactBuffer::MAX_CONTACTS];
 						PxMemZero(chosen, sizeof(chosen));
 						for(PxU32 i = 0; i < 4; ++i)
 						{
@@ -353,7 +355,7 @@ namespace Dy
 							chosen[deepestInd[i]] = true;
 						}						
 						
-						for(PxU32 i = 4; i < CONTACT_REDUCTION_MAX_CONTACTS; ++i)
+						for(PxU32 i = 4; i < MaxContactsPerPatch; ++i)
 						{
 							separation[i] = PX_MAX_REAL;
 							deepestInd[i] = 0;
@@ -366,11 +368,11 @@ namespace Dy
 								if(!chosen[tmpPatch->startIndex+b])
 								{
 									PxContactPoint& point = mOriginalContacts[tmpPatch->startIndex + b];	
-									for(PxU32 j = 4; j < CONTACT_REDUCTION_MAX_CONTACTS; ++j)
+									for(PxU32 j = 4; j < MaxContactsPerPatch; ++j)
 									{
 										if(point.separation < separation[j])
 										{
-											for(PxU32 k = CONTACT_REDUCTION_MAX_CONTACTS-1; k > j; --k)
+											for(PxU32 k = MaxContactsPerPatch-1; k > j; --k)
 											{
 												separation[k] = separation[k-1];
 												deepestInd[k] = deepestInd[k-1];
@@ -385,12 +387,12 @@ namespace Dy
 							tmpPatch = tmpPatch->mNextPatch;
 						}
 
-						for(PxU32 i = 4; i < CONTACT_REDUCTION_MAX_CONTACTS; ++i)
+						for(PxU32 i = 4; i < MaxContactsPerPatch; ++i)
 						{
 							reducedPatch.contactPoints[i] = deepestInd[i];
 						}
 
-						reducedPatch.numContactPoints = CONTACT_REDUCTION_MAX_CONTACTS;
+						reducedPatch.numContactPoints = MaxContactsPerPatch;
 					}
 				}
 			}

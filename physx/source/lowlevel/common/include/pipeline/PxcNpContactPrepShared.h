@@ -41,11 +41,6 @@ class PxcConstraintBlockStream;
 struct PxContactPoint;
 struct PxcDataStreamPool;
 
-namespace Gu
-{
-	struct ContactPoint;
-}
-
 PX_FORCE_INLINE PxU32 computeAlignedSize(PxU32 size)
 {
 	return (size + 0xf) & 0xfffffff0;

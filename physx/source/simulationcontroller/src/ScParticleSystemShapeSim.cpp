@@ -40,9 +40,6 @@ using namespace physx;
 Sc::ParticleSystemShapeSim::ParticleSystemShapeSim(ParticleSystemSim& particleSim, const ParticleSystemShapeCore* core) :
 	ShapeSimBase(particleSim, core)
 {
-	mLLShape.mBodySimIndex_GPU = PxNodeIndex(PX_INVALID_NODE);
-	mLLShape.mElementIndex_GPU = PX_INVALID_U32;
-
 	createLowLevelVolume();
 }
 
@@ -57,13 +54,6 @@ Sc::ParticleSystemShapeSim::~ParticleSystemShapeSim()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void Sc::ParticleSystemShapeSim::getFilterInfo(PxFilterObjectAttributes& filterAttr, PxFilterData& filterData) const
-{
-	filterAttr = 0;
-	setFilterObjectAttributeType(filterAttr, PxFilterObjectType::ePARTICLESYSTEM);
-	filterData = getBodySim().getCore().getShapeCore().getSimulationFilterData();
-}
 
 void Sc::ParticleSystemShapeSim::updateBounds()
 {
@@ -114,15 +104,10 @@ void Sc::ParticleSystemShapeSim::createLowLevelVolume()
 	else
 		getScene().getAABBManager()->reserveSpaceForBounds(index);
 
-	{
-		const PxU32 group = Bp::FilterGroup::eDYNAMICS_BASE + getActor().getActorID();
-		const PxU32 type = Bp::FilterType::PARTICLESYSTEM;
-		const PxReal contactOffset = getBodySim().getCore().getContactOffset();
-		addToAABBMgr(contactOffset, Bp::FilterGroup::Enum((group << BP_FILTERING_TYPE_SHIFT_BIT) | type), Bp::ElementType::eSHAPE);
-	}
+	const PxReal contactOffset = getContactOffset();
+	addToAABBMgr(contactOffset, Bp::FilterType::PARTICLESYSTEM);
 
-	// PT: TODO: what's the difference between "getContactOffset()" and "getBodySim().getCore().getContactOffset()" above?
-	getScene().updateContactDistance(index, getContactOffset());
+	getScene().updateContactDistance(index, contactOffset);
 
 	PxsTransformCache& cache = getScene().getLowLevelContext()->getTransformCache();
 	cache.initEntry(index);

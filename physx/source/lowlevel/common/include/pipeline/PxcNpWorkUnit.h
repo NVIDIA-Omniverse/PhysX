@@ -29,14 +29,17 @@
 #ifndef PXC_NP_WORK_UNIT_H
 #define PXC_NP_WORK_UNIT_H
 
-#include "PxcNpThreadContext.h"
-#include "PxcMaterialMethodImpl.h"
-#include "PxcNpCache.h"
+#include "PxConstraintDesc.h"
 
 namespace physx
 {
 struct PxsRigidCore;
 struct PxsShapeCore;
+
+namespace IG
+{
+	typedef PxU32 EdgeIndex;
+}
 
 struct PxcNpWorkUnitFlag
 {
@@ -104,7 +107,7 @@ struct PxcNpWorkUnit
 	PxU32				mTransformCache0;			//										//44	//68
 	PxU32				mTransformCache1;			//										//48	//72
 	
-	PxU32				mEdgeIndex;					//inout the island gen edge index		//52	//76
+	IG::EdgeIndex		mEdgeIndex;					//inout the island gen edge index		//52	//76
 	PxU32				mNpIndex;					//INPUT									//56	//80
 
 	PxReal				mTorsionalPatchRadius;												//60	//84

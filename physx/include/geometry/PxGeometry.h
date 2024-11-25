@@ -51,12 +51,12 @@ struct PxGeometryType
 		ePLANE,
 		eCAPSULE,
 		eBOX,
+		eCONVEXCORE,
 		eCONVEXMESH,
 		ePARTICLESYSTEM,
 		eTETRAHEDRONMESH,
 		eTRIANGLEMESH,
 		eHEIGHTFIELD,
-		eHAIRSYSTEM,
 		eCUSTOM,
 		
 		eGEOMETRY_COUNT,	//!< internal use only!

@@ -36,6 +36,8 @@
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxIntrinsics.h"
 #include "foundation/PxBitUtils.h"
+#include "foundation/PxConstructor.h"
+
 
 #if !PX_DOXYGEN
 namespace physx
@@ -226,6 +228,17 @@ namespace physx
 					return (i << 5) + PxHighestSetBit(mMap[i]);
 			}
 			return PxU32(0);
+		}
+
+		bool hasAnyBitSet() const
+		{
+			const PxU32 wordCount = getWordCount();
+			for(PxU32 i = 0; i<wordCount; i++)
+			{
+				if (mMap[i])
+					return true;
+			}
+			return false;
 		}
 
 		// the obvious combiners and some used in the SDK

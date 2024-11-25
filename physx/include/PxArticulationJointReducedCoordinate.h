@@ -438,7 +438,7 @@ namespace physx
 
 		\return The string name.
 		*/
-		virtual	const char*						getConcreteTypeName() const { return "PxArticulationJointReducedCoordinate"; }
+		virtual	const char*						getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationJointReducedCoordinate"; }
 
 		virtual									~PxArticulationJointReducedCoordinate() {}
 

@@ -29,7 +29,6 @@
 #ifndef PX_WINDOWS_MATH_INTRINSICS_H
 #define PX_WINDOWS_MATH_INTRINSICS_H
 
-#include "foundation/Px.h"
 #include "foundation/PxAssert.h"
 
 #if !PX_WINDOWS_FAMILY
@@ -121,7 +120,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE float selectMax(float a, float b)
 //! \brief platform-specific finiteness check (not INF or NAN)
 PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(float a)
 {
-#ifdef __CUDACC__
+#if PX_CUDA_COMPILER
 	return !!isfinite(a);
 #else
 	return (0 == ((_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF) & _fpclass(a)));
@@ -131,7 +130,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(float a)
 //! \brief platform-specific finiteness check (not INF or NAN)
 PX_CUDA_CALLABLE PX_FORCE_INLINE bool isFinite(double a)
 {
-#ifdef __CUDACC__
+#if PX_CUDA_COMPILER
 	return !!isfinite(a);
 #else
 	return (0 == ((_FPCLASS_SNAN | _FPCLASS_QNAN | _FPCLASS_NINF | _FPCLASS_PINF) & _fpclass(a)));

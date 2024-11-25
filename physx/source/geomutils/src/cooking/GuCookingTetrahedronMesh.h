@@ -38,38 +38,42 @@ namespace physx
 	public:
 
 		static bool	loadFromDesc(const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
-								PxSoftBodySimulationDataDesc softbodyDataDesc, Gu::TetrahedronMeshData& simulationMesh, Gu::SoftBodySimulationData& simulationData,
-								Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData, const PxCookingParams&	params, bool validateMesh = false);
+			PxDeformableVolumeSimulationDataDesc deformableVolumeDataDesc, Gu::TetrahedronMeshData& simulationMesh, Gu::DeformableVolumeSimulationData& simulationData,
+			Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData,
+			const PxCookingParams&	params, bool validateMesh = false);
+
 		static bool	saveTetrahedronMeshData(PxOutputStream& stream, bool platformMismatch, const PxCookingParams& params,
-											const Gu::TetrahedronMeshData& mesh);
-		static bool	saveSoftBodyMeshData(PxOutputStream& stream, bool platformMismatch, const PxCookingParams& params,
-										const Gu::TetrahedronMeshData& simulationMesh, const Gu::SoftBodySimulationData& simulationData, const Gu::TetrahedronMeshData& collisionMesh, 
-										const Gu::SoftBodyCollisionData& collisionData, const Gu::CollisionMeshMappingData& mappingData);
+			const Gu::TetrahedronMeshData& mesh);
+
+		static bool	saveDeformableVolumeMeshData(PxOutputStream& stream, bool platformMismatch, const PxCookingParams& params,
+			const Gu::TetrahedronMeshData& simulationMesh, const Gu::DeformableVolumeSimulationData& simulationData,
+			const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData,
+			const Gu::CollisionMeshMappingData& mappingData);
 
 		//PxMeshMidPhase::Enum				getMidphaseID()	const { return PxMeshMidPhase::eBVH34; }
-		static bool	createMidPhaseStructure(Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData, const PxCookingParams& params);
-		static void	saveMidPhaseStructure(PxOutputStream& stream, bool mismatch, const Gu::SoftBodyCollisionData& collisionData);
+		static bool	createMidPhaseStructure(Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, const PxCookingParams& params);
+		static void	saveMidPhaseStructure(PxOutputStream& stream, bool mismatch, const Gu::DeformableVolumeCollisionData& collisionData);
 
 		static void	computeTetData(const PxTetrahedronMeshDesc& desc, Gu::TetrahedronMeshData& mesh);
 
-		static bool	createGRBMidPhaseAndData(const PxU32 originalTriangleCount, Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData, const PxCookingParams& params);
-		static void	computeSimData(const PxTetrahedronMeshDesc& desc, Gu::TetrahedronMeshData& simulationMesh, Gu::SoftBodySimulationData& simulationData, const PxCookingParams& params);
-		static void	computeModelsMapping(Gu::TetrahedronMeshData& simulationMesh, const Gu::TetrahedronMeshData& collisionMesh, const Gu::SoftBodyCollisionData& collisionData, 
+		static bool	createGRBMidPhaseAndData(const PxU32 originalTriangleCount, Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, const PxCookingParams& params);
+		static void	computeSimData(const PxTetrahedronMeshDesc& desc, Gu::TetrahedronMeshData& simulationMesh, Gu::DeformableVolumeSimulationData& simulationData, const PxCookingParams& params);
+		static void	computeModelsMapping(Gu::TetrahedronMeshData& simulationMesh, const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData,
 																	Gu::CollisionMeshMappingData& mappingData, bool buildGPUData, const PxBoundedData* vertexToTet);
-		static void	createCollisionModelMapping(const Gu::TetrahedronMeshData& collisionMesh, const Gu::SoftBodyCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData);
+		static void	createCollisionModelMapping(const Gu::TetrahedronMeshData& collisionMesh, const Gu::DeformableVolumeCollisionData& collisionData, Gu::CollisionMeshMappingData& mappingData);
 		
-		static void	recordTetrahedronIndices(const Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData, bool buildGPUData);
+		static void	recordTetrahedronIndices(const Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, bool buildGPUData);
 		static bool	importMesh(const PxTetrahedronMeshDesc& collisionMeshDesc, const PxCookingParams& params, 
-								Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData, bool validate = false);
+								Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData, bool validate = false);
 		
-		static bool	computeCollisionData(const PxTetrahedronMeshDesc& collisionMeshDesc, Gu::TetrahedronMeshData& collisionMesh, Gu::SoftBodyCollisionData& collisionData,
+		static bool	computeCollisionData(const PxTetrahedronMeshDesc& collisionMeshDesc, Gu::TetrahedronMeshData& collisionMesh, Gu::DeformableVolumeCollisionData& collisionData,
 										const PxCookingParams&	params, bool validateMesh = false);
 	};
 
 	class BV32TetrahedronMeshBuilder
 	{
 	public:
-		static	bool	createMidPhaseStructure(const PxCookingParams& params, Gu::TetrahedronMeshData& meshData, Gu::BV32Tree& bv32Tree, Gu::SoftBodyCollisionData& collisionData);
+		static	bool	createMidPhaseStructure(const PxCookingParams& params, Gu::TetrahedronMeshData& meshData, Gu::BV32Tree& bv32Tree, Gu::DeformableVolumeCollisionData& collisionData);
 		static	void	saveMidPhaseStructure(Gu::BV32Tree* tree, PxOutputStream& stream, bool mismatch);
 	};
 }

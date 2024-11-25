@@ -123,17 +123,20 @@ PxTetrahedronMesh* PxCreateTetrahedronMesh(const PxCookingParams& params, const 
 	return immediateCooking::createTetrahedronMesh(params, meshDesc, insertionCallback);
 }
 
-bool PxCookSoftBodyMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc, const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxOutputStream& stream)
+bool PxCookDeformableVolumeMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc,
+	const PxDeformableVolumeSimulationDataDesc& softbodyDataDesc, PxOutputStream& stream)
 {
-	return immediateCooking::cookSoftBodyMesh(params, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, stream);
+	return immediateCooking::cookDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, stream);
 }
 
-PxSoftBodyMesh* PxCreateSoftBodyMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc, const PxTetrahedronMeshDesc& collisionMeshDesc, const PxSoftBodySimulationDataDesc& softbodyDataDesc, PxInsertionCallback& insertionCallback)
+PxDeformableVolumeMesh* PxCreateDeformableVolumeMesh(const PxCookingParams& params, const PxTetrahedronMeshDesc& simulationMeshDesc,
+	const PxTetrahedronMeshDesc& collisionMeshDesc, const PxDeformableVolumeSimulationDataDesc& softbodyDataDesc, PxInsertionCallback& insertionCallback)
 {
-	return immediateCooking::createSoftBodyMesh(params, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, insertionCallback);
+	return immediateCooking::createDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, insertionCallback);
 }
 
-PxCollisionMeshMappingData* PxComputeModelsMapping(const PxCookingParams& params, PxTetrahedronMeshData& simulationMesh, const PxTetrahedronMeshData& collisionMesh, const PxSoftBodyCollisionData& collisionData, const PxBoundedData* vertexToTet)
+PxCollisionMeshMappingData* PxComputeModelsMapping(const PxCookingParams& params, PxTetrahedronMeshData& simulationMesh,
+	const PxTetrahedronMeshData& collisionMesh, const PxDeformableVolumeCollisionData& collisionData, const PxBoundedData* vertexToTet)
 {
 	return immediateCooking::computeModelsMapping(params, simulationMesh, collisionMesh, collisionData, vertexToTet);
 }
@@ -148,13 +151,10 @@ PxSimulationTetrahedronMeshData* PxComputeSimulationData(const PxCookingParams& 
 	return immediateCooking::computeSimulationData(params, simulationMeshDesc);
 }
 
-PxSoftBodyMesh*	PxAssembleSoftBodyMesh(PxTetrahedronMeshData& simulationMesh, PxSoftBodySimulationData& simulationData, PxTetrahedronMeshData& collisionMesh, PxSoftBodyCollisionData& collisionData, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback)
+PxDeformableVolumeMesh* PxAssembleDeformableVolumeMesh(PxTetrahedronMeshData& simulationMesh, PxDeformableVolumeSimulationData& simulationData,
+	PxTetrahedronMeshData& collisionMesh, PxDeformableVolumeCollisionData& collisionData, PxCollisionMeshMappingData& mappingData,
+	PxInsertionCallback& insertionCallback)
 {
-	return immediateCooking::assembleSoftBodyMesh(simulationMesh, simulationData, collisionMesh, collisionData, mappingData, insertionCallback);
-}
-	
-PxSoftBodyMesh*	PxAssembleSoftBodyMesh_Sim(PxSimulationTetrahedronMeshData& simulationMesh, PxCollisionTetrahedronMeshData& collisionMesh, PxCollisionMeshMappingData& mappingData, PxInsertionCallback& insertionCallback)
-{
-	return immediateCooking::assembleSoftBodyMesh_Sim(simulationMesh, collisionMesh, mappingData, insertionCallback);
+	return immediateCooking::assembleDeformableVolumeMesh(simulationMesh, simulationData, collisionMesh, collisionData, mappingData, insertionCallback);
 }
 

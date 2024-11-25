@@ -48,7 +48,7 @@ TriggerInteraction::TriggerInteraction(	ShapeSimBase& tShape, ShapeSimBase& oSha
 	PX_COMPILE_TIME_ASSERT(LAST < 0xffff);
 
 	{
-		const bool active = onActivate(NULL);
+		const bool active = onActivate();
 		registerInActors();
 		getScene().registerInteraction(this, active);
 	}
@@ -99,7 +99,7 @@ static bool isOneActorActive(TriggerInteraction* trigger)
 // - If the scenario above does not apply, then a trigger pair can only be deactivated, if both actors are sleeping.
 // - If an overlapping actor is activated/deactivated, the trigger interaction gets notified
 //
-bool TriggerInteraction::onActivate(void*)
+bool TriggerInteraction::onActivate()
 {
 	// IMPORTANT: this method can get called concurrently from multiple threads -> make sure shared resources
 	//            are protected (note: there are none at the moment but it might change)

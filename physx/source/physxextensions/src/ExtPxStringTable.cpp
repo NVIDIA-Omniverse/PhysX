@@ -32,10 +32,11 @@
 #include "extensions/PxStringTableExt.h"
 #include "PxProfileAllocatorWrapper.h" //tools for using a custom allocator
 
-namespace physx
-{
-	using namespace physx::profile;
+using namespace physx;
+using namespace physx::profile;
 
+namespace
+{
 	class PxStringTableImpl : public PxStringTable, public PxUserAllocated
 	{
 		typedef PxProfileHashMap<const char*, PxU32> THashMapType;
@@ -57,7 +58,6 @@ namespace physx
 				PX_PROFILE_DELETE( mWrapper, const_cast<char*>( iter->first ) );
 			mHashMap.clear();
 		}
-
 
 		virtual const char* allocateStr( const char* inSrc )
 		{
@@ -88,9 +88,9 @@ namespace physx
 			PX_PROFILE_DELETE( mWrapper.getAllocator(), this );
 		}
 	};
+}
 
-	PxStringTable& PxStringTableExt::createStringTable( PxAllocatorCallback& inAllocator )
-	{
-		return *PX_PROFILE_NEW( inAllocator, PxStringTableImpl )( inAllocator );
-	}
+PxStringTable& physx::PxStringTableExt::createStringTable( PxAllocatorCallback& inAllocator )
+{
+	return *PX_PROFILE_NEW( inAllocator, PxStringTableImpl )( inAllocator );
 }

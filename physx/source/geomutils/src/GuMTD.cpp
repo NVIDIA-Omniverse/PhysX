@@ -468,7 +468,7 @@ static bool computeMTD_BoxBox(PxVec3& _mtd, PxF32& _depth, const Box& box0, cons
 
 ///////////////////////////////////////////////////////////////////////////////
 
-using namespace physx::aos;
+using namespace aos;
 
 bool pointConvexDistance(PxVec3& normal_, PxVec3& closestPoint_, PxReal& sqDistance, const PxVec3& pt, const ConvexMesh* convexMesh, const PxMeshScale& meshScale, const PxTransform32& convexPose)
 {
@@ -1300,12 +1300,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		GeomMTDCallback_SpherePlane,		//PxGeometryType::ePLANE
 		GeomMTDCallback_SphereCapsule,		//PxGeometryType::eCAPSULE
 		GeomMTDCallback_SphereBox,			//PxGeometryType::eBOX
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCONVEXCORE
 		GeomMTDCallback_SphereConvex,		//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_SphereMesh,			//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_SphereHeightField,	//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
@@ -1315,12 +1315,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePLANE
 		GeomMTDCallback_PlaneCapsule,		//PxGeometryType::eCAPSULE
 		GeomMTDCallback_PlaneBox,			//PxGeometryType::eBOX
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCONVEXCORE
 		GeomMTDCallback_PlaneConvex,		//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
@@ -1330,12 +1330,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		GeomMTDCallback_CapsuleCapsule,		//PxGeometryType::eCAPSULE
 		GeomMTDCallback_CapsuleBox,			//PxGeometryType::eBOX
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCONVEXCORE
 		GeomMTDCallback_CapsuleConvex,		//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_CapsuleMesh,		//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_CapsuleHeightField,	//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
@@ -1345,13 +1345,28 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		GeomMTDCallback_BoxBox,				//PxGeometryType::eBOX
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCONVEXCORE
 		GeomMTDCallback_BoxConvex,			//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_BoxMesh,			//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_BoxHeightField,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
+	},
+
+	//PxGeometryType::eCONVEX
+	{
+		0,									//PxGeometryType::eSPHERE
+		0,									//PxGeometryType::ePLANE
+		0,									//PxGeometryType::eCAPSULE
+		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCONVEXMESH
+		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
+		GeomMTDCallback_NotSupported,		//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eCONVEXMESH
@@ -1360,12 +1375,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		GeomMTDCallback_ConvexConvex,		//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_ConvexMesh,			//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_ConvexHeightField,	//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
@@ -1375,12 +1390,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eCUSTOM
 	},
 
@@ -1390,12 +1405,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		0,									//PxGeometryType::ePARTICLESYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eCUSTOM
 	},
 
@@ -1405,12 +1420,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		0,									//PxGeometryType::ePARTICLESYSTEM
 		0,									//PxGeometryType::eTETRAHEDRONMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
 	},
 
@@ -1420,28 +1435,13 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		0,									//PxGeometryType::ePARTICLESYSTEM
 		0,									//PxGeometryType::eTETRAHEDRONMESH
 		0,									//PxGeometryType::eTRIANGLEMESH
 		GeomMTDCallback_NotSupported,		//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_GeometryCustomGeometry,	//PxGeometryType::eCUSTOM
-	},
-
-	//PxGeometryType::eHAIRSYSTEM
-	{
-		0,									//PxGeometryType::eSPHERE
-		0,									//PxGeometryType::ePLANE
-		0,									//PxGeometryType::eCAPSULE
-		0,									//PxGeometryType::eBOX
-		0,									//PxGeometryType::eCONVEXMESH
-		0,									//PxGeometryType::ePARTICLESYSTEM
-		0,									//PxGeometryType::eTETRAHEDRONMESH
-		0,									//PxGeometryType::eTRIANGLEMESH
-		0,									//PxGeometryType::eHEIGHTFIELD
-		GeomMTDCallback_NotSupported,		//PxGeometryType::eHAIRSYSTEM
-		GeomMTDCallback_CustomGeometryGeometry,	//PxGeometryType::eCUSTOM
 	},
 
 	//PxGeometryType::eCUSTOM
@@ -1450,12 +1450,12 @@ Gu::GeomMTDFunc gGeomMTDMethodTable[][PxGeometryType::eGEOMETRY_COUNT] =
 		0,									//PxGeometryType::ePLANE
 		0,									//PxGeometryType::eCAPSULE
 		0,									//PxGeometryType::eBOX
+		0,									//PxGeometryType::eCONVEXCORE
 		0,									//PxGeometryType::eCONVEXMESH
 		0,									//PxGeometryType::ePARTICLESYSTEM
 		0,									//PxGeometryType::eTETRAHEDRONMESH
 		0,									//PxGeometryType::eTRIANGLEMESH
 		0,									//PxGeometryType::eHEIGHTFIELD
-		0,									//PxGeometryType::eHAIRSYSTEM
 		GeomMTDCallback_CustomGeometryGeometry,	//PxGeometryType::eCUSTOM
 	},
 };

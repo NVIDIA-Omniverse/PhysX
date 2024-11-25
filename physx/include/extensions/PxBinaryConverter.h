@@ -30,6 +30,7 @@
 #define PX_BINARY_CONVERTER_H
 
 #include "common/PxPhysXCommonConfig.h"
+#include "foundation/PxIO.h"
 
 #if !PX_DOXYGEN
 namespace physx

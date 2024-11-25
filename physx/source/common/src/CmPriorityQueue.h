@@ -79,7 +79,7 @@ namespace Cm
 			PxU32 newIndex;
 			PxU32 parentIndex = parent(mHeapSize);
 
-			for (newIndex = mHeapSize; newIndex > 0 && compare(value, mDataPtr[parentIndex]); newIndex = parentIndex, parentIndex= parent(newIndex)) 
+			for (newIndex = mHeapSize; newIndex > 0 && compare(value, mDataPtr[parentIndex]); newIndex = parentIndex, parentIndex = parent(newIndex)) 
 			{
 				mDataPtr[ newIndex ] = mDataPtr[parentIndex];
 			}

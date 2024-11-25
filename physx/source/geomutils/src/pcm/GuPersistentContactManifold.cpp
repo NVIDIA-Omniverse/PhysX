@@ -219,7 +219,7 @@ static void drawManifoldPoint(const PersistentContact& manifold, const PxTransfo
 	const PxVec3 right2(size2, 0.f, 0.f);
 	const PxVec3 forwards2(0.f, 0.f, size2);
 	
-	const PxMat44 m = PxMat44(PxIdentity);
+	const PxMat44 m(PxIdentity);
 	
 	out << m << PxRenderOutput::LINES;
 
@@ -266,7 +266,7 @@ static void drawManifoldPoint(const PersistentContact& manifold, const PxTransfo
 	const PxVec3 right2(size2, 0.f, 0.f);
 	const PxVec3 forwards2(0.f, 0.f, size2);
 	
-	PxMat44 m = PxMat44(PxIdentity);
+	const PxMat44 m(PxIdentity);
 	
 	out << 0xffff00ff << m << PxRenderOutput::LINES  << a << e;
 	out << 0xff00ffff << m << PxRenderOutput::LINES << a + up << a - up;
@@ -681,7 +681,7 @@ PxU32 PersistentContactManifold::reduceContactsForPCM(const Vec3VArg localPointA
 			const FloatV sqDif = distancePointTriangleSquaredLocal(	tempContacts[i].mLocalPointB, mContactPoints[0].mLocalPointB, mContactPoints[1].mLocalPointB, mContactPoints[2].mLocalPointB); 
 			if(FAllGrtr(sqDif, maxDist))
 			{
-				maxDist= sqDif;
+				maxDist = sqDif;
 				index = i;
 			}
 		}
@@ -1868,7 +1868,7 @@ FloatV SinglePersistentContactManifold::refreshContactPoints(const PxMatTransfor
 		const Vec3V v = V3Sub(localAInB, localBInB); 
 
 		const Vec3V localNormal = Vec3V_From_Vec4V(manifoldPoint.mLocalNormalPen); // normal in b space
-		const FloatV dist= V3Dot(v, localNormal);
+		const FloatV dist = V3Dot(v, localNormal);
 
 		const Vec3V projectedPoint = V3NegScaleSub(localNormal, dist, localAInB);//manifoldPoint.worldPointA - manifoldPoint.worldPointB * manifoldPoint.m_distance1;
 		const Vec3V projectedDifference = V3Sub(localBInB, projectedPoint);
@@ -1925,7 +1925,7 @@ void MultiplePersistentContactManifold::drawLine(PxRenderOutput& out, const Vec3
 	V3StoreU(p0, a);
 	V3StoreU(p1, b);
 
-	PxMat44 m = PxMat44(PxIdentity);
+	const PxMat44 m(PxIdentity);
 	out << color << m << PxRenderOutput::LINES << a << b;
 #else
 	PX_UNUSED(out);
@@ -1938,7 +1938,7 @@ void MultiplePersistentContactManifold::drawLine(PxRenderOutput& out, const Vec3
 void MultiplePersistentContactManifold::drawLine(PxRenderOutput& out, const PxVec3 p0, const PxVec3 p1, PxU32 color)
 {
 #if VISUALIZE_PERSISTENT_CONTACT
-	PxMat44 m = PxMat44(PxIdentity);
+	const PxMat44 m(PxIdentity);
 	out << color << m << PxRenderOutput::LINES << p0 << p1;
 #else
 	PX_UNUSED(out);
@@ -1958,7 +1958,7 @@ void MultiplePersistentContactManifold::drawPoint(PxRenderOutput& out, const Vec
 	PxVec3 a;
 	V3StoreU(p, a);
 
-	PxMat44 m = PxMat44(PxIdentity);
+	const PxMat44 m(PxIdentity);
 	
 	out << color << m << PxRenderOutput::LINES << a + up << a - up;
 	out << color << m << PxRenderOutput::LINES << a + right << a - right;

@@ -45,6 +45,8 @@ struct NpConnectorType
 		eAggregate,
 		eObserver,
 		eBvh,
+		eAttachment,
+		eElementFilter,
 		eInvalid
 	};
 };

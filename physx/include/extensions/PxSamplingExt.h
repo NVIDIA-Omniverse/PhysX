@@ -29,6 +29,8 @@
 #ifndef PX_SAMPLING_EXT_H
 #define PX_SAMPLING_EXT_H
 
+#include "foundation/PxTransform.h"
+#include "foundation/PxBounds3.h"
 #include "foundation/PxArray.h"
 #include "geometry/PxGeometry.h"
 #include "foundation/PxUserAllocated.h"

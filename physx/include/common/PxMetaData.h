@@ -29,7 +29,6 @@
 #ifndef PX_METADATA_H
 #define PX_METADATA_H
 
-#include "foundation/Px.h"
 #include "foundation/PxIO.h"
 #include "PxMetaDataFlags.h"
 

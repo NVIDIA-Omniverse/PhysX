@@ -64,6 +64,8 @@ public:
 		virtual			PxU32					getActors(PxActor** userBuffer, PxU32 bufferSize, PxU32 startIndex) const	PX_OVERRIDE PX_FINAL;
 		virtual			PxScene*				getScene()	PX_OVERRIDE PX_FINAL;
 		virtual			bool					getSelfCollision()	const	PX_OVERRIDE PX_FINAL;
+		virtual			bool					setEnvironmentID(PxU32 envID)	PX_OVERRIDE PX_FINAL;
+		virtual			PxU32					getEnvironmentID()		const	PX_OVERRIDE PX_FINAL;
 		//~PxAggregate
 
 		PX_FORCE_INLINE	PxU32					getMaxNbShapesFast()	const	{ return mMaxNbShapes;	}
@@ -74,6 +76,7 @@ public:
 
 		PX_FORCE_INLINE	bool					getSelfCollideFast()	const	{ return PxGetAggregateSelfCollisionBit(mFilterHint)!=0;	}
 		PX_FORCE_INLINE	PxAggregateFilterHint	getFilterHint()			const	{ return mFilterHint;	}
+		PX_FORCE_INLINE	PxU32					getEnvID()				const	{ return mEnvID;		}
 
 						void					scRemoveActor(NpActor& actor, bool reinsert);
 						bool					removeActorAndReinsert(PxActor& actor, bool reinsert);
@@ -87,6 +90,7 @@ private:
 						PxU32					mMaxNbActors;
 						PxU32					mMaxNbShapes;
 						PxAggregateFilterHint	mFilterHint;
+						PxU32					mEnvID;
 						PxU32					mNbActors;
 						PxU32					mNbShapes;
 						PxActor**				mActors;

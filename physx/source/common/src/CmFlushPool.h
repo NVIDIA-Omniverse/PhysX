@@ -29,7 +29,6 @@
 #ifndef CM_FLUSH_POOL_H
 #define CM_FLUSH_POOL_H
 
-#include "foundation/Px.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxBitUtils.h"
 #include "foundation/PxMutex.h"

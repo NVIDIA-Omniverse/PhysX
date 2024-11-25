@@ -58,6 +58,7 @@ bool CustomConvex::generateContacts(const PxGeometry& geom0, const PxGeometry& g
 	case PxGeometryType::eSPHERE:
 	case PxGeometryType::eCAPSULE:
 	case PxGeometryType::eBOX:
+	case PxGeometryType::eCONVEXCORE:
 	case PxGeometryType::eCONVEXMESH:
 	{
 		PxGjkQueryExt::ConvexGeomSupport geomSupport(geom1);

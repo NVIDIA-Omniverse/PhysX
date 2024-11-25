@@ -30,8 +30,7 @@
 #define PX_GJK_QUERY_H
 
 #include "common/PxPhysXCommonConfig.h"
-#include "foundation/PxVec3.h"
-#include "foundation/PxQuat.h"
+#include "foundation/PxTransform.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -53,7 +52,6 @@ public:
 	*/
 	struct Support
 	{
-		/* Virtual destructor */
 		virtual ~Support() {}
 		/**
 		\brief Return the user defined shape margin. Margin should be greater than or equal to 0
@@ -85,7 +83,7 @@ public:
 	\param[out] separatingAxis	Translating shape B along 'separatingAxis' by 'separation' makes the shapes touching
 	\param[out] separation		Translating shape B along 'separatingAxis' by 'separation' makes the shapes touching
 
-	\return						False if the distance greater than contactDistance.
+	\return						False if the distance is greater than contactDistance.
 	*/
 	PX_PHYSX_COMMON_API static bool proximityInfo(const Support& a, const Support& b, const PxTransform& poseA, const PxTransform& poseB,
 		PxReal contactDistance, PxReal toleranceLength, PxVec3& pointA, PxVec3& pointB, PxVec3& separatingAxis, PxReal& separation);
@@ -110,10 +108,10 @@ public:
 	/**
 	\brief Overlap test for two shapes.
 
-	\param[in] a				Shape A support mapping
-	\param[in] b				Shape B support mapping
-	\param[in] poseA			Shape A transformation
-	\param[in] poseB			Shape B transformation
+	\param[in] a			Shape A support mapping
+	\param[in] b			Shape B support mapping
+	\param[in] poseA		Shape A transformation
+	\param[in] poseB		Shape B transformation
 
 	\return					True if the shapes overlap.
 	*/
@@ -122,10 +120,10 @@ public:
 	/**
 	\brief Sweep the shape B in space and test for collision with the shape A.
 
-	\param[in] a				Shape A support mapping
-	\param[in] b				Shape B support mapping
-	\param[in] poseA			Shape A transformation
-	\param[in] poseB			Shape B transformation
+	\param[in] a			Shape A support mapping
+	\param[in] b			Shape B support mapping
+	\param[in] poseA		Shape A transformation
+	\param[in] poseB		Shape B transformation
 	\param[in] unitDir		Normalized direction of the ray to test the shape against
 	\param[in] maxDist		Maximum ray length, has to be in the [0, inf) range
 	\param[out] t			Hit distance

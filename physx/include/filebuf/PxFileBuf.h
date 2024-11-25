@@ -70,7 +70,7 @@ public:
 		setEndianMode(mode);
 	}
 
-	virtual ~PxFileBuf(void)
+	virtual ~PxFileBuf()
 	{
 
 	}
@@ -91,9 +91,9 @@ public:
 		OPEN_READ_WRITE_EXISTING		// open an existing file for both read/write access
 	};
 
-	virtual OpenMode	getOpenMode(void) const  = 0;
+	virtual OpenMode	getOpenMode() const  = 0;
 
-	bool isOpen(void) const
+	bool isOpen() const
 	{
 		return getOpenMode()!=OPEN_FILE_NOT_FOUND;
 	}
@@ -106,7 +106,7 @@ public:
 		SEEKABLE_READWRITE 	= 0x3
 	};
 
-	virtual SeekType isSeekable(void) const = 0;
+	virtual SeekType isSeekable() const = 0;
 
 	void	setEndianMode(EndianMode e)
 	{
@@ -122,12 +122,12 @@ public:
 		}
 	}
 
-	EndianMode	getEndianMode(void) const
+	EndianMode	getEndianMode() const
 	{
 		return mEndianMode;
 	}
 
-	virtual uint32_t getFileLength(void) const = 0;
+	virtual uint32_t getFileLength() const = 0;
 
 	/**
 	\brief Seeks the stream to a particular location for reading
@@ -181,26 +181,26 @@ public:
 
 	\return Returns the current stream read location.
 	*/
-	virtual uint32_t	tellRead(void) const = 0;
+	virtual uint32_t	tellRead() const = 0;
 
 	/**
 	\brief Reports the current stream location for write access.
 
 	\return Returns the current stream write location.
 	*/
-	virtual uint32_t	tellWrite(void) const = 0;
+	virtual uint32_t	tellWrite() const = 0;
 
 	/**
 	\brief	Causes any temporarily cached data to be flushed to the stream.
 	*/
-	virtual	void	flush(void) = 0;
+	virtual	void	flush() = 0;
 
 	/**
 	\brief	Close the stream.
 	*/
-	virtual void close(void) {}
+	virtual void close() {}
 
-	void release(void)
+	void release()
 	{
 		PX_DELETE_THIS;
 	}
@@ -271,14 +271,14 @@ public:
 		write(&w,sizeof(w));
 	}
 
-	uint8_t readByte(void) 
+	uint8_t readByte()
 	{
 		uint8_t v=0;
 		read(&v,sizeof(v));
 		return v;
 	}
 
-	uint16_t readWord(void) 
+	uint16_t readWord()
 	{
 		uint16_t v=0;
 		read(&v,sizeof(v));
@@ -287,7 +287,7 @@ public:
 		return v;
 	}
 
-	uint32_t readDword(void) 
+	uint32_t readDword()
 	{
 		uint32_t v=0;
 		read(&v,sizeof(v));
@@ -296,7 +296,7 @@ public:
 		return v;
 	}
 
-	float readFloat(void) 
+	float readFloat()
 	{
 		float v=0;
 		read(&v,sizeof(v));
@@ -305,7 +305,7 @@ public:
 		return v;
 	}
 
-	double readDouble(void) 
+	double readDouble()
 	{
 		double v=0;
 		read(&v,sizeof(v));

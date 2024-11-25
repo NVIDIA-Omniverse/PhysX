@@ -38,6 +38,7 @@
 #include "PxsContactManager.h"
 #include "PxsContactManagerState.h"
 #include "PxcNpContactPrepShared.h"
+#include "DySolverContact4.h"
 
 namespace physx
 {
@@ -129,7 +130,7 @@ inline bool getFrictionPatches(CorrelationBuffer& c,
 	return true;
 }
 
-PX_FORCE_INLINE PxU32 extractContacts(PxContactBuffer& buffer, PxsContactManagerOutput& npOutput, bool& hasMaxImpulse, bool& hasTargetVelocity,
+PX_FORCE_INLINE PxU32 extractContacts(PxContactBuffer& buffer, const PxsContactManagerOutput& npOutput, bool& hasMaxImpulse, bool& hasTargetVelocity,
 							 PxReal& invMassScale0, PxReal& invMassScale1, PxReal& invInertiaScale0, PxReal& invInertiaScale1, PxReal defaultMaxImpulse)
 {
 	PxContactStreamIterator iter(npOutput.contactPatches, npOutput.contactPoints, npOutput.getInternalFaceIndice(), npOutput.nbPatches, npOutput.nbContacts);

@@ -39,6 +39,7 @@ AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PxFl
 	mRemovedHandleMap		(allocator),
 	mChangedHandleMap		(allocator),
 	mGroups					(allocator),
+	mEnvIDs					(allocator),
 	mContactDistance		(contactDistance),
 	mVolumeData				(allocator),
 	mFilters				(kineKineFilteringMode == PxPairFilteringMode::eKILL, staticKineFilteringMode == PxPairFilteringMode::eKILL),
@@ -56,7 +57,7 @@ AABBManagerBase::AABBManagerBase(	BroadPhase& bp, BoundsArray& boundsArray, PxFl
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS
 #endif
-#ifdef BP_USE_AGGREGATE_GROUP_TAIL
+#if BP_USE_AGGREGATE_GROUP_TAIL
 	mAggregateGroupTide		(PxU32(Bp::FilterGroup::eAGGREGATE_BASE)),
 #endif
 	mContextID				(contextID),

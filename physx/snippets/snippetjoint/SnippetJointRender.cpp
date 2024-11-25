@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 
 #include "../snippetrender/SnippetRender.h"
@@ -59,7 +57,7 @@ void renderCallback()
 	{
 		const PxVec3 dynColor(1.0f, 0.5f, 0.25f);
 
-		std::vector<PxRigidActor*> actors(nbActors);
+		PxArray<PxRigidActor*> actors(nbActors);
 		scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
 		Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true, dynColor);
 	}
@@ -67,7 +65,7 @@ void renderCallback()
 	Snippets::finishRender();
 }
 
-void exitCallback(void)
+void exitCallback()
 {
 	delete sCamera;
 	cleanupPhysics(true);

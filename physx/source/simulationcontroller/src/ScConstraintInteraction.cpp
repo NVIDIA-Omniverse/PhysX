@@ -41,7 +41,7 @@ ConstraintInteraction::ConstraintInteraction(ConstraintSim* constraint, RigidSim
 	mConstraint	(constraint)
 {
 	{
-		onActivate(NULL);
+		onActivate();
 		registerInActors();
 	}
 
@@ -110,11 +110,11 @@ void ConstraintInteraction::updateState()
 	// and thus there is no need to consider that case here.
 	//
 
-	onActivate(NULL);	// note: this will not activate if the necessary conditions are not met, so it can be called even if the pair has been deactivated again before the
-						//       simulation step started
+	onActivate();	// note: this will not activate if the necessary conditions are not met, so it can be called even if the pair has been deactivated again before the
+					//       simulation step started
 }
 
-bool ConstraintInteraction::onActivate(void*)
+bool ConstraintInteraction::onActivate()
 {
 	PX_ASSERT(!mConstraint->isBroken());
 

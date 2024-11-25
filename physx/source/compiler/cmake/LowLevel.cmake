@@ -39,8 +39,8 @@ SET(LL_API_DIR ${LL_SOURCE_DIR}/api/)
 SET(LL_API_HEADERS	
 	${LL_API_DIR}/include/PxsMaterialShared.h
 	${LL_API_DIR}/include/PxsMaterialCore.h
-	${LL_API_DIR}/include/PxsFEMSoftBodyMaterialCore.h
-	${LL_API_DIR}/include/PxsFEMClothMaterialCore.h
+	${LL_API_DIR}/include/PxsDeformableSurfaceMaterialCore.h
+	${LL_API_DIR}/include/PxsDeformableVolumeMaterialCore.h
 	${LL_API_DIR}/include/PxsPBDMaterialCore.h
 	${LL_API_DIR}/include/PxsMaterialManager.h
 	${LL_API_DIR}/include/PxvConfig.h
@@ -102,13 +102,13 @@ SET(LL_SOFTWARE_HEADERS
 	${LL_SOFTWARE_DIR}/include/PxsHeapMemoryAllocator.h
 	${LL_SOFTWARE_DIR}/include/PxsIslandManagerTypes.h
 	${LL_SOFTWARE_DIR}/include/PxsIslandSim.h
+	${LL_SOFTWARE_DIR}/include/PxsPartitionEdge.h
 	${LL_SOFTWARE_DIR}/include/PxsKernelWrangler.h
 	${LL_SOFTWARE_DIR}/include/PxsMaterialCombiner.h
 	${LL_SOFTWARE_DIR}/include/PxsMemoryManager.h
 	${LL_SOFTWARE_DIR}/include/PxsNphaseImplementationContext.h
 	${LL_SOFTWARE_DIR}/include/PxsRigidBody.h
     ${LL_SOFTWARE_DIR}/include/PxsParticleBuffer.h
-	${LL_SOFTWARE_DIR}/include/PxsShapeSim.h
 	${LL_SOFTWARE_DIR}/include/PxsSimpleIslandManager.h
 	${LL_SOFTWARE_DIR}/include/PxsSimulationController.h
 	${LL_SOFTWARE_DIR}/include/PxsTransformCache.h

@@ -109,14 +109,13 @@ namespace Snippets
 	void	initFPS();
 	void	showFPS(int updateIntervalMS = 30, const char* info = NULL);
 
-	void	renderSoftBody(physx::PxSoftBody* softBody, const physx::PxVec4* deformedPositionsInvMass, bool shadows, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f));
+	void	renderDeformableVolume(physx::PxDeformableVolume* deformableVolume, const physx::PxVec4* deformedPositionsInvMass, bool shadows, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f));
 	void	renderActors(physx::PxRigidActor** actors, const physx::PxU32 numActors, bool shadows = false, const physx::PxVec3& color = physx::PxVec3(0.0f, 0.75f, 0.0f), TriggerRender* cb = NULL, bool changeColorForSleepingActors = true, bool wireframePass=true);
 //	void	renderGeoms(const physx::PxU32 nbGeoms, const physx::PxGeometry* geoms, const physx::PxTransform* poses, bool shadows, const physx::PxVec3& color);
 	void	renderGeoms(const physx::PxU32 nbGeoms, const physx::PxGeometryHolder* geoms, const physx::PxTransform* poses, bool shadows, const physx::PxVec3& color);
 	void	renderMesh(physx::PxU32 nbVerts, const physx::PxVec3* verts, physx::PxU32 nbTris, const physx::PxU32* indices, const physx::PxVec3& color, const physx::PxVec3* normals = NULL, bool flipFaceOrientation = false);
 	void	renderMesh(physx::PxU32 nbVerts, const physx::PxVec4* verts, physx::PxU32 nbTris, const physx::PxU32* indices, const physx::PxVec3& color, const physx::PxVec4* normals = NULL, bool flipFaceOrientation = false);
 	void	renderMesh(physx::PxU32 nbVerts, const physx::PxVec4* verts, physx::PxU32 nbTris, const void* indices, bool hasSixteenBitIndices, const physx::PxVec3& color, const physx::PxVec4* normals = NULL, bool flipFaceOrientation = false, bool enableBackFaceCulling = true);
-	void	renderHairSystem(physx::PxHairSystem* hairSystem, const physx::PxVec4* vertexPositionInvMass, physx::PxU32 numVertices);
 
 	void	DrawLine(const physx::PxVec3& p0, const physx::PxVec3& p1, const physx::PxVec3& color);
 	void	DrawPoints(const physx::PxArray<physx::PxVec3>& pts, const physx::PxVec3& color, float scale);

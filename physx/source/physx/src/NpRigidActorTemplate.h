@@ -136,8 +136,10 @@ void NpRigidActorTemplate<APIClass>::preExportDataReset()
 	//Clearing the aggregate ID for serialization so we avoid having a stale 
 	//reference after deserialization. The aggregate ID get's reset on readding to the 
 	//scene anyway.
+	// PT: this happens on a copy of the object so the reset does not break anything.
 	Sc::ActorCore& actorCore = NpActor::getActorCore();
-	actorCore.setAggregateID(PX_INVALID_U32);
+	if(actorCore.hasAggregateID())
+		actorCore.setAggregateID(PX_INVALID_U32);
 	mShapeManager.preExportDataReset();
 	//mIndex = 0xFFFFFFFF;
 	NpBase::mFreeSlot = 0xFFFFFFFF;
@@ -215,9 +217,12 @@ bool NpRigidActorTemplate<APIClass>::attachShape(PxShape& shape)
 	NpScene* npScene = ActorTemplateClass::getNpScene();
 	NP_WRITE_CHECK(npScene);
 	NpShape& npShape = static_cast<NpShape&>(shape);
-	PX_CHECK_AND_RETURN_VAL(!static_cast<NpShape&>(shape).isExclusive() || shape.getActor()==NULL, "PxRigidActor::attachShape: shape must be shared or unowned", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eSOFT_BODY_SHAPE), "PxRigidActor::attachShape() not allowed to attach a soft body shape to a rigid actor", false);
-	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eCLOTH_SHAPE), "PxRigidActor::attachShape() not allowed to attach a cloth shape to a rigid actor", false);
+	PX_CHECK_AND_RETURN_VAL(!static_cast<NpShape&>(shape).isExclusive() || shape.getActor()==NULL,
+		"PxRigidActor::attachShape: shape must be shared or unowned", false);
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_VOLUME_SHAPE),
+		"PxRigidActor::attachShape() not allowed to attach a deformable volume shape to a rigid actor", false);
+	PX_CHECK_AND_RETURN_VAL(!(npShape.getCore().getCore().mShapeCoreFlags & PxShapeCoreFlag::eDEFORMABLE_SURFACE_SHAPE),
+		"PxRigidActor::attachShape() not allowed to attach a deformable surface shape to a rigid actor", false);
 
 	PX_CHECK_SCENE_API_WRITE_FORBIDDEN_AND_RETURN_VAL(npScene, "PxRigidActor::attachShape() not allowed while simulation is running. Call will be ignored.", false);
 

@@ -46,12 +46,11 @@ namespace Sc
 		enum Enum
 		{
 			eGEOMETRY			= 1<<0,
-			eMATERIAL			= 1<<1,
-			eSHAPE2BODY			= 1<<2,
-			eFILTERDATA			= 1<<3,
-			eCONTACTOFFSET		= 1<<4,
-			eRESTOFFSET			= 1<<5,
-			eRESET_FILTERING	= 1<<6
+			eSHAPE2BODY			= 1<<1,
+			eFILTERDATA			= 1<<2,
+			eCONTACTOFFSET		= 1<<3,
+			eRESTOFFSET			= 1<<4,
+			eRESET_FILTERING	= 1<<5
 		};
 	};
 	typedef PxFlags<ShapeChangeNotifyFlag::Enum, PxU32> ShapeChangeNotifyFlags;

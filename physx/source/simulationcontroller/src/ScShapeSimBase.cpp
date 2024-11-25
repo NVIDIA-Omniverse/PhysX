@@ -48,9 +48,8 @@ void resetElementID(Scene& scene, ShapeSimBase& shapeSim)
 		shapeSim.destroySqBounds();
 }
 
-PX_INLINE Bp::FilterGroup::Enum getBPGroup(const ShapeSimBase& shapeSim)
+static PX_INLINE Bp::FilterGroup::Enum getBPGroup(const ShapeSimBase& shapeSim)
 {
-
 	const BodySim* bs = shapeSim.getBodySim();
 
 	const RigidSim& rbSim = shapeSim.getRbSim();
@@ -87,11 +86,6 @@ void ShapeSimBase::onResetFiltering()
 		reinsertBroadPhase();
 }
 
-void ShapeSimBase::onMaterialChange()
-{
-	setElementInteractionsDirty(*this, InteractionDirtyFlag::eMATERIAL, InteractionFlag::eRB_ELEMENT);
-}
-
 void ShapeSimBase::onRestOffsetChange()
 {
 	setElementInteractionsDirty(*this, InteractionDirtyFlag::eREST_OFFSET, InteractionFlag::eRB_ELEMENT);
@@ -124,8 +118,7 @@ void ShapeSimBase::reinsertBroadPhase()
 	{
 		//unregisterShapeFromNphase(shape.getCore());
 
-		// PT: "getID" is const but the addShape call used LLShape, which uses elementID, so....
-		scene.getSimulationController()->removeShape(getElementID());
+		scene.getSimulationController()->removePxgShape(getElementID());
 
 		scene.unregisterShapeFromNphase(getCore(), getElementID());
 	}
@@ -155,7 +148,7 @@ void ShapeSimBase::reinsertBroadPhase()
 
 	// Scene::addShape
 	{
-		scene.getSimulationController()->addShape(&getLLShapeSim(), getElementID());
+		scene.getSimulationController()->addPxgShape(this, getPxsShapeCore(), getActorNodeIndex(), getElementID());
 
 		// PT: TODO: anything else needed here?
 		scene.registerShapeInNphase(&getRbSim().getRigidCore(), getCore(), getElementID());
@@ -208,26 +201,16 @@ void ShapeSimBase::initSubsystemsDependingOnElementID()
 	//	if(scScene.getDirtyShapeSimMap().size() <= index)
 	//		scScene.getDirtyShapeSimMap().resize(PxMax(index+1, (scScene.getDirtyShapeSimMap().size()+1) * 2u));
 
-	RigidSim& owner = getRbSim();
+	ActorSim& owner = mActor;
+
 	if (owner.isDynamicRigid() && static_cast<BodySim&>(owner).isActive())
 		createSqBounds();
+}
 
-	// Init LL shape
-	{
-		mLLShape.mElementIndex_GPU = index;
-		mLLShape.mShapeCore = const_cast<PxsShapeCore*>(&getCore().getCore());
-
-		if (owner.getActorType() == PxActorType::eRIGID_STATIC)
-		{
-			mLLShape.mBodySimIndex_GPU = PxNodeIndex(PX_INVALID_NODE);
-		}
-		else
-		{
-			BodySim& bodySim = static_cast<BodySim&>(getActor());
-			mLLShape.mBodySimIndex_GPU = bodySim.getNodeIndex();
-			//mLLShape.mLocalBound = computeBounds(mCore.getGeometry(), PxTransform(PxIdentity));
-		}
-	}
+PxNodeIndex ShapeSimBase::getActorNodeIndex() const
+{
+	ActorSim& owner = mActor;
+	return owner.getActorType() == PxActorType::eRIGID_STATIC ? PxNodeIndex(PX_INVALID_NODE) : static_cast<BodySim&>(owner).getNodeIndex();
 }
 
 void ShapeSimBase::getAbsPoseAligned(PxTransform* PX_RESTRICT globalPose) const
@@ -304,7 +287,7 @@ void ShapeSimBase::onFlagChange(PxShapeFlags oldFlags)
 	else if (hadSq && !hasSq)
 		destroySqBounds();
 
-	getScene().getSimulationController()->reinsertShape(&getLLShapeSim(), getElementID());
+	getScene().getSimulationController()->addPxgShape(this, getPxsShapeCore(), getActorNodeIndex(), getElementID());
 }
 
 BodySim* ShapeSimBase::getBodySim() const
@@ -399,7 +382,7 @@ void ShapeSimBase::onVolumeOrTransformChange()
 	}
 
 	markBoundsForUpdate();
-	getScene().getSimulationController()->reinsertShape(&getLLShapeSim(), getElementID());
+	getScene().getSimulationController()->addPxgShape(this, getPxsShapeCore(), getActorNodeIndex(), getElementID());
 }
 
 void notifyActorInteractionsOfTransformChange(ActorSim& actor)

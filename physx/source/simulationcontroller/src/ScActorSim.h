@@ -56,12 +56,11 @@ namespace Sc
 			eRIGID_STATIC		= eNEXT_FREE,
 			eRIGID_DYNAMIC		= eNEXT_FREE<<1,
 			eNON_RIGID			= eNEXT_FREE<<2,
-			eSOFTBODY			= eNEXT_FREE<<3,
-			eFEMCLOTH			= eNEXT_FREE<<4,
+			eDEFORMABLE_SURFACE	= eNEXT_FREE<<3,
+			eDEFORMABLE_VOLUME	= eNEXT_FREE<<4,
 			ePARTICLESYSTEM		= eNEXT_FREE<<5,
-			eHAIRSYSTEM			= eNEXT_FREE<<6,
 
-			eLAST				= eHAIRSYSTEM
+			eLAST				= ePARTICLESYSTEM
 		};
 	};
 
@@ -144,13 +143,12 @@ namespace Sc
 		PX_FORCE_INLINE	PxActorType::Enum	getActorType()				const	{ return mCore.getActorCoreType();	}
 
 		// Returns true if the actor is a dynamic rigid body (including articulation links)
-		PX_FORCE_INLINE	PxU16				isDynamicRigid()			const	{ return mFilterFlags & PxFilterObjectFlagEx::eRIGID_DYNAMIC;	}
-		PX_FORCE_INLINE	PxU16				isSoftBody()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eSOFTBODY;		}
-		PX_FORCE_INLINE	PxU16				isFEMCloth()				const   { return mFilterFlags & PxFilterObjectFlagEx::eFEMCLOTH;		}
-		PX_FORCE_INLINE PxU16				isParticleSystem()			const	{ return mFilterFlags & PxFilterObjectFlagEx::ePARTICLESYSTEM;	}
-		PX_FORCE_INLINE	PxU16				isHairSystem()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eHAIRSYSTEM;		}
-		PX_FORCE_INLINE PxU16				isNonRigid()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eNON_RIGID;		}
-		PX_FORCE_INLINE	PxU16				isStaticRigid()				const   { return mFilterFlags & PxFilterObjectFlagEx::eRIGID_STATIC;	}
+		PX_FORCE_INLINE	PxU16				isDynamicRigid()			const	{ return mFilterFlags & PxFilterObjectFlagEx::eRIGID_DYNAMIC;		}
+		PX_FORCE_INLINE	PxU16				isDeformableSurface()		const	{ return mFilterFlags & PxFilterObjectFlagEx::eDEFORMABLE_SURFACE;	}
+		PX_FORCE_INLINE	PxU16				isDeformableVolume()		const	{ return mFilterFlags & PxFilterObjectFlagEx::eDEFORMABLE_VOLUME;	}
+		PX_FORCE_INLINE PxU16				isParticleSystem()			const	{ return mFilterFlags & PxFilterObjectFlagEx::ePARTICLESYSTEM;		}
+		PX_FORCE_INLINE PxU16				isNonRigid()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eNON_RIGID;			}
+		PX_FORCE_INLINE	PxU16				isStaticRigid()				const	{ return mFilterFlags & PxFilterObjectFlagEx::eRIGID_STATIC;		}
 
 		virtual			void				postActorFlagChange(PxU32, PxU32) {}
 

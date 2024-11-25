@@ -29,7 +29,6 @@
 #ifndef PX_AOS_H
 #define PX_AOS_H
 
-#include "foundation/Px.h"
 
 #if PX_WINDOWS && !PX_NEON
 #include "windows/PxWindowsAoS.h"

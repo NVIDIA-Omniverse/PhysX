@@ -234,7 +234,7 @@ namespace physx { namespace Sn {
 		}
 		virtual PxU32 countChildren()
 		{
-			PxU32 retval=  0;
+			PxU32 retval =  0;
 			for ( XmlNode* theChild = mCurrentNode->mFirstChild; theChild != NULL; theChild = theChild->mNextSibling )
 				++retval;
 			return retval;

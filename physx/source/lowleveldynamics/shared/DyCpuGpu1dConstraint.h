@@ -92,7 +92,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeJointSpeedPGS
  PxReal& jointSpeedForRestitutionBounce, PxReal& initJointSpeed)
 {
 	// this helper is only meant to be used for scenarios where at least one body is an articulation link
-#if defined(__CUDACC__)
+#if PX_CUDA_COMPILER
 	assert(!(isRigidDynamic0 && isRigidDynamic1));  // until PX_ASSERT works on GPU (see PX-4133)
 #else
 	PX_ASSERT(!(isRigidDynamic0 && isRigidDynamic1));
@@ -256,6 +256,57 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE Constraint1dSolverConstantsPGS compute1dConstra
 	return desc;
 }
 
+
+// Computing constant, unbiasedConstant, velMultiplier, and impulseMultiplier using precomputed coefficients. 
+// See also "queryReduced1dConstraintSolverConstantsPGS" and "compute1dConstraintSolverConstantsPGS."
+PX_CUDA_CALLABLE PX_FORCE_INLINE void compute1dConstraintSolverConstantsPGS
+(bool isSpring, bool isAccelerationSpring, PxReal coeff0, PxReal coeff1, PxReal coeff2,
+	const PxReal unitResponse, const PxReal recipUnitResponse,
+	PxReal& constant, PxReal& unbiasedConstant, PxReal& velMultiplier, PxReal& impulseMultiplier)
+{
+	if (isSpring)
+	{
+		// coeff0: a
+		// coeff1: b
+
+		const PxReal a = coeff0;
+		const PxReal b = coeff1;
+
+		if (isAccelerationSpring)
+		{
+			const PxReal x = 1.0f / (1.0f + a);
+			constant = x * recipUnitResponse * b;
+			unbiasedConstant = constant;
+			velMultiplier = -x * recipUnitResponse * a;
+			impulseMultiplier = 1.0f - x;
+		}
+		else
+		{
+			const PxReal x = 1.0f / (1.0f + a * unitResponse);
+			constant = x * b;
+			unbiasedConstant = constant;
+			velMultiplier = -x * a;
+			impulseMultiplier = 1.0f - x;
+		}
+	}
+	else
+	{
+		// coeff0: constant (to be scaled by recipUnitResponse)
+		// coeff1: unbiasedConstant (to be scaled by recipUnitResponse)
+
+		velMultiplier = -recipUnitResponse;
+		impulseMultiplier = 1.0f;
+
+		constant = coeff0 * recipUnitResponse;
+		unbiasedConstant = coeff1 * recipUnitResponse;
+	}
+
+	// coeff2: initJointSpeed
+	const PxReal velBias = coeff2 * velMultiplier;
+	constant += velBias;
+	unbiasedConstant += velBias;
+}
+
 /**
 \brief Constraint1dSolverConstantsTGS contains the constant terms used by the TGS 1d constraint solver functions.
 For velocity iterations we have:
@@ -363,6 +414,7 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void computeJointSpeedTGS
 \param[in] recipStepDt is equal to 1/stepDt.
 \return A Constraint1dSolverConstantsTGS instance that contains the solver constant terms.
 */
+
 PX_CUDA_CALLABLE PX_FORCE_INLINE Constraint1dSolverConstantsTGS compute1dConstraintSolverConstantsTGS
 (const PxU16 constraintFlags, 
  const PxReal springStiffness, const PxReal springDamping, 
@@ -431,6 +483,120 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE Constraint1dSolverConstantsTGS compute1dConstra
 	return desc;
 }
 
+// Save required coefficients to compute initBias, biasScale, velMultiplier, and velTarget every sub-timestep.
+// This does not change the previous impulse formulation.
+
+PX_CUDA_CALLABLE PX_FORCE_INLINE void queryReduced1dConstraintSolverConstantsTGS
+(const PxU16 constraintFlags,
+	const PxReal springStiffness, const PxReal springDamping,
+	const PxReal restitution, const PxReal bounceThreshold,
+	const PxReal geometricError, const PxReal velocityTarget,
+	const PxReal jointSpeedForRestitutionBounce, const PxReal initJointSpeed,
+	const PxReal erp, const PxReal stepDt, const PxReal recipStepDt, 
+	PxReal& coeff0, PxReal& coeff1, PxReal& coeff2, PxReal& coeff3)
+{
+	// coeff0: initJointSpeed
+	// coeff1: biasScale
+	coeff0 = initJointSpeed;
+
+	if (constraintFlags & Px1DConstraintFlag::eSPRING)
+	{
+		// coeff2: a, coeff3: b
+		const PxReal a = stepDt * (stepDt * springStiffness + springDamping);
+		const PxReal b = stepDt * (springDamping * velocityTarget);
+
+		coeff2 = a;
+		coeff3 = b;
+
+		if (constraintFlags & Px1DConstraintFlag::eACCELERATION_SPRING)
+		{
+			const PxReal x = 1.0f / (1.0f + a);
+			coeff1 = -x * springStiffness * stepDt; // to recover biasScale, multiply it by recipUnitResponse
+		}
+		else
+		{
+			coeff1 = -springStiffness * stepDt; // to recover biasScale, multiply it by x 
+		}
+	}
+	else
+	{
+		// coeff2: bounceVel, coeff3: velocityTarget 
+		const PxReal bounceVel = computeBounceVelocity(constraintFlags, jointSpeedForRestitutionBounce, bounceThreshold, restitution, geometricError);
+
+		coeff2 = bounceVel;
+		coeff3 = velocityTarget;
+
+		if (bounceVel != 0.0f)
+		{
+			coeff1 = 0.f; // biasScale is zero
+		}
+		else
+		{
+			const PxReal biasScale = -recipStepDt * erp;
+			coeff1 = biasScale; // biasScale
+		}
+	}
+}
+
+// Computing initBias, biasScale, velMultiplier, and velTarget at each sub-timestep using the coefficients saved in queryReduced1dConstraintSolverConstantsTGS.
+// This does not change the previous impulse formulation.
+
+PX_CUDA_CALLABLE PX_FORCE_INLINE void
+compute1dConstraintSolverConstantsTGS(bool isSpring, bool isAccelerationSpring, const PxReal geometricError,
+                                      const PxReal unitResponse, const PxReal recipUnitResponse,
+                                      PxReal coeff0, PxReal coeff1, PxReal coeff2, PxReal coeff3, PxReal& biasScale,
+                                      PxReal& velMultiplier, PxReal& error, PxReal& targetVel)
+{
+	PxReal initJointSpeed = coeff0;
+	biasScale = coeff1;
+
+	if (isSpring)
+	{
+		// coeff2: a, coeff3: b
+		const PxReal a = coeff2;
+		const PxReal b = coeff3;
+
+		if (isAccelerationSpring)
+		{
+			biasScale *= recipUnitResponse;
+			error = biasScale * geometricError;
+
+			const PxReal x = 1.0f / (1.0f + a);
+			velMultiplier = -x * a * recipUnitResponse;
+			targetVel = x * b * recipUnitResponse - velMultiplier * initJointSpeed;
+		}
+		else
+		{
+			const PxReal x = 1.0f / (1.0f + a * unitResponse);
+			biasScale *= x;
+			error = biasScale * geometricError;
+			velMultiplier = -x * a;
+			targetVel = x * b - velMultiplier * initJointSpeed;
+		}
+	}
+	else
+	{
+		// coeff2: bounceVel, coeff3: velocityTarget 
+		const PxReal bounceVel = coeff2;
+		const PxReal velocityTarget = coeff3;
+
+		if (bounceVel != 0.0f)
+		{
+			biasScale = 0.f; // biasScale is zero
+			error = 0.f;
+			velMultiplier = -1.0f;
+			targetVel = bounceVel - velMultiplier * initJointSpeed;
+		}
+		else
+		{
+			error = geometricError * biasScale;
+			velMultiplier = -1.0f;
+			targetVel = velocityTarget - velMultiplier * initJointSpeed;
+		}
+	}
+}
+
+
 /**
 \brief Translate external flags and hints to internal flags.
 \param[in] externalFlags Parameter that holds Px1DConstraintFlag::Type flags to translate.
@@ -442,6 +608,9 @@ PX_CUDA_CALLABLE PX_FORCE_INLINE void raiseInternalFlagsTGS(T externalFlags, T e
 {
 	if (externalFlags & Px1DConstraintFlag::eSPRING)
 		internalFlags |= DY_SC_FLAG_SPRING;
+
+	if (externalFlags & Px1DConstraintFlag::eACCELERATION_SPRING)
+		internalFlags |= DY_SC_FLAG_ACCELERATION_SPRING;
 
 	if (externalFlags & Px1DConstraintFlag::eOUTPUT_FORCE)
 		internalFlags |= DY_SC_FLAG_OUTPUT_FORCE;
@@ -539,7 +708,7 @@ without bringing the target velocity into the mix.
 \param[in] elapsedTime The elapsed time since start of the solver (stepDt accumulated over solver iterations).
 \return The resolved geometric error.
 */
-#if defined(__CUDACC__)
+#if PX_CUDA_COMPILER
 __device__ PX_FORCE_INLINE PxReal computeResolvedGeometricErrorTGS(const PxVec3& deltaLin0, const PxVec3& deltaLin1,
 	const PxVec3& cLinVel0, const PxVec3& cLinVel1,
 	const PxVec3& deltaAngInertia0, const PxVec3& deltaAngInertia1,
@@ -625,7 +794,7 @@ PX_FORCE_INLINE aos::Vec4V computeResolvedGeometricErrorTGSBlock(
 
 \return The minimum bias.
 */
-#if defined(__CUDACC__)
+#if PX_CUDA_COMPILER
 __device__ PX_FORCE_INLINE PxReal computeMinBiasTGS(PxU32 flags, PxReal maxBias)
 {
 	const PxReal minBias = -((flags & DY_SC_FLAG_INEQUALITY) ? PX_MAX_F32 : maxBias);

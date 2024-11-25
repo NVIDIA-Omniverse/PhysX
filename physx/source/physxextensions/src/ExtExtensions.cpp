@@ -174,7 +174,7 @@ static void releaseExternalSQ()
 	}
 }
 
-void PxCloseExtensions(void)
+void PxCloseExtensions()
 {
 	releaseExternalSQ();
 

@@ -29,7 +29,7 @@
 #ifndef PX_UNION_CAST_H
 #define PX_UNION_CAST_H
 
-#include "foundation/Px.h"
+#include "foundation/PxPreprocessor.h"
 
 
 #if !PX_DOXYGEN

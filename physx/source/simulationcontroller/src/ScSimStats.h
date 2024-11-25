@@ -79,9 +79,8 @@ namespace Sc
 		TriggerPairCounts numTriggerPairs;
 
 		PxU64 gpuMemSizeParticles;
-		PxU64 gpuMemSizeSoftBodies;
-		PxU64 gpuMemSizeFEMCloths;
-		PxU64 gpuMemSizeHairSystems;
+		PxU64 gpuMemSizeDeformableSurfaces;
+		PxU64 gpuMemSizeDeformableVolumes;
 	};
 
 } // namespace Sc

@@ -38,13 +38,13 @@
 #include "PxClient.h"
 #include "task/PxTask.h"
 #include "PxArticulationFlag.h"
-#include "PxSoftBodyFlag.h"
-#include "PxHairSystemFlag.h"
+#include "PxSoftBodyFlag.h" // deprecated
 #include "PxActorData.h"
 #include "PxParticleSystemFlag.h"
 #include "PxParticleSolverType.h"
-#include "cudamanager/PxCudaTypes.h"
 #include "PxResidual.h"
+
+#include "cudamanager/PxCudaTypes.h"
 
 #include "pvd/PxPvdSceneClient.h"
 
@@ -65,9 +65,8 @@ struct PxContactPairHeader;
 
 class PxPvdSceneClient;
 
-class PxSoftBody;
-class PxFEMCloth;
-class PxHairSystem;
+class PxDeformableSurface;
+class PxDeformableVolume;
 class PxPBDParticleSystem;
 
 /**
@@ -161,6 +160,21 @@ class PxBroadPhaseCallback
 	\param[in] aggregate	Aggregate that left the broad-phase bounds
 	*/
 	virtual		void	onObjectOutOfBounds(PxAggregate& aggregate) = 0;
+};
+
+/**
+\brief Abstract base class for post-solve callback functionality.
+*/
+class PxPostSolveCallback
+{
+public:
+	/**
+	\brief Callback function called after a solve event.
+	\param startEvent CUDA event that should be waited for on the user stream. Once the event happened, the user can safely read the solver's results.
+	*/
+	virtual void onPostSolve(CUevent startEvent) = 0;
+
+	virtual ~PxPostSolveCallback() {}
 };
 
 /** 
@@ -516,16 +530,44 @@ class PxScene : public PxSceneSQSystem
 	virtual PxActor**		getActiveActors(PxU32& nbActorsOut) = 0;
 
 	/**
-	\brief Retrieve the number of soft bodies in the scene.
+	\brief Retrieve the number of deformable surfaces in the scene.
 
-	\return the number of soft bodies.
+	\return the number of deformable surfaces.
+
+	See getDeformableSurfaces()
+	*/
+	virtual PxU32				getNbDeformableSurfaces() const = 0;
+
+	/**
+	\brief Retrieve an array of all the deformable surfaces in the scene.
+
+	\param[out] userBuffer The buffer to write the deformable surface pointers to
+	\param[in] bufferSize Size of the provided user buffer
+	\param[in] startIndex Index of first deformable surface pointer to be retrieved
+	\return Number of deformable surfaces written to the buffer
+	*/
+	virtual PxU32				getDeformableSurfaces(PxDeformableSurface** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	/**
+	\brief Retrieve the number of deformable volumes in the scene.
+
+	\return the number of deformable volumes.
 
 	\see getActors()
 	*/
-	virtual	PxU32				getNbSoftBodies() const = 0;
+	virtual	PxU32				getNbDeformableVolumes() const = 0;
 
 	/**
-	\brief Retrieve an array of all the soft bodies in the scene.
+	\brief Deprecated
+	\see getNbDeformableVolumes
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxU32 getNbSoftBodies() const
+	{
+		return getNbDeformableVolumes();
+	}
+
+	/**
+	\brief Retrieve an array of all the deformable volumes in the scene.
 
 	\param[out] userBuffer The buffer to receive actor pointers.
 	\param[in] bufferSize Size of provided user buffer.
@@ -534,7 +576,16 @@ class PxScene : public PxSceneSQSystem
 
 	\see getNbActors()
 	*/
-	virtual	PxU32				getSoftBodies(PxSoftBody** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+	virtual	PxU32				getDeformableVolumes(PxDeformableVolume** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
+
+	/**
+	\brief Deprecated
+	\see getDeformableVolumes
+	*/
+	PX_DEPRECATED PX_FORCE_INLINE PxU32 getSoftBodies(PxDeformableVolume** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const
+	{
+		return getDeformableVolumes(userBuffer, bufferSize, startIndex);
+	}
 
 	/**
 	\deprecated Use getNbPBDParticleSystems() instead.
@@ -581,46 +632,6 @@ class PxScene : public PxSceneSQSystem
 	\see getNbPBDParticleSystems()
 	*/
 	virtual PxU32				getPBDParticleSystems(class PxPBDParticleSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	\brief Retrieve the number of FEM cloths in the scene.
-	\warning Feature under development, only for internal usage.
-
-	\return the number of FEM cloths.
-
-	See getFEMCloths()
-	*/
-	virtual PxU32				getNbFEMCloths() const = 0;
-
-	/**
-	\brief Retrieve an array of all the FEM cloths in the scene.
-	\warning Feature under development, only for internal usage.
-
-	\param[out] userBuffer The buffer to write the FEM cloth pointers to
-	\param[in] bufferSize Size of the provided user buffer
-	\param[in] startIndex Index of first FEM cloth pointer to be retrieved
-	\return Number of FEM cloths written to the buffer
-	*/
-	virtual PxU32				getFEMCloths(PxFEMCloth** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
-
-	/**
-	\brief Retrieve the number of hair systems in the scene.
-	\warning Feature under development, only for internal usage.
-	\return the number of hair systems
-	\see getActors()
-	*/
-	virtual	PxU32				getNbHairSystems() const = 0;
-
-	/**
-	\brief Retrieve an array of all the hair systems in the scene.
-	\warning Feature under development, only for internal usage.
-
-	\param[out] userBuffer The buffer to write the actor pointers to
-	\param[in] bufferSize Size of the provided user buffer
-	\param[in] startIndex Index of first actor pointer to be retrieved
-	\return Number of actors written to the buffer
-	*/
-	virtual	PxU32				getHairSystems(PxHairSystem** userBuffer, PxU32 bufferSize, PxU32 startIndex = 0) const = 0;
 
 	/**
 	\brief Returns the number of articulations in the scene.
@@ -1770,33 +1781,33 @@ class PxScene : public PxSceneSQSystem
 	PX_DEPRECATED	virtual void	updateArticulationsKinematic(CUevent signalEvent = NULL) = 0;
 
 	/**
-	\brief Copy GPU softbody data from the internal GPU buffer to a user-provided device buffer.
-	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every softbody to process
+	\brief Copy GPU deformable volume data from the internal GPU buffer to a user-provided device buffer.
+	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every deformable volume to process
 	\param[in] dataSizes The size of every buffer in bytes
-	\param[in] softBodyIndices User provided gpu index buffer. This buffer stores the softbody index which the user want to copy.
+	\param[in] deformableVolumeIndices User provided gpu index buffer. This buffer stores the deformable volume index which the user want to copy.
 	\param[in] maxSize The largest size stored in dataSizes. Used internally to decide how many threads to launch for the copy process.
-	\param[in] flag Flag defining which data the user wants to read back from the softbody system
-	\param[in] nbCopySoftBodies The number of softbodies to be copied.
+	\param[in] flag Flag defining which data the user wants to read back from the deformable volume system
+	\param[in] nbCopyDeformableVolumes The number of deformable volumes to be copied.
 	\param[in] copyEvent User-provided event for the user to sync data. Defaults to NULL which means the function will wait for the copy to finish before returning.
 	
-	\deprecated There is no direct replacement. Most of the data is exposed in the PxSoftBody interface.
+	\deprecated There is no direct replacement. Most of the data is exposed in the PxDeformableVolume interface.
 	*/
-	PX_DEPRECATED	virtual	void	copySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopySoftBodies, const PxU32 maxSize, CUevent copyEvent = NULL) = 0;
+	PX_DEPRECATED	virtual	void	copySoftBodyData(void** data, void* dataSizes, void* deformableVolumeIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbCopyDeformableVolumes, const PxU32 maxSize, CUevent copyEvent = NULL) = 0;
 
 	/**
-	\brief Apply user-provided data to the internal softbody system.
-	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every softbody to process
+	\brief Apply user-provided data to the internal deformable volume system.
+	\param[in] data User-provided gpu buffer containing a pointer to another gpu buffer for every deformable volume to process
 	\param[in] dataSizes The size of every buffer in bytes	
-	\param[in] softBodyIndices User provided gpu index buffer. This buffer stores the updated softbody index.
-	\param[in] flag Flag defining which data the user wants to write to the softbody system
+	\param[in] deformableVolumeIndices User provided gpu index buffer. This buffer stores the updated deformable volume index.
+	\param[in] flag Flag defining which data the user wants to write to the deformable volume system
 	\param[in] maxSize The largest size stored in dataSizes. Used internally to decide how many threads to launch for the copy process. 
-	\param[in] nbUpdatedSoftBodies The number of updated softbodies
-	\param[in] applyEvent User-provided event for the softbody stream to wait for data.
-	\param[in] signalEvent User-provided event for the softbody stream to signal when the read from the user buffer has completed. Defaults to NULL which means the function will wait for the copy to finish before returning.
+	\param[in] nbUpdatedDeformableVolumes The number of updated deformable volumes
+	\param[in] applyEvent User-provided event for the deformable volume stream to wait for data.
+	\param[in] signalEvent User-provided event for the deformable volume stream to signal when the read from the user buffer has completed. Defaults to NULL which means the function will wait for the copy to finish before returning.
 	
-	\deprecated There is no direct replacement. Most of the data is exposed in the PxSoftBody interface.
+	\deprecated There is no direct replacement. Most of the data is exposed in the PxDeformableVolume interface.
 	*/
-	PX_DEPRECATED	virtual	void	applySoftBodyData(void** data, void* dataSizes, void* softBodyIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedSoftBodies, const PxU32 maxSize, CUevent applyEvent = NULL, CUevent signalEvent = NULL) = 0;
+	PX_DEPRECATED	virtual	void	applySoftBodyData(void** data, void* dataSizes, void* deformableVolumeIndices, PxSoftBodyGpuDataFlag::Enum flag, const PxU32 nbUpdatedDeformableVolumes, const PxU32 maxSize, CUevent applyEvent = NULL, CUevent signalEvent = NULL) = 0;
 
 	/**
 	\brief Copy rigid body contact data from the internal GPU buffer to a user-provided device buffer.
@@ -1862,6 +1873,18 @@ class PxScene : public PxSceneSQSystem
 	*/
 	PX_DEPRECATED	virtual	void	evaluateSDFDistances(const PxU32* sdfShapeIds, const PxU32 nbShapes, const PxVec4* localSamplePointsConcatenated,
 														 const PxU32* samplePointCountPerShape, const PxU32 maxPointCount, PxVec4* localGradientAndSDFConcatenated, CUevent event = NULL) = 0;
+
+	/**
+	\brief Sets the post-solve callback for deformable surface GPU computations. Allows to schedule custom work to be done by the GPU as soon as possible after the deformable surface solver finishes.
+	\param postSolveCallback Pointer to the callback implementation.
+	*/
+	virtual void setDeformableSurfaceGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) = 0;
+
+	/**
+	\brief Sets the post-solve callback for deformable volume GPU computations. Allows to schedule custom work to be done by the GPU as soon as possible after the deformable volume solver finishes.
+	\param postSolveCallback Pointer to the callback implementation.
+	*/
+	virtual void setDeformableVolumeGpuPostSolveCallback(PxPostSolveCallback* postSolveCallback) = 0;
 
 	/**
 	\brief Compute dense Jacobian matrices for specified articulations on the GPU.

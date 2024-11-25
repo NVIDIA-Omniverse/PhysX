@@ -30,9 +30,9 @@
 #define GU_ADJACENCIES_H
 
 #define MSH_ADJACENCIES_INCLUDE_CONVEX_BITS
-#include "foundation/Px.h"
 #include "GuTriangle.h"
 #include "common/PxPhysXCommonConfig.h"
+#include "foundation/PxIO.h"
 
 namespace physx
 {

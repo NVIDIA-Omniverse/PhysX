@@ -49,6 +49,7 @@ namespace physx
 	class PxShape;
 	class PxBVH;
 	class PxPruningStructure;
+	class PxBounds3;
 
 	/**
 	\brief Built-in enum for default PxScene pruners

@@ -100,7 +100,7 @@ static bool intersectRayPolyhedron(const Vec3VArg a, const Vec3VArg dir, const P
 	const FloatV zero = FZero();
 	const FloatV eps = FLoad(1e-7f);
 	FloatV tFirst = zero;
-	FloatV tLast= FMax();
+	FloatV tLast = FMax();
 
 	for(PxU32 k=0; k<polyData.mNbPolygons; ++k)
 	{

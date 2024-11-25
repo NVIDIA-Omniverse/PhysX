@@ -38,7 +38,6 @@
 // 
 // ****************************************************************************
 
-#include <vector>
 #include "PxPhysicsAPI.h"
 #include "../snippetutils/SnippetUtils.h"
 #include "../snippetcommon/SnippetPrint.h"
@@ -55,8 +54,8 @@ static PxScene*					gScene		= NULL;
 static PxMaterial*				gMaterial	= NULL;
 static PxPvd*					gPvd        = NULL;
 
-std::vector<PxVec3> gContactPositions;
-std::vector<PxVec3> gContactImpulses;
+PxArray<PxVec3> gContactPositions;
+PxArray<PxVec3> gContactImpulses;
 
 static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attributes0, PxFilterData filterData0, 
 												PxFilterObjectAttributes attributes1, PxFilterData filterData1,
@@ -87,7 +86,7 @@ class ContactReportCallback: public PxSimulationEventCallback
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
 	{
 		PX_UNUSED((pairHeader));
-		std::vector<PxContactPairPoint> contactPoints;
+		PxArray<PxContactPairPoint> contactPoints;
 		
 		for(PxU32 i=0;i<nbPairs;i++)
 		{
@@ -99,8 +98,8 @@ class ContactReportCallback: public PxSimulationEventCallback
 
 				for(PxU32 j=0;j<contactCount;j++)
 				{
-					gContactPositions.push_back(contactPoints[j].position);
-					gContactImpulses.push_back(contactPoints[j].impulse);
+					gContactPositions.pushBack(contactPoints[j].position);
+					gContactImpulses.pushBack(contactPoints[j].impulse);
 				}
 			}
 		}
@@ -167,6 +166,9 @@ void stepPhysics(bool /*interactive*/)
 	
 void cleanupPhysics(bool /*interactive*/)
 {
+	gContactPositions.reset();
+	gContactImpulses.reset();
+    
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
 	PxCloseExtensions();

@@ -660,7 +660,7 @@ PX_FORCE_INLINE	physx::PxTriangleMesh*	PxCreateTriangleMesh(const physx::PxCooki
 	return PxCreateTriangleMesh(params, desc, *PxGetStandaloneInsertionCallback());
 }
 
-// ==== Tetrahedron & soft body meshes ====
+// ==== Tetrahedron & deformable volume meshes ====
 
 /**
 \brief Cooks a tetrahedron mesh. The results are written to the stream.
@@ -718,31 +718,43 @@ PX_FORCE_INLINE	physx::PxTetrahedronMesh*	PxCreateTetrahedronMesh(const physx::P
 }
 
 /**
-\brief Cooks a softbody mesh. The results are written to the stream.
+\brief Cooks a deformable volume mesh. The results are written to the stream.
 
-To create a softbody mesh object it is necessary to first 'cook' the mesh data into
+To create a deformable volume mesh object it is necessary to first 'cook' the mesh data into
 a form which allows the SDK to perform efficient collision detection and to store data
 used during the FEM calculations.
 
-PxCookSoftBodyMesh() allows a mesh description to be cooked into a binary stream
+PxCookDeformableVolumeMesh() allows a mesh description to be cooked into a binary stream
 suitable for loading and performing collision detection at runtime.
 
 \param[in] params				The cooking parameters
 \param[in] simulationMeshDesc	The tetrahedron mesh descriptor to read the simulation mesh from.
 \param[in] collisionMeshDesc	The tetrahedron mesh descriptor to read the collision mesh from.
-\param[in] softbodyDataDesc		The softbody data descriptor to read mapping information from.
+\param[in] simulationDataDesc	The deformable volume data descriptor to read mapping information from.
 \param[in] stream				User stream to output the cooked data.
 \return true on success
 
 \see PxCookConvexMesh() PxPhysics.createTriangleMesh() PxTriangleMeshCookingResult::Enum
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	bool PxCookSoftBodyMesh(const physx::PxCookingParams& params, const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-														const physx::PxSoftBodySimulationDataDesc& softbodyDataDesc, physx::PxOutputStream& stream);
+PX_C_EXPORT PX_PHYSX_COOKING_API	bool PxCookDeformableVolumeMesh(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxOutputStream& stream);
 
 /**
-\brief Cooks and creates a softbody mesh without going through a stream.
+\brief Deprecated
+\see PxCookDeformableVolumeMesh
+*/
+PX_DEPRECATED PX_FORCE_INLINE bool PxCookSoftBodyMesh(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxOutputStream& stream)
+{
+	return PxCookDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, stream);
+}
 
-\note This method does the same as PxCookSoftBodyMesh, but the produced mesh is not stored
+/**
+\brief Cooks and creates a deformable volume mesh without going through a stream.
+
+\note This method does the same as PxCookDeformableVolumeMesh, but the produced mesh is not stored
 into a stream but is either directly inserted in PxPhysics, or created as a standalone
 object. Use this method if you are unable to cook offline.
 
@@ -752,40 +764,64 @@ or PxGetStandaloneInsertionCallback().
 \param[in] params				The cooking parameters
 \param[in] simulationMeshDesc	The tetrahedron mesh descriptor to read the simulation mesh from.
 \param[in] collisionMeshDesc	The tetrahedron mesh descriptor to read the collision mesh from.
-\param[in] softbodyDataDesc		The softbody data descriptor to read mapping information from.
+\param[in] simulationDataDesc	The deformable volume data descriptor to read mapping information from.
 \param[in] insertionCallback	The insertion interface from PxPhysics.
-\return PxSoftBodyMesh pointer on success.
+\return PxDeformableVolumeMesh pointer on success.
 
 \see PxCookTriangleMesh() PxPhysics.createTriangleMesh() PxInsertionCallback
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxSoftBodyMesh* PxCreateSoftBodyMesh(const physx::PxCookingParams& params, const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-																const physx::PxSoftBodySimulationDataDesc& softbodyDataDesc, physx::PxInsertionCallback& insertionCallback);
+PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxDeformableVolumeMesh* PxCreateDeformableVolumeMesh(const physx::PxCookingParams& params, 
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxInsertionCallback& insertionCallback);
 
 /**
-\brief Cooks and creates a softbody mesh without going through a stream. Convenience function for standalone objects.
+\brief Deprecated
+\see PxCreateDeformableVolumeMesh
+*/
+PX_DEPRECATED PX_FORCE_INLINE physx::PxDeformableVolumeMesh* PxCreateSoftBodyMesh(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc, physx::PxInsertionCallback& insertionCallback)
+{
+	return PxCreateDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, insertionCallback);
+}
 
-\note This method does the same as PxCookSoftBodyMesh, but the produced mesh is not stored
+/**
+\brief Cooks and creates a deformable volume mesh without going through a stream. Convenience function for standalone objects.
+
+\note This method does the same as PxCreateDeformableVolumeMesh, but the produced mesh is not stored
 into a stream but is either directly inserted in PxPhysics, or created as a standalone
 object. Use this method if you are unable to cook offline.
 
 \param[in] params				The cooking parameters
 \param[in] simulationMeshDesc	The tetrahedron mesh descriptor to read the simulation mesh from.
 \param[in] collisionMeshDesc	The tetrahedron mesh descriptor to read the collision mesh from.
-\param[in] softbodyDataDesc		The softbody data descriptor to read mapping information from.
-\return PxSoftBodyMesh pointer on success.
+\param[in] simulationDataDesc	The deformable volume data descriptor to read mapping information from.
+\return PxDeformableVolumeMesh pointer on success.
 
 \see PxCookTriangleMesh() PxPhysics.createTriangleMesh() PxInsertionCallback
 */
-PX_FORCE_INLINE	physx::PxSoftBodyMesh*	PxCreateSoftBodyMesh(const physx::PxCookingParams& params, const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
-	const physx::PxSoftBodySimulationDataDesc& softbodyDataDesc)
+PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxCreateDeformableVolumeMesh(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc)
 {
-	return PxCreateSoftBodyMesh(params, simulationMeshDesc, collisionMeshDesc, softbodyDataDesc, *PxGetStandaloneInsertionCallback());
+	return PxCreateDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, *PxGetStandaloneInsertionCallback());
+}
+
+/**
+\brief Deprecated
+\see PxCreateDeformableVolumeMesh
+*/
+PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxCreateSoftBodyMesh(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc, const physx::PxTetrahedronMeshDesc& collisionMeshDesc,
+	const physx::PxDeformableVolumeSimulationDataDesc& simulationDataDesc)
+{
+	return PxCreateDeformableVolumeMesh(params, simulationMeshDesc, collisionMeshDesc, simulationDataDesc, *PxGetStandaloneInsertionCallback());
 }
 
 /**
 \brief Computes the mapping between collision and simulation mesh
 
-The softbody deformation is computed on the simulation mesh. To deform the collision mesh accordingly
+The deformable volume deformation is computed on the simulation mesh. To deform the collision mesh accordingly
 it needs to be specified how its vertices need to be placed and updated inside the deformation mesh.
 This method computes that embedding information.
 
@@ -800,8 +836,9 @@ This method computes that embedding information.
 
 \see PxTetMaker::createVoxelTetrahedronMesh
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxCollisionMeshMappingData* PxComputeModelsMapping(const physx::PxCookingParams& params, physx::PxTetrahedronMeshData& simulationMesh, const physx::PxTetrahedronMeshData& collisionMesh, 
-																				const physx::PxSoftBodyCollisionData& collisionData, const physx::PxBoundedData* vertexToTet = NULL);
+PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxCollisionMeshMappingData* PxComputeModelsMapping(const physx::PxCookingParams& params,
+	physx::PxTetrahedronMeshData& simulationMesh, const physx::PxTetrahedronMeshData& collisionMesh, 
+	const physx::PxDeformableVolumeCollisionData& collisionData, const physx::PxBoundedData* vertexToTet = NULL);
 	
 /**
 \brief Computes data to accelerate collision detection of tetrahedral meshes
@@ -812,23 +849,25 @@ Computes data structures to speed up collision detection with tetrahedral meshes
 \param[in] collisionMeshDesc	Raw tetrahedral mesh descriptor which will be used for collision detection 
 \return PxCollisionTetrahedronMeshData pointer that describes the collision mesh
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxCollisionTetrahedronMeshData* PxComputeCollisionData(const physx::PxCookingParams& params, const physx::PxTetrahedronMeshDesc& collisionMeshDesc);
+PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxCollisionTetrahedronMeshData* PxComputeCollisionData(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& collisionMeshDesc);
 
 /**
 \brief Computes data to accelerate collision detection of tetrahedral meshes
 
-Computes data to compute and store a softbody's deformation using FEM.
+Computes data to compute and store a deformable volume's deformation using FEM.
 
 \param[in] params				The cooking parameters
 \param[in] simulationMeshDesc	Raw tetrahedral mesh descriptor which will be used for FEM simulation
 \return PxSimulationTetrahedronMeshData pointer that describes the simulation mesh
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxSimulationTetrahedronMeshData* PxComputeSimulationData(const physx::PxCookingParams& params, const physx::PxTetrahedronMeshDesc& simulationMeshDesc);
+PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxSimulationTetrahedronMeshData* PxComputeSimulationData(const physx::PxCookingParams& params,
+	const physx::PxTetrahedronMeshDesc& simulationMeshDesc);
 
 /**
-\brief Bundles all data required for softbody simulation
+\brief Bundles all data required for deformable volume simulation
 
-Creates a container that provides everything to create a PxSoftBody
+Creates a container that provides everything to create a PxDeformableVolume
 
 \param[in] simulationMesh		The geometry (tetrahedral mesh) to be used as simulation mesh
 \param[in] simulationData		Additional non-tetmesh data that contains mass information etc. for the simulation mesh 
@@ -836,27 +875,34 @@ Creates a container that provides everything to create a PxSoftBody
 \param[in] collisionData		Additional non-tetmesh data that contains surface information, acceleration structures etc. for the simulation mesh 
 \param[in] mappingData			Mapping that describes how the collision mesh's vertices are embedded into the simulation mesh
 \param[in] insertionCallback	The insertion interface from PxPhysics.
-\return PxSoftBodyMesh pointer that represents a softbody mesh bundling all data (simulation mesh, collision mesh etc.)
+\return PxDeformableVolumeMesh pointer that represents a deformable volume mesh bundling all data (simulation mesh, collision mesh etc.)
 
-\see PxSoftBody createSoftBody()
+\see PxDeformableVolume createDeformableVolume()
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxSoftBodyMesh*	PxAssembleSoftBodyMesh(physx::PxTetrahedronMeshData& simulationMesh, physx::PxSoftBodySimulationData& simulationData, physx::PxTetrahedronMeshData& collisionMesh,
-																	physx::PxSoftBodyCollisionData& collisionData, physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback);
-	
+PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxDeformableVolumeMesh*	PxAssembleDeformableVolumeMesh(physx::PxTetrahedronMeshData& simulationMesh,
+	physx::PxDeformableVolumeSimulationData& simulationData, physx::PxTetrahedronMeshData& collisionMesh, physx::PxDeformableVolumeCollisionData& collisionData,
+	physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback);
+
 /**
-\brief Bundles all data required for softbody simulation
-
-Creates a container that provides everything to create a PxSoftBody
-
-\param[in] simulationMesh		Container that provides all information about the simulation mesh (geometry, mass distribution etc.)
-\param[in] collisionMesh		Container that provides all information about the collision mesh (geometry, surface information, acceleration structures etc.)
-\param[in] mappingData			Mapping that describes how the collision mesh's vertices are embedded into the simulation mesh
-\param[in] insertionCallback	The insertion interface from PxPhysics.
-\return PxSoftBodyMesh pointer that represents a softbody mesh bundling all data (simulation mesh, collision mesh etc.)
-
-\see PxSoftBody createSoftBody()
+\brief Deprecated
+\see PxAssembleDeformableVolumeMesh
 */
-PX_C_EXPORT PX_PHYSX_COOKING_API	physx::PxSoftBodyMesh*	PxAssembleSoftBodyMesh_Sim(physx::PxSimulationTetrahedronMeshData& simulationMesh, physx::PxCollisionTetrahedronMeshData& collisionMesh, 
-																	physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback);
+PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxAssembleSoftBodyMesh(physx::PxTetrahedronMeshData& simulationMesh,
+	physx::PxDeformableVolumeSimulationData& simulationData, physx::PxTetrahedronMeshData& collisionMesh, physx::PxDeformableVolumeCollisionData& collisionData,
+	physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback)
+{
+	return PxAssembleDeformableVolumeMesh(simulationMesh, simulationData, collisionMesh, collisionData, mappingData, insertionCallback);
+}
+
+/**
+\brief Deprecated
+\see PxAssembleDeformableVolumeMesh
+*/
+PX_DEPRECATED PX_FORCE_INLINE	physx::PxDeformableVolumeMesh* PxAssembleSoftBodyMesh_Sim(physx::PxSimulationTetrahedronMeshData& simulationMesh,
+	physx::PxCollisionTetrahedronMeshData& collisionMesh, physx::PxCollisionMeshMappingData& mappingData, physx::PxInsertionCallback& insertionCallback)
+{
+	return PxAssembleDeformableVolumeMesh(*simulationMesh.getMesh(), *simulationMesh.getData(), 
+		*collisionMesh.getMesh(), *collisionMesh.getData(), mappingData, insertionCallback);
+}
 
 #endif

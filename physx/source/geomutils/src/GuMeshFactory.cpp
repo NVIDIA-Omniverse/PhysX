@@ -98,7 +98,7 @@ void MeshFactory::release()
 	// Release all objects in case the user didn't do it
 	releaseObjects(mTriangleMeshes);
 	releaseObjects(mTetrahedronMeshes);
-	releaseObjects(mSoftBodyMeshes);
+	releaseObjects(mDeformableVolumeMeshes);
 	releaseObjects(mConvexMeshes);
 	releaseObjects(mHeightFields);
 	releaseObjects(mBVHs);
@@ -576,13 +576,13 @@ static TetrahedronMeshData* loadTetrahedronMeshData(PxInputStream& stream)
 	return data;
 }
 
-static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
+static bool loadDeformableVolumeMeshData(PxInputStream& stream, DeformableVolumeMeshData& data)
 {
 	// Import header
 	PxU32 version;
 	bool mismatch;
 	
-	if (!readHeader('S', 'O', 'M', 'E', version, mismatch, stream))
+	if (!readHeader('D', 'V', 'M', 'E', version, mismatch, stream))
 		return false;
 
 	// Import serialization flags
@@ -594,7 +594,7 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 
 	//const PxU32 nbSurfaceTriangles = readDword(mismatch, stream);
 
-	const PxU32 nbTetrahedrons= readDword(mismatch, stream);
+	const PxU32 nbTetrahedrons = readDword(mismatch, stream);
 	
 	//ML: this will allocate CPU tetrahedron indices and GPU tetrahedron indices and other GPU data if we have GRB data built
 	//void* tets = data.allocateTetrahedrons(nbTetrahedrons, serialFlags & IMSF_GRB_DATA);
@@ -661,7 +661,7 @@ static bool loadSoftBodyMeshData(PxInputStream& stream, SoftBodyMeshData& data)
 		}
 	}*/
 	
-	SoftBodyMeshData* bv4data = &data;
+	DeformableVolumeMeshData* bv4data = &data;
 	if (!bv4data->mCollisionData.mBV4Tree.load(stream, mismatch))
 	{
 		outputError<PxErrorCode::eINTERNAL_ERROR>(__LINE__, "BV4 binary image load error.");
@@ -817,23 +817,23 @@ void MeshFactory::addTetrahedronMesh(TetrahedronMesh* np, bool lock)
 	OMNI_PVD_NOTIFY_ADD(np);
 }
 
-void MeshFactory::addSoftBodyMesh(SoftBodyMesh* np, bool lock)
+void MeshFactory::addDeformableVolumeMesh(DeformableVolumeMesh* np, bool lock)
 {
-	addToHash(mSoftBodyMeshes, np, lock ? &mTrackingMutex : NULL);
+	addToHash(mDeformableVolumeMeshes, np, lock ? &mTrackingMutex : NULL);
 	OMNI_PVD_NOTIFY_ADD(np);
 }
 
-PxSoftBodyMesh* MeshFactory::createSoftBodyMesh(PxInputStream& desc)
+PxDeformableVolumeMesh* MeshFactory::createDeformableVolumeMesh(PxInputStream& desc)
 {
 	TetrahedronMeshData mSimulationMesh;
-	SoftBodySimulationData mSimulationData;
+	DeformableVolumeSimulationData mSimulationData;
 	TetrahedronMeshData mCollisionMesh;
-	SoftBodyCollisionData mCollisionData;
+	DeformableVolumeCollisionData mCollisionData;
 	CollisionMeshMappingData mMappingData;
-	SoftBodyMeshData data(mSimulationMesh, mSimulationData, mCollisionMesh, mCollisionData, mMappingData);	
-	if (!::loadSoftBodyMeshData(desc, data))
+	DeformableVolumeMeshData data(mSimulationMesh, mSimulationData, mCollisionMesh, mCollisionData, mMappingData);
+	if (!::loadDeformableVolumeMeshData(desc, data))
 		return NULL;
-	PxSoftBodyMesh* m = createSoftBodyMesh(data);
+	PxDeformableVolumeMesh* m = createDeformableVolumeMesh(data);
 	return m;
 }
 
@@ -864,29 +864,29 @@ PxTetrahedronMesh* MeshFactory::createTetrahedronMesh(void* data)
 	return createTetrahedronMesh(*reinterpret_cast<TetrahedronMeshData*>(data));
 }
 
-PxSoftBodyMesh* MeshFactory::createSoftBodyMesh(Gu::SoftBodyMeshData& data)
+PxDeformableVolumeMesh* MeshFactory::createDeformableVolumeMesh(Gu::DeformableVolumeMeshData& data)
 {
-	SoftBodyMesh* np = NULL;
-	PX_NEW_SERIALIZED(np, SoftBodyMesh)(this, data);
+	DeformableVolumeMesh* np = NULL;
+	PX_NEW_SERIALIZED(np, DeformableVolumeMesh)(this, data);
 
 	if (np) 	
-		addSoftBodyMesh(np);	
+		addDeformableVolumeMesh(np);
 
 	return np;
 }
 
 // data injected by cooking lib for runtime cooking
-PxSoftBodyMesh* MeshFactory::createSoftBodyMesh(void* data)
+PxDeformableVolumeMesh* MeshFactory::createDeformableVolumeMesh(void* data)
 {
-	return createSoftBodyMesh(*reinterpret_cast<SoftBodyMeshData*>(data));
+	return createDeformableVolumeMesh(*reinterpret_cast<DeformableVolumeMeshData*>(data));
 }
 
-bool MeshFactory::removeSoftBodyMesh(PxSoftBodyMesh& tetMesh)
+bool MeshFactory::removeDeformableVolumeMesh(PxDeformableVolumeMesh& tetMesh)
 {
-	SoftBodyMesh* gu = static_cast<SoftBodyMesh*>(&tetMesh);
+	DeformableVolumeMesh* gu = static_cast<DeformableVolumeMesh*>(&tetMesh);
 	OMNI_PVD_NOTIFY_REMOVE(gu);
 	PxMutex::ScopedLock lock(mTrackingMutex);
-	bool found = mSoftBodyMeshes.erase(gu);
+	bool found = mDeformableVolumeMeshes.erase(gu);
 	return found;
 }
 
@@ -899,10 +899,10 @@ bool MeshFactory::removeTetrahedronMesh(PxTetrahedronMesh& tetMesh)
 	return found;
 }
 
-PxU32 MeshFactory::getNbSoftBodyMeshes()	const
+PxU32 MeshFactory::getNbDeformableVolumeMeshes()	const
 {
 	PxMutex::ScopedLock lock(mTrackingMutex);
-	return mSoftBodyMeshes.size();
+	return mDeformableVolumeMeshes.size();
 }
 
 PxU32 MeshFactory::getNbTetrahedronMeshes()	const
@@ -917,10 +917,10 @@ PxU32 MeshFactory::getTetrahedronMeshes(PxTetrahedronMesh** userBuffer, PxU32 bu
 	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mTetrahedronMeshes.getEntries(), mTetrahedronMeshes.size());
 }
 
-PxU32 MeshFactory::getSoftBodyMeshes(PxSoftBodyMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const
+PxU32 MeshFactory::getDeformableVolumeMeshes(PxDeformableVolumeMesh** userBuffer, PxU32 bufferSize, PxU32 startIndex)	const
 {
 	PxMutex::ScopedLock lock(mTrackingMutex);
-	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mSoftBodyMeshes.getEntries(), mSoftBodyMeshes.size());
+	return getArrayOfPointers(userBuffer, bufferSize, startIndex, mDeformableVolumeMeshes.getEntries(), mDeformableVolumeMeshes.size());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1157,8 +1157,8 @@ bool MeshFactory::remove(PxBase& obj)
 		return removeTriangleMesh(static_cast<PxTriangleMesh&>(obj));
 	else if(type==PxConcreteType::eTETRAHEDRON_MESH)
 		return removeTetrahedronMesh(static_cast<PxTetrahedronMesh&>(obj));
-	else if (type == PxConcreteType::eSOFTBODY_MESH)
-		return removeSoftBodyMesh(static_cast<PxSoftBodyMesh&>(obj));
+	else if (type == PxConcreteType::eDEFORMABLE_VOLUME_MESH)
+		return removeDeformableVolumeMesh(static_cast<PxDeformableVolumeMesh&>(obj));
 	else if(type==PxConcreteType::eBVH)
 		return removeBVH(static_cast<PxBVH&>(obj));
 	return false;
@@ -1217,10 +1217,10 @@ namespace
 				return np;
 			}
 
-			if (type == PxConcreteType::eSOFTBODY_MESH)
+			if (type == PxConcreteType::eDEFORMABLE_VOLUME_MESH)
 			{
-				SoftBodyMesh* np;
-				PX_NEW_SERIALIZED(np, SoftBodyMesh)(NULL, *reinterpret_cast<SoftBodyMeshData*>(data));
+				DeformableVolumeMesh* np;
+				PX_NEW_SERIALIZED(np, DeformableVolumeMesh)(NULL, *reinterpret_cast<DeformableVolumeMeshData*>(data));
 				return np;
 			}
 

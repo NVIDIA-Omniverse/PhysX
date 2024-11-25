@@ -97,7 +97,7 @@ Prefetch aligned 64B x86, 32b ARM around \c ptr+offset.
 */
 PX_FORCE_INLINE void PxPrefetchLine(const void* ptr, uint32_t offset = 0)
 {
-#ifdef __CUDACC__
+#if PX_CUDA_COMPILER
 	__builtin_prefetch(reinterpret_cast<const char*>(ptr) + offset, 0, 3);
 #else
 	__builtin_prefetch(reinterpret_cast<const char* PX_RESTRICT>(ptr) + offset, 0, 3);

@@ -29,7 +29,6 @@
 #ifndef PX_BOUNDS3_H
 #define PX_BOUNDS3_H
 
-
 #include "foundation/PxTransform.h"
 #include "foundation/PxMat33.h"
 

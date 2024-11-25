@@ -29,7 +29,8 @@
 #ifndef CM_RANDOM_H
 #define CM_RANDOM_H
 
-#include "common/PxPhysXCommonConfig.h"
+#include "foundation/PxQuat.h"
+#include "foundation/PxVec3.h"
 #define TEST_MAX_RAND 0xffff
 
 namespace physx

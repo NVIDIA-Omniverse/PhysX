@@ -616,7 +616,7 @@ static void generatedTriangleContacts(const TriangleV& triangle, PxU32 triangleI
 	Vec3V nmax = V3Neg(max); 
 
 	//transform reference polygon to 2d, calculate min and max
-	Vec3V rPolygonMin= max;
+	Vec3V rPolygonMin = max;
 	Vec3V rPolygonMax = nmax;
 	for(PxU32 i=0; i<3; ++i)
 	{
@@ -631,7 +631,7 @@ static void generatedTriangleContacts(const TriangleV& triangle, PxU32 triangleI
 	const FloatV d = V3GetZ(points0In0[0]);
 	const FloatV rd = FAdd(d, contactDist);
 
-	Vec3V iPolygonMin= max; 
+	Vec3V iPolygonMin = max; 
 	Vec3V iPolygonMax = nmax;
 
 	PxU32 inside = 0;
@@ -833,7 +833,7 @@ static void generatedPolyContacts(const PolygonalData& polyData0, const HullPoly
 	Vec3V nmax = V3Neg(max); 
 
 	//transform reference polygon to 2d, calculate min and max
-	Vec3V rPolygonMin= max;
+	Vec3V rPolygonMin = max;
 	Vec3V rPolygonMax = nmax;
 	for(PxU32 i=0; i<referencePolygon.mNbVerts; ++i)
 	{
@@ -850,7 +850,7 @@ static void generatedPolyContacts(const PolygonalData& polyData0, const HullPoly
 
 	const FloatV rd = FAdd(d, contactDist);
 
-	Vec3V iPolygonMin= max; 
+	Vec3V iPolygonMin = max; 
 	Vec3V iPolygonMax = nmax;
 
 	PxU32 inside = 0;

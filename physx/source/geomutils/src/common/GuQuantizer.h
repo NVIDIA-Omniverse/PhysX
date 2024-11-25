@@ -29,7 +29,7 @@
 #ifndef GU_QUANTIZER_H
 #define GU_QUANTIZER_H
 
-#include "foundation/Px.h"
+#include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx

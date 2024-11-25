@@ -44,7 +44,7 @@
 using namespace physx;
 using namespace Gu;
 using namespace Cm;
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuSweepConvexTri.h"
 

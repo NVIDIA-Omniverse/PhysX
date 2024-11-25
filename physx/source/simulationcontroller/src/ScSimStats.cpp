@@ -38,7 +38,8 @@ Sc::SimStats::SimStats()
 	numBroadPhaseAdds = numBroadPhaseRemoves = 0;
 
 	gpuMemSizeParticles = 0;
-	gpuMemSizeSoftBodies = 0;
+	gpuMemSizeDeformableSurfaces = 0;
+	gpuMemSizeDeformableVolumes = 0;
 
 	clear();
 }
@@ -138,11 +139,11 @@ void Sc::SimStats::readOut(PxSimulationStatistics& s, const PxvSimStats& simStat
 	s.gpuDynamicsMemoryConfigStatistics.foundLostPairs = simStats.mGpuDynamicsFoundLostPairs;
 	s.gpuDynamicsMemoryConfigStatistics.foundLostAggregatePairs = simStats.mGpuDynamicsFoundLostAggregatePairs;
 	s.gpuDynamicsMemoryConfigStatistics.totalAggregatePairs = simStats.mGpuDynamicsTotalAggregatePairs;
-	s.gpuDynamicsMemoryConfigStatistics.softbodyContacts = simStats.mGpuDynamicsSoftbodyContacts;
-	s.gpuDynamicsMemoryConfigStatistics.femClothContacts = simStats.mGpuDynamicsFemClothContacts;
+	s.gpuDynamicsMemoryConfigStatistics.deformableSurfaceContacts = simStats.mGpuDynamicsDeformableSurfaceContacts;
+	s.gpuDynamicsMemoryConfigStatistics.deformableVolumeContacts = simStats.mGpuDynamicsDeformableVolumeContacts;
+	s.gpuDynamicsMemoryConfigStatistics.softbodyContacts = simStats.mGpuDynamicsDeformableVolumeContacts; //deprecated
 	s.gpuDynamicsMemoryConfigStatistics.particleContacts = simStats.mGpuDynamicsParticleContacts;
 	s.gpuDynamicsMemoryConfigStatistics.collisionStackSize = simStats.mGpuDynamicsCollisionStackSize;
-	s.gpuDynamicsMemoryConfigStatistics.hairContacts = simStats.mGpuDynamicsHairContacts;
 
 #else
 	PX_CATCH_UNDEFINED_ENABLE_SIM_STATS

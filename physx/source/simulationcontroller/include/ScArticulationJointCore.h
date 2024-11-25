@@ -55,7 +55,7 @@ namespace Sc
 	public:
 // PX_SERIALIZATION
 															ArticulationJointCore(const PxEMPTY) : mCore(PxEmpty), mSim(NULL) {}
-						void								preExportDataReset() { mCore.jointDirtyFlag = Dy::ArticulationJointCoreDirtyFlag::eALL; }
+						void								preExportDataReset() { mCore.jCalcUpdateFrames = true; }
 		static			void								getBinaryMetaData(PxOutputStream& stream);
 //~PX_SERIALIZATION
 															ArticulationJointCore(const PxTransform& parentFrame, const PxTransform& childFrame);
@@ -93,11 +93,10 @@ namespace Sc
 						void								setMaxJointVelocity(PxReal maxJointV);
 		PX_FORCE_INLINE	PxReal								getMaxJointVelocity()	const	{ return mCore.maxJointVelocity;	}
 
-		// PT: TODO: don't we need to set ArticulationJointCoreDirtyFlag::eMOTION here?
 		PX_FORCE_INLINE	void								setMotion(PxArticulationAxis::Enum axis, PxArticulationMotion::Enum motion)	{ mCore.motion[axis] = PxU8(motion);						}
 		PX_FORCE_INLINE	PxArticulationMotion::Enum			getMotion(PxArticulationAxis::Enum axis)							const	{ return PxArticulationMotion::Enum(mCore.motion[axis]);	}
 
-		PX_FORCE_INLINE	void								setJointType(PxArticulationJointType::Enum type)	{ mCore.initJointType(type);								}
+		PX_FORCE_INLINE	void								setJointType(PxArticulationJointType::Enum type)	{ mCore.setJointType(type);								}
 		PX_FORCE_INLINE	PxArticulationJointType::Enum		getJointType()								const	{ return PxArticulationJointType::Enum(mCore.jointType);	}
 						
 						void								setFrictionCoefficient(const PxReal coefficient);
@@ -121,9 +120,9 @@ namespace Sc
 		PX_FORCE_INLINE void									setLLIndex(const PxU32 llLinkIndex)					{ mLLLinkIndex = llLinkIndex;	}
 	private:
 						void									setSimDirty();
-		PX_FORCE_INLINE	void									setDirty(Dy::ArticulationJointCoreDirtyFlag::Enum dirtyFlag)
+		PX_FORCE_INLINE	void									setDirty()
 																{
-																	mCore.jointDirtyFlag |= dirtyFlag;
+																	mCore.jCalcUpdateFrames = true;
 																	setSimDirty();
 																}
 

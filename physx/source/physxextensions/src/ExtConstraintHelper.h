@@ -398,8 +398,13 @@ namespace Ext
 				c->velocityTarget = velTarget;
 
 				PxU16 flags = PxU16(c->flags | Px1DConstraintFlag::eSPRING | Px1DConstraintFlag::eHAS_DRIVE_LIMIT);
+				
 				if(drive.flags & PxD6JointDriveFlag::eACCELERATION)
 					flags |= Px1DConstraintFlag::eACCELERATION_SPRING;
+				
+				if (drive.flags & PxD6JointDriveFlag::eOUTPUT_FORCE)
+					flags |= Px1DConstraintFlag::eOUTPUT_FORCE;
+
 				c->flags = flags;
 				c->mods.spring.stiffness = drive.stiffness;
 				c->mods.spring.damping = drive.damping;

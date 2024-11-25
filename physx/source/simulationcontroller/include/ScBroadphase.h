@@ -57,7 +57,7 @@ namespace Sc
 			PX_FORCE_INLINE	PxBroadPhaseCallback*	getBroadPhaseCallback()	const							{ return mBroadPhaseCallback;		}
 
 							void					prepareOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManager);
-							bool					fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManager, const ObjectIDTracker& tracker);
+							bool					fireOutOfBoundsCallbacks(Bp::AABBManagerBase* aabbManager, const ObjectIDTracker& tracker, PxU64 contextID);
 
 							void					flush(Bp::AABBManagerBase* aabbManager);
 

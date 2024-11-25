@@ -32,5 +32,5 @@ using namespace Gu;
 
 #define SWEEP_AABB_IMPL
 #include "foundation/PxVecMath.h"
-using namespace physx::aos;
+using namespace aos;
 #include "GuBV4_BoxSweep_Internal.h"

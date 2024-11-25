@@ -32,7 +32,8 @@
 #include "foundation/PxAllocatorCallback.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxFoundation.h"
-#include "foundation/Px.h"
+#include "foundation/PxIO.h"
+#include <stdlib.h>
 
 #if PX_VC
 	#pragma warning(push)

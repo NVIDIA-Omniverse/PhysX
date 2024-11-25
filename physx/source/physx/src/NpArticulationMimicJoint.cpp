@@ -53,7 +53,11 @@ NpArticulationMimicJoint* NpArticulationMimicJoint::createObject(PxU8*& address,
 }
 //~PX_SERIALIZATION
 
-NpArticulationMimicJoint::NpArticulationMimicJoint(const PxArticulationJointReducedCoordinate& jointA, PxArticulationAxis::Enum axisA, const PxArticulationJointReducedCoordinate& jointB, PxArticulationAxis::Enum axisB, PxReal gearRatio, PxReal offset) : 
+NpArticulationMimicJoint::NpArticulationMimicJoint(
+	const PxArticulationJointReducedCoordinate& jointA, PxArticulationAxis::Enum axisA, 
+	const PxArticulationJointReducedCoordinate& jointB, PxArticulationAxis::Enum axisB, 
+	PxReal gearRatio, PxReal offset,
+	PxReal naturalFrequency, PxReal dampingRatio) :
 	PxArticulationMimicJoint(PxConcreteType::eARTICULATION_MIMIC_JOINT, PxBaseFlag::eOWNS_MEMORY),
 	NpBase(NpType::eARTICULATION_MIMIC_JOINT)
 {
@@ -63,6 +67,8 @@ NpArticulationMimicJoint::NpArticulationMimicJoint(const PxArticulationJointRedu
 	mCore.mAxisB = axisB;
 	mCore.mGearRatio = gearRatio;
 	mCore.mOffset = offset;
+	mCore.mNaturalFrequency = naturalFrequency;
+	mCore.mDampingRatio = dampingRatio;
 }
 
 void NpArticulationMimicJoint::release()
@@ -111,6 +117,26 @@ void NpArticulationMimicJoint::setOffset(const PxReal offset)
 	}
 }
 
+void NpArticulationMimicJoint::setNaturalFrequency(const PxReal naturalFrequency)
+{
+	mCore.mNaturalFrequency = naturalFrequency;
+
+	if (mCore.getSim())
+	{
+		mCore.getSim()->setNaturalFrequency(naturalFrequency);
+	}
+}
+
+void NpArticulationMimicJoint::setDampingRatio(const PxReal dampingRatio)
+{
+	mCore.mDampingRatio = dampingRatio;
+
+	if (mCore.getSim())
+	{
+		mCore.getSim()->setDampingRatio(dampingRatio);
+	}
+}
+
 PxReal NpArticulationMimicJoint::getGearRatio() const
 {
 	return mCore.mGearRatio;
@@ -119,6 +145,16 @@ PxReal NpArticulationMimicJoint::getGearRatio() const
 PxReal NpArticulationMimicJoint::getOffset() const
 {
 	return mCore.mOffset;
+}
+
+PxReal NpArticulationMimicJoint::getNaturalFrequency() const
+{
+	return mCore.mNaturalFrequency;
+}
+
+PxReal NpArticulationMimicJoint::getDampingRatio() const
+{
+	return mCore.mDampingRatio;
 }
 
 PxArticulationJointReducedCoordinate& NpArticulationMimicJoint::getJointA() const 
@@ -139,15 +175,7 @@ PxArticulationAxis::Enum NpArticulationMimicJoint::getAxisA() const
 PxArticulationAxis::Enum NpArticulationMimicJoint::getAxisB() const
 {
 	return PxArticulationAxis::Enum(mCore.mAxisB);
-
 }
-
-
-
-
-
-
-
 
 }
 

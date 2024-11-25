@@ -53,7 +53,7 @@ PX_INLINE PxReal computeMimicJointSelfResponse(const PxU32 linkIndex, const PxU3
 	const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);	
 
 	const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
-	const PxU8 dofCount = artData.getJointData(linkIndex).dof;
+	const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
 
 	const PxReal testJointImpulses[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	const PxReal* testJointImpulse = testJointImpulses[dof];
@@ -135,7 +135,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 		const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);	
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
-		const PxU8 dofCount = artData.getJointData(linkIndex).dof;
+		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
 
 		Zp = propagateImpulseW(
 				parentLinkToChildLink,
@@ -155,7 +155,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 		const PxVec3& parentLinkToChildLink = artData.getRw(linkIndex);
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
-		const PxU8 dofCount = artData.getJointData(linkIndex).dof;
+		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
 
 		//(1) Propagate link impulse (and zero joint impulse) to parent
 		Zp = propagateImpulseW(
@@ -181,7 +181,7 @@ PX_INLINE PxReal computeMimicJointCrossResponse
 		const PxVec3& parentToChild = artData.getRw(linkIndex);
 
 		const PxU32 jointOffset = artData.getJointData(linkIndex).jointOffset;
-		const PxU8 dofCount = artData.getJointData(linkIndex).dof;
+		const PxU8 dofCount = artData.getJointData(linkIndex).nbDof;
 
 		//Compute the jointVelocity only when we reach linkB.
 		PxReal* jointVelocityToUse = ((numFromRootToOtherLink - 1) == k) ? jointVelocity : NULL;
@@ -219,18 +219,20 @@ void setupMimicJointInternal
 	const PxReal rBA = computeMimicJointCrossResponse(linkA, dofA, linkB, dofB, artData, scratchBufferQMinusStZ, scratchBufferQMinusStZLength);
 	const PxReal rAB = computeMimicJointCrossResponse(linkB, dofB, linkA, dofA, artData, scratchBufferQMinusStZ, scratchBufferQMinusStZLength);
 
-	//Combine all 4 response terms to compute the reciprocal of the numerator ( = 1/ J * M^-1 * J^T)
+	//Combine all 4 response terms to compute (J * M^-1 * J^T)
 	const PxReal gearRatio = mimicJointCore.gearRatio;
-	const PxReal effectiveInertia = computeMimicJointEffectiveInertia(rAA, rAB, rBB, rBA, gearRatio);
+	const PxReal recipEffectiveInertia = computeRecipMimicJointEffectiveInertia(rAA, rAB, rBB, rBA, gearRatio);
 
 	//Set everything we now know about the mimic joint.
 	mimicJointInternal.gearRatio = mimicJointCore.gearRatio;
 	mimicJointInternal.offset = mimicJointCore.offset;
+	mimicJointInternal.naturalFrequency = mimicJointCore.naturalFrequency;
+	mimicJointInternal.dampingRatio = mimicJointCore.dampingRatio;
 	mimicJointInternal.linkA = mimicJointCore.linkA;
 	mimicJointInternal.linkB = mimicJointCore.linkB;
 	mimicJointInternal.dofA = dofA;
 	mimicJointInternal.dofB = dofB;
-	mimicJointInternal.effectiveInertia = effectiveInertia;
+	mimicJointInternal.recipEffectiveInertia = recipEffectiveInertia;
 }
 
 void FeatherstoneArticulation::setupInternalMimicJointConstraints()
@@ -267,8 +269,12 @@ void FeatherstoneArticulation::solveInternalMimicJointConstraints(const PxReal d
 		const PxReal gearRatio = internalMimicJoint.gearRatio;
 		const PxReal offset = internalMimicJoint.offset;
 
+		//Get the compliance of the mimic joint
+		const PxReal naturalFrequency = internalMimicJoint.naturalFrequency;
+		const PxReal dampingRatio = internalMimicJoint.dampingRatio;
+
 		//Get the responses of the mimic joint.
-		const PxReal mimicJointEffectiveInertia = internalMimicJoint.effectiveInertia;
+		const PxReal mimicJointRecipEffectiveInertia = internalMimicJoint.recipEffectiveInertia;
 
 		//Get the dofs involved in the mimic joint.
 		//We need these to work out the joint dof speeds and positions.
@@ -302,10 +308,11 @@ void FeatherstoneArticulation::solveInternalMimicJointConstraints(const PxReal d
 			PxReal jointDofImpA = 0;
 			PxReal jointdofImpB = 0;
 			computeMimicJointImpulses(
-				biasCoefficient, invDt, 
+				biasCoefficient, dt, invDt, 
 				qA, qB, qADot, qBDot, 
 				gearRatio, offset, 
-				mimicJointEffectiveInertia,
+				naturalFrequency, dampingRatio, 
+				mimicJointRecipEffectiveInertia,
 				velocityIteration,
 				jointDofImpA, jointdofImpB);
 			jointImpulseA[dofA] = jointDofImpA;

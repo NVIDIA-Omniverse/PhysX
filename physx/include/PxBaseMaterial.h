@@ -40,7 +40,7 @@ namespace physx
 	/**
 	\brief Base material class.
 
-	\see PxPhysics.createMaterial PxPhysics.createFEMClothMaterial PxPhysics.createFEMSoftBodyMaterial PxPhysics.createPBDMaterial
+	\see PxPhysics.createMaterial PxPhysics.createDeformableSurfaceMaterial PxPhysics.createDeformableVolumeMaterial PxPhysics.createPBDMaterial
 	*/
 	class PxBaseMaterial : public PxRefCounted
 	{

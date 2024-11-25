@@ -107,7 +107,7 @@ namespace physx
 		*/
 		virtual	float		getGearRatio()	const		= 0;
 
-		virtual	const char*	getConcreteTypeName() const { return "PxGearJoint"; }
+		virtual	const char*	getConcreteTypeName() const	PX_OVERRIDE	{ return "PxGearJoint"; }
 
 	protected:
 

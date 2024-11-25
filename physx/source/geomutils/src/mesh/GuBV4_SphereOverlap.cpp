@@ -32,7 +32,7 @@ using namespace Gu;
 
 #include "foundation/PxBasicTemplates.h"
 #include "foundation/PxVecMath.h"
-using namespace physx::aos;
+using namespace aos;
 
 #include "GuBV4_Common.h"
 #include "GuSphere.h"

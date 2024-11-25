@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 #include "../snippetrender/SnippetRender.h"
 #include "../snippetrender/SnippetCamera.h"
@@ -60,7 +58,7 @@ namespace
 		PxU32 nbActors = scene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
 		if (nbActors)
 		{
-			std::vector<PxRigidActor*> actors(nbActors);
+			PxArray<PxRigidActor*> actors(nbActors);
 			scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, reinterpret_cast<PxActor**>(&actors[0]), nbActors);
 			Snippets::renderActors(&actors[0], static_cast<PxU32>(actors.size()), true);
 		}
@@ -78,7 +76,7 @@ namespace
 		Snippets::finishRender();
 	}
 
-	void exitCallback(void)
+	void exitCallback()
 	{
 		delete sCamera;
 		cleanupPhysics(true);

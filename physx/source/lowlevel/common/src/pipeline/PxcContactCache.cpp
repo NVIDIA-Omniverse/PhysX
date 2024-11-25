@@ -27,7 +27,7 @@
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
 #include "PxcContactCache.h"
-#include "PxsContactManager.h"
+#include "PxcNpThreadContext.h"
 #include "foundation/PxUtilities.h"
 #include "PxcNpCache.h"
 #include "CmMatrix34.h"
@@ -68,12 +68,12 @@ namespace physx
 			false,		//PxcContactSpherePlane
 			true,		//PxcContactSphereCapsule
 			false,		//PxcContactSphereBox
+			false,		//PxConvexCoreGeometry
 			true,		//PxcContactSphereConvex
 			false,		//ParticleSystem
 			true,		//SoftBody
 			true,		//PxcContactSphereMesh
 			true,		//PxcContactSphereHeightField
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcContactGeometryCustomGeometry
 		},
 
@@ -83,12 +83,12 @@ namespace physx
 			false,		//PxcInvalidContactPair
 			true,		//PxcContactPlaneCapsule
 			true,		//PxcContactPlaneBox
+			false,		//PxConvexCoreGeometry
 			true,		//PxcContactPlaneConvex
 			false,		//ParticleSystem
 			true,		//SoftBody
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcContactGeometryCustomGeometry
 		},
 
@@ -98,12 +98,12 @@ namespace physx
 			false,		//-
 			true,		//PxcContactCapsuleCapsule
 			true,		//PxcContactCapsuleBox
+			false,		//PxConvexCoreGeometry
 			true,		//PxcContactCapsuleConvex
 			false,		//ParticleSystem
 			true,		//SoftBody
 			true,		//PxcContactCapsuleMesh
 			true,		//PxcContactCapsuleHeightField
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcContactGeometryCustomGeometry
 		},
 
@@ -113,12 +113,27 @@ namespace physx
 			false,		//-
 			false,		//-
 			true,		//PxcContactBoxBox
+			false,		//PxConvexCoreGeometry
 			true,		//PxcContactBoxConvex
 			false,		//ParticleSystem
 			true,		//SoftBody
 			true,		//PxcContactBoxMesh
 			true,		//PxcContactBoxHeightField
-			false,		//PxcInvalidContactPair (hair)
+			false,		//PxcContactGeometryCustomGeometry
+		},
+
+		//PxGeometryType::eCONVEXCORE
+		{
+			false,		//-
+			false,		//-
+			false,		//-
+			false,		//-
+			false,		//PxConvexCoreGeometry
+			false,		//PxcContactBoxConvex
+			false,		//ParticleSystem
+			false,		//SoftBody
+			false,		//PxcContactBoxMesh
+			false,		//PxcContactBoxHeightField
 			false,		//PxcContactGeometryCustomGeometry
 		},
 
@@ -128,12 +143,12 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
+			false,		//-
 			true,		//PxcContactConvexConvex
 			false,		//-
 			true,		//-
 			true,		//PxcContactConvexMesh2
 			true,		//PxcContactConvexHeightField
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcContactGeometryCustomGeometry
 		},
 
@@ -146,9 +161,9 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
+			false,		//-
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcInvalidContactPair
 		},
 
@@ -161,9 +176,9 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
+			false,		//-
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcInvalidContactPair
 		},
 
@@ -175,10 +190,10 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
+			false,		//-
 			true,		//-
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
-			false,		//PxcInvalidContactPair (hair)
 			false,		//PxcInvalidContactPair
 		},
 
@@ -190,24 +205,9 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
-			true,		//-
-			false,		//-
-			false,		//PxcInvalidContactPair
-			false,		//PxcInvalidContactPair (hair)
-			false,		//PxcInvalidContactPair
-		},
-
-		//PxGeometryType::eHAIRSYSTEM
-		{
-			false,		//-
-			false,		//-
-			false,		//-
-			false,		//-
-			false,		//-
 			false,		//-
 			true,		//-
 			false,		//-
-			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
 		},
@@ -220,9 +220,9 @@ namespace physx
 			false,		//-
 			false,		//-
 			false,		//-
+			false,		//-
 			true,		//-
 			false,		//-
-			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
 			false,		//PxcInvalidContactPair
 		},
@@ -476,6 +476,7 @@ bool physx::PxcCacheLocalContacts(	PxcNpThreadContext& context, Cache& pairConta
 		{
 			contactsData.mNbCachedContacts	= 0;
 			contactsData.mUseFaceIndices	= false;
+			contactsData.mSameNormal		= false;
 			PxcNpCacheWrite(context.mNpCacheStreamPair, pairContactCache, contactsData, nbBytes, bytes);
 		}
 	}

@@ -29,6 +29,8 @@
 #ifndef PX_CUSTOMGEOMETRY_H
 #define PX_CUSTOMGEOMETRY_H
 
+#include "foundation/PxTransform.h"
+#include "foundation/PxBounds3.h"
 #include "geometry/PxGeometry.h"
 #include "geometry/PxGeometryHit.h"
 #include "geometry/PxGeometryQueryContext.h"

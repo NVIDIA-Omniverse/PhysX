@@ -145,8 +145,12 @@ Sc::ElementSim::~ElementSim()
 
 void Sc::ElementSim::addToAABBMgr(PxReal contactDistance, Bp::FilterGroup::Enum group, Bp::ElementType::Enum type)
 {
+	const ActorCore& actorCore = mActor.getActorCore();
+	const PxU32 aggregateID = actorCore.getAggregateID();
+	const PxU32 envID = actorCore.getEnvID();
+
 	Sc::Scene& scene = getScene();
-	if(!scene.getAABBManager()->addBounds(mElementID, contactDistance, group, this, mActor.getActorCore().getAggregateID(), type))
+	if(!scene.getAABBManager()->addBounds(mElementID, contactDistance, group, this, aggregateID, type, envID))
 		return;
 
 	mInBroadPhase = true;

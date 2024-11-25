@@ -29,6 +29,7 @@
 #ifndef GU_BV32_H
 #define GU_BV32_H
 
+#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxBounds3.h"
 #include "foundation/PxVec4.h"
 #include "common/PxSerialFramework.h"

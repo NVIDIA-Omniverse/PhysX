@@ -33,6 +33,7 @@
 #include "PxPhysXConfig.h"
 #include "foundation/PxFlags.h"
 #include "foundation/PxVec3.h"
+#include "foundation/PxTransform.h"
 #include "common/PxBase.h"
 
 #if !PX_DOXYGEN
@@ -64,7 +65,7 @@ struct Px1DConstraintFlag
 		eRESTITUTION			= 1<<2,	//!< whether the restitution model should be applied to generate the target velocity. Mutually exclusive with eSPRING. If restitution causes a bounces, eKEEPBIAS is ignored
 		eKEEPBIAS				= 1<<3,	//!< whether to keep the error term when solving for velocity. Ignored if restitution generates bounce, or eSPRING is set.
 		eOUTPUT_FORCE			= 1<<4,	//!< whether to accumulate the force value from this constraint in the force total that is reported for the constraint and tested for breakage
-		eHAS_DRIVE_LIMIT		= 1<<5,	//!< whether the constraint has a drive force limit (which will be scaled by dt unless PxConstraintFlag::eLIMITS_ARE_FORCES is set)
+		eHAS_DRIVE_LIMIT		= 1<<5,	//!< whether the constraint has a drive force limit (which will be scaled by dt unless #PxConstraintFlag::eDRIVE_LIMITS_ARE_FORCES is set)
 		eANGULAR_CONSTRAINT		= 1<<6,	//!< whether this is an angular or linear constraint
 		eDEPRECATED_DRIVE_ROW	= 1<<7	//!< whether the constraint's geometric error should drive the target velocity \deprecated this member will be removed in a future version with no substitute
 	};
@@ -110,7 +111,7 @@ struct PxConstraintSolveHint
 	};
 };
 
-/*** 
+/**
 \brief A one-dimensional constraint that constrains the relative motion of two rigid bodies.
 
 A constraint is expressed as a set of 1-dimensional constraint rows which define the required constraint

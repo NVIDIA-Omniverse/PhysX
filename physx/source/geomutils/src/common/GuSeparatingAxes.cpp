@@ -30,12 +30,6 @@
 
 using namespace physx;
 
-union FloatInt
-{
-	float	f;
-	PxU32	i;
-};
-
 bool Gu::SeparatingAxes::addAxis(const PxVec3& axis)
 {
 	PxU32 numAxes = getNumAxes();

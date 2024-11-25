@@ -777,7 +777,7 @@ static bool extractHullPolygons(PxU32& nb_polygons, PxArray<PxU32>& polygon_data
 				{
 					//const AdjTriangle& AT = faces[indices.GetEntry(i)];
 
-					for(PxU32 j= i + 1;j<indices.size();j++)
+					for(PxU32 j = i + 1;j<indices.size();j++)
 					{						
 						const AdjTriangle& testAT = faces[indices[j]];
 

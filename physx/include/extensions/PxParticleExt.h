@@ -34,7 +34,7 @@
 #include "foundation/PxArray.h"
 #include "foundation/PxHashMap.h"
 #include "foundation/PxUserAllocated.h"
-#include "PxAttachment.h"
+#include "PxDeformableAttachment.h"
 
 #if !PX_DOXYGEN
 namespace physx

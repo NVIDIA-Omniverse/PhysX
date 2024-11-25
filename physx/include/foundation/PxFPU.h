@@ -29,6 +29,7 @@
 #ifndef PX_FPU_H
 #define PX_FPU_H
 
+#include "foundation/PxSimpleTypes.h"
 #include "foundation/PxIntrinsics.h"
 #include "foundation/PxAssert.h"
 #include "foundation/PxFoundationConfig.h"

@@ -29,7 +29,6 @@
 #ifndef PX_VEC_MATH_H
 #define PX_VEC_MATH_H
 
-#include "foundation/Px.h"
 #include "foundation/PxIntrinsics.h"
 #include "foundation/PxVec3.h"
 #include "foundation/PxVec4.h"

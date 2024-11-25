@@ -30,6 +30,7 @@
 
 
 #include "foundation/PxSimpleTypes.h"
+#include "foundation/PxTransform.h"
 
 #include "vehicle2/PxVehicleParams.h"
 

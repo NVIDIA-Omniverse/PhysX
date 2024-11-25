@@ -32,6 +32,7 @@
 #include "OmniPvdReader.h"
 #include "OmniPvdLog.h"
 
+
 class OmniPvdReaderImpl : public OmniPvdReader {
 public:
 	OmniPvdReaderImpl();
@@ -68,12 +69,15 @@ public:
 
 	uint64_t OMNI_PVD_CALL getFrameTimeStart();
 	uint64_t OMNI_PVD_CALL getFrameTimeStop();
-	
+
+	bool OMNI_PVD_CALL getMessageData(const char*& message, const char*& file, uint32_t& line, uint32_t& type, OmniPvdClassHandle& handle) override;
+
 	OmniPvdClassHandle OMNI_PVD_CALL getEnumClassHandle();
 	uint32_t OMNI_PVD_CALL getEnumValue();
 
 	// Internal helper
 	void readLongDataFromStream(uint32_t streamByteLen);
+	bool readStringFromStream(char* string, uint16_t& stringLength);
 	void resetCommandParams();
 
 	OmniPvdLog mLog;
@@ -95,12 +99,9 @@ public:
 	uint32_t mCmdBaseClassHandle;
 	uint32_t mCmdAttributeHandle;
 		
-	////////////////////////////////////////////////////////////////////////////////
-	// TODO : take care of buffer length limit at read time!
-	////////////////////////////////////////////////////////////////////////////////
-	char mCmdClassName[1000];
-	char mCmdAttributeName[1000];
-	char mCmdObjectName[1000];
+	char mCmdClassName[OMNI_PVD_MAX_STRING_LENGTH];
+	char mCmdAttributeName[OMNI_PVD_MAX_STRING_LENGTH];
+	char mCmdObjectName[OMNI_PVD_MAX_STRING_LENGTH];
 
 	uint16_t mCmdClassNameLen;
 	uint16_t mCmdAttributeNameLen;
@@ -125,6 +126,16 @@ public:
 
 	bool mIsReadingStarted;
 	uint8_t mReadBaseClassHandle;
+
+	// Messages
+	bool mCmdMessageParsed;
+	uint16_t mCmdMessageLength;
+	char mCmdMessage[OMNI_PVD_MAX_STRING_LENGTH];
+	uint16_t mCmdMessageFileLength;
+	char mCmdMessageFile[OMNI_PVD_MAX_STRING_LENGTH];
+	uint32_t mCmdMessageLine;
+	uint32_t mCmdMessageType;
+	OmniPvdClassHandle mCmdMessageClassHandle;
 };
 
 #endif

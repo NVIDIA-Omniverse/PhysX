@@ -29,14 +29,13 @@
 #ifndef PXFOUNDATION_PXUNIXINTRINSICS_H
 #define PXFOUNDATION_PXUNIXINTRINSICS_H
 
-#include "foundation/Px.h"
 #include "foundation/PxAssert.h"
 
 #if !(PX_LINUX || PX_APPLE_FAMILY)
 #error "This file should only be included by Unix builds!!"
 #endif
 
-#if PX_LINUX && !defined(__CUDACC__) && !PX_EMSCRIPTEN
+#if PX_LINUX && !PX_CUDA_COMPILER && !PX_EMSCRIPTEN
     // Linux and CUDA compilation does not work with std::isfnite, as it is not marked as CUDA callable
     #include <cmath>
     #ifndef isfinite

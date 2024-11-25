@@ -59,13 +59,13 @@ public:
 	\param[in] width The number of samples along the x direction of the resulting SDF volume
 	\param[in] height The number of samples along the y direction of the resulting SDF volume
 	\param[in] depth The number of samples along the z direction of the resulting SDF volume	
-	\param[in] minExtents The minimum corner location of the axis aligned box containing the SDF samples.
-	\param[in] maxExtents The maximum corner location of the axis aligned box containing the SDF samples.
-	\param[in] cellCenteredSamples Determines if the sample points are located at the center of a SDF cell or at the lower left (=min) corner of a cell.
-	\param[out] sdf The distance values. Must provide space for width*height*depth distance samples. Negative distance means the sample point is located inside of the triangle mesh.
-	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally.
+	\param[in] minExtents The minimum corner location of the axis aligned box containing the SDF samples
+	\param[in] maxExtents The maximum corner location of the axis aligned box containing the SDF samples
+	\param[in] cellCenteredSamples Determines if the sample points are located at the center of a SDF cell or at the lower left (=min) corner of a cell
+	\param[out] sdf The distance values. Must provide space for width*height*depth distance samples. Negative distance means the sample point is located inside of the triangle mesh
+	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally
 
-	\return A boolean that indicates whether the SDF creation succeeded.	
+	\return A boolean that indicates whether the SDF creation succeeded
 	*/
 	virtual bool buildSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		const PxVec3& minExtents, const PxVec3& maxExtents, bool cellCenteredSamples, PxReal* sdf, CUstream stream = 0) = 0;
@@ -79,19 +79,22 @@ public:
 	\param[in] width The number of samples along the x direction of the resulting SDF volume
 	\param[in] height The number of samples along the y direction of the resulting SDF volume
 	\param[in] depth The number of samples along the z direction of the resulting SDF volume
-	\param[in] minExtents The minimum corner location of the axis aligned box containing the SDF samples.
-	\param[in] maxExtents The maximum corner location of the axis aligned box containing the SDF samples.
-	\param[in] narrowBandThickness The thickness of the narrow band.
+	\param[in] minExtents The minimum corner location of the axis aligned box containing the SDF samples
+	\param[in] maxExtents The maximum corner location of the axis aligned box containing the SDF samples
+	\param[in] narrowBandThickness The thickness of the narrow band
 	\param[in] cellsPerSubgrid The number of cells in a sparse subgrid block (full block has mSubgridSize^3 cells and (mSubgridSize+1)^3 samples)
 	\param[in] bitsPerSubgridPixel Subgrid pixel compression
+	\param[out] sdfCoarse Used to store the lower resolution, dense backround SDF to provide distance information further away from the mesh's surface
+	\param[out] sdfSubgridsStartSlots Used to store the subgrids start indices
+	\param[out] sdfDataSubgrids Used to store the subgrids
 	\param[out] subgridsMinSdfValue Used to store the minimum sdf value over all subgrids
 	\param[out] subgridsMaxSdfValue Used to store the maximum sdf value over all subgrids
 	\param[out] sdfSubgrids3DTexBlockDimX Used to store x dimension of the texture block that stores the subgrids
 	\param[out] sdfSubgrids3DTexBlockDimY Used to store y dimension of the texture block that stores the subgrids
 	\param[out] sdfSubgrids3DTexBlockDimZ Used to store z dimension of the texture block that stores the subgrids
-	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally.		
+	\param[in] stream The cuda stream on which the conversion is processed. If the default stream (0) is used, a temporary stream will be created internally
 
-	\return A boolean that indicates whether the SDF creation succeeded.
+	\return A boolean that indicates whether the SDF creation succeeded
 	*/
 	virtual bool buildSparseSDF(const PxVec3* vertices, PxU32 numVertices, const PxU32* indices, PxU32 numTriangleIndices, PxU32 width, PxU32 height, PxU32 depth,
 		const PxVec3& minExtents, const PxVec3& maxExtents, PxReal narrowBandThickness, PxU32 cellsPerSubgrid, PxSdfBitsPerSubgridPixel::Enum bitsPerSubgridPixel,

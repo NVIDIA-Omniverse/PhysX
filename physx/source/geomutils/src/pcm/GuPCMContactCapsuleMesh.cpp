@@ -184,7 +184,7 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEE(const Vec3VArg p, const V
 	
 	// if colliding edge (p3,p4) and plane are parallel return no collision
 	const Vec3V pq = V3Sub(q, p);
-	const FloatV npq= V3Dot(n, pq); 
+	const FloatV npq = V3Dot(n, pq); 
 	if(FAllEq(npq, zero))
 		return;
 
@@ -254,7 +254,7 @@ void Gu::PCMCapsuleVsMeshContactGeneration::generateEEMTD(	const Vec3VArg p, con
 	
 	// if colliding edge (p3,p4) and plane are parallel return no collision
 	const Vec3V pq = V3Sub(q, p);
-	const FloatV npq= V3Dot(n, pq); 
+	const FloatV npq = V3Dot(n, pq); 
 	if(FAllEq(npq, zero))
 		return;
 

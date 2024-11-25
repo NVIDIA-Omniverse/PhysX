@@ -1099,8 +1099,14 @@ static void removeAggregateFromDirtyArray(Aggregate* aggregate, PxArray<Aggregat
 }
 
 // PT: userData = Sc::ElementSim
-bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userData, AggregateHandle aggregateHandle, ElementType::Enum volumeType)
+bool AABBManager::addBounds(BoundsIndex index, PxReal contactDistance, Bp::FilterGroup::Enum group, void* userData, AggregateHandle aggregateHandle, ElementType::Enum volumeType, PxU32 envID)
 {
+	if(envID!=PX_INVALID_U32)
+	{
+		envID = PX_INVALID_U32;
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::addBounds - environment ID is not supported in CPU broadphases\n");
+	}
+
 //	PX_ASSERT(checkID(index));
 
 	initEntry(index, contactDistance, group, userData, volumeType);
@@ -1184,9 +1190,15 @@ bool AABBManager::removeBounds(BoundsIndex index)
 }
 
 // PT: TODO: the userData is actually a PxAggregate pointer. Maybe we could expose/use that.
-AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 /*maxNumShapes*/, PxAggregateFilterHint filterHint)
+AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup::Enum group, void* userData, PxU32 /*maxNumShapes*/, PxAggregateFilterHint filterHint, PxU32 envID)
 {
 //	PX_ASSERT(checkID(index));
+
+	if(envID!=PX_INVALID_U32)
+	{
+		envID = PX_INVALID_U32;
+		PxGetFoundation().error(PxErrorCode::eINVALID_PARAMETER, PX_FL, "AABBManager::createAggregate - environment ID is not supported in CPU broadphases\n");
+	}
 
 	Aggregate* aggregate = PX_NEW(Aggregate)(index, filterHint);
 
@@ -1203,7 +1215,7 @@ AggregateHandle AABBManager::createAggregate(BoundsIndex index, Bp::FilterGroup:
 		mAggregates[handle] = aggregate;
 	}
 
-#ifdef BP_USE_AGGREGATE_GROUP_TAIL
+#if BP_USE_AGGREGATE_GROUP_TAIL
 /*		PxU32 id = index;
 		id<<=2;
 		id|=FilterType::AGGREGATE;
@@ -1268,7 +1280,7 @@ bool AABBManager::destroyAggregate(BoundsIndex& index_, Bp::FilterGroup::Enum& g
 	index_ = index;
 	group_ = mGroups[index];
 
-#ifdef BP_USE_AGGREGATE_GROUP_TAIL
+#if BP_USE_AGGREGATE_GROUP_TAIL
 	releaseAggregateGroup(mGroups[index]);
 #endif
 	resetEntry(index);
@@ -1544,7 +1556,7 @@ void AABBManager::updateBPSecondPass(PxcScratchAllocator* scratchAllocator, PxBa
 	const BroadPhaseUpdateData updateData(mAddedHandles.begin(), mAddedHandles.size(),
 		mUpdatedHandles.begin(), mUpdatedHandles.size(),
 		mRemovedHandles.begin(), mRemovedHandles.size(),
-		mBoundsArray.begin(), mGroups.begin(), mContactDistance.begin(), mBoundsArray.getCapacity(),
+		mBoundsArray.begin(), mGroups.begin(), mContactDistance.begin(), mBoundsArray.size(),
 		mFilters,
 		// PT: TODO: this could also be removed now. The key to understanding the refactorings is that none of the two bools below are actualy used by the CPU versions.
 		mBoundsArray.hasChanged(),

@@ -33,7 +33,7 @@
 #include "ScScene.h"
 
 using namespace physx;
-using namespace physx::Dy;
+using namespace Dy;
 
 
 Sc::ParticleSystemSim::ParticleSystemSim(ParticleSystemCore& core, Scene& scene) :
@@ -43,7 +43,7 @@ Sc::ParticleSystemSim::ParticleSystemSim(ParticleSystemCore& core, Scene& scene)
 	
 	mLLParticleSystem = scene.createLLParticleSystem(this);
 
-	mNodeIndex = scene.getSimpleIslandManager()->addParticleSystem(mLLParticleSystem, false);
+	mNodeIndex = scene.getSimpleIslandManager()->addNode(false, false, IG::Node::ePARTICLESYSTEM_TYPE, mLLParticleSystem);
 
 	scene.getSimpleIslandManager()->activateNode(mNodeIndex);
 

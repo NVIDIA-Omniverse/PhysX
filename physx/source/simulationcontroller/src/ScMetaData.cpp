@@ -65,11 +65,11 @@ void Sc::ActorCore::getBinaryMetaData(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_CLASS(stream,	Sc::ActorCore)
 
-	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, ActorSim,			mSim,						PxMetaDataFlag::ePTR)
-	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU32,			    mAggregateIDOwnerClient,	0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxActorFlags,		mActorFlags,				0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU8,				mActorType,					0)
-	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU8,				mDominanceGroup,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, ActorSim,		mSim,				PxMetaDataFlag::ePTR)
+	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU32,			mPackedIDs,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxActorFlags,	mActorFlags,		0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU8,			mActorType,			0)
+	PX_DEF_BIN_METADATA_ITEM(stream,	Sc::ActorCore, PxU8,			mDominanceGroup,	0)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,6 +312,8 @@ void Sc::ArticulationMimicJointCore::getBinaryMetaData(PxOutputStream& stream)
 	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationMimicJointCore, PxU32, mAxisB, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationMimicJointCore, PxReal, mGearRatio, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationMimicJointCore, PxReal, mOffset, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationMimicJointCore, PxReal, mNaturalFrequency, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, ArticulationMimicJointCore, PxReal, mDampingRatio, 0)
 }
 
 
@@ -401,8 +403,6 @@ static void getBinaryMetaData_ArticulationJointCore(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_CLASS(stream, Dy::ArticulationJointCore)	
 
-	PX_DEF_BIN_METADATA_TYPEDEF(stream, ArticulationJointCoreDirtyFlags, PxU8)
-
 	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, PxTransform, parentPose, 0)
 	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, PxTransform, childPose, 0)
 
@@ -426,7 +426,7 @@ static void getBinaryMetaData_ArticulationJointCore(PxOutputStream& stream)
 
 	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, PxReal, maxJointVelocity, 0)
 
-	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, ArticulationJointCoreDirtyFlags, jointDirtyFlag, 0)
+	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, bool, jCalcUpdateFrames, 0)
 
 	PX_DEF_BIN_METADATA_ITEM(stream, Dy::ArticulationJointCore, PxU32, jointOffset, 0)
 

@@ -68,19 +68,19 @@ namespace physx
 
 		PX_CUDA_CALLABLE PX_FORCE_INLINE bool isStaticBody() const { return PxU32(ind >> 32) == PX_INVALID_NODE; }
 
-		PX_CUDA_CALLABLE bool isValid() const { return PxU32(ind >> 32) != PX_INVALID_NODE; }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE bool isValid() const { return PxU32(ind >> 32) != PX_INVALID_NODE; }
 
-		PX_CUDA_CALLABLE void setIndices(PxU32 index, PxU32 articLinkId) { ind = ((PxU64(index) << 32) | (articLinkId << 1) | 1); }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE void setIndices(PxU32 index, PxU32 articLinkId) { ind = ((PxU64(index) << 32) | (articLinkId << 1) | 1); }
 
-		PX_CUDA_CALLABLE void setIndices(PxU32 index) { ind = ((PxU64(index) << 32)); }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE void setIndices(PxU32 index) { ind = ((PxU64(index) << 32)); }
 
-		PX_CUDA_CALLABLE bool operator < (const PxNodeIndex& other) const { return ind < other.ind; }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator < (const PxNodeIndex& other) const { return ind < other.ind; }
 
-		PX_CUDA_CALLABLE bool operator <= (const PxNodeIndex& other) const { return ind <= other.ind; }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator <= (const PxNodeIndex& other) const { return ind <= other.ind; }
 
-		PX_CUDA_CALLABLE bool operator == (const PxNodeIndex& other) const { return ind == other.ind; }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE bool operator == (const PxNodeIndex& other) const { return ind == other.ind; }
 
-		PX_CUDA_CALLABLE PxU64 getInd() const { return ind; }
+		PX_CUDA_CALLABLE PX_FORCE_INLINE PxU64 getInd() const { return ind; }
 	};
 #if !PX_DOXYGEN
 } // namespace physx

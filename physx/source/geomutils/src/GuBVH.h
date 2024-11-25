@@ -41,6 +41,7 @@
 namespace physx
 {
 	struct PxBVHInternalData;
+	class PxInputStream;
 
 namespace Gu
 {

@@ -43,7 +43,7 @@ PrismaticJoint::PrismaticJoint(const PxTolerancesScale& scale, PxRigidActor* act
 	data->jointFlags	= PxPrismaticJointFlags();
 }
 
-PxPrismaticJointFlags PrismaticJoint::getPrismaticJointFlags(void) const
+PxPrismaticJointFlags PrismaticJoint::getPrismaticJointFlags() const
 { 
 	return data().jointFlags;		
 }

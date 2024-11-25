@@ -36,6 +36,9 @@ namespace physx
 {
 #endif
 
+
+template<class Type> class PxMat44T;
+
 /*!
 \brief class representing a rigid euclidean transform as a quaternion and a vector
 */

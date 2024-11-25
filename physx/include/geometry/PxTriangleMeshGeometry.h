@@ -50,8 +50,9 @@ struct PxMeshGeometryFlag
 	{
 		eTIGHT_BOUNDS = (1<<0),	//!< Use tighter (but more expensive to compute) bounds around the triangle mesh geometry.
 		eDOUBLE_SIDED = (1<<1)	//!< Meshes with this flag set are treated as double-sided.
-								//!< This flag is currently only used for raycasts and sweeps (it is ignored for overlap queries).
+								//!< This flag is currently only used for raycasts and sweeps. It is ignored for overlap queries and has no effect on contact generation, i.e. simulation.
 								//!< For detailed specifications of this flag for meshes and heightfields please refer to the Geometry Query section of the user guide.
+								//!< For double-sided collision meshes, consider duplicating their faces with flipped normals.
 	};
 };
 

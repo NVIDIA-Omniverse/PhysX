@@ -112,7 +112,7 @@ public:
 	*/
 	virtual	const void*			getDynamicMergeData()	const	= 0;
 
-	virtual	const char*			getConcreteTypeName() const	{ return "PxPruningStructure";	}
+	virtual	const char*			getConcreteTypeName() const	PX_OVERRIDE	PX_FINAL	{ return "PxPruningStructure";	}
 protected:
 	PX_INLINE					PxPruningStructure(PxType concreteType, PxBaseFlags baseFlags) : PxBase(concreteType, baseFlags) {}
 	PX_INLINE					PxPruningStructure(PxBaseFlags baseFlags) : PxBase(baseFlags) {}

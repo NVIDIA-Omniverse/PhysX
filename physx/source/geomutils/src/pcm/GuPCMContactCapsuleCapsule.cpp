@@ -155,7 +155,7 @@ bool Gu::pcmContactCapsuleCapsule(GU_CONTACT_METHOD_ARGS)
 		if(FAllGrtr(cos, parallelTolerance))//paralle
 		{
 			//project s, e into s1e1
-			const Vec4V t= pcmDistancePointSegmentTValue22(s0, e0, s1, e1,
+			const Vec4V t = pcmDistancePointSegmentTValue22(s0, e0, s1, e1,
 															s1, e1, s0, e0);
 
 			const BoolV con = BAnd(V4IsGrtrOrEq(t, zeroV4), V4IsGrtrOrEq(oneV4, t));

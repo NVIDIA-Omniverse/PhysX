@@ -192,7 +192,7 @@ public:
 
 	\return The string name.
 	*/
-	virtual		const char*					getConcreteTypeName()		const		{ return "PxArticulationLink";	}
+	virtual		const char*					getConcreteTypeName()	const	PX_OVERRIDE	PX_FINAL	{ return "PxArticulationLink";	}
 
 protected:
 	PX_INLINE								PxArticulationLink(PxType concreteType, PxBaseFlags baseFlags) : PxRigidBody(concreteType, baseFlags) {}

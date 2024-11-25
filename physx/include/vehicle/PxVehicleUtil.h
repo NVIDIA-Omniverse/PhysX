@@ -29,7 +29,7 @@
 #ifndef PX_VEHICLE_UTIL_H
 #define PX_VEHICLE_UTIL_H
 
-#include "foundation/Px.h"
+#include "foundation/PxSimpleTypes.h"
 
 #if !PX_DOXYGEN
 namespace physx

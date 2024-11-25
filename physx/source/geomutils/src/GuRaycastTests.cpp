@@ -30,6 +30,8 @@
 #include "geometry/PxConvexMeshGeometry.h"
 #include "geometry/PxTetrahedronMeshGeometry.h"
 #include "geometry/PxCustomGeometry.h"
+#include "geometry/PxConvexCoreGeometry.h"
+#include "geometry/PxGjkQuery.h"
 #include "GuMidphaseInterface.h"
 #include "GuInternal.h"
 #include "GuIntersectionRayCapsule.h"
@@ -39,6 +41,9 @@
 #include "GuDistancePointSegment.h"
 #include "GuConvexMesh.h"
 #include "CmScaling.h"
+#include "GuConvexGeometry.h"
+#include "GuConvexSupport.h"
+#include "GuBounds.h"
 
 using namespace physx;
 using namespace Gu;
@@ -430,25 +435,6 @@ PxU32 raycast_triangleMesh(GU_RAY_FUNC_PARAMS)
 	return Midphase::raycastTriangleMesh(meshData, meshGeom, pose, rayOrigin, rayDir, maxDist, hitFlags, maxHits, hits, stride);
 }
 
-PxU32 raycast_hairsystem(GU_RAY_FUNC_PARAMS)
-{
-	PX_ASSERT(geom.getType() == PxGeometryType::eHAIRSYSTEM);
-	PX_ASSERT(PxAbs(rayDir.magnitudeSquared() - 1)<1e-4f);
-
-	PX_UNUSED(threadContext);
-	PX_UNUSED(stride);
-	PX_UNUSED(rayDir);
-	PX_UNUSED(pose);
-	PX_UNUSED(rayOrigin);
-	PX_UNUSED(maxHits);
-	PX_UNUSED(maxDist);
-	PX_UNUSED(hits);
-	PX_UNUSED(hitFlags);
-	PX_UNUSED(geom);
-
-	return 0;
-}
-
 namespace
 {
 	struct HFTraceSegmentCallback 
@@ -609,6 +595,52 @@ static PxU32 raycast_custom(GU_RAY_FUNC_PARAMS)
 	return 0;
 }
 
+static PxU32 raycast_convexCore(GU_RAY_FUNC_PARAMS)
+{
+	PX_UNUSED(threadContext);
+	PX_UNUSED(stride);
+	PX_UNUSED(maxHits);
+	PX_UNUSED(hitFlags);
+
+	struct GjkSupport : PxGjkQuery::Support
+	{
+		Gu::ConvexShape shape;
+		GjkSupport(const PxConvexCoreGeometry& g)
+		{
+			Gu::makeConvexShape(g, PxTransform(PxIdentity), shape);
+		}
+		virtual PxReal getMargin() const
+		{
+			return shape.margin;
+		}
+		virtual PxVec3 supportLocal(const PxVec3& dir) const
+		{
+			return shape.supportLocal(dir);
+		}
+	};
+
+	const PxConvexCoreGeometry& convex = static_cast<const PxConvexCoreGeometry&>(geom);
+	if (convex.isValid())
+	{
+		PxBounds3 bounds = Gu::computeBounds(convex, pose);
+		bounds.include(rayOrigin);
+		PxReal wiseDist = PxMin(maxDist, bounds.getDimensions().magnitude());
+		PxReal t;
+		PxVec3 n, p;
+		if (PxGjkQuery::raycast(GjkSupport(convex), pose, rayOrigin, rayDir, wiseDist, t, n, p))
+		{
+			PxGeomRaycastHit& hit = *hits;
+			hit.distance = t;
+			hit.position = p;
+			hit.normal = n;
+			hit.flags |= PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PT: table is not static because it's accessed as 'extern' within Gu (bypassing the function call).
 RaycastFunc gRaycastMap[] =
@@ -617,12 +649,12 @@ RaycastFunc gRaycastMap[] =
 	raycast_plane,
 	raycast_capsule,
 	raycast_box,
+	raycast_convexCore,
 	raycast_convexMesh,
 	raycast_particlesystem,
 	raycast_softbody,
-	raycast_triangleMesh,	
+	raycast_triangleMesh,
 	raycast_heightField,
-	raycast_hairsystem,
 	raycast_custom
 };
 PX_COMPILE_TIME_ASSERT(sizeof(gRaycastMap) / sizeof(gRaycastMap[0]) == PxGeometryType::eGEOMETRY_COUNT);

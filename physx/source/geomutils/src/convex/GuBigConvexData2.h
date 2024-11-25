@@ -29,6 +29,7 @@
 #ifndef GU_BIG_CONVEX_DATA2_H
 #define GU_BIG_CONVEX_DATA2_H
 
+#include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
 #include "common/PxMetaData.h"
 #include "GuBigConvexData.h"

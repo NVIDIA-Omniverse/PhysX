@@ -36,7 +36,7 @@
 #include "ScSimStateData.h"
 
 using namespace physx;
-using namespace physx::Dy;
+using namespace Dy;
 using namespace Sc;
 
 #define PX_FREEZE_INTERVAL 1.5f
@@ -86,7 +86,7 @@ BodySim::BodySim(Scene& scene, BodyCore& core, bool compound) :
 	IG::SimpleIslandManager* simpleIslandManager = scene.getSimpleIslandManager();
 	if(!isArticulationLink())
 	{
-		mNodeIndex = simpleIslandManager->addRigidBody(&mLLBody, isKine, isAwake);
+		mNodeIndex = simpleIslandManager->addNode(isAwake, isKine, IG::Node::eRIGID_BODY_TYPE, &mLLBody);
 	}
 	else
 	{
@@ -665,7 +665,7 @@ bool BodySim::updateForces(PxReal dt, PxsRigidBody** updatedBodySims, PxU32* upd
 
 	bool forceChangeApplied = false;
 
-	//if we change the logic like this, which means we don't need to have two seperate variables in the pxgbodysim to represent linAcc and angAcc. However, this
+	//if we change the logic like this, which means we don't need to have two separate variables in the pxgbodysim to represent linAcc and angAcc. However, this
 	//means angAcc will be always 0
 	if( (accDirty || velDirty) && ((simStateData = getSimStateData(false)) != NULL) )
 	{
@@ -751,17 +751,28 @@ void BodySim::setArticulation(ArticulationSim* a, PxReal wakeCounter, bool aslee
 
 		//Articulations defer registering their shapes with the nphaseContext until the IG node index is known.
 		{
+			PxvNphaseImplementationContext*	ctx = mScene.getLowLevelContext()->getNphaseImplementationContext();
 			ElementSim** current = getElements();
 			PxU32 nbElements = getNbElements();
 			while (nbElements--)
 			{
 				ShapeSim* sim = static_cast<ShapeSim*>(*current++);
-				mScene.getLowLevelContext()->getNphaseImplementationContext()->registerShape(mNodeIndex, sim->getCore().getCore(), sim->getElementID(), sim->getActor().getPxActor());
+				ctx->registerShape(mNodeIndex, sim->getCore().getCore(), sim->getElementID(), sim->getActor().getPxActor());
 			}
 		}
 
 		//Force node index into LL shapes
-		setBodyNodeIndex(mNodeIndex);
+		{
+			PxsSimulationController* sc = getScene().getSimulationController();
+			const PxNodeIndex nodeIndex = mNodeIndex;
+			PxU32 nbElems = getNbElements();
+			ElementSim** elems = getElements();
+			while (nbElems--)
+			{
+				ShapeSim* sim = static_cast<ShapeSim*>(*elems++);
+				sc->setPxgShapeBodyNodeIndex(nodeIndex, sim->getElementID());
+			}
+		}
 
 		if (a->getCore().getArticulationFlags() & PxArticulationFlag::eDISABLE_SELF_COLLISION)
 		{

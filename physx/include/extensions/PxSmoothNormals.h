@@ -29,6 +29,7 @@
 #ifndef PX_SMOOTH_NORMALS_H
 #define PX_SMOOTH_NORMALS_H
 
+#include "foundation/PxVec3.h"
 #include "common/PxPhysXCommonConfig.h"
 
 /**

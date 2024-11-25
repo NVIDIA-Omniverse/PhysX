@@ -29,12 +29,15 @@
 #ifndef GU_CONTACTPOLYGONPOLYGON_H
 #define GU_CONTACTPOLYGONPOLYGON_H
 
-#include "foundation/Px.h"
+
+#include "foundation/PxMat33.h"
+#include "foundation/PxMat34.h"
 #include "common/PxPhysXCommonConfig.h"
 
 namespace physx
 {
 class PxContactBuffer;
+class PxPlane;
 
 namespace Cm
 {

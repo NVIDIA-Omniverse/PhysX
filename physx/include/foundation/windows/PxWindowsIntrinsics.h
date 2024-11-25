@@ -30,6 +30,7 @@
 #define PX_WINDOWS_INTRINSICS_H
 
 #include "foundation/PxAssert.h"
+#include <string.h>
 
 // this file is for internal intrinsics - that is, intrinsics that are used in
 // cross platform code but do not appear in the API
@@ -37,6 +38,10 @@
 #if !PX_WINDOWS_FAMILY
 #error "This file should only be included by Windows builds!!"
 #endif
+
+#pragma intrinsic(memcmp)
+#pragma intrinsic(memcpy)
+#pragma intrinsic(memset)
 
 #pragma warning(push)
 //'symbol' is not defined as a preprocessor macro, replacing with '0' for 'directives'

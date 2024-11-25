@@ -51,29 +51,25 @@
 #include "ScElementInteractionMarker.h"
 
 #if PX_SUPPORT_GPU_PHYSX
-	#include "PxSoftBody.h"
-	#include "ScSoftBodySim.h"
-	#include "DySoftBody.h"
-	#if PX_ENABLE_FEATURES_UNDER_CONSTRUCTION
-		#include "PxFEMCloth.h"
-		#include "PxHairSystem.h"
-	#endif
-	#include "ScFEMClothSim.h"
-	#include "DyFEMCloth.h"
+	#include "PxDeformableSurface.h"
+	#include "ScDeformableSurfaceSim.h"
+	#include "DyDeformableSurface.h"
+	#include "PxDeformableVolume.h"
+	#include "ScDeformableVolumeSim.h"
+	#include "DyDeformableVolume.h"
 	#include "ScParticleSystemSim.h"
 	#include "DyParticleSystem.h"
-	#include "ScHairSystemSim.h"
-	#include "DyHairSystem.h"
 #endif
 
 #include "ScArticulationCore.h"
 #include "ScArticulationSim.h"
 #include "ScConstraintCore.h"
 #include "ScConstraintSim.h"
+#include "DyIslandManager.h"
 
 using namespace physx;
-using namespace physx::Cm;
-using namespace physx::Dy;
+using namespace Cm;
+using namespace Dy;
 using namespace Sc;
 
 PX_IMPLEMENT_OUTPUT_ERROR
@@ -135,12 +131,6 @@ void Sc::Scene::collideStep(PxBaseTask* continuation)
 
 	mStats->simStart();
 	mLLContext->beginUpdate();
-
-	mPostNarrowPhase.setTaskManager(*continuation->getTaskManager());
-	mPostNarrowPhase.addReference();
-
-	mFinalizationPhase.setTaskManager(*continuation->getTaskManager());
-	mFinalizationPhase.addReference();
 
 	mRigidBodyNarrowPhase.setContinuation(continuation);
 	mPreRigidBodyNarrowPhase.setContinuation(&mRigidBodyNarrowPhase);
@@ -315,9 +305,6 @@ void Sc::Scene::broadPhase(PxBaseTask* continuation)
 {
 	PX_PROFILE_START_CROSSTHREAD("Basic.broadPhase", mContextId);
 
-	/*mProcessLostPatchesTask.setContinuation(&mPostNarrowPhase);
-	mProcessLostPatchesTask.removeReference();*/
-
 #if PX_SUPPORT_GPU_PHYSX
 	gpu_updateBounds();
 #endif
@@ -333,16 +320,10 @@ void Sc::Scene::broadPhase(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Sc::Scene::processFoundSolverPatches(PxBaseTask* /*continuation*/)
+void Sc::Scene::processSolverPatches(PxBaseTask* /*continuation*/)
 {
 	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
-	mDynamicsContext->processFoundPatches(*mSimpleIslandManager, nphase->getFoundPatchManagers(), nphase->getNbFoundPatchManagers(), nphase->getFoundPatchOutputCounts());
-}
-
-void Sc::Scene::processLostSolverPatches(PxBaseTask* /*continuation*/)
-{
-	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
-	mDynamicsContext->processLostPatches(*mSimpleIslandManager, nphase->getFoundPatchManagers(), nphase->getNbFoundPatchManagers(), nphase->getFoundPatchOutputCounts());
+	mDynamicsContext->processPatches(nphase->getLostFoundPatchManagers(), nphase->getNbLostFoundPatchManagers(), nphase->getLostFoundPatchOutputCounts());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -350,12 +331,11 @@ void Sc::Scene::processLostSolverPatches(PxBaseTask* /*continuation*/)
 void Sc::Scene::broadPhaseFirstPass(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Basic.broadPhaseFirstPass", mContextId);
-
 	const PxU32 numCpuTasks = continuation->getTaskManager()->getCpuDispatcher()->getWorkerCount();
 	mAABBManager->updateBPFirstPass(numCpuTasks, mLLContext->getTaskPool(), mHasContactDistanceChanged, continuation);
 	
-	// AD: we already update the aggregate bounds above, but because we just update all the aggregates all the time,
-	// this should be fine here. The important thing is that we don't mix normal and aggregate bounds in the normal BP.
+	// AD: this combines the update flags of the normal pipeline with the update flags
+	// marking updated bounds for the direct-GPU API.
 	if (isDirectGPUAPIInitialized())
 	{
 		mSimulationController->mergeChangedAABBMgHandle();
@@ -861,7 +841,7 @@ void Sc::Scene::postBroadPhaseStage2(PxBaseTask* continuation)
 		{
 			PxU32 nb = mPreallocatedContactManagers.size();
 			PxsContactManager** managers = mPreallocatedContactManagers.begin();
-			Cm::PoolList<PxsContactManager, PxsContext>& pool = mLLContext->getContactManagerPool();
+			Cm::PoolList<PxsContactManager>& pool = mLLContext->getContactManagerPool();
 			while(nb--)
 			{
 				PxsContactManager* current = *managers++;
@@ -919,25 +899,14 @@ void Sc::Scene::islandInsertion(PxBaseTask* /*continuation*/)
 			if (!bs1.isStaticRigid())
 				nodeIndexB = bs1.getNodeIndex();
 
-			IG::Edge::EdgeType type = IG::Edge::eCONTACT_MANAGER;
-#if PX_SUPPORT_GPU_PHYSX
-			if(actorTypeLargest == PxActorType::eSOFTBODY)
-				type = IG::Edge::eSOFT_BODY_CONTACT;
-			else if (actorTypeLargest == PxActorType::eFEMCLOTH)
-				type = IG::Edge::eFEM_CLOTH_CONTACT;
-			else if(actorTypeLargest == PxActorType::ePBD_PARTICLESYSTEM)
-				type = IG::Edge::ePARTICLE_SYSTEM_CONTACT;
-			else if (actorTypeLargest == PxActorType::eHAIRSYSTEM)
-				type = IG::Edge::eHAIR_SYSTEM_CONTACT;
-#endif
-			IG::EdgeIndex edgeIdx = mSimpleIslandManager->addContactManager(contactManager, bs0.getNodeIndex(), nodeIndexB, interaction, type);
+			const IG::Edge::EdgeType type = getInteractionEdgeType(actorTypeLargest);
+
+			const IG::EdgeIndex edgeIdx = mSimpleIslandManager->addContactManager(contactManager, bs0.getNodeIndex(), nodeIndexB, interaction, type);
+			PX_ASSERT(!contactManager || contactManager->getWorkUnit().mEdgeIndex == edgeIdx);
 
 			interaction->mEdgeIndex = edgeIdx;
 
-			if(contactManager)
-				contactManager->getWorkUnit().mEdgeIndex = edgeIdx;
-
-			//If it is a soft body or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
+			//If it is a deformable volume or particle overlap, treat it as a contact for now (we can hook up touch found/lost events later maybe)
 			if(actorTypeLargest > PxActorType::eARTICULATION_LINK)
 				mSimpleIslandManager->setEdgeConnected(edgeIdx, type);
 		}
@@ -1159,8 +1128,7 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 
 	if(mDt != 0.0f)
 	{
-		mFinalizationPhase.addDependent(*continuation);
-		mFinalizationPhase.removeReference();
+		mFinalizationPhase.setContinuation(continuation);
 
 		if(mPublicFlags & PxSceneFlag::eENABLE_CCD)
 		{
@@ -1180,9 +1148,7 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 		mSolver.setContinuation(&mUpdateBodies);
 		mPostIslandGen.setContinuation(&mSolver);
 		mIslandGen.setContinuation(&mPostIslandGen);
-		mPostNarrowPhase.addDependent(mIslandGen);
-		mPostNarrowPhase.removeReference();
-
+		mPostNarrowPhase.setContinuation(&mIslandGen);
 		mSecondPassNarrowPhase.setContinuation(&mPostNarrowPhase);
 
 		mFinalizationPhase.removeReference();
@@ -1201,18 +1167,22 @@ void Sc::Scene::advanceStep(PxBaseTask* continuation)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Sc::Scene::activateEdgesInternal(const IG::EdgeIndex* activatingEdges, const PxU32 nbActivatingEdges)
+void Sc::Scene::activateEdgesInternal(IG::Edge::EdgeType type)
 {
 	const IG::IslandSim& speculativeSim = mSimpleIslandManager->getSpeculativeIslandSim();
+
+	const IG::EdgeIndex* activatingEdges = speculativeSim.getActivatedEdges(type);
+	const PxU32 nbActivatingEdges = speculativeSim.getNbActivatedEdges(type);
+
 	for(PxU32 i = 0; i < nbActivatingEdges; ++i)
 	{
-		Interaction* interaction = mSimpleIslandManager->getInteraction(activatingEdges[i]);
+		Interaction* interaction = mSimpleIslandManager->getInteractionFromEdgeIndex(activatingEdges[i]);
 
 		if(interaction && !interaction->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
 		{
 			if(speculativeSim.getEdge(activatingEdges[i]).isActive())
 			{
-				const bool proceed = activateInteraction(interaction, NULL);
+				const bool proceed = activateInteraction(interaction);
 
 				if(proceed && (interaction->getType() < InteractionType::eTRACKED_IN_SCENE_COUNT))
 					notifyInteractionActivated(interaction);
@@ -1232,18 +1202,16 @@ void Sc::Scene::secondPassNarrowPhase(PxBaseTask* /*continuation*/)
 		// wake interactions
 		{
 			PX_PROFILE_ZONE("ScScene.wakeInteractions", mContextId);
-			const IG::IslandSim& speculativeSim = mSimpleIslandManager->getSpeculativeIslandSim();
 
 			//KS - only wake contact managers based on speculative state to trigger contact gen. Waking actors based on accurate state
 			//should activate and joints.
 			{
 				//Wake speculatively based on rigid contacts, soft contacts and particle contacts
-				activateEdgesInternal(speculativeSim.getActivatedEdges(IG::Edge::eCONTACT_MANAGER), speculativeSim.getNbActivatedEdges(IG::Edge::eCONTACT_MANAGER));
+				activateEdgesInternal(IG::Edge::eCONTACT_MANAGER);
 #if PX_SUPPORT_GPU_PHYSX
-				activateEdgesInternal(speculativeSim.getActivatedEdges(IG::Edge::eSOFT_BODY_CONTACT), speculativeSim.getNbActivatedEdges(IG::Edge::eSOFT_BODY_CONTACT));
-				activateEdgesInternal(speculativeSim.getActivatedEdges(IG::Edge::eFEM_CLOTH_CONTACT), speculativeSim.getNbActivatedEdges(IG::Edge::eFEM_CLOTH_CONTACT));
-				activateEdgesInternal(speculativeSim.getActivatedEdges(IG::Edge::ePARTICLE_SYSTEM_CONTACT), speculativeSim.getNbActivatedEdges(IG::Edge::ePARTICLE_SYSTEM_CONTACT));
-				activateEdgesInternal(speculativeSim.getActivatedEdges(IG::Edge::eHAIR_SYSTEM_CONTACT), speculativeSim.getNbActivatedEdges(IG::Edge::eHAIR_SYSTEM_CONTACT));
+				activateEdgesInternal(IG::Edge::eSOFT_BODY_CONTACT);
+				activateEdgesInternal(IG::Edge::eFEM_CLOTH_CONTACT);
+				activateEdgesInternal(IG::Edge::ePARTICLE_SYSTEM_CONTACT);
 #endif
 			}
 		}
@@ -1296,59 +1264,18 @@ void Sc::Scene::postNarrowPhase(PxBaseTask* /*continuation*/)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Sc::Scene::processNarrowPhaseTouchEvents()
-{
-	PX_PROFILE_ZONE("Sim.preIslandGen", mContextId);
-
-	PxsContext* context = mLLContext;
-
-	// Update touch states from LL
-	PxU32 newTouchCount, lostTouchCount;
-	PxU32 ccdTouchCount = 0;
-	{
-		PX_PROFILE_ZONE("Sim.preIslandGen.managerTouchEvents", mContextId);
-		context->getManagerTouchEventCount(reinterpret_cast<PxI32*>(&newTouchCount), reinterpret_cast<PxI32*>(&lostTouchCount), NULL);
-		//PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
-		//PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
-
-		mTouchFoundEvents.forceSize_Unsafe(0);
-		mTouchFoundEvents.reserve(newTouchCount);
-		mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
-
-		mTouchLostEvents.forceSize_Unsafe(0);
-		mTouchLostEvents.reserve(lostTouchCount);
-		mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
-
-		context->fillManagerTouchEvents(mTouchFoundEvents.begin(), reinterpret_cast<PxI32&>(newTouchCount), mTouchLostEvents.begin(),
-			reinterpret_cast<PxI32&>(lostTouchCount), NULL, reinterpret_cast<PxI32&>(ccdTouchCount));
-
-		mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
-		mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
-	}
-
-	context->getSimStats().mNbNewTouches = newTouchCount;
-	context->getSimStats().mNbLostTouches = lostTouchCount;
-}
-
 void Sc::Scene::islandGen(PxBaseTask* continuation)
 {
 	PX_PROFILE_ZONE("Sc::Scene::islandGen", mContextId);
 
 	//mLLContext->runModifiableContactManagers(); //KS - moved here so that we can get up-to-date touch found/lost events in IG
 
-	
-	processNarrowPhaseTouchEvents();
-
-	// PT: could we merge processNarrowPhaseTouchEventsStage2 with processNarrowPhaseTouchEvents ?
-	mProcessFoundPatchesTask.setContinuation(continuation);
-	mProcessLostPatchesTask.setContinuation(&mProcessFoundPatchesTask);
-
-	mProcessLostPatchesTask.removeReference();
-	mProcessFoundPatchesTask.removeReference();
+	mProcessPatchesTask.setContinuation(continuation);
+	mProcessPatchesTask.removeReference();
 
 	// extracting information for the contact callbacks must happen before the solver writes the post-solve
 	// velocities and positions into the solver bodies
-	processNarrowPhaseTouchEventsStage2(&mUpdateDynamics);
+	processNarrowPhaseTouchEvents(&mUpdateDynamics);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1399,18 +1326,52 @@ namespace
 	};
 }
 
-void Sc::Scene::processNarrowPhaseTouchEventsStage2(PxBaseTask* continuation)
+void Sc::Scene::processNarrowPhaseTouchEvents(PxBaseTask* continuation)
 {
-	PX_PROFILE_ZONE("Sc::Scene::processNarrowPhaseTouchEventsStage2", mContextId);
+	PX_PROFILE_ZONE("Sc::Scene::processNarrowPhaseTouchEvents", mContextId);
 
-	PxvNphaseImplementationContext*	ctx = mLLContext->getNphaseImplementationContext();
+	PxsContext* context = mLLContext;
+
+	{
+		PX_PROFILE_ZONE("Sim.preIslandGen", mContextId);
+
+		// Update touch states from LL
+		PxU32 newTouchCount, lostTouchCount;
+		PxU32 ccdTouchCount = 0;
+		{
+			PX_PROFILE_ZONE("Sim.preIslandGen.managerTouchEvents", mContextId);
+			context->getManagerTouchEventCount(&newTouchCount, &lostTouchCount, NULL);
+			//PX_ALLOCA(newTouches, PxvContactManagerTouchEvent, newTouchCount);
+			//PX_ALLOCA(lostTouches, PxvContactManagerTouchEvent, lostTouchCount);
+
+			mTouchFoundEvents.forceSize_Unsafe(0);
+			mTouchFoundEvents.reserve(newTouchCount);
+			mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
+
+			mTouchLostEvents.forceSize_Unsafe(0);
+			mTouchLostEvents.reserve(lostTouchCount);
+			mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
+
+			context->fillManagerTouchEvents(mTouchFoundEvents.begin(), newTouchCount,
+											mTouchLostEvents.begin(), lostTouchCount,
+											NULL, ccdTouchCount);
+
+			mTouchFoundEvents.forceSize_Unsafe(newTouchCount);
+			mTouchLostEvents.forceSize_Unsafe(lostTouchCount);
+		}
+
+		context->getSimStats().mNbNewTouches = newTouchCount;
+		context->getSimStats().mNbLostTouches = lostTouchCount;
+	}
+
+	PxvNphaseImplementationContext*	ctx = context->getNphaseImplementationContext();
 
 	PxsContactManagerOutputIterator outputs = ctx->getContactManagerOutputs();
 
 	const PxU32 newTouchCount = mTouchFoundEvents.size();
 
 	{
-		Cm::FlushPool& flushPool = mLLContext->getTaskPool();
+		Cm::FlushPool& flushPool = context->getTaskPool();
 
 		// PT: why not a delegate task here? We seem to be creating a single InteractionNewTouchTask ?
 		InteractionNewTouchTask* task = PX_PLACEMENT_NEW(flushPool.allocate(sizeof(InteractionNewTouchTask)), InteractionNewTouchTask)(mContextId, mTouchFoundEvents.begin(), newTouchCount, outputs, mNPhaseCore);
@@ -1524,7 +1485,7 @@ void Sc::Scene::solver(PxBaseTask* continuation)
 	//Narrowphase is completely finished so the streams can be swapped.
 	mLLContext->swapStreams();
 
-	//PxsContactManagerOutputIterator outputs = this->mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
+	//PxsContactManagerOutputIterator outputs = mLLContext->getNphaseImplementationContext()->getContactManagerOutputs();
 	//mNPhaseCore->processPersistentContactEvents(outputs, continuation);
 }
 
@@ -1536,7 +1497,7 @@ namespace
 	{
 	public:
 		static const PxU32 MaxBodiesPerTask = 256;
-		PxNodeIndex					mBodies[MaxBodiesPerTask];
+		PxsRigidBody*				mBodies[MaxBodiesPerTask];
 		PxU32						mNumBodies;
 		const PxReal				mDt;
 		IG::SimpleIslandManager*	mIslandManager;
@@ -1566,22 +1527,14 @@ namespace
 			PxsRigidBody* updatedBodySims[MaxBodiesPerTask];
 			PxU32 updatedBodyNodeIndices[MaxBodiesPerTask];
 			PxU32 nbUpdatedBodySims = 0;
-
+		
 			PxU32 nb = mNumBodies;
-			const PxNodeIndex* bodies = mBodies;
-			while(nb--)
+			PxsRigidBody** bodies = mBodies;
+			while (nb--)
 			{
-				const PxNodeIndex index = *bodies++;
-
-				if(islandSim.getActiveNodeIndex(index) != PX_INVALID_NODE)
-				{
-					if(islandSim.getNode(index).mType == IG::Node::eRIGID_BODY_TYPE)
-					{
-						PxsRigidBody* body = islandSim.getRigidBody(index);
-						BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(body) - rigidBodyOffset);
-						bodySim->updateForces(mDt, updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, NULL, mAccelerationProvider, maxNumBodies);
-					}
-				}
+				PxsRigidBody* body = *bodies++;
+				BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(body) - rigidBodyOffset);
+				bodySim->updateForces(mDt, updatedBodySims, updatedBodyNodeIndices, nbUpdatedBodySims, NULL, mAccelerationProvider, maxNumBodies);
 			}
 
 			if(nbUpdatedBodySims)
@@ -1662,7 +1615,7 @@ namespace
 
 			for(PxU32 a = 0; a < mNumArticulations; ++a)
 			{
-				ArticulationSim* articSim = islandSim.getArticulationSim(mArticIndices[a]);
+				ArticulationSim* articSim = getArticulationSim(islandSim, mArticIndices[a]);
 
 				articSim->saveLastCCDTransform();
 			}
@@ -1696,10 +1649,9 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 	mNumDeactivatingNodes[IG::Node::eRIGID_BODY_TYPE] = 0;//islandSim.getNbNodesToDeactivate(IG::Node::eRIGID_BODY_TYPE);
 	mNumDeactivatingNodes[IG::Node::eARTICULATION_TYPE] = 0;//islandSim.getNbNodesToDeactivate(IG::Node::eARTICULATION_TYPE);
 //#if PX_SUPPORT_GPU_PHYSX
-	mNumDeactivatingNodes[IG::Node::eSOFTBODY_TYPE] = 0;
-	mNumDeactivatingNodes[IG::Node::eFEMCLOTH_TYPE] = 0;
+	mNumDeactivatingNodes[IG::Node::eDEFORMABLE_SURFACE_TYPE] = 0;
+	mNumDeactivatingNodes[IG::Node::eDEFORMABLE_VOLUME_TYPE] = 0;
 	mNumDeactivatingNodes[IG::Node::ePARTICLESYSTEM_TYPE] = 0;
-	mNumDeactivatingNodes[IG::Node::eHAIRSYSTEM_TYPE] = 0;
 //#endif
 
 	const PxU32 MaxBodiesPerTask = ScBeforeSolverTask::MaxBodiesPerTask;
@@ -1719,16 +1671,24 @@ void Sc::Scene::beforeSolver(PxBaseTask* continuation)
 			PxU32 count = 0;
 			for(; count < MaxBodiesPerTask && i != PxBitMap::Iterator::DONE; i = iter.getNext())
 			{
-				PxsRigidBody* body = islandSim.getRigidBody(PxNodeIndex(i));
-				bool retainsAccelerations = false;
-				if(body)
+				// we need to check if the body is active because putToSleep does raise the
+				// velocityModFlags making it appear as if the body needs to update forces. It can also
+				// happen that we have inactive bodies with modified velocities if the user does not call
+				// autowake when modifying velocities.
+				PxNodeIndex index(i);
+				bool retainAccelerations = false;
+				if(islandSim.getActiveNodeIndex(index) != PX_INVALID_NODE)
 				{
-					task->mBodies[count++] = PxNodeIndex(i);
+					PxsRigidBody* body = getRigidBodyFromIG(islandSim, index);
+					PX_ASSERT(body);
+					PX_ASSERT(islandSim.getNode(index).mType == IG::Node::eRIGID_BODY_TYPE);
 
-					retainsAccelerations = (body->mCore->mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS);
+					task->mBodies[count++] = body;
+
+					retainAccelerations = (body->mCore->mFlags & PxRigidBodyFlag::eRETAIN_ACCELERATIONS);
 				}
 
-				if(!retainsAccelerations)
+				if(!retainAccelerations)
 					mVelocityModifyMap.reset(i);
 			}
 			task->mNumBodies = count;
@@ -1813,10 +1773,10 @@ void Sc::Scene::updateDynamics(PxBaseTask* continuation)
 
 	PxvNphaseImplementationContext* nphase = mLLContext->getNphaseImplementationContext();
 
-	mDynamicsContext->update(*mSimpleIslandManager, continuation, &mProcessLostContactsTask,
+	mDynamicsContext->update(continuation, &mProcessLostContactsTask,
 		nphase,	maxPatchCount, mMaxNbArticulationLinks, mDt, mGravity, mAABBManager->getChangedAABBMgActorHandleMap());
 
-	mSimpleIslandManager->clearDestroyedEdges();
+	mSimpleIslandManager->clearDestroyedPartitionEdges();
 
 	mProcessLostContactsTask3.removeReference();
 	mProcessLostContactsTask2.removeReference();
@@ -2092,22 +2052,18 @@ void Sc::Scene::postThirdPassIslandGen(PxBaseTask* /*continuation*/)
 		//KS - only deactivate contact managers based on speculative state to trigger contact gen. When the actors were deactivated based on accurate state
 		//joints should have been deactivated.
 
-		const PxU32 NbTypes = 5;
-		const IG::Edge::EdgeType types[NbTypes] = {
-			IG::Edge::eCONTACT_MANAGER,
-			IG::Edge::eSOFT_BODY_CONTACT,
-			IG::Edge::eFEM_CLOTH_CONTACT,
-			IG::Edge::ePARTICLE_SYSTEM_CONTACT,
-			IG::Edge::eHAIR_SYSTEM_CONTACT };
-
-		for(PxU32 t = 0; t < NbTypes; ++t)
+		for(PxU32 t = 0; t < IG::Edge::eEDGE_TYPE_COUNT; ++t)
 		{
-			const PxU32 nbDeactivatingEdges = islandSim.getNbDeactivatingEdges(types[t]);
-			const IG::EdgeIndex* deactivatingEdgeIds = islandSim.getDeactivatingEdges(types[t]);
+			const IG::Edge::EdgeType edgeType = IG::Edge::EdgeType(t);
+			if(edgeType == IG::Edge::eCONSTRAINT)
+				continue;
+
+			const PxU32 nbDeactivatingEdges = islandSim.getNbDeactivatingEdges(edgeType);
+			const IG::EdgeIndex* deactivatingEdgeIds = islandSim.getDeactivatingEdges(edgeType);
 
 			for(PxU32 i = 0; i < nbDeactivatingEdges; ++i)
 			{
-				Interaction* interaction = mSimpleIslandManager->getInteraction(deactivatingEdgeIds[i]);
+				Interaction* interaction = mSimpleIslandManager->getInteractionFromEdgeIndex(deactivatingEdgeIds[i]);
 
 				if(interaction && interaction->readInteractionFlag(InteractionFlag::eIS_ACTIVE))
 				{
@@ -2148,9 +2104,6 @@ void Sc::Scene::updateSimulationController(PxBaseTask* continuation)
 		mDynamicsContext->updateBodyCore(continuation);
 	}
 	//mSimulationController->update(cache, boundArray, changedAABBMgrActorHandles);
-
-	/*mProcessLostPatchesTask.setContinuation(&mFinalizationPhase);
-	mProcessLostPatchesTask.removeReference();*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2193,12 +2146,6 @@ void Sc::Scene::postSolver(PxBaseTask* /*continuation*/)
 	mDynamicsContext->getExternalRigidAccelerations().clearAll();
 
 	//afterIntegration(continuation);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void Sc::Scene::constraintProjection(PxBaseTask* /*continuation*/)
-{
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2291,7 +2238,7 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 			PxBitMapPinned& changedAABBMgrActorHandles = mAABBManager->getChangedAABBMgActorHandleMap();
 			for(PxU32 i = previousNumBodiesToDeactivate; i < numBodiesToDeactivate; i++)
 			{
-				PxsRigidBody* rigid = islandSim.getRigidBody(deactivatingIndices[i]);
+				PxsRigidBody* rigid = getRigidBodyFromIG(islandSim, deactivatingIndices[i]);
 				BodySim* bodySim = reinterpret_cast<BodySim*>(reinterpret_cast<PxU8*>(rigid) - rigidBodyOffset);
 				//we need to set the rigid body back to the previous pose for the deactivated objects. This emulates the previous behavior where island gen ran before the solver, ensuring
 				//that bodies that should be deactivated this frame never reach the solver. We now run the solver in parallel with island gen, so objects that should be deactivated this frame
@@ -2345,14 +2292,14 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 
 	for(PxU32 i = previousNumArticsToDeactivate; i < numArticsToDeactivate; ++i)
 	{
-		ArticulationSim* artic = islandSim.getArticulationSim(deactivatingArticIndices[i]);
+		ArticulationSim* artic = getArticulationSim(islandSim, deactivatingArticIndices[i]);
 
 		artic->putToSleep();
 	}
 
-	//PxU32 previousNumClothToDeactivate = mNumDeactivatingNodes[IG::Node::eFEMCLOTH_TYPE];
-	//const PxU32 numClothToDeactivate = islandSim.getNbNodesToDeactivate(IG::Node::eFEMCLOTH_TYPE);
-	//const IG::NodeIndex*const deactivatingClothIndices = islandSim.getNodesToDeactivate(IG::Node::eFEMCLOTH_TYPE);
+	//PxU32 previousNumClothToDeactivate = mNumDeactivatingNodes[IG::Node::eDEFORMABLE_SURFACE_TYPE];
+	//const PxU32 numClothToDeactivate = islandSim.getNbNodesToDeactivate(IG::Node::eDEFORMABLE_SURFACE_TYPE);
+	//const IG::NodeIndex*const deactivatingClothIndices = islandSim.getNodesToDeactivate(IG::Node::eDEFORMABLE_SURFACE_TYPE);
 
 	//for (PxU32 i = previousNumClothToDeactivate; i < numClothToDeactivate; ++i)
 	//{
@@ -2366,10 +2313,10 @@ void Sc::Scene::afterIntegration(PxBaseTask* continuation)
 
 	//for (PxU32 i = previousNumSoftBodiesToDeactivate; i < numSoftBodiesToDeactivate; ++i)
 	//{
-	//	Dy::SoftBody* softbody = islandSim.getLLSoftBody(deactivatingSoftBodiesIndices[i]);
-	//	printf("after Integration: Deactivating soft body %i\n", softbody->getGpuRemapId());
-	//	//mSimulationController->deactivateSoftbody(softbody);
-	//	softbody->getSoftBodySim()->setActive(false, 0);
+	//	Dy::DeformableVolume* deformableVolume = islandSim.getLLDeformableVolume(deactivatingSoftBodiesIndices[i]);
+	//	printf("after Integration: Deactivating deformable volume %i\n", softbody->getGpuRemapId());
+	//	//mSimulationController->deactivateDeformableVolume(deformableVolume);
+	//	deformableVolume->getDeformableVolumeSim()->setActive(false, 0);
 	//}
 
 	PX_PROFILE_STOP_CROSSTHREAD("Basic.dynamics", mContextId);
@@ -2409,7 +2356,10 @@ void Sc::Scene::fireOnAdvanceCallback()
 
 	const PxU32 bodyCount = mClientPosePreviewBodies.size();
 	if(bodyCount)
+	{
+		PX_PROFILE_ZONE("USERCODE - PxSimulationEventCallback::onAdvance", mContextId);
 		mSimulationEventCallback->onAdvance(mClientPosePreviewBodies.begin(), mClientPosePreviewBuffer.begin(), bodyCount);
+	}
 }
 
 void Sc::Scene::finalizationPhase(PxBaseTask* /*continuation*/)

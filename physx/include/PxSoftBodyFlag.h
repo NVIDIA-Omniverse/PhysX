@@ -29,35 +29,24 @@
 #ifndef PX_SOFT_BODY_FLAG_H
 #define PX_SOFT_BODY_FLAG_H
 
-#include "PxPhysXConfig.h"
-#include "foundation/PxFlags.h"
+#include "PxDeformableVolumeFlag.h"
 
 #if !PX_DOXYGEN
 namespace physx
 {
 #endif
-	
+
 /**
-\brief Identifies the buffers of a PxSoftBody.
-
-\see PxSoftBody::markDirty()
+\brief Deprecated
+\see PxDeformableVolumeDataFlag
 */
-struct PxSoftBodyDataFlag
-{
-	enum Enum
-	{
-		eNONE = 0,
+typedef PX_DEPRECATED PxDeformableVolumeDataFlag PxSoftBodyDataFlag;
 
-		ePOSITION_INVMASS = 1 << 0,             //!< The collision mesh's positions
-		eSIM_POSITION_INVMASS = 1 << 1,         //!< The simulation mesh's positions and inverse masses
-		eSIM_VELOCITY = 1 << 2,                 //!< The simulation mesh's velocities
-		eREST_POSITION_INVMASS = 1 << 3,        //!< The collision mesh's rest positions
-
-		eALL = ePOSITION_INVMASS | eSIM_POSITION_INVMASS | eSIM_VELOCITY | eREST_POSITION_INVMASS
-	};
-};
-
-typedef PxFlags<PxSoftBodyDataFlag::Enum, PxU32> PxSoftBodyDataFlags;
+/**
+\brief Deprecated
+\see PxDeformableVolumeDataFlags
+*/
+typedef PX_DEPRECATED PxDeformableVolumeDataFlags PxSoftBodyDataFlags;
 
 /**
 \brief These flags determine what data is read or written when using PxScene::copySoftBodyData()

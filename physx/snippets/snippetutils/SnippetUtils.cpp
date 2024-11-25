@@ -174,7 +174,7 @@ namespace SnippetUtils
 		{
 		}
 
-		virtual void execute(void)											
+		virtual void execute()											
 		{ 
 			mEntryPoint(mData);
 		}

@@ -798,7 +798,7 @@ bool Sn::ConvX::convertCollection(const void* buffer, int fileSize, int nbObject
 
 	const int ptrSize_Src = mSrcPtrSize;
 	const int ptrSize_Dst = mDstPtrSize;
-	Item* objects = PX_NEW(Item)[PxU32(nbObjects)];
+	Item* objects = (nbObjects != 0) ? PX_NEW(Item)[PxU32(nbObjects)] : NULL;
 
 	for(PxU32 i=0;i<PxU32(nbObjects);i++)
 	{

@@ -28,8 +28,6 @@
 
 #ifdef RENDER_SNIPPET
 
-#include <vector>
-
 #include "PxPhysicsAPI.h"
 
 #include "../snippetrender/SnippetRender.h"
@@ -63,7 +61,7 @@ void renderCallback()
 		scene->getArticulations(&articulation, 1, i);
 
 		const PxU32 nbLinks = articulation->getNbLinks();
-		std::vector<PxArticulationLink*> links(nbLinks);
+		PxArray<PxArticulationLink*> links(nbLinks);
 		articulation->getLinks(&links[0], nbLinks);
 
 		PxReal colorScale = 1.0f;
@@ -78,7 +76,7 @@ void renderCallback()
 	Snippets::finishRender();
 }
 
-void exitCallback(void)
+void exitCallback()
 {
 	delete sCamera;
 	cleanupPhysics(true);
