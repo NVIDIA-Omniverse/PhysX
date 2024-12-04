@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrating From PhysX SDK 5.4 to 5.5 &mdash; physx 5.5.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PhysX SDK API" href="../_api_build/physx_api.html" />
+    <link rel="prev" title="Migrating From PhysX SDK 5.3 to 5.4" href="MigrationTo54.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DeformableBodyOverview.html">Deformable Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DeformableVolume.html">Deformable Volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Migrating From PhysX SDK 5.4 to 5.5</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#deformable-volumes">Deformable Volumes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Migrating From PhysX SDK 5.4 to 5.5</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="migrating-from-physx-sdk-5-4-to-5-5">
+<span id="migrationto55"></span><h1>Migrating From PhysX SDK 5.4 to 5.5<a class="headerlink" href="#migrating-from-physx-sdk-5-4-to-5-5" title="Permalink to this headline"></a></h1>
+<ul class="simple">
+<li><p>This guide highlights all significant parts of the API that have changed in the last release. An application with a working integration of the older version of PhysX should be able to easily migrate to the newer version by following these pointers.</p></li>
+</ul>
+<section id="deformable-volumes">
+<h2>Deformable Volumes<a class="headerlink" href="#deformable-volumes" title="Permalink to this headline"></a></h2>
+<p>The API for the deformable feature has been reworked. Generally a “Soft Body” is now refered to as “Deformable Volume”. A new “Deformable Surface” feature has been added for the simulation of cloth, shells or sheats. The new actor type hierarchy looks like this:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxActor</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxRigidActor</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxRigidStatic</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxRigidBody</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxRigidDynamic</span><span class="w"></span>
+<span class="w">            </span><span class="n">PxArticulationLink</span><span class="w"></span>
+<span class="w">    </span><span class="n">PxDeformableBody</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxDeformableSurface</span><span class="w"></span>
+<span class="w">        </span><span class="n">PxDeformableVolume</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Here is a list of APIs that have been deprecated and should be replaced.</p>
+<ul class="simple">
+<li><p>PxSoftBody, use PxDeformableVolume instead</p></li>
+<li><p>PxSoftBodyFlag and PxSoftBodyFlags, use PxDeformableVolumeFlag and PxDeformableVolumeFlags instead</p></li>
+<li><p>PxSoftBodyDataFlag and PxSoftBodyDataFlags, use PxDeformableVolumeDataFlag and PxDeformableVolumeDataFlags instead</p></li>
+<li><p>PxFEMSoftBodyMaterial, use PxDeformableVolumeMaterial instead</p></li>
+<li><p>PxSoftBodyMesh, use PxDeformableVolumeMesh instead</p></li>
+<li><p>PxSoftBodyAuxData, use PxDeformableVolumeAuxData instead</p></li>
+<li><p>PxFEMMaterial, use PxDeformableMaterial instead.</p></li>
+<li><p>PxFEMParameters::velocityDamping, use PxDeformableBody::setLinearDamping instead</p></li>
+<li><p>PxFEMParameters::settlingThreshold, use PxDeformableBody::setSettlingThreshold instead</p></li>
+<li><p>PxFEMParameters::sleepThreshold, use PxDeformableBody::setSleepThreshold instead</p></li>
+<li><p>PxFEMParameters::sleepDamping, use PxDeformableBody::setSettlingDamping instead</p></li>
+<li><p>PxFEMParameters::selfCollisionFilterDistance, use PxDeformableBody::setSelfCollisionFilterDistance instead</p></li>
+<li><p>PxFEMParameters::selfCollisionStressTolerance, use PxDeformableVolume::setSelfCollisionStressTolerance instead</p></li>
+<li><p>PxSoftBodyFlag::eDISABLE_SELF_COLLISION, use PxDeformableBodyFlag::eDISABLE_SELF_COLLISION instead</p></li>
+<li><p>PxSoftBodyFlag::eENABLE_CCD, use PxDeformableBodyFlag::eENABLE_SPECULATIVE_CCD instead</p></li>
+<li><p>PxSoftBodyFlag::eKINEMATIC, use PxDeformableBodyFlag::eKINEMATIC instead</p></li>
+<li><p>PxSoftBody::setKinematicTargetBufferD(const PxVec4* positions, PxDeformableVolumeFlags flags), use setKinematicTargetBufferD(const PxVec4* positions) instead. Note that the kinematic flags of the deformable volume (PxDeformableBodyFlag::eKINEMATIC and PxDeformableVolumeFlag::ePARTIALLY_KINEMATIC) are not raised or cleared automatically, but instead have to be set by the application via PxDeformableVolume::setDeformableVolumeFlag and PxDeformableBody::setDeformableBodyFlag.</p></li>
+<li><p>PxSoftBodyExt, use PxDeformableVolumeExt instead.</p></li>
+<li><p>PxPhysics::createSoftBody(), use createDeformableVolume() instead.</p></li>
+<li><p>PxPhysics::createFEMSoftBodyMaterial(), use createDeformableVolumeMaterial() instead.</p></li>
+<li><p>PxPhysics::getNbFEMSoftBodyMaterials(), use getNbDeformableVolumeMaterials() instead.</p></li>
+<li><p>PxPhysics::getFEMSoftBodyMaterials(), use getDeformableVolumeMaterials() instead.</p></li>
+<li><p>PxScene::getNbSoftBodies(), use getNbDeformableVolumes() instead.</p></li>
+<li><p>PxScene::getSoftBodies(), use getDeformableVolumes() instead.</p></li>
+<li><p>DampingScale (get and set) in PxDeformableMaterial, adjust the elasticity damping to get a similar effect</p></li>
+<li><p>Damping (get and set) in PxDeformableMaterial, use ElasticityDamping instead.</p></li>
+</ul>
+<p>The classes have been renamed and replaced with typedefs for backwards compatibility. Note that sometimes compile errors can occur in application code due to forward class definitions. Redundant class definitions should be removed. Either the code needs to be completely upgraded, including APIs and include files, or the forward class definitions need to be replaced by typedefs. E.g.:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">PxSoftBody</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+
+<span class="n">to</span><span class="w"></span>
+
+<span class="k">namespace</span><span class="w"> </span><span class="nn">physx</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">typedef</span><span class="w"> </span><span class="n">PxDeformableVolume</span><span class="w"> </span><span class="n">PxSoftBody</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The following APIs have been removed completely</p>
+<ul class="simple">
+<li><p>PxFEMMaterialTableIndex has been replaced with PxDeformableMaterialTableIndex</p></li>
+<li><p>PxDeformableVolumeExt::commit has been removed. Please use PxDeformableVolumeExt::copyToDevice instead.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 04, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

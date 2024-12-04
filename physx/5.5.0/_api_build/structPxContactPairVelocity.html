@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PxContactPairVelocity &mdash; physx 5.5.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PxContactPatch" href="structPxContactPatch.html" />
+    <link rel="prev" title="PxContactPairPose" href="structPxContactPairPose.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../docs/License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DeformableBodyOverview.html">Deformable Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DeformableVolume.html">Deformable Volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/SceneQueries.html">Scene Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../docs/MigrationTo55.html">Migrating From PhysX SDK 5.4 to 5.5</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="physx_api.html">PhysX SDK API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#directory-hierarchy">Directory hierarchy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="physx_api.html#namespace-hierarchy">Namespace hierarchy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="physx_api.html#api-contents">API contents</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="classes.html">Classes</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="structExtGpu_1_1PxParticleAndDiffuseBufferDesc.html">PxParticleAndDiffuseBufferDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classExtGpu_1_1PxParticleAttachmentBuffer.html">PxParticleAttachmentBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structExtGpu_1_1PxParticleBufferDesc.html">PxParticleBufferDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classExtGpu_1_1PxParticleClothBufferHelper.html">PxParticleClothBufferHelper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structExtGpu_1_1PxParticleClothConstraint.html">PxParticleClothConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classExtGpu_1_1PxParticleClothCooker.html">PxParticleClothCooker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classExtGpu_1_1PxParticleRigidBufferHelper.html">PxParticleRigidBufferHelper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structExtGpu_1_1PxParticleRigidDesc.html">PxParticleRigidDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classExtGpu_1_1PxParticleVolumeBufferHelper.html">PxParticleVolumeBufferHelper</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structExtGpu_1_1PxParticleVolumeMesh.html">PxParticleVolumeMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structOmniPvdCommand.html">OmniPvdCommand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structOmniPvdDataType.html">OmniPvdDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileReadStream.html">OmniPvdFileReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdFileWriteStream.html">OmniPvdFileWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdMemoryStream.html">OmniPvdMemoryStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReadStream.html">OmniPvdReadStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdReader.html">OmniPvdReader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriteStream.html">OmniPvdWriteStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classOmniPvdWriter.html">OmniPvdWriter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structOmniPvdWriterStatusFlag.html">OmniPvdWriterStatusFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPx1DConstraint.html">Px1DConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPx1DConstraintFlag.html">Px1DConstraintFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAABBManager.html">PxAABBManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxActor.html">PxActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxActorCacheFlag.html">PxActorCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxActorFlag.html">PxActorFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxActorShape.html">PxActorShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxActorType.html">PxActorType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxActorTypeFlag.html">PxActorTypeFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAggregate.html">PxAggregate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxAggregateType.html">PxAggregateType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAlignedAllocator.html">PxAlignedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocationListener.html">PxAllocationListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocator.html">PxAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAllocatorCallback.html">PxAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxAllocatorTraits.html">PxAllocatorTraits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyCallback.html">PxAnisotropyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxAnisotropyGenerator.html">PxAnisotropyGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArrayConverter.html">PxArrayConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationAttachment.html">PxArticulationAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationAxis.html">PxArticulationAxis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCache.html">PxArticulationCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationCacheFlag.html">PxArticulationCacheFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationDataRC.html">PxArticulationDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationDrive.html">PxArticulationDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationDriveType.html">PxArticulationDriveType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationFixedTendon.html">PxArticulationFixedTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationFlag.html">PxArticulationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIComputeType.html">PxArticulationGPUAPIComputeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationGPUAPIMaxCounts.html">PxArticulationGPUAPIMaxCounts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIReadType.html">PxArticulationGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGPUAPIWriteType.html">PxArticulationGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationGpuDataType.html">PxArticulationGpuDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationJointDataRC.html">PxArticulationJointDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationJointReducedCoordinate.html">PxArticulationJointReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationJointType.html">PxArticulationJointType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationKinematicFlag.html">PxArticulationKinematicFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLimit.html">PxArticulationLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationLink.html">PxArticulationLink</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLinkCookie.html">PxArticulationLinkCookie</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLinkDataRC.html">PxArticulationLinkDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLinkDerivedDataRC.html">PxArticulationLinkDerivedDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLinkHandle.html">PxArticulationLinkHandle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationLinkMutableDataRC.html">PxArticulationLinkMutableDataRC</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationMimicJoint.html">PxArticulationMimicJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationMotion.html">PxArticulationMotion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationReducedCoordinate.html">PxArticulationReducedCoordinate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxArticulationRootLinkData.html">PxArticulationRootLinkData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationSpatialTendon.html">PxArticulationSpatialTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendon.html">PxArticulationTendon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonJoint.html">PxArticulationTendonJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxArticulationTendonLimit.html">PxArticulationTendonLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH.html">PxBVH</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBVH33MidphaseDesc.html">PxBVH33MidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH33TriangleMesh.html">PxBVH33TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBVH34BuildStrategy.html">PxBVH34BuildStrategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBVH34MidphaseDesc.html">PxBVH34MidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVH34TriangleMesh.html">PxBVH34TriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBVHBuildStrategy.html">PxBVHBuildStrategy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBVHDesc.html">PxBVHDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBVHInternalData.html">PxBVHInternalData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBase.html">PxBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBaseFlag.html">PxBaseFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseMaterial.html">PxBaseMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBaseTask.html">PxBaseTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBatchQueryExt.html">PxBatchQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBatchQueryStatus.html">PxBatchQueryStatus</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBinaryConverter.html">PxBinaryConverter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitAndDataT.html">PxBitAndDataT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBitMapBase.html">PxBitMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBoundedData.html">PxBoundedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBounds3.html">PxBounds3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxController.html">PxBoxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxControllerDesc.html">PxBoxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxGeometry.html">PxBoxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBoxObstacle.html">PxBoxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhase.html">PxBroadPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseCallback.html">PxBroadPhaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhaseCaps.html">PxBroadPhaseCaps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseDesc.html">PxBroadPhaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseExt.html">PxBroadPhaseExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhasePair.html">PxBroadPhasePair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhaseRegion.html">PxBroadPhaseRegion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhaseRegionInfo.html">PxBroadPhaseRegionInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseRegions.html">PxBroadPhaseRegions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhaseResults.html">PxBroadPhaseResults</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxBroadPhaseType.html">PxBroadPhaseType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadPhaseUpdateData.html">PxBroadPhaseUpdateData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcast.html">PxBroadcast</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingAllocator.html">PxBroadcastingAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxBroadcastingErrorCallback.html">PxBroadcastingErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCCDContactModifyCallback.html">PxCCDContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCUenum.html">PxCUenum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCache.html">PxCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCacheAllocator.html">PxCacheAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCapsuleClimbingMode.html">PxCapsuleClimbingMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleController.html">PxCapsuleController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleControllerDesc.html">PxCapsuleControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleGeometry.html">PxCapsuleGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCapsuleObstacle.html">PxCapsuleObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashMap.html">PxCoalescedHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCoalescedHashSet.html">PxCoalescedHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollection.html">PxCollection</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollectionExt.html">PxCollectionExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionMeshMappingData.html">PxCollisionMeshMappingData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCollisionTetrahedronMeshData.html">PxCollisionTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCombineMode.html">PxCombineMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConcreteType.html">PxConcreteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConeLimitParams.html">PxConeLimitParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConeLimitedConstraint.html">PxConeLimitedConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraint.html">PxConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintAllocator.html">PxConstraintAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintBatchHeader.html">PxConstraintBatchHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintConnector.html">PxConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintExtIDs.html">PxConstraintExtIDs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintFlag.html">PxConstraintFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintInfo.html">PxConstraintInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintInvMassScale.html">PxConstraintInvMassScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintResidual.html">PxConstraintResidual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintShaderTable.html">PxConstraintShaderTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintSolveHint.html">PxConstraintSolveHint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConstraintVisualizationFlag.html">PxConstraintVisualizationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConstraintVisualizer.html">PxConstraintVisualizer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContact.html">PxContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactBuffer.html">PxContactBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactJoint.html">PxContactJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyCallback.html">PxContactModifyCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactModifyPair.html">PxContactModifyPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPair.html">PxContactPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairExtraDataItem.html">PxContactPairExtraDataItem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairExtraDataIterator.html">PxContactPairExtraDataIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairExtraDataType.html">PxContactPairExtraDataType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairFlag.html">PxContactPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairFrictionAnchor.html">PxContactPairFrictionAnchor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairHeader.html">PxContactPairHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairHeaderFlag.html">PxContactPairHeaderFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairIndex.html">PxContactPairIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairPoint.html">PxContactPairPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPairPose.html">PxContactPairPose</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PxContactPairVelocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPatch.html">PxContactPatch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactPoint.html">PxContactPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactRecorder.html">PxContactRecorder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxContactSet.html">PxContactSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxContactStreamIterator.html">PxContactStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxController.html">PxController</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerBehaviorCallback.html">PxControllerBehaviorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerBehaviorFlag.html">PxControllerBehaviorFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerCollisionFlag.html">PxControllerCollisionFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerDebugRenderFlag.html">PxControllerDebugRenderFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerDesc.html">PxControllerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilterCallback.html">PxControllerFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerFilters.html">PxControllerFilters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerHit.html">PxControllerHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxControllerManager.html">PxControllerManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerNonWalkableMode.html">PxControllerNonWalkableMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerObstacleHit.html">PxControllerObstacleHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerShapeHit.html">PxControllerShapeHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerShapeType.html">PxControllerShapeType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerState.html">PxControllerState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllerStats.html">PxControllerStats</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxControllersHit.html">PxControllersHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConverterReportMode.html">PxConverterReportMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexCore.html">PxConvexCore</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexCoreExt.html">PxConvexCoreExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexCoreGeometry.html">PxConvexCoreGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConvexFlag.html">PxConvexFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMesh.html">PxConvexMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConvexMeshCookingResult.html">PxConvexMeshCookingResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConvexMeshCookingType.html">PxConvexMeshCookingType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshDesc.html">PxConvexMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxConvexMeshGeometry.html">PxConvexMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxConvexMeshGeometryFlag.html">PxConvexMeshGeometryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCookingParams.html">PxCookingParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCounterFrequencyToTensOfNanos.html">PxCounterFrequencyToTensOfNanos</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCpuDispatcher.html">PxCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCreateArticulationLinkCookie.html">PxCreateArticulationLinkCookie</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContext.html">PxCudaContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManager.html">PxCudaContextManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCudaContextManagerDesc.html">PxCudaContextManagerDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCudaInteropRegisterFlag.html">PxCudaInteropRegisterFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxCudaKernelParam.html">PxCudaKernelParam</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometry.html">PxCustomGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomGeometryExt.html">PxCustomGeometryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystem.html">PxCustomSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxCustomSceneQuerySystemAdapter.html">PxCustomSceneQuerySystemAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxD6Axis.html">PxD6Axis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxD6Drive.html">PxD6Drive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6Joint.html">PxD6Joint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxD6JointDrive.html">PxD6JointDrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxD6JointDriveFlag.html">PxD6JointDriveFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxD6Motion.html">PxD6Motion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDataAccessFlag.html">PxDataAccessFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugArc.html">PxDebugArc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugArrow.html">PxDebugArrow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugBasis.html">PxDebugBasis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugBox.html">PxDebugBox</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugCircle.html">PxDebugCircle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugColor.html">PxDebugColor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugLine.html">PxDebugLine</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugPoint.html">PxDebugPoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugText.html">PxDebugText</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDebugTriangle.html">PxDebugTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultAllocator.html">PxDefaultAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultCpuDispatcher.html">PxDefaultCpuDispatcher</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDefaultCpuDispatcherWaitForWorkMode.html">PxDefaultCpuDispatcherWaitForWorkMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultErrorCallback.html">PxDefaultErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileInputData.html">PxDefaultFileInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultFileOutputStream.html">PxDefaultFileOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryInputData.html">PxDefaultMemoryInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDefaultMemoryOutputStream.html">PxDefaultMemoryOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableAttachment.html">PxDeformableAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableAttachmentData.html">PxDeformableAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableAttachmentTargetType.html">PxDeformableAttachmentTargetType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableBody.html">PxDeformableBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableBodyFlag.html">PxDeformableBodyFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableElementFilter.html">PxDeformableElementFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableElementFilterData.html">PxDeformableElementFilterData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableMaterial.html">PxDeformableMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableSkinning.html">PxDeformableSkinning</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableSkinningExt.html">PxDeformableSkinningExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableSurface.html">PxDeformableSurface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableSurfaceDataFlag.html">PxDeformableSurfaceDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableSurfaceExt.html">PxDeformableSurfaceExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableSurfaceFlag.html">PxDeformableSurfaceFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableSurfaceMaterial.html">PxDeformableSurfaceMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolume.html">PxDeformableVolume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeAuxData.html">PxDeformableVolumeAuxData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeCollisionData.html">PxDeformableVolumeCollisionData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableVolumeDataFlag.html">PxDeformableVolumeDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeExt.html">PxDeformableVolumeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableVolumeFlag.html">PxDeformableVolumeFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeMaterial.html">PxDeformableVolumeMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeformableVolumeMaterialModel.html">PxDeformableVolumeMaterialModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeMesh.html">PxDeformableVolumeMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeSimulationData.html">PxDeformableVolumeSimulationData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeformableVolumeSimulationDataDesc.html">PxDeformableVolumeSimulationDataDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDelayLoadHook.html">PxDelayLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDeletionEventFlag.html">PxDeletionEventFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeletionListener.html">PxDeletionListener</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeserializationContext.html">PxDeserializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDeviceAllocatorCallback.html">PxDeviceAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDiffuseParticleParams.html">PxDiffuseParticleParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDim3.html">PxDim3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDirectGPUAPI.html">PxDirectGPUAPI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDistanceJoint.html">PxDistanceJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDistanceJointFlag.html">PxDistanceJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDominanceGroupPair.html">PxDominanceGroupPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxDynamicArrayReportCallback.html">PxDynamicArrayReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxDynamicTreeSecondaryPruner.html">PxDynamicTreeSecondaryPruner</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxEqual.html">PxEqual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxErrorCallback.html">PxErrorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxErrorCode.html">PxErrorCode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxExtendedContact.html">PxExtendedContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxExternalStorageReportCallback.html">PxExternalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFEMParameters.html">PxFEMParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFPUGuard.html">PxFPUGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFileBuf.html">PxFileBuf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFilterData.html">PxFilterData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFilterFlag.html">PxFilterFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFilterObjectFlag.html">PxFilterObjectFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFilterObjectType.html">PxFilterObjectType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFilterOp.html">PxFilterOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedJoint.html">PxFixedJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFixedSizeLookupTable.html">PxFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFlags.html">PxFlags</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxForceMode.html">PxForceMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFoundation.html">PxFoundation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxFrictionAnchorStreamIterator.html">PxFrictionAnchorStreamIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFrictionPatch.html">PxFrictionPatch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxFrictionType.html">PxFrictionType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGearJoint.html">PxGearJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeomIndexPair.html">PxGeomIndexPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeomOverlapHit.html">PxGeomOverlapHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeomRaycastHit.html">PxGeomRaycastHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeomSweepHit.html">PxGeomSweepHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometry.html">PxGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryHolder.html">PxGeometryHolder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGeometryQuery.html">PxGeometryQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeometryQueryFlag.html">PxGeometryQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGeometryType.html">PxGeometryType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQuery.html">PxGjkQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGjkQueryExt.html">PxGjkQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuActorPair.html">PxGpuActorPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuBodyData.html">PxGpuBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuContactPair.html">PxGpuContactPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuDynamicsMemoryConfig.html">PxGpuDynamicsMemoryConfig</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuDynamicsMemoryConfigStatistics.html">PxGpuDynamicsMemoryConfigStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuFixedTendonData.html">PxGpuFixedTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuLoadHook.html">PxGpuLoadHook</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuMirroredPointer.html">PxGpuMirroredPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuParticleBufferIndexPair.html">PxGpuParticleBufferIndexPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGpuParticleData.html">PxGpuParticleData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuParticleSystem.html">PxGpuParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuSpatialTendonData.html">PxGpuSpatialTendonData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonAttachmentData.html">PxGpuTendonAttachmentData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGpuTendonJointCoefficientData.html">PxGpuTendonJointCoefficientData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxGreater.html">PxGreater</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxGroupsMask.html">PxGroupsMask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHash.html">PxHash</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHash_3_01const_01char_01_5_01_4.html">PxHash&lt; const char * &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashBase.html">PxHashBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMap.html">PxHashMap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashMapBase.html">PxHashMapBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSet.html">PxHashSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHashSetBase.html">PxHashSetBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightField.html">PxHeightField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldDesc.html">PxHeightFieldDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHeightFieldFlag.html">PxHeightFieldFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHeightFieldFormat.html">PxHeightFieldFormat</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxHeightFieldGeometry.html">PxHeightFieldGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHeightFieldMaterial.html">PxHeightFieldMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHeightFieldSample.html">PxHeightFieldSample</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHeightFieldTessFlag.html">PxHeightFieldTessFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHitBuffer.html">PxHitBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHitCallback.html">PxHitCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHitFlag.html">PxHitFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxHullPolygon.html">PxHullPolygon</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxImmediateConstraint.html">PxImmediateConstraint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxIndexDataPair.html">PxIndexDataPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineAllocator.html">PxInlineAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInlineArray.html">PxInlineArray</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputData.html">PxInputData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInputStream.html">PxInputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxInsertionCallback.html">PxInsertionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceCallback.html">PxIsosurfaceCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxIsosurfaceExtractor.html">PxIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxIsosurfaceGridFilteringType.html">PxIsosurfaceGridFilteringType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxIsosurfaceParams.html">PxIsosurfaceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxJacobianRow.html">PxJacobianRow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJoint.html">PxJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxJointActorIndex.html">PxJointActorIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointAngularLimitPair.html">PxJointAngularLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxJointConcreteType.html">PxJointConcreteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitCone.html">PxJointLimitCone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitParameters.html">PxJointLimitParameters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLimitPyramid.html">PxJointLimitPyramid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimit.html">PxJointLinearLimit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxJointLinearLimitPair.html">PxJointLinearLimitPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxKernelIndex.html">PxKernelIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxLess.html">PxLess</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLightCpuTask.html">PxLightCpuTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLocalStorageReportCallback.html">PxLocalStorageReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxLocationHit.html">PxLocationHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxLockedData.html">PxLockedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxLogTwo.html">PxLogTwo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxLogTwo_3_011_01_4.html">PxLogTwo&lt; 1 &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMassProperties.html">PxMassProperties</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33Padded.html">PxMat33Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat33T.html">PxMat33T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34Padded.html">PxMat34Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat34T.html">PxMat34T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMat44T.html">PxMat44T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMaterial.html">PxMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMaterialFlag.html">PxMaterialFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshCookingHint.html">PxMeshCookingHint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshFlag.html">PxMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshGeometryFlag.html">PxMeshGeometryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshMeshQueryFlag.html">PxMeshMeshQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshMidPhase.html">PxMeshMidPhase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshOverlapUtil.html">PxMeshOverlapUtil</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMeshPreprocessingFlag.html">PxMeshPreprocessingFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshQuery.html">PxMeshQuery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMeshScale.html">PxMeshScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMetaDataEntry.html">PxMetaDataEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxMetaDataFlag.html">PxMetaDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMidphaseDesc.html">PxMidphaseDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxModifiableContact.html">PxModifiableContact</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMultiCallback.html">PxMultiCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexImpl.html">PxMutexImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxMutexT.html">PxMutexT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNeighborhoodIterator.html">PxNeighborhoodIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxNodeIndex.html">PxNodeIndex</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacle.html">PxObstacle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxObstacleContext.html">PxObstacleContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOmniPvd.html">PxOmniPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxOutputStream.html">PxOutputStream</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxOverlapBufferN.html">PxOverlapBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxOverlapHit.html">PxOverlapHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDMaterial.html">PxPBDMaterial</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPBDParticleSystem.html">PxPBDParticleSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPackValidation.html">PxPackValidation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPadding.html">PxPadding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPair.html">PxPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPairFilteringMode.html">PxPairFilteringMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPairFlag.html">PxPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleAndDiffuseBuffer.html">PxParticleAndDiffuseBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleBuffer.html">PxParticleBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleBufferFlag.html">PxParticleBufferFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleCloth.html">PxParticleCloth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothBuffer.html">PxParticleClothBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleClothDesc.html">PxParticleClothDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleClothPreProcessor.html">PxParticleClothPreProcessor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleFlag.html">PxParticleFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleLockFlag.html">PxParticleLockFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleNeighborhoodProvider.html">PxParticleNeighborhoodProvider</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticlePhaseFlag.html">PxParticlePhaseFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleRigidAttachment.html">PxParticleRigidAttachment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleRigidBuffer.html">PxParticleRigidBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleRigidFilterPair.html">PxParticleRigidFilterPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleSolverType.html">PxParticleSolverType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleSpring.html">PxParticleSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemCallback.html">PxParticleSystemCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxParticleSystemGeometry.html">PxParticleSystemGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxParticleVolume.html">PxParticleVolume</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPartitionedParticleCloth.html">PxPartitionedParticleCloth</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysics.html">PxPhysics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPhysicsGpu.html">PxPhysicsGpu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPinnedAllocator.html">PxPinnedAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlane.html">PxPlane</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPlaneGeometry.html">PxPlaneGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPoissonSampler.html">PxPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPostSolveCallback.html">PxPostSolveCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPrismaticJoint.html">PxPrismaticJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPrismaticJointFlag.html">PxPrismaticJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProcessPxBaseCallback.html">PxProcessPxBaseCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfileScoped.html">PxProfileScoped</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxProfilerCallback.html">PxProfilerCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPruningStructure.html">PxPruningStructure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPruningStructureType.html">PxPruningStructureType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvd.html">PxPvd</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPvdInstrumentationFlag.html">PxPvdInstrumentationFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdSceneClient.html">PxPvdSceneClient</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPvdSceneFlag.html">PxPvdSceneFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxPvdTransport.html">PxPvdTransport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxPvdUpdateType.html">PxPvdUpdateType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQuatT.html">PxQuatT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryCache.html">PxQueryCache</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxQueryFilterCallback.html">PxQueryFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryFilterData.html">PxQueryFilterData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryFlag.html">PxQueryFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryHit.html">PxQueryHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryHitType.html">PxQueryHitType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxQueryThreadContext.html">PxQueryThreadContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRackAndPinionJoint.html">PxRackAndPinionJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRawAllocator.html">PxRawAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRaycastBufferN.html">PxRaycastBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRaycastHit.html">PxRaycastHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReadWriteLock.html">PxReadWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRefCounted.html">PxRefCounted</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReflectionAllocator.html">PxReflectionAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRegularReportCallback.html">PxRegularReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRemeshingExt.html">PxRemeshingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderBuffer.html">PxRenderBuffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRenderOutput.html">PxRenderOutput</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRepXInstantiationArgs.html">PxRepXInstantiationArgs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRepXObject.html">PxRepXObject</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRepXSerializer.html">PxRepXSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxReportCallback.html">PxReportCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxResidual.html">PxResidual</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxResiduals.html">PxResiduals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRevoluteJoint.html">PxRevoluteJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRevoluteJointFlag.html">PxRevoluteJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActor.html">PxRigidActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidActorExt.html">PxRigidActorExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBody.html">PxRigidBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRigidBodyData.html">PxRigidBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidBodyExt.html">PxRigidBodyExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRigidBodyFlag.html">PxRigidBodyFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamic.html">PxRigidDynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIReadType.html">PxRigidDynamicGPUAPIReadType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidDynamicGPUAPIWriteType.html">PxRigidDynamicGPUAPIWriteType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxRigidDynamicLockFlag.html">PxRigidDynamicLockFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRigidStatic.html">PxRigidStatic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxRunnable.html">PxRunnable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFBuilder.html">PxSDFBuilder</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSDFDesc.html">PxSDFDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSIMDGuard.html">PxSIMDGuard</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListEntry.html">PxSListEntry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSListImpl.html">PxSListImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSListT.html">PxSListT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSamplingExt.html">PxSamplingExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScene.html">PxScene</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneDesc.html">PxSceneDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSceneFlag.html">PxSceneFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneLimits.html">PxSceneLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryDesc.html">PxSceneQueryDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQueryExt.html">PxSceneQueryExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystem.html">PxSceneQuerySystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneQuerySystemBase.html">PxSceneQuerySystemBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSceneQueryUpdateMode.html">PxSceneQueryUpdateMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneReadLock.html">PxSceneReadLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneSQSystem.html">PxSceneSQSystem</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSceneWriteLock.html">PxSceneWriteLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedCudaLock.html">PxScopedCudaLock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxScopedPointer.html">PxScopedPointer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSdfBitsPerSubgridPixel.html">PxSdfBitsPerSubgridPixel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerialization.html">PxSerialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationContext.html">PxSerializationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializationRegistry.html">PxSerializationRegistry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializer.html">PxSerializer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSerializerDefaultAdapter.html">PxSerializerDefaultAdapter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShape.html">PxShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxShapeExt.html">PxShapeExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxShapeFlag.html">PxShapeFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimpleTriangleMesh.html">PxSimpleTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationEventCallback.html">PxSimulationEventCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationFilterCallback.html">PxSimulationFilterCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationStatistics.html">PxSimulationStatistics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSimulationTetrahedronMeshData.html">PxSimulationTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionCallback.html">PxSmoothedPositionCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSmoothedPositionGenerator.html">PxSmoothedPositionGenerator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSocket.html">PxSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSoftBodyGpuDataFlag.html">PxSoftBodyGpuDataFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverBody.html">PxSolverBody</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverBodyData.html">PxSolverBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverConstraintDesc.html">PxSolverConstraintDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverConstraintPrepDesc.html">PxSolverConstraintPrepDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverConstraintPrepDescBase.html">PxSolverConstraintPrepDescBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverContactDesc.html">PxSolverContactDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSolverType.html">PxSolverType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSparseGridIsosurfaceExtractor.html">PxSparseGridIsosurfaceExtractor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSparseGridParams.html">PxSparseGridParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSpatialForce.html">PxSpatialForce</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSpatialVector.html">PxSpatialVector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSpatialVelocity.html">PxSpatialVelocity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphereGeometry.html">PxSphereGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSphericalJoint.html">PxSphericalJoint</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSphericalJointFlag.html">PxSphericalJointFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSpring.html">PxSpring</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStack.html">PxStack</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStrideIterator.html">PxStrideIterator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxStridedData.html">PxStridedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTable.html">PxStringTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxStringTableExt.html">PxStringTableExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSweepBufferN.html">PxSweepBufferN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxSweepHit.html">PxSweepHit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncImpl.html">PxSyncImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxSyncT.html">PxSyncT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverBodyData.html">PxTGSSolverBodyData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverBodyTxInertia.html">PxTGSSolverBodyTxInertia</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverBodyVel.html">PxTGSSolverBodyVel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverConstraintPrepDesc.html">PxTGSSolverConstraintPrepDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverConstraintPrepDescBase.html">PxTGSSolverConstraintPrepDescBase</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTGSSolverContactDesc.html">PxTGSSolverContactDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTask.html">PxTask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTaskManager.html">PxTaskManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTaskType.html">PxTaskType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTempAllocator.html">PxTempAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetMaker.html">PxTetMaker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTetmeshSkinningGpuData.html">PxTetmeshSkinningGpuData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedron.html">PxTetrahedron</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMesh.html">PxTetrahedronMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshAnalysisResult.html">PxTetrahedronMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshData.html">PxTetrahedronMeshData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshDesc.html">PxTetrahedronMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTetrahedronMeshEmbeddingInfo.html">PxTetrahedronMeshEmbeddingInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshExt.html">PxTetrahedronMeshExt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTetrahedronMeshFlag.html">PxTetrahedronMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTetrahedronMeshGeometry.html">PxTetrahedronMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadImpl.html">PxThreadImpl</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxThreadPriority.html">PxThreadPriority</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxThreadT.html">PxThreadT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTime.html">PxTime</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTolerancesScale.html">PxTolerancesScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTransformPadded.html">PxTransformPadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTransformT.html">PxTransformT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangle.html">PxTriangle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMesh.html">PxTriangleMesh</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshAnalysisResult.html">PxTriangleMeshAnalysisResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriangleMeshCookingResult.html">PxTriangleMeshCookingResult</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshDesc.html">PxTriangleMeshDesc</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriangleMeshEmbeddingInfo.html">PxTriangleMeshEmbeddingInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriangleMeshFlag.html">PxTriangleMeshFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshGeometry.html">PxTriangleMeshGeometry</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriangleMeshInternalData.html">PxTriangleMeshInternalData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTriangleMeshPoissonSampler.html">PxTriangleMeshPoissonSampler</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxTrianglePadded.html">PxTrianglePadded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriggerPair.html">PxTriggerPair</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTriggerPairFlag.html">PxTriggerPairFlag</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTrimeshSkinningGpuData.html">PxTrimeshSkinningGpuData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo.html">PxTypeInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxActor_01_4.html">PxTypeInfo&lt; PxActor &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxAggregate_01_4.html">PxTypeInfo&lt; PxAggregate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxArticulationJointReducedCoordinate_01_4.html">PxTypeInfo&lt; PxArticulationJointReducedCoordinate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxArticulationLink_01_4.html">PxTypeInfo&lt; PxArticulationLink &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxArticulationReducedCoordinate_01_4.html">PxTypeInfo&lt; PxArticulationReducedCoordinate &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxBVH33TriangleMesh_01_4.html">PxTypeInfo&lt; PxBVH33TriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxBVH34TriangleMesh_01_4.html">PxTypeInfo&lt; PxBVH34TriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxBase_01_4.html">PxTypeInfo&lt; PxBase &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxConstraint_01_4.html">PxTypeInfo&lt; PxConstraint &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxConvexMesh_01_4.html">PxTypeInfo&lt; PxConvexMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableAttachment_01_4.html">PxTypeInfo&lt; PxDeformableAttachment &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableElementFilter_01_4.html">PxTypeInfo&lt; PxDeformableElementFilter &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableSurface_01_4.html">PxTypeInfo&lt; PxDeformableSurface &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableSurfaceMaterial_01_4.html">PxTypeInfo&lt; PxDeformableSurfaceMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableVolume_01_4.html">PxTypeInfo&lt; PxDeformableVolume &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxDeformableVolumeMaterial_01_4.html">PxTypeInfo&lt; PxDeformableVolumeMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxHeightField_01_4.html">PxTypeInfo&lt; PxHeightField &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxMaterial_01_4.html">PxTypeInfo&lt; PxMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxPBDMaterial_01_4.html">PxTypeInfo&lt; PxPBDMaterial &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxPBDParticleSystem_01_4.html">PxTypeInfo&lt; PxPBDParticleSystem &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxParticleAndDiffuseBuffer_01_4.html">PxTypeInfo&lt; PxParticleAndDiffuseBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxParticleBuffer_01_4.html">PxTypeInfo&lt; PxParticleBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxParticleClothBuffer_01_4.html">PxTypeInfo&lt; PxParticleClothBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxParticleRigidBuffer_01_4.html">PxTypeInfo&lt; PxParticleRigidBuffer &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxPruningStructure_01_4.html">PxTypeInfo&lt; PxPruningStructure &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxRigidActor_01_4.html">PxTypeInfo&lt; PxRigidActor &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxRigidBody_01_4.html">PxTypeInfo&lt; PxRigidBody &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxRigidDynamic_01_4.html">PxTypeInfo&lt; PxRigidDynamic &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxRigidStatic_01_4.html">PxTypeInfo&lt; PxRigidStatic &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxShape_01_4.html">PxTypeInfo&lt; PxShape &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxTetrahedronMesh_01_4.html">PxTypeInfo&lt; PxTetrahedronMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypeInfo_3_01PxTriangleMesh_01_4.html">PxTypeInfo&lt; PxTriangleMesh &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypedBoundedData.html">PxTypedBoundedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxTypedStridedData.html">PxTypedStridedData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxUnConst.html">PxUnConst</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxUnConst_3_01const_01T_01_4.html">PxUnConst&lt; const T &gt;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserAllocated.html">PxUserAllocated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxUserControllerHitReport.html">PxUserControllerHitReport</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec2T.html">PxVec2T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3Padded.html">PxVec3Padded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec3T.html">PxVec3T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVec4T.html">PxVec4T</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAckermannParams.html">PxVehicleAckermannParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAntiRollForceParams.html">PxVehicleAntiRollForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAntiRollTorque.html">PxVehicleAntiRollTorque</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleArrayData.html">PxVehicleArrayData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAutoboxParams.html">PxVehicleAutoboxParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAutoboxState.html">PxVehicleAutoboxState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAxes.html">PxVehicleAxes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleAxleDescription.html">PxVehicleAxleDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleBrakeCommandResponseParams.html">PxVehicleBrakeCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleClutchAccuracyMode.html">PxVehicleClutchAccuracyMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleClutchCommandResponseParams.html">PxVehicleClutchCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleClutchCommandResponseState.html">PxVehicleClutchCommandResponseState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleClutchParams.html">PxVehicleClutchParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleClutchSlipState.html">PxVehicleClutchSlipState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleCommandNonLinearResponseParams.html">PxVehicleCommandNonLinearResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleCommandResponseParams.html">PxVehicleCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleCommandState.html">PxVehicleCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleCommandValueResponseTable.html">PxVehicleCommandValueResponseTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleComponent.html">PxVehicleComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleComponentSequence.html">PxVehicleComponentSequence</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleComponentSequenceLimits.html">PxVehicleComponentSequenceLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleConstraintConnector.html">PxVehicleConstraintConnector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleDifferentialState.html">PxVehicleDifferentialState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveActuationStateComponent.html">PxVehicleDirectDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDriveCommandResponseComponent.html">PxVehicleDirectDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleDirectDriveThrottleCommandResponseParams.html">PxVehicleDirectDriveThrottleCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleDirectDriveTransmissionCommandState.html">PxVehicleDirectDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleDirectDrivetrainComponent.html">PxVehicleDirectDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveActuationStateComponent.html">PxVehicleEngineDriveActuationStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDriveCommandResponseComponent.html">PxVehicleEngineDriveCommandResponseComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleEngineDriveThrottleCommandResponseState.html">PxVehicleEngineDriveThrottleCommandResponseState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleEngineDriveTransmissionCommandState.html">PxVehicleEngineDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleEngineDrivetrainComponent.html">PxVehicleEngineDrivetrainComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleEngineParams.html">PxVehicleEngineParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleEngineState.html">PxVehicleEngineState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFixedSizeLookupTable.html">PxVehicleFixedSizeLookupTable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleFourWheelDriveDifferentialLegacyParams.html">PxVehicleFourWheelDriveDifferentialLegacyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleFourWheelDriveDifferentialParams.html">PxVehicleFourWheelDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleFourWheelDriveDifferentialStateComponent.html">PxVehicleFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleFrame.html">PxVehicleFrame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleGearboxParams.html">PxVehicleGearboxParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleGearboxState.html">PxVehicleGearboxState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyFourWheelDriveDifferentialStateComponent.html">PxVehicleLegacyFourWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacySuspensionComponent.html">PxVehicleLegacySuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleLegacyTireComponent.html">PxVehicleLegacyTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleLimits.html">PxVehicleLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrix33Solver.html">PxVehicleMatrix33Solver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNGaussSeidelSolver.html">PxVehicleMatrixNGaussSeidelSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNN.html">PxVehicleMatrixNN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMatrixNNLUSolver.html">PxVehicleMatrixNNLUSolver</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleMultiWheelDriveDifferentialParams.html">PxVehicleMultiWheelDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleMultiWheelDriveDifferentialStateComponent.html">PxVehicleMultiWheelDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePVDComponent.html">PxVehiclePVDComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXActor.html">PxVehiclePhysXActor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorBeginComponent.html">PxVehiclePhysXActorBeginComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXActorEndComponent.html">PxVehiclePhysXActorEndComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXActorUpdateMode.html">PxVehiclePhysXActorUpdateMode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXConstraintComponent.html">PxVehiclePhysXConstraintComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXConstraintLimits.html">PxVehiclePhysXConstraintLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXConstraintState.html">PxVehiclePhysXConstraintState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXConstraints.html">PxVehiclePhysXConstraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXMaterialFriction.html">PxVehiclePhysXMaterialFriction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXMaterialFrictionParams.html">PxVehiclePhysXMaterialFrictionParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorParams.html">PxVehiclePhysXRigidActorParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRigidActorShapeParams.html">PxVehiclePhysXRigidActorShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXRoadGeometryQueryParams.html">PxVehiclePhysXRoadGeometryQueryParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXRoadGeometryQueryState.html">PxVehiclePhysXRoadGeometryQueryState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXRoadGeometryQueryType.html">PxVehiclePhysXRoadGeometryQueryType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXRoadGeometrySceneQueryComponent.html">PxVehiclePhysXRoadGeometrySceneQueryComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXSimulationContext.html">PxVehiclePhysXSimulationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXSteerState.html">PxVehiclePhysXSteerState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePhysXSuspensionLimitConstraintParams.html">PxVehiclePhysXSuspensionLimitConstraintParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelParams.html">PxVehiclePhysXWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehiclePhysXWheelShapeParams.html">PxVehiclePhysXWheelShapeParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehiclePvdContext.html">PxVehiclePvdContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleRigidBodyComponent.html">PxVehicleRigidBodyComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleRigidBodyParams.html">PxVehicleRigidBodyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleRigidBodyState.html">PxVehicleRigidBodyState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleRoadGeometryState.html">PxVehicleRoadGeometryState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleScale.html">PxVehicleScale</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSimulationContext.html">PxVehicleSimulationContext</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSimulationContextType.html">PxVehicleSimulationContextType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSizedArrayData.html">PxVehicleSizedArrayData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSteerCommandResponseParams.html">PxVehicleSteerCommandResponseParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionComplianceParams.html">PxVehicleSuspensionComplianceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionComplianceState.html">PxVehicleSuspensionComplianceState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleSuspensionComponent.html">PxVehicleSuspensionComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionForce.html">PxVehicleSuspensionForce</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionForceLegacyParams.html">PxVehicleSuspensionForceLegacyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionForceParams.html">PxVehicleSuspensionForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionJounceCalculationType.html">PxVehicleSuspensionJounceCalculationType</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionParams.html">PxVehicleSuspensionParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionState.html">PxVehicleSuspensionState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleSuspensionStateCalculationParams.html">PxVehicleSuspensionStateCalculationParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTankDriveDifferentialParams.html">PxVehicleTankDriveDifferentialParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTankDriveDifferentialStateComponent.html">PxVehicleTankDriveDifferentialStateComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTankDriveTransmissionCommandState.html">PxVehicleTankDriveTransmissionCommandState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireAxisStickyParams.html">PxVehicleTireAxisStickyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireCamberAngleState.html">PxVehicleTireCamberAngleState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleTireComponent.html">PxVehicleTireComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireDirectionModes.html">PxVehicleTireDirectionModes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireDirectionState.html">PxVehicleTireDirectionState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireForce.html">PxVehicleTireForce</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireForceParams.html">PxVehicleTireForceParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireGripState.html">PxVehicleTireGripState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireSlipParams.html">PxVehicleTireSlipParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireSlipState.html">PxVehicleTireSlipState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireSpeedState.html">PxVehicleTireSpeedState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireStickyParams.html">PxVehicleTireStickyParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleTireStickyState.html">PxVehicleTireStickyState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleVectorN.html">PxVehicleVectorN</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleWheelActuationState.html">PxVehicleWheelActuationState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVehicleWheelComponent.html">PxVehicleWheelComponent</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleWheelConstraintGroupState.html">PxVehicleWheelConstraintGroupState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleWheelLocalPose.html">PxVehicleWheelLocalPose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleWheelParams.html">PxVehicleWheelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVehicleWheelRigidBody1dState.html">PxVehicleWheelRigidBody1dState</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocator.html">PxVirtualAllocator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classPxVirtualAllocatorCallback.html">PxVirtualAllocatorCallback</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxVisualizationParameter.html">PxVisualizationParameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="structPxsParticleMaterialData.html">PxsParticleMaterialData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classRaycastCCDManager.html">RaycastCCDManager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="classphysx_1_1Ext_1_1PxCudaHelpersExt.html">PxCudaHelpersExt</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="functions.html">Helper functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="typedefs.html">Typedefs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="deprecated.html">Deprecated list</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+    <li><a href="physx_api.html">PhysX SDK API</a> &raquo;</li>
+    <li><a href="classes.html">Classes</a> &raquo;</li>
+<li>PxContactPairVelocity</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pxcontactpairvelocity">
+<h1>PxContactPairVelocity<a class="headerlink" href="#pxcontactpairvelocity" title="Permalink to this headline"></a></h1>
+<p>Defined in <a class="reference internal" href="file_include_PxSimulationEventCallback.h.html#pxsimulationeventcallback-8h"><span class="std std-ref">include/PxSimulationEventCallback.h</span></a></p>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv421PxContactPairVelocity">
+<span id="_CPPv321PxContactPairVelocity"></span><span id="_CPPv221PxContactPairVelocity"></span><span id="PxContactPairVelocity"></span><span class="target" id="structpxcontactpairvelocity"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairVelocity</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">public</span></span><span class="w"> </span><a class="reference internal" href="structPxContactPairExtraDataItem.html#_CPPv426PxContactPairExtraDataItem" title="PxContactPairExtraDataItem"><span class="n"><span class="pre">PxContactPairExtraDataItem</span></span></a><a class="headerlink" href="#_CPPv421PxContactPairVelocity" title="Permalink to this definition"></a><br /></dt>
+<dd><p>Velocities of the contact pair rigid bodies. </p>
+<p>This struct is shared by multiple types of extra data items. The type field allows to distinguish between them: <ul class="simple">
+<li><p>PxContactPairExtraDataType::ePRE_SOLVER_VELOCITY: see PxPairFlag::ePRE_SOLVER_VELOCITY </p></li>
+<li><p>PxContactPairExtraDataType::ePOST_SOLVER_VELOCITY: see PxPairFlag::ePOST_SOLVER_VELOCITY</p></li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>PxContactPairHeader.extraDataStream </p>
+</div>
+</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For static rigid bodies, the velocities will be set to zero.</p>
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxContactPairVelocity21PxContactPairVelocityEv">
+<span id="_CPPv3N21PxContactPairVelocity21PxContactPairVelocityEv"></span><span id="_CPPv2N21PxContactPairVelocity21PxContactPairVelocityEv"></span><span id="PxContactPairVelocity::PxContactPairVelocity"></span><span class="target" id="structpxcontactpairvelocity_1ab56fcc83a523a5ca786b9b312abf5966"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">PxContactPairVelocity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N21PxContactPairVelocity21PxContactPairVelocityEv" title="Permalink to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric-h3 rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxContactPairVelocity14linearVelocityE">
+<span id="_CPPv3N21PxContactPairVelocity14linearVelocityE"></span><span id="_CPPv2N21PxContactPairVelocity14linearVelocityE"></span><span id="PxContactPairVelocity::linearVelocity__PxVec3A"></span><span class="target" id="structpxcontactpairvelocity_1a98a55c7cf6a531934189f69933723a23"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">linearVelocity</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N21PxContactPairVelocity14linearVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The linear velocity of the rigid bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxContactPairVelocity15angularVelocityE">
+<span id="_CPPv3N21PxContactPairVelocity15angularVelocityE"></span><span id="_CPPv2N21PxContactPairVelocity15angularVelocityE"></span><span id="PxContactPairVelocity::angularVelocity__PxVec3A"></span><span class="target" id="structpxcontactpairvelocity_1aa930131d979792551504da7890665c76"></span><a class="reference internal" href="typedef_PxVec3_8h_1ae91c92d849735e5ef8906ccfd6fc1f20.html#_CPPv46PxVec3" title="PxVec3"><span class="n"><span class="pre">PxVec3</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">angularVelocity</span></span></span><span class="p"><span class="pre">[</span></span><span class="m"><span class="pre">2</span></span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N21PxContactPairVelocity15angularVelocityE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The angular velocity of the rigid bodies. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N21PxContactPairVelocity4typeE">
+<span id="_CPPv3N21PxContactPairVelocity4typeE"></span><span id="_CPPv2N21PxContactPairVelocity4typeE"></span><span id="PxContactPairVelocity::type__PxU8"></span><span class="target" id="structpxcontactpairextradataitem_1a18e83c33b02a0a57f0daf818379e06d6"></span><a class="reference internal" href="typedef_PxSimpleTypes_8h_1acb0c5ec0d2eb9574f23f686dc0e0fa27.html#_CPPv44PxU8" title="PxU8"><span class="n"><span class="pre">PxU8</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">type</span></span></span><a class="headerlink" href="#_CPPv4N21PxContactPairVelocity4typeE" title="Permalink to this definition"></a><br /></dt>
+<dd><p>The type of the extra data stream item. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 04, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>

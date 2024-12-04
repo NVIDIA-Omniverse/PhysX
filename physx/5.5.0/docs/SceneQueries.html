@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scene Queries &mdash; physx 5.5.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/omni-style.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/api-styles.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/mermaid-init.js"></script>
+        <script src="../_static/design-tabs.js"></script>
+        <script src="../_static/version.js"></script>
+        <script src="../_static/social-media.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Gjk Queries" href="GjkQueries.html" />
+    <link rel="prev" title="Geometry Queries" href="GeometryQueries.html" />
+ 
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+
+  <a href="../index.html">
+  <img src="../_static/PhysXLogoWhite.png" class="logo" alt="Logo"/>
+</a>
+
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="License.html">PhysX License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BuildingWithPhysX.html">Building with PhysX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Snippets.html">Snippets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="API.html">PhysX API Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Startup.html">Startup and Shutdown</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Threading.html">Threading</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Geometry.html">Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CustomGeometry.html">Custom Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyOverview.html">Rigid Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyCollision.html">Rigid Body Collision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RigidBodyDynamics.html">Rigid Body Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulation.html">Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="AdvancedCollisionDetection.html">Advanced Collision Detection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Joints.html">Joints</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Articulations.html">Articulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GPURigidBodies.html">GPU Simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DirectGPUAPI.html">Direct GPU API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DeformableBodyOverview.html">Deformable Body Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DeformableVolume.html">Deformable Volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ParticleSystem.html">Particle System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GeometryQueries.html">Geometry Queries</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Scene Queries</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-queries">Basic queries</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#raycasts">Raycasts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sweeps">Sweeps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overlaps">Overlaps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#touching-and-blocking-hits">Touching and blocking hits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#query-modes">Query modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#closest-hit">Closest hit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#any-hit">Any hit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-hits">Multiple hits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multiple-hits-with-blocking-hit">Multiple hits with blocking hit</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#filtering">Filtering</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pxqueryflag-estatic-pxqueryflag-edynamic">PxQueryFlag::eSTATIC, PxQueryFlag::eDYNAMIC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxqueryflag-eprefilter-pxqueryflag-epostfilter">PxQueryFlag::ePREFILTER, PxQueryFlag::ePOSTFILTER</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxqueryflag-eany-hit">PxQueryFlag::eANY_HIT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxqueryflag-eno-block">PxQueryFlag::eNO_BLOCK</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxfilterdata-fixed-function-filtering">PxFilterData fixed function filtering</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#user-defined-hit-callbacks-for-unbounded-results">User defined hit callbacks for unbounded results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#batched-queries">Batched queries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#single-object-caching">Single Object Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxpruningstructuretype">PxPruningStructureType</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#generalities">Generalities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxpruningstructuretype-enone">PxPruningStructureType::eNONE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxpruningstructuretype-estatic-aabb-tree">PxPruningStructureType::eSTATIC_AABB_TREE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxpruningstructuretype-edynamic-aabb-tree">PxPruningStructureType::eDYNAMIC_AABB_TREE</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pxdynamictreesecondarypruner">PxDynamicTreeSecondaryPruner</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pxdynamictreesecondarypruner-enone">PxDynamicTreeSecondaryPruner::eNONE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxdynamictreesecondarypruner-ebucket">PxDynamicTreeSecondaryPruner::eBUCKET</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxdynamictreesecondarypruner-eincremental">PxDynamicTreeSecondaryPruner::eINCREMENTAL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pxdynamictreesecondarypruner-ebvh">PxDynamicTreeSecondaryPruner::eBVH</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bvh-build-settings">BVH build settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxscenequeryupdatemode">PxSceneQueryUpdateMode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pxpruningstructure">PxPruningStructure</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#merge-process">Merge process</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pxbvh">PxBVH</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-create-pxbvh">How to create PxBVH</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standalone-pxbvh">Standalone PxBVH</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#pxscenequerysystem">PxSceneQuerySystem</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#external-scene-query-system">External scene query system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-scene-query-system">Custom scene query system</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#low-level-query-system">Low-level query system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rationale-for-decoupled-broadphases-scene-query-system">Rationale for decoupled broadphases &amp; scene-query system</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GjkQueries.html">Gjk Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vehicles.html">Vehicles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="CharacterControllers.html">Character Controllers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DebugVisualization.html">Debug Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OmniVisualDebugger.html">Omniverse Visual Debugger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Statistics.html">Simulation Statistics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Serialization.html">Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingSerialization.html">Extending Serialization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="BestPractices.html">Best Practices Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationFrom28.html">Migrating From PhysX SDK 2.x to 3.x</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo33.html">Migrating From PhysX SDK 3.2 to 3.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo34.html">Migrating From PhysX SDK 3.3 to 3.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo40.html">Migrating From PhysX SDK 3.4 to 4.0</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo51.html">Migrating From PhysX SDK 4.0 to 5.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo52.html">Migrating From PhysX SDK 5.1 to 5.2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo53.html">Migrating From PhysX SDK 5.2 to 5.3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo54.html">Migrating From PhysX SDK 5.3 to 5.4</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MigrationTo55.html">Migrating From PhysX SDK 5.4 to 5.5</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_api_build/physx_api.html">PhysX SDK API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">physx</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+
+
+<li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+<li>Scene Queries</li>
+
+      <li class="wy-breadcrumbs-aside">
+      </li>
+<li class="wy-breadcrumbs-aside">
+
+  <span>&nbsp;</span>
+</li>
+
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="scene-queries">
+<span id="scenequeries"></span><h1>Scene Queries<a class="headerlink" href="#scene-queries" title="Permalink to this headline"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h2>
+<p><em>PhysX</em> provides methods in <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> to perform collision queries against actors and attached shapes in the scene. There are three types of queries: <a class="reference internal" href="#scenequeryraycasts"><span class="std std-ref">Raycasts</span></a>, <a class="reference internal" href="#scenequerysweeps"><span class="std std-ref">Sweeps</span></a> and <a class="reference internal" href="#scenequeryoverlaps"><span class="std std-ref">Overlaps</span></a>, and each can return either a single result or multiple results. Broadly speaking, each query traverses a culling structure (a.k.a. pruning structure) containing the scene objects, performs a precise test using the geometry query functions (see <a class="reference internal" href="GeometryQueries.html#geometryqueries"><span class="std std-ref">Geometry Queries</span></a>), and accumulates the results. Filtering may occur before or after precise testing.</p>
+<p>The scene uses two different query structures, one for <a class="reference internal" href="../_api_build/classPxRigidStatic.html#_CPPv413PxRigidStatic" title="PxRigidStatic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidStatic</span></code></a> actors, and the other for <a class="reference internal" href="../_api_build/classPxRigidBody.html#_CPPv411PxRigidBody" title="PxRigidBody"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidBody</span></code></a> actors (<a class="reference internal" href="../_api_build/classPxRigidDynamic.html#_CPPv414PxRigidDynamic" title="PxRigidDynamic"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidDynamic</span></code></a> and <a class="reference internal" href="../_api_build/classPxArticulationLink.html#_CPPv418PxArticulationLink" title="PxArticulationLink"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxArticulationLink</span></code></a>). The two structures may be configured to use different culling implementations depending on the desired speed/space characteristics (see <a class="reference internal" href="#pxpruningstructuretype"><span class="std std-ref">PxPruningStructureType</span></a>).</p>
+</section>
+<hr class="docutils" />
+<section id="basic-queries">
+<h2>Basic queries<a class="headerlink" href="#basic-queries" title="Permalink to this headline"></a></h2>
+<section id="raycasts">
+<span id="scenequeryraycasts"></span><h3>Raycasts<a class="headerlink" href="#raycasts" title="Permalink to this headline"></a></h3>
+<p>A <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="PxScene::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::raycast()</span></code></a> query intersects a user-defined ray with the whole scene. The simplest use case for a raycast query is to find the closest hit along a given ray as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                 </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">            </span><span class="c1">// [in] Raycast max distance</span>
+<span class="n">PxRaycastBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">                 </span><span class="c1">// [out] Raycast results</span>
+
+<span class="c1">// Raycast against all static &amp; dynamic objects (no filtering)</span>
+<span class="c1">// The main result from this call is the closest hit, stored in the &#39;hit.block&#39; structure</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">status</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">applyDamage</span><span class="p">(</span><span class="n">hit</span><span class="p">.</span><span class="n">block</span><span class="p">.</span><span class="n">position</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">.</span><span class="n">block</span><span class="p">.</span><span class="n">normal</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this code snippet a <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1ab21a68ce9e5a18aa742111920b75a84c.html#_CPPv415PxRaycastBuffer" title="PxRaycastBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxRaycastBuffer</span></code></a> object is used to receive results from the raycast query.
+A call to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene7raycastERK6PxVec3RK6PxVec3K6PxRealR17PxRaycastCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="PxScene::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::raycast()</span></code></a> returns true if there was a hit. <em>hit.hadBlock</em> is also set to true if there was a hit.
+The distance for raycasts has to be in the [0, inf) range.</p>
+<p>Raycasts results include position, normal, hit distance, shape and actor, and a face index with UV coordinates for triangle meshes and heightfields. Before using the query results check <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum9ePOSITIONE" title="PxHitFlag::ePOSITION"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::ePOSITION</span></code></a>, <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum7eNORMALE" title="PxHitFlag::eNORMAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eNORMAL</span></code></a>, <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum3eUVE" title="PxHitFlag::eUV"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eUV</span></code></a> flags first, to ensure the corresponding data is available. For example the computation of impact position &amp; normal can be skipped if they are not needed. The user-provided <code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxHitFlags</span></code> control what gets computed during queries.</p>
+<p>Note that the scene-level raycast query returns <a class="reference internal" href="../_api_build/structPxRaycastHit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRaycastHit</span></code></a> structures, while the object-level raycast query returns <a class="reference internal" href="../_api_build/structPxGeomRaycastHit.html#_CPPv416PxGeomRaycastHit" title="PxGeomRaycastHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomRaycastHit</span></code></a> hits. The difference is simply that <a class="reference internal" href="../_api_build/structPxRaycastHit.html#_CPPv412PxRaycastHit" title="PxRaycastHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRaycastHit</span></code></a> is augmented with <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a> and <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> pointers.</p>
+</section>
+<section id="sweeps">
+<span id="scenequerysweeps"></span><h3>Sweeps<a class="headerlink" href="#sweeps" title="Permalink to this headline"></a></h3>
+<p>A <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene5sweepERK10PxGeometryRK11PxTransformRK6PxVec3K6PxRealR15PxSweepCallback10PxHitFlagsRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCacheK6PxReal20PxGeometryQueryFlags" title="PxScene::sweep"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::sweep()</span></code></a> query is geometrically similar to a raycast: a <a class="reference internal" href="../_api_build/classPxGeometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> shape is swept from a specified initial pose in a unit direction with specified maximum length, to find the points of impacts of the geometry with scene objects. The maximum distance for sweeps has to be in the [0, inf) range, and will be clamped to <code class="xref c c-macro docutils literal notranslate"><span class="pre">PX_MAX_SWEEP_DISTANCE</span></code>, defined in file <em>PxGeometryQuery.h</em>.</p>
+<p>Allowed shapes are box, sphere, capsule and convex.</p>
+<p>A <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1aecfed2b83a930b922b3d95e22ff30665.html#_CPPv413PxSweepBuffer" title="PxSweepBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxSweepBuffer</span></code></a> object is used to receive results from sweep queries:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxSweepBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">              </span><span class="c1">// [out] Sweep results</span>
+<span class="n">PxGeometry</span><span class="w"> </span><span class="n">sweepShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">    </span><span class="c1">// [in] swept shape</span>
+<span class="n">PxTransform</span><span class="w"> </span><span class="n">initialPose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">  </span><span class="c1">// [in] initial shape pose (at distance=0)</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">sweepDirection</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">    </span><span class="c1">// [in] normalized sweep direction</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">sweep</span><span class="p">(</span><span class="n">sweepShape</span><span class="p">,</span><span class="w"> </span><span class="n">initialPose</span><span class="p">,</span><span class="w"> </span><span class="n">sweepDirection</span><span class="p">,</span><span class="w"> </span><span class="n">sweepDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Sweeps results include position, normal, hit distance, shape and actor, and a face index for triangle meshes and heightfields. This is again controlled by the <code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxHitFlags</span></code> passed to the query.</p>
+<p>Note that the scene-level sweep query returns <a class="reference internal" href="../_api_build/structPxSweepHit.html#_CPPv410PxSweepHit" title="PxSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSweepHit</span></code></a> structures, while the object-level sweep query returns <a class="reference internal" href="../_api_build/structPxGeomSweepHit.html#_CPPv414PxGeomSweepHit" title="PxGeomSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomSweepHit</span></code></a> hits. The difference is simply that <a class="reference internal" href="../_api_build/structPxSweepHit.html#_CPPv410PxSweepHit" title="PxSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSweepHit</span></code></a> is augmented with <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a> and <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> pointers.</p>
+</section>
+<section id="overlaps">
+<span id="scenequeryoverlaps"></span><h3>Overlaps<a class="headerlink" href="#overlaps" title="Permalink to this headline"></a></h3>
+<p>A <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4NK7PxScene7overlapERK10PxGeometryRK11PxTransformR17PxOverlapCallbackRK17PxQueryFilterDataP21PxQueryFilterCallbackPK12PxQueryCache20PxGeometryQueryFlags" title="PxScene::overlap"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::overlap()</span></code></a> query searches a region enclosed by a specified shape for any overlapping objects in the scene. The region is specified as a transformed box, sphere, capsule or convex geometry.</p>
+<p>A <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a54a708942a891f3321c2427d5c160750.html#_CPPv415PxOverlapBuffer" title="PxOverlapBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxOverlapBuffer</span></code></a> object is used to receive results from overlap queries:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxOverlapBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">            </span><span class="c1">// [out] Overlap results</span>
+<span class="n">PxGeometry</span><span class="w"> </span><span class="n">overlapShape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">  </span><span class="c1">// [in] shape to test for overlaps</span>
+<span class="n">PxTransform</span><span class="w"> </span><span class="n">shapePose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">    </span><span class="c1">// [in] initial shape pose (at distance=0)</span>
+
+<span class="n">PxOverlapBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w"></span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">overlap</span><span class="p">(</span><span class="n">overlapShape</span><span class="p">,</span><span class="w"> </span><span class="n">shapePose</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Overlaps results only include actor/shape and faceIndex since there is no single point of intersection.</p>
+<p>Note that the scene-level overlap query returns <a class="reference internal" href="../_api_build/structPxOverlapHit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxOverlapHit</span></code></a> structures, while the object-level sweep query returns <a class="reference internal" href="../_api_build/structPxGeomOverlapHit.html#_CPPv416PxGeomOverlapHit" title="PxGeomOverlapHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeomOverlapHit</span></code></a> hits. The difference is simply that <a class="reference internal" href="../_api_build/structPxOverlapHit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxOverlapHit</span></code></a> is augmented with <a class="reference internal" href="../_api_build/classPxRigidActor.html#_CPPv412PxRigidActor" title="PxRigidActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxRigidActor</span></code></a> and <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> pointers.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="touching-and-blocking-hits">
+<h2>Touching and blocking hits<a class="headerlink" href="#touching-and-blocking-hits" title="Permalink to this headline"></a></h2>
+<p>For queries with multiple results we distinguish between <em>touching</em> and <em>blocking</em> hits. The choice of whether a hit is touching or blocking is made by the user-implemented filtering logic. Intuitively a blocking hit prevents further progress of a raycast or a sweep along its path, and a touching hit is recorded but allows the ray or sweep to continue. So a multiple-hit query will return the closest blocking hit if one exists, together with any touching hits that are closer. If there are no blocking hits, all touching hits will be returned.</p>
+<p>See the <a class="reference internal" href="#queryfiltering"><span class="std std-ref">Filtering</span></a> section for details.</p>
+</section>
+<hr class="docutils" />
+<section id="query-modes">
+<h2>Query modes<a class="headerlink" href="#query-modes" title="Permalink to this headline"></a></h2>
+<section id="closest-hit">
+<h3>Closest hit<a class="headerlink" href="#closest-hit" title="Permalink to this headline"></a></h3>
+<p>The default mode of operation for all three query types is “closest hit”. The query looks for all blocking hits, picks the one with the minimum distance and reports it in the <a class="reference internal" href="../_api_build/structPxHitBuffer.html#_CPPv4N11PxHitBuffer5blockE" title="PxHitBuffer::block"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHitBuffer::block</span></code></a> member.</p>
+<ul class="simple">
+<li><p>For <em>overlap</em> queries an arbitrary blocking hit is chosen as the reported blocking hit (distance is treated as zero for all overlap hits).</p></li>
+</ul>
+</section>
+<section id="any-hit">
+<h3>Any hit<a class="headerlink" href="#any-hit" title="Permalink to this headline"></a></h3>
+<p>All three query types can operate in “any hit” mode. This is a performance hint to the query system indicating that there is no need to look for the closest hit - any hit encountered will do. This mode is most often used for boolean blocking/non-blocking queries.
+With this flag the code can early-exit from a query as soon as a single hit is found, sometimes providing significant performance improvements.
+To activate this mode use <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum8eANY_HITE" title="PxQueryFlag::eANY_HIT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eANY_HIT</span></code></a> filter data flag and set it in <a class="reference internal" href="../_api_build/structPxQueryFilterData.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryFilterData</span></code></a> object, for instance:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxQueryFilterData</span><span class="w"> </span><span class="n">fd</span><span class="p">;</span><span class="w"></span>
+<span class="n">fd</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">PxQueryFlag</span><span class="o">::</span><span class="n">eANY_HIT</span><span class="p">;</span><span class="w"> </span><span class="c1">// note the OR with the default value</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">,</span><span class="w"></span>
+<span class="w">                             </span><span class="n">PxHitFlags</span><span class="p">(</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">),</span><span class="w"> </span><span class="n">fdAny</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that when raycasting against a triangle mesh, it is useful to also enable the “any hit” mode at the midphase-level, that is against the mesh itself, using the <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum8eANY_HITE" title="PxHitFlag::eANY_HIT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eANY_HIT</span></code></a> flag.</p>
+</section>
+<section id="multiple-hits">
+<h3>Multiple hits<a class="headerlink" href="#multiple-hits" title="Permalink to this headline"></a></h3>
+<p>All three query types (raycast, overlap, sweep) can also report multiple hits with objects in the scene.</p>
+<ul class="simple">
+<li><p>To activate this mode for raycasts use the <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1ab21a68ce9e5a18aa742111920b75a84c.html#_CPPv415PxRaycastBuffer" title="PxRaycastBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxRaycastBuffer</span></code></a> constructor with user provided buffer for touching hits.</p></li>
+<li><p>In this mode all hits default to ‘touching’ type and are recorded in the <code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxRaycastBuffer::touches</span></code> array.</p></li>
+</ul>
+<p>For instance:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                 </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">            </span><span class="c1">// [in] Raycast max distance</span>
+
+<span class="k">const</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">bufferSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="p">;</span><span class="w">        </span><span class="c1">// [in] size of &#39;hitBuffer&#39;</span>
+<span class="n">PxRaycastHit</span><span class="w"> </span><span class="n">hitBuffer</span><span class="p">[</span><span class="n">bufferSize</span><span class="p">];</span><span class="w">  </span><span class="c1">// [out] User provided buffer for results</span>
+<span class="n">PxRaycastBuffer</span><span class="w"> </span><span class="nf">buf</span><span class="p">(</span><span class="n">hitBuffer</span><span class="p">,</span><span class="w"> </span><span class="n">bufferSize</span><span class="p">);</span><span class="w"> </span><span class="c1">// [out] Blocking and touching hits stored here</span>
+
+<span class="c1">// Raycast against all static &amp; dynamic objects (no filtering)</span>
+<span class="c1">// The main result from this call are all hits along the ray, stored in &#39;hitBuffer&#39;</span>
+<span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">);</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">buf</span><span class="p">.</span><span class="n">nbTouches</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">animateLeaves</span><span class="p">(</span><span class="n">buf</span><span class="p">.</span><span class="n">touches</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>The same mechanism is used for overlaps (use <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a54a708942a891f3321c2427d5c160750.html#_CPPv415PxOverlapBuffer" title="PxOverlapBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxOverlapBuffer</span></code></a> with <em>PxOverlapHit[]</em>) and sweeps (<a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1aecfed2b83a930b922b3d95e22ff30665.html#_CPPv413PxSweepBuffer" title="PxSweepBuffer"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxSweepBuffer</span></code></a> with <em>PxSweepHit[]</em>).</p>
+</section>
+<section id="multiple-hits-with-blocking-hit">
+<h3>Multiple hits with blocking hit<a class="headerlink" href="#multiple-hits-with-blocking-hit" title="Permalink to this headline"></a></h3>
+<p>In the snippet for multiple hits above we only expected touching hits. If a blocking hit was encountered along with touching hits, it will be reported in <a class="reference internal" href="../_api_build/structPxHitBuffer.html#_CPPv4N11PxHitBuffer5blockE" title="PxHitBuffer::block"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHitBuffer::block</span></code></a> member, and the touch buffer will contain only touching hits which are closer. This combination is useful in scenarios such as bullets going through windows (breaking them on their way) or leaves of a tree (making them rustle) until they hit a blocking object (a concrete wall):</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// same initialization code as in the snippet for multiple hits</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">hadBlockingHit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hadBlockingHit</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">drawWallDecal</span><span class="p">(</span><span class="n">buf</span><span class="p">.</span><span class="n">block</span><span class="p">);</span><span class="w"></span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">buf</span><span class="p">.</span><span class="n">nbTouches</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">assert</span><span class="p">(</span><span class="n">buf</span><span class="p">.</span><span class="n">touches</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">distance</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">buf</span><span class="p">.</span><span class="n">block</span><span class="p">.</span><span class="n">distance</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">animateLeaves</span><span class="p">(</span><span class="n">buf</span><span class="p">.</span><span class="n">touches</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>By default, hits are assumed to be touching when a touch buffer is provided, and the filter callback should return <a class="reference internal" href="../_api_build/structPxQueryHitType.html#_CPPv4N14PxQueryHitType4Enum6eBLOCKE" title="PxQueryHitType::eBLOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryHitType::eBLOCK</span></code></a> to denote that a hit is blocking. See <a class="reference internal" href="#queryfiltering"><span class="std std-ref">Filtering</span></a> for details.</p></li>
+<li><p>For overlap queries all touching hits will be recorded even if a blocking hit was encountered and <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum9eNO_BLOCKE" title="PxQueryFlag::eNO_BLOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eNO_BLOCK</span></code></a> flag is set.</p></li>
+</ul>
+<hr class="docutils" />
+</section>
+</section>
+<section id="filtering">
+<span id="queryfiltering"></span><h2>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline"></a></h2>
+<p>Filtering controls how shapes are excluded from scene query results and how results are reported.
+All three query types support the following filtering parameters:</p>
+<ul class="simple">
+<li><p>a <a class="reference internal" href="../_api_build/structPxQueryFilterData.html#_CPPv417PxQueryFilterData" title="PxQueryFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryFilterData</span></code></a> structure, containing both <a class="reference internal" href="../_api_build/typedef_PxQueryFiltering_8h_1aacf083b040f6c841644782282171bd61.html#_CPPv412PxQueryFlags" title="PxQueryFlags"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxQueryFlags</span></code></a> and <a class="reference internal" href="../_api_build/structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a></p></li>
+<li><p>an optional <a class="reference internal" href="../_api_build/classPxQueryFilterCallback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryFilterCallback</span></code></a></p></li>
+</ul>
+<section id="pxqueryflag-estatic-pxqueryflag-edynamic">
+<h3>PxQueryFlag::eSTATIC, PxQueryFlag::eDYNAMIC<a class="headerlink" href="#pxqueryflag-estatic-pxqueryflag-edynamic" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum7eSTATICE" title="PxQueryFlag::eSTATIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eSTATIC</span></code></a> and <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum8eDYNAMICE" title="PxQueryFlag::eDYNAMIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eDYNAMIC</span></code></a> flags control whether the query should include shapes from the static and/or dynamic query structures.
+This is the most efficient way to filter out all static/dynamic shapes.
+For example an explosion effect that applies forces to all dynamics in a region could use a spherical <em>overlap</em> query,
+and only the <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum8eDYNAMICE" title="PxQueryFlag::eDYNAMIC"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eDYNAMIC</span></code></a> flag to exclude all statics since forces cannot be applied to static objects.
+By default both statics and dynamics are included in query results.</p>
+<p>For instance:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                 </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">            </span><span class="c1">// [in] Raycast max distance</span>
+<span class="n">PxRaycastBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">                 </span><span class="c1">// [out] Raycast results</span>
+
+<span class="c1">// [in] Define filter for static objects only</span>
+<span class="n">PxQueryFilterData</span><span class="w"> </span><span class="nf">filterData</span><span class="p">(</span><span class="n">PxQueryFlag</span><span class="o">::</span><span class="n">eSTATIC</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// Raycast against static objects only</span>
+<span class="c1">// The main result from this call is the boolean &#39;status&#39;</span>
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">,</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">,</span><span class="w"> </span><span class="n">filterData</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="pxqueryflag-eprefilter-pxqueryflag-epostfilter">
+<h3>PxQueryFlag::ePREFILTER, PxQueryFlag::ePOSTFILTER<a class="headerlink" href="#pxqueryflag-eprefilter-pxqueryflag-epostfilter" title="Permalink to this headline"></a></h3>
+<p>Scene queries are performed in three phases: broad phase, midphase and narrow phase.</p>
+<ul class="simple">
+<li><p>Broad phase traverses the global scene spatial partitioning structures to find the candidates for mid and narrow phases.</p></li>
+<li><p>Midphase traverses the triangle mesh and heightfield internal culling structures, to find a smaller subset of the triangles in a mesh reported by the broad phase.</p></li>
+<li><p>Narrow phase performs exact intersection tests (ray test for <em>raycast()</em> queries, exact sweep shape tests or overlap tests for <em>sweep()</em> and <em>overlap()</em> queries).</p></li>
+</ul>
+<p>To implement custom filtering in queries, set the <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum10ePREFILTERE" title="PxQueryFlag::ePREFILTER"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::ePREFILTER</span></code></a> and/or <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum11ePOSTFILTERE" title="PxQueryFlag::ePOSTFILTER"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::ePOSTFILTER</span></code></a> flags and subclass <a class="reference internal" href="../_api_build/classPxQueryFilterCallback.html#_CPPv421PxQueryFilterCallback" title="PxQueryFilterCallback"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryFilterCallback</span></code></a> with the required filtering logic.</p>
+<ul class="simple">
+<li><p>Pre-filtering happens before midphase and narrow phase and allows shapes to be efficiently discarded before the potentially expensive exact collision test. These tests are more expensive for triangle meshes, heightfields, convexes and most sweeps than raycast and overlap tests involving only simple shapes (such as spheres, capsules and boxes.)</p></li>
+<li><p>Post-filtering happens after the narrow phase test and can therefore use the results of the test (such as <a class="reference internal" href="../_api_build/structPxRaycastHit.html#_CPPv4N12PxRaycastHit8positionE" title="PxRaycastHit::position"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxRaycastHit::position</span></code></a>) to determine whether a hit should be discarded or not. These results can be accessed via the <em>hit</em> input argument to the post-filtering callback (<a class="reference internal" href="../_api_build/classPxQueryFilterCallback.html#_CPPv4N21PxQueryFilterCallback10postFilterERK12PxFilterDataRK10PxQueryHitPK7PxShapePK12PxRigidActor" title="PxQueryFilterCallback::postFilter"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxQueryFilterCallback::postFilter()</span></code></a>). Use e.g. <em>static_cast&lt;PxRaycastHit&amp;&gt;(hit)</em>, access data specific to a raycast query, and similarly for overlaps (<a class="reference internal" href="../_api_build/structPxOverlapHit.html#_CPPv412PxOverlapHit" title="PxOverlapHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxOverlapHit</span></code></a>) and sweeps (<a class="reference internal" href="../_api_build/structPxSweepHit.html#_CPPv410PxSweepHit" title="PxSweepHit"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSweepHit</span></code></a>).</p></li>
+</ul>
+<p>The implementation of a filtering callback returns a <a class="reference internal" href="../_api_build/structPxQueryHitType.html#_CPPv414PxQueryHitType" title="PxQueryHitType"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxQueryHitType</span></code></a> result.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/structPxQueryHitType.html#_CPPv4N14PxQueryHitType4Enum5eNONEE" title="PxQueryHitType::eNONE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryHitType::eNONE</span></code></a> indicates that the hit should be discarded.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxQueryHitType.html#_CPPv4N14PxQueryHitType4Enum6eBLOCKE" title="PxQueryHitType::eBLOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryHitType::eBLOCK</span></code></a> indicates that the hit is blocking.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxQueryHitType.html#_CPPv4N14PxQueryHitType4Enum6eTOUCHE" title="PxQueryHitType::eTOUCH"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryHitType::eTOUCH</span></code></a> indicates that the hit is touching.</p></li>
+</ul>
+<p>Whenever a <em>raycast()</em>, <em>sweep()</em> or <em>overlap()</em> query was called with non-zero <a class="reference internal" href="../_api_build/structPxHitCallback.html#_CPPv4N13PxHitCallback9nbTouchesE" title="PxHitCallback::nbTouches"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHitCallback::nbTouches</span></code></a> and <a class="reference internal" href="../_api_build/structPxHitCallback.html#_CPPv4N13PxHitCallback7touchesE" title="PxHitCallback::touches"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHitCallback::touches</span></code></a> parameters, eTOUCH type hits that are no further (touchDistance &lt;= blockDistance) than the closest eBLOCK type hit, will be reported. For example, to record all hits from a raycast query, always return eTOUCH.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Returning eTOUCH from a filter callback requires the hit buffer query parameter to have a non-zero ::touches array, otherwise PhysX will generate an error in checked builds and discard any touching hits.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>eBLOCK should not be returned from user filters for <em>overlap()</em>. Doing so will result in undefined behavior, and a warning will be issued. If the <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum9eNO_BLOCKE" title="PxQueryFlag::eNO_BLOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eNO_BLOCK</span></code></a> flag is set, the eBLOCK will instead be automatically converted to an eTOUCH and the warning suppressed.</p>
+</div>
+</section>
+<section id="pxqueryflag-eany-hit">
+<h3>PxQueryFlag::eANY_HIT<a class="headerlink" href="#pxqueryflag-eany-hit" title="Permalink to this headline"></a></h3>
+<p>Use this flag to force the query to report the first encountered hit (which may not be the closest) as a blocking hit.
+Best performance gains can be expected for long raycasts/sweeps with a nearby intersecting object, or overlaps with multiple intersecting objects.</p>
+<ul class="simple">
+<li><p>Also see <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum9eMESH_ANYE" title="PxHitFlag::eMESH_ANY"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eMESH_ANY</span></code></a> (now <a class="reference internal" href="../_api_build/structPxHitFlag.html#_CPPv4N9PxHitFlag4Enum8eANY_HITE" title="PxHitFlag::eANY_HIT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxHitFlag::eANY_HIT</span></code></a>).</p></li>
+</ul>
+</section>
+<section id="pxqueryflag-eno-block">
+<h3>PxQueryFlag::eNO_BLOCK<a class="headerlink" href="#pxqueryflag-eno-block" title="Permalink to this headline"></a></h3>
+<p>Use this flag when you want to override the eBLOCK value returned from filters to eTOUCH or in cases when no blocking hits are expected (in this case this flag serves as a performance hint). All hits will then be reported as touching regardless of the filter callback return value.
+The hit callback/buffer object provided to the query is required to have a non-zero <a class="reference internal" href="../_api_build/structPxHitBuffer.html#_CPPv4N11PxHitBuffer7touchesE" title="PxHitBuffer::touches"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxHitBuffer::touches</span></code></a> buffer when this flag is used. Significant performance gains should only be expected for scenarios where the touching hit buffer overflows.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>this flag overrides the return value from pre and post-filter functions, so hits that were previously returned as blocking will instead be returned as touching.</p>
+</div>
+</section>
+<section id="pxfilterdata-fixed-function-filtering">
+<h3>PxFilterData fixed function filtering<a class="headerlink" href="#pxfilterdata-fixed-function-filtering" title="Permalink to this headline"></a></h3>
+<p>A fast, fixed-function filter is provided by <a class="reference internal" href="../_api_build/structPxFilterData.html#_CPPv412PxFilterData" title="PxFilterData"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxFilterData</span></code></a>, a 4*32-bit bitmask used by the built-in filtering equation.
+Each shape has a bitmask (set via <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv4N7PxShape18setQueryFilterDataERK12PxFilterData" title="PxShape::setQueryFilterData"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxShape::setQueryFilterData()</span></code></a>), and the query also has a bitmask.</p>
+<p>The query data is used differently by batched and unbatched queries (see below for batched queries). For unbatched queries, the following rules are applied:</p>
+<ul class="simple">
+<li><p>If the query’s bitmask is all zeroes, custom filtering and intersection testing proceed as normal.</p></li>
+<li><p>Otherwise, if the bitwise-AND value of the query’s bitmask and the shape’s bitmask is zero, the shape is skipped</p></li>
+</ul>
+<p>Or in other words:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxU32</span><span class="w"> </span><span class="n">keep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">object</span><span class="p">.</span><span class="n">word0</span><span class="p">)</span><span class="w"></span>
+<span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">word1</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">object</span><span class="p">.</span><span class="n">word1</span><span class="p">)</span><span class="w"></span>
+<span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">word2</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">object</span><span class="p">.</span><span class="n">word2</span><span class="p">)</span><span class="w"></span>
+<span class="w">           </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">word3</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">object</span><span class="p">.</span><span class="n">word3</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This hardcoded equation can provide simple filtering while avoiding the function call overhead of the filtering callback. For example, to emulate the behavior of PhysX 2 active groups, define the groups as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">enum</span><span class="w"> </span><span class="nc">ActiveGroup</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">GROUP1</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">GROUP2</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">GROUP3</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="n">GROUP4</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">3</span><span class="p">),</span><span class="w"></span>
+<span class="w">    </span><span class="p">...</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When shapes are created, they can be assigned to the a group, for example GROUP1:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span><span class="w">             </span><span class="c1">// Previously created shape</span>
+
+<span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData</span><span class="p">;</span><span class="w"></span>
+<span class="n">filterData</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GROUP1</span><span class="p">;</span><span class="w"></span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">setQueryFilterData</span><span class="p">(</span><span class="n">filterData</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Or to multiple groups, for example GROUP1 and GROUP3:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxShape</span><span class="o">*</span><span class="w"> </span><span class="n">shape</span><span class="p">;</span><span class="w">             </span><span class="c1">// Previously created shape</span>
+
+<span class="n">PxFilterData</span><span class="w"> </span><span class="n">filterData</span><span class="p">;</span><span class="w"></span>
+<span class="n">filterData</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GROUP1</span><span class="o">|</span><span class="n">GROUP3</span><span class="p">;</span><span class="w"></span>
+<span class="n">shape</span><span class="o">-&gt;</span><span class="n">setQueryFilterData</span><span class="p">(</span><span class="n">filterData</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>When performing a scene query, select which groups are active for the query - for example GROUP2 and GROUP3 - as follows:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">               </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">   </span><span class="c1">// [in] Raycast max distance</span>
+<span class="n">PxRaycastBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">                </span><span class="c1">// [out] Raycast results</span>
+
+<span class="c1">// [in] Define what parts of PxRaycastHit we&#39;re interested in</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxHitFlags</span><span class="w"> </span><span class="n">outputFlags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">ePOSITION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eNORMAL</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// [in] Raycast against GROUP2 and GROUP3</span>
+<span class="n">PxQueryFilterData</span><span class="w"> </span><span class="n">filterData</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxQueryFilterData</span><span class="p">();</span><span class="w"></span>
+<span class="n">filterData</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">word0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GROUP2</span><span class="o">|</span><span class="n">GROUP3</span><span class="p">;</span><span class="w"></span>
+
+<span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">,</span><span class="w"> </span><span class="n">outputFlags</span><span class="p">,</span><span class="w"> </span><span class="n">filterData</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="user-defined-hit-callbacks-for-unbounded-results">
+<h2>User defined hit callbacks for unbounded results<a class="headerlink" href="#user-defined-hit-callbacks-for-unbounded-results" title="Permalink to this headline"></a></h2>
+<p>Queries can sometimes return a very large number of results (for example, queries with very large objects or in areas with high object density), and it can be prohibitively expensive to reserve a sufficiently large memory buffer. The classes <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a4dbe8142d799492bd8e7c5ec70bfac41.html#_CPPv417PxRaycastCallback" title="PxRaycastCallback"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxRaycastCallback</span></code></a>, <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a6f93f556cef747d50f643499928dd865.html#_CPPv415PxSweepCallback" title="PxSweepCallback"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxSweepCallback</span></code></a> and <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a9baa3a8cad31bbb8ef666fe01b3afeb7.html#_CPPv417PxOverlapCallback" title="PxOverlapCallback"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxOverlapCallback</span></code></a> provide efficient callback based solutions for such scenarios. For instance a <em>raycast</em> query with a <a class="reference internal" href="../_api_build/typedef_PxQueryReport_8h_1a4dbe8142d799492bd8e7c5ec70bfac41.html#_CPPv417PxRaycastCallback" title="PxRaycastCallback"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxRaycastCallback</span></code></a> callback will return all touch hits via multiple <a class="reference internal" href="../_api_build/structPxHitCallback.html#_CPPv4N13PxHitCallback14processTouchesEPK7HitType5PxU32" title="PxHitCallback::processTouches"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxHitCallback::processTouches()</span></code></a> calls:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="k">struct</span><span class="w"> </span><span class="nc">UserCallback</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">PxRaycastCallback</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">UserData</span><span class="w"> </span><span class="n">data</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="n">PxAgain</span><span class="w"> </span><span class="nf">processTouches</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PxRaycastHit</span><span class="o">*</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">PxU32</span><span class="w"> </span><span class="n">nbHits</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// This callback can be issued multiple times and can be used</span>
+<span class="w">        </span><span class="c1">// to process an unbounded number of touching hits.</span>
+<span class="w">        </span><span class="c1">// Each reported touching hit in buffer is guaranteed to be closer than</span>
+<span class="w">        </span><span class="c1">// the final block hit after the query has fully executed.</span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nbHits</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"></span>
+<span class="w">            </span><span class="n">animateLeaves</span><span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">virtual</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">finalizeQuery</span><span class="p">()</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">drawWallDecal</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;</span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+<span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                 </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">            </span><span class="c1">// [in] Raycast max distance</span>
+
+<span class="n">UserCallback</span><span class="w"> </span><span class="n">cb</span><span class="p">;</span><span class="w"> </span><span class="n">cb</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+<span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">cb</span><span class="p">);</span><span class="w"> </span><span class="c1">// see UserCallback::processTouches</span>
+</pre></div>
+</div>
+<p>In this code snippet the raycast query will potentially invoke <em>processTouches</em> multiple times, with all touching hits already clipped to the globally nearest blocking hit.</p>
+<ul class="simple">
+<li><p>Note that the query can be up to twice as expensive in case all eTOUCH results do not fit in the provided touches buffer and a blocking hit was also found.</p></li>
+<li><p>Also see <a class="reference internal" href="../_api_build/structPxQueryFlag.html#_CPPv4N11PxQueryFlag4Enum9eNO_BLOCKE" title="PxQueryFlag::eNO_BLOCK"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxQueryFlag::eNO_BLOCK</span></code></a></p></li>
+</ul>
+<hr class="docutils" />
+</section>
+<section id="batched-queries">
+<span id="id1"></span><h2>Batched queries<a class="headerlink" href="#batched-queries" title="Permalink to this headline"></a></h2>
+<p>PhysX supports batching of scene queries via the <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> interface. This can be found in the extensions library. This API is mainly provided for backward compatibility - it does not necessarily provide performance gains.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> interface facilitates batching and execution of multiple queries together. <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> buffers raycast, overlap and sweep queries until <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv4N15PxBatchQueryExt7executeEv" title="PxBatchQueryExt::execute"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBatchQueryExt::execute()</span></code></a> is called.</p></li>
+<li><p>Use <a class="reference internal" href="../_api_build/function_PxSceneQueryExt_8h_1a793696c25094939ca56bb72b9faf10e1.html#_CPPv421PxCreateBatchQueryExtRK7PxSceneP21PxQueryFilterCallbackP15PxRaycastBufferK5PxU32P12PxRaycastHitK5PxU32P13PxSweepBufferK5PxU32P10PxSweepHitK5PxU32P15PxOverlapBufferK5PxU32P12PxOverlapHitK5PxU32" title="PxCreateBatchQueryExt"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreateBatchQueryExt()</span></code></a> to create a <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> object. There are two versions of this function. One takes user-provided arrays to store the results and touch data, while the other will allocate arrays for the result and touch data, as specified in the function arguments.</p></li>
+<li><p>The hardcoded filtering equation is not used for batched queries.</p></li>
+<li><p>Each of the query functions of <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> returns a pointer to <em>PxRaycastBuffer/PxSweepBuffer/PxOverlapBuffer</em> as appropriate. <a class="reference internal" href="../_api_build/classPxBatchQueryExt.html#_CPPv415PxBatchQueryExt" title="PxBatchQueryExt"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBatchQueryExt</span></code></a> consumes the corresponding buffers in the order the queries are called. If the corresponding buffers are not large enough then a null pointer will be returned and an error issued to the error stream.</p></li>
+<li><p>The function <a class="reference internal" href="../_api_build/structPxBatchQueryStatus.html#_CPPv4N18PxBatchQueryStatus9getStatusERK15PxRaycastBuffer" title="PxBatchQueryStatus::getStatus"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBatchQueryStatus::getStatus()</span></code></a> can be used to determine if the allocated or provided touch buffer was insufficiently large to record all touches resulting from the batch of queries.</p></li>
+</ul>
+<hr class="docutils" />
+</section>
+<section id="single-object-caching">
+<span id="id2"></span><h2>Single Object Caching<a class="headerlink" href="#single-object-caching" title="Permalink to this headline"></a></h2>
+<p>A special case mechanism for accelerating scene queries is single-object caching, using <a class="reference internal" href="../_api_build/structPxQueryCache.html#_CPPv412PxQueryCache" title="PxQueryCache"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryCache</span></code></a>.</p>
+<ul class="simple">
+<li><p>This cache can provide additional speedups and memory savings for “any hit” queries.</p></li>
+<li><p>The cache object defines which shape should be tested first. For queries with high temporal coherence, this can provide significant performance gains. A good strategy to capture that coherence is simply to fill the cache object of a given query with the eBLOCK result (last blocking shape) from the previous frame.</p></li>
+<li><p>Note that it is likely incorrect to use a past touching hit (recorded with eTOUCH flag) for caching since it will be interpreted as blocking and override any filtering.</p></li>
+</ul>
+<p>For example there is a good chance that an AI visibility query will return the same line-of-sight blocking shape for several frames. Using a <em>raycast</em> query with a properly filled <a class="reference internal" href="../_api_build/structPxQueryCache.html#_CPPv412PxQueryCache" title="PxQueryCache"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxQueryCache</span></code></a> object will allow PhysX to test a single shape - before traversing the internal spatial partitioning structures, and in case of a “cache hit” the traversal can be bypassed entirely. For instance:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxScene</span><span class="o">*</span><span class="w"> </span><span class="n">scene</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                 </span><span class="c1">// [in] Ray origin</span>
+<span class="n">PxVec3</span><span class="w"> </span><span class="n">unitDir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">                </span><span class="c1">// [in] Normalized ray direction</span>
+<span class="n">PxReal</span><span class="w"> </span><span class="n">maxDistance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w">            </span><span class="c1">// [in] Raycast max distance</span>
+<span class="n">PxRaycastBuffer</span><span class="w"> </span><span class="n">hit</span><span class="p">;</span><span class="w">                 </span><span class="c1">// [out] Raycast results</span>
+
+<span class="c1">// Per-raycast persistent cache, valid from one frame to the next</span>
+<span class="k">static</span><span class="w"> </span><span class="n">PxQueryCache</span><span class="w"> </span><span class="n">persistentCache</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// Define cache for current frame:</span>
+<span class="c1">// - if there was a hit in the previous frame, use the cache.</span>
+<span class="c1">// - otherwise do not (PhysX requires given cache has a valid shape pointer)</span>
+<span class="k">const</span><span class="w"> </span><span class="n">PxQueryCache</span><span class="o">*</span><span class="w"> </span><span class="n">cache</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">persistentCache</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="o">&amp;</span><span class="n">persistentCache</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">// Perform a raycast query using the cache</span>
+<span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scene</span><span class="o">-&gt;</span><span class="n">raycast</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span><span class="w"> </span><span class="n">unitDir</span><span class="p">,</span><span class="w"> </span><span class="n">maxDistance</span><span class="p">,</span><span class="w"> </span><span class="n">hit</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                   </span><span class="n">PxHitFlags</span><span class="p">(</span><span class="n">PxHitFlag</span><span class="o">::</span><span class="n">eDEFAULT</span><span class="p">),</span><span class="w"></span>
+<span class="w">                                   </span><span class="n">PxQueryFilterData</span><span class="p">(),</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">cache</span><span class="p">);</span><span class="w"></span>
+<span class="k">if</span><span class="p">(</span><span class="n">status</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// We hit a shape. Cache it for next frame.</span>
+<span class="w">    </span><span class="n">persistentCache</span><span class="p">.</span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hit</span><span class="p">.</span><span class="n">block</span><span class="p">.</span><span class="n">shape</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">persistentCache</span><span class="p">.</span><span class="n">faceIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hit</span><span class="p">.</span><span class="n">block</span><span class="p">.</span><span class="n">faceIndex</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="k">else</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// We did not hit anything. Reset the cache for next frame.</span>
+<span class="w">    </span><span class="n">persistentCache</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxQueryCache</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Caching can also be useful in queries looking for the closest blocking hit. In this case, testing the previously closest object first can allow PhysX to shorten the query distance very early, leading to fewer total narrow phase collision tests and early out from the traversal.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PhysX does not detect stale pointers, so the application is responsible for cached object validity when shapes are deleted.</p>
+</div>
+<hr class="docutils" />
+</section>
+<section id="pxpruningstructuretype">
+<span id="id3"></span><h2>PxPruningStructureType<a class="headerlink" href="#pxpruningstructuretype" title="Permalink to this headline"></a></h2>
+<p>PhysX SDK offers different pruning structures which are used to accelerate the scene queries. This paragraph describes the differences between them.</p>
+<section id="generalities">
+<h3>Generalities<a class="headerlink" href="#generalities" title="Permalink to this headline"></a></h3>
+<p>The Scene Query system uses two different acceleration structures, a hierarchical grid and an AABB tree.</p>
+<p>The grid builds quickly, in O(n) time, with queries executing in between O(1) and O(N) time depending on how uniformly the objects are distributed in space, with pathological worst case performance of O(N) when all objects are clustered in the same grid cell.</p>
+<p>The tree builds in O(n log(n)) time, but queries with a single result typically run in O(log(n)) time. Queries returning multiple results will traverse more of the tree, the worst case being a query returning all of the objects in the scene in O(n) time. The tree is vulnerable to degeneration when the same topology is maintained too long as object positions change, and in pathological cases query performance may degrade to O(n) time.</p>
+<p>Acceleration structures must be continually modified in accordance with objects being added or removed, or object AABB updates due to changes in position or geometry. To minimize the cost, modifications are deferred for as long as possible. Thus adding or removing objects or updating AABBs occurs in amortized constant time, with the cost of modifications deferred until the changes ‘commit’. This happens on the next subsequent query or the next <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a> or the next <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchQueriesEb" title="PxScene::fetchQueries"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchQueries()</span></code></a> call. To force an immediate commit, call the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene17flushQueryUpdatesEv" title="PxScene::flushQueryUpdates"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::flushQueryUpdates()</span></code></a> function.</p>
+<p>The exact details of the commit process depend on the values of <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc15staticStructureE" title="PxSceneDesc::staticStructure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticStructure</span></code></a> and <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc16dynamicStructureE" title="PxSceneDesc::dynamicStructure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicStructure</span></code></a>.</p>
+<p>To avoid automatic resizing triggered by insertions into internal scene query data structures, reserve the space in advance. See <a class="reference internal" href="../_api_build/classPxSceneLimits.html#_CPPv4N13PxSceneLimits17maxNbStaticShapesE" title="PxSceneLimits::maxNbStaticShapes"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneLimits::maxNbStaticShapes</span></code></a> and <a class="reference internal" href="../_api_build/classPxSceneLimits.html#_CPPv4N13PxSceneLimits18maxNbDynamicShapesE" title="PxSceneLimits::maxNbDynamicShapes"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneLimits::maxNbDynamicShapes</span></code></a>.</p>
+</section>
+<section id="pxpruningstructuretype-enone">
+<h3>PxPruningStructureType::eNONE<a class="headerlink" href="#pxpruningstructuretype-enone" title="Permalink to this headline"></a></h3>
+<p>The <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum5eNONEE" title="PxPruningStructureType::eNONE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eNONE</span></code></a> acceleration structure is similar to a hierarchical grid. Committing changes requires a full rebuild. This is a good choice if you expect to rarely or never update the objects in this structure.</p>
+</section>
+<section id="pxpruningstructuretype-estatic-aabb-tree">
+<h3>PxPruningStructureType::eSTATIC_AABB_TREE<a class="headerlink" href="#pxpruningstructuretype-estatic-aabb-tree" title="Permalink to this headline"></a></h3>
+<p>The <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum17eSTATIC_AABB_TREEE" title="PxPruningStructureType::eSTATIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eSTATIC_AABB_TREE</span></code></a> acceleration structure is a tree. Committing changes requires a full rebuild. It is not generally recommended, but can be a good choice
+for <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc15staticStructureE" title="PxSceneDesc::staticStructure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticStructure</span></code></a> if the static actors in your scene are created on initialization, and not modified thereafter. If you frequently add or remove static geometry, the default <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum18eDYNAMIC_AABB_TREEE" title="PxPruningStructureType::eDYNAMIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></code></a> setting is usually a better choice, although it has a higher memory footprint than that of <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum17eSTATIC_AABB_TREEE" title="PxPruningStructureType::eSTATIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eSTATIC_AABB_TREE</span></code></a>.</p>
+</section>
+<section id="pxpruningstructuretype-edynamic-aabb-tree">
+<h3>PxPruningStructureType::eDYNAMIC_AABB_TREE<a class="headerlink" href="#pxpruningstructuretype-edynamic-aabb-tree" title="Permalink to this headline"></a></h3>
+<p>With <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum18eDYNAMIC_AABB_TREEE" title="PxPruningStructureType::eDYNAMIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></code></a>, both a main tree and a secondary pruning structure are used, and each query searches both the tree and the secondary pruner.</p>
+<p>The main tree is initially built by the first commit. Once a tree is built, committing changes proceeds as follows:</p>
+<ul class="simple">
+<li><p>the tree is refitted in accordance with updates and removals of object it contains.</p></li>
+<li><p>added objects are inserted into the secondary pruner. Such additions, but also removals, or changes to objects in the secondary pruner, only cause updates to this structure (not to the main tree). The nature of these updates depends on which implementation is used for the secondary pruner. This can be defined by the <a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv428PxDynamicTreeSecondaryPruner" title="PxDynamicTreeSecondaryPruner"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner</span></code></a> enum in <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc26dynamicTreeSecondaryPrunerE" title="PxSceneDesc::dynamicTreeSecondaryPruner"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicTreeSecondaryPruner</span></code></a>. (See details below).</p></li>
+</ul>
+<p>In addition, a new tree is incrementally built during <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a>, over a number of frames controlled by <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc26dynamicTreeRebuildRateHintE" title="PxSceneDesc::dynamicTreeRebuildRateHint"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicTreeRebuildRateHint</span></code></a>. When the build starts, it includes all of the objects in the current tree and secondary pruner. When it finishes, some frames later, the new tree is refitted in accordance with any AABB changes or removals since the build started, and then replaces the current tree. Any objects that were added since the start of the build remain in the secondary pruner.</p>
+<p>To force a full immediate rebuild, call <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene23forceDynamicTreeRebuildEbb" title="PxScene::forceDynamicTreeRebuild"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::forceDynamicTreeRebuild()</span></code></a>. This can be useful in cases such as the following:</p>
+<ul class="simple">
+<li><p>a slow rebuilt rate is typically desirable, but occasionally a large number of object additions creates high occupancy in the secondary pruner.</p></li>
+<li><p>you are moving many objects across large distances, since refitting may significantly degrade the quality of the current tree.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pxdynamictreesecondarypruner">
+<h2>PxDynamicTreeSecondaryPruner<a class="headerlink" href="#pxdynamictreesecondarypruner" title="Permalink to this headline"></a></h2>
+<p>As mentioned in the previous paragraph, <a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv428PxDynamicTreeSecondaryPruner" title="PxDynamicTreeSecondaryPruner"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner</span></code></a> controls which implementation is used for the secondary pruner of dynamic trees. This secondary pruner manages newly added objects, typically while the main scene tree is rebuilt over a number of frames.</p>
+<section id="pxdynamictreesecondarypruner-enone">
+<h3>PxDynamicTreeSecondaryPruner::eNONE<a class="headerlink" href="#pxdynamictreesecondarypruner-enone" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4Enum5eNONEE" title="PxDynamicTreeSecondaryPruner::eNONE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner::eNONE</span></code></a> tells the system to ignore scene queries for newly added objects. It means that for a number of frames after insertion into the scene, (until the main scene tree is rebuilt), these objects will not be visible to scene queries. This can be acceptable in large streaming worlds where objects streamed in are located at the limits of the world, and it can be fine for these objects to not participate in scene queries immediately (it would be the same as streaming them in some frames later). The benefits is that no CPU time is spent on managing these new objects, so insertion &amp; query costs are small.</p>
+</section>
+<section id="pxdynamictreesecondarypruner-ebucket">
+<h3>PxDynamicTreeSecondaryPruner::eBUCKET<a class="headerlink" href="#pxdynamictreesecondarypruner-ebucket" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4Enum7eBUCKETE" title="PxDynamicTreeSecondaryPruner::eBUCKET"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner::eBUCKET</span></code></a> uses a grid similar to the one used for the main pruner with <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum5eNONEE" title="PxPruningStructureType::eNONE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eNONE</span></code></a>. Insertions are cheap but query cost can be high if a lot of objects end up in the grid - especially if insertions are localized and a lot of objects end up in the same grid cell. This was the default structure for secondary pruner in PhysX 3.</p>
+</section>
+<section id="pxdynamictreesecondarypruner-eincremental">
+<h3>PxDynamicTreeSecondaryPruner::eINCREMENTAL<a class="headerlink" href="#pxdynamictreesecondarypruner-eincremental" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4Enum12eINCREMENTALE" title="PxDynamicTreeSecondaryPruner::eINCREMENTAL"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner::eINCREMENTAL</span></code></a> uses an incremental AABB-tree, with no direct <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructureType</span></code></a> equivalent. Queries are fast, but insertion cost can be high.
+This was the default structure for secondary pruner in PhysX 4, and it is also the default choice in PhysX 5.</p>
+</section>
+<section id="pxdynamictreesecondarypruner-ebvh">
+<h3>PxDynamicTreeSecondaryPruner::eBVH<a class="headerlink" href="#pxdynamictreesecondarypruner-ebvh" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/structPxDynamicTreeSecondaryPruner.html#_CPPv4N28PxDynamicTreeSecondaryPruner4Enum4eBVHE" title="PxDynamicTreeSecondaryPruner::eBVH"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxDynamicTreeSecondaryPruner::eBVH</span></code></a> uses a PxBVH structure for the secondary pruner (see below). This is an AABB-tree with support for refit operations, tweaked for fast
+build performance and reasonable query performance. This new implementation generally offers the best overall performance. However it is not as efficient as <em>PxDynamicTreeSecondaryPruner::eINCREMENTAL</em> for important edge cases in which a scene query immediately follows the insertion of one or a few objects into the scene. This would be the case for example when a raycast or a sweep is used to position each newly spawned object in the scene.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="bvh-build-settings">
+<h2>BVH build settings<a class="headerlink" href="#bvh-build-settings" title="Permalink to this headline"></a></h2>
+<p>Since PhysX 5.1, users can tweak &amp; refine the build strategy and the number of objects per node for <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum17eSTATIC_AABB_TREEE" title="PxPruningStructureType::eSTATIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eSTATIC_AABB_TREE</span></code></a> and <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum18eDYNAMIC_AABB_TREEE" title="PxPruningStructureType::eDYNAMIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></code></a> structures. The corresponding parameters are:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc22staticBVHBuildStrategyE" title="PxSceneDesc::staticBVHBuildStrategy"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticBVHBuildStrategy</span></code></a> and <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc22staticNbObjectsPerNodeE" title="PxSceneDesc::staticNbObjectsPerNode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::staticNbObjectsPerNode</span></code></a> for the static structure (<a class="reference internal" href="../_api_build/classPxSceneQueryDesc.html#_CPPv4N16PxSceneQueryDesc15staticStructureE" title="PxSceneQueryDesc::staticStructure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneQueryDesc::staticStructure</span></code></a>)</p></li>
+<li><p><a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc23dynamicBVHBuildStrategyE" title="PxSceneDesc::dynamicBVHBuildStrategy"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicBVHBuildStrategy</span></code></a> and <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc23dynamicNbObjectsPerNodeE" title="PxSceneDesc::dynamicNbObjectsPerNode"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::dynamicNbObjectsPerNode</span></code></a> for the dynamic structure (<a class="reference internal" href="../_api_build/classPxSceneQueryDesc.html#_CPPv4N16PxSceneQueryDesc16dynamicStructureE" title="PxSceneQueryDesc::dynamicStructure"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneQueryDesc::dynamicStructure</span></code></a>).</p></li>
+</ul>
+<p>There are three available build strategies:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/structPxBVHBuildStrategy.html#_CPPv4N18PxBVHBuildStrategy4Enum5eFASTE" title="PxBVHBuildStrategy::eFAST"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBVHBuildStrategy::eFAST</span></code></a> provides the fastest builds.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxBVHBuildStrategy.html#_CPPv4N18PxBVHBuildStrategy4Enum8eDEFAULTE" title="PxBVHBuildStrategy::eDEFAULT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBVHBuildStrategy::eDEFAULT</span></code></a> is the default mode for internal midphase structures: it is a good middle-ground between build performance and query performance.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxBVHBuildStrategy.html#_CPPv4N18PxBVHBuildStrategy4Enum4eSAHE" title="PxBVHBuildStrategy::eSAH"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBVHBuildStrategy::eSAH</span></code></a> provides the best trees in terms of query performance, but they can be significantly more costly to build.</p></li>
+</ul>
+<p>Because objects are constantly moving in these scene-level trees, i.e. these trees will be constantly rebuilt at runtime, it is usually better to focus on build performance rather than absolute best build quality. Thus, the default mode here is <a class="reference internal" href="../_api_build/structPxBVHBuildStrategy.html#_CPPv4N18PxBVHBuildStrategy4Enum5eFASTE" title="PxBVHBuildStrategy::eFAST"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBVHBuildStrategy::eFAST</span></code></a>. (The midphase structures for triangle meshes are usually purely static and never updated, so they use <a class="reference internal" href="../_api_build/structPxBVHBuildStrategy.html#_CPPv4N18PxBVHBuildStrategy4Enum8eDEFAULTE" title="PxBVHBuildStrategy::eDEFAULT"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxBVHBuildStrategy::eDEFAULT</span></code></a> instead).</p>
+<p>The number of objects per node is another parameter that can affect build and runtime performance. Increasing that number means that each BVH leaf node will contains more objects, i.e. a query against a leaf node will potentially take more time, as the code will query each of the leaf objects sequentially. On the other hand, the tree will take less memory, it will be faster to build, and because it contains less internal nodes overall it will also be faster to refit, potentially reducing CPU-time spikes. The default value is 4 objects per node to be consistent with previous PhysX versions, but it is not unreasonable to increase this number up to 15.</p>
+</section>
+<hr class="docutils" />
+<section id="pxscenequeryupdatemode">
+<h2>PxSceneQueryUpdateMode<a class="headerlink" href="#pxscenequeryupdatemode" title="Permalink to this headline"></a></h2>
+<p>It is possible to define what scene query related work is done during <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene12fetchResultsEbP5PxU32" title="PxScene::fetchResults"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::fetchResults()</span></code></a>.</p>
+<p>By default <em>fetchResults</em> will sync changed bounds during simulation and update the scene query bounds in pruners, this work is mandatory.
+Other work can be optional, based on the <a class="reference internal" href="../_api_build/structPxSceneQueryUpdateMode.html#_CPPv422PxSceneQueryUpdateMode" title="PxSceneQueryUpdateMode"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQueryUpdateMode</span></code></a>:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/structPxSceneQueryUpdateMode.html#_CPPv4N22PxSceneQueryUpdateMode4Enum29eBUILD_ENABLED_COMMIT_ENABLEDE" title="PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_ENABLED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_ENABLED</span></code></a> does allow to execute the new AABB tree build step during <em>fetchResults</em>, additionally the pruner commit is called where any changes are applied. During commit PhysX refits the dynamic scene query tree and if a new tree was built and the build finished the tree is swapped with current AABB tree.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxSceneQueryUpdateMode.html#_CPPv4N22PxSceneQueryUpdateMode4Enum30eBUILD_ENABLED_COMMIT_DISABLEDE" title="PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneQueryUpdateMode::eBUILD_ENABLED_COMMIT_DISABLED</span></code></a> does allow to execute the new AABB tree build step during <em>fetchResults</em>. Pruner commit is not called, this means that refit will then occur during the first scene query following <em>fetchResults</em>, or may be forced by the method <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene17flushQueryUpdatesEv" title="PxScene::flushQueryUpdates"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::flushQueryUpdates()</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxSceneQueryUpdateMode.html#_CPPv4N22PxSceneQueryUpdateMode4Enum31eBUILD_DISABLED_COMMIT_DISABLEDE" title="PxSceneQueryUpdateMode::eBUILD_DISABLED_COMMIT_DISABLED"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxSceneQueryUpdateMode::eBUILD_DISABLED_COMMIT_DISABLED</span></code></a> no further scene query work is executed. The scene queries update needs to be called manually, see <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene18sceneQueriesUpdateEP10PxBaseTaskb" title="PxScene::sceneQueriesUpdate"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::sceneQueriesUpdate()</span></code></a>. It is recommended to call <em>PxScene::sceneQueriesUpdate</em> right after <em>fetchResults</em> as the pruning structures are not updated.</p></li>
+</ul>
+<p>It is sometimes useful to change the scene query update mode at runtime. For example when running multiple physics (sub)steps per (render) frame, it is often not necessary to update the scene query structures for each of these substeps. It can thus be useful to disable scene query updates for all substeps except the last one.</p>
+</section>
+<hr class="docutils" />
+<section id="pxpruningstructure">
+<h2>PxPruningStructure<a class="headerlink" href="#pxpruningstructure" title="Permalink to this headline"></a></h2>
+<p><a class="reference internal" href="../_api_build/classPxPruningStructure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a> provides access to precomputed pruning structure used to accelerate scene queries against newly added actors.</p>
+<p>A pruning structure can be provided to <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene9addActorsEPPC7PxActor5PxU32" title="PxScene::addActors"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::addActors()</span></code></a>. The actors scene query shapes will then be directly merged into the scenes AABB tree, without the need of an AABB tree recompute:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create pruning structure from given actors.</span>
+<span class="n">PxPruningStructure</span><span class="o">*</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxPhysics</span><span class="o">::</span><span class="n">createPruningStructure</span><span class="p">(</span><span class="o">&amp;</span><span class="n">actors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="p">(</span><span class="n">PxU32</span><span class="p">)</span><span class="n">actors</span><span class="p">.</span><span class="n">size</span><span class="p">());</span><span class="w"></span>
+<span class="c1">// Add actors into a scene together with the precomputed pruning structure.</span>
+<span class="n">PxScene</span><span class="o">::</span><span class="n">addActors</span><span class="p">(</span><span class="o">*</span><span class="n">ps</span><span class="p">);</span><span class="w"></span>
+<span class="n">ps</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A <a class="reference internal" href="../_api_build/classPxPruningStructure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a> object can be serialized into a collection together with its actors.</p>
+<p>For usage of <a class="reference internal" href="../_api_build/classPxPruningStructure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a> please refer to the snippet <em>SnippetPrunerSerialization</em>.</p>
+<p>A typical use case for <a class="reference internal" href="../_api_build/classPxPruningStructure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a> is a large world scenario where blocks of closely positioned actors get streamed in.</p>
+<section id="merge-process">
+<h3>Merge process<a class="headerlink" href="#merge-process" title="Permalink to this headline"></a></h3>
+<p>The merge process into the scene query acceleration structure differs based on <a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv422PxPruningStructureType" title="PxPruningStructureType"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructureType</span></code></a>:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum17eSTATIC_AABB_TREEE" title="PxPruningStructureType::eSTATIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eSTATIC_AABB_TREE</span></code></a> - the pruning structure is merged directly into scene’s AABBtree. This might unbalance the tree and it is recommended to recompute the static tree at some point.</p></li>
+<li><p><a class="reference internal" href="../_api_build/structPxPruningStructureType.html#_CPPv4N22PxPruningStructureType4Enum18eDYNAMIC_AABB_TREEE" title="PxPruningStructureType::eDYNAMIC_AABB_TREE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxPruningStructureType::eDYNAMIC_AABB_TREE</span></code></a> - the pruning structure is merged into a temporary pruning structures until the scene’s new optimized AABB tree is computed.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pxbvh">
+<h2>PxBVH<a class="headerlink" href="#pxbvh" title="Permalink to this headline"></a></h2>
+<p><a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> modifies the default behavior of scene queries. By default scene queries are shape centric, which means each shape is represented as an object in a scene query pruner. A <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> tells the SDK to set actor centric behavior for that given actor.</p>
+<p>If a <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> is provided during <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv4N7PxScene8addActorER7PxActorPK5PxBVH" title="PxScene::addActor"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxScene::addActor()</span></code></a>, that actor’s bounds are stored in a separate internal pruning structure known as a “compound pruner” - instead of adding each of the actor’s shapes to the regular static &amp; dynamic pruning structures. When a scene query against such an actor is done it does first query the actors bounds and then makes a local query against the shapes using the provided BVH structure data (note that the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> data are copied to the SDK and are not required during runtime).</p>
+<section id="how-to-create-pxbvh">
+<h3>How to create PxBVH<a class="headerlink" href="#how-to-create-pxbvh" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> can be created with either <a class="reference internal" href="../_api_build/function_PxCooking_8h_1aa39458e1f2c4a2e5b03af3340d4d71a1.html#_CPPv49PxCookBVHRKN5physx9PxBVHDescERN5physx14PxOutputStreamE" title="PxCookBVH"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCookBVH()</span></code></a> or <a class="reference internal" href="../_api_build/function_PxCooking_8h_1a1bdbcaedaf4faad371de98affbe16f15.html#_CPPv411PxCreateBVHRKN5physx9PxBVHDescERN5physx19PxInsertionCallbackE" title="PxCreateBVH"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxCreateBVH()</span></code></a>. It takes the provided <a class="reference internal" href="../_api_build/classPxBounds3.html#_CPPv49PxBounds3" title="PxBounds3"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBounds3</span></code></a> and computes a BVH. The bounds data is stored within the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> and used later.</p>
+<p>Example:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// get the bounds from the actor, this can be done through a helper function in PhysX extensions</span>
+<span class="n">PxU32</span><span class="w"> </span><span class="n">numBounds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="n">PxBounds3</span><span class="o">*</span><span class="w"> </span><span class="n">bounds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">getRigidActorShapeLocalBoundsList</span><span class="p">(</span><span class="o">*</span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="n">numBounds</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// setup the PxBVHDesc, it does contain only the PxBounds3 data</span>
+<span class="n">PxBVHDesc</span><span class="w"> </span><span class="n">bvhDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numBounds</span><span class="p">;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bounds</span><span class="p">;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">PxBounds3</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// cook the bvh</span>
+<span class="n">PxBVH</span><span class="o">*</span><span class="w"> </span><span class="n">bvh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateBVH</span><span class="p">(</span><span class="n">bvhDesc</span><span class="p">,</span><span class="w"> </span><span class="n">gPhysics</span><span class="o">-&gt;</span><span class="n">getPhysicsInsertionCallback</span><span class="p">());</span><span class="w"></span>
+<span class="c1">// Or simply: PxBVH* bvh = PxCreateBVH(bvhDesc, gPhysics-&gt;getPhysicsInsertionCallback());</span>
+
+<span class="c1">// release the memory allocated within extensions, the bounds are not required anymore</span>
+<span class="n">gAllocator</span><span class="p">.</span><span class="n">deallocate</span><span class="p">(</span><span class="n">bounds</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// add the actor to the scene and provide the bvh structure</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">body</span><span class="p">,</span><span class="w"> </span><span class="n">bvh</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// bvh can be released at this point, the precomputed BVH structure was copied to the SDK pruners.</span>
+<span class="n">bvh</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>For usage of <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> please refer to the snippet <em>SnippetBVHStructure</em>.</p>
+<p>Since PhysX 5 it is also possible to use the new <a class="reference internal" href="../_api_build/classPxRigidActorExt.html#_CPPv4N15PxRigidActorExt18createBVHFromActorER9PxPhysicsRK12PxRigidActor" title="PxRigidActorExt::createBVHFromActor"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxRigidActorExt::createBVHFromActor()</span></code></a> helper to make the code smaller:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="c1">// cook the bvh</span>
+<span class="n">PxBVH</span><span class="o">*</span><span class="w"> </span><span class="n">bvh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxRigidActorExt</span><span class="o">::</span><span class="n">createBVHFromActor</span><span class="p">(</span><span class="n">gPhysics</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">actor</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// add the actor to the scene and provide the bvh structure</span>
+<span class="n">gScene</span><span class="o">-&gt;</span><span class="n">addActor</span><span class="p">(</span><span class="o">*</span><span class="n">actor</span><span class="p">,</span><span class="w"> </span><span class="n">bvh</span><span class="p">);</span><span class="w"></span>
+
+<span class="c1">// bvh can be released at this point, the precomputed BVH structure was copied to the SDK pruners.</span>
+<span class="n">bvh</span><span class="o">-&gt;</span><span class="n">release</span><span class="p">();</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Note that the resulting <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> can also be added to an aggregate via <a class="reference internal" href="../_api_build/classPxAggregate.html#_CPPv4N11PxAggregate8addActorER7PxActorPK5PxBVH" title="PxAggregate::addActor"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxAggregate::addActor()</span></code></a>.</p>
+</section>
+<section id="standalone-pxbvh">
+<h3>Standalone PxBVH<a class="headerlink" href="#standalone-pxbvh" title="Permalink to this headline"></a></h3>
+<p>It is possible to create standalone <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> objects that can be used without having a <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> around. In this case the call to <a class="reference internal" href="../_api_build/classPxPhysics.html#_CPPv4N9PxPhysics27getPhysicsInsertionCallbackEv" title="PxPhysics::getPhysicsInsertionCallback"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxPhysics::getPhysicsInsertionCallback()</span></code></a> is not needed, and the cooking call just becomes:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="n">PxBVHDesc</span><span class="w"> </span><span class="n">bvhDesc</span><span class="p">;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+<span class="n">bvhDesc</span><span class="p">.</span><span class="n">bounds</span><span class="p">.</span><span class="n">stride</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">...;</span><span class="w"></span>
+
+<span class="n">PxBVH</span><span class="o">*</span><span class="w"> </span><span class="n">bvh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PxCreateBVH</span><span class="p">(</span><span class="n">bvhDesc</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>A standalone <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> is a simple independent tree structure that can be used for arbitrary purposes, not just for physics per-se. In fact the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> API contains additional functions compared to the PxScene-level API. For example in addition to the traditional raycast, overlap and sweep queries it has a <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv4NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags" title="PxBVH::cull"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBVH::cull()</span></code></a> method that can be used to implement view-frustum culling.</p>
+<p>Examples of standalone <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> usages can be found in <em>SnippetStandaloneBVH</em>, <em>SnippetFrustumQuery</em>, <em>SnippetPathTracing</em>.</p>
+<p><em>SnippetStandaloneBVH</em> is similar in spirit to the previously mentioned <em>SnippetGeometryQuery</em> (see <a class="reference internal" href="GeometryQueries.html#snippetgeometryquery"><span class="std std-ref">PxGeometryQuery raycast snippet</span></a>). In that previous snippet we used the <a class="reference internal" href="../_api_build/classPxGeometryQuery.html#_CPPv4N15PxGeometryQuery7raycastERK6PxVec3RK6PxVec3RK10PxGeometryRK11PxTransform6PxReal10PxHitFlags5PxU32P16PxGeomRaycastHit5PxU3220PxGeometryQueryFlagsP22PxRaycastThreadContext" title="PxGeometryQuery::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxGeometryQuery::raycast()</span></code></a> function to raytrace a single object at a time. <em>SnippetStandaloneBVH</em> extends that snippet and uses a <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> structure to manage a custom scene. This new snippet then uses the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv4NK5PxBVH7raycastERK6PxVec3RK6PxVec3fR15RaycastCallback20PxGeometryQueryFlags" title="PxBVH::raycast"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBVH::raycast()</span></code></a> function to raytrace the whole scene, instead of just one object. As before, the results are displayed in the corner of the screen. The snippet also demonstrates how the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv4N5PxBVH5refitEv" title="PxBVH::refit"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBVH::refit()</span></code></a> function is used to update the tree structure after the objects have moved.</p>
+<img alt="../_images/SnippetStandaloneBVH.png" src="../_images/SnippetStandaloneBVH.png" />
+<p><em>SnippetFrustumQuery</em> demonstrates how to use the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv4NK5PxBVH4cullE5PxU32PK7PxPlaneR15OverlapCallback20PxGeometryQueryFlags" title="PxBVH::cull"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxBVH::cull()</span></code></a> function to implement basic view-frustum culling. Note that this feature is not available directly in <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a>, this is currently only available in the <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> API. Move the camera with the mouse, the number of visible objects at any given time is displayed on screen.</p>
+<img alt="../_images/SnippetFrustumQuery.png" src="../_images/SnippetFrustumQuery.png" />
+<p><em>SnippetPathTracing</em> demonstrates how to use a standalone <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> in a (CPU) path-tracer. This is an advanced snippet that shows how to use a BVH for a more realistic/complex case than <em>SnippetStandaloneBVH</em>. It also reuses some multithreading code from <em>SnippetMultiThreading</em>, so you should get familiar with these two snippets first.</p>
+<img alt="../_images/SnippetPathTracing.png" src="../_images/SnippetPathTracing.png" />
+</section>
+</section>
+<hr class="docutils" />
+<section id="pxscenequerysystem">
+<h2>PxSceneQuerySystem<a class="headerlink" href="#pxscenequerysystem" title="Permalink to this headline"></a></h2>
+<p>As one can see from the above documentation the <em>PhysX</em> scene query system evolved into a complex entity containing a lot of unique features (such as the touch/block hits, the query caches, etc). This can be both a blessing and a curse, since the feature-rich system can appear overwhelming for new users. Generally speaking <em>PhysX</em> also tries to provide backward compatibility with previous versions, which means the API can feel a bit set-in-stone and cumbersome. It is not always easy to refactor without breaking users’ code (see e.g. how previous incarnations of the scene query API survived in the Extensions library, e.g. in <em>PxSceneQueryExt.h</em>, to ensure smooth transitions).</p>
+<p><a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQuerySystem</span></code></a> is a first step towards decoupling the scene query system from <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a>. The goal is to separate the two, and make the entire system easier for users to tweak and customize. As a start, all scene-query-related functions previously located in the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> API have been moved to the <a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQuerySystem</span></code></a> API. This is done in a way that keeps the old code compiling so it should be transparent for users updating from PhysX 4 to PhysX 5.</p>
+<p>There is a new <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc16sceneQuerySystemE" title="PxSceneDesc::sceneQuerySystem"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::sceneQuerySystem</span></code></a> parameter. It is  now possible for users to setup their own <a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQuerySystem</span></code></a> pointer there, and all the scene-query-related calls will then be re-routed to this user-provided implementation. The idea is that while these user-specific implementations must follow the same API as the one used in <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a>, they could still simplify the code under the hood to remove an undesired feature, or customize a query.</p>
+<p>If <a class="reference internal" href="../_api_build/classPxSceneDesc.html#_CPPv4N11PxSceneDesc16sceneQuerySystemE" title="PxSceneDesc::sceneQuerySystem"><code class="xref cpp cpp-member docutils literal notranslate"><span class="pre">PxSceneDesc::sceneQuerySystem</span></code></a> is set to NULL, which is the default, nothing changes for users. Out-of-the-box, <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> still contains an internal implementation of the <em>PxSceneQuerySystem</em> API that behaves exactly as before.</p>
+<p>We provide two example <a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQuerySystem</span></code></a> implementations, discussed below, in the extensions library.</p>
+<section id="external-scene-query-system">
+<h3>External scene query system<a class="headerlink" href="#external-scene-query-system" title="Permalink to this headline"></a></h3>
+<p>The first example is the “external scene query system”, located in <em>PxSceneQuerySystemExt.h</em>. This is a full-featured replacement for the <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a>’s internal scene query system, and it is a good starting point to begin tinkering with the code, and understand how everything fits together. Note that this implementation actually re-uses large parts of <em>PhysX</em>’s own internal implementation, located in the <em>SceneQuery</em> static library. This ensures that this version does not deviate from what current users are familiar with. It is mainly the location of the scene-query code that has changed: it partially moved to the Extension library, which is where traditional “plugins” are located (e.g. all the PhysX joints can be found there).</p>
+</section>
+<section id="custom-scene-query-system">
+<h3>Custom scene query system<a class="headerlink" href="#custom-scene-query-system" title="Permalink to this headline"></a></h3>
+<p>The second example is the “custom scene query system”, located in <em>PxCustomSceneQuerySystem.h</em>. It modifies the previous code so that the scene query system supports an arbitrary number of pruning structures, instead of just the two traditional static &amp; dynamic structures used in both the previously discussed internal and external scene query systems. This can be very useful for large streamed worlds, that can then use a different pruner for each section of the streamed world (reminiscent of MBP regions). Doing so minimizes the load on each pruner, and can lead to faster updates and reduced CPU spikes. It can also be easier to multi-thread the pruner updates when one has multiple independent pruners. See <em>SnippetMultiPruners</em> for an example.</p>
+<p>Note that this customized implementation is not fully compatible with the traditional <a class="reference internal" href="../_api_build/classPxScene.html#_CPPv47PxScene" title="PxScene"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxScene</span></code></a> API, and this is why these experiments take place in the Extensions library. For example the <a class="reference internal" href="../_api_build/classPxPruningStructure.html#_CPPv418PxPruningStructure" title="PxPruningStructure"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxPruningStructure</span></code></a> only knows about static and dynamic pruning structures, so they cannot be easily merged with this customized version (and thus the <a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv4N18PxSceneQuerySystem5mergeERK18PxPruningStructure" title="PxSceneQuerySystem::merge"><code class="xref cpp cpp-func docutils literal notranslate"><span class="pre">PxSceneQuerySystem::merge()</span></code></a> function is not available here). There are also new additional functions to add a pruner to the system and to manage the now user-defined actor/shape-to-pruner mapping. See the details in <em>PxCustomSceneQuerySystem.h</em>.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="low-level-query-system">
+<h2>Low-level query system<a class="headerlink" href="#low-level-query-system" title="Permalink to this headline"></a></h2>
+<p>Finally, PhysX 5 also introduces a completely independent low-level scene-query system. While <a class="reference internal" href="../_api_build/classPxSceneQuerySystem.html#_CPPv418PxSceneQuerySystem" title="PxSceneQuerySystem"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxSceneQuerySystem</span></code></a> still operated on <a class="reference internal" href="../_api_build/classPxActor.html#_CPPv47PxActor" title="PxActor"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxActor</span></code></a> and <a class="reference internal" href="../_api_build/classPxShape.html#_CPPv47PxShape" title="PxShape"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxShape</span></code></a> objects, this is not the case anymore for this low-level version, located in the PhysXCommon library (<code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">Gu::QuerySystem</span></code>). It only operates on <a class="reference internal" href="../_api_build/classPxGeometry.html#_CPPv410PxGeometry" title="PxGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxGeometry</span></code></a> and <a class="reference internal" href="../_api_build/typedef_PxTransform_8h_1a8ddcfa21262bb645cbe896368cf1e7aa.html#_CPPv411PxTransform" title="PxTransform"><code class="xref cpp cpp-type docutils literal notranslate"><span class="pre">PxTransform</span></code></a> classes, like <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a>. This <em>standalone query system</em> is higher level than <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> though and contains more features, like the ability to rebuild a tree in the background. It can be seen as the counterpart of immediate mode for scene queries - and in fact could be used to implement either a tree-based immediate mode broadphase, or a scene-query system for immediate mode.</p>
+<p>See <em>SnippetStandaloneQuerySystem</em>, <em>SnippetQuerySystemAllQueries</em> and <em>SnippetQuerySystemCustomCompound</em> for detailed examples of how to use it.</p>
+<p>Start with <em>SnippetStandaloneQuerySystem</em>. This snippet is similar to <em>SnippetStandaloneBVH</em>, but this time using <code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">Gu::QuerySystem</span></code> instead of a <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a>. The snippet illustrates a basic setup and a single type of query (raycast closest hit).</p>
+<img alt="../_images/SnippetStandaloneQuerySystem.png" src="../_images/SnippetStandaloneQuerySystem.png" />
+<p>For more queries see <em>SnippetQuerySystemAllQueries</em>: it demonstrates all queries supported by the low-level query system (raycast, overlap, sweep, for ‘any hit’, ‘closest hit’ or ‘multiple hits’).</p>
+<img alt="../_images/SnippetQuerySystemAllQueries.png" src="../_images/SnippetQuerySystemAllQueries.png" />
+<p>Finally <em>SnippetQuerySystemCustomCompound</em> demonstrates how to re-implement a ‘compound pruner’ in <code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">Gu::QuerySystem</span></code> using <a class="reference internal" href="../_api_build/classPxCustomGeometry.html#_CPPv416PxCustomGeometry" title="PxCustomGeometry"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxCustomGeometry</span></code></a> objects. As mentioned before, <em>PhysX</em> uses an internal ‘compound pruner’ when a <a class="reference internal" href="../_api_build/classPxBVH.html#_CPPv45PxBVH" title="PxBVH"><code class="xref cpp cpp-class docutils literal notranslate"><span class="pre">PxBVH</span></code></a> structure is used for a newly added actor. This snippet shows how to replicate this actor-centric behavior in low-level scene queries, where a custom geometry acts as a container for the actor’s shapes. This advanced snippet shows how all these low-level structures fit together.</p>
+<img alt="../_images/SnippetQuerySystemCustomCompound.png" src="../_images/SnippetQuerySystemCustomCompound.png" />
+</section>
+<hr class="docutils" />
+<section id="rationale-for-decoupled-broadphases-scene-query-system">
+<h2>Rationale for decoupled broadphases &amp; scene-query system<a class="headerlink" href="#rationale-for-decoupled-broadphases-scene-query-system" title="Permalink to this headline"></a></h2>
+<p>A traditional design in popular physics engines is to use the same data structure for broadphase and scene queries (typically a BVH). Having to maintain a single data structure instead of two is an obvious benefit, so it is a legitimate design decision. But PhysX uses independent broadphase and scene-query systems for several reasons:</p>
+<ul class="simple">
+<li><p>broadphase performance. Tree-based broadphases may not perform as well as other algorithms dedicated to broadphase work (like sweep-and-prune variants). This will highly depend on implementation details though.</p></li>
+<li><p>double-buffering. Users need to e.g. raycast against the scene while it is simulated, so some double-buffering scheme is needed for the broadphase. It is of course possible to double-buffer a single data structure like a BVH, but it is also possible to instead sync two entirely different data structures, and get more benefits out of this requirement. This is what PhysX does, the broadphase-to-scene-query sync is equivalent to a double buffering scheme.</p></li>
+<li><p>different objects. PhysX has “simulation objects” (see <a class="reference internal" href="../_api_build/structPxShapeFlag.html#_CPPv4N11PxShapeFlag4Enum17eSIMULATION_SHAPEE" title="PxShapeFlag::eSIMULATION_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eSIMULATION_SHAPE</span></code></a>) and “scene query objects” (see <a class="reference internal" href="../_api_build/structPxShapeFlag.html#_CPPv4N11PxShapeFlag4Enum18eSCENE_QUERY_SHAPEE" title="PxShapeFlag::eSCENE_QUERY_SHAPE"><code class="xref cpp cpp-enumerator docutils literal notranslate"><span class="pre">PxShapeFlag::eSCENE_QUERY_SHAPE</span></code></a>). They are not always the same, e.g. when using a detailed mesh for raycasts but a convex approximation of that mesh for simulation/collisions. Some objects can  be simulation-objects only, or scene-query objects only. It pollutes the broadphase and complicates collision filtering to put all of them in the same (broadphase) data structure. It is simpler to put simulation objects in the broadphase, and scene-query objects in a BVH. Separation of concerns.</p></li>
+<li><p>different bounds (AABBs). The “broadphase bounds” are not the same as the “scene query bounds”. The broadphase bounds can be temporal bounds, or larger than necessary for speculative contacts. Scene queries do not need that, so scene query performance takes a hit when using the same bounds for both purposes. Here again it makes everything simpler to put the simulation bounds in one structure, and tighter bounds in another. So now the two structures contain different objects with different bounds for different purposes. A clear picture emerges.</p></li>
+<li><p>different update frequencies. Sometimes a higher simulation frequency is needed for increasing stability. Simulating e.g. at 120 Hz requires two broadphase updates per render frame (at 60 FPS). But scene-queries typically only need a single update per render frame. Updating a tree structure is (often) more complicated than updating a broadphase structure so the cost of substeps increases a lot there. Using looser bounds can avoid most of the update work but again, looser bounds might decrease performance across the board.</p></li>
+<li><p>the GPU broadphase. In PhysX the broadphase must also run on the GPU. Selecting a tree-based broadphase just to support scene-queries limits the available choices of algorithms for the GPU version. Not all algorithms map well to GPUs so this extra burden is really not ideal here. In the end, in PhysX, the GPU broadphase does not currently support scene-queries and effectively the broadphase runs on the GPU while scene-queries runs on the CPU - on a different processor using a different algorithm, different objects, different bounds, and sometimes a different update frequency.</p></li>
+<li><p>external scene-query system. Finally, the final stage of this decoupling is that it is now possible for users to plug their own scene-query system on top of PhysX, while the PhysX broadphase runs independently (possibly on the GPU).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022-2024, NVIDIA.
+      <span class="lastupdated">Last updated on Dec 04, 2024.
+      </span></p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+ 
+
+
+
+</body>
+</html>
