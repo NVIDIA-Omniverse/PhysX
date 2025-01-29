@@ -106,7 +106,7 @@ struct PxContactPatch
 	/**
 	\brief The number of contacts in this patch
 	*/
-	PxU8	nbContacts;
+	PxU16	nbContacts;
 
 	/**
 	\brief The combined material flag of two actors that come in contact
@@ -129,7 +129,7 @@ struct PxContactPatch
 	*/
 	PxU16	materialIndex1;
 
-	PxU16	pad[5];
+	PxU16	pad[4];
 }
 PX_ALIGN_SUFFIX(16);
 
