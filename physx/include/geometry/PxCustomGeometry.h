@@ -259,7 +259,7 @@ namespace physx
 
 		\return  True if the current settings are valid for shape creation.
 
-		\see PxRigidActor::createShape, PxPhysics::createShape
+		\see PxPhysics::createShape
 		*/
 		PX_INLINE bool isValid() const;
 

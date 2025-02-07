@@ -38,6 +38,8 @@
 #include "foundation/PxUserAllocated.h"
 #include "PxScene.h"
 #include "PxParticleSystem.h"
+#include "PxArticulationTendonData.h"
+#include "PxNodeIndex.h"
 
 namespace physx
 {
@@ -106,9 +108,14 @@ namespace physx
 	class PxsSimulationControllerOVDCallbacks : public PxUserAllocated
 	{
 	public:
-		virtual void    processRigidDynamicSet(PxsRigidBody** rigids, void* dataVec, PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements) = 0;
-		virtual void    processArticulationSet(Dy::FeatherstoneArticulation** simBodyVec, void* dataVec, PxArticulationGPUIndex* indexVec, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
+		virtual void    processRigidDynamicSet(const PxsRigidBody* const * rigids, const void* dataVec, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements) = 0;
+		virtual void    processArticulationSet(const Dy::FeatherstoneArticulation* const * simBodyVec, const void* dataVec, const PxArticulationGPUIndex* indexVec, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
 			PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments) = 0;
+		
+		// Returns the number of elements in a data block as well as the size of the datablock, see PxArticulationGPUAPIWriteType::Enum for where the sizes etc are derived
+		PX_FORCE_INLINE void getArticulationDataElements(PxArticulationGPUAPIWriteType::Enum dataType, PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments,
+			PxU32& nbSubElements, PxU32& blockSize) const;
+
 		virtual ~PxsSimulationControllerOVDCallbacks() {}
 	};
 #endif
@@ -355,6 +362,78 @@ namespace physx
 	public:
 		const PxIntBool						mGPU;	// PT: true for GPU version, used to quickly skip calls for CPU version
 	};
+
+#if PX_SUPPORT_OMNI_PVD
+	PX_FORCE_INLINE void PxsSimulationControllerOVDCallbacks::getArticulationDataElements(PxArticulationGPUAPIWriteType::Enum dataType, PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments,
+		PxU32& nbSubElements, PxU32& blockSize) const
+	{
+		PxU32 singleSubElementSize = 0;
+		switch(dataType)
+		{
+		case PxArticulationGPUAPIWriteType::eJOINT_POSITION:
+		case PxArticulationGPUAPIWriteType::eJOINT_VELOCITY:
+		case PxArticulationGPUAPIWriteType::eJOINT_FORCE:
+		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_VELOCITY:
+		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_POSITION:
+		{
+			nbSubElements = maxDofs;
+			singleSubElementSize = sizeof(PxReal);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE:
+		{
+			nbSubElements = 1;
+			singleSubElementSize = sizeof(PxTransform);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eROOT_LINEAR_VELOCITY:
+		case PxArticulationGPUAPIWriteType::eROOT_ANGULAR_VELOCITY:
+		{
+			nbSubElements = 1;
+			singleSubElementSize = sizeof(PxVec3);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eLINK_FORCE:
+		case PxArticulationGPUAPIWriteType::eLINK_TORQUE:
+		{
+			nbSubElements = maxLinks;
+			singleSubElementSize = sizeof(PxVec3);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eFIXED_TENDON:
+		{
+			nbSubElements = maxFixedTendons;
+			singleSubElementSize = sizeof(PxGpuFixedTendonData);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eFIXED_TENDON_JOINT:
+		{
+			nbSubElements = maxFixedTendons * maxTendonJoints;
+			singleSubElementSize = sizeof(PxGpuTendonJointCoefficientData);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eSPATIAL_TENDON:
+		{
+			nbSubElements = maxSpatialTendons;
+			singleSubElementSize = sizeof(PxGpuSpatialTendonData);
+			break;
+		}
+		case PxArticulationGPUAPIWriteType::eSPATIAL_TENDON_ATTACHMENT:
+		{
+			nbSubElements = maxSpatialTendons * maxSpatialTendonAttachments;
+			singleSubElementSize = sizeof(PxGpuTendonAttachmentData);
+			break;
+		}
+		default:
+			PX_ALWAYS_ASSERT();
+			nbSubElements = 0;
+			singleSubElementSize = 0;
+			break;
+		}
+		blockSize = singleSubElementSize * nbSubElements;
+	}
+#endif
+
 }
 
 #endif

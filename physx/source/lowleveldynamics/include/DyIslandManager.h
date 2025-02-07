@@ -56,9 +56,12 @@ namespace physx
 
 	template <> struct IGNodeTraits<PxsRigidBody>					{ enum { TypeID = IG::Node::eRIGID_BODY_TYPE };			};
 	template <> struct IGNodeTraits<Dy::FeatherstoneArticulation>	{ enum { TypeID = IG::Node::eARTICULATION_TYPE };		};
+
+#if PX_SUPPORT_GPU_PHYSX
 	template <> struct IGNodeTraits<Dy::DeformableSurface>			{ enum { TypeID = IG::Node::eDEFORMABLE_SURFACE_TYPE };	};
 	template <> struct IGNodeTraits<Dy::DeformableVolume>			{ enum { TypeID = IG::Node::eDEFORMABLE_VOLUME_TYPE };	};
 	template <> struct IGNodeTraits<Dy::ParticleSystem>				{ enum { TypeID = IG::Node::ePARTICLESYSTEM_TYPE };		};
+#endif
 
 	template<class T>
 	PX_FORCE_INLINE T* getObjectFromIG(const IG::Node& node)

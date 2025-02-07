@@ -945,6 +945,13 @@ void NpArticulationReducedCoordinate::release()
 
 	if (npScene)
 	{
+	#if PX_SUPPORT_OMNI_PVD
+		if (npScene->getFlags() & PxSceneFlag::eENABLE_DIRECT_GPU_API)
+		{
+			npScene->getSceneOvdClientInternal().removeArticulationReset(this);
+		}
+	#endif
+
 		npScene->removeArticulationTendons(*this);
 		npScene->removeArticulationMimicJoints(*this);
 		npScene->scRemoveArticulation(*this);

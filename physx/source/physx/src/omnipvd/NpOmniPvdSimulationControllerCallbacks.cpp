@@ -44,16 +44,16 @@ NpOmniPvdSimulationControllerCallbacks::NpOmniPvdSimulationControllerCallbacks(N
 {
 }
 
-const PxRigidDynamic* NpOmniPvdSimulationControllerCallbacks::castPxsRigidBodyToPxRigidDynamic(PxsRigidBody* const rigidBody)
+const PxRigidDynamic* NpOmniPvdSimulationControllerCallbacks::castPxsRigidBodyToPxRigidDynamic(const PxsRigidBody* rigidBody)
 {
-	PxsBodyCore& pxsBodyCoreRef = rigidBody->getCore();
+	const PxsBodyCore& pxsBodyCoreRef = rigidBody->getCore();
 	Sc::BodyCore& bodyCoreRef = Sc::BodyCore::getCore(pxsBodyCoreRef);
 	PxRigidDynamic* rigidDynamic = static_cast<PxRigidDynamic*>(bodyCoreRef.getPxActor());
 	PX_ASSERT(rigidDynamic->getConcreteType() == PxConcreteType::eRIGID_DYNAMIC);
 	return rigidDynamic;
 }
 
-const NpArticulationReducedCoordinate* NpOmniPvdSimulationControllerCallbacks::castFeatherstoneToNpArticulation(Dy::FeatherstoneArticulation* const featherstone)
+const NpArticulationReducedCoordinate* NpOmniPvdSimulationControllerCallbacks::castFeatherstoneToNpArticulation(const Dy::FeatherstoneArticulation* const featherstone)
 {
 	// Dy::FeatherstoneArticulation's constructor takes a void pointer argument, which is stored as userData in the
 	// object. This userData argument is the Sc::ArticulationSim pointer for the purpose of the PxgArticulationCore
@@ -65,106 +65,32 @@ const NpArticulationReducedCoordinate* NpOmniPvdSimulationControllerCallbacks::c
 	return npArticulation;
 }
 
-// Returns the number of elements in a data block see PxArticulationGPUAPIWriteType::Enum for where the sizes etc are derived
-PxU32 NpOmniPvdSimulationControllerCallbacks::getArticulationDataMaxSubElementsNb(PxArticulationGPUAPIWriteType::Enum dataType,
-	PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments)
-{
-	PxU32 nbSubElements = 1;
-	switch(dataType)
-	{
-	case PxArticulationGPUAPIWriteType::eJOINT_POSITION:
-	{
-		// The joint positions. 1 PxReal per dof. Block size per articulation: maxDofs.
-		nbSubElements = maxDofs;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eJOINT_VELOCITY:
-	{
-		// The joint velocities. 1 PxReal per dof. Block size per articulation: maxDofs.
-		nbSubElements = maxDofs;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eJOINT_FORCE:
-	{
-		// The applied joint forces or torques. 1 PxReal per dof. Block size per articulation: maxDofs.
-		nbSubElements = maxDofs;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eJOINT_TARGET_VELOCITY:
-	{
-		// The velocity targets for the joint drives. 1 PxReal per dof. Block size per articulation: maxDofs.
-		nbSubElements = maxDofs;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eJOINT_TARGET_POSITION:
-	{
-		// The position targets for the joint drives. 1 PxReal per dof. Block size per articulation: maxDofs.
-		nbSubElements = maxDofs;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE:
-	{
-		// The root link transform. 1 PxTransform per articulation. Block size per articulation: 1.
-		nbSubElements = 1;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eROOT_LINEAR_VELOCITY:
-	{
-		// The root link linear velocity. 1 PxVec3 per articulation. Block size per articulation: 1.
-		nbSubElements = 1;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eROOT_ANGULAR_VELOCITY:
-	{
-		// The root link angular velocity. 1 PxVec3 per articulation. Block size per articulation: 1.
-		nbSubElements = 1;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eLINK_FORCE:
-	{
-		// The forces to apply to links. 1 PxVec3 per link. Block size per articulation: maxLinks.
-		nbSubElements = maxLinks;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eLINK_TORQUE:
-	{
-		// The torques to apply to links. 1 PxVec3 per link. Block size per articulation: maxLinks.
-		nbSubElements = maxLinks;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eFIXED_TENDON:
-	{
-		// Fixed tendon data. 1 PxGpuFixedTendonData per fixed tendon. Block size per articulation: maxFixedTendons.
-		nbSubElements = maxFixedTendons;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eFIXED_TENDON_JOINT:
-	{
-		// Fixed tendon joint data. 1 PxGpuTendonJointCoefficientData per fixed tendon joint. Block size per articulation: maxFixedTendons * maxFixedTendonJoints.
-		nbSubElements = maxFixedTendons * maxTendonJoints;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eSPATIAL_TENDON:
-	{
-		// Spatial tendon data. 1 PxGpuSpatialTendonData per spatial tendon. Block size per articulation: maxSpatialTendons.
-		nbSubElements = maxSpatialTendons;
-		break;
-	}
-	case PxArticulationGPUAPIWriteType::eSPATIAL_TENDON_ATTACHMENT:
-	{
-		// Spatial tendon attachment data. 1 PxGpuTendonAttachmentData per spatial tendon attachment. Block size per articulation: maxSpatialTendons * maxSpatialTendonAttachments.
-		nbSubElements = maxSpatialTendons * maxSpatialTendonAttachments;
-		break;
-	}
-	default:
-		PX_ASSERT(false);
-		nbSubElements = 0;
-		break;
-	}
-	return nbSubElements;
+#define SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxActorType, DataVecType, attribute) \
+{ \
+	DataVecType* dataVecCasted = (DataVecType*)dataVec; \
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData) \
+	for (PxU32 i = 0; i < nbElements; i++) \
+	{ \
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActorType, attribute, *castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]), dataVecCasted[i]); \
+	} \
+	OMNI_PVD_WRITE_SCOPE_END \
 }
 
-void NpOmniPvdSimulationControllerCallbacks::processRigidDynamicSet(PxsRigidBody** rigids, void* dataVec, PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements)
+#define SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, npScene, resetAttributeFunction, PxActorType, DataVecType, attribute) \
+{ \
+	NpOmniPvdSceneClient& ovdClient = npScene.getSceneOvdClientInternal(); \
+	DataVecType* dataVecCasted = (DataVecType*)dataVec; \
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData) \
+	for (PxU32 i = 0; i < nbElements; i++) \
+	{ \
+		const PxRigidDynamic* ridiDynamic = castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]); \
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActorType, attribute, *ridiDynamic, dataVecCasted[i]); \
+		ovdClient.resetAttributeFunction(ridiDynamic); \
+	} \
+	OMNI_PVD_WRITE_SCOPE_END \
+}
+
+void NpOmniPvdSimulationControllerCallbacks::processRigidDynamicSet(const PxsRigidBody* const * rigids, const void* dataVec, const PxRigidDynamicGPUIndex* gpuIndices, PxRigidDynamicGPUAPIWriteType::Enum dataType, PxU32 nbElements)
 {
 	PX_COMPILE_TIME_ASSERT(sizeof(PxVec3) == (sizeof(PxF32) * 3));
 	PX_COMPILE_TIME_ASSERT(sizeof(PxTransform) == (sizeof(PxF32) * 7));
@@ -173,63 +99,27 @@ void NpOmniPvdSimulationControllerCallbacks::processRigidDynamicSet(PxsRigidBody
 	{
 	case PxRigidDynamicGPUAPIWriteType::eGLOBAL_POSE:
 	{
-		PxTransform* tformsDataVec = (PxTransform*)dataVec;
-		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-		for (PxU32 i = 0; i < nbElements; i++)
-		{
-			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, *castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]), tformsDataVec[i]);
-		}
-		OMNI_PVD_WRITE_SCOPE_END
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidActor, const PxTransform, globalPose)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eLINEAR_VELOCITY:
-	{		
-		PxVec3* linearVelocitiesDataVec = (PxVec3*)dataVec;
-		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-		for (PxU32 i = 0; i < nbElements; i++)
-		{
-			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity, *castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]), linearVelocitiesDataVec[i])
-		}
-		OMNI_PVD_WRITE_SCOPE_END
+	{	
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, const PxVec3, linearVelocity)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eANGULAR_VELOCITY:
 	{
-		PxVec3* angularVelocitiesDataVec = (PxVec3*)dataVec;
-		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-		for (PxU32 i = 0; i < nbElements; i++)
-		{
-			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity, *castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]), angularVelocitiesDataVec[i])
-		}
-		OMNI_PVD_WRITE_SCOPE_END
+		SET_RIGID_DYNAMIC_ATTRIBUTES(rigids, dataVec, gpuIndices, nbElements, PxRigidBody, const PxVec3, angularVelocity)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eFORCE:
 	{
-		NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
-		PxVec3* forcesDataVec = (PxVec3*)dataVec;
-		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-		for (PxU32 i = 0; i < nbElements; i++)
-		{
-			const PxRigidDynamic* ridiDynamic = castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]);
-			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, force, *ridiDynamic, forcesDataVec[i])
-			ovdClient.addRigidDynamicForceReset(ridiDynamic);
-		}
-		OMNI_PVD_WRITE_SCOPE_END
+		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicForceReset, PxRigidBody, const PxVec3, force)
 		break;
 	}
 	case PxRigidDynamicGPUAPIWriteType::eTORQUE:
 	{
-		NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
-		PxVec3* torquesDataVec = (PxVec3*)dataVec;
-		OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-		for (PxU32 i = 0; i < nbElements; i++)
-		{
-			const PxRigidDynamic* ridiDynamic = castPxsRigidBodyToPxRigidDynamic(rigids[gpuIndices[i]]);
-			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, torque, *ridiDynamic, torquesDataVec[i])
-			ovdClient.addRigidDynamicTorqueReset(ridiDynamic);
-		}
-		OMNI_PVD_WRITE_SCOPE_END
+		SET_RIGID_DYNAMIC_ATTRIBUTES_WITH_RESET(rigids, dataVec, gpuIndices, nbElements, mNpScene, addRigidDynamicTorqueReset, PxRigidBody, const PxVec3, torque)
 		break;
 	}
 	default:
@@ -256,11 +146,11 @@ void NpOmniPvdSimulationControllerCallbacks::setDofOffsetVec(PxArray<PxU32>& dof
 	}
 }
 
-void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, Dy::FeatherstoneArticulation** articulations, PxReal* realsDataVec, PxArticulationGPUIndex* nodeIndices,
+void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulationGPUAPIWriteType::Enum dataType, const Dy::FeatherstoneArticulation* const * articulations, const PxReal* realsDataVec, const PxArticulationGPUIndex* nodeIndices,
 	PxU32 nbArticulations, PxU32 maxLinks, PxU32 maxSubElementsInBlock)
 {
 	NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
-	PxArray<PxU32> dofStarts(maxLinks);
+	mDofStarts.resizeUninitialized(maxLinks);
 	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
 	for (PxU32 artId = 0; artId < nbArticulations; artId++)
 	{
@@ -269,14 +159,14 @@ void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulat
 		{
 			ovdClient.addArticulationJointsForceReset(static_cast<const PxArticulationReducedCoordinate*>(npArticulation));
 		}
-		PxReal* realsForArticulation = &realsDataVec[ artId * maxSubElementsInBlock ];
+		const PxReal* realsForArticulation = &realsDataVec[ artId * maxSubElementsInBlock ];
 		const PxU32 nbLinks = npArticulation->getNbLinks();
 		const NpArticulationLink* const * npLinks = npArticulation->getLinks();
-		setDofOffsetVec(dofStarts, nbLinks, npLinks);
+		setDofOffsetVec(mDofStarts, nbLinks, npLinks);
 		for(PxU32 linkId = 1; linkId < nbLinks; linkId++)
 		{
 			const NpArticulationLink* npLink = npLinks[linkId];						
-			PxReal* realsForDofs = &realsForArticulation[dofStarts[npLink->getLinkIndex()]];
+			const PxReal* realsForDofs = &realsForArticulation[mDofStarts[npLink->getLinkIndex()]];
 			const PxArticulationJointReducedCoordinate& joint = *static_cast<const PxArticulationJointReducedCoordinate*>(npLink->getInboundJoint());
 			const PxU32 nbrDofs = npLink->getInboundJointDof();
 			switch(dataType)
@@ -314,13 +204,51 @@ void NpOmniPvdSimulationControllerCallbacks::streamJointValues(const PxArticulat
 	OMNI_PVD_WRITE_SCOPE_END
 }
 
+#define SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxActorType, DataVecType, attribute) \
+{ \
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData) \
+	DataVecType* dataVecCasted = (DataVecType*)dataVec; \
+	for (PxU32 artId = 0; artId < nbElements; artId++) \
+	{ \
+		const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]); \
+		DataVecType* attribData = &dataVecCasted[ artId * nbrSubElementsPerBlock ]; \
+		PxActorType& actor = *static_cast<PxActorType*>(npArticulation->mArticulationLinks[0]); \
+		OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActorType, attribute, actor, *attribData) \
+	} \
+	OMNI_PVD_WRITE_SCOPE_END \
+}
+
+#define SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, npScene, linkAttributeResetFunction, PxActorType, DataVecType, attribute) \
+{ \
+	NpOmniPvdSceneClient& ovdClient = npScene.getSceneOvdClientInternal(); \
+	OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData) \
+	DataVecType* dataVecCasted = (DataVecType*)dataVec; \
+	for (PxU32 artId = 0; artId < nbElements; artId++) \
+	{ \
+		const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]); \
+		ovdClient.linkAttributeResetFunction(static_cast<const PxArticulationReducedCoordinate*>(npArticulation)); \
+		DataVecType* attribData = &dataVecCasted[ artId * nbrSubElementsPerBlock ]; \
+		const PxU32 nbLinks = npArticulation->getNbLinks(); \
+		const NpArticulationLink* const * npLinks = npArticulation->getLinks(); \
+		for (PxU32 linkId = 0; linkId < nbLinks; linkId++) \
+		{ \
+			const NpArticulationLink* npLink = npLinks[linkId]; \
+			const PxU32 linkLowLevelIndex = npLink->getLinkIndex(); \
+			const PxActorType& rb = *static_cast<const PxActorType*>(npLink); \
+			OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxActorType, attribute, rb, attribData[linkLowLevelIndex]) \
+		} \
+	} \
+	OMNI_PVD_WRITE_SCOPE_END \
+} 
+
 // The nodeIndices are expected to be remapped from gpuIndices to nodeIndices before this function is called
 // The remapping is done in PxgArticulationCore::ovdArticulationCallback
-void NpOmniPvdSimulationControllerCallbacks::processArticulationSet(Dy::FeatherstoneArticulation** articulations, void* dataVec, PxArticulationGPUIndex* nodeIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
+void NpOmniPvdSimulationControllerCallbacks::processArticulationSet(const Dy::FeatherstoneArticulation* const *articulations, const void* dataVec, const PxArticulationGPUIndex* nodeIndices, PxArticulationGPUAPIWriteType::Enum dataType, PxU32 nbElements,
 		PxU32 maxLinks, PxU32 maxDofs, PxU32 maxFixedTendons, PxU32 maxTendonJoints, PxU32 maxSpatialTendons, PxU32 maxSpatialTendonAttachments)
 {
-	PxU32 nbrSubElementsPerBlock = getArticulationDataMaxSubElementsNb(dataType,
-		maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments);
+	PxU32 nbrSubElementsPerBlock;
+	PxU32 blockSize;
+	getArticulationDataElements(dataType, maxLinks, maxDofs, maxFixedTendons, maxTendonJoints, maxSpatialTendons, maxSpatialTendonAttachments, nbrSubElementsPerBlock, blockSize);
 
 	switch(dataType)
 	{
@@ -330,95 +258,32 @@ void NpOmniPvdSimulationControllerCallbacks::processArticulationSet(Dy::Feathers
 		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_VELOCITY:
 		case PxArticulationGPUAPIWriteType::eJOINT_TARGET_POSITION:
 		{
-			streamJointValues(dataType, articulations, (PxReal*)dataVec, nodeIndices, nbElements, maxLinks, nbrSubElementsPerBlock);
+			streamJointValues(dataType, articulations, (const PxReal*)dataVec, nodeIndices, nbElements, maxLinks, nbrSubElementsPerBlock);
 			break;
 		}
-		case PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE:
+		case PxArticulationGPUAPIWriteType::eROOT_GLOBAL_POSE:		
 		{
-			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			PxTransform* tformDataVec = (PxTransform*)dataVec;
-			for (PxU32 artId = 0; artId < nbElements; artId++)
-			{
-				const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]);
-				PxTransform* tform = &tformDataVec[ artId * nbrSubElementsPerBlock ];
-				PxRigidActor& rb = *static_cast<PxRigidActor*>(npArticulation->mArticulationLinks[0]);
-				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidActor, globalPose, rb, *tform)
-			}
-			OMNI_PVD_WRITE_SCOPE_END
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidActor, const PxTransform, globalPose)
 			break;
 		}
         case PxArticulationGPUAPIWriteType::eROOT_LINEAR_VELOCITY:
 		{
-			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			PxVec3* velocitiesDataVec = (PxVec3*)dataVec;
-			for (PxU32 artId = 0; artId < nbElements; artId++)
-			{
-				const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]);
-				PxVec3* velocity = &velocitiesDataVec[ artId * nbrSubElementsPerBlock ];
-				PxRigidBody& rb = *static_cast<PxRigidBody*>(npArticulation->mArticulationLinks[0]);
-				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, linearVelocity , rb, *velocity)
-			}
-			OMNI_PVD_WRITE_SCOPE_END
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, const PxVec3, linearVelocity)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eROOT_ANGULAR_VELOCITY:
 		{
-			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			PxVec3* velocitiesDataVec = (PxVec3*)dataVec;
-			for (PxU32 artId = 0; artId < nbElements; artId++)
-			{
-				const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]);
-				PxVec3* velocity = &velocitiesDataVec[ artId * nbrSubElementsPerBlock ];
-				PxRigidBody& rb = *static_cast<PxRigidBody*>(npArticulation->mArticulationLinks[0]);
-				OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, angularVelocity , rb, *velocity)
-			}
-			OMNI_PVD_WRITE_SCOPE_END
+			SET_ARTICULATION_ROOT_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, PxRigidBody, const PxVec3, angularVelocity)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eLINK_FORCE:
 		{
-			NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
-			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			PxVec3* forcesDataVec = (PxVec3*)dataVec;
-			for (PxU32 artId = 0; artId < nbElements; artId++)
-			{
-				const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]);
-				ovdClient.addArticulationLinksForceReset(static_cast<const PxArticulationReducedCoordinate*>(npArticulation));
-				PxVec3* forcesForArticulation = &forcesDataVec[ artId * nbrSubElementsPerBlock ];
-				const PxU32 nbLinks = npArticulation->getNbLinks();
-				NpArticulationLink* const * npLinks = const_cast<NpArticulationReducedCoordinate*>(npArticulation)->getLinks();
-				for (PxU32 linkId = 0; linkId < nbLinks; linkId++)
-				{
-					const NpArticulationLink* npLink = npLinks[linkId];
-					const PxU32 linkLowLevelIndex = npLink->getLinkIndex();
-					const PxRigidBody& rb = *static_cast<const PxRigidBody*>(npLink);
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, force, rb, forcesForArticulation[linkLowLevelIndex])
-				}
-			}
-			OMNI_PVD_WRITE_SCOPE_END
+			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksForceReset, PxRigidBody, const PxVec3, force)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eLINK_TORQUE:
 		{
-			NpOmniPvdSceneClient& ovdClient = mNpScene.getSceneOvdClientInternal();
-			OMNI_PVD_WRITE_SCOPE_BEGIN(pvdWriter, pvdRegData)
-			PxVec3* torquesDataVec = (PxVec3*)dataVec;
-			for (PxU32 artId = 0; artId < nbElements; artId++)
-			{
-				const NpArticulationReducedCoordinate* npArticulation = castFeatherstoneToNpArticulation(articulations[nodeIndices[artId]]);
-				ovdClient.addArticulationLinksTorqueReset(static_cast<const PxArticulationReducedCoordinate*>(npArticulation));
-				PxVec3* torquesForArticulation = &torquesDataVec[ artId * nbrSubElementsPerBlock ];
-				const PxU32 nbLinks = npArticulation->getNbLinks();
-				NpArticulationLink* const * npLinks = const_cast<NpArticulationReducedCoordinate*>(npArticulation)->getLinks();
-				for (PxU32 linkId = 0; linkId < nbLinks; linkId++)
-				{
-					const NpArticulationLink* npLink = npLinks[linkId];
-					const PxU32 linkLowLevelIndex = npLink->getLinkIndex();
-					const PxRigidBody& rb = *static_cast<const PxRigidBody*>(npLink);
-					OMNI_PVD_SET_EXPLICIT(pvdWriter, pvdRegData, OMNI_PVD_CONTEXT_HANDLE, PxRigidBody, torque, rb, torquesForArticulation[linkLowLevelIndex])
-				}
-			}
-			OMNI_PVD_WRITE_SCOPE_END
+			SET_ARTICULATION_LINK_ATTRIBUTES(articulations, dataVec, nbrSubElementsPerBlock, mNpScene, addArticulationLinksTorqueReset, PxRigidBody, const PxVec3, torque)
 			break;
 		}
 		case PxArticulationGPUAPIWriteType::eFIXED_TENDON:

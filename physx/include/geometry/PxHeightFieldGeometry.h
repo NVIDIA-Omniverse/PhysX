@@ -102,9 +102,9 @@ public:
 	\return True if the current settings are valid
 
 	\note A valid height field has a positive scale value in each direction (heightScale > 0, rowScale > 0, columnScale > 0).
-	It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a height field that has zero extents in any direction.
+	It is illegal to call PxPhysics::createShape with a height field that has zero extents in any direction.
 
-	\see PxRigidActor::createShape, PxPhysics::createShape
+	\see PxPhysics::createShape
 	*/
 	PX_INLINE bool isValid() const;
 

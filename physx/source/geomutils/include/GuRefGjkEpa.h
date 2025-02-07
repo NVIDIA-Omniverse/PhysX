@@ -346,6 +346,7 @@ namespace physx
 				PxVec3d dir = -V3_To_V3d((poseA.p - poseB.p).magnitudeSquared() > FLT_EPSILON ? (poseA.p - poseB.p).getNormalized() : PxVec3(1, 0, 0));
 				PxF64 closestDist = DBL_MAX;
 
+				PxU32 counter = 0;
 				while (true)
 				{
 					const PxU8 aI = convexA.supportIndex(dir), bI = convexB.supportIndex(-dir);
@@ -356,7 +357,10 @@ namespace physx
 					if (dist > PxF64(maxDist))
 						return FLT_MAX;
 
-					if (dist >= closestDist - epsDist || !gjk.addPoint(p, aI, bI))
+					// QuickFix: the algorithm may get stuck trying to add same 3 points
+					// over and over. for now we just count the iterations and exit if
+					// we spin here for too long
+					if (++counter > 100 || dist >= closestDist - epsDist || !gjk.addPoint(p, aI, bI))
 					{
 						PxVec3d pA, pB;
 						gjk.computePoints(convexA, convexB, pA, pB);
@@ -644,6 +648,12 @@ namespace physx
 
 					if (dist >= closestDist - epsDist || !epa.addPoint(p, aI, bI))
 					{
+						// QuickFix: if the algorithm stops too early we may not have
+						// a nearest plane computed yet. we just skip contacts like
+						// this for now
+						if (epa.getDir().magnitudeSquared() < PxF64(FLT_EPSILON))
+							return FLT_MAX;
+
 						PxVec3d pA, pB;
 						epa.computePoints(convexA, convexB, pA, pB);
 						pointA = V3d_To_V3(pA);

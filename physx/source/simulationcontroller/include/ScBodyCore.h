@@ -172,6 +172,11 @@ namespace Sc
 			return *reinterpret_cast<BodyCore*>(reinterpret_cast<PxU8*>(&core) - getCoreOffset());
 		}
 
+		static PX_FORCE_INLINE BodyCore&	getCore(const PxsBodyCore& core)
+		{ 
+			return *reinterpret_cast<BodyCore*>(reinterpret_cast<PxU8*>(&const_cast<PxsBodyCore&>(core)) - getCoreOffset());
+		}
+
 						void				setFixedBaseLink(bool value);
 	private:
 						PX_ALIGN_PREFIX(16) PxsBodyCore mCore PX_ALIGN_SUFFIX(16);

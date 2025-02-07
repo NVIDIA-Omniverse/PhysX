@@ -123,9 +123,9 @@ public:
 	\return True if the current settings are valid for shape creation.
 
 	\note A valid convex mesh has a positive scale value in each direction (scale.x > 0, scale.y > 0, scale.z > 0).
-	It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a convex that has zero extent in any direction.
+	It is illegal to call PxPhysics::createShape with a convex that has zero extent in any direction.
 
-	\see PxRigidActor::createShape, PxPhysics::createShape
+	\see PxPhysics::createShape
 	*/
 	PX_INLINE bool isValid() const;
 

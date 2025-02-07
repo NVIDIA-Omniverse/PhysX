@@ -33,6 +33,7 @@
 #include "foundation/PxSimpleTypes.h"
 #include "foundation/PxHashMap.h"
 #include "foundation/PxArray.h"
+#include "foundation/PxHashSet.h"
 #include "foundation/PxMutex.h"
 #include "foundation/PxUserAllocated.h"
 #include "foundation/PxErrorCallback.h"
@@ -48,6 +49,7 @@ namespace physx
 	class PxMaterial;
 
 	class PxArticulationReducedCoordinate;
+	class PxArticulationLink;
 	class PxRigidDynamic;
 
 	class PxDeformableMaterial;
@@ -121,13 +123,16 @@ public:
 	void incrementFrame(OmniPvdWriter& pvdWriter, bool recordProfileFrame = false); // stopFrame (frameID), then startFrame (frameID + 1)
 	void stopLastFrame(OmniPvdWriter& pvdWriter);
 	
+	void addRigidDynamicReset(const physx::PxRigidDynamic* rigidDynamic);
 	void addRigidDynamicForceReset(const physx::PxRigidDynamic* rigidDynamic);
 	void addRigidDynamicTorqueReset(const physx::PxRigidDynamic* rigidDynamic);
+	void removeRigidDynamicReset(const physx::PxRigidDynamic* rigidDynamic);
 	
+	void addArticulationFromLinkFlagChangeReset(const physx::PxArticulationLink* link);
 	void addArticulationLinksForceReset(const physx::PxArticulationReducedCoordinate* articulation);
 	void addArticulationLinksTorqueReset(const physx::PxArticulationReducedCoordinate* articulation);
-	
 	void addArticulationJointsForceReset(const physx::PxArticulationReducedCoordinate* articulation);
+	void removeArticulationReset(const physx::PxArticulationReducedCoordinate* articulation);
 	
 	void resetForces();
 
@@ -135,13 +140,12 @@ private:
 	physx::PxScene& mScene;
 	physx::PxU64 mFrameId;
 
-	physx::PxArray<const PxRigidDynamic*> mRigidDynamicForceSets;
-	physx::PxArray<const PxRigidDynamic*> mRigidDynamicTorqueSets;
+	physx::PxHashSet<const PxRigidDynamic*> mResetRigidDynamicForce;
+	physx::PxHashSet<const PxRigidDynamic*> mResetRigidDynamicTorque;
 
-	physx::PxArray<const PxArticulationReducedCoordinate*> mArticulationLinksForceSets;
-	physx::PxArray<const PxArticulationReducedCoordinate*> mArticulationLinksTorqueSets;
-
-	physx::PxArray<const PxArticulationReducedCoordinate*> mArticulationJointsForceSets;
+	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationLinksForce;
+	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationLinksTorque;
+	physx::PxHashSet<const PxArticulationReducedCoordinate*> mResetArticulationJointsForce;
 };
 
 }
@@ -164,7 +168,6 @@ public:
 	void onObjectRemove(const physx::PxBase& object);
 	
 	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) PX_OVERRIDE;
-
 };
 
 

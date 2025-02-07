@@ -53,7 +53,7 @@ namespace physx
 		It is assumed that the application holds a reference to each of the objects in the collection, with the exception of objects that are not releasable
 		(PxBase::isReleasable()). In general, objects that violate this assumption need to be removed from the collection prior to calling releaseObjects.
 		
-		\note when a shape is created with PxRigidActor::createShape() or PxRigidActorExt::createExclusiveShape(), the only counted reference is held by the actor. 
+		\note when a shape is created with PxRigidActorExt::createExclusiveShape(), the only counted reference is held by the actor. 
 		If such a shape and its actor are present in the collection, the reference count will be decremented once when the actor is released, and once when the 
 		shape is released, resulting in undefined behavior. Shape reference counts can be incremented with PxShape::acquireReference().
 

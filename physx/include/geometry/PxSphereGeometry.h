@@ -71,9 +71,9 @@ public:
 	\return True if the current settings are valid
 
 	\note A valid sphere has radius > 0.  
-	It is illegal to call PxRigidActor::createShape and PxPhysics::createShape with a sphere that has zero radius.
+	It is illegal to call PxPhysics::createShape with a sphere that has zero radius.
 
-	\see PxRigidActor::createShape, PxPhysics::createShape
+	\see PxPhysics::createShape
 	*/
 	PX_INLINE bool isValid() const;
 
